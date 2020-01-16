@@ -1,9 +1,9 @@
 # kit4b 
 **kit4b** - the 'K-mer Informed Toolkit for Bioinformatics' - is an integrated toolkit of high performance bioinformatics processes and subprocesses targeting the challenges of next generation sequencing analytics. 
 
-This toolkit is a source base clone of **BioKanga** release 4.4.2 (https://github.com/csiro-crop-informatics/biokanga) containing significant functionality enhancements breaking backward compatibility with **BioKanga**.
+This toolkit is a source base clone of **BioKanga** release 4.4.2 (https://github.com/csiro-crop-informatics/biokanga) containing significant functionality enhancements, these enhancements have resulted in compromised backward compatibility with **BioKanga**.
 
-**kit4b** is being released under the Opensource Software License Agreement (GPLv3), the same as **BioKanga**
+**kit4b** is being released under the Opensource Software License Agreement (GPLv3), the same as **BioKanga** licencing.
 
 ## Why YAT (Yet Another Toolkit)
 Compared with other widely used bioinformatics toolkits, **kit4b** provides substantial gains in throughput and quality of processing with integrated functionality providing the majority of bioinformatics workflow processing stages without the need to incorporate third party processing into the workflow.
