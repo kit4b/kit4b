@@ -52,8 +52,11 @@ The primary process is **ngskitb** targeting NGS workflows which has subprocesse
 ```
 There are many other processes additional to **kit4b** included in this release, all sharing the same common library modules in **libkitb**. 
 
-The most notable of these additional processes is **kit4bpacbio** which has subprocesses targeting PacBio long read error correction and denovo assemblies. 
-Documentation on these additional processes will be provided at a later date when the primary process **bkit** has matured with complete documentation having been made available.
+The most notable of these additional processes is **pacbiokit4b** which has subprocesses targeting PacBio long read error correction and denovo assemblies. 
+Documentation on these additional processes will be provided at a later date when the primary process **ngsbkit** has matured with complete documentation having been made available.
+
+## Documentation
+Limited documentation is located in the /kit4b/Docs directory
 
 ## Build and installation
 ### Linux
