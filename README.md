@@ -11,7 +11,7 @@ Compared with other widely used bioinformatics toolkits, **kit4b** provides subs
 ## Toolset Components
 The **kit4b** toolset contains a number of processes and subprocesses, each of which is targeting a specific bioinformatics analytics task. **kit4b** core functionality is written in C++, and can be natively compiled for execution in either a Windows and Linux hosting environment. 
 
-The primary process is **kitb** which has subprocesses providing functionality to:
+The primary process is **ngskitb** targeting NGS workflows which has subprocesses providing functionality to:
 ```
   * Generate simulated NGS readsets
   * Process NGS reads and report quality scores with compositional distributions
