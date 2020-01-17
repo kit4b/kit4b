@@ -1,0 +1,131 @@
+ngskit4b ultras
+Identify Utra/Hyper conserved elements
+
+Version 0.4.6
+===========================
+Released January 16th 2020
+
+
+-h, --help
+	This option will display the list of options and brief help as to the
+	function of each of these options together with default values, and
+	then terminates the process
+
+-v, --version, --ver
+	This option displays the ngskit4b build version and then
+	terminates
+
+-f, --FileLogLevel=<int>
+	Use this option to control the level of diagnostics written to screen
+	and logfile. Currently most log messages are written at the default
+	level of diagnostics (3)
+
+-F, --log=<file>
+	Use to specify the log file to which diagnostics are to be written.
+	If not specified then diagnostics will be written to screen only
+
+-i <file>
+	input from this .algn file
+
+-o <file>
+	output to statistics file as CSV
+
+-O <file>
+	output hypercore loci to file as CSV
+
+-r, --regions=<file>
+	characterise regions from this biobed file
+
+-x, --procmode=<int>
+	processing mode 
+		0:default
+		1:summary
+		2:outspecies
+
+-b, --numbins=<int>
+	when generating length distributions then use this many bins (defaults to 1000, range 10..10000)
+
+-B, --bindelta=<int>
+	when generating length distributions then each bin holds this length delta 
+	(default 1, range 1,2,5,10,25,50,100,250,500 or 1000)
+
+-u, --uniquespecieseqs=<string> 
+	Ignore alignment blocks in which these species are not unique (use 'any' for all, or '*' for -s<specieslist>)
+
+-m, --numcorespecies=<int> 
+	number of core species in alignment, default is num of species in -s<specieslist>
+
+-M, --minalignedspecies=<int>
+	min number of species required in alignment (includes core species), 
+	default is num of species in -s<specieslist>
+
+-s, --species=<string>
+	species list, ordered by processing priority
+
+-q, --multiplefeatbits
+	single featbit (default) or multiple featbits allowed
+
+-j, --indelsasmismatches
+	treat InDels same as mismatches (default is to terminate element if InDel)
+
+-k, --sloughrefindels
+	slough columns in which the ref base is an InDel (default is to terminate element if InDel)
+
+-l, --filt
+	filter out low confidence subsequences,( slough subsequence < 15mer and first/last subsequence, subsequence must start/end on identical, identity > 70)
+
+-N, --minhyperlen=<int>
+	minimum (default = 50 or minultralen) required hypercore length (0,10..1000) - will be maximally extended
+
+-n, --minultralen=<int>
+	minimum (default = 50) required ultra length (0,10..1000) - will be maximally extended
+
+-X, --maxmismatches=<int>
+	total number (default = 100) of mismatches allowed in any hypercores (0..500)
+
+-y, --minidentity=<int>
+	minimum percentage identity (default = 90) required in hypercore (50-100)
+
+-L, --updnstream=<int>
+	length of 5'up or 3'down  stream regulatory region length (default = 2000) 0..1000000
+
+-c, --chromper
+	generate stats for each chromosome -= default is for complete genome
+
+-d, --distsegs=<int>
+	number of match distribution segments (default 10) used when processing outspecies mode
+
+-E, --exclude=<file>
+	exclude all regions in biobed file from processing
+
+-I, --include=<file>
+	include all regions (unless specific regions excluded) in biobed file
+
+-w, --windowsize=<int>
+	if non-zero then sets fixed size window (in Kbp) used to sample along genome
+
+-z, --chromeinclude=<string>
+	regular expressions defining species.chromosomes to include (overrides exclude) from processing
+
+-Z, --chromexclude=<string>
+	regular expressions defining species.chromosomes to exclude from processing
+
+-D, --TargDep
+	Generate target file only if missing or older than any of the independent source files
+
+-q, --sumrslts=<file>
+	Output results summary to this SQLite3 database file
+
+-w, --experimentname=<str>
+	experiment name SQLite3 database file
+
+-W, --experimentdescr=<str>
+	experiment description SQLite3 database file
+
+
+Note: Options and associated parameters can be entered into an option parameter
+file, one option and it's associated parameter per line.
+To specify usage of this option paramter file to the ngskit4b toolkit
+components then precede its name with '@' - ngskit4b ultras @myparams.txt
+
+

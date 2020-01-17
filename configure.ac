@@ -1,0 +1,82 @@
+AC_INIT(libkit4b/BEDfile.cpp)
+AC_CHECK_LIB(gslcblas,main)
+AC_CHECK_LIB(gsl,main)
+AC_CHECK_LIB(pthread,main)
+AC_CHECK_LIB(dl,main)
+AC_CHECK_LIB(rt,main)
+PACKAGE=kit4b
+VERSION=0.4.6
+AM_INIT_AUTOMAKE($PACKAGE,$VERSION)
+AC_PROG_RANLIB
+AC_CONFIG_HEADERS(config.h)
+AC_PROG_CC
+AC_PROG_CXX
+AC_PROG_INSTALL
+AC_OUTPUT(Makefile 
+    libkit4b/Makefile 
+    libBKPLPlot/Makefile
+    libzlib/Makefile
+    ngskit4b/Makefile
+    pacbiokit4b/Makefile 
+    bed2csv/Makefile
+    BEDFilter/Makefile
+    BEDMerge/Makefile
+    blast2csv/Makefile
+    csv2bed/Makefile
+    csv2fasta/Makefile
+    csv2feat/Makefile
+    csv2sqlite/Makefile
+    csv2stats/Makefile
+    csvfilter/Makefile
+    csvmerge/Makefile
+    DNAseqSitePotential/Makefile
+    fasta2dist/Makefile
+    fasta2struct/Makefile
+    fastafilter/Makefile
+    FastaToPE/Makefile
+    filterreads/Makefile
+    genalignconf/Makefile
+    genalignloci2core/Makefile
+    genalignref2relloci/Makefile
+    genalignstats/Makefile
+    genbiomultialign/Makefile
+    gencentroidmetrics/Makefile
+    gencomposition/Makefile
+    genElementProfiles/Makefile
+    genelementseq/Makefile
+    genGenomeFromAGP/Makefile
+    genhyperdropouts/Makefile
+    genloci2gene/Makefile
+    genmarkers/Makefile
+    genNormWiggle/Makefile
+    gennucstats/Makefile
+    genrollups/Makefile
+    gensampler/Makefile
+    genseqcandidates/Makefile
+    genstructprofile/Makefile
+    genstructstats/Makefile
+    genultras/Makefile
+    genWiggle/Makefile
+    genzygosity/Makefile
+    GFFfilter/Makefile
+    GTFfilter/Makefile
+    HammingDist/Makefile
+    kit4bhrdx/Makefile
+    kit4bRADSeq/Makefile
+    LocateROI/Makefile
+    loci2dist/Makefile
+    Loci2Phylip/Makefile
+    locmarkers/Makefile
+    PEscaffold/Makefile
+    predconfnucs/Makefile
+    prednucleosomes/Makefile
+    proccentroids/Makefile
+    processcsvfiles/Makefile
+    psl2csv/Makefile
+    quickcount/Makefile
+    RNAseqSitePotential/Makefile
+    SimulateMNase/Makefile
+    splitmultifasta/Makefile
+    ufilter/Makefile
+    usimdiffexpr/Makefile)
+

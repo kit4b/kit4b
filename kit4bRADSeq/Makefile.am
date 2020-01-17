@@ -1,0 +1,10 @@
+bin_PROGRAMS = kit4bRADSeq
+kit4bRADSeq_SOURCES= kit4bRADSeq.cpp ProcReads.cpp StackSeqs.h StackSeqs.cpp
+
+
+# set the include path found by configure
+AM_CPPFLAGS= $(all_includes)
+
+# our library
+LDADD = ../libkit4b/libkit4b.a ../libzlib/libzlib.a
+

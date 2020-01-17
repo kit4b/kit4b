@@ -1,0 +1,88 @@
+ngskit4b alignbs
+Alignments bootstrapper
+
+This document is derived from documentation supplied with BioKanga 4.2.0
+
+Version 0.4.6
+===========================
+Released January 16th 2020
+
+
+-h, --help
+	This option will display the list of options and brief help as to the
+	function of each of these options together with default values, and
+	then terminates the process
+
+-v, --version, --ver
+	This option displays the ngskit4b build version and then
+	terminates
+
+-f, --FileLogLevel=<int>
+	Use this option to control the level of diagnostics written to screen
+	and logfile. Currently most log messages are written at the default
+	level of diagnostics (3)
+
+-F, --log=<file>
+	Use to specify the log file to which diagnostics are to be written.
+	If not specified then diagnostics will be written to screen only
+
+-q, --sumrslts=<file>     
+	Output results summary to this SQLite3 database file
+
+-w, --experimentname=<str> 
+	experiment name SQLite3 database file
+
+-W, --experimentdescr=<str> 
+	experiment description SQLite3 database file
+
+-m, --mode=<int>
+	bootstrap processing mode: 
+		0 - standard
+		1 - report bootstrap sequences used in each iteration
+
+-r, --randseed=<int>
+	if > 0 then random generator seed, otherwise current time used as the seed (default 0)
+
+-a, --senseonly
+	align sense only, default is to align both sense and antisense
+
+-s, --maxsubs=<int>
+	allowing at most this many subs as percentage of query length before accepting alignment (default 0, range 0..50
+
+-b, --numbootstraps=<int>
+	number of bootstrap iterations - excluding initial original query seqs aligned to original target seqs (default 1000, range 1..10000)
+
+-x, --woreplacement
+	sample without replacement, default is to sample with replacement
+
+-X, --nooverlaps
+	sample without overlap, default is to sample allowing overlaps
+
+-p, --queryseqsfile=<file>
+	fasta file containing initial query sequences from which to derive query length distributions
+
+-P, --queryassembfile=<file>
+	file containing fasta assembly to be bootstrap sampled for query sequences with same length distributions as sequences in queryseqsfile
+
+-i, --targseqsfile=<file>
+	fasta file containing initial target sequences from which to derive target length distributions
+
+-I, --targassembfile=<file>
+	file containing fasta assembly to be bootstrap sampled for target sequences with same length distributions as sequences in targassembfile
+
+-o, --qrsltsfile=<file>
+	summary number of query hits onto at least one target bootstrap results to this file
+
+-O, --trsltsfile=<file>
+	summary number of targets hit by at least one query bootstrap results to this file
+
+-T, --threads=<int>
+	number of processing threads 0..128 (defaults to 0 which sets threads to number of CPU cores)
+
+
+Note: Options and associated parameters can be entered into an option parameter
+file, one option and it's associated parameter per line.
+To specify usage of this option paramter file to the ngskit4b toolkit
+components then precede its name with '@' - ngskit4b alignbs @myparams.txt
+
+

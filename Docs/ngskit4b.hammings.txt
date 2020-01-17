@@ -1,0 +1,101 @@
+ngskit4b hammings
+Generate hamming distances for K-mer over sequences
+
+Version 0.4.6
+===========================
+Released January 16th 2020
+
+
+-h, --help
+	This option will display the list of options and brief help as to the
+	function of each of these options together with default values, and
+	then terminates the process
+
+-v, --version, --ver
+	This option displays the ngskit4b build version and then
+	terminates
+
+-f, --FileLogLevel=<int>
+	Use this option to control the level of diagnostics written to screen
+	and logfile. Currently most log messages are written at the default
+	level of diagnostics (3)
+
+-F, --log=<file>
+	Use to specify the log file to which diagnostics are to be written.
+	If not specified then diagnostics will be written to screen only
+
+-m, --mode=<int>          
+	distributed processing mode: 
+		0 - restricted Hammings
+		1 - exhaustive single node Hammings
+		2 - exhaustive multiple node Hammings
+		3 - merge multiple Hamming files
+		4 - transform Hamming CSV into quick load binary format
+		5  - transform quick load Hamming binary format into CSV (default = 0)
+
+-s, --sensitivity=<int>
+	restricted Hamming sensitivity: 
+	0 - normal
+	1 - high
+	2 - ultra
+	3 - low (default = 0)
+
+-r, --rhamm=<int>
+	restricted hamming upper limit (1..10, default 3) only applies in mode 0
+
+-S, --resformat=<int>
+	restricted Hamning file output format: 
+	0 - csv
+	1 - UCSC BED
+	2 - UCSC Wiggle (default = 0)
+
+-c, --strandcrick
+	process Crick in addition to Watson strand - 
+		Caution: very slow processing
+
+-z, --intrainterboth=<int> 
+	0: hammings over both intra (same sequence as probe K-mer drawn from) and inter
+		 (different sequences to that from which probe K-mer drawn)
+	1: Intra only
+	2: Inter only (default 0)
+
+-n, --numnodes=<int>
+	total number of nodes (2..10000) if processing over multiple nodes
+
+-N, --node=<int>
+	node instance (1..N) if processing over multiple nodes
+
+-b, --sweepstart=<int>    
+	process starting from this sweep instance inclusive (default = 1 for 1st)
+
+-B, --sweepend=<int>
+	complete processing at this sweep instance inclusive (default = 0 for all remaining, or >= Sweep start)
+
+-K, --seqlen=<int>
+	Hamming edit distances for these length k-mer subsequences (range 10..5000, default is 100)
+
+-k, --sample=<int>
+	sample every -S<N> sweep instances (default is 1) useful if only interested in overall distributions
+    in restricted Hamming processing then sample every Nth (max 100) K-mer
+
+-i, --in=<file>
+	in mode 0 input sfx file
+	in mode 1 and 2, bioseq genome assembly file or 
+	in mode 3 merge from this input Hamming file
+
+-I, --seq=<file>
+	if restricted hamming processing then optional file containing source kmer sequences
+
+-o, --out=<file>
+	output (merged) Hamming distances to this file
+
+-T, --threads=<int>
+	number of processing threads 0..128 (defaults to 0 which sets threads to number of CPU cores)
+
+
+Note: Options and associated parameters can be entered into an option parameter
+file, one option and it's associated parameter per line.
+To specify usage of this option paramter file to the ngskit4b toolkit
+components then precede its name with '@' - ngskit4b hammings @myparams.txt
+
+
