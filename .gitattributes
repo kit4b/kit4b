@@ -1,0 +1,196 @@
+###############################
+# Git Line Endings            #
+###############################
+ 
+# Set default behavior to automatically normalize line endings.
+* text=auto
+ 
+# Force bash scripts to always use lf line endings so that if a repo is accessed
+# in Unix via a file share from Windows, the scripts will work.
+# same for Windows batch scripts
+*.sh text eol=lf
+*.bash text eol=lf
+*.bat text eol=crlf
+
+# for Visual Studio
+*.sln        text eol=crlf
+*.csproj     text eol=crlf
+*.vbproj     text eol=crlf
+*.vcxproj    text eol=crlf
+*.vcproj     text eol=crlf
+*.dbproj     text eol=crlf
+*.fsproj     text eol=crlf
+*.lsproj     text eol=crlf
+*.wixproj    text eol=crlf
+*.modelproj  text eol=crlf
+*.sqlproj    text eol=crlf
+*.wmaproj    text eol=crlf
+*.xproj      text eol=crlf
+*.props      text eol=crlf
+*.filters    text eol=crlf
+*.vcxitems   text eol=crl
+
+# Source files
+*.c     text diff=c
+*.cc    text diff=cpp
+*.cxx   text diff=cpp
+*.cpp   text diff=cpp
+*.c++   text diff=cpp
+*.hpp   text diff=cpp
+*.h     text diff=c
+*.h++   text diff=cpp
+*.hh    text diff=cpp
+*.css   text
+*.htm   text
+*.html  text
+*.inc   text
+*.ini   text
+*.js    text
+*.py    text
+*.py3   text
+*.sql   text
+*.xml   text
+*.xhtml text
+*.Rdata text
+*.rdb   binary
+*.rds   binary
+*.Rd    text
+*.Rdx   binary
+*.Rmd	text
+*.R  	text
+
+# Compiled Object files
+*.slo   binary
+*.lo    binary
+*.o     binary
+*.obj   binary
+
+# Precompiled Headers
+*.gch   binary
+*.pch   binary
+
+# Compiled Dynamic libraries
+*.so    binary
+*.dylib binary
+*.dll   binary
+
+# Compiled Static libraries
+*.lai   binary
+*.la    binary
+*.a     binary
+*.lib   binary
+
+# Executables
+*.exe   binary
+*.out   binary
+*.app   binary
+
+# Builds
+*.ini          text
+*.bowerrc      text
+*.cnf          text
+*.conf         text
+*.config       text
+.gitattributes text
+.gitconfig     text
+.gitignore     text
+.htaccess      text
+*.npmignore    text
+*.yaml         text
+*.yml          text
+browserslist   text
+Makefile.*     text
+makefile.*     text
+ 
+# Archives
+*.7z binary
+*.br binary
+*.gz binary
+*.tar binary
+*.zip binary
+
+# Bioinformatics - just a few, every tool has it's own unique file format output
+# treating all of these as binary even though some are ascii; if there is a change then a diff is likely to be meaningless
+*.fasta binary
+*.fastq binary
+*.bed binary
+*.csfasta binary
+*.sam binary
+*.bam binary
+*.bai binary
+*.csi binary
+*.sfx binary
+*.vcf binary
+
+ 
+# Documents
+*.pdf binary
+*.PDF  binary
+*.doc binary
+*.DOC  binary
+*.docx binary
+*.DOCX binary
+*.dot  binary
+*.DOT  binary
+*.rtf  binary
+*.RTF  binary
+*.txt text
+*.md text
+*.adoc text
+*.textile text
+*.csv text
+*.tab text
+*.tsv text
+*.sql text
+
+# Project documentation
+*.markdown   text
+*.md         text
+*.mdwn       text
+*.mdown      text
+*.mkd        text
+*.mkdn       text
+*.mdtxt      text
+*.mdtext     text
+AUTHORS      text
+CHANGELOG    text
+CHANGES      text
+CONTRIBUTING text
+COPYING      text
+copyright    text
+*COPYRIGHT*  text
+INSTALL      text
+license      text
+LICENSE      text
+NEWS         text
+readme       text
+*README*     text
+TODO         text
+ 
+## GRAPHICS
+*.ai   binary
+*.bmp  binary
+*.eps  binary
+*.gif  binary
+*.ico  binary
+*.jng  binary
+*.jp2  binary
+*.jpg  binary
+*.jpeg binary
+*.jpx  binary
+*.jxr  binary
+*.pdf  binary
+*.png  binary
+*.psb  binary
+*.psd  binary
+*.svg  text
+*.svgz binary
+*.tif  binary
+*.tiff binary
+*.wbmp binary
+*.webp binary
+ 
+# Fonts
+*.ttf   binary
+*.woff2 binary
+
