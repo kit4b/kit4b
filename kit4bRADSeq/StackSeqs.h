@@ -1,7 +1,5 @@
 #pragma once
 
-const int cMaxWorkerThreads = 128;			// limiting max number of threads to this many
-
 const int cMinP1StackDepth = 5;		// user can specify P1 stack as must contain at least this many reads
 const int cDfltP1StackDepth = 10;	// by default P1 stack must contain at least this many reads
 const int cMaxP1StackDepth = 1000;	// user can specify at most P1 stack to contain at least this many reads

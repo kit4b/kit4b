@@ -11,4 +11,7 @@ Release 0.0.1 - Initial clone of BioKanga and renaming application to be kit4b
 	'kit4b' is being released under the Opensource Software License Agreement (GPLv3)
 	'kit4b' is Copyright (c) 2020, Please contact Dr Stuart Stephen < stuartjs@g3web.com > if you have any questions regarding 'kit4b'.
 Release 0.4.6 - Initial source commit to GitHub as master branch 
+Release 0.4.7 - using gitattributes and gitignore to improve chances that respositories will be free of extraneous files/dirs and files have host appropriate line endings
+              - slight cosmetic change when reporting list of subprocesses in ngskit4b - removed a tab char in kalign description
+Release 0.4.8 - code refactoring, CSimReads read simulation class now part of libkit4b  
  

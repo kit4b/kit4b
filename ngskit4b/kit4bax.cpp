@@ -38,7 +38,6 @@ Orginal 'BioKanga' copyright notice has been retained and immediately follows th
 
 #include "ngskit4b.h"
 
-const int cMaxWorkerThreads = 128;		// limiting max number of threads to this many
 const size_t cGbpSeqSize = 1000000000;	// define our definition of a Gbp
 const int cMaxSimGenomeGbp = 1000;      // when simulating genomes then allowing for genomes of upto 1 Tbp which would require ~ 6TB of memory!
 const int cNumSimChroms = 10000;		// simulated genomes will be split over this many equal sized chromosomes
@@ -50,7 +49,7 @@ const int cMaxInFileSpecs = 100;			// user can specify upto this many input file
 
 const int cMaxDupEntries = 10;				// report 1st 10 duplicate entry names
 
-const int cMaxAllocBuffChunk = 0x00ffffff;	// buffer for fasta sequences is realloc'd in this sized chunks
+const int cMaxAXAllocBuffChunk = 0x00ffffff;	// buffer for fasta sequences is realloc'd in this sized chunks
 
 int
 CreateBioseqSuffixFile(int Mode,
@@ -500,7 +499,7 @@ if((Rslt=Fasta.Open(pszFile,true))!=eBSFSuccess)
 	return(Rslt);
 	}
 
-AllocdBuffSize = (size_t)cMaxAllocBuffChunk * 16;
+AllocdBuffSize = (size_t)cMaxAXAllocBuffChunk * 16;
 // note malloc is used as can then simply realloc to expand as may later be required
 if((pSeqBuff = (unsigned char *)malloc(AllocdBuffSize)) == NULL)
 	{
@@ -517,7 +516,7 @@ bEntryCreated = false;
 SeqID = 0;
 BuffOfs = 0;
 NumSeqsUnderlength = 0;
-while((Rslt = SeqLen = Fasta.ReadSequence(&pSeqBuff[BuffOfs],(int)min(AvailBuffSize,(size_t)cMaxAllocBuffChunk),true,false)) > eBSFSuccess)
+while((Rslt = SeqLen = Fasta.ReadSequence(&pSeqBuff[BuffOfs],(int)min(AvailBuffSize,(size_t)cMaxAXAllocBuffChunk),true,false)) > eBSFSuccess)
 	{
 	if(SeqLen == eBSFFastaDescr)		// just read a descriptor line
 		{
@@ -583,9 +582,9 @@ while((Rslt = SeqLen = Fasta.ReadSequence(&pSeqBuff[BuffOfs],(int)min(AvailBuffS
 
 	BuffOfs += SeqLen;
 	AvailBuffSize -= SeqLen;
-	if(AvailBuffSize < (size_t)(cMaxAllocBuffChunk / 8))
+	if(AvailBuffSize < (size_t)(cMaxAXAllocBuffChunk / 8))
 		{
-		size_t NewSize = (size_t)cMaxAllocBuffChunk + AllocdBuffSize;
+		size_t NewSize = (size_t)cMaxAXAllocBuffChunk + AllocdBuffSize;
 		unsigned char *pTmp;
 		if((pTmp = (unsigned char *)realloc(pSeqBuff,NewSize))==NULL)
 			{

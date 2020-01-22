@@ -42,8 +42,6 @@ Orginal 'BioKanga' copyright notice has been retained and immediately follows th
 
 #include "ngskit4b.h"
 
-const int cMaxWorkerThreads = 128;			// limiting max number of threads to this many
-
 const double cNormCntsScale = 0.0;			// default normalise experiment to control counts is autoscaling
 
 const double cClampFoldChange = 25.0;		// clamp fold changes to be at most cClampFoldChange
@@ -127,24 +125,24 @@ typedef enum TAG_eCntsScore {
 } etCntsScore;
 
 // processing modes
-typedef enum TAG_ePMode {
-	ePMdefault = 0,				// Standard sensitivity (2500 iterations)
-	ePMMoreSens,				// More sensitive (slower 5000 iterations)
-	ePMUltraSens,				// Ultra sensitive (very slow 10000 iterations)
-	ePMLessSens,				// Less sensitive (quicker 1000 iterations)
-	ePMplaceholder				// used to set the enumeration range
-	} etPMode;
+typedef enum TAG_eDEPMode {
+	eDEPMdefault = 0,				// Standard sensitivity (2500 iterations)
+	eDEPMMoreSens,				// More sensitive (slower 5000 iterations)
+	eDEPMUltraSens,				// Ultra sensitive (very slow 10000 iterations)
+	eDEPMLessSens,				// Less sensitive (quicker 1000 iterations)
+	eDEPMplaceholder				// used to set the enumeration range
+	} etDEPMode;
 
 
-typedef enum eBEDRegion {
-	eMEGRAny = 0,				// process any region
-	eMEGRExons,					// only process exons
-	eMEGRIntrons,				// only process introns
-	eMEGRCDS,					// only process CDSs
-	eMEGUTR,					// only process UTRs
-	eMEG5UTR,					// only process 5'UTRs
-	eMEG3UTR					// only process 3'UTRs
-} etBEDRegion;
+typedef enum eDEBEDRegion {
+	eDEMEGRAny = 0,				// process any region
+	eDEMEGRExons,					// only process exons
+	eDEMEGRIntrons,				// only process introns
+	eDEMEGRCDS,					// only process CDSs
+	eDEMEGUTR,					// only process UTRs
+	eDEMEG5UTR,					// only process 5'UTRs
+	eDEMEG3UTR					// only process 3'UTRs
+} etDEBEDRegion;
 
 // strand processing modes
 typedef enum TAG_eStrandProc {
@@ -279,12 +277,12 @@ pthread_spinlock_t m_hSpinLock;
 void *ThreadedDEproc(void * pThreadPars);
 #endif
 
-char *Region2Txt(etBEDRegion Region);
+char *Region2Txt(etDEBEDRegion Region);
 char ReportStrand(etStrandProc StrandProc);
 void DEReset(void);
 void DEInit(void);
 
-teBSFrsltCodes Process(etPMode PMode,					// processing mode
+teBSFrsltCodes Process(etDEPMode PMode,					// processing mode
 					int NumThreads,						// number of threads (0 defaults to number of CPUs)
 					int  CoWinLen,						// counts coalescing window length
 					int ArtifactCntsThres,				// if counts at any loci are >= this threshold then process for PCR artifact reduction
@@ -292,7 +290,7 @@ teBSFrsltCodes Process(etPMode PMode,					// processing mode
 					bool bFiltNonaligned,				// true if only features having at least one read aligned are to be be reported
 					char AlignStrand,					// process for reads aligning to this strand only
 					char FeatStrand,					// process for genes or features on this strand only
-					etBEDRegion Region,					// process for this genomic region only
+					etDEBEDRegion Region,					// process for this genomic region only
 					int	NumBins,						// number of non-overlapping count bins
 					int MinFeatCntThres,				// minimum feature count threshold, control or experiment, required (1 to 200, defaults to 20)
 					int MinStartLociThres,				// minimum feature unique start loci threshold, control or experiment, required (1 to 200, defaults to 10)
@@ -419,7 +417,7 @@ char szLogFile[_MAX_PATH];	// write diagnostics to this file
 int Rslt = 0;   			// function result code >= 0 represents success, < 0 on failure
 
 int Idx;
-int PMode;				// processing mode
+etDEPMode PMode;				// processing mode
 int NumberOfProcessors;		// number of installed CPUs
 int NumThreads;				// number of threads (0 defaults to number of CPUs)
 
@@ -635,10 +633,10 @@ if (!argerrors)
 		szExperimentDescr[0] = '\0';
 		}
 
-	PMode = (etPMode)(pmode->count ? pmode->ival[0] : ePMdefault);
-	if(PMode < ePMdefault || PMode >= ePMplaceholder)
+	PMode = (etDEPMode)(pmode->count ? pmode->ival[0] : etDEPMode::eDEPMdefault);
+	if(PMode < etDEPMode::eDEPMdefault || PMode >= etDEPMode::eDEPMplaceholder)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Processing sensitivity '-m%d' specified outside of range %d..%d",PMode,0,(int)ePMplaceholder-1);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Processing sensitivity '-m%d' specified outside of range %d..%d",(int)PMode,0,(int)etDEPMode::eDEPMplaceholder-1);
 		exit(1);
 		}
 
@@ -669,10 +667,10 @@ if (!argerrors)
 
 	bFiltNonaligned = filtnonaligned->count ? true : false;
 
-	Region = (etBEDRegion)(region->count ? region->ival[0] : eMEGRExons);	// default as being exons
-	if(Region < eMEGRAny || Region > eMEG3UTR)
+	Region = (etDEBEDRegion)(region->count ? region->ival[0] : eDEMEGRExons);	// default as being exons
+	if(Region < eDEMEGRAny || Region > eDEMEG3UTR)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Specified region '-g%d' outside of range 0..%d",Region,eMEG3UTR);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Specified region '-g%d' outside of range 0..%d",Region,eDEMEG3UTR);
 		exit(1);
 		}
 
@@ -809,16 +807,16 @@ if (!argerrors)
 
 	const char *pszProcMode;
 	switch(PMode) {
-		case ePMdefault:
+		case etDEPMode::eDEPMdefault:
 			pszProcMode = "Standard sensitivity";
 			break;
-		case ePMMoreSens:
+		case etDEPMode::eDEPMMoreSens:
 			pszProcMode = "More sensitive (slower)";
 			break;
-		case ePMUltraSens:
+		case etDEPMode::eDEPMUltraSens:
 			pszProcMode = "Ultra sensitive (very slow)";
 			break;
-		case ePMLessSens:
+		case etDEPMode::eDEPMLessSens:
 		default:
 			pszProcMode = "Less sensitive (quicker)";
 			break;
@@ -836,7 +834,7 @@ if (!argerrors)
 
 	gDiagnostics.DiagOutMsgOnly(eDLInfo,"Process gene or feature strand: '%c'",ReportStrand((etStrandProc)FeatStrand));
 
-	gDiagnostics.DiagOutMsgOnly(eDLInfo,"Process cnts in region: %s",Region2Txt((etBEDRegion)Region));
+	gDiagnostics.DiagOutMsgOnly(eDLInfo,"Process cnts in region: %s",Region2Txt((etDEBEDRegion)Region));
 
 	gDiagnostics.DiagOutMsgOnly(eDLInfo,"artifact loci read count reduction threshold: %d",ArtifactCntsThres);
 
@@ -932,7 +930,7 @@ if (!argerrors)
 	SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
 #endif
 	gStopWatch.Start();
-	Rslt = Process((etPMode)PMode,						// processing mode
+	Rslt = Process((etDEPMode)PMode,						// processing mode
 					NumThreads,					// number of threads (0 defaults to number of CPUs)
 					CoWinLen,					// counts coalescing window length
 					ArtifactCntsThres,			// if counts at any loci are >= this then process for PCR artifact reduction
@@ -940,7 +938,7 @@ if (!argerrors)
 					bFiltNonaligned,			// true if only features having at least one read aligned are to be be reported
 					ReportStrand((etStrandProc)AlignStrand),	// process for reads on this strand only
 					ReportStrand((etStrandProc)FeatStrand),	// process for genes or features on this strand only
-					(etBEDRegion)Region,						// which genomic region is to be processed
+					(etDEBEDRegion)Region,						// which genomic region is to be processed
 					NumBins,					// number of non-overlapping count bins
 					MinFeatCntThres,			// minimum feature count threshold, control + experiment, required (1 to 200, defaults to 20)
 					MinStartLociThres,				// minimum feature unique start loci threshold, control or experiment, required (1 to 200, defaults to 10)
@@ -977,28 +975,28 @@ return 0;
 }
 
 char *
-Region2Txt(etBEDRegion Region)
+Region2Txt(etDEBEDRegion Region)
 {
 switch(Region) {
-	case eMEGRAny:		// process any region
+	case etDEBEDRegion::eDEMEGRAny:		// process any region
 		return((char *)"All except Intergenic");
 
-	case eMEGRExons:	// only process exons
+	case etDEBEDRegion::eDEMEGRExons:	// only process exons
 		return((char *)"EXONS");
 
-	case eMEGRIntrons:	// only process introns
+	case etDEBEDRegion::eDEMEGRIntrons:	// only process introns
 		return((char *)"INTRONS");
 
-	case eMEGRCDS:		// only process CDSs
+	case etDEBEDRegion::eDEMEGRCDS:		// only process CDSs
 		return((char *)"CDS");
 
-	case eMEGUTR:		// only process UTRs
+	case etDEBEDRegion::eDEMEGUTR:		// only process UTRs
 		return((char *)"UTR");
 
-	case eMEG5UTR:		// only process 5'UTRs
+	case etDEBEDRegion::eDEMEG5UTR:		// only process 5'UTRs
 		return((char *)"5'UTR");
 
-	case eMEG3UTR:		// only process 3'UTRs
+	case etDEBEDRegion::eDEMEG3UTR:		// only process 3'UTRs
 		return((char *)"3'UTR");
 
 	default:
@@ -1034,7 +1032,7 @@ int m_MaxConfidenceIterations;				// max number of iterations over start loci wh
 tsThreadInstData *m_pThreadsInstData;		// all allocated thread instance data
 
 
-etPMode m_DEPMode;					// processing mode
+etDEPMode m_DEPMode;					// processing mode
 etProcPhase m_ProcessingPhase;		// current processing phase
 bool m_bFiltNonaligned;				// true if only features having at least one read aligned are to be be reported
 
@@ -1087,7 +1085,7 @@ tsThreadInstData *m_pThreadInst;		// pts to current thread instance
 
 char m_DEAlignStrand;				// process for reads on this strand only
 char m_FeatStrand;					// process for genes or features on this strand only
-etBEDRegion m_Region;				// process for this genomic region only
+etDEBEDRegion m_Region;				// process for this genomic region only
 int m_NumBins;						// Bin regions into this many non-overlapping bins
 
 double m_LibSizeNormExpToCtrl;		// factor by which experiment counts can be normalised to that of control counts (accounts for library size ratio)
@@ -1638,7 +1636,7 @@ pThreadInst->NumBinsWithLoci = 0;
 pThreadInst->NumBinInstStarts = 0;
 pThreadInst->CurFeatLen = 0;
 NumExons = m_pBEDFeatFile->GetNumExons(pThreadInst->FeatureID);					// returns number of exons - includes UTRs + CDS
-if(m_Region != eMEGRAny)
+if(m_Region != eDEMEGRAny)
 	{
 	NumIntrons = m_pBEDFeatFile->GetNumIntrons(pThreadInst->FeatureID);
 	CDSstart = StartLoci + m_pBEDFeatFile->GetCDSStart(pThreadInst->FeatureID);		// returns relative start offset of CDS - NOTE add to '+' strand gene start, subtract on '-' strand gene start
@@ -1647,13 +1645,13 @@ if(m_Region != eMEGRAny)
 Rslt = eBSFSuccess;
 
 switch(m_Region) {
-	case eMEGRAny:			// retain any region
+	case eDEMEGRAny:			// retain any region
 		pThreadInst->CurRegionLen = m_pBEDFeatFile->GetFeatLen(pThreadInst->FeatureID);
 		if(pThreadInst->CurRegionLen > 0)
 			Rslt=GenBinAlignStarts(pThreadInst,0,szChrom,StartLoci,EndLoci);
 		break;
 
-	case eMEGRExons:		// only retain exons
+	case eDEMEGRExons:		// only retain exons
 		pThreadInst->CurRegionLen = m_pBEDFeatFile->GetTranscribedLen(pThreadInst->FeatureID);
 		if(pThreadInst->CurRegionLen > 0)
 			{
@@ -1671,7 +1669,7 @@ switch(m_Region) {
 			}
 		break;
 
-	case eMEGRIntrons:		// only retain introns
+	case eDEMEGRIntrons:		// only retain introns
 		if(NumIntrons)
 			{
 			pThreadInst->CurRegionLen =  m_pBEDFeatFile->GetFeatLen(pThreadInst->FeatureID);
@@ -1693,7 +1691,7 @@ switch(m_Region) {
 			}
 		break;
 
-	case eMEGRCDS:			// only retain CDSs
+	case eDEMEGRCDS:			// only retain CDSs
 		pThreadInst->CurRegionLen = m_pBEDFeatFile->GetCDSLen(pThreadInst->FeatureID);
 		if(pThreadInst->CurRegionLen > 0)
 			{
@@ -1717,7 +1715,7 @@ switch(m_Region) {
 			}
 		break;
 
-	case eMEGUTR:			// only process UTRs - single exon may have both 5' and 3' UTRs
+	case eDEMEGUTR:			// only process UTRs - single exon may have both 5' and 3' UTRs
 		pThreadInst->CurRegionLen = m_pBEDFeatFile->Get5UTRLen(pThreadInst->FeatureID);
 		pThreadInst->CurRegionLen += m_pBEDFeatFile->Get3UTRLen(pThreadInst->FeatureID);
 		if(pThreadInst->CurRegionLen > 0)
@@ -1752,7 +1750,7 @@ switch(m_Region) {
 			}
 		break;
 
-	case eMEG5UTR:			// only process 5'UTRs - strand sensitive
+	case eDEMEG5UTR:			// only process 5'UTRs - strand sensitive
 		pThreadInst->CurRegionLen = m_pBEDFeatFile->Get5UTRLen(pThreadInst->FeatureID);
 		if(pThreadInst->CurRegionLen > 0)
 			{
@@ -1788,7 +1786,7 @@ switch(m_Region) {
 			}
 		break;
 
-	case eMEG3UTR:			// only process 3'UTRs  - strand sensitive
+	case eDEMEG3UTR:			// only process 3'UTRs  - strand sensitive
 		pThreadInst->CurRegionLen = m_pBEDFeatFile->Get3UTRLen(pThreadInst->FeatureID);
 		if(pThreadInst->CurRegionLen > 0)
 			{
@@ -2092,7 +2090,7 @@ return(eBSFSuccess);
 
 
 teBSFrsltCodes
-Process(etPMode PMode,									// processing mode
+Process(etDEPMode PMode,									// processing mode
 					int NumThreads,						// number of threads (0 defaults to number of CPUs)
 					int CoWinLen,						// counts coalescing window length
 					int ArtifactCntsThres,				// if counts at any loci are >= this threshold then process for PCR artifact reduction
@@ -2100,7 +2098,7 @@ Process(etPMode PMode,									// processing mode
 					bool bFiltNonaligned,				// true if only features having at least one read aligned are to be be reported
 					char AlignStrand,					// process for reads on this strand only
 					char FeatStrand,					// process for genes or features on this strand only
-					etBEDRegion Region,					// process for this genomic region only
+					etDEBEDRegion Region,					// process for this genomic region only
 					int	NumBins,						// number of non-overlapping count bins
 					int MinFeatCntThres,				// minimum feature count threshold, control or experiment, required (1 to 200, defaults to 20)
 					int MinStartLociThres,				// minimum feature unique start loci threshold, control or experiment, required (1 to 200, defaults to 10)
@@ -2139,16 +2137,16 @@ m_ProcessingPhase = ePPInit;
 DECreateMutexes();
 
 switch(PMode) {
-	case ePMdefault:				// Standard sensitivity (2500 iterations)
+	case eDEPMdefault:				// Standard sensitivity (2500 iterations)
 		m_MaxConfidenceIterations = cMaxConfidenceIterations/4;
 		break;
-	case ePMMoreSens:				// More sensitive (slower 5000 iterations)
+	case eDEPMMoreSens:				// More sensitive (slower 5000 iterations)
 		m_MaxConfidenceIterations = cMaxConfidenceIterations/2;
 		break;
-	case ePMUltraSens:				// Ultra sensitive (very slow 10000 iterations)
+	case eDEPMUltraSens:				// Ultra sensitive (very slow 10000 iterations)
 		m_MaxConfidenceIterations = cMaxConfidenceIterations;
 		break;
-	case ePMLessSens:				// Less sensitive (quicker 1000 iterations)
+	case eDEPMLessSens:				// Less sensitive (quicker 1000 iterations)
 		m_MaxConfidenceIterations = cMaxConfidenceIterations/10;
 		break;
 	}

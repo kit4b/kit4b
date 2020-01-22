@@ -26,8 +26,6 @@ const int cMaxIterTargs = 10000;		// max allowed target bootstrap iterations
 const UINT32 cDfltBootstrappingAttempts = 1000;	// default is to allow this many bootstrapping attempts at generating a sample set before returning an error 
 const UINT32 cDfltSamplingAttempts = 10000;		// default is to allow this many sampling attempts before starting a new bootstrapping attempt
 
-const int cMaxWorkerThreads = 128;			// limiting max number of threads to this many
-
 const int cMaxAssembSeqLen = 0x5fffffff;	// accepting individual assembly sequences if no longer than this length
 
 const int cMaxQuerySeqLen = 0x0ffff;		// accepting individual query sequences if no longer than this length

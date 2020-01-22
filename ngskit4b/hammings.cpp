@@ -43,7 +43,6 @@ const int cMaxNthRHamming = 100;		// sampling is to sample every Nth K-mer, with
 
 const int cMinCoreLen = 4;				// restricted hamming minimum core length supported
 
-const int cMaxWorkerThreads = 128;		// limiting max number of threads to this many
 const int cMaxNumNodes = 10000;			// allow for upto this many nodes if processing is distributed over multiple nodes
 
 const int cRptBuffAllocsize = 0x0fffff; // reporting buffer allocation size
@@ -75,23 +74,23 @@ typedef struct TAG_sThreadParams {
 
 #pragma pack(1)
 // Hamming specific structures
-const int cMaxHammingChroms = 1000;		// can handle at most this many chromosomes with hammings
-typedef struct TAG_sHamChrom {
+const int cMaxHHammingChroms = 1000;		// can handle at most this many chromosomes with hammings
+typedef struct TAG_sHHamChrom {
 	UINT32 ChromID;						// uniquely identifies this chromosome
 	UINT8  szChrom[cMaxDatasetSpeciesChrom];	// chrom name
 	UINT32 NumEls;						// number of subsequences with hammings on this chrom
 	UINT16 Dists[1];					// array, in ascending loci order, of hamming distances
-} tsHamChrom;
+} tsHHamChrom;
 
-typedef struct TAG_sHamHdr {
+typedef struct TAG_sHHamHdr {
 	UINT8 Magic[4];		        // magic chars 'bham' to identify this file as a biosequence file containing hamming edit distances
 	UINT32 Version;				// structure version
 	INT32 Len;					// file length, also allocation size required when loading hammings into memory
 	UINT16 NumChroms;		    // number of chromosomes with Hammings
-	UINT32 ChromOfs[cMaxHammingChroms];	// offsets to each chromosomes respective tsHamChrom
-} tsHamHdr;
+	UINT32 ChromOfs[cMaxHHammingChroms];	// offsets to each chromosomes respective tsHHamChrom
+} tsHHamHdr;
 
-const int cAllocHamDist = sizeof(tsHamHdr) + sizeof(tsHamChrom) + 10000000; // allocate for hamming distances in this sized chunks
+const int cAllocHamDist = sizeof(tsHHamHdr) + sizeof(tsHHamChrom) + 10000000; // allocate for hamming distances in this sized chunks
 
 #pragma pack()
 
@@ -684,10 +683,10 @@ UINT32 m_NumSubSeqs;			// total number of actual Hamming subsequences in genome
 
 double m_PercentComplete;		// proportion of all hammings generated
 
-tsHamHdr *m_pHamHdr;			// header for binary format hamming edit distances
-tsHamChrom *m_pCurHamChrom;		// pts to current chromosome specific binary hammings
+tsHHamHdr *m_pHamHdr;			// header for binary format hamming edit distances
+tsHHamChrom *m_pCurHamChrom;		// pts to current chromosome specific binary hammings
 
-tsHamHdr *m_pPregenHamHdr;		// header for loading pregenerated binary format hamming edit distances
+tsHHamHdr *m_pPregenHamHdr;		// header for loading pregenerated binary format hamming edit distances
 
 tsThreadParams *m_pThreadParams;	// holds initialised phase parameter sets for each thread or processing core
 
@@ -910,7 +909,7 @@ teBSFrsltCodes
 LoadPregenHammings(char *pszHammings)
 {
 int hHamFile;
-tsHamHdr HamHdr;
+tsHHamHdr HamHdr;
 
 if(m_pPregenHamHdr != NULL)
 	{
@@ -930,7 +929,7 @@ if(hHamFile == -1)					// check if file open succeeded
 	return(eBSFerrOpnFile);
 	}
 
-if(read(hHamFile,&HamHdr,sizeof(tsHamHdr))!=sizeof(tsHamHdr))
+if(read(hHamFile,&HamHdr,sizeof(tsHHamHdr))!=sizeof(tsHHamHdr))
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to read %s - %s",pszHammings,strerror(errno));
 	close(hHamFile);
@@ -952,15 +951,15 @@ if(HamHdr.NumChroms < 1)
 	return(eBSFerrNoEntries);
 	}
 
-if((m_pPregenHamHdr = (tsHamHdr *)new UINT8 [HamHdr.Len])==NULL)
+if((m_pPregenHamHdr = (tsHHamHdr *)new UINT8 [HamHdr.Len])==NULL)
 	{
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Unable to allocate memory (%d bytes) for holding Hamming distances loaded from - %s",HamHdr.Len,pszHammings);
 	close(hHamFile);
 	Reset(false);
 	return(eBSFerrMem);
 	}
-memcpy(m_pPregenHamHdr,&HamHdr,sizeof(tsHamHdr));
-if(read(hHamFile,(UINT8 *)m_pPregenHamHdr+sizeof(tsHamHdr),HamHdr.Len-sizeof(tsHamHdr))!=HamHdr.Len-sizeof(tsHamHdr))
+memcpy(m_pPregenHamHdr,&HamHdr,sizeof(tsHHamHdr));
+if(read(hHamFile,(UINT8 *)m_pPregenHamHdr+sizeof(tsHHamHdr),HamHdr.Len-sizeof(tsHHamHdr))!=HamHdr.Len-sizeof(tsHHamHdr))
 	{
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Unable to read all Hamming edit distances from - %s",pszHammings);
 	close(hHamFile);
@@ -980,7 +979,7 @@ TransHammingsCSV(char *pszHamFile,char *pszOutFile)
 int Rslt;
 int ChromIdx;
 UINT32 Loci;
-tsHamChrom *pCurChrom;
+tsHHamChrom *pCurChrom;
 char szBuff[32000];
 int BuffOfs;
 
@@ -1013,7 +1012,7 @@ if(m_hOutFile < 0)
 BuffOfs = sprintf(szBuff,"\"Chrom\",\"Loci\",\"Hamming\"\n");
 for(ChromIdx = 0; ChromIdx < m_pPregenHamHdr->NumChroms; ChromIdx++)
 	{
-	pCurChrom = (tsHamChrom *)((UINT8 *)m_pPregenHamHdr + m_pPregenHamHdr->ChromOfs[ChromIdx]);
+	pCurChrom = (tsHHamChrom *)((UINT8 *)m_pPregenHamHdr + m_pPregenHamHdr->ChromOfs[ChromIdx]);
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Transforming chrom: '%s' with %d Hammings",pCurChrom->szChrom,pCurChrom->NumEls);
 	for(Loci = 0; Loci < pCurChrom->NumEls; Loci++)
 		{
@@ -1321,27 +1320,27 @@ char szCurChrom[cMaxDatasetSpeciesChrom+1];
 int CurChromID;
 int AllocLen;
 
-tsHamChrom *pCurHamChrom;
-tsHamHdr *pTmpHdr;
+tsHHamChrom *pCurHamChrom;
+tsHHamHdr *pTmpHdr;
 CCSVFile *pHammings;
 
 if(m_pHamHdr != NULL)
 	free(m_pHamHdr);
 m_pCurHamChrom = NULL;
-if((m_pHamHdr = (tsHamHdr *)malloc(cAllocHamDist))==NULL)
+if((m_pHamHdr = (tsHHamHdr *)malloc(cAllocHamDist))==NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory (%d bytes) for Hamming distances",cAllocHamDist);
 	return(eBSFerrMem);
 	}
 AllocLen = cAllocHamDist;
-memset(m_pHamHdr,0,sizeof(tsHamHdr));
+memset(m_pHamHdr,0,sizeof(tsHHamHdr));
 
 m_pHamHdr->Magic[0] = 'b';
 m_pHamHdr->Magic[1] = 'h';
 m_pHamHdr->Magic[2] = 'a';
 m_pHamHdr->Magic[3] = 'm';
 m_pHamHdr->Version = 1;
-m_pHamHdr->Len = sizeof(tsHamHdr);
+m_pHamHdr->Len = sizeof(tsHHamHdr);
 
 if((pHammings = new CCSVFile())==NULL)
 	{
@@ -1385,9 +1384,9 @@ while((Rslt=pHammings->NextLine()) > 0)
 		if(m_pHamHdr->NumChroms > 0)
 			gDiagnostics.DiagOut(eDLInfo,gszProcName,"chrom %s has %d Hammings",szCurChrom,pCurHamChrom->NumEls);
 		gDiagnostics.DiagOut(eDLInfo,gszProcName,"Loading Hammings for chrom: %s",pszChrom);
-		if((AllocLen - m_pHamHdr->Len) < (sizeof(tsHamChrom) + (cAllocHamDist/16)))	// allow some hammings as well as the tsHamChrom
+		if((AllocLen - m_pHamHdr->Len) < (sizeof(tsHHamChrom) + (cAllocHamDist/16)))	// allow some hammings as well as the tsHHamChrom
 			{
-			if((pTmpHdr = (tsHamHdr *)realloc(m_pHamHdr,AllocLen + cAllocHamDist))==NULL)
+			if((pTmpHdr = (tsHHamHdr *)realloc(m_pHamHdr,AllocLen + cAllocHamDist))==NULL)
 				{
 				gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to reallocate memory (%d bytes) for Hamming distances",AllocLen + cAllocHamDist);
 				return(eBSFerrMem);
@@ -1396,8 +1395,8 @@ while((Rslt=pHammings->NextLine()) > 0)
 			AllocLen += cAllocHamDist;
 			}
 		m_pHamHdr->ChromOfs[m_pHamHdr->NumChroms] = m_pHamHdr->Len;
-		m_pHamHdr->Len += sizeof(tsHamChrom) - 1;
-		pCurHamChrom = (tsHamChrom *)((UINT8 *)m_pHamHdr + m_pHamHdr->ChromOfs[m_pHamHdr->NumChroms++]);
+		m_pHamHdr->Len += sizeof(tsHHamChrom) - 1;
+		pCurHamChrom = (tsHHamChrom *)((UINT8 *)m_pHamHdr + m_pHamHdr->ChromOfs[m_pHamHdr->NumChroms++]);
 		pCurHamChrom->NumEls = 0;
 		pCurHamChrom->ChromID = m_pHamHdr->NumChroms;
 		strcpy((char *)pCurHamChrom->szChrom,pszChrom);
@@ -1408,14 +1407,14 @@ while((Rslt=pHammings->NextLine()) > 0)
 	// check if needing to extend
 	if(m_pHamHdr->Len == AllocLen)
 		{
-		if((pTmpHdr = (tsHamHdr *)realloc(m_pHamHdr,AllocLen + cAllocHamDist))==NULL)
+		if((pTmpHdr = (tsHHamHdr *)realloc(m_pHamHdr,AllocLen + cAllocHamDist))==NULL)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to reallocate memory (%d bytes) for Hamming distances",AllocLen + cAllocHamDist);
 			return(eBSFerrMem);
 			}
 		m_pHamHdr = pTmpHdr;
 		AllocLen += cAllocHamDist;
-		pCurHamChrom = (tsHamChrom *)((UINT8 *)m_pHamHdr + m_pHamHdr->ChromOfs[m_pHamHdr->NumChroms-1]);
+		pCurHamChrom = (tsHHamChrom *)((UINT8 *)m_pHamHdr + m_pHamHdr->ChromOfs[m_pHamHdr->NumChroms-1]);
 		}
 
 	// check that the hamming loci are monotonically ascending

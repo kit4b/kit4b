@@ -57,11 +57,11 @@ const int cWrtBuffSize = 0x0fffff;			// use a 1 MB write buffer size
 const int cAllocFeatRPKMs = 400000;			// allocate for feature RPKMs in this many instances
 
 // processing modes
-typedef enum TAG_ePMode {		
-	ePMExonCnts,				// default processing is to use total counts over isoform transcript exons
-	ePMRPKM,					// processing is for RPKM
-	ePMplaceholder				// used to set the enumeration range
-	} etPMode;
+typedef enum TAG_eDEPMode {		
+	eDEPMExonCnts,				// default processing is to use total counts over isoform transcript exons
+	eDEPMRPKM,					// processing is for RPKM
+	eDEPMplaceholder				// used to set the enumeration range
+	} etDEPMode;
 
 #pragma pack(1)
 
@@ -76,7 +76,7 @@ typedef struct TAG_sFeatRPKM {
 
 #pragma pack()
 
-teBSFrsltCodes Process(etPMode PMode,		// processing mode
+teBSFrsltCodes Process(etDEPMode PMode,		// processing mode
 	        bool bFeatLen,					// if true then also output the feature length
 			int MinFeatLen,					// feature has to be at least this length
 			int MaxFeatLen,					// but no longer than this length
@@ -132,7 +132,7 @@ char szLogFile[_MAX_PATH];	// write diagnostics to this file
 int Rslt = 0;   			// function result code >= 0 represents success, < 0 on failure
 int Idx;					// general iteration indexer
 
-etPMode PMode;				// processing mode
+etDEPMode PMode;				// processing mode
 double NormCntsScale;		// counts normalisation scale factor
 
 bool bFeatLen = false;			// if true then also output the feature length
@@ -322,10 +322,10 @@ if (!argerrors)
 		}
 
 
-	PMode = (etPMode)(pmode->count ? pmode->ival[0] : ePMExonCnts);
-	if(PMode < ePMExonCnts || PMode >= ePMplaceholder)
+	PMode = (etDEPMode)(pmode->count ? pmode->ival[0] : eDEPMExonCnts);
+	if(PMode < eDEPMExonCnts || PMode >= eDEPMplaceholder)
 		{
-		printf("\nError: Processing mode '-m%d' specified outside of range %d..%d",PMode,0,(int)ePMplaceholder-1);
+		printf("\nError: Processing mode '-m%d' specified outside of range %d..%d",PMode,0,(int)eDEPMplaceholder-1);
 		exit(1);
 		}
 
@@ -459,15 +459,15 @@ if (!argerrors)
 
 	const char *pszProcMode;
 	switch(PMode) {
-		case ePMRPKM:
+		case eDEPMRPKM:
 			pszProcMode = "Processing maploci2feature generated csv input files for RPKMs";
 			break;
-		case ePMExonCnts:
+		case eDEPMExonCnts:
 			pszProcMode = "Processing maploci2feature generated csv input files total exon counts";
 			break;
 		default:
 			pszProcMode = "Unknown mode, defaulting to processing maploci2feature generated csv input files into DESeq tab delimited file";
-			PMode = ePMExonCnts;
+			PMode = eDEPMExonCnts;
 			break;
 		};
 	gDiagnostics.DiagOutMsgOnly(eDLInfo,"Processing mode: '%s'",pszProcMode);
@@ -528,7 +528,7 @@ if (!argerrors)
 	SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
 #endif
 	gStopWatch.Start();
-	Rslt = Process((etPMode)PMode,						// processing mode
+	Rslt = Process((etDEPMode)PMode,						// processing mode
 					bFeatLen,					// true if feature length also to be reported
 				    MinFeatLen,					// feature has to be at least this length
 					MaxFeatLen,					// but no longer than this length
@@ -568,7 +568,7 @@ return 0;
 
 const int cDataBuffAlloc = 0x0fffffff;		// allocation size to hold features
 
-etPMode m_GDEPMode;							// processing mode
+etDEPMode m_GDEPMode;							// processing mode
 double m_NormCntsScale;						// normalise the counts by scaling with this factor
 UINT32 m_NumSampleSets;						// total number of sample datasets (1 per input file)
 UINT32 m_NumExperimentSets;					// number of experiment datasets (1 per input file)
@@ -631,7 +631,7 @@ GDEReset();
 }
 
 teBSFrsltCodes
-Process(etPMode PMode,						// processing mode
+Process(etDEPMode PMode,						// processing mode
         bool bFeatLen,					// if true then also output the feature length
 		int MinFeatLen,					// feature has to be at least this length
 		int MaxFeatLen,					// but no longer than this length
@@ -870,13 +870,13 @@ while((Rslt=m_pCSVFile->NextLine()) > 0)	// onto next line containing fields
 		m_pCSVFile->GetText(1, &pszFeatName);
 		if (!stricmp(pszFeatName, "FeatID"))
 			{
-			if (NumFields < 4 && m_GDEPMode == ePMExonCnts)
+			if (NumFields < 4 && m_GDEPMode == eDEPMExonCnts)
 				{
 				gDiagnostics.DiagOut(eDLFatal, gszProcName, "Expected at least 4 fields in header line in %s", pszInFile);
 				delete m_pCSVFile;
 				return(eBSFerrFieldCnt);
 				}
-			if (NumFields < 5 && m_GDEPMode == ePMRPKM)
+			if (NumFields < 5 && m_GDEPMode == eDEPMRPKM)
 				{
 				gDiagnostics.DiagOut(eDLFatal, gszProcName, "Expected at least 5 fields in header line in %s", pszInFile);
 				delete m_pCSVFile;
@@ -919,10 +919,10 @@ while((Rslt=m_pCSVFile->NextLine()) > 0)	// onto next line containing fields
 	if(ExpNumFields >= 13 && ExpNumFields != 71)
 		{
 		switch (m_GDEPMode) {
-				case ePMRPKM:
+				case eDEPMRPKM:
 					m_pCSVFile->GetDouble(13, &RPKM);
 					break;
-				case ePMExonCnts:
+				case eDEPMExonCnts:
 					m_pCSVFile->GetDouble(14, &RPKM);
 					break;
 					}

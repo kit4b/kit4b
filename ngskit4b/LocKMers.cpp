@@ -522,7 +522,7 @@ return(0);
 }
 
 int
-CLocKMers::LocKMers(etPMode PMode,				// processing mode - defaults to 0
+CLocKMers::LocKMers(etKMPMode PMode,				// processing mode - defaults to 0
 		  int KMerLen,					// this length K-mers
 	  	  int PrefixLen,				// inter-cultivar shared prefix length
 		  int SuffixLen,				// cultivar specific suffix length
@@ -716,7 +716,7 @@ for(EntryID = 1; EntryID <= m_NumSfxEntries; EntryID++, pCultivar++)
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"   Processing K-mers against non-target pseudo-chromosome '%s'",szSfxEntryName);
 	}
 
-if(PMode == ePMPrefixKMers && (m_MinWithPrefix == 0 || m_MinWithPrefix > (m_NumSfxEntries - NumPartialCultivars)))
+if(PMode == eKMPMPrefixKMers && (m_MinWithPrefix == 0 || m_MinWithPrefix > (m_NumSfxEntries - NumPartialCultivars)))
 	m_MinWithPrefix = m_NumSfxEntries - NumPartialCultivars;
 
 // looks good to go so create/truncate output marker sequence file
@@ -1164,7 +1164,7 @@ while((SubSeqsLen=GetBlockSeqs(pPars->AllocBlockSeqsSize - 1,pPars->pBlockSeqs))
 				{
 				NumAcceptedKMers += 1;											// accepted on Hammings...
 
-				if(m_PMode == ePMPrefixKMers && m_PrefixLen)					// if must share prefix sequence with other cultivars then check this condition can be met
+				if(m_PMode == eKMPMPrefixKMers && m_PrefixLen)					// if must share prefix sequence with other cultivars then check this condition can be met
 					{
 					PrevHitIdx = 0;
 					NumCultsPrefixed = 0;
@@ -1206,7 +1206,7 @@ while((SubSeqsLen=GetBlockSeqs(pPars->AllocBlockSeqsSize - 1,pPars->pBlockSeqs))
 					MarkContainingReads(m_KMerLen,pStartKMerBase);
 
 				// report K-mers of m_KMerLen only?
-				if(m_PMode != ePMExtdKMers)
+				if(m_PMode != eKMPMNoExtdKMers)
 					{
 					ReportMarker(m_KMerLen,pStartKMerBase);
 					NumAcceptedExtdKMers+=1;
@@ -1230,7 +1230,7 @@ while((SubSeqsLen=GetBlockSeqs(pPars->AllocBlockSeqsSize - 1,pPars->pBlockSeqs))
 				MarkStartIdx = StartIdx;
 				}
 			}
-		if(m_PMode == ePMExtdKMers && MarkKMerLen)
+		if(m_PMode == eKMPMExtdKMers && MarkKMerLen)
 			{
 			ReportMarker(MarkKMerLen,pMarkStartKMerBase);
 			NumAcceptedExtdKMers += 1;
@@ -1402,7 +1402,7 @@ while((SubSeqsLen=GetBlockSeqs(pPars->AllocBlockSeqsSize - 1,pPars->pBlockSeqs))
 					MarkContainingReads(m_KMerLen,pStartKMerBase);
 
 				// report K-mers of m_KMerLen only?
-				if(m_PMode == ePMNoExtdKMers)
+				if(m_PMode == eKMPMNoExtdKMers)
 					{
 					ReportMarker(m_KMerLen,pStartKMerBase);
 					NumAcceptedExtdKMers+=1;
@@ -1426,7 +1426,7 @@ while((SubSeqsLen=GetBlockSeqs(pPars->AllocBlockSeqsSize - 1,pPars->pBlockSeqs))
 				MarkStartIdx = StartIdx;
 				}
 			}
-		if(m_PMode == ePMExtdKMers && MarkKMerLen)
+		if(m_PMode == eKMPMExtdKMers && MarkKMerLen)
 			{
 			ReportMarker(MarkKMerLen,pMarkStartKMerBase);
 			NumAcceptedExtdKMers += 1;

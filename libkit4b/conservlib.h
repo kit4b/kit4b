@@ -47,6 +47,7 @@
 #include "./SimpleGlob.h"
 #include "./Contaminants.h"
 #include "./ProcRawReads.h"
+#include "./SimReads.h"
 #include "./GTFFile.h"
 #include "./GFFFile.h"
 #include "./sqlite3.h"

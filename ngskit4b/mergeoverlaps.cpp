@@ -49,8 +49,6 @@ const int cMaxMinRequiredOverlap  = 200;	// max paired ends must overlap by at l
 
 const int cMaxInFileSpecs = 100;			// allow at most this many files for input per end
 
-const int cMaxWorkerThreads = 128;			// limiting max number of threads to this many
-
 int
 Process(etPMode PMode,				// processing mode
 	    etOFormat OFormat,			// output file format

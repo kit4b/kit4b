@@ -33,13 +33,13 @@ Please contact Dr Stuart Stephen < stuartjs@g3web.com > if you have any question
 const int cMaxInFileSpecs = 50;			// allow at most this many input file specs
 
 // processing modes
-typedef enum TAG_ePMode {
-	ePMdefault,					// default BED , no exons
-	ePMplaceholder				// used to set the enumeration range
-	} etPMode;
+typedef enum TAG_eF2BPMode {
+	eF2BPMdefault,					// default BED , no exons
+	eF2BPMplaceholder				// used to set the enumeration range
+	} etF2BPMode;
 
 int 
-Process(etPMode Mode,				// processing mode - 0 default BED , single exon
+Process(etF2BPMode PMMode,				// processing mode - 0 default BED , single exon
 		int NumInputFiles,			// number of input sequence files
 		char **pszInFastaFile,		// names of input sequence files (wildcards allowed)
 		char *pszRsltsFile);		// file to write BED format into
@@ -62,7 +62,7 @@ int iFileLogLevel;			// level of file diagnostics
 char szLogFile[_MAX_PATH];	// write diagnostics to this file
 
 int Rslt;
-etPMode PMode;				// processing mode
+etF2BPMode PMode;				// processing mode
 int Idx;
 
 int NumInputFiles;							// number of input sequence files
@@ -148,10 +148,10 @@ if (!argerrors)
 
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Version: %s",kit4bversion);
 
-	PMode = (etPMode)(pmode->count ? pmode->ival[0] : ePMdefault);
-	if(PMode < ePMdefault || PMode >= ePMplaceholder)
+	PMode = (etF2BPMode)(pmode->count ? pmode->ival[0] : eF2BPMdefault);
+	if(PMode < etF2BPMode::eF2BPMdefault || PMode >= etF2BPMode::eF2BPMplaceholder)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Processing mode '-m%d' specified outside of range %d..%d\n",PMode,ePMdefault,(int)ePMplaceholder-1);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Processing mode '-m%d' specified outside of range %d..%d\n",PMode, etF2BPMode::eF2BPMdefault,(int)etF2BPMode::eF2BPMplaceholder-1);
 		exit(1);
 		}
 
@@ -216,7 +216,7 @@ return 0;
 etSeqBase *m_pSeq;
 
 int
-ProcessFile(etPMode Mode,				// processing mode - 0  BED output, no exon features
+ProcessFile(etF2BPMode PMode,				// processing mode - 0  BED output, no exon features
 			int hOutputBED,				// write to this BED file
 			char *pszFastaFile)			// input file containing fasta sequences
 {
@@ -278,7 +278,7 @@ return(Rslt);
 }
 
 int 
-Process(etPMode Mode,				// processing mode - 0  BED file output
+Process(etF2BPMode PMode,				// processing mode - 0  BED file output
 		int NumInputFiles,			// number of input sequence files
 		char **pszInFastaFile,		// names of input sequence files (wildcards allowed)
 		char *pszRsltsFile)			// file to write BED format into
@@ -319,7 +319,7 @@ for(Idx = 0; Idx < NumInputFiles; Idx++)
 	for (int FileID = 0; Rslt >= eBSFSuccess &&  FileID < glob.FileCount(); ++FileID)
 		{
 		pszInFile = glob.File(FileID);
-		if((Rslt = ProcessFile(Mode,hRslts,pszInFile)) < 0)
+		if((Rslt = ProcessFile(PMode,hRslts,pszInFile)) < 0)
 			{
 			close(hRslts);
 			return(Rslt);
