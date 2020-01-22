@@ -88,7 +88,7 @@ The project can then be built. By default, executables will be copied into the `
 Incomplete documentation for the core functionality of **kit4b** is available under the `Docs` directory.
 
 ## Contributing
-kit4b is maintained by Dr Stuart Stephen, developed **BioKanga** whilst with the Crop Bioinformatics and Data Science team at CSIRO based in Canberra, Australia. Although nominally now retired Dr Stephen is still actively engaged in bioinformatics related research. 
+kit4b is maintained by Dr Stuart Stephen, who developed **BioKanga** whilst with the Crop Bioinformatics and Data Science team at CSIRO based in Canberra, Australia. Although nominally now retired Dr Stephen is still actively engaged in bioinformatics related research. 
 
 Contributions are most welcome. To contribute, follow these steps.
 
