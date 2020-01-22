@@ -127,7 +127,7 @@ tsSubProcess SubProcesses[] = {
 	{"kmarkers","K-Mer Markers","NGS reads alignment-less K-mer derived marker sequences generation",genkmarkers},
 	{"prekmarkers","K-Mer Prefix Markers","NGS reads alignment-less prefix K-mer derived marker sequences generation",kmermarkers},
 	{"pseudogenome","Generate Pseudo-Genome","Concatenate sequences to create pseudo-genome assembly",genpseudogenome},
-	{"kalign","Align (dev) NGS reads","\tAlign NGS reads to indexed genome assembly or sequences",kalignercl},
+	{"kalign","Align (dev) NGS reads","Align NGS reads to indexed genome assembly or sequences",kalignercl},
 	{"pescaffold","PE Scaffold","Scaffold assembly contigs using PE read alignments",pescaffold},
 	{"ssr","SSR Discovery","\tIdentify SSRs in multifasta sequences",SSRdiscovery},
 	{"maploci","Map Loci to Features","Map aligned reads loci to known features",maploci2features},

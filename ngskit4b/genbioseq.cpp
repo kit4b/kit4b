@@ -31,7 +31,7 @@ Please contact Dr Stuart Stephen < stuartjs@g3web.com > if you have any question
 
 #include "./ngskit4b.h"
 
-const int cMaxAllocBuffChunk = 0x00ffffff;	// buffer for fasta sequences is realloc'd in this sized chunks
+const int cGBSMaxAllocBuffChunk = 0x00ffffff;	// buffer for fasta sequences is realloc'd in this sized chunks
 
 
 typedef struct TAG_sProcParams 
@@ -290,7 +290,7 @@ if((Rslt=pSeqFile->Exists(EntryID))!= eBSFSuccess)
 	}
 
 
-if((pFastaSeqBuff = new unsigned char [cMaxAllocBuffChunk])==NULL)
+if((pFastaSeqBuff = new unsigned char [cGBSMaxAllocBuffChunk])==NULL)
 	{
 	pFasta->Close();
 	pSeqFile->Close();
@@ -299,7 +299,7 @@ if((pFastaSeqBuff = new unsigned char [cMaxAllocBuffChunk])==NULL)
 	return(eBSFerrMem);
 	}
 
-if((pBioSeqBuff = new unsigned char [cMaxAllocBuffChunk])==NULL)
+if((pBioSeqBuff = new unsigned char [cGBSMaxAllocBuffChunk])==NULL)
 	{
 	delete pFastaSeqBuff;
 	pFasta->Close();
@@ -334,9 +334,9 @@ while((FastaSeqLen = pFasta->ReadSequence(pFastaSeqBuff,TestBuffSize,true)) > eB
 		}
 	CurSeqOfs += BioSeqLen;
 	BioEntryDataLen -= BioSeqLen;
-	// make buffsize a pseudorandom value between 1 and (cMaxAllocBuffChunk -1)
+	// make buffsize a pseudorandom value between 1 and (cGBSMaxAllocBuffChunk -1)
 	TestBuffSize *= 125031;	// guess this must be a prime!
-	TestBuffSize %= cMaxAllocBuffChunk;
+	TestBuffSize %= cGBSMaxAllocBuffChunk;
 	if(!TestBuffSize)
 		TestBuffSize = 1;
 	}
@@ -369,9 +369,9 @@ int Rslt;
 int SeqID;
 bool bCapsSoftMask;
 
-if((pSeqBuff = new unsigned char [cMaxAllocBuffChunk]) == NULL)
+if((pSeqBuff = new unsigned char [cGBSMaxAllocBuffChunk]) == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessFastaFile:- Unable to allocate memory (%d bytes) for sequence buffer",cMaxAllocBuffChunk);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessFastaFile:- Unable to allocate memory (%d bytes) for sequence buffer", cGBSMaxAllocBuffChunk);
 	return(false);
 	}
 
@@ -388,7 +388,7 @@ if((Rslt=Fasta.Open(pszFile,true))!=eBSFSuccess)
 bFirstEntry = true;
 bEntryCreated = false;
 SeqID = 0;
-while((Rslt = SeqLen = Fasta.ReadSequence(pSeqBuff,cMaxAllocBuffChunk,true,bCapsSoftMask)) > eBSFSuccess)
+while((Rslt = SeqLen = Fasta.ReadSequence(pSeqBuff, cGBSMaxAllocBuffChunk,true,bCapsSoftMask)) > eBSFSuccess)
 	{
 	if(SeqLen == eBSFFastaDescr)		// just read a descriptor line
 		{

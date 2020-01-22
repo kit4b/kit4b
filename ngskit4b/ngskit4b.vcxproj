@@ -193,7 +193,6 @@
     <ClInclude Include="ReadStats.h" />
     <ClInclude Include="RemapLoci.h" />
     <ClInclude Include="Scaffolder.h" />
-    <ClInclude Include="SimReads.h" />
     <ClInclude Include="SNPLoci.h" />
     <ClInclude Include="SQLiteDE.h" />
     <ClInclude Include="SQLiteMarkers.h" />

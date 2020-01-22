@@ -32,8 +32,6 @@ const int cMaxNumReps  = 100;			// maximum number of replicates supported
 const double cDfltShotNoise = 0.0;			// mean shot noise per transcript as proportion of counts
 const double cMaxShotNoise = 0.5;			// max mean shot noise per transcript as proportion of counts
 
-const int cMaxWorkerThreads = 128;			// limiting max number of threads to this many
-
 // processing modes
 typedef enum TAG_ePMode {
 	ePMStandard,					// default - standard uniform read sampling probabilities

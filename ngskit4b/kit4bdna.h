@@ -93,7 +93,6 @@ const UINT32 cMaxSfxBlkEls = 4000000000;	// construct suffix block arrays with 4
 
 const UINT64 cMaxConcatSeqLen = (UINT64)0x0ffffffffff; // arbitary limit to all concatenated read sequences lengths - 1Tbp should be enough!   
 
-const int cMaxWorkerThreads = 128;			// limiting max number of threads to this many
 const int cMaxDupInstances = 2500;			// maintain instance counts up this max number of instances
 
 const int cMaxMultiSeqFlags = 4000;			// limit local copy of sequence flags to at most this many
@@ -137,12 +136,12 @@ const int cReadsThreadStackSize = 0x01fffff; // increase stack size to 2MB for w
 
 // Suffix array indexes are sparse, every Nth base is suffix indexed  
 // processing modes
-typedef enum TAG_ePMode {
-	ePMdefault,					// default processing mode is to load and assemble raw reads
-	ePMfileLoadTypeSeqs,		// load sparse suffix reads from file and assemble
-	ePMfileSaveTypeSeqs,		// save preprocessed sparse suffix reads to file
-	ePMplaceholder				// used to set the enumeration range
-	} etPMode;
+typedef enum TAG_eDNAPMode {
+	eDNAPMdefault,					// default processing mode is to load and assemble raw reads
+	eDNAPMfileLoadTypeSeqs,		// load sparse suffix reads from file and assemble
+	eDNAPMfileSaveTypeSeqs,		// save preprocessed sparse suffix reads to file
+	eDNAPMplaceholder				// used to set the enumeration range
+	} etDNAPMode;
 
 typedef enum TAG_eOvlFlankPhase {
 	eOvlpSenseToSense = 0,				// it's sense overlap sense flank processing (probe cFlg5Prime and target cFlg3Prime set if overlap) 

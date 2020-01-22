@@ -220,4 +220,6 @@ typedef struct TAG_sRawReadV6 {
 	UINT8  Read[1];				// descriptor followed by packed read + phred score (read in bits 0..2, phred in 3..7)
 } tsRawReadV6;
 
+const int cMaxWorkerThreads = 128;			// limiting max number of threads to this many
+
 #pragma pack()

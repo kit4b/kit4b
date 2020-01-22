@@ -32,20 +32,18 @@ const int cMinHamming = 1;				// minimum required Hamming separation
 const int cDfltHamming = 2;				// default Hamming separation
 const int cMaxHamming = 5;				// maximum required Hamming separation
 
-const int cMaxWorkerThreads = 128;			// limiting max number of threads to this many
-
 const int cBlockReqSize = 0x07ffff;		// each worker thread will request a block containing no more than this total concatenated sequences length
 const int cConcatSeqBuffSize = (cBlockReqSize * cMaxWorkerThreads * 4);	// will buffer up to this sized concatenated sequences from which blocks will be allocated
 
 const int cMarkerSeqBuffSize = 0x0ffffff;	// marker sequence buffering used to hold markers prior to writing out to file
 
 // processing modes
-typedef enum TAG_ePMode {
-	ePMExtdKMers,				// default processing mode
-	ePMNoExtdKMers,				// do not attempt to extend K-mers
-	ePMPrefixKMers,				// K-mers to share prefix sequence with other cultivars
-	ePMplaceholder				// used to set the enumeration range
-	} etPMode;
+typedef enum TAG_eKMPMode {
+	eKMPMExtdKMers,				// default processing mode
+	eKMPMNoExtdKMers,				// do not attempt to extend K-mers
+	eKMPMPrefixKMers,				// K-mers to share prefix sequence with other cultivars
+	eKMPMplaceholder				// used to set the enumeration range
+	} etKMPMode;
 
 #pragma pack(1)
 
@@ -92,7 +90,7 @@ class CLocKMers
 	tsCultivar m_AllCultivars[cMaxTargCultivarChroms];	// all cultivars, including those targeted, represented in targeted psudeochromosome sfx array
 
 
-	int m_PMode;					// processing mode - defaults to maximally extend KMers
+	etKMPMode m_PMode;					// processing mode - defaults to maximally extend KMers
 	int m_KMerLen;					// this length K-mers
 	int m_PrefixLen;				// inter-cultivar shared prefix length
 	int m_SuffixLen;				// cultivar specific suffix length
@@ -190,7 +188,7 @@ public:
 
 
 	int
-		LocKMers(etPMode PMode,				// processing mode - defaults to 0
+		LocKMers(etKMPMode PMode,				// processing mode - defaults to 0
 		  int KMerLen,					// this length K-mers
 	  	  int PrefixLen,				// inter-cultivar shared prefix length
 		  int SuffixLen,				// cultivar specific suffix length

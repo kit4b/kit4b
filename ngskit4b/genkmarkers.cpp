@@ -45,7 +45,7 @@ Orginal 'BioKanga' copyright notice has been retained and immediately follows th
 #include "./LocKMers.h"
 
 int
-LocMarkers(etPMode PMode,				// processing mode - defaults to 0
+LocMarkers(etKMPMode PMode,				// processing mode - defaults to 0
 		  int KMerLen,					// this length K-mers
 	  	  int PrefixLen,				// inter-cultivar shared prefix length
 		  int SuffixLen,				// cultivar specific suffix length
@@ -284,10 +284,10 @@ if (!argerrors)
 		}
 
 
-	PMode = (etPMode)(pmode->count ? pmode->ival[0] : ePMExtdKMers);
-	if(PMode < ePMExtdKMers || PMode >= ePMplaceholder)
+	PMode = (etKMPMode)(pmode->count ? pmode->ival[0] : eKMPMExtdKMers);
+	if(PMode < eKMPMExtdKMers || PMode >= eKMPMplaceholder)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Processing mode '-m%d' specified outside of range %d..%d\n",PMode,ePMExtdKMers,(int)ePMplaceholder-1);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Processing mode '-m%d' specified outside of range %d..%d\n",PMode,eKMPMExtdKMers,(int)eKMPMplaceholder-1);
 		exit(1);
 		}
 
@@ -398,13 +398,13 @@ if (!argerrors)
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Processing parameters:");
 	const char *pszDescr;
 	switch(PMode) {
-		case ePMExtdKMers:
+		case eKMPMExtdKMers:
 			pszDescr = "Extended K-mer markers";
 			break;
-		case ePMNoExtdKMers:
+		case eKMPMNoExtdKMers:
 			pszDescr = "Non-extended K-mer markers";
 			break;
-		case ePMPrefixKMers:
+		case eKMPMPrefixKMers:
 			pszDescr = "K-mers to share prefix sequence with other cultivars";
 			break;
 		}
@@ -416,7 +416,7 @@ if (!argerrors)
 		gDiagnostics.DiagOutMsgOnly(eDLInfo,"Targeted cultivar chromosome name (%d) : '%s'", Idx + 1,pszPartialCultivars[Idx]);
 
 	gDiagnostics.DiagOutMsgOnly(eDLInfo,"Core K-mer length : %d",KMerLen);
-	if(PMode == ePMPrefixKMers)
+	if(PMode == eKMPMPrefixKMers)
 		{
 		gDiagnostics.DiagOutMsgOnly(eDLInfo,"Inter-cultivar shared prefix sequence length : %d",PrefixLen);
 		gDiagnostics.DiagOutMsgOnly(eDLInfo,"Cultivar specific suffix sequence length : %d",SuffixLen);
@@ -473,7 +473,7 @@ if (!argerrors)
 	SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
 #endif
 	gStopWatch.Start();
-	Rslt = LocMarkers((etPMode)PMode,KMerLen,PrefixLen,SuffixLen,MinWithPrefix,MinHamming,szCultivarName,NumPartialCultivars,pszPartialCultivars,szSfxPseudoGenome,szMarkerFile,szMarkerReadsFile,NumThreads);
+	Rslt = LocMarkers((etKMPMode)PMode,KMerLen,PrefixLen,SuffixLen,MinWithPrefix,MinHamming,szCultivarName,NumPartialCultivars,pszPartialCultivars,szSfxPseudoGenome,szMarkerFile,szMarkerReadsFile,NumThreads);
 	Rslt = Rslt >=0 ? 0 : 1;
 	if(gExperimentID > 0)
 		{
@@ -496,7 +496,7 @@ return 0;
 }
 
 int
-LocMarkers(etPMode PMode,				// processing mode - defaults to 0
+LocMarkers(etKMPMode PMode,				// processing mode - defaults to 0
 		  int KMerLen,					// this length K-mers
 	  	  int PrefixLen,				// inter-cultivar shared prefix length
 		  int SuffixLen,				// cultivar specific suffix length

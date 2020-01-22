@@ -44,22 +44,22 @@ const int cDfltNSeps = 100;				// default to 100 N's to be specified as being th
 const int cMaxNSeps = 100;				// allow at most 100 N's to be specified as being the length of sequence separators
 
 // processing modes
-typedef enum TAG_ePMode {
-	ePMdefault,					// default processing mode
-	ePMplaceholder				// used to set the enumeration range
-	} etPMode;
+typedef enum TAG_eGPGPMode {
+	eGPGPMdefault,					// default processing mode
+	eGPGPMplaceholder				// used to set the enumeration range
+	} etGPGPMode;
 
 // output format modes
-typedef enum TAG_eFMode {
-	eFMdefault,					// default
-	eFMplaceholder				// used to set the enumeration rangeP
-	} etFMode;
+typedef enum TAG_eFGPGMode {
+	eGPGFMdefault,					// default
+	eGPGFMplaceholder				// used to set the enumeration rangeP
+	} etGPGFMode;
 
 const int cMaxInFileSpecs = 100; // can handle up to this many input files
 
 int
-GPGProcess(etPMode PMode,					// processing mode
-		etFMode FMode,					// output format mode
+GPGProcess(etGPGPMode PMode,					// processing mode
+		etGPGFMode FMode,					// output format mode
 		int LenNSeps,					// generate with this number of 'N' bases separating concatenated sequences 
 		char *pszTrackTitle,			// track title for output UCSC BED
 		int NumInputFileSpecs,		  	// number of input file specs
@@ -259,14 +259,14 @@ if (!argerrors)
 		szExperimentDescr[0] = '\0';
 		}
 
-	PMode = (etPMode)(pmode->count ? pmode->ival[0] : ePMdefault);
-	if(PMode < ePMdefault || PMode >= ePMplaceholder)
+	PMode = (etGPGPMode)(pmode->count ? pmode->ival[0] : eGPGPMdefault);
+	if(PMode < eGPGPMdefault || PMode >= eGPGPMplaceholder)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Processing mode '-m%d' specified outside of range %d..%d\n",PMode,ePMdefault,(int)ePMplaceholder-1);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Processing mode '-m%d' specified outside of range %d..%d\n",PMode,eGPGPMdefault,(int)eGPGPMplaceholder-1);
 		exit(1);
 		}
 
-	FMode = (etFMode)(format->count ? format->ival[0] : eFMdefault);
+	FMode = (etGPGFMode)(format->count ? format->ival[0] : eGPGFMdefault);
 
 	LenNSeps = lennseps->count ? lennseps->ival[0] : cDfltNSeps;
 	if(LenNSeps < cMinNSeps || LenNSeps > cMaxNSeps)
@@ -276,10 +276,10 @@ if (!argerrors)
 		}
 
 
-	FMode = (etFMode)(format->count ? format->ival[0] : eFMdefault);
-	if(FMode < eFMdefault || FMode >= eFMplaceholder)
+	FMode = (etGPGFMode)(format->count ? format->ival[0] : eGPGFMdefault);
+	if(FMode < eGPGFMdefault || FMode >= eGPGFMplaceholder)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Output format mode '-m%d' specified outside of range %d..%d\n",FMode,eFMdefault,(int)eFMplaceholder-1);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Output format mode '-m%d' specified outside of range %d..%d\n",FMode,eGPGFMdefault,(int)eGPGFMplaceholder-1);
 		exit(1);
 		}
 
@@ -329,7 +329,7 @@ if (!argerrors)
 
 	const char *pszDescr;
 	switch(PMode) {
-		case ePMdefault:
+		case eGPGPMdefault:
 			pszDescr = "Standard processing";
 			break;
 		default:
@@ -339,7 +339,7 @@ if (!argerrors)
 	gDiagnostics.DiagOutMsgOnly(eDLInfo,"Processing mode is : '%s'",pszDescr);
 
 	switch(FMode) {
-		case eFMdefault:
+		case eGPGFMdefault:
 			pszDescr = "output as single pseudo chrom genome fasta and associated gene BED file";
 			break;
 		}
@@ -376,7 +376,7 @@ if (!argerrors)
 	SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
 #endif
 	gStopWatch.Start();
-	Rslt = GPGProcess((etPMode)PMode,(etFMode)FMode,LenNSeps,szTrackTitle,NumInputFiles,pszInfileSpecs,szOutGenomeFile,szOutGeneFile);
+	Rslt = GPGProcess((etGPGPMode)PMode,(etGPGFMode)FMode,LenNSeps,szTrackTitle,NumInputFiles,pszInfileSpecs,szOutGenomeFile,szOutGeneFile);
 	Rslt = Rslt >=0 ? 0 : 1;
 	if(gExperimentID > 0)
 		{
@@ -597,8 +597,8 @@ return(eBSFSuccess);
 }
 
 int
-GPGProcess(etPMode PMode,					// processing mode
-		etFMode FMode,					// output format mode
+GPGProcess(etGPGPMode PMode,					// processing mode
+		etGPGFMode FMode,					// output format mode
 		int LenNSeps,					// generate with this number of 'N' bases separating concatenated sequences 
 		char *pszGenomeName,			// track title for output UCSC BED and psudeo genome fasta descriptor
 		int NumInputFileSpecs,		  	// number of input file specs

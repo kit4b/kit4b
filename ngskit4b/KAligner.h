@@ -28,7 +28,6 @@ const int cBSFRdsVersionBack= 5;		// backward compatible to this version
 
 const unsigned int cMaxInFileSpecs = 100;	// allow user to specify upto this many input file specs
 
-const int cMaxWorkerThreads = 128;		// limiting max number of threads to this many
 const int cMaxReadsPerBlock = 20000;	// max number of reads allocated for processing per thread as a block (could increase but may end up with 1 thread doing more than fair share of workload)
 
 const int cMaxIncludeChroms = 20;		// max number of include chromosomes regular expressions

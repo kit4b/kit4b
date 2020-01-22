@@ -49,7 +49,7 @@ typedef enum TAG_eARPMode {
 typedef struct TAG_sThreadIdentDuplicatePars {
 	int ThreadIdx;					// index of this thread (1..m_NumThreads)
 	void *pThis;					// will be initialised to pt to CKit4bdna instance
-	etPMode PMode;					// processing mode
+	etARPMode PMode;					// processing mode
 #ifdef _WIN32
 	HANDLE threadHandle;			// handle as returned by _beginthreadex()
 	unsigned int threadID;			// identifier as set by _beginthreadex()
@@ -105,7 +105,7 @@ typedef struct TAG_sThreadKmerDistPars {
 typedef struct TAG_sThreadIdentOverlapPars {
 	int ThreadIdx;					// index of this thread (1..m_NumThreads)
 	void *pThis;					// will be initialised to pt to CKit4bdna instance
-	etPMode PMode;					// processing mode
+	etARPMode PMode;					// processing mode
 #ifdef _WIN32
 	HANDLE threadHandle;			// handle as returned by _beginthreadex()
 	unsigned int threadID;			// identifier as set by _beginthreadex()

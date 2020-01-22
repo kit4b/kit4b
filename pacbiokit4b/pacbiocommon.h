@@ -71,8 +71,6 @@ const int cSummaryTargCoreHitCnts = 20000;				 // summary core hit counts on at 
 
 const int cChkOverlapGapLen = 20;						 // if gap between probe cores with at least one match > this threshold then set core probe offset at which to check for core extension (set 0 to disable core extensions)
 
-const int cMaxWorkerThreads = 128;							// limiting max number of threads to this many
-
 const UINT32 cMaxValidID = 0xffffff00;      // treat any vertex, edge, subgraph or sequence identifier over this value as a processing error identifier which is to be cast as teBSFrsltCodes for actual error 
 typedef UINT32 tVertID;						// vertice identifiers are 32bits with identifiers > cMaxValidID used as processing error indicator, cast to teBSFrsltCodes for actual error
 typedef UINT32 tEdgeID;						// edges identifiers are 32bits with identifiers > cMaxValidID used as processing error indicator, cast to teBSFrsltCodes for actual error
