@@ -333,7 +333,7 @@ static void plfloatlabel( PLFLT value, char *string, PLINT len )
     //
 #define FORM_LEN         10
 #define TMPSTRING_LEN    15
-    char  form[FORM_LEN], tmpstring[TMPSTRING_LEN];
+    char  form[FORM_LEN+10], tmpstring[TMPSTRING_LEN+10];
     PLINT exponent = 0;
     PLFLT mant, tmp;
 
@@ -367,9 +367,9 @@ static void plfloatlabel( PLFLT value, char *string, PLINT len )
     if ( mant != 0.0 )
         mant = (int) ( mant * pow( 10.0, prec - 1 ) + 0.5 * mant / fabs( mant ) ) / pow( 10.0, prec - 1 );
 
-    snprintf( form, FORM_LEN, "%%.%df", prec - 1 );
+    snprintf( form, FORM_LEN+5, "%%.%df", prec - 1 );
     snprintf( string, (size_t) len, form, mant );
-    snprintf( tmpstring, TMPSTRING_LEN, "#(229)10#u%d", exponent );
+    snprintf( tmpstring, TMPSTRING_LEN+5, "#(229)10#u%d", exponent );
     strncat( string, tmpstring, (size_t) len - strlen( string ) - 1 );
 
     if ( abs( exponent ) < limexp || value == 0.0 )
@@ -384,7 +384,7 @@ static void plfloatlabel( PLFLT value, char *string, PLINT len )
         if ( prec < 0 )
             prec = 0;
 
-        snprintf( form, FORM_LEN, "%%.%df", (int) prec );
+        snprintf( form, FORM_LEN+5, "%%.%df", (int) prec );
         snprintf( string, (size_t) len, form, value );
     }
 }

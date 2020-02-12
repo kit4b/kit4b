@@ -1776,7 +1776,7 @@ m_hDuplicatesDistRptFile = -1;
 // report read length distributions for downstream analytics
 if(pPlots != NULL)
 	{
-	char szLen[10];
+	char szLen[20];
 	UINT64 SumCnts; 
 	UINT64 CummulativeSum;
 	int LenRange = 1 + m_MaxReadLen - m_MinReadLen;

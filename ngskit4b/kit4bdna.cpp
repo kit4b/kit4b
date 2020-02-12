@@ -5657,7 +5657,7 @@ tSeqID SeqID;
 UINT32 SeqLen;
 UINT32 SrcFileID;
 
-char szPassID[10];
+char szPassID[20];
 char szFastaFileSE[_MAX_PATH];
 char szFastaFilePE1[_MAX_PATH];
 char szFastaFilePE2[_MAX_PATH];

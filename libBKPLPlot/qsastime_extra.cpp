@@ -230,7 +230,7 @@ const char * getISOString( MJDtime* MJD, int delim, int forceJulian )
     //  as it writes to a static variable DateTime
     //*
 
-    static char DateTime[50];
+    static char DateTime[400];
     int         y, m, d, hour, min;
     int         sec1, ysign;
     double      sec;

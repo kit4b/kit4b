@@ -279,7 +279,7 @@ public:
 					bool bNoRefNameChk = false);	// if true then do not validate ref seq name as having been present in SAM/BAM header
 
 	int						// number of bases returned
-		CSAMfile::BAMalignSeq(tsBAMalign* pBAMalign,		// ptr to tsBAMalign alignment containing packed (2 per byte) sequence to be returned as etSeqBases 
+		BAMalignSeq(tsBAMalign* pBAMalign,		// ptr to tsBAMalign alignment containing packed (2 per byte) sequence to be returned as etSeqBases 
 			int MaxLen,					// maximum length sequence to be returned
 			etSeqBase* pRetSeq);			// to hold returned sequence
 

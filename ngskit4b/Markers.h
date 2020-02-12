@@ -54,7 +54,7 @@ typedef struct TAG_sAlignLoci {
 	UINT32 ProbeBaseCnts[5];	// indexed by A,C,G,T,N : number instances probe base aligned to TargRefBase 
 } tsAlignLoci;
 
-const int cAllocAlignLoci = 40000000;	// initially allocate to hold this many alignments
+const int cAllocAlignLoci = 50000000;	// initially allocate to hold this many alignments
 const int cReAllocAlignPerc = 125;	    // if required to realloc then realloc by this percentage of the current allocation
 
 typedef struct TAG_sSNPSSpecies {

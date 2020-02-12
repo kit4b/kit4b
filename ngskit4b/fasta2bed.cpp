@@ -258,11 +258,11 @@ while((Rslt = SeqLen = pFasta->ReadSequence(NULL,0)) > eBSFSuccess)
 		{
 		DescrLen = pFasta->ReadDescriptor(szBEDFeature, sizeof(szBEDFeature));
 		sscanf(szBEDFeature," %s[ ,]",szFeature);
-		szFeature[35] = '\0';
+		szFeature[80] = '\0';
 		bInSeq = false;	
 		continue;
 		}
-	LineLen = sprintf(szBEDFeature,"%s\t0\t%d\t%s\t0\t+\t0\t%d\t0\t1\t%d,\t0\n",szFeature,SeqLen,szFeature,SeqLen,SeqLen);
+	LineLen = sprintf(szBEDFeature,"%.80s\t0\t%d\t%.80s\t0\t+\t0\t%d\t0\t1\t%d,\t0\n",szFeature,SeqLen,szFeature,SeqLen,SeqLen);
 	Rslt=write(hOutputBED,szBEDFeature,LineLen);
 	NumProcessed += 1;
 

@@ -1,6 +1,6 @@
 kit4b -- K-mer Informed Toolkit for Bioinformatics
 
-This is the initial release of the source code for the 'kit4b' bioinformatics toolkit.
+This is the second release (0.5.0) of the source code for the 'kit4b' bioinformatics toolkit.
 
 'kit4b' processescan be compiled to execute natively in either the Windows or Linux processing environments.
 

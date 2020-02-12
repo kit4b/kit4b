@@ -2491,8 +2491,8 @@ void plP_default_label_log_fixed( PLINT PL_UNUSED( axis ), PLFLT value, char *st
     value = pow( 10.0, exponent );
     if ( exponent < 0 )
     {
-        char form[FORMAT_LEN];
-        snprintf( form, FORMAT_LEN, "%%.%df", ABS( exponent ) );
+        char form[FORMAT_LEN+10];
+        snprintf( form, FORMAT_LEN+5, "%%.%df", ABS( exponent ) );
         snprintf( string, (size_t) len, form, value );
     }
     else

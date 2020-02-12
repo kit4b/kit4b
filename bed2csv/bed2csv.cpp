@@ -315,7 +315,7 @@ int Score;
 char szChrom[128];
 char szPrevChrom[128];
 char szFeatName[128];
-char szRelComp[128];
+char szRelComp[500];
 char Strand;
 int Rslt;
 int RefID;

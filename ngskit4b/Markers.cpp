@@ -516,12 +516,12 @@ if(m_pAllocAlignLoci == NULL)		// initial allocation?
 	}
 else
 	{
-	if(m_AllocAlignLoci <= (m_UsedAlignLoci + 100))	// play safe and increase allocation?
+	if(m_AllocAlignLoci <= (m_UsedAlignLoci + 100))	// play safe when increasing allocation
 		{
 		size_t memreq;
-		INT64 AllocTo;
-		AllocTo = (INT64)cReAllocAlignPerc * m_AllocAlignLoci; 
-		memreq = (AllocTo * sizeof(tsAlignLoci))/100;
+		size_t AllocTo;
+		AllocTo = ((size_t)cReAllocAlignPerc * m_AllocAlignLoci)/100;
+		memreq = ((AllocTo + 1) * sizeof(tsAlignLoci));
 		gDiagnostics.DiagOut(eDLInfo,gszProcName,"AddLoci: memory re-allocation to %lld from %lld bytes",(INT64)memreq,(INT64)m_AllocMemAlignLoci);
 
 #ifdef _WIN32

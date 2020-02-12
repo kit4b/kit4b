@@ -1610,7 +1610,7 @@ CBioSeqFile::Dump2XML(char *pszXMLfile,
 					  unsigned int MaxDumpSeqLen)
 {
 int hDumpXMLFile;
-char szBuff[1000];
+char szBuff[cBSFDescriptionSize + cBSFSourceSize + 200];
 char szSource[cBSFSourceSize+1];
 char szDescr[cBSFDescriptionSize+1];
 unsigned int EntryID;

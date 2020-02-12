@@ -165,7 +165,7 @@ CDiagnostics::DiagOut(etDiagLevel DiagLevel,					// diagnostics level
 va_list Args;
 int LineLen;
 char szDiag[cMaxDiagLen];
-char szLine[cMaxDiagLen+128];			// need to allow for timestamp and message source
+char szLine[cMaxDiagLen+1000];			// need to allow for timestamp and message source
 char szTimestamp[200];
 #ifdef _WIN32
 struct _timeb timebuffer;
@@ -226,7 +226,7 @@ CDiagnostics::DiagOutMsgOnly(etDiagLevel DiagLevel,				// diagnostics level
 va_list Args;
 int LineLen;
 char szDiag[cMaxDiagLen];
-char szLine[cMaxDiagLen+2];			// need to allow for '\n'
+char szLine[cMaxDiagLen+100];			// need to allow for '\n'
 
 if(!m_Opened)
 	return(false);

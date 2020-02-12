@@ -390,7 +390,7 @@ size_t strfMJD( char * buf, size_t len, const char *format, const MJDtime *MJD, 
     size_t     posn = 0;
     size_t     last = len - 1;
     MJDtime    nMJD_value, *nMJD = &nMJD_value;
-    char       dynamic_format[10];
+    char       dynamic_format[20];
 
     // Find required resolution
     resolution = 0;

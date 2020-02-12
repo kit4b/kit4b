@@ -295,7 +295,7 @@ int
 Process(char *pszInFasta,char *pszOutPath,char *pszOutPrefix,char *pszGenome,int MaxTotSeqLen,int MaxFastaEntries)
 {
 int Rslt;
-char szDirPath[_MAX_PATH];
+char szDirPath[_MAX_PATH+10];
 char szFileSpec[_MAX_PATH];
 tsProcParams ProcParams;		// initialised to hold processing parameters
 memset(&ProcParams,0,sizeof(ProcParams));

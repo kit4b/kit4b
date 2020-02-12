@@ -506,7 +506,7 @@ etSeqBase *pProbeWindowRight;
 etSeqBase *pTargWindow;
 
 
-char szBuff[20000];
+char szBuff[33000];
 int DumpSize;
 int NumExtdMatches;
 
