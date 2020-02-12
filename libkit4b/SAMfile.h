@@ -20,7 +20,7 @@ const UINT32 cSAMFlgSuppAlign = 0x0800;		// supplementary alignment
 
 const int cMaxBAMSeqLen = cMaxReadLen+1;	// max length sequence which can be processed
 const int cMaxBAMAuxValLen = 100;			// max length BAM aux value length
-const int cMaxBAMCigarOps = 20;				// max number of BAM MAGIC ops handled
+const int cMaxBAMCigarOps = 50;				// max number of BAM MAGIC ops handled
 const int cMaxBAMAuxTags = 20;				// max number of BAM aux tags handled
 const int cMaxBAMLineLen = (cMaxDescrIDLen + cMaxGeneNameLen + 2000 + (cMaxBAMSeqLen * 2));	// max SAM line length expected with full length query and quality sequences plus a few tags		
 
@@ -56,9 +56,22 @@ typedef enum TAG_etSAMFileType {
 	eSFTBAM,			// BAM bgzf compressed file
 	eSFTBAM_BAI,		// BAM bgzf plus associated BAI file
 	eSFTBAM_CSI			// BAM bgzf plus associated bgzf'd CSI file
-
 } eSAMFileType;
 
+// MAGIC operators
+// m_CigarOpsMap[] = {'M','I','D','N','S','H','P','=','X'};
+typedef enum TAG_eCIGAROpType {
+	eCOPMatch = 0,			//	'M' aligned but could be either matching or mismatching, consumes query and reference sequence
+	eCOPInsert,				//	'I'  insertion relative to target - consumes query sequence only
+	eCOPDelete,				//	'D'  deletion relative to target - consumes reference sequence only
+	eCOPSkipRegion,			//	'N'  skipped region relative to target - intron?  - consumes reference sequence only
+	eCOPSoftClip,			//	'S'  soft clipping - consumes query sequence only
+	eCOPHardClip,			//	'H'  hard clipping - consumes neither query or reference sequence
+	eCOPPadding,			//	'P' padding (silent deletion from padded reference) consumes neither query or reference sequence
+	eCOPALignMatch,			//  '=' aligned as exactly matching, consumes both query and reference sequence
+	eCOPALignMismatch,		// 'X' aligned but as a mismatch, consumes both query and reference sequence
+	eCOPUnrecognised		// unrecognised CIGAR operation
+} etCIGAROpType;
 
 #pragma pack(1)
 
@@ -262,7 +275,13 @@ public:
 	int											// negative if errors parsing otherwise 0 for success
 		ParseSAM2BAMalign(char *pszSAMline,		// parsing this SAM format line
 					tsBAMalign *pBAMalign,     // into this tsBAMalign structure
-			        CBEDfile *pBEDremapper = NULL);		  // with optional remapping of alignment loci from features (contigs) in this BED file
+			        CBEDfile *pBEDremapper = NULL,  // with optional remapping of alignment loci from features (contigs) in this BED file
+					bool bNoRefNameChk = false);	// if true then do not validate ref seq name as having been present in SAM/BAM header
+
+	int						// number of bases returned
+		CSAMfile::BAMalignSeq(tsBAMalign* pBAMalign,		// ptr to tsBAMalign alignment containing packed (2 per byte) sequence to be returned as etSeqBases 
+			int MaxLen,					// maximum length sequence to be returned
+			etSeqBase* pRetSeq);			// to hold returned sequence
 
 	int				// alignment length as calculated from SAM/BAM CIGAR string, only 'M','X','=' lengths contribute
 		CigarAlignLen(char *pszCigar);	// alignment length as calculated from SAM/BAM CIGAR

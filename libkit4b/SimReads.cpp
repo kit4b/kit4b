@@ -39,7 +39,17 @@ Orginal 'BioKanga' copyright notice has been retained and immediately follows th
 
 CSimReads::CSimReads()
 {
-Init();
+m_pBioSeqFile = NULL;
+m_pBEDFile = NULL;
+m_pChromSeqs = NULL;
+m_pProfSel = NULL;			// allocated array of profile site selection preferences (0.0..1.0) indexed by sequence octamers
+m_pProfCSV = NULL;			// used to hold DNase site preferences whilst loading into m_pProfSel
+m_hOutFile = -1;
+m_hOutPEFile = -1;
+m_pSimReads = NULL;			// allocated to hold simulated reads
+m_pGenomeSeq = NULL;		// allocated to hold concatenated (separated by eBaseEOSs) chromosome sequences
+
+Reset(false);
 }
 
 
@@ -447,6 +457,7 @@ if(m_pBEDFile != NULL)
 	delete m_pBEDFile;
 	m_pBEDFile = NULL;
 	}
+
 if(m_pProfSel != NULL)
 	{
 	delete m_pProfSel;
@@ -490,19 +501,7 @@ if(m_pGenomeSeq != NULL)
 #endif
 	m_pGenomeSeq = NULL;
 	}
-if(m_pHamHdr != NULL)
-	{
-	delete(m_pHamHdr);
-	m_pHamHdr = NULL;
-	}
 
-if(m_pHamDistFreq != NULL)
-	{
-	delete m_pHamDistFreq;
-	m_pHamDistFreq = NULL;
-	}
-
-m_pCurHamChrom = NULL;
 m_AllocdMemReads = 0;
 m_NumReadsAllocd = 0;
 
@@ -513,6 +512,8 @@ m_szSpecies[0] = '\0';
 m_NumChromSeqs = 0;
 m_AllocdChromSeqs = 0;
 m_AllocdChromSize = 0;
+
+
 
 m_DynProbErr = 0.01;	// default as being a 1% error rate
 m_bUniformDist = false;		// default as being a uniform distribution of induced errors
@@ -525,112 +526,6 @@ m_MaxFastaLineLen = 79;
 memset(m_InducedErrDist,0,sizeof(m_InducedErrDist));	// to hold induced error count distribution
 memset(m_InducedErrPsnDist,0,sizeof(m_InducedErrPsnDist));	// to hold read sequence psn induced error count
 }
-
-void
-CSimReads::Init(void)
-{
-m_pBioSeqFile = NULL;
-m_pBEDFile = NULL;
-m_pChromSeqs = NULL;
-m_pProfSel = NULL;			// allocated array of profile site selection preferences (0.0..1.0) indexed by sequence octamers
-m_pProfCSV = NULL;			// used to hold DNase site preferences whilst loading into m_pProfSel
-m_hOutFile = -1;
-m_hOutPEFile = -1;
-m_pSimReads = NULL;			// allocated to hold simulated reads
-m_pGenomeSeq = NULL;		// allocated to hold concatenated (separated by eBaseEOSs) chromosome sequences
-m_pHamHdr = NULL;
-m_pCurHamChrom = NULL;
-m_pHamDistFreq = NULL;
-Reset(false);
-}
-
-
-teBSFrsltCodes
-CSimReads::LoadHammings(char *pszHammings)
-{
-int hHamFile;
-tsSRHamHdr HamHdr;
-
-#ifdef _WIN32
-hHamFile = open(pszHammings, O_READSEQ ); // file access will be sequential..
-#else
-hHamFile = open64(pszHammings, O_READSEQ ); // file access will be sequential..
-#endif
-if(hHamFile == -1)					// check if file open succeeded
-	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to open %s - %s",pszHammings,strerror(errno));
-	Reset(false);
-	return(eBSFerrOpnFile);
-	}
-
-if(read(hHamFile,&HamHdr,sizeof(tsSRHamHdr))!=sizeof(tsSRHamHdr))
-	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to read %s - %s",pszHammings,strerror(errno));
-	close(hHamFile);
-	Reset(false);
-	return(eBSFerrParse);
-	}
-if(HamHdr.Magic[0] != 'b' && HamHdr.Magic[0] != 'h' && HamHdr.Magic[0] != 'a' && HamHdr.Magic[0] != 'm')
-	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Not a binary format Hamming distance file - %s",pszHammings);
-	close(hHamFile);
-	Reset(false);
-	return(eBSFerrFileType);
-	}
-if(HamHdr.NumChroms < 1)
-	{
-	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Hamming distance file contains no edit distances - %s",pszHammings);
-	close(hHamFile);
-	Reset(false);
-	return(eBSFerrNoEntries);
-	}
-
-if((m_pHamHdr = (tsSRHamHdr *)new UINT8 [HamHdr.Len])==NULL)
-	{
-	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Unable to allocate memory (%d bytes) for holding Hamming distances loaded from - %s",HamHdr.Len,pszHammings);
-	close(hHamFile);
-	Reset(false);
-	return(eBSFerrMem);
-	}
-memcpy(m_pHamHdr,&HamHdr,sizeof(tsSRHamHdr));
-if(read(hHamFile,(UINT8 *)m_pHamHdr+sizeof(tsSRHamHdr),HamHdr.Len-sizeof(tsSRHamHdr))!=HamHdr.Len-sizeof(tsSRHamHdr))
-	{
-	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Unable to read all Hamming edit distances from - %s",pszHammings);
-	close(hHamFile);
-	Reset(false);
-	return(eBSFerrFileAccess);
-	}
-close(hHamFile);
-int ChromIdx;
-for(ChromIdx = 0; ChromIdx < m_pHamHdr->NumChroms; ChromIdx++)
-	{
-	m_pCurHamChrom = (tsSRHamChrom *)((UINT8 *)m_pHamHdr + m_pHamHdr->ChromOfs[ChromIdx]);
-	gDiagnostics.DiagOut(eDLInfo,gszProcName,"chrom '%s' loaded with %d Hammings",m_pCurHamChrom->szChrom,m_pCurHamChrom->NumEls);
-	}
-m_pCurHamChrom = NULL;
-return(eBSFSuccess);
-}
-
-int				// returned Hamming distance, -1 if no hammings loaded, -2 if chrom not matched, -3 if loci outside of range
-CSimReads::LocateHamming(char *pszChrom,UINT32 Loci)
-{
-int ChromIdx;
-tsSRHamChrom *pCurHamChrom;
-if(m_pHamHdr == NULL)
-	return(-1);
-for(ChromIdx = 0; ChromIdx < m_pHamHdr->NumChroms; ChromIdx++)
-	{
-	pCurHamChrom = (tsSRHamChrom *)((UINT8 *)m_pHamHdr + m_pHamHdr->ChromOfs[ChromIdx]);
-	if(!stricmp((char *)pCurHamChrom->szChrom,pszChrom))
-		break;
-	}
-if(ChromIdx == m_pHamHdr->NumChroms)
-	return(-2);
-if(Loci >= pCurHamChrom->NumEls)
-	return(-3);
-return(pCurHamChrom->Dists[Loci]);
-}
-
 
 // generate '+' strand index from K-mer of length SeqLen starting at pSeq
 int
@@ -759,6 +654,11 @@ m_pProfCSV = NULL;
 
 return(eBSFSuccess);
 }
+
+
+
+
+
 
 
 int
@@ -900,7 +800,7 @@ while((Rslt = SeqLen = Fasta.ReadSequence(pSeqBuff,cSRMaxAllocBuffChunk-1,true,f
 		if(SeqLen != eBSFFastaDescr || sscanf(szDescription," %s[ ,]",szName)!=1)
 			sprintf(szName,"%s.%d",pszFastaFile,ChromID);
 		strncpy(pChromSeq->szChromName,szName,sizeof(pChromSeq->szChromName));
-		pChromSeq->szChromName[30] = '\0';	  // limiting chrom names to be at most 30 chars as additional detail will later be appended		
+		pChromSeq->szChromName[50] = '\0';	  // limiting chrom names to be at most 50 chars as additional detail will later be appended		
 		pChromSeq->Strand = '*';
 		pChromSeq->RelDensity = 1000;
 		pChromSeq->SeqOfs = (UINT32)m_GenomeLen;
@@ -1521,120 +1421,25 @@ pSeq = pRead1->pSeq;
 for(Idx = 0; Idx < ReadLen; Idx++,pSeq++)
 	Seq[Idx] = *pSeq & NUCONLYMSK;
 CSeqTrans::MapSeq2Ascii(Seq,ReadLen,szSeq);
-gDiagnostics.DiagOut(eDLInfo,gszProcName,"chrom: %1.2d, loci: %1.9d HD: %1.2d seq: '%s'",
-			 pRead1->ChromID,pRead1->StartLoci,pRead1->HammingDist,szSeq);
+gDiagnostics.DiagOut(eDLInfo,gszProcName,"chrom: %1.2d, loci: %1.9d seq: '%s'",
+			 pRead1->ChromID,pRead1->StartLoci,szSeq);
 pSeq = pRead2->pSeq;
 for(Idx = 0; Idx < ReadLen; Idx++,pSeq++)
 	Seq[Idx] = *pSeq & NUCONLYMSK;
 CSeqTrans::MapSeq2Ascii(Seq,ReadLen,szSeq);
-gDiagnostics.DiagOut(eDLInfo,gszProcName,"chrom: %1.2d, loci: %1.9d HD: %1.2d seq: '%s'",
-			 pRead2->ChromID,pRead2->StartLoci,pRead2->HammingDist,szSeq);
+gDiagnostics.DiagOut(eDLInfo,gszProcName,"chrom: %1.2d, loci: %1.9d seq: '%s'",
+			 pRead2->ChromID,pRead2->StartLoci,szSeq);
 }
 
 
-// TransformToColorspace
-// transformation of basespace and colorspace (SOLiD)
-//
-UINT8 CvrtSOLiDmap[5][7] = {
-	{0,1,2,3,4,(UINT8)eBaseEOS,(UINT8)eBaseEOG},	// PrevBase==etBaseA
-	{1,0,3,2,4,(UINT8)eBaseEOS,(UINT8)eBaseEOG},	// PrevBase==etBaseC
-	{2,3,0,1,4,(UINT8)eBaseEOS,(UINT8)eBaseEOG},	// PrevBase==etBaseG
-	{3,2,1,0,4,(UINT8)eBaseEOS,(UINT8)eBaseEOG},	// PrevBase==etBaseT
-	{0,1,2,3,4,(UINT8)eBaseEOS,(UINT8)eBaseEOG},	// PrevBase==etBaseN
-	};
 
 int
-CSimReads::TransformToColorspace(UINT8 *pSrcBases,		// basespace sequence to transform
-					UINT32 SeqLen,			// sequence length
-					char *pDstColorspace,	// where to write transformed
-					etSeqBase Seed)			// use this base as the seed base immediately preceding the first base
-{
-etSeqBase PrvBase;
-etSeqBase CurBase;
-UINT8 ColorSpace;
-if(pSrcBases == NULL || SeqLen == 0 || pDstColorspace == NULL || Seed > eBaseN)
-	return(eBSFerrParams);
-PrvBase = Seed;
-while(SeqLen--)
-	{
-	CurBase = *pSrcBases++ & 0x0f;						// conversion is on the low nibble
-	if(!(CurBase == eBaseEOS || CurBase == eBaseEOG) && PrvBase <= 4)
-		{
-		CurBase &= ~cRptMskFlg;
-		if(CurBase >= eBaseN)
-			CurBase = eBaseN;
-		ColorSpace = CvrtSOLiDmap[PrvBase][CurBase];
-		*pDstColorspace++ = 0x30 + ColorSpace;
-		}
-	else
-		*pDstColorspace++ = 0x30 + CurBase;
-	PrvBase = CurBase;
-	}
-*pDstColorspace = '\0';
-return(eBSFSuccess);
-}
-
-// TransformToColorspaceBase
-// BWA requires that the colorspace be represented as double encoded basespace - UGH!!!
-int
-CSimReads::TransformToColorspaceBase(UINT8 *pSrcBases,		// basespace sequence to transform
-					UINT32 SeqLen,			// sequence length
-					char *pDstColorspace,	// where to write transformed
-					etSeqBase Seed)			// use this base as the seed base immediately preceding the first base
-{
-etSeqBase PrvBase;
-etSeqBase CurBase;
-UINT8 ColorSpace;
-UINT8 ColorSpaceBase;
-if(pSrcBases == NULL || SeqLen == 0 || pDstColorspace == NULL || Seed > eBaseN)
-	return(eBSFerrParams);
-PrvBase = Seed;
-while(SeqLen--)
-	{
-	CurBase = *pSrcBases++ & 0x0f;						// conversion is on the low nibble
-	if(!(CurBase == eBaseEOS || CurBase == eBaseEOG) && PrvBase <= 4)
-		{
-		CurBase &= ~cRptMskFlg;				// remove any repeat masking
-		if(CurBase > eBaseN)
-			CurBase = eBaseN;
-
-		ColorSpace = CvrtSOLiDmap[PrvBase][CurBase];
-		switch(ColorSpace) {
-			case 0: ColorSpaceBase = 'A'; break;
-			case 1: ColorSpaceBase = 'C'; break;
-			case 2: ColorSpaceBase = 'G'; break;
-			case 3: ColorSpaceBase = 'T'; break;
-			default: ColorSpaceBase = 'N'; break;
-			}
-
-		*pDstColorspace++ = ColorSpaceBase;
-		}
-	else
-		*pDstColorspace++ = 'N';
-	PrvBase = CurBase;
-	}
-*pDstColorspace = '\0';
-return(eBSFSuccess);
-}
-
-//
-typedef struct TAG_sReadRprt {
-	etSeqBase FwdSeq[cMaxReadLen+1];
-	etSeqBase RevSeq[cMaxReadLen+1];
-	char szColorspace[cMaxReadLen+2];
-	char szLineBuff[(cMaxReadLen + 2) * 2];
-	int LineLen;
-	int NumCols;
-} sReadRprt;
-
-int
-CSimReads::ReportReads(bool bPEgen,			// true if paired end simulated reads being simulated
-		    int Region,			// Process regions 0:ALL,1:CDS,2:5'UTR,3:3'UTR,4:Introns,5:5'US,6:3'DS,7:Intergenic (default = ALL)
+CSimReads::ReportReads(bool bPEgen,	// true if paired end simulated reads being simulated
+		    int Region,				// Process regions 0:ALL,1:CDS,2:5'UTR,3:3'UTR,4:Introns,5:5'US,6:3'DS,7:Intergenic (default = ALL)
 			int NomReadLen,			// reads nominal length
 			int NumPrevReported,	// number of reads previously reported
 			int MaxReads,			// maximum number of reads remaining to be reported
 			bool bDedupe,			// true if reads are to be deduped
-			bool bReadHamDist,	    // true if hamming distributions from each sampled read to all other genome subsequences to be generated
 			int AvailReads)			// number of reads to be reported on from m_pSimReads[]
 {
 tsSRSimRead *pRead;
@@ -1643,18 +1448,18 @@ tsSRSimRead *pPrevRead;
 tsSRChromSeq *pChromSeq;
 etSeqBase *pReadSeq;
 char *pszIsRand;
-char *pQualChr;
 int ReadOfs;
 int ReadsIdx;
 int ReadLenRem;
 
 int NumOfDups;
 int NumReported;
-etSeqBase CSseedBase;
+
+char szCIGAR[128];				// to hold a simulated reads SAM CIGAR
 
 sReadRprt *pPEreads;			// to hold each either SE or PE read being reported
 
-
+szCIGAR[0] = '\0';
 
 
 // check if any reads to report
@@ -1685,17 +1490,15 @@ if(bDedupe && AvailReads > 1)
 				pPrevRead->Status = 2;
 			pRead->Status = 2;
 			if(pRead->pPartner != NULL)
-				{
 				pRead->pPartner->Status = 2;
-				}
 			NumOfDups+=1;
 			}
 		else
 			{
 			if(pPrevRead->Len == pRead->Len)
 				{
-				int Hamming = CmpSeqs(pRead->Len,pPrevRead->pSeq,pRead->pSeq);
-				if(Hamming < pPrevRead->HammingDist || Hamming < pRead->HammingDist)
+				int Diffs = CmpSeqs(pRead->Len,pPrevRead->pSeq,pRead->pSeq);
+				if(Diffs == 0)
 					{
 					if(pRead->Status > 1)
 						pPrevRead->Status = 2;
@@ -1757,8 +1560,6 @@ gDiagnostics.DiagOut(eDLInfo,gszProcName,"Writing simulated reads to file: '%s'"
 memset(pPEreads,0,2 * sizeof(sReadRprt));
 pRead = m_pSimReads;
 NumReported = 0;
-if(m_PMode == etSRPMode::eSRPMSampHamm)
-	pPEreads[0].LineLen = sprintf(pPEreads[0].szLineBuff,"\"Chrom\",\"Loci\",\"Hamming\"\n");
 
 for(ReadsIdx = 0; ReadsIdx < AvailReads; ReadsIdx++, pRead++)
 	{
@@ -1808,42 +1609,6 @@ for(ReadsIdx = 0; ReadsIdx < AvailReads; ReadsIdx++, pRead++)
 	NumReported += 1;
 	pChromSeq = &m_pChromSeqs[pRead->ChromSeqID-1];
 	switch(m_FMode) {
-		case eSRFMcsv:
-		case eSRFMcsvSeq:
-			if(m_PMode == etSRPMode::eSRPMSampHamm)
-				{
-				pPEreads[0].LineLen += sprintf(&pPEreads[0].szLineBuff[pPEreads[0].LineLen],"\"%s\",%d,%d\n",
-					pChromSeq->szChromName,pRead->StartLoci,pRead->HammingDist);
-				break;
-				}
-
-			pPEreads[0].LineLen += sprintf(&pPEreads[0].szLineBuff[pPEreads[0].LineLen],"%d,\"%s\",\"%s\",\"%s\",%d,%d,%d,\"%c\",%d",
-					NumPrevReported+NumReported,"usimreads",m_szSpecies,pChromSeq->szChromName,pRead->StartLoci,pRead->EndLoci,pRead->Len,pRead->Strand ? '-' : '+',pRead->HammingDist);
-			if(m_FMode == eSRFMcsvSeq)
-				{
-				pPEreads[0].LineLen += sprintf(&pPEreads[0].szLineBuff[pPEreads[0].LineLen],",\"");
-				pReadSeq = pPEreads[0].FwdSeq;
-
-				if(pRead->Strand)
-					{
-					memcpy(pPEreads[0].RevSeq,pReadSeq,Pair1ReadLen);
-					CSeqTrans::ReverseComplement(Pair1ReadLen,pPEreads[0].RevSeq);
-					pReadSeq = pPEreads[0].RevSeq;
-					}
-				CSeqTrans::MapSeq2Ascii(pReadSeq,Pair1ReadLen,&pPEreads[0].szLineBuff[pPEreads[0].LineLen]);
-				pPEreads[0].LineLen += Pair1ReadLen;
-				pPEreads[0].LineLen += sprintf(&pPEreads[0].szLineBuff[pPEreads[0].LineLen],"\"");
-				}
-			if(bReadHamDist)
-				{
-				int HamDistIdx;
-				UINT32 *pCnt = pRead->pHamDistFreq;
-				for(HamDistIdx=0; HamDistIdx <= pRead->Len; HamDistIdx++,pCnt++)
-					pPEreads[0].LineLen += sprintf(&pPEreads[0].szLineBuff[pPEreads[0].LineLen],",%d",*pCnt);
-				}
-			pPEreads[0].LineLen += sprintf(&pPEreads[0].szLineBuff[pPEreads[0].LineLen],"\n");
-			break;
-
 		case eSRFMFasta:
 		case eSRFMNWFasta:
 			{
@@ -1879,8 +1644,21 @@ for(ReadsIdx = 0; ReadsIdx < AvailReads; ReadsIdx++, pRead++)
 				pszIsRand = (char *)"lcr";
 				}
 
-			pPEreads[0].LineLen+=sprintf(&pPEreads[0].szLineBuff[pPEreads[0].LineLen],">%s|usimreads|%1.8d|%s|%d|%d|%d|%c|%d|%d|%d\n",pszIsRand,
-					NumPrevReported+NumReported,pChromSeq->szChromName,pRead->StartLoci,pRead->EndLoci+InDelSize,Pair1ReadLen,pRead->Strand ? '-' : '+',pRead->HammingDist,NumSubs,InDelSize);
+			// CIGAR chars recognised/used are:
+			//	=  matching
+			//	X  mismatch
+			//	M either matching or mismatching
+			//	I  insertion relative to target - score after skipping I bases in read
+			//	D  deletion relative to target - score after skipping D bases in target
+			//	N  skipped region relative to target - score after skipping N bases in target
+			//	S  soft clipping - score after skipping S bases in both read and target
+			//	H  hard clipping - score starting from first base in sequence
+			//
+			// TLEN template length
+			// >chr1.2003.2102.+.1234567 100:25M65M:0
+
+			pPEreads[0].LineLen+=sprintf(&pPEreads[0].szLineBuff[pPEreads[0].LineLen],">%s|%1.8d|%s|%d|%d|%d|%c|%d|%d\n",pszIsRand,
+					NumPrevReported+NumReported,pChromSeq->szChromName,pRead->StartLoci,pRead->EndLoci+InDelSize,Pair1ReadLen,pRead->Strand ? '-' : '+',NumSubs,InDelSize);
 
 			ReadOfs = 0;
 			ReadLenRem = Pair1ReadLen;
@@ -1897,7 +1675,7 @@ for(ReadsIdx = 0; ReadsIdx < AvailReads; ReadsIdx++, pRead++)
 			if(bPEgen == true)
 				{
 				NumReported += 1;
-				pReadSeq = pPEreads[1].FwdSeq;
+				pReadSeq = pPEreads[1].FwdSeq; 
 				if(pPairRead->Strand)
 					{
 					memcpy(pPEreads[1].RevSeq,pReadSeq,Pair2ReadLen+m_InDelSize);
@@ -1921,8 +1699,8 @@ for(ReadsIdx = 0; ReadsIdx < AvailReads; ReadsIdx++, pRead++)
 					pszIsRand = (char *)"lcr";
 					}
 
-				pPEreads[1].LineLen+=sprintf(&pPEreads[1].szLineBuff[pPEreads[1].LineLen],">%s|usimreads|%1.8d|%s|%d|%d|%d|%c|%d|%d|%d\n",pszIsRand,
-						NumPrevReported+NumReported,pChromSeq->szChromName,pPairRead->StartLoci,pPairRead->EndLoci+InDelSize,Pair2ReadLen,pPairRead->Strand ? '-' : '+',pPairRead->HammingDist,NumSubs,InDelSize);
+				pPEreads[1].LineLen+=sprintf(&pPEreads[1].szLineBuff[pPEreads[1].LineLen],">%s|%1.8d|%s|%d|%d|%d|%c|%d|%d\n",pszIsRand,
+						NumPrevReported+NumReported,pChromSeq->szChromName,pPairRead->StartLoci,pPairRead->EndLoci+InDelSize,Pair2ReadLen,pPairRead->Strand ? '-' : '+',NumSubs,InDelSize);
 
 				ReadOfs = 0;
 				ReadLenRem = Pair2ReadLen;
@@ -1939,122 +1717,6 @@ for(ReadsIdx = 0; ReadsIdx < AvailReads; ReadsIdx++, pRead++)
 			break;
 			}
 
-		case eSRFMSOLiD:
-		case eSRFMSOLiDbwa:
-			{
-			int NumSubs;
-			pReadSeq = pPEreads[0].FwdSeq;
-			if(pRead->Strand)
-				{
-				memcpy(pPEreads[0].RevSeq,pReadSeq,Pair1ReadLen);
-				if(m_FMode == eSRFMSOLiD)
-					CSeqTrans::ReverseComplement(Pair1ReadLen,pPEreads[0].RevSeq);
-				else
-					CSeqTrans::ReverseSeq(Pair1ReadLen,pPEreads[0].RevSeq);
-				pReadSeq = pPEreads[0].RevSeq;
-				}
-
-			int InDelSize;
-
-			if(!m_PropRandReads || (m_PropRandReads < RGseeds.IRandom(0,1000000)))
-				{
-				InDelSize = SimInDels(pRead,&Pair1ReadLen,pReadSeq);
-				NumSubs = SimSeqErrors(Pair1ReadLen,pReadSeq);
-				pszIsRand = (char *)"lcl";
-				}
-			else
-				{
-				InDelSize = 0;
-				NumSubs = SimSeqRand(Pair1ReadLen,pReadSeq);
-				pszIsRand = (char *)"lcr";
-				}
-
-			CSseedBase = (UINT8)RGseeds.IRandom(0,3);
-			pPEreads[0].szColorspace[0] = CSeqTrans::MapBase2Ascii(CSseedBase);
-			if(m_FMode == eSRFMSOLiD)
-				TransformToColorspace(pReadSeq,Pair1ReadLen,&pPEreads[0].szColorspace[1],CSseedBase);
-			else
-				TransformToColorspaceBase(pReadSeq,Pair1ReadLen,&pPEreads[0].szColorspace[1],CSseedBase);
-
-			if(m_FMode == eSRFMSOLiD)
-				{
-				pPEreads[0].LineLen+=sprintf(&pPEreads[0].szLineBuff[pPEreads[0].LineLen],">%s|usimreads|%1.8d|%s|%d|%d|%d|%c|%d|%d|%d\n",pszIsRand,
-					NumPrevReported+NumReported,pChromSeq->szChromName,pRead->StartLoci,pRead->EndLoci+InDelSize,Pair1ReadLen,pRead->Strand ? '-' : '+',pRead->HammingDist,NumSubs,InDelSize);
-				pPEreads[0].LineLen+=sprintf(&pPEreads[0].szLineBuff[pPEreads[0].LineLen],"%s\n",pPEreads[0].szColorspace);
-				}
-			else
-				{
-				pPEreads[0].LineLen+=sprintf(&pPEreads[0].szLineBuff[pPEreads[0].LineLen],"@%s|usimreads|%1.8d|%s|%d|%d|%d|%c|%d|%d|%d\n",pszIsRand,
-					NumPrevReported+NumReported,pChromSeq->szChromName,pRead->StartLoci,pRead->EndLoci+InDelSize,Pair1ReadLen,pRead->Strand ? '-' : '+',pRead->HammingDist,NumSubs,InDelSize);
-				pPEreads[0].LineLen+=sprintf(&pPEreads[0].szLineBuff[pPEreads[0].LineLen],"%s\n",pPEreads[0].szColorspace);
-				pPEreads[0].LineLen+=sprintf(&pPEreads[0].szLineBuff[pPEreads[0].LineLen],"+ descriptor line\n");
-				pQualChr = &pPEreads[0].szLineBuff[pPEreads[0].LineLen];
-				*pQualChr++ = '!';			// dummy quality scores
-				for(Idx = 0; Idx < Pair1ReadLen; Idx++)
-					*pQualChr++ = (char)(((pRead->StartLoci + Idx) % 20) + 65);
-				*pQualChr++ = '\n';
-				*pQualChr = '\0';
-				pPEreads[0].LineLen += Pair1ReadLen + 2;
-				}
-
-			if(bPEgen == true)
-				{
-				NumReported += 1;
-				pReadSeq = pPEreads[1].FwdSeq;
-				if(pPairRead->Strand)
-					{
-					memcpy(pPEreads[1].RevSeq,pReadSeq,Pair2ReadLen);
-					if(m_FMode == eSRFMSOLiD)
-						CSeqTrans::ReverseComplement(Pair2ReadLen,pPEreads[1].RevSeq);
-					else
-						CSeqTrans::ReverseSeq(Pair2ReadLen,pPEreads[1].RevSeq);
-					pReadSeq = pPEreads[1].RevSeq;
-					}
-
-				if(!m_PropRandReads || (m_PropRandReads < RGseeds.IRandom(0,1000000)))
-					{
-					InDelSize = SimInDels(pPairRead,&Pair2ReadLen,pReadSeq);
-					NumSubs = SimSeqErrors(Pair2ReadLen,pReadSeq);
-					pszIsRand = (char *)"lcl";
-					}
-				else
-					{
-					InDelSize = 0;
-					NumSubs = SimSeqRand(Pair2ReadLen,pReadSeq);
-					pszIsRand = (char *)"lcr";
-					}
-
-				CSseedBase = (UINT8)RGseeds.IRandom(0,3);
-				pPEreads[1].szColorspace[0] = CSeqTrans::MapBase2Ascii(CSseedBase);
-
-				if(m_FMode == eSRFMSOLiD)
-					TransformToColorspace(pReadSeq,Pair2ReadLen,&pPEreads[1].szColorspace[1],CSseedBase);
-				else
-					TransformToColorspaceBase(pReadSeq,Pair2ReadLen,&pPEreads[1].szColorspace[1],CSseedBase);
-
-				if(m_FMode == eSRFMSOLiD)
-					{
-					pPEreads[1].LineLen+=sprintf(&pPEreads[1].szLineBuff[pPEreads[1].LineLen],">%s|usimreads|%1.8d|%s|%d|%d|%d|%c|%d|%d|%d\n",pszIsRand,
-						NumPrevReported+NumReported,pChromSeq->szChromName,pPairRead->StartLoci,pPairRead->EndLoci+InDelSize,Pair2ReadLen,pPairRead->Strand ? '-' : '+',pPairRead->HammingDist,NumSubs,InDelSize);
-					pPEreads[1].LineLen+=sprintf(&pPEreads[1].szLineBuff[pPEreads[1].LineLen],"%s\n",pPEreads[1].szColorspace);
-					}
-				else
-					{
-					pPEreads[1].LineLen+=sprintf(&pPEreads[1].szLineBuff[pPEreads[1].LineLen],">%s|usimreads|%1.8d|%s|%d|%d|%d|%c|%d|%d|%d\n",pszIsRand,
-					NumPrevReported+NumReported,pChromSeq->szChromName,pPairRead->StartLoci,pPairRead->EndLoci+InDelSize,Pair2ReadLen,pPairRead->Strand ? '-' : '+',pPairRead->HammingDist,NumSubs,InDelSize);
-					pPEreads[1].LineLen+=sprintf(&pPEreads[1].szLineBuff[pPEreads[1].LineLen],"%s\n",pPEreads[1].szColorspace);
-					pPEreads[1].LineLen+=sprintf(&pPEreads[1].szLineBuff[pPEreads[1].LineLen],"+ descriptor line\n");
-					pQualChr = &pPEreads[1].szLineBuff[pPEreads[1].LineLen];
-					*pQualChr++ = '!';
-					for(Idx = 0; Idx < Pair2ReadLen; Idx++)
-						*pQualChr++ = (char)(((pPairRead->StartLoci + Idx) % 20) + 65);
-					*pQualChr++ = '\n';
-					*pQualChr = '\0';
-					pPEreads[1].LineLen += Pair2ReadLen + 2;
-					}
-				}
-			break;
-			}
 		}
 
 	if((pPEreads[0].LineLen + 2) > sizeof(pPEreads[0].szLineBuff) / 2)
@@ -2157,7 +1819,6 @@ CSimReads::GenSimReads(etSRPMode PMode,		// processing mode
 		int SNPrate,		// simulate SNPs at this rate per million bases
 		int InDelSize,		// simulated InDel size range
 		double InDelRate,	// simulated InDel rate per read
-		bool bReadHamDist,	// true if hamming distributions from each sampled read to all other genome subsequences to be generated
 		etSRFMode FMode,		// output format
 		int NumThreads,		// number of worker threads to use
 		char Strand,		// generate for this strand '+' or '-' or for both '*'
@@ -2172,19 +1833,16 @@ CSimReads::GenSimReads(etSRPMode PMode,		// processing mode
 		int CutMin,			// min cut length
 		int CutMax,			// max cut length
 		bool bDedupe,		// true if unique read sequences only to be generated
-		int DfltHamming,	// if < 0 then Hamming distance to be dynamically calculated otherwise default Hamming to this value
 		int Region,			// Process regions 0:ALL,1:CDS,2:5'UTR,3:3'UTR,4:Introns,5:5'US,6:3'DS,7:Intergenic (default = ALL)
 		int UpDnRegLen,		// if processing regions then up/down stream regulatory length
 		char *pszFeatFile,	// optionally generate transcriptome reads from features or genes in this BED file
 		char *pszInFile,	// input from this raw multifasta or bioseq assembly
 		char *pszProfFile,	// input from this profile site preferences file
-		char *pszHammFile,	// use Hamming edit distances from this file
 		char *pszOutPEFile, // output partner paired end simulated reads to this file
 		char *pszOutFile,	// output simulated reads to this file
 		char *pszOutSNPs)   // output simulated SNP loci to this file
 {
 int Rslt;
-bool bUseLocateHamming;
 int ReadsOfs;
 int NumReadsReq;
 int ReadsCnt;
@@ -2201,7 +1859,7 @@ int CurNumGenReads;
 int PrevNumGenReads;
 int MinChromLen;
 
-Init();
+Reset(false);
 
 RGseeds.RandomInit((int)time(NULL));
 
@@ -2235,8 +1893,6 @@ for(int Idx = 0; Idx < m_NumArtef3Seqs; Idx++)
 	CSeqTrans::MapAscii2Sense(pszArtef3Seqs[Idx],m_Artef3SeqLens[Idx],m_Artef3Seqs[Idx]);
 	}
 
-bUseLocateHamming = (pszHammFile != NULL && pszHammFile[0] != '\0') ? true : false;
-
 if(PMode != etSRPMode::eSRPMStandard)
 	{
 	if((Rslt=InitProfSitePrefs(pszProfFile))!=eBSFSuccess)
@@ -2252,6 +1908,8 @@ if(bPEgen)
 else
 	MinChromLen = CutMax;
 MinChromLen += 20;
+if(MinChromLen < cSRMinChromLen)
+	MinChromLen = cSRMinChromLen;
 
 if(Region != eSRMEGRAny || pszFeatFile == NULL || pszFeatFile[0] == '\0')
 	{
@@ -2354,28 +2012,9 @@ else
 	m_hOutPEFile = -1;
 	}
 
-if(pszHammFile != NULL && pszHammFile[0] != '\0')
-	{
-	gDiagnostics.DiagOutMsgOnly(eDLInfo,"Loading Hamming edit distances from file '%s'",pszHammFile);
-	if((Rslt = LoadHammings(pszHammFile)) < eBSFSuccess)
-		{
-		Reset(false);
-		return(Rslt);
-		}
-	gDiagnostics.DiagOutMsgOnly(eDLInfo,"Loading Hamming edit distances completed");
-	}
-
-// Don't bother checkpointing (write to file in batches every N reads generated) unless dynamically generating Hamming or profiling
+// Don't bother checkpointing (write to file in batches every N reads generated) unless profiling
 // Checkpointing is only used if the processing is expected to take some time to complete
-if(DfltHamming < 0 && (pszHammFile == NULL || pszHammFile[0] == '\0'))
-	MaxReadsPerBatch = cMaxHammingBatchSize;
-else
-	{
-	if(PMode != etSRPMode::eSRPMStandard)
-		MaxReadsPerBatch = min(m_TotReqReads,cMaxProfileBatchSize);
-	else
-		MaxReadsPerBatch = min(m_TotReqReads,cMaxBatchSize);
-	}
+MaxReadsPerBatch = cMaxProfileBatchSize;
 MaxReadsPerBatch *= NumThreads;
 
 
@@ -2414,21 +2053,6 @@ if(m_pSimReads == MAP_FAILED)
 #endif
 
 memset(m_pSimReads,0,(size_t)m_AllocdMemReads);
-if(bReadHamDist) {
-	tsSRSimRead *pRead;
-	int ReadIdx;
-	m_pHamDistFreq = new UINT32 [m_NumReadsAllocd * (ReadLen+1)]; // need to allow for distances ranging 0..ReadLen inclusive
-	if(m_pHamDistFreq == NULL)
-		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for simulated reads failed",(INT64)m_AllocdMemReads);
-		Reset(false);
-		return(eBSFerrMem);
-		}
-
-	pRead = m_pSimReads;
-	for(ReadIdx = 0; ReadIdx < m_NumReadsAllocd; ReadIdx++,pRead++)
-		pRead->pHamDistFreq = &m_pHamDistFreq[ReadIdx * (ReadLen+1)];
-	}
 
 #ifdef _WIN32
 if((m_hMtxDedupe = CreateMutex(NULL,false,NULL))==NULL)
@@ -2456,10 +2080,7 @@ do {
 		}
 	else
 		{
-		if(bUseLocateHamming)
-			ReadsCnt = min(1000+(m_TotReqReads - TotReportedReads),MaxReadsPerBatch);
-		else
-			ReadsCnt = min((int)(((INT64)(m_TotReqReads - TotReportedReads) * 105)/100),MaxReadsPerBatch);
+		ReadsCnt = min((int)(((INT64)(m_TotReqReads - TotReportedReads) * 105)/100),MaxReadsPerBatch);
 		if(ReadsCnt < 10000 && (ReadsOfs + 10000) < m_NumReadsAllocd)
 			ReadsCnt = 10000;
 		}
@@ -2474,10 +2095,7 @@ do {
 		pCurThread->pThis = this;
 		pCurThread->RandSeed = RGseeds.IRandom(1,INT_MAX);
 		pCurThread->ThreadIdx = ThreadIdx;
-		pCurThread->DfltHamming = DfltHamming;
-		pCurThread->bUseLocateHamming = bUseLocateHamming;
 		pCurThread->bDedupe = bDedupe;
-		pCurThread->bReadHamDist = bReadHamDist;
 		pCurThread->ReadLen = ReadLen;
 		pCurThread->Region = Region;
 		pCurThread->UpDnRegLen = UpDnRegLen;
@@ -2557,7 +2175,6 @@ do {
 			    TotReportedReads,			// number of reads thus far reported on
 				m_TotReqReads,				// maximum number of reads required to be reported on
 				bDedupe,					// true if reads are to be deduped
-				bReadHamDist,				// true if hamming distributions from each sampled read
 				ReadsOfs);					// number of reads to report on from this batch
 		TotReportedReads += ReportedReads;
 		gDiagnostics.DiagOut(eDLInfo,gszProcName,"Current block processing: %1.7d total: %1.8d",ReportedReads,TotReportedReads);
@@ -2621,8 +2238,7 @@ etSeqBase ReadSeq[cMaxReadLen+1];
 etSeqBase *pReadSeq;
 etSeqBase Nuc;
 tsSRSimRead *pRead;
-int HammingDist;
-int HammingDistW;
+
 int RandChrom;
 
 int BEDChromID;
@@ -2896,53 +2512,6 @@ while(pWorkerPars->NumGenReads < pWorkerPars->NumReqReads)
 			continue;
 		}
 
-	if(pWorkerPars->bReadHamDist)
-		{
-		if(m_PMode == etSRPMode::eSRPMSampHamm)
-			{
-			HammingDistW = MinHammingDistW(pWorkerPars->ReadLen,pWorkerPars->ReadLen,pChromSeq->ChromID,RandCutSite1,ReadSeq);
-			CSeqTrans::ReverseComplement(RandCutLen,ReadSeq);
-			HammingDist = MinHammingDistC(HammingDistW,pWorkerPars->ReadLen,pChromSeq->ChromID,RandCutSite1,ReadSeq);
-			}
-		else
-			{
-			memset(pRead->pHamDistFreq,0,sizeof(UINT32) * (pWorkerPars->ReadLen + 1));
-			HammingDistW = HammingDistCntsW(pWorkerPars->ReadLen,pChromSeq->ChromID,RandCutSite1,ReadSeq,pRead->pHamDistFreq);
-			CSeqTrans::ReverseComplement(RandCutLen,ReadSeq);
-			HammingDist = HammingDistCntsC(pWorkerPars->ReadLen,pChromSeq->ChromID,RandCutSite1,ReadSeq,pRead->pHamDistFreq);
-			if(HammingDistW < HammingDist)
-				HammingDist = HammingDistW;
-			}
-		}
-	else
-		{
-		if(pWorkerPars->bUseLocateHamming)
-			{
-			HammingDist = LocateHamming(pChromSeq->szChromName,RandCutSite1);
-			if(HammingDist < 0)	// need to tighten up on this: -1 returned if no such chromosome or no hamming for subsequence at specified loci
-				continue;		// in this experimental release these chroms are simply sloughed
-			}
-		else
-			{
-			if(pWorkerPars->DfltHamming < 0)
-				{
-				// now determine the minimal Hamming distance of this sequence from any other sequence in the targeted genome
-				// on both the watson and crick strands
-				// Dynamic Hamming distance determination is an extremely slow process, how to speed it up?????
-				// small speedup by setting initial hamming to be readlen/2. With length 36, currently the largest actual hamming observed
-				// was around 14
-				HammingDistW = MinHammingDistW(pWorkerPars->ReadLen/2,pWorkerPars->ReadLen,pChromSeq->ChromID,RandCutSite1,ReadSeq);
-				CSeqTrans::ReverseComplement(RandCutLen,ReadSeq);
-				HammingDist = MinHammingDistC(HammingDistW,pWorkerPars->ReadLen,pChromSeq->ChromID,RandCutSite1,ReadSeq);
-				}
-			else
-				HammingDist = pWorkerPars->DfltHamming;
-			}
-		if(pWorkerPars->bDedupe && HammingDist == 0)
-			continue;
-		}
-
-
 	// we have a sequence starting at RandCutSite1 and ending at RandCutSite2-1 which is of length RandCutLen
 	// if non-duplicates required then mark subsequence as selected
 	if(pWorkerPars->bDedupe)
@@ -2977,7 +2546,6 @@ while(pWorkerPars->NumGenReads < pWorkerPars->NumReqReads)
 	pRead->StartLoci = RandCutSite1;
 	pRead->EndLoci = RandCutSite2 - 1;
 	pRead->Len = RandCutLen;
-	pRead->HammingDist = HammingDist;
 	pRead->pSeq = &pSeq[RandCutSite1];
 	pWorkerPars->NumGenReads += 1;
 	pRead->FlgPE2 = 0;
@@ -2998,7 +2566,6 @@ while(pWorkerPars->NumGenReads < pWorkerPars->NumReqReads)
 		pRead->StartLoci = PERandCutSite1;
 		pRead->EndLoci = PERandCutSite2 - 1;
 		pRead->Len = PERandCutLen;
-		pRead->HammingDist = HammingDist;
 		pRead->pSeq = &pSeq[pRead->StartLoci];
 		pWorkerPars->NumGenReads += 1;
 		pRead += 1;
@@ -3008,7 +2575,7 @@ while(pWorkerPars->NumGenReads < pWorkerPars->NumReqReads)
 	NumChromIters = 0;
 
 	// time to let main thread know that some progress is being made?
-	if(pWorkerPars->bReadHamDist == true || CurNumGenReads >= 500)
+	if(CurNumGenReads >= 500)
 		{
 #ifdef _WIN32
 		WaitForSingleObject(m_hMtxDedupe,INFINITE);
@@ -3035,182 +2602,7 @@ pthread_exit(NULL);
 
 
 
-int		// returned minimum Hamming distance of Watson sequence - note the check for self-loci otherwise hamming would always be 0!
-CSimReads::MinHammingDistW(int MinHamming,	// initial minimum Hamming distance
-			   int ReadLen,		// read length
-			   int ChromID,     // from which chromosome was this read was derived
-			   int ReadLoci,	// read start loci
-			   etSeqBase *pRead) // read sequence
-{
-int ChromIdx;
-int SeqIdx;
-int ChromSeqIdx;
-int CurHamming;
-int EndIdx;
-tsSRChromSeq *pChrom;
-etSeqBase *pChromBase;
-etSeqBase *pChromSeq;
-etSeqBase *pReadBase;
 
-if(MinHamming <= 0)
-	return(0);
-
-pChrom = &m_pChromSeqs[0];
-for(ChromIdx = 0; ChromIdx < m_NumChromSeqs; ChromIdx++, pChrom++)
-	{
-	pChromSeq =  &m_pGenomeSeq[pChrom->SeqOfs];
-	EndIdx = pChrom->Len - ReadLen;
-	for(ChromSeqIdx=0;ChromSeqIdx <= EndIdx; ChromSeqIdx++,pChromSeq++)
-		{
-		if(ChromSeqIdx == ReadLoci && ChromID == pChrom->ChromID)
-			continue;
-
-		pChromBase = pChromSeq;
-		pReadBase = pRead;
-		CurHamming = 0;
-		for(SeqIdx=0;SeqIdx < ReadLen; SeqIdx++,pChromBase++,pReadBase++)
-			if((*pChromBase & NUCONLYMSK) != (*pReadBase & NUCONLYMSK) &&
-				++CurHamming >= MinHamming)
-					break;
-		if(CurHamming < MinHamming)
-			{
-			MinHamming = CurHamming;
-			if(MinHamming == 0)
-				return(MinHamming);
-			}
-		}
-	}
-return(MinHamming);
-}
-
-int		// returned minimum Hamming distance of Crick (reverse complement of Watson) sequence - note no check for self-loci
-CSimReads::MinHammingDistC(int MinHamming,	// initial minimum Hamming distance
-			   int ReadLen,		// read length
-			   int ChromID,     // from which chromosome was this read was derived
-			   int ReadLoci,	// read start loci
-			   etSeqBase *pRead) // read sequence
-{
-int ChromIdx;
-int SeqIdx;
-int ChromSeqIdx;
-int CurHamming;
-int EndIdx;
-tsSRChromSeq *pChrom;
-etSeqBase *pChromBase;
-etSeqBase *pChromSeq;
-etSeqBase *pReadBase;
-
-if(MinHamming <= 0)
-	return(0);
-
-pChrom = &m_pChromSeqs[0];
-for(ChromIdx = 0; ChromIdx < m_NumChromSeqs; ChromIdx++, pChrom++)
-	{
-	pChromSeq =  &m_pGenomeSeq[pChrom->SeqOfs];
-	EndIdx = pChrom->Len - ReadLen;
-	for(ChromSeqIdx=0;ChromSeqIdx <= EndIdx; ChromSeqIdx++,pChromSeq++)
-		{
-		pChromBase = pChromSeq;
-		pReadBase = pRead;
-		CurHamming = 0;
-		for(SeqIdx=0;SeqIdx < ReadLen; SeqIdx++,pChromBase++,pReadBase++)
-			if((*pChromBase & NUCONLYMSK) != (*pReadBase & NUCONLYMSK) &&
-				++CurHamming >= MinHamming)
-					break;
-		if(CurHamming < MinHamming)
-			{
-			MinHamming = CurHamming;
-			if(MinHamming == 0)
-				return(MinHamming);
-			}
-		}
-	}
-return(MinHamming);
-}
-
-
-int		// minimum Hamming for Watson strand
-CSimReads::HammingDistCntsW(int ReadLen,		// read length
-			 int ChromID,     // from which chromosome was this read was derived
-			 int ReadLoci,	// read start loci
-			 etSeqBase *pRead, // read sequence
-			 UINT32 *pHammDist)	// where to return hamming dist counts (assumes at least ReadLen elements)
-{
-int MinHamming;
-int ChromIdx;
-int SeqIdx;
-int ChromSeqIdx;
-int CurHamming;
-int EndIdx;
-tsSRChromSeq *pChrom;
-etSeqBase *pChromBase;
-etSeqBase *pChromSeq;
-etSeqBase *pReadBase;
-
-MinHamming = ReadLen;
-pChrom = &m_pChromSeqs[0];
-for(ChromIdx = 0; ChromIdx < m_NumChromSeqs; ChromIdx++, pChrom++)
-	{
-	pChromSeq =  &m_pGenomeSeq[pChrom->SeqOfs];
-	EndIdx = pChrom->Len - ReadLen;
-	for(ChromSeqIdx=0;ChromSeqIdx <= EndIdx; ChromSeqIdx++,pChromSeq++)
-		{
-		if(ChromSeqIdx == ReadLoci && ChromID == pChrom->ChromID)
-			continue;
-
-		pChromBase = pChromSeq;
-		pReadBase = pRead;
-		CurHamming = 0;
-		for(SeqIdx=0;SeqIdx < ReadLen; SeqIdx++,pChromBase++,pReadBase++)
-			if((*pChromBase & NUCONLYMSK) != (*pReadBase & NUCONLYMSK))
-				CurHamming++;
-		pHammDist[CurHamming] += 1;
-		if(MinHamming > CurHamming)
-			MinHamming = CurHamming;
-		}
-	}
-return(MinHamming);
-}
-
-int		// minimum Hamming for Crick strand
-CSimReads::HammingDistCntsC(int ReadLen,		// read length
-			   int ChromID,     // from which chromosome was this read was derived
-			   int ReadLoci,	// read start loci
-			   etSeqBase *pRead, // read sequence
-   			 UINT32 *pHammDist)	// where to return hamming dist counts (assumes at least ReadLen elements)
-{
-int MinHamming;
-int ChromIdx;
-int SeqIdx;
-int ChromSeqIdx;
-int CurHamming;
-int EndIdx;
-tsSRChromSeq *pChrom;
-etSeqBase *pChromBase;
-etSeqBase *pChromSeq;
-etSeqBase *pReadBase;
-
-MinHamming = ReadLen;
-pChrom = &m_pChromSeqs[0];
-for(ChromIdx = 0; ChromIdx < m_NumChromSeqs; ChromIdx++, pChrom++)
-	{
-	pChromSeq = &m_pGenomeSeq[pChrom->SeqOfs];
-	EndIdx = pChrom->Len - ReadLen;
-	for(ChromSeqIdx=0;ChromSeqIdx <= EndIdx; ChromSeqIdx++,pChromSeq++)
-		{
-		pChromBase = pChromSeq;
-		pReadBase = pRead;
-		CurHamming = 0;
-		for(SeqIdx=0;SeqIdx < ReadLen; SeqIdx++,pChromBase++,pReadBase++)
-			if((*pChromBase & NUCONLYMSK) != (*pReadBase & NUCONLYMSK))
-				CurHamming+=1;
-		pHammDist[CurHamming] += 1;
-		if(MinHamming > CurHamming)
-			MinHamming = CurHamming;
-		}
-	}
-return(MinHamming);
-}
 
 int
 CSimReads::LocateRevCplSeq(int Len,etSeqBase *pProbe,int NumSortedReads)

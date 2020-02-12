@@ -56,7 +56,6 @@ Process(etSRPMode PMode,		// processing mode
 		int SNPrate,		// simulate SNPs at this rate per million bases
 		int InDelSize,		// simulated InDel size range
 		double InDelRate,	// simulated InDel rate per read
-		bool bReadHamDist,	// true if hamming distributions from each sampled read to all other genome subsequences to be generated
 		etSRFMode FMode,		// output format
 		int NumThreads,		// number of worker threads to use
 		char Strand,		// generate for this strand '+' or '-' or for both '*'
@@ -71,13 +70,11 @@ Process(etSRPMode PMode,		// processing mode
 		int CutMin,			// min cut length
 		int CutMax,			// max cut length
 		bool bDedupe,		// true if unique read sequences only to be generated
-		int DfltHamming,	// if < 0 then dynamically determine Hamming distance otherwise use this value as the Hamming
 		int Region,			// Process regions 0:ALL,1:CDS,2:5'UTR,3:3'UTR,4:Introns,5:5'US,6:3'DS,7:Intergenic (default = ALL)
 		int UpDnRegLen,		// if processing regions then up/down stream regulatory length
 		char *pszFeatFile,	// optionally generate transcriptome reads from features or genes in this BED file
 		char *pszInFile,	// input from this bioseq assembly
 		char *pszProfFile,	// input from this profile site preferences file
-		char *pszHammFile,	// use Hamming edit distances from this file
 		char *pszOutPEFile, // output partner paired end simulated reads to this file
 		char *pszOutFile,	// output simulated reads to this file
 		char *pszOutSNPs);   // output simulated SNP loci to this file
@@ -103,17 +100,16 @@ int Idx;
 int LenReq;
 
 etSRPMode PMode;					// processing mode
-etSRFMode FMode;					// output format - csv loci, csv loci +seq or multifasta
+etSRFMode FMode;					// multifasta
 char Strand;				// generate for this strand '+' or '-' or for both '*'
 int NumReads;				// number of reads required
 int ReadLen;				// read lengths
 int CutMin;					// min length
 int CutMax;					// max cut length
 bool bDedupe;				// true if unique reads only to be generated
-int DfltHamming;			// if >= 0 then the default Hamming edit distance to use
+
 int NumberOfProcessors;		// number of installed CPUs
 int NumThreads;				// number of threads (0 defaults to number of CPUs)
-bool bReadHamDist;			// true if hamming distributions from each sampled read to all other genome subsequences to be generated
 int SNPrate;				// generate SNPs at this rate per million bases
 
 etSRBEDRegion Region;					// Process regions 0:ALL,1:CDS,2:5'UTR,3:3'UTR,4:Introns,5:5'US,6:3'DS,7:Intergenic (default = ALL)
@@ -135,7 +131,6 @@ char szProfFile[_MAX_PATH];// input from this profile site preferences file
 char szOutFile[_MAX_PATH];	// output simulated reads to this file
 char szOutPEFile[_MAX_PATH];// output partner paired end simulated reads to this file
 char szSNPFile[_MAX_PATH];	// output simulated SNPs to this file
-char szHammFile[_MAX_PATH];	// hamming edit distance file
 char szFeatFile[_MAX_PATH]; // optional BED feature or gene file if generating transcriptome reads
 
 double Artef5Rate;			// rate (0..1) at which to insert 5' artefact sequences
@@ -157,7 +152,7 @@ struct arg_int *FileLogLevel=arg_int0("f", "FileLogLevel",		"<int>","Level of di
 struct arg_file *LogFile = arg_file0("F","log","<file>",		"diagnostics log file");
 
 struct arg_int *pmode = arg_int0("m","mode","<int>",		    "processing mode: 0 - random start and end, 1 - Profiled start with random end sites, 2 - random start with profiled end sites,  3 - profiled start with profiled end sites, 4 - same as standard with Hammings (0 - default)");
-struct arg_int *fmode = arg_int0("M","format","<int>",		    "output format: 0 - CSV loci only, 1 - CSV loci with sequence, 2 - multifasta wrapped, 3 - multifasta non-wrapped, 4 - SOLiD colorspace, 5 - SOLiD for BWA (default: 3)");
+struct arg_int *fmode = arg_int0("M","format","<int>",		    "output format: 0 - multifasta wrapped, 1 - multifasta non-wrapped");
 struct arg_int *numreads = arg_int0("n","nreads","<int>",	    "number of reads required, minimum 5, maximum 500000000 (default = 10000000)");
 
 
@@ -178,19 +173,13 @@ struct arg_int *cutmin = arg_int0("c","cutmin","<int>",		    "min cut length (mi
 struct arg_int *cutmax = arg_int0("C","cutmax","<int>",		    "max cut length (maximum = 100000)");
 struct arg_file *infile = arg_file1("i","in","<file>",			"input from this raw multifasta or bioseq assembly");
 struct arg_file *inmnase = arg_file0("I","inprofile","<file>",	"input from this profile site preferences file");
-
 struct arg_int *distcluster = arg_int0("D","distcluster","<int>","distribute generated reads as clusters into windows of this median length (0..300), 0 if no clustering");
-
 struct arg_file *featfile = arg_file0("t","featfile","<file>",	"use features or genes in this BED file to generate transcriptome reads from target genome");
-
-struct arg_file *hammfile = arg_file0("H","hammingfile","<file>","use distances in this Hamming edit distance file (.hmg) for targeted genome instead of dynamic generation");
 struct arg_file *outfile = arg_file1("o","out","<file>",		"output simulated (or N/1 if paired) reads to this file");
 struct arg_file *outpefile = arg_file0("O","outpe","<file>",	"output simulated (N/2) paired end reads to this file");
 struct arg_file *outsnpfile = arg_file0("u","outsnp","<file>",	"output simulated SNP loci to this BED file, if no SNP rate specified then defaults to 1000 per Mbp");
 struct arg_int *threads = arg_int0("T","threads","<int>",		"number of processing threads 0..128 (defaults to 0 which sets threads to number of CPU cores)");
 struct arg_lit  *dedupe = arg_lit0("d","dedupe",                "generate unique read sequences only");
-struct arg_int *hamming = arg_int0("e","hamming","<int>",		"if specified and < 0, then dynamically generate Hamming edit distances, otherwise use this static distance (default = static generation with Hamming 0)");
-struct arg_lit  *readhamdist = arg_lit0("r","readhamdist",      "generate hamming distribution from each simulated read to all other subsequences of same length in genome");
 struct arg_int *snprate = arg_int0("N","snprate","<int>",       "generate SNPs at the specified rate per Mb (default = 0, range 1..20000)");
 
 struct arg_lit  *pegen = arg_lit0("p","pegen",				    "generate paired end reads");
@@ -213,10 +202,10 @@ struct arg_str *experimentdescr = arg_str0("W","experimentdescr","<str>",	"exper
 struct arg_end *end = arg_end(200);
 
 void *argtable[] = {help,version,FileLogLevel,LogFile,
-					pmode,region,updnreglen,pegen,pemin,pemax,readhamdist,fmode,numreads,proprandreads,snprate,generrmode,distcluster,seqerrrate,seqerrprof,
+					pmode,region,updnreglen,pegen,pemin,pemax,fmode,numreads,proprandreads,snprate,generrmode,distcluster,seqerrrate,seqerrprof,
 					artif5rate,artif5str,artif3rate,artif3str,
-					indelsize,indelrate,strand,readlen,cutmin,cutmax,dedupe,hamming,featfile,
-					infile,inmnase,hammfile,outpefile,outfile,outsnpfile,summrslts,
+					indelsize,indelrate,strand,readlen,cutmin,cutmax,dedupe,featfile,
+					infile,inmnase,outpefile,outfile,outsnpfile,summrslts,
 					experimentname,experimentdescr,
 					threads,
 					end};
@@ -361,185 +350,128 @@ if (!argerrors)
 		exit(1);
 		}
 
-	bReadHamDist = readhamdist->count ? true : false;
-	if(PMode == eSRPMSampHamm)
-		bReadHamDist = true;
-
-	if(bReadHamDist)
-		{
-		Region = region->count ? (etSRBEDRegion)region->ival[0] : eSRMEGRAny;	// default as being any region
-		if(Region < eSRMEGRAny)
-			{
-			printf("\nSpecified region '-G%d' < 0, assuming you meant ANY region",Region);
-			Region = eSRMEGRAny;
-			}
-		else
-			{
-			if(Region > eSRMEGRIntergenic)
-				{
-				printf("\nSpecified region '-n%d' > %d, assuming you meant Intergenic",Region,eSRMEGRIntergenic);
-				Region = eSRMEGRIntergenic;
-
-				}
-			}
-		if(Region != eSRMEGRAny)
-			{
-			UpDnRegLen = updnreglen->count ? updnreglen->ival[0] : cUpdnstream;
-			if(UpDnRegLen < 0 || UpDnRegLen > 100000)
-				{
-				gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Up/Dn stream regulatory region '-u%d' specified outside the range 0..100000",UpDnRegLen);
-				exit(1);
-				}
-			}
-		else
-			UpDnRegLen = 0;
-		}
-	else
-		{
-		Region = eSRMEGRAny;
-		UpDnRegLen = 0;
-		}
+	Region = eSRMEGRAny;
+	UpDnRegLen = 0;
 
 	InDelRate = 0.0f;
 	InDelSize = 0;
-	if(!bReadHamDist)
+
+	bPEgen = pegen->count ? true : false;
+	if(bPEgen && PMode != eSRPMStandard)
 		{
-		bPEgen = pegen->count ? true : false;
-		if(bPEgen && PMode != eSRPMStandard)
-			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Processing mode '-m%d' not supported when generating paired ends",PMode);
-			exit(1);
-			}
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Processing mode '-m%d' not supported when generating paired ends",PMode);
+		exit(1);
+		}
 
-		if(bPEgen && outpefile->count == 0)
-			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Paired end processing '-p' requested but no partner paired end output file specifed with '-O<file>'");
-			exit(1);
-			}
+	if(bPEgen && outpefile->count == 0)
+		{
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Paired end processing '-p' requested but no partner paired end output file specifed with '-O<file>'");
+		exit(1);
+		}
 
-		FMode = (etSRFMode)(fmode->count ? fmode->ival[0] : eSRFMNWFasta);
-		if(FMode < eSRFMcsv || FMode >= eSRFMplaceholder)
-			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Output format '-m%d' specified outside of range %d..%d",PMode,(int)eSRFMcsv,(int)eSRFMplaceholder-1);
-			exit(1);
-			}
+	FMode = (etSRFMode)(fmode->count ? fmode->ival[0] : eSRFMFasta);
+	if(FMode < eSRFMFasta || FMode >= eSRFMplaceholder)
+		{
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Output format '-m%d' specified outside of range %d..%d",PMode,(int)eSRFMFasta,(int)eSRFMplaceholder-1);
+		exit(1);
+		}
 
-		if(bPEgen && !(FMode == eSRFMNWFasta || FMode == eSRFMFasta))
-			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Output format '-M%d' not supported (only fasta output supported) when generating paired ends",FMode);
-			exit(1);
-			}
+	if(bPEgen && !(FMode == eSRFMNWFasta || FMode == eSRFMFasta))
+		{
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Output format '-M%d' not supported (only fasta output supported) when generating paired ends",FMode);
+		exit(1);
+		}
 
-		PropRandReads = proprandreads->count ? proprandreads->dval[0] : 0.0;
-		if(PropRandReads < 0.0 || PropRandReads >= 0.9000)
-			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Proportion of random reads '-R%f' must in range 0 to 0.9000",PropRandReads);
-			exit(1);
-			}
+	PropRandReads = proprandreads->count ? proprandreads->dval[0] : 0.0;
+	if(PropRandReads < 0.0 || PropRandReads >= 0.9000)
+		{
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Proportion of random reads '-R%f' must in range 0 to 0.9000",PropRandReads);
+		exit(1);
+		}
 
-		SNPrate = snprate->count ? snprate->ival[0] : 0;
-		if(SNPrate < 0 || SNPrate > 20000)
-			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: simulated SNP rate '-N%d' specified outside of range 0..20000",SNPrate);
-			exit(1);
-			}
+	SNPrate = snprate->count ? snprate->ival[0] : 0;
+	if(SNPrate < 0 || SNPrate > 20000)
+		{
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: simulated SNP rate '-N%d' specified outside of range 0..20000",SNPrate);
+		exit(1);
+		}
 
-		if(outsnpfile->count)
+	if(outsnpfile->count)
+		{
+		strncpy(szSNPFile,outsnpfile->filename[0],_MAX_PATH);
+		szSNPFile[_MAX_PATH-1] = '\0';
+		if(SNPrate == 0)
 			{
-			strncpy(szSNPFile,outsnpfile->filename[0],_MAX_PATH);
-			szSNPFile[_MAX_PATH-1] = '\0';
-			if(SNPrate == 0)
-				{
-				gDiagnostics.DiagOut(eDLInfo,gszProcName,"Info: SNP file output requested but no SNP rate specified, defaulting SNP rate to 1000 per Mbp");
-				SNPrate = 1000;
-				}
+			gDiagnostics.DiagOut(eDLInfo,gszProcName,"Info: SNP file output requested but no SNP rate specified, defaulting SNP rate to 1000 per Mbp");
+			SNPrate = 1000;
 			}
-		else
-			szSNPFile[0] = '\0';
-
-		DistCluster = distcluster->count ? distcluster->ival[0] : 0;
-		if(DistCluster < 0 || DistCluster > cMaxDistClusterLen)
-			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: distributed cluster size '-D%d' must be in range 0 to %d",DistCluster,cMaxDistClusterLen);
-			exit(1);
-			}
-
-		InDelRate = indelrate->count ? indelrate->dval[0] : 0.0f;
-		if(InDelRate < 0.0 || InDelRate > 1.0)
-			{
-			printf("\nError: simulated InDel size range '-X%f' must be in range 0.0 to 1.0",InDelRate);
-			exit(1);
-			}
-		if(InDelRate > 0.0)
-			{
-			InDelSize = indelsize->count ? indelsize->ival[0] :3;
-			if(InDelSize < 1 || InDelSize > 9)
-				{
-				gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: simulated InDel size range '-x%d' specified outside of range 1..9",InDelSize);
-				exit(1);
-				}
-			}
-		else
-			InDelSize = 0;
-
-		SEMode = (etSRSEMode)(generrmode->count ? generrmode->ival[0] : eSRSEPnone);
-		if(SEMode < eSRSEPnone || SEMode >= eSRSEPplaceholder)
-			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: simulated error rate mode '-m%d' specified outside of range %d..%d",SEMode,(int)eSRSEPnone,(int)eSRSEPplaceholder-1);
-			exit(1);
-			}
-		if(SEMode == eSRSEPdyn || SEMode == eSRSEPfixerrs)
-			{
-			SeqErrRate = SEMode == eSRSEPdyn ? 0.01 : 5.0;
-			double MaxSeqErrRate = SEMode == eSRSEPdyn ? 0.20 : 30;
-			SeqErrRate = seqerrrate->count ? seqerrrate->dval[0] : SeqErrRate;
-			if(SeqErrRate < 0.0 || SeqErrRate > MaxSeqErrRate)
-				{
-				gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: sequencer error rate '-z%f' must be in range 0.0 to %f",SeqErrRate,MaxSeqErrRate);
-				exit(1);
-				}
-			}
-		else
-			SeqErrRate = -1;
-
-		if((FMode < eSRFMNWFasta) && SEMode != eSRSEPnone)
-			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: sequencer error rate mode '-g%d' only allowed if generating multifasta output with '-M2/3/4'",SEMode);
-			exit(1);
-			}
-
-		bSeqErrProfile = seqerrprof->count ? true : false;
-		if(bSeqErrProfile && SEMode == eSRSEPnone)
-			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Uniform profile '-Z' requested but no error rate mode specified with '-g<mode>'");
-			exit(1);
-			}
-
 		}
 	else
+		szSNPFile[0] = '\0';
+
+	DistCluster = distcluster->count ? distcluster->ival[0] : 0;
+	if(DistCluster < 0 || DistCluster > cMaxDistClusterLen)
 		{
-		SEMode = eSRSEPnone;
-		FMode = eSRFMcsv;
-		bPEgen = false;
-		DistCluster = 0;
-		SNPrate = 0;
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: distributed cluster size '-D%d' must be in range 0 to %d",DistCluster,cMaxDistClusterLen);
+		exit(1);
+		}
+
+	InDelRate = indelrate->count ? indelrate->dval[0] : 0.0f;
+	if(InDelRate < 0.0 || InDelRate > 1.0)
+		{
+		printf("\nError: simulated InDel size range '-X%f' must be in range 0.0 to 1.0",InDelRate);
+		exit(1);
+		}
+	if(InDelRate > 0.0)
+		{
+		InDelSize = indelsize->count ? indelsize->ival[0] :3;
+		if(InDelSize < 1 || InDelSize > 9)
+			{
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: simulated InDel size range '-x%d' specified outside of range 1..9",InDelSize);
+			exit(1);
+			}
+		}
+	else
 		InDelSize = 0;
-		PropRandReads = 0.0;
-		SeqErrRate = 0;
-		bSeqErrProfile = false;
-		}
 
-
-	if(bReadHamDist)
-		Strand = '+';
-	else
+	SEMode = (etSRSEMode)(generrmode->count ? generrmode->ival[0] : eSRSEPnone);
+	if(SEMode < eSRSEPnone || SEMode >= eSRSEPplaceholder)
 		{
-		Strand = strand->count ? *(char *)strand->sval[0] : '*';
-		if(!(Strand == '+' || Strand == '-' || Strand == '*'))
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: simulated error rate mode '-m%d' specified outside of range %d..%d",SEMode,(int)eSRSEPnone,(int)eSRSEPplaceholder-1);
+		exit(1);
+		}
+	if(SEMode == eSRSEPdyn || SEMode == eSRSEPfixerrs)
+		{
+		SeqErrRate = SEMode == eSRSEPdyn ? 0.01 : 5.0;
+		double MaxSeqErrRate = SEMode == eSRSEPdyn ? 0.20 : 30;
+		SeqErrRate = seqerrrate->count ? seqerrrate->dval[0] : SeqErrRate;
+		if(SeqErrRate < 0.0 || SeqErrRate > MaxSeqErrRate)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Strand specified '-s%c' must be one of '+', '-' or '*'",Strand);
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: sequencer error rate '-z%f' must be in range 0.0 to %f",SeqErrRate,MaxSeqErrRate);
 			exit(1);
 			}
+		}
+	else
+		SeqErrRate = -1;
+
+	if((FMode < eSRFMNWFasta) && SEMode != eSRSEPnone)
+		{
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: sequencer error rate mode '-g%d' only allowed if generating multifasta output with '-M2/3/4'",SEMode);
+		exit(1);
+		}
+
+	bSeqErrProfile = seqerrprof->count ? true : false;
+	if(bSeqErrProfile && SEMode == eSRSEPnone)
+		{
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Uniform profile '-Z' requested but no error rate mode specified with '-g<mode>'");
+		exit(1);
+		}
+
+	Strand = strand->count ? *(char *)strand->sval[0] : '*';
+	if(!(Strand == '+' || Strand == '-' || Strand == '*'))
+		{
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Strand specified '-s%c' must be one of '+', '-' or '*'",Strand);
+		exit(1);
 		}
 
 	NumReads = numreads->count ? numreads->ival[0] : cSRDfltNumReads;
@@ -555,27 +487,6 @@ if (!argerrors)
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Read length '-a%d' specified outside of range %d..%d",ReadLen,cSRMinReadLen,cSRMaxReadLen);
 		exit(1);
 		}
-
-	if(!bReadHamDist) // if not generating Hammings to all other subsequences
-		{
-		DfltHamming = hamming->count ? hamming->ival[0] : 0;
-		if(DfltHamming > ReadLen)
-			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Hamming edit distance '-e%d' must be <= read length %d",DfltHamming,ReadLen);
-			exit(1);
-			}
-		else
-			if(DfltHamming < 0)
-				DfltHamming = -1;
-
-		if((DfltHamming == -1 || hamming->count == 0) && hammfile->count)
-			{
-			strncpy(szHammFile,hammfile->filename[0],_MAX_PATH);
-			szHammFile[_MAX_PATH-1] = '\0';
-			DfltHamming = -1;
-			}
-		else
-			szHammFile[0] = '\0';
 
 		CutMin = cutmin->count ? cutmin->ival[0] : ReadLen;
 		if(CutMin < ReadLen || CutMin > cSRMaxCutLen)
@@ -620,16 +531,6 @@ if (!argerrors)
 			PEmin = 0;
 			PEmax = 0;
 			}
-		}
-	else
-		{
-		CutMin = ReadLen;
-		CutMax = ReadLen;
-		DfltHamming = 0;
-		szHammFile[0] = '\0';
-		PEmin = 0;
-		PEmax = 0;
-		}
 
 	bDedupe = dedupe->count ? true : false;
 
@@ -655,7 +556,7 @@ if (!argerrors)
 		{
 		strncpy(szFeatFile,featfile->filename[0],_MAX_PATH);
 		szFeatFile[_MAX_PATH-1] = '\0';
-		FMode = eSRFMcsv;
+		FMode = eSRFMFasta;
 		}
 	else
 		szFeatFile[0] = '\0';
@@ -675,7 +576,7 @@ if (!argerrors)
 	int MaxArtefLen = min(ReadLen - 5,cMaxArtefSeqLen);
 	if(artif5rate->count ||  artif3rate->count)
 		{
-		if(!(FMode == eSRFMNWFasta || FMode == eSRFMFasta ) || bPEgen || Region != eSRMEGRAny || bDedupe || bReadHamDist)
+		if(!(FMode == eSRFMNWFasta || FMode == eSRFMFasta ) || bPEgen || Region != eSRMEGRAny || bDedupe)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Sorry artefact sequence processing not supported with currently selected options - only single end fasta is supported!");
 			exit(1);
@@ -827,30 +728,15 @@ if (!argerrors)
 		case eSRPMProfProf:
 			pszDescr = "profiled start with profiled end sites";
 			break;
-		case eSRPMSampHamm:
-			pszDescr = "random start and random end sites with Hamming generation in 'uhamming' format";
-			break;
 		}
 	gDiagnostics.DiagOutMsgOnly(eDLInfo,"processing mode is : '%s'",pszDescr);
 
 	switch(FMode) {
-		case eSRFMcsv:
-			pszDescr = "CSV loci only";
-			break;
-		case eSRFMcsvSeq:
-			pszDescr = "CSV loci + sequence";
-			break;
 		case eSRFMFasta:
 			pszDescr = "Multifasta, wrapped read sequences";
 			break;
 		case eSRFMNWFasta:
 			pszDescr = "Multifasta, non-wrapped read sequences";
-			break;
-		case eSRFMSOLiD:
-			pszDescr = "SOLiD colorspace csfasta";
-			break;
-		case eSRFMSOLiDbwa:
-			pszDescr = "SOLiD colorspace reads in double encoded basespace to suit BWA in fastq";
 			break;
 		}
 
@@ -923,23 +809,10 @@ if (!argerrors)
 	else
 		gDiagnostics.DiagOutMsgOnly(eDLInfo,"Induce 3' artefacts at this rate: %1.2f",Artef3Rate);
 
-	gDiagnostics.DiagOutMsgOnly(eDLInfo,"Generate Hamming distributions for each simulated read: %s",bReadHamDist?"Yes":"No");
+	gDiagnostics.DiagOutMsgOnly(eDLInfo,"min cut length: %d",CutMin);
+	gDiagnostics.DiagOutMsgOnly(eDLInfo,"max cut length: %d",CutMax);
+	gDiagnostics.DiagOutMsgOnly(eDLInfo,"unique read sequences only: %s",bDedupe ? "yes" : "no");
 
-	if(!bReadHamDist)
-		{
-		gDiagnostics.DiagOutMsgOnly(eDLInfo,"min cut length: %d",CutMin);
-		gDiagnostics.DiagOutMsgOnly(eDLInfo,"max cut length: %d",CutMax);
-		gDiagnostics.DiagOutMsgOnly(eDLInfo,"unique read sequences only: %s",bDedupe ? "yes" : "no");
-		if(DfltHamming == -1)
-			{
-			if(szHammFile[0] == '\0')
-				gDiagnostics.DiagOutMsgOnly(eDLInfo,"Dynamically generate Hamming edit distances (VERY SLOW!)");
-			else
-				gDiagnostics.DiagOutMsgOnly(eDLInfo,"Use Hamming edit distances from this file: '%s'",szHammFile);
-			}
-		else
-			gDiagnostics.DiagOutMsgOnly(eDLInfo,"Default Hamming edit distances: %d",DfltHamming);
-		}
 
 	gDiagnostics.DiagOutMsgOnly(eDLInfo,"input bioseq assembly file: '%s'",szInFile);
 	if(PMode != eSRPMStandard)
@@ -980,8 +853,6 @@ if (!argerrors)
 		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,sizeof(CutMin),"cutmin",&CutMin);
 		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,sizeof(CutMax),"cutmax",&CutMax);
 		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,sizeof(bTrueInt),"dedupe",bDedupe  == true ? &bTrueInt : &bFalseInt);
-		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,sizeof(DfltHamming),"hamming",&DfltHamming);
-		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,sizeof(bTrueInt),"readhamdist",bReadHamDist  == true ? &bTrueInt : &bFalseInt);
 		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,sizeof(NumThreads),"threads",&NumThreads);
 		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,sizeof(SNPrate),"snprate",&SNPrate);
 		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,sizeof(Region),"genomicregion",&Region);
@@ -1015,8 +886,6 @@ if (!argerrors)
 			ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTText,(int)strlen(szOutPEFile),"outpe",szOutPEFile);
 		if(szSNPFile[0] != '\0')
 			ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTText,(int)strlen(szSNPFile),"outsnp",szSNPFile);
-		if(szHammFile[0] != '\0')
-			ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTText,(int)strlen(szHammFile),"hammingfile",szHammFile);
 		if(szFeatFile[0] != '\0')
 			ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTText,(int)strlen(szFeatFile),"featfile",szFeatFile);
 
@@ -1034,9 +903,9 @@ if (!argerrors)
 	gStopWatch.Start();
 	Rslt = Process((etSRPMode)PMode,SEMode,bPEgen,PEmin,PEmax,PropRandReads,
 			DistCluster,SeqErrRate,bSeqErrProfile,SNPrate,
-						InDelSize,InDelRate,bReadHamDist,FMode,NumThreads,Strand,NumReads,
+						InDelSize,InDelRate,FMode,NumThreads,Strand,NumReads,
 						ReadLen,Artef5Rate,NumArtef5Seqs,pszArtef5Seqs,Artef3Rate,NumArtef3Seqs,pszArtef3Seqs,
-						CutMin,CutMax,bDedupe,DfltHamming,Region,UpDnRegLen,szFeatFile,szInFile,szProfFile,szHammFile,szOutPEFile,szOutFile,szSNPFile);
+						CutMin,CutMax,bDedupe,Region,UpDnRegLen,szFeatFile,szInFile,szProfFile,szOutPEFile,szOutFile,szSNPFile);
 	Rslt = Rslt >=0 ? 0 : 1;
 	if(gExperimentID > 0)
 		{
@@ -1070,7 +939,6 @@ Process(etSRPMode PMode,		// processing mode
 		int SNPrate,		// simulate SNPs at this rate per million bases
 		int InDelSize,		// simulated InDel size range
 		double InDelRate,	// simulated InDel rate per read
-		bool bReadHamDist,	// true if hamming distributions from each sampled read to all other genome subsequences to be generated
 		etSRFMode FMode,		// output format
 		int NumThreads,		// number of worker threads to use
 		char Strand,		// generate for this strand '+' or '-' or for both '*'
@@ -1085,13 +953,11 @@ Process(etSRPMode PMode,		// processing mode
 		int CutMin,			// min cut length
 		int CutMax,			// max cut length
 		bool bDedupe,		// true if unique read sequences only to be generated
-		int DfltHamming,	// if < 0 then dynamically determine Hamming distance otherwise use this value as the Hamming
 		int Region,			// Process regions 0:ALL,1:CDS,2:5'UTR,3:3'UTR,4:Introns,5:5'US,6:3'DS,7:Intergenic (default = ALL)
 		int UpDnRegLen,		// if processing regions then up/down stream regulatory length
 		char *pszFeatFile,	// optionally generate transcriptome reads from features or genes in this BED file
 		char *pszInFile,	// input from this bioseq assembly
 		char *pszProfFile,	// input from this profile site preferences file
-		char *pszHammFile,	// use Hamming edit distances from this file
 		char *pszOutPEFile, // output partner paired end simulated reads to this file
 		char *pszOutFile,	// output simulated reads to this file
 		char *pszOutSNPs)   // output simulated SNP loci to this file
@@ -1106,12 +972,11 @@ if((pSimReads = new CSimReads) == NULL)
 	}
 
 Rslt = pSimReads->GenSimReads(PMode, SEMode, bPEgen, PEmin, PEmax, PropRandReads, DistCluster,
-		SeqErrRate,	bSeqErrProfile,	SNPrate, InDelSize,	InDelRate, bReadHamDist, FMode,
+		SeqErrRate,	bSeqErrProfile,	SNPrate, InDelSize,	InDelRate, FMode,
 		NumThreads,	Strand,	NumReads, ReadLen,	Artef5Rate,	NumArtef5Seqs, pszArtef5Seqs,Artef3Rate,NumArtef3Seqs,	
-		pszArtef3Seqs,	CutMin,	CutMax,	bDedupe,DfltHamming,Region,	UpDnRegLen,	pszFeatFile,pszInFile,pszProfFile,pszHammFile,pszOutPEFile,	pszOutFile,	pszOutSNPs);
+		pszArtef3Seqs,	CutMin,	CutMax,	bDedupe,Region,	UpDnRegLen,	pszFeatFile,pszInFile,pszProfFile,pszOutPEFile,	pszOutFile,	pszOutSNPs);
 delete pSimReads;
 return(Rslt);
-
 }
 
 

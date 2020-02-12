@@ -845,6 +845,23 @@ if(m_hFile == -1)						// file has to be opened!
 return(eBSFSuccess);
 }
 
+int
+CCSVFile::GetChar(int FieldID, char* pRetChar)
+{
+char *pCurChar;
+char CurChar;
+if (FieldID < 1 || FieldID > m_CurNumFields)
+	return(eBSFerrFieldID);
+if (m_hFile == -1)						// file has to be opened!
+	return(eBSFerrFileClosed);
+pCurChar = m_pFields[FieldID - 1].pValue;
+while ((CurChar = *pCurChar++) != '\0')
+	if(!(CurChar <= ' ' || CurChar >= '~' || CurChar == '"' || CurChar == '\'' || CurChar == '`'))
+		break;
+*pRetChar = CurChar;
+return(eBSFSuccess);
+}
+
 
 int 
 CCSVFile::GetLineNumber(void)			// get current line number

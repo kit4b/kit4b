@@ -25,7 +25,10 @@ const int cSRMinNumReads =  5;			// minimum number of reads
 const int cSRMaxNumReads =  500000000;	// maximum number of reads
 const int cSRMinReadLen  =  20;			// minimum read length
 const int cSRDfltReadLen= 100;			// default read length
-const int cSRMaxReadLen = 100000;		// max simulated read length
+const int cSRMaxReadLen = 1000;			// max simulated read length
+const int cSRMaxCIGARLen = 100;			// limit any CIGAR string to be at most this length
+
+const int cSRMinChromLen = 1000;		// reads simulated from chromosomes of at least this length
 
 const int cUpdnstream = 2000;			// when regional filtering this is the length of the up/down stream region
 
@@ -37,7 +40,6 @@ const int cMaxPEFragLen     = 100000;	// paired end maximum fragment length
 
 const int cMaxDistClusterLen = 300;		// max clustered read bin size
 
-const int cMaxHammingBatchSize = 5000;	// max number of dynamic Hamming reads to simulate per thread before checkpointing to disk
 const int cMaxProfileBatchSize = 500000;  // max number of end profiled reads to simulate per thread before checkpointing to disk
 const int cMaxBatchSize = 5000000;		// max number of defaulted Hamming and non-profiled reads to simulate per thread before checkpointing to disk
 
@@ -47,14 +49,15 @@ const int cMaxBatchSize = 5000000;		// max number of defaulted Hamming and non-p
 const int cSRMaxAllocBuffChunk = 0x07fffff;			// buffer fasta
 const int cSRAllocNumChroms = 4096;					// allocate for chrom seqs in this many increments
 
+const int cSRAllocdObsErrProfMemChunk = 0x07ffffff;		// allocate for observed error profiles in this sized memory chunks 
+
 // processing modes
 typedef enum TAG_eSRPMode {
 	eSRPMStandard,					// default - standard random start and end
 	eSRPMProfRand,					// profiled start with random end sites
 	eSRPMRandProf,					// random start with profiled end sites
 	eSRPMProfProf,					// profiled start with profiled end sites
-	eSRPMSampHamm,					// same as ePMStandard except hammings also generated in same format as 'uhamming' generated
-	eSRPMplaceholder					// used to set the enumeration range
+	eSRPMplaceholder				// used to set the enumeration range
 	} etSRPMode;
 
 typedef enum TAG_eSRBEDRegion {
@@ -71,13 +74,9 @@ typedef enum TAG_eSRBEDRegion {
 
 // output format
 typedef enum TAG_eSRFMode {
-	eSRFMcsv,					// default - CSV loci only
-	eSRFMcsvSeq,				// CSV loci + sequence
 	eSRFMFasta,				// multifasta, sequences wrapped if longer than 79bp
-	eSRFMNWFasta,				// multifasta, sequences non-wrapped even if longer than 79bp
-	eSRFMSOLiD,				// SOLiD colorspace reads as csfasta
-	eSRFMSOLiDbwa,			// SOLiD colorspace reads in double encoded basespace to suit BWA as fastq
-	eSRFMplaceholder			// used to set the enumeration range
+	eSRFMNWFasta,			// multifasta, sequences non-wrapped even if longer than 79bp
+	eSRFMplaceholder		// used to set the enumeration range
 	} etSRFMode;
 
 // simulated error rate mode selection
@@ -90,23 +89,18 @@ typedef enum TAG_eSRSEMode {
 	} etSRSEMode;
 
 #pragma pack(1)
-// Hamming specific structures
-const int cMaxSRHammingChroms = 200;	// can handle at most this many chromosomes with hammings
-typedef struct TAG_sSRHamChrom {
-	UINT32 ChromID;					// uniquely identifies this chromosome
-	UINT8  szChrom[cMaxDatasetSpeciesChrom];	// chrom name
-	UINT32 NumEls;					// number of subsequences with hammings on this chrom
-	UINT8 Dists[1];					// array, in ascending loci order, of hamming distances
-} tsSRHamChrom;
 
-typedef struct TAG_sSRHamHdr {
-	UINT8 Magic[4];		        // magic chars 'bham' to identify this file as a biosequence file containing hamming edit distances
-	UINT32 Version;				// structure version
-	INT32 Len;					// file length, also allocation size required when loading hammings into memory
-	UINT16 NumChroms;		    // number of chromosomes with Hammings
-	UINT32 ChromOfs[cMaxSRHammingChroms];	// offsets to each chromosomes respective tsHamChrom
-} tsSRHamHdr;
-
+typedef struct TAG_sPackedCIGARS {
+	uint32_t ID;						// observed CIGAR identifier
+	uint16_t Size;						// actual size of this tsPackedCIGARS instance in bytes 
+	uint16_t ReadLen;					// read length
+	uint8_t FlgPE1Strand:1;				// PE1 strand - 0 if watson, 1 if crick
+	uint8_t FlgPE2Strand : 1;			// PE2 strand - 0 if watson, 1 if crick
+	uint8_t PE1NumCIGAROps;				// number of PE1 CIGAR operators
+	uint8_t PE2NumCIGAROps;				// number of PE2 CIGAR operators
+	uint32_t PEInsertSize;				// if PE then insert size
+	uint32_t CIGAROps[1];	// place holder for read CIGAR operations; PE1 first followed by PE2
+} tsPackedCIGARS;
 
 typedef struct TAG_sSRChromSeq {
 	int ChromSeqID;			// m_pChromSeqs[ChromSeqID-1] of this tsChromSeq instance
@@ -134,9 +128,7 @@ typedef struct TAG_sSRSimRead {
 	int Len;				// and was originally of this length
 	int InDelLen;			// and has had a deletion (<0) or an insertion (>0) of this length
 	int Lenx;				// resulting after the InDel in the simulated read being of this length
-	int HammingDist;		// read is at least this hamming distance from any other sequence of same length in targeted genome
 	etSeqBase *pSeq;		// pts to start of this simulated reads sequence
-	UINT32 *pHamDistFreq;	// hamming distributions from this read to all other genome subsequences of same length
 	} tsSRSimRead;
 
 // Induced errors will be heavily 3' biased simulating Illumina read substitution profiles
@@ -145,6 +137,14 @@ typedef struct TAG_sSRInduceErrProf {
 	int NumSubs;				// this number of sequencer errors
 } tsSRInduceErrProf;
 
+typedef struct TAG_sReadRprt {
+	etSeqBase FwdSeq[cMaxReadLen + 1];
+	etSeqBase RevSeq[cMaxReadLen + 1];
+	char szColorspace[cMaxReadLen + 2];
+	char szLineBuff[(cMaxReadLen + 2) * 2];
+	int LineLen;
+	int NumCols;
+} sReadRprt;
 
 typedef struct TAG_sSRWorkerPars {
 	int ThreadIdx;					// index of this thread (1..m_NumThreads)
@@ -163,10 +163,7 @@ typedef struct TAG_sSRWorkerPars {
 	int UpDnRegLen;			// if processing regions then up/down stream regulatory length
 	int NumReqReads;		// number of reads to be generated by this worker thread
 	int NumGenReads;		// number of actually generated reads
-	int DfltHamming;		// if < 0 then dynamically determine Hamming distance otherwise use this value as the Hamming
-	bool bUseLocateHamming; // if true then call LocateHamming() using distances from file instead of dynamically generating Hammings
 	bool bDedupe;			// if true then slough any reads with a Hamming of 0
-	bool bReadHamDist;		// true if hamming distributions from each sampled read to all other genome subsequences to be generated
 	int ReadLen;			// read length
 	int CutMin;				// min cut length
 	int CutMax;				// max cut length
@@ -224,15 +221,11 @@ class CSimReads
 	INT64 m_GenomeLen;				// total genome length including concatenators
 	INT32 m_GenomeScaledLen;		// sum of all chrom scaled lengths, will always be less than INT_MAX
 
-	tsSRHamHdr *m_pHamHdr;			// header for binary format hamming edit distances
-	tsSRHamChrom *m_pCurHamChrom;		// pts to current chromosome specific binary hammings
-
 	tsSRSimRead *m_pSimReads;			// allocated to hold simulated reads - NOTE: mmap/malloc used because of GNU malloc limitations
 	INT64 m_AllocdMemReads;			// actual memory allocation size used when allocating m_pSimReads
 	int m_NumReadsAllocd;			// this many reads have been allocated for in m_pSimReads
 	int m_TotReqReads;				// number of reads required to be simulated - will be 2x user requested number if simulating paired end reads
 	int m_CurNumGenReads;			// current number of generated reads - updated every N reads generated by worker threads
-	UINT32 *m_pHamDistFreq;			// allocated to hold hamming distance counts from one read to all other genome subsequences
 
 	int m_MaxFastaLineLen;			// wrap sequences in multifasta output files if line is longer than this many bases
 	int SimInDels(tsSRSimRead *pSimRead,int *pReadLen,etSeqBase *pRead);
@@ -244,6 +237,7 @@ class CSimReads
 
 	int // number of substitutions inplace induced into this read
 		SimSeqRand(int SeqLen,etSeqBase *pRead);
+
 
 #ifdef _WIN32
 	HANDLE m_hMtxDedupe;
@@ -257,7 +251,6 @@ public:
 	CSimReads();
 	~CSimReads();
 
-	void Init(void);
 	void Reset(bool bSync);
 
 	static int SortSimLoci(const void *arg1, const void *arg2);
@@ -277,7 +270,6 @@ public:
 				int SNPrate,		// simulate SNPs at this rate per million bases
 				int InDelSize,		// simulated InDel size range
 				double InDelRate,	// simulated InDel rate per read
-				bool bReadHamDist,	// true if hamming distributions from each sampled read to all other genome subsequences to be generated
 				etSRFMode FMode,		// output format
 				int NumThreads,		// number of worker threads to use
 				char Strand,		// generate for this strand '+' or '-' or for both '*'
@@ -292,13 +284,11 @@ public:
 				int CutMin,			// min cut length
 				int CutMax,			// max cut length
 				bool bDedupe,		// true if unique read sequences only to be generated
-				int DfltHamming,	// if < 0 then Hamming distance to be dynamically calculated otherwise default Hamming to this value
 				int Region,			// Process regions 0:ALL,1:CDS,2:5'UTR,3:3'UTR,4:Introns,5:5'US,6:3'DS,7:Intergenic (default = ALL)
 				int UpDnRegLen,		// if processing regions then up/down stream regulatory length
 				char *pszFeatFile,	// optionally generate transcriptome reads from features or genes in this BED file
 				char *pszInFile,	// input from this raw multifasta or bioseq assembly
 				char *pszProfFile,	// input from this profile site preferences file
-				char *pszHammFile,	// use Hamming edit distances from this file
 				char *pszOutPEFile, // output partner paired end simulated reads to this file
 				char *pszOutFile,	// output simulated reads to this file
 				char *pszOutSNPs);   // output simulated SNP loci to this file
@@ -307,6 +297,7 @@ public:
 	int LoadBioseq(size_t *pTotLen,int MinChromLen,char *pszBioSeqFile);
 	int LoadGenome(int MinChromLen,			// warn if loaded chromosomes are less than this length; may be too short to sample reads from
 			char *pszBioSeqFile);
+
 	int
 	LoadTranscriptome(char *pszBioSeqFile,			// genome assembly
 				char *pszFeatFile);				// BED file containing features or genes
@@ -320,17 +311,6 @@ public:
 	bool IsDupSeq(int Len, etSeqBase* pSeq1, etSeqBase* pSeq2); // sequences the same?
 	bool IsDupSeqStrands(int Len, etSeqBase* pReadSeq1, etSeqBase* pReadSeq2); // both the forward and reverse complements are compared for equivilence
 	void ShowDupSeqs(int ReadLen, tsSRSimRead* pRead1, tsSRSimRead* pRead2); // display duplicated sequences
-	int TransformToColorspace(UINT8* pSrcBases,		// basespace sequence to transform
-			UINT32 SeqLen,			// sequence length
-			char* pDstColorspace,	// where to write transformed
-			etSeqBase Seed);		// use this base as the seed base immediately preceding the first base
-	
-	// TransformToColorspaceBase
-// BWA requires that the colorspace be represented as double encoded basespace - UGH!!!
-	int	TransformToColorspaceBase(UINT8* pSrcBases,		// basespace sequence to transform
-			UINT32 SeqLen,			// sequence length
-			char* pDstColorspace,	// where to write transformed
-			etSeqBase Seed);		// use this base as the seed base immediately preceding the first base
 
 	int
 		ReportReads(bool bPEgen,			// true if paired end simulated reads being simulated
@@ -339,7 +319,6 @@ public:
 			int NumPrevReported,	// number of reads previously reported
 			int MaxReads,			// maximum number of reads remaining to be reported
 			bool bDedupe,			// true if reads are to be deduped
-			bool bReadHamDist,	    // true if hamming distributions from each sampled read to all other genome subsequences to be generated
 			int AvailReads);			// number of reads to be reported on from m_pSimReads[]
 
 	int
@@ -359,42 +338,6 @@ int GenMSeqIdx(int SeqLen,etSeqBase *pSeq);
 int
 InitProfSitePrefs(char *pszInProfFile);	// read from this profile site selectivity file (for MNase, generated by MNaseSitePred process), if NULL then static profiling
 
-	teBSFrsltCodes LoadHammings(char *pszHammings);
-
-	int				// returned Hamming distance, -1 if no hammings loaded, -2 if chrom not matched, -3 if loci outside of range
-		LocateHamming(char *pszChrom,UINT32 Loci);
-
-	int		// returned minimum Hamming distance, checks for self-loci
-		MinHammingDistW(int MinHamming,	// initial minimum Hamming distance
-			   int ReadLen,		// read length
-			   int ChromID,     // from which chromosome was this read was derived
-			   int ReadLoci,	// read start loci
-			   etSeqBase *pRead); // read sequence
-
-	int		// returned minimum Hamming distance, no check for self-loci
-		MinHammingDistC(int MinHamming,	// initial minimum Hamming distance
-			   int ReadLen,		// read length
-			   int ChromID,     // from which chromosome was this read was derived
-			   int ReadLoci,	// read start loci
-			   etSeqBase *pRead); // read sequence
-
-	int		// returned minimum Watson Hamming
-		HammingDistCntsW(int ReadLen,		// read length
-			 int ChromID,     // from which chromosome was this read was derived
-			 int ReadLoci,	// read start loci
-			 etSeqBase *pRead, // read sequence
-			 UINT32 *pHammDist);	// where to return hamming dist counts (assumes at least ReadLen elements)
-
-	int		// returned minimum Crick Hamming
-		HammingDistCntsC(int ReadLen,		// read length
-			   int ChromID,     // from which chromosome was this read was derived
-			   int ReadLoci,	// read start loci
-			   etSeqBase *pRead, // read sequence
-   			 UINT32 *pHammDist);	// where to return hamming dist counts (assumes at least ReadLen elements)	
-
 	int ThreadSimReads(void * pThreadPars);
-
-
-
 };
 

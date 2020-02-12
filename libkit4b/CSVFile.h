@@ -109,10 +109,11 @@ public:
 	int GetQuotedErrs(int FieldID);		  // 0 if noerrs, < 0 if errors
 	int GetQuotedIncomplete(int FieldID); // 0 if noerrs, < 0 if errors
 
-	int GetInt(int FieldID,int *pRetInt);	// parses (atoi) and returns specified field as int
-	int GetLong(int FieldID,long *pRetLong);		// parses (atol) and returns specified field as long
+	int GetInt(int FieldID,int *pRetInt);	    // parses (atoi) and returns specified field as int
+	int GetLong(int FieldID,long *pRetLong);	// parses (atol) and returns specified field as long
 	int GetInt64(int FieldID,INT64 *pRetInt64);	// parses (atoi64) and returns specified field as INT64
 	int GetDouble(int FieldID,double *pRetDouble); // parses (atof) and returns specified field as double
-	int GetText(int FieldID,char **ppRetText);			// returns text from specified field in current line 
+	int GetChar(int FieldID, char* pRetChar);	// returns first non-white space char which is not a single or double quote char, '\0' if none
+	int GetText(int FieldID,char **ppRetText);	// returns text from specified field in current line 
 	int GetLine(int Max2Ret,char *pRetLine);	// returns a copy of raw line as processed by NextLine 
 };

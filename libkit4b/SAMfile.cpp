@@ -669,14 +669,22 @@ CSAMfile::ReadSequence(void *pRetSeq,	// where to return sequence, can be NULL i
 {
 int LineLen;
 char *pTxt;
-char szLine[cMaxReadLen  * 3];				// buffer input lines
-etSeqBase SeqBases[cMaxReadLen*3];
+char *pszLine;				// buffer input lines
+etSeqBase *pSeqBases;
 char szCigar[128];
 char szRNext[128];
 int MAPQ;
 int PNext;
 int TLen;
 int SeqRetLen;
+
+if((pszLine = new char [cMaxReadLen * 3]) == NULL)
+	return(eBSFerrMem);
+if((pSeqBases = new etSeqBase [cMaxReadLen * 3])==NULL)
+	{
+	delete pszLine;
+	return(eBSFerrMem);
+	}
 
 switch(m_ParseSeqState) {
 	case 1:					// expecting the sequence to be returned
@@ -688,9 +696,9 @@ switch(m_ParseSeqState) {
 		SeqRetLen = min(m_ParsedSeqLen,Max2Ret);
 		if(bSeqBase)
 			{
-			CSeqTrans::MapAscii2Sense(m_szParsedSeqBases,0,SeqBases);
-			SeqBases[SeqRetLen] = eBaseEOS;
-			memcpy(pRetSeq,SeqBases,SeqRetLen);
+			CSeqTrans::MapAscii2Sense(m_szParsedSeqBases,0, pSeqBases);
+			pSeqBases[SeqRetLen] = eBaseEOS;
+			memcpy(pRetSeq, pSeqBases,SeqRetLen);
 			}
 		else
 			{
@@ -698,8 +706,9 @@ switch(m_ParseSeqState) {
 			strcpy((char *)pRetSeq,m_szParsedSeqBases);
 			}
 		m_ParseSeqState = 0;		// next alignment is to loaded on next call to this function
+		delete pszLine;
+		delete pSeqBases;
 		return(SeqRetLen);
-		break;
 
 	default:
 		break;
@@ -714,19 +723,23 @@ m_ParsedFlags = 0;
 m_ParsedszChrom[0] = '\0';
 m_ParsedStartLoci = 0;
 
-while((LineLen = GetNxtSAMline(szLine)) > 0)
+while((LineLen = GetNxtSAMline(pszLine)) > 0)
 	{
-	szLine[sizeof(szLine)-1] = '\0';
-	pTxt = TrimWhitespace(szLine);
+	pszLine[(cMaxReadLen * 3) -1] = '\0';
+	pTxt = TrimWhitespace(pszLine);
 	if(*pTxt=='\0' || *pTxt=='@')	// simply slough lines which were just whitespace or start with '@'
 		continue;					// only interested in the alignments
 	
-	sscanf(szLine,"%s\t%d\t%s\t%d\t%d\t%s\t%s\t%d\t%d\t%16383s\t",m_szParsedDescriptor, &m_ParsedFlags, m_ParsedszChrom, &m_ParsedStartLoci,&MAPQ,szCigar,szRNext,&PNext,&TLen,m_szParsedSeqBases);
+	sscanf(pszLine,"%s\t%d\t%s\t%d\t%d\t%s\t%s\t%d\t%d\t%16383s\t",m_szParsedDescriptor, &m_ParsedFlags, m_ParsedszChrom, &m_ParsedStartLoci,&MAPQ,szCigar,szRNext,&PNext,&TLen,m_szParsedSeqBases);
 	m_ParsedDescrLen = (int)strlen(m_szParsedDescriptor);
 	m_ParsedSeqLen = (int)strlen(m_szParsedSeqBases);
 	m_ParseSeqState = 1;
+	delete pszLine;
+	delete pSeqBases;
 	return(eBSFFastaDescr);				// descriptor is ready to be returned
 	}
+delete pszLine;
+delete pSeqBases;
 return(LineLen);
 }
 
@@ -747,7 +760,7 @@ while((Chr=*pszRefSeqName++) != '\0')
 return(Hash);
 }
 
-// It is expected that sequence names will have been added with AddSeqName() in alpha ascending order such that when locating
+// It is expected that sequence names will have been added with AddRefSeq() in alpha ascending order such that when locating
 // names then the exhaustive search can early terminate
 int				// locates reference sequence name and returns it's SeqID, returns 0 if unable to locate a match
 CSAMfile::LocateRefSeqID(char *pszRefSeqName) // reference sequence name to locate
@@ -826,7 +839,7 @@ CigarOPlen = 0;
 AlignLen = 0;
 while((CigarChr = *pCigar++) != '\0')
 	{
-	if(CigarIdx >= 50)	// can only handle CIGARs of up to 40 chars
+	if(CigarIdx >= cMaxBAMCigarOps)	// can only handle CIGARs containing at most 50 operations - it's a BAM limitation
 		return(eBSFerrParse);
 	if(CigarChr >= '0' && CigarChr <= '9')
 		{
@@ -848,7 +861,7 @@ while((CigarChr = *pCigar++) != '\0')
 		default:				// unsupported!
 			break;
 		}
-	if(CigarIdx > 50)
+	if(CigarIdx > cMaxBAMCigarOps)
 		return(eBSFerrParse);
 	CigarOPlen = 0;
 	}
@@ -859,7 +872,8 @@ return(AlignLen);
 int											// negative if errors parsing otherwise 0 for success
 CSAMfile::ParseSAM2BAMalign(char *pszSAMline, // parsing this SAM format line
 				tsBAMalign *pBAMalign,        // into this tsBAMalign structure
-				CBEDfile *pBEDremapper)		  // with optional remapping from features (contigs) in this BED file
+				CBEDfile *pBEDremapper,		  // with optional remapping from features (contigs) in this BED file
+				bool bNoRefNameChk)		  	// if true then do not validate ref seq name as having been present in SAM/BAM header
 {
 char szDescriptor[128];			// parsed out descriptor
 int Flags;						// parsed out flags
@@ -905,14 +919,17 @@ else
 strncpy(pBAMalign->szRefSeqName,szChrom,sizeof(pBAMalign->szRefSeqName));   // szChrom as szRefSeqName
 pBAMalign->szRefSeqName[sizeof(pBAMalign->szRefSeqName)-1] = '\0';
 
-if(m_szLastNotLocatedRefSeqName[0] != '\0')
-	if(!stricmp(pBAMalign->szRefSeqName,m_szLastNotLocatedRefSeqName))
-		return(eBSFerrFeature);
-
-if((pBAMalign->refID = LocateRefSeqID(pBAMalign->szRefSeqName)) < 1)
+if(!bNoRefNameChk)
 	{
-	strncpy(m_szLastNotLocatedRefSeqName,pBAMalign->szRefSeqName,sizeof(m_szLastNotLocatedRefSeqName) - 1);
-	return(eBSFerrFeature);
+	if(m_szLastNotLocatedRefSeqName[0] != '\0')
+		if(!stricmp(pBAMalign->szRefSeqName,m_szLastNotLocatedRefSeqName))
+			return(eBSFerrFeature);
+
+	if((pBAMalign->refID = LocateRefSeqID(pBAMalign->szRefSeqName)) < 1)
+		{
+		strncpy(m_szLastNotLocatedRefSeqName,pBAMalign->szRefSeqName,sizeof(m_szLastNotLocatedRefSeqName) - 1);
+		return(eBSFerrFeature);
+		}
 	}
 
 if(!(szRNext[0] == '*' || szRNext[0] == '=' ))
@@ -967,7 +984,7 @@ if(*pCigar != '*')
 	{
 	while((CigarChr = *pCigar++) != '\0')
 		{
-		if(CigarIdx >= 50)
+		if(CigarIdx >= cMaxBAMCigarOps)
 			return(eBSFerrParse);
 		if(CigarChr >= '0' && CigarChr <= '9')
 			{
@@ -1008,7 +1025,7 @@ if(*pCigar != '*')
 			}
 		pBAMalign->cigar[CigarIdx++] = (UINT32)CigarOPlen << 4 | CigarOP;
 		pBAMalign->end += CigarOPlen;
-		if(CigarIdx > 50)
+		if(CigarIdx > cMaxBAMCigarOps)
 			return(eBSFerrParse);
 		CigarOPlen = 0;
 		CigarOP = 0;
@@ -1072,13 +1089,70 @@ pBAMalign->NumSeqBytes = (pBAMalign->l_seq + 1)/2;
 return(eBSFSuccess);
 }
 
+int						// number of bases returned
+CSAMfile::BAMalignSeq(tsBAMalign *pBAMalign,		// ptr to tsBAMalign alignment containing packed (2 per byte) sequence to be returned as etSeqBases 
+			int MaxLen,					// maximum length sequence to be returned
+			etSeqBase *pRetSeq)			// to hold returned sequence
+{
+if(pBAMalign == NULL || MaxLen < 1 || pRetSeq == NULL)
+	return(0);
+etSeqBase Base;
+uint8_t Byte;
+int CurSeqLen = 0;
+int Ofs = 0;
+if(MaxLen > pBAMalign->l_seq)
+	MaxLen = pBAMalign->l_seq;
+
+do	{
+	Byte = pBAMalign->seq[Ofs++];
+	switch(Byte & 0xf0) {
+		case 0x10:
+			Base = eBaseA;
+			break;
+		case 0x20:
+			Base = eBaseC;
+			break;
+		case 0x40:
+			Base = eBaseG;
+			break;
+		case 0x80:
+			Base = eBaseT;
+			break;
+		default:
+			Base = eBaseN;
+			break;
+		}
+	*pRetSeq++ = Base;
+	if(++CurSeqLen == MaxLen)
+		break;
+
+	switch (Byte & 0x0f) {
+		case 0x01:
+			Base = eBaseA;
+			break;
+		case 0x02:
+			Base = eBaseC;
+			break;
+		case 0x04:
+			Base = eBaseG;
+			break;
+		case 0x08:
+			Base = eBaseT;
+			break;
+		default:
+			Base = eBaseN;
+			break;
+			}
+	*pRetSeq++ = Base;
+	}
+while (++CurSeqLen < MaxLen);
+return(MaxLen);
+}
+
 
 
 // returns next SAM formated line
 // if reading BAM input and special EOF block encountered then that block is simply sloughed as there could be blocks following
-//
-
-
 int											// number of chars returned in pszNxtLine
 CSAMfile::GetNxtSAMline(char *pszNxtLine)	// copy next line read from input source to this line buffer; assumes caller has allocated at least cMaxBAMLineLen chars to hold worst case length
 {
@@ -1255,6 +1329,7 @@ else  // reading from BAM
 			m_pCurRefSeq->SeqNameLen = -1 + *(int *)&m_pBAM[m_CurInBAMIdx];
 			m_CurInBAMIdx += 4;
 			strcpy(m_pCurRefSeq->szSeqName,(char *)&m_pBAM[m_CurInBAMIdx]);
+			m_pCurRefSeq->Hash = GenNameHash(m_pCurRefSeq->szSeqName);
 			m_CurInBAMIdx += 1 + m_pCurRefSeq->SeqNameLen;
 			m_pCurRefSeq->SeqLen = *(int *)&m_pBAM[m_CurInBAMIdx];
 			m_CurInBAMIdx += 4;
