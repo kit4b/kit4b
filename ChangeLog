@@ -15,4 +15,5 @@ Release 0.4.7 - using gitattributes and gitignore to improve chances that respos
               - slight cosmetic change when reporting list of subprocesses in ngskit4b - removed a tab char in kalign description
 Release 0.4.8 - code refactoring, CSimReads read simulation class now part of libkit4b  
 Release 0.5.0 - fix for snpmarkers segfault, reduced number of warnings when compiling with gcc 9.2
+Release 0.5.1 - fix to allow snpmarkers process continuation if all SNPs are filtered out from a SNP file, removed genmarkers as functionality incorporated within 'ngskit4b snpmarkers'
  
