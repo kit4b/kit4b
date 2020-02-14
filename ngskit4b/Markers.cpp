@@ -651,23 +651,6 @@ while((Rslt=pCSV->NextLine()) > 0)	// onto next line containing fields
 
 	NumElsParsed += 1;
 
-	// apply any filtering
-	pCSV->GetInt(11,&CoveringBases);
-	if(CoveringBases < MinBases)
-		{
-		NumFilteredOut += 1;
-		FilteredCovBases += 1;
-		continue;
-		}
-
-	pCSV->GetDouble(10,&PValue);
-	if(PValue > MaxPValue)
-		{
-		NumFilteredOut += 1;
-		FilteredPValue += 1;
-		continue;
-		}
-
 	pCSV->GetText(4,&pszRefSeq);
 	pCSV->GetInt(5,&StartLoci);
 	pCSV->GetInt(12,&Mismatches);
@@ -677,6 +660,42 @@ while((Rslt=pCSV->NextLine()) > 0)	// onto next line containing fields
 	pCSV->GetInt(16,&MMBaseG);
 	pCSV->GetInt(17,&MMBaseT);
 	pCSV->GetInt(18,&MMBaseN);
+
+	// fix for reported issue whereby all SNPs were filtered out from this SNP file
+	// and thus probe or query was not being registered
+	UINT16 TargID;
+	UINT16 ProbeID;
+	UINT32 TargSeqID;
+	INT64 Rslt;
+
+	TargID = AddSpecies(pszRefSpecies, true);
+	if (TargID == 0 || TargID != m_RefSpeciesID)
+		continue;
+
+	ProbeID = AddSpecies(pszProbeSpecies, false);
+	if (ProbeID == 0 || ProbeID == m_RefSpeciesID)
+		continue;
+
+	TargSeqID = AddTargSeq(pszRefSeq);
+	if (TargSeqID == 0)
+		continue;
+
+	// apply any filtering
+	pCSV->GetInt(11, &CoveringBases);
+	if (CoveringBases < MinBases)
+		{
+		NumFilteredOut += 1;
+		FilteredCovBases += 1;
+		continue;
+		}
+
+	pCSV->GetDouble(10, &PValue);
+	if (PValue > MaxPValue)
+		{
+		NumFilteredOut += 1;
+		FilteredPValue += 1;
+		continue;
+		}
 
 	switch(pszRefBase[0]) {
 		case 'a': case 'A':
@@ -730,7 +749,7 @@ return(NumElsParsed - NumFilteredOut);
 
 // AddImputedAlignments
 // Add alignments for species where no snp was called but other species do have snp called
-// The no call could be because there were none or insufficent reads covering the loci, or there was coverage but no snp!
+// The call could be because there were none or insufficent reads covering the loci, or there was coverage but no snp!
 INT64 
 CMarkers::AddImputedAlignments(int MinBases,			// must be at least this number of reads covering the SNP loci
 					  char *pszRefSpecies,				// this is the reference species 
@@ -758,7 +777,7 @@ if((ProbeSpeciesID = NameToSpeciesID(pszProbeSpecies)) < 1)
 	}
 if((RefSpeciesID = NameToSpeciesID(pszRefSpecies)) < 1)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to locate identifier for probe species '%s'",pszRefSpecies);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to locate identifier for reference species species '%s'",pszRefSpecies);
 	return(eBSFerrInternal);
 	}
 

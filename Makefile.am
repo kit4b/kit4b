@@ -32,7 +32,6 @@ SUBDIRS = libkit4b \
     genGenomeFromAGP \
     genhyperdropouts \
     genloci2gene \
-    genmarkers \
     genNormWiggle \
     gennucstats \
     genrollups \

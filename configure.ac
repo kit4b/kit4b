@@ -47,7 +47,6 @@ AC_OUTPUT(Makefile
     genGenomeFromAGP/Makefile
     genhyperdropouts/Makefile
     genloci2gene/Makefile
-    genmarkers/Makefile
     genNormWiggle/Makefile
     gennucstats/Makefile
     genrollups/Makefile
