@@ -724,6 +724,7 @@ gDiagnostics.DiagOut(eDLInfo,gszProcName,"Accepted a total of %lld SNP alignment
 gDiagnostics.DiagOut(eDLFatal,gszProcName,"Now checking for imputed alignments where no SNP called in one or more cultivars...");
 
 InitalAlignLoci = PrevAlignLoci = CurAlignLoci;
+pMarkers->SortTargSeqLociSpecies();				// must be sorted ....
 for(FileIdx = 0; FileIdx < NumAlignFiles; FileIdx++)
 	{
 	pszAlignFile = pszAlignFiles[FileIdx];
@@ -743,7 +744,7 @@ for(FileIdx = 0; FileIdx < NumAlignFiles; FileIdx++)
 	PrevAlignLoci = CurAlignLoci;
 	}
 
-gDiagnostics.DiagOut(eDLInfo,gszProcName,"Total alignments %lld or which %lld are imputed alignments",CurAlignLoci, CurAlignLoci - InitalAlignLoci);
+gDiagnostics.DiagOut(eDLInfo,gszProcName,"Total alignments %lld of which %lld are imputed alignments",CurAlignLoci, CurAlignLoci - InitalAlignLoci);
 
 Rslt64 = pMarkers->SortTargSeqLociSpecies();
 pMarkers->IdentSpeciesSpec(AltSpeciesMaxCnt,	// max count allowed for base being processed in any other species, 0 if no limit

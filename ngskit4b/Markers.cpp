@@ -602,7 +602,7 @@ CMarkers::LoadSNPFile(int MinBases,			// accept SNPs with at least this number c
 					  char *pszSNPFile)		// SNP file to parse and load
 {
 int Rslt;
-INT64 Rslt64;
+int64_t Rslt64;
 int NumFields;
 int NumElsParsed;
 
@@ -636,6 +636,28 @@ if((Rslt=pCSV->Open(pszSNPFile))!=eBSFSuccess)
 	return(Rslt);
 	}
 
+// fix for reported issue whereby all SNPs were filtered out from this SNP file
+// and thus probe or query was not being registered
+UINT16 TargID;
+UINT16 ProbeID;
+UINT32 TargSeqID;
+
+TargID = AddSpecies(pszRefSpecies, true);
+if (TargID == 0 || TargID != m_RefSpeciesID)
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to register species: %s", pszRefSpecies);
+	delete pCSV;
+	return(eBSFerrFeature);
+	}
+
+ProbeID = AddSpecies(pszProbeSpecies, false);
+if (ProbeID == 0 || ProbeID == m_RefSpeciesID)
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to register species: %s", pszProbeSpecies);
+	delete pCSV;
+	return(eBSFerrFeature);
+	}
+
 double PValue;
 
 NumElsParsed = 0;
@@ -660,21 +682,6 @@ while((Rslt=pCSV->NextLine()) > 0)	// onto next line containing fields
 	pCSV->GetInt(16,&MMBaseG);
 	pCSV->GetInt(17,&MMBaseT);
 	pCSV->GetInt(18,&MMBaseN);
-
-	// fix for reported issue whereby all SNPs were filtered out from this SNP file
-	// and thus probe or query was not being registered
-	UINT16 TargID;
-	UINT16 ProbeID;
-	UINT32 TargSeqID;
-	INT64 Rslt;
-
-	TargID = AddSpecies(pszRefSpecies, true);
-	if (TargID == 0 || TargID != m_RefSpeciesID)
-		continue;
-
-	ProbeID = AddSpecies(pszProbeSpecies, false);
-	if (ProbeID == 0 || ProbeID == m_RefSpeciesID)
-		continue;
 
 	TargSeqID = AddTargSeq(pszRefSeq);
 	if (TargSeqID == 0)
@@ -743,7 +750,7 @@ if(pCSV != NULL)
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Parsed %d SNPs from file: %s",NumElsParsed,pszSNPFile);
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Accepted %d SNPs, filtered out %d high P-Value (> %.3f), filtered out %d low coverage ( < %d bases)",
 					NumElsParsed - NumFilteredOut, FilteredPValue, MaxPValue, FilteredCovBases, MinBases);
-
+m_NumSSNPLoci = m_UsedAlignLoci;
 return(NumElsParsed - NumFilteredOut);
 }
 
@@ -781,8 +788,6 @@ if((RefSpeciesID = NameToSpeciesID(pszRefSpecies)) < 1)
 	return(eBSFerrInternal);
 	}
 
-
-SortTargSeqLociSpecies();	// must be sorted ....
 
 if(m_pHypers != NULL)
 	{
@@ -904,7 +909,7 @@ AlignIdx = 0;
 bProbeAligned = false;
 PrevTargSeqID = 0;
 pszTargSeq = NULL;
-UsedAlignLoci = m_UsedAlignLoci;
+UsedAlignLoci = m_NumSSNPLoci;
 for(AlignIdx = 0; AlignIdx < UsedAlignLoci; AlignIdx++)
 	{
 	pAlign = &m_pAllocAlignLoci[AlignIdx];			// m_pAllocAlignLoci could be realloc'd so best to take the address each iteration....

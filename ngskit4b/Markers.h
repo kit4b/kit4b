@@ -99,6 +99,7 @@ class CMarkers
 	UINT8 m_szCurSeqName[cMaxLenName+1];	// holds last processed sequence name
 	UINT32 m_CurSeqNameID;				// and it's corresponding identifer
 
+	INT64 m_NumSSNPLoci;				// number of loci hold SNPs called in SNP files
 	INT64 m_UsedAlignLoci;				// currently using this many alignment loci
 	INT64 m_AllocAlignLoci;				// allocated to hold this many alignment loci
 	size_t m_AllocMemAlignLoci;			// allocation memory size
