@@ -84,7 +84,7 @@ extern int gengoassoc(int argc, char* argv[]);
 extern int gengoterms(int argc, char* argv[]);
 extern int hammings(int argc, char* argv[]);
 extern int fasta2bed(int argc,char *argv[]);
-
+extern int BenchmarkAligners(int argc, char* argv[]);
 
 // inplace text cleaning; any leading/trailing or internal quote characters are removed; excessive whitespace is reduced to single
 char *
@@ -118,6 +118,7 @@ return(pszRawText);
 
 tsSubProcess SubProcesses[] = {
 	{ "simreads", "Simulate NGS Reads", "Generate simulated NGS readsets", SimReads },
+	{ "benchmark", "Benchmark NGS Aligners", "Benchmark aligners using observed error profiled simulated NGS readsets", BenchmarkAligners },
 	{ "ngsqc", "NGS Reads QC", "\tProcess NGS reads and report quality scores with compositional distributions", ReadsetDists },
 	{ "fasta2nxx", "Fasta Nxx", "Generate N10..N90 over Fasta sequences", fasta2nxx },
 	{"filter","Filter NGS Reads","Filter NGS reads for sequencer errors and/or exact duplicates",ArtefactReduce },

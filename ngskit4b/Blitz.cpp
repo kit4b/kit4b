@@ -1084,6 +1084,7 @@ if(CoreLen == 0)
 	m_CoreLen = CoreLen;
 	}
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "Using core length : %d", m_CoreLen);
+m_pSfxArray->InitialiseCoreKMers(m_CoreLen);
 m_MinExtdCoreLen = m_CoreLen + 1;	// allows for a core match onto target to have been extended by at least 1 base even if that base was a mismatch 
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "Using minimum extended core length : %d", m_MinExtdCoreLen);
 
@@ -1109,14 +1110,11 @@ if(CoreDelta == 0)
 	}
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "Using core delta : %d", m_CoreDelta);
 
+m_MinPathScore = MinPathScore;
 if(MinPathScore == 0)
-	{
-	MinPathScore = max(10 * CoreLen,cMinPathScore);
-	if(MinPathScore > cMaxPathScore)
-		MinPathScore = cMaxPathScore;	
-	m_MinPathScore = MinPathScore;
-	}
-gDiagnostics.DiagOut(eDLInfo, gszProcName, "Using minimum path score : %d", m_MinPathScore);
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Using automatic query sequence length dependent minimum path score");
+else
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Using minimum path score : %d", m_MinPathScore);
 m_MaxIter = MaxOccKMerDepth;
 
 // restrict the max core iterations and substitutions thresholding according to the requested sensitivity
@@ -1239,7 +1237,6 @@ char szNonAlignedFilePE1[_MAX_PATH];
 char szNonAlignedFilePE2[_MAX_PATH];
 
 sprintf(szNonAlignedFilePE1,"%s.PE1.Unaligned.fasta", pszOutFile);
-sprintf(szNonAlignedFilePE2,"%s.PE2.Unaligned.fasta", pszOutFile);
 #ifdef _WIN32
 m_hOutNonAlignedFilePE1 = open(szNonAlignedFilePE1, (O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC), (_S_IREAD | _S_IWRITE));
 #else
@@ -1258,25 +1255,32 @@ if (m_hOutNonAlignedFilePE1 < 0)
 	return(eBSFerrCreateFile);
 	}
 
+if(pszInputFilePE2 != NULL && pszInputFilePE2[0] != '\0')
+	{
+	sprintf(szNonAlignedFilePE2, "%s.PE2.Unaligned.fasta", pszOutFile);
 #ifdef _WIN32
-m_hOutNonAlignedFilePE2 = open(szNonAlignedFilePE2, (O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC), (_S_IREAD | _S_IWRITE));
+	m_hOutNonAlignedFilePE2 = open(szNonAlignedFilePE2, (O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC), (_S_IREAD | _S_IWRITE));
 #else
-if ((m_hOutNonAlignedFilePE2 = open(szNonAlignedFilePE2, O_WRONLY | O_CREAT, S_IREAD | S_IWRITE)) != -1)
-if (ftruncate(m_hOutNonAlignedFilePE2, 0) != 0)
-	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to truncate %s - %s", szNonAlignedFilePE2, strerror(errno));
-	Reset(false);
-	return(eBSFerrCreateFile);
-	}
+	if ((m_hOutNonAlignedFilePE2 = open(szNonAlignedFilePE2, O_WRONLY | O_CREAT, S_IREAD | S_IWRITE)) != -1)
+		if (ftruncate(m_hOutNonAlignedFilePE2, 0) != 0)
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to truncate %s - %s", szNonAlignedFilePE2, strerror(errno));
+		Reset(false);
+		return(eBSFerrCreateFile);
+		}
 #endif
-if (m_hOutNonAlignedFilePE2 < 0)
-	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: unable to create/truncate output file '%s'", szNonAlignedFilePE2);
-	Reset(false);
-	return(eBSFerrCreateFile);
+	if (m_hOutNonAlignedFilePE2 < 0)
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: unable to create/truncate output file '%s'", szNonAlignedFilePE2);
+		Reset(false);
+		return(eBSFerrCreateFile);
+		}
 	}
-
-
+else
+	{
+	szNonAlignedFilePE2[0] = '\0';
+	m_hOutNonAlignedFilePE2 = -1;
+	}
 
 if(RsltsFormat != eBLZRsltsSQLite)
 	{
@@ -1739,6 +1743,7 @@ UINT32 TargPathStartOfs;
 UINT32 TargPathEndOfs;
 UINT32 TargSeqLen;
 char szTargName[100];
+int MinPathScore;
 
 while((Rslt = DequeueQuerySeq(120, cMaxQuerySeqIdentLen + 1, &SeqID, szQuerySeqIdent, &QuerySeqLen, &pQuerySeq)) == 1)
 	{
@@ -1749,7 +1754,7 @@ while((Rslt = DequeueQuerySeq(120, cMaxQuerySeqIdentLen + 1, &SeqID, szQuerySeqI
 	NumQueryPathsRprtd = 0;
 	bQueryAtLeast1Path = false;
 	MaxIter = max(m_MaxIter / 5, 100);
-	MinPathHiScore = 180;
+	MinPathHiScore = ((QuerySeqLen - 5) * m_ExactMatchScore) / 2;
 	
 	do {
 		NumMatches = m_pSfxArray->LocateQuerySeqs(SeqID, pQuerySeq, QuerySeqLen, m_ExtnScoreThres, m_CoreLen, m_CoreDelta, m_AlignStrand, m_CoreLen, pPars->NumAllocdAlignNodes, pPars->pAllocdAlignNodes, MaxIter);
@@ -1757,7 +1762,12 @@ while((Rslt = DequeueQuerySeq(120, cMaxQuerySeqIdentLen + 1, &SeqID, szQuerySeqI
 			{
 			if (NumMatches > 1)	// sorting by TargSeqID.QueryID.FlgStrand.TargStartOfs.QueryStartOfs
 				qsort(pPars->pAllocdAlignNodes, NumMatches, sizeof(tsQueryAlignNodes), SortQueryAlignNodes);
-			NumHeadNodes = IdentifyHighScorePaths(m_MinPathScore, m_MaxPathsToReport, QuerySeqLen, NumMatches, pPars->pAllocdAlignNodes, pPars->ppFirst2Rpts);
+			if(m_MinPathScore > 0)
+				MinPathScore = m_MinPathScore;
+			else
+				MinPathScore = (QuerySeqLen * m_ExactMatchScore)/2;
+
+			NumHeadNodes = IdentifyHighScorePaths(MinPathScore, m_MaxPathsToReport, QuerySeqLen, NumMatches, pPars->pAllocdAlignNodes, pPars->ppFirst2Rpts);
 			if (NumHeadNodes)
 				{
 				for (SortedPathIdx = 0; SortedPathIdx < min(NumHeadNodes, (UINT32)m_MaxPathsToReport); SortedPathIdx++)
@@ -1767,7 +1777,7 @@ while((Rslt = DequeueQuerySeq(120, cMaxQuerySeqIdentLen + 1, &SeqID, szQuerySeqI
 			
 					pHeadNode = pPars->ppFirst2Rpts[SortedPathIdx];
 					PathHiScore = pHeadNode->HiScore;
-					PathHiScore = (int)(((double)PathHiScore / (QuerySeqLen * m_ExactMatchScore)) * 255.0);
+					PathHiScore = (int)(((double)PathHiScore / ((int64_t)QuerySeqLen * m_ExactMatchScore)) * 255.0);
 					if(PathHiScore >= MinPathHiScore)
 						{
 						bStrand = pHeadNode->FlgStrand ? true : false;
@@ -1804,7 +1814,7 @@ while((Rslt = DequeueQuerySeq(120, cMaxQuerySeqIdentLen + 1, &SeqID, szQuerySeqI
 		if(MaxIter < m_MaxIter)
 			{
 			MaxIter = m_MaxIter;
-			MinPathHiScore = 60;
+			MinPathHiScore = ((QuerySeqLen - 5) * m_ExactMatchScore) / 3;
 			}
 		else
 			{
@@ -1844,6 +1854,7 @@ UINT32 SAMFlags;
 
 tsQueryAlignNodes *pHeadNode;
 bool bStrand;
+int MinPathScore;
 UINT32 PathHiScore;
 UINT32 SortedPathIdx;
 UINT32 NumPathNodes;
@@ -1883,7 +1894,7 @@ while((Rslt = DequeueQuerySeq(120, cMaxQuerySeqIdentLen + 1, &SeqID, szQuerySeqI
 	bQueryAtLeast1Path = false;
 
 	int CoreDelta = max(m_CoreLen,m_CoreDelta);
-	UINT32 MinPathHiScore = 180;
+	UINT32 MinPathHiScore = ((QuerySeqLen - 5) * m_ExactMatchScore) / 2;
 	int NumNoPE1Matches = 0;
 	int NumNoPE2Matches = 0;
 
@@ -1899,7 +1910,11 @@ while((Rslt = DequeueQuerySeq(120, cMaxQuerySeqIdentLen + 1, &SeqID, szQuerySeqI
 			{
 			if (NumMatches > 1)	// sorting by TargSeqID.QueryID.FlgStrand.TargStartOfs.QueryStartOfs
 				qsort(pPars->pAllocdAlignNodes, NumMatches, sizeof(tsQueryAlignNodes), SortQueryAlignNodes);
-			NumHeadNodes = IdentifyHighScorePaths(m_MinPathScore, m_MaxPathsToReport + 1, QuerySeqLen, NumMatches, pPars->pAllocdAlignNodes, pPars->ppFirst2Rpts);
+			if (m_MinPathScore > 0)
+				MinPathScore = m_MinPathScore;
+			else
+				MinPathScore = (QuerySeqLen * m_ExactMatchScore) / 2;
+			NumHeadNodes = IdentifyHighScorePaths(MinPathScore, m_MaxPathsToReport + 1, QuerySeqLen, NumMatches, pPars->pAllocdAlignNodes, pPars->ppFirst2Rpts);
 			}
 		else
 			NumNoPE1Matches++;
@@ -1911,7 +1926,11 @@ while((Rslt = DequeueQuerySeq(120, cMaxQuerySeqIdentLen + 1, &SeqID, szQuerySeqI
 				{
 				if (NumMatchesPE2 > 1)	// sorting by TargSeqID.QueryID.FlgStrand.TargStartOfs.QueryStartOfs
 					qsort(pPars->pAllocdAlignNodesPE2, NumMatchesPE2, sizeof(tsQueryAlignNodes), SortQueryAlignNodes);
-				NumHeadNodesPE2 = IdentifyHighScorePaths(m_MinPathScore, m_MaxPathsToReport + 1, QuerySeqLenPE2, NumMatchesPE2, pPars->pAllocdAlignNodesPE2, pPars->ppFirst2RptsPE2);
+				if (m_MinPathScore > 0)
+					MinPathScore = m_MinPathScore;
+				else
+					MinPathScore = (QuerySeqLen * m_ExactMatchScore) / 2;
+				NumHeadNodesPE2 = IdentifyHighScorePaths(MinPathScore, m_MaxPathsToReport + 1, QuerySeqLenPE2, NumMatchesPE2, pPars->pAllocdAlignNodesPE2, pPars->ppFirst2RptsPE2);
 				}
 			else
 				NumNoPE2Matches++;
@@ -1930,7 +1949,7 @@ while((Rslt = DequeueQuerySeq(120, cMaxQuerySeqIdentLen + 1, &SeqID, szQuerySeqI
 					continue;
 				pHeadNode = pPars->ppFirst2Rpts[SortedPathIdx];
 				PathHiScore = pHeadNode->HiScore;
-				PathHiScore = (int)(((double)PathHiScore / (QuerySeqLen * m_ExactMatchScore)) * 255.0);
+				PathHiScore = (int)(((double)PathHiScore / ((int64_t)QuerySeqLen * m_ExactMatchScore)) * 255.0);
 				if (PathHiScore >= MinPathHiScore)
 					{
 					bStrand = pHeadNode->FlgStrand ? false : true;
@@ -1945,7 +1964,7 @@ while((Rslt = DequeueQuerySeq(120, cMaxQuerySeqIdentLen + 1, &SeqID, szQuerySeqI
 							bStrand == (bStrandPE2 = (pHeadNodePE2->FlgStrand ? false : true)))
 							continue;
 						PathHiScorePE2 = pHeadNodePE2->HiScore;
-						PathHiScorePE2 = (int)(((double)PathHiScorePE2 / (QuerySeqLen * m_ExactMatchScore)) * 255.0);
+						PathHiScorePE2 = (int)(((double)PathHiScorePE2 / ((int64_t)QuerySeqLen * m_ExactMatchScore)) * 255.0);
 						if (PathHiScorePE2 >= MinPathHiScore)
 							{
 							// select that pair which are shortest distance apart and having maximal combined scores
@@ -2035,7 +2054,7 @@ while((Rslt = DequeueQuerySeq(120, cMaxQuerySeqIdentLen + 1, &SeqID, szQuerySeqI
 		if (CoreDelta > m_CoreDelta)
 			{
 			CoreDelta = m_CoreDelta;
-			MinPathHiScore = 60;
+			MinPathHiScore = ((QuerySeqLen - 5) * m_ExactMatchScore) / 3;
 			}
 		else
 			{
@@ -2062,6 +2081,7 @@ int NumQueriesProc;
 int PrevNumQueriesProc;
 int NumMatches;
 int QuerySeqLen;
+int MinPathScore;
 int SeqID;
 UINT8 *pQuerySeq;
 char szQuerySeqIdent[cMaxQuerySeqIdentLen+1];
@@ -2076,8 +2096,11 @@ while((Rslt = DequeueQuerySeq(120,sizeof(szQuerySeqIdent),&SeqID,szQuerySeqIdent
 		{
 		if(NumMatches > 1)	// sorting by TargSeqID.QueryID.FlgStrand.TargStartOfs.QueryStartOfs
 			qsort(pPars->pAllocdAlignNodes,NumMatches,sizeof(tsQueryAlignNodes),SortQueryAlignNodes);
-
-		NumQueryPathsRprtd = Report(m_MinPathScore,m_MaxPathsToReport,szQuerySeqIdent,QuerySeqLen,pQuerySeq,NumMatches,pPars->pAllocdAlignNodes,pPars->ppFirst2Rpts);
+		if(m_MinPathScore == 0)
+			MinPathScore = (QuerySeqLen * m_ExactMatchScore) / 2;
+		else
+			MinPathScore = m_MinPathScore;
+		NumQueryPathsRprtd = Report(MinPathScore,m_MaxPathsToReport,szQuerySeqIdent,QuerySeqLen,pQuerySeq,NumMatches,pPars->pAllocdAlignNodes,pPars->ppFirst2Rpts);
 		AcquireSerialise();
 		if(NumQueryPathsRprtd > 0)
 			m_QueriesPaths += 1;
