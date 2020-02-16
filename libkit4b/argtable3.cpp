@@ -1026,7 +1026,10 @@ char* arg_dstr_cstr(arg_dstr_t ds) /* Interpreter whose result to return. */
 
 void arg_dstr_cat(arg_dstr_t ds, char* str) {
     setup_append_buf(ds, (int)strlen(str) + 1);
-    strncat(ds->data, str, strlen(str));
+// following 1 line is the original. Next 2 lines are the replacements to elimate compiler (gcc 9.2) warnings
+//    strncat(ds->data, str, strlen(str));
+size_t CurStrLen = strlen(ds->data);
+memcpy(&ds->data[CurStrLen],str,strlen(str)+1);
 }
 
 /*
@@ -4605,8 +4608,12 @@ void arg_cmd_register(const char* name, arg_cmdfn* proc, const char* description
     strncpy_s(cmd_info->name, ARG_CMD_NAME_LEN, name, strlen(name));
     strncpy_s(cmd_info->description, ARG_CMD_DESCRIPTION_LEN, description, strlen(description));
 #else
-    strncpy(cmd_info->name, name, strlen(name));
-    strncpy(cmd_info->description, description, strlen(description));
+// following 2 lines are the original. Next 2 lines are the replacements to elimate compiler (gcc 9.2) warnings
+// relating to  __builtin___strncpy_chk
+//    strncpy(cmd_info->name, name, strlen(name));
+//    strncpy(cmd_info->description, description, strlen(description));
+    memcpy(cmd_info->name, name, strlen(name)+1);
+    memcpy(cmd_info->description, description, strlen(description)+1);
 #endif
 
     cmd_info->proc = proc;
