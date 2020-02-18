@@ -1249,21 +1249,30 @@ NumReported = 0;
 for(Idx = 0; Idx < m_UsedAlignLoci; Idx++, pAlign++)
 	{
 	if(MinSpeciesWithCnts > pAlign->NumSpeciesWithCnts)
+		{
+		Idx += (m_NumSpecies - 2);
+		pAlign += (m_NumSpecies - 2);
 		continue;
+		}
 
 	// user may have requested that only variants between the cultivars are of interest; if all cultivars have same variant, even if different to reference, then slough
 	if(bSloughRefOnly && (bFirstReport || pAlign->TargLoci != CurTargLoci || pAlign->TargSeqID != CurTargSeqID))	// starting new row
 		{
 		tsAlignLoci *pTmpAlign = pAlign;
-		UINT8 CultBase = pAlign->CultSpecBase;
-		int NumSpeciesWithCnts = (int)pAlign->NumSpeciesWithCnts;
+		UINT8 CultBase = 0x0ff;
 		int ChkIdx;
-		for(ChkIdx = 0; ChkIdx < NumSpeciesWithCnts; ChkIdx++,pTmpAlign++)
+		for(ChkIdx = 0; ChkIdx < m_NumSpecies - 1; ChkIdx++,pTmpAlign++)
 			{
-			if(CultBase != pTmpAlign->CultSpecBase)
-				break;
+			if(!pTmpAlign->FiltLowTotBases)
+				{
+				if(CultBase == 0x0ff)
+					CultBase = pTmpAlign->CultSpecBase;
+				else
+					if(CultBase != pTmpAlign->CultSpecBase)
+						break;
+				}
 			}
-		if(ChkIdx == NumSpeciesWithCnts)	// all cultivar bases same?
+		if(ChkIdx == m_NumSpecies - 1)	// all cultivar bases same?
 			{
 			pAlign = pTmpAlign - 1;
 			Idx += ChkIdx - 1;

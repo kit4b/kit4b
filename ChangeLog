@@ -18,4 +18,5 @@ Release 0.5.0 - fix for snpmarkers segfault, reduced number of warnings when com
 Release 0.5.1 - fix to allow snpmarkers process continuation if all SNPs are filtered out from a SNP file, removed genmarkers as functionality incorporated within 'ngskit4b snpmarkers'
 Release 0.5.2 - initial release of the alignment benchmarking framework - subject to changes!
 Release 0.5.3 - now clean compiles, no warnings, with gcc 9.2 on Ubuntu 18.04
+Release 0.5.5 - fix for 'ngskit4b snpmarkers -m1' bug (incomplete rows in generated SNP marker file) has been applied
  
