@@ -663,7 +663,7 @@ gDiagnostics.DiagOut(eDLFatal,gszProcName,"Estimating minimum total memory requi
 // try to prealloc for SNPs 
 gDiagnostics.DiagOut(eDLFatal,gszProcName,"Pre-allocating memory for %lld SNP loci allowing 10x additional for impuned SNPS",TotSNPRows);
 
-if((Rslt = pMarkers->PreAllocSNPs(TotSNPRows)) != eBSFSuccess)
+if((Rslt = pMarkers->PreAllocEstSNPs(TotSNPRows)) != eBSFSuccess)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to pre-allocate %dGB memory for SNP loci",TotSNPRows * sizeof(tsAlignLoci));
 	delete pMarkers;
@@ -715,16 +715,12 @@ if(Rslt == 0)
 	}
 
 CurAlignLoci = pMarkers->NumAlignLoci();			// report on total number of accepted SNP alignments
-gDiagnostics.DiagOut(eDLInfo,gszProcName,"Accepted a total of %lld SNP alignments to further process for markers",CurAlignLoci);
-
-// if no SNPs are being called at a loci for one cultivar then was it because there was no coverage?
-// sort the SNPs by refseq.loci.probespecies ascending
-// iterate looking for missing probespecies at each refseq.loci
-// load the probespecies alignments and check for coverage at the missing refseq.loci
-gDiagnostics.DiagOut(eDLFatal,gszProcName,"Now checking for imputed alignments where no SNP called in one or more cultivars...");
-
 InitalAlignLoci = PrevAlignLoci = CurAlignLoci;
+
+gDiagnostics.DiagOut(eDLFatal, gszProcName, "Sorting %%lld known SNPs loaded from SNP files...", CurAlignLoci);
 pMarkers->SortTargSeqLociSpecies();				// must be sorted ....
+pMarkers->PreAllocImpunedSNPs(NumSNPFiles);
+gDiagnostics.DiagOut(eDLFatal, gszProcName, "Now checking for imputed alignments where no SNP called in one or more cultivars...");
 for(FileIdx = 0; FileIdx < NumAlignFiles; FileIdx++)
 	{
 	pszAlignFile = pszAlignFiles[FileIdx];
@@ -744,19 +740,20 @@ for(FileIdx = 0; FileIdx < NumAlignFiles; FileIdx++)
 	PrevAlignLoci = CurAlignLoci;
 	}
 
-gDiagnostics.DiagOut(eDLInfo,gszProcName,"Total alignments %lld of which %lld are imputed alignments",CurAlignLoci, CurAlignLoci - InitalAlignLoci);
-
+gDiagnostics.DiagOut(eDLInfo,gszProcName,"Total SNPs %lld of which %lld are from imputed alignments",CurAlignLoci, CurAlignLoci - InitalAlignLoci);
+gDiagnostics.DiagOut(eDLFatal, gszProcName, "Sorting %%lld known and imputed SNPs ...", CurAlignLoci);
 Rslt64 = pMarkers->SortTargSeqLociSpecies();
+gDiagnostics.DiagOut(eDLFatal, gszProcName, "Applying filtering ...");
 pMarkers->IdentSpeciesSpec(AltSpeciesMaxCnt,	// max count allowed for base being processed in any other species, 0 if no limit
 						MinCovBases,			// min count required for base being processed in species
 						   SNPMmajorPC);		// to be processed major putative SNP base must be at least this proportion of total
 
-gDiagnostics.DiagOut(eDLInfo,gszProcName,"Reporting markers to '%s'...",pszMarkerFile);
+gDiagnostics.DiagOut(eDLInfo,gszProcName,"Reporting marker SNPs to '%s'...",pszMarkerFile);
 Rslt64 = pMarkers->Report(pszRefGenome,NumRelGenomes,pszRelGenomes,pszMarkerFile,MinSpeciesWithCnts,MinSpeciesTotCntThres,PMode == eRPMInterCultOnly ? true : false);
 if(Rslt64 < 0)
-	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Reporting of markers to '%s' error %d",pszMarkerFile,(int)Rslt64);
+	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Reporting of marker SNPs to '%s' error %d",pszMarkerFile,(int)Rslt64);
 else
-	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Reporting of %lld markers to '%s' completed",Rslt64,pszMarkerFile);
+	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Reporting of %lld marker SNPs to '%s' completed",Rslt64,pszMarkerFile);
 delete pMarkers;
 return(Rslt64 < 0 ? (int)Rslt64 : eBSFSuccess);
 }

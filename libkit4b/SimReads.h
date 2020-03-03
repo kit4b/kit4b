@@ -26,7 +26,7 @@ const int cSRMaxNumReads =  500000000;	// maximum number of reads
 const int cSRMinReadLen  =  20;			// minimum read length
 const int cSRDfltReadLen= 100;			// default read length
 const int cSRMaxReadLen = 1000;			// max simulated read length
-const int cSRMaxCIGARLen = 100;			// limit any CIGAR string to be at most this length
+const int cSRMaxCIGARLen = 200;			// limit any CIGAR string to be at most this length
 
 const int cSRMinChromLen = 1000;		// reads simulated from chromosomes of at least this length
 

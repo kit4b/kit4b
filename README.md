@@ -13,6 +13,7 @@ The **kit4b** toolset contains a number of processes and subprocesses, each of w
 
 The primary process is **ngskitb** targeting NGS workflows which has subprocesses providing functionality to:
 ```
+  * alignment benchmarking
   * Generate simulated NGS readsets
   * Process NGS reads and report quality scores with compositional distributions
   * Generate N10..N90 over Fasta sequences

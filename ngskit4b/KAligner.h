@@ -81,9 +81,9 @@ const int cAllocMultihits = 25000000;		// alloc/realloc for multihit loci in thi
 const int cDfltReadLen = 200;			 // assume reads plus descriptors combined of of this length - not critical as actual read lengths are processed
 const size_t cReadsHitReAlloc = 50000000; // realloc allocation to hold this many read instances
 
-const int cPairMinLen =	25;				// apparent paired reads sequences must be of at least this minimum length
-const int cPairMaxLen = 100000;			// apparent paired reads sequences are restricted be of this maximum length
-const int cDfltPairMinLen = 100;		// default apparent paired reads sequences insert size must be of at least this length
+const int cPairMinLen =	25;				// apparent paired reads sequences insert size must be of at least this minimum length
+const int cPairMaxLen = 100000;			// apparent paired reads sequences insert size are restricted be of this maximum length
+const int cDfltPairMinLen = 50;			// default apparent paired reads sequences insert size must be of at least this length
 const int cDfltPairMaxLen = 1000;		// default apparent paired reads sequences insert size must be no longer than this length
 
 const int cMaxConstrainedChroms = 64;   // at most this many chroms can have loci base constraints
@@ -601,7 +601,7 @@ class CKAligner
 	int m_NumConstraintLoci;		// number of constrained alignment loci in m_pConstraintLoci[]
 	tsConstraintLoci *m_pConstraintLoci; // allocated to hold any read alignment loci constraints
 
-	int m_MinChimericLen;			// minimum chimeric length as a percentage (0 to disable, otherwise 25..99) of probe sequence
+	int m_MinChimericLen;			// minimum chimeric length as a percentage (0 to disable, otherwise 15..99) of probe sequence
 	bool m_bReportChimerics;        // true if individual chimeric sequences to also be reported for diagnostics
 	int m_microInDelLen;			// microInDel length maximum
 	int m_SpliceJunctLen;			// minimum splice junction length when aligning RNAseq reads
@@ -1065,7 +1065,7 @@ public:
 				bool bPEcircularised,			// experimental - true if processing for PE spanning circularised fragments
 				bool bPEInsertLenDist,			// experimental - true if stats file to include PE insert length distributions for each transcript
 				eALStrand AlignStrand,			// align on to watson, crick or both strands of target
-				int MinChimericLen,				// minimum chimeric length as a percentage (0 to disable, otherwise 25..99) of probe sequence length: negative if chimeric diagnostics to be reported
+				int MinChimericLen,				// minimum chimeric length as a percentage (0 to disable, otherwise 15..99) of probe sequence length: negative if chimeric diagnostics to be reported
 				bool bChimericRpt,				// report chimeric trimming detail for individual reads (default is not to report)
 				int microInDelLen,				// microInDel length maximum
 				int SpliceJunctLen,				// maximum splice junction length when aligning RNAseq reads

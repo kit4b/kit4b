@@ -34,7 +34,8 @@
 
 int
 BenchmarkProcess(eBMProcMode PMode,			// processing mode
-				bool bPEReadss,				// if true then PE pairs processing otherwise SE reads
+				bool bPrimaryOnly,			// if true then score only primary alignments otherwise score including secondary
+				bool bPEReads,				// if true then PE pairs processing otherwise SE reads
 				int UnalignedBasePts,		// points to apply for each unaligned base
 				int AlignedBasePts,			// points to apply for each base aligned to it's ground truth loci
 				int SilentTrimAlignBasePts, // points to apply for each base aligned in a silently trimmed read within ground truth loci range
@@ -44,8 +45,8 @@ BenchmarkProcess(eBMProcMode PMode,			// processing mode
 				char *pszRefGenomeFile,		// reads are against this target genome file
 				char *pszAlignmentsFile,	// input file containing aligned reads (SAM or BAM)
 				char *pszSEReads,			// simulated reads are output to this file (SE or PE1 if PE)  (input when scoring as contains ground truth)
-				char *pszPE2Reads,			// simulated PE2 reads are output to this file if simulating PE reads (input when scoring as contains ground truth)
-				int NumThreads);			// number of worker threads to use
+				char *pszPE2Reads);			// simulated PE2 reads are output to this file if simulating PE reads (input when scoring as contains ground truth)
+
 
 
 #ifdef _WIN32
@@ -67,10 +68,10 @@ char szLogFile[_MAX_PATH];	// write diagnostics to this file
 int Rslt = 0;   			// function result code >= 0 represents success, < 0 on failure
 
 eBMProcMode PMode;			// processing mode
+bool bPrimaryOnly;			// score only primary alignments otherwise score including secondary
 bool bPEReads;				// if true then PE simulations
 
 int NumberOfProcessors;		// number of installed CPUs
-int NumThreads;				// number of threads (0 defaults to number of CPUs)
 
 int UnalignedBasePts;		// points to apply for each unaligned base
 int SilentTrimAlignBasePts; // points to apply for each base aligned in a silently trimmed read within ground truth loci range
@@ -97,7 +98,8 @@ struct arg_file* LogFile = arg_file0("F", "log", "<file>", "diagnostics log file
 struct arg_int* pmode = arg_int0("m", "mode", "<int>", "processing mode: 0 - generate observed CIGARs from alignments, 1:- simulate reads using observed CIGARs, 2: score base alignments using expected CIGARs");
 struct arg_file* inalignments = arg_file0("i", "alignments", "<file>", "input alignments (SAM or BAM) when generating observed CIGARs or alignments if scoring using expected CIGARs");
 
-struct arg_lit* pereads = arg_lit0("p", "pe",			"set if PE pairs processing otherwise SE reads only");
+struct arg_lit* scoreprimaryonly = arg_lit0("P", "primary", "set if only primary alignments are to be scored");
+struct arg_lit* pereads = arg_lit0("p", "pe",				"set if PE pairs processing otherwise SE reads only");
 
 struct arg_file* refgenome = arg_file0("I", "refgenome", "<file>",	"alignment reference genome suffix array ('ngskit4b index' generated) file");
 struct arg_file* reads = arg_file0("o", "reads", "<file>",			"simulated reads to this file SE or PE1 if PE reads, or from if scoring");
@@ -111,8 +113,6 @@ struct arg_int* unalignedbasepts = arg_int0("k", "unalignedbasepts", "<int>",	"u
 struct arg_int* misalignedbasepts = arg_int0("l", "misalignedbasepts", "<int>",	"incorrectly aligned base points (defaults to -2");
 struct arg_int* maxnumreads = arg_int0("r", "maxnumreads", "<int>", "process for this number of reads or read pairs if PE (defaults to 10000000");
 
-struct arg_int* threads = arg_int0("T", "threads", "<int>", "number of processing threads 0..128 (defaults to 0 which sets threads to number of CPU cores)");
-
 struct arg_file* summrslts = arg_file0("q", "sumrslts", "<file>", "Output results summary to this SQLite3 database file");
 struct arg_str* experimentname = arg_str0("w", "experimentname", "<str>", "experiment name SQLite3 database file");
 struct arg_str* experimentdescr = arg_str0("W", "experimentdescr", "<str>", "experiment description SQLite3 database file");
@@ -120,10 +120,8 @@ struct arg_str* experimentdescr = arg_str0("W", "experimentdescr", "<str>", "exp
 struct arg_end* end = arg_end(200);
 
 	void* argtable[] = { help,version,FileLogLevel,LogFile,
-						pmode, inalignments,pereads,refgenome,reads,pe2reads,cigars,alignedbasepts,silenttrimaligdbasepts,unalignedbasepts,misalignedbasepts,maxnumreads,
-						summrslts,experimentname,experimentdescr,
-						threads,
-						end };
+						pmode, inalignments,pereads,refgenome,reads,pe2reads,scoreprimaryonly,cigars,alignedbasepts,silenttrimaligdbasepts,unalignedbasepts,misalignedbasepts,maxnumreads,
+						summrslts,experimentname,experimentdescr,end };
 
 	char** pAllArgs;
 	int argerrors;
@@ -260,6 +258,7 @@ struct arg_end* end = arg_end(200);
 		AlignedBasePts = 0;
 		MisalignedBasePts = 0;
 		MaxNumReads = 0;
+		SilentTrimAlignBasePts = 0;
 
 		PMode = pmode->count ? (eBMProcMode)pmode->ival[0] : eBMGenCIGARs;
 		if (PMode < eBMGenCIGARs || PMode > eBMScore)
@@ -281,16 +280,6 @@ struct arg_end* end = arg_end(200);
 #else
 		NumberOfProcessors = sysconf(_SC_NPROCESSORS_CONF);
 #endif
-		int MaxAllowedThreads = min(cMaxWorkerThreads, NumberOfProcessors);	// limit to be at most cMaxWorkerThreads
-		if ((NumThreads = threads->count ? threads->ival[0] : MaxAllowedThreads) == 0)
-			NumThreads = MaxAllowedThreads;
-		if (NumThreads < 0 || NumThreads > MaxAllowedThreads)
-		{
-			gDiagnostics.DiagOut(eDLWarn, gszProcName, "Warning: Number of threads '-T%d' specified was outside of range %d..%d", NumThreads, 1, MaxAllowedThreads);
-			gDiagnostics.DiagOut(eDLWarn, gszProcName, "Warning: Defaulting number of threads to %d", MaxAllowedThreads);
-			NumThreads = MaxAllowedThreads;
-		}
-
 		if (PMode == eBMGenCIGARs || PMode == eBMSimReads)
 			{
 			if (cigars->count)
@@ -339,6 +328,7 @@ struct arg_end* end = arg_end(200);
 		else
 			szAlignmentsFile[0] = '\0';
 
+		bPrimaryOnly = scoreprimaryonly->count ? true : false;
 		bPEReads = pereads->count ? true : false;
 		MaxNumReads = maxnumreads->count ? maxnumreads->ival[0] : cBMDfltReads;
 		if(MaxNumReads > cBMMaxReads)		// silently clamp to be within a reasonable range
@@ -396,11 +386,6 @@ struct arg_end* end = arg_end(200);
 					strcpy(szPE2Reads, pe2reads->filename[0]);
 					CUtility::TrimQuotedWhitespcExtd(szPE2Reads);
 					}
-				if(!bPEReads && strlen(szPE2Reads))
-					{
-					gDiagnostics.DiagOut(eDLInfo, gszProcName, "PE2 reads file was specified as '-O%s' but not PE '-p' processing, assuming you wanted to score using PE alignments", szPE2Reads);
-					bPEReads = true;
-					}
 				}
 			if (bPEReads)
 				{
@@ -451,6 +436,8 @@ struct arg_end* end = arg_end(200);
 			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Indexed reference genome file : '%s'", szRefGenomeFile);
 		
 		gDiagnostics.DiagOutMsgOnly(eDLInfo, "Maximum number of %s to be processed : %d", bPEReads ? "PE read pairs" : "SE reads", MaxNumReads);
+		if(PMode == eBMScore)
+			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Scoring is for: %s", bPrimaryOnly ? "Primary alignments only" : "All alignments");
 		if(szSEReads[0] != '\0')
 			gDiagnostics.DiagOutMsgOnly(eDLInfo, "%s file : '%s'", bPEReads ? "PE1" : "SE", szSEReads);
 		if (szPE2Reads[0] != '\0')
@@ -460,7 +447,7 @@ struct arg_end* end = arg_end(200);
 		if(PMode == eBMScore)
 			{
 			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Aligned base score points: %d", AlignedBasePts);
-			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Aligned silently trimed read base score points: %d", SilentTrimAlignBasePts);
+			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Aligned silently trimmed read base score points: %d", SilentTrimAlignBasePts);
 			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Misaligned base score points: %d", MisalignedBasePts);
 			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Unaligned base score points: %d", UnalignedBasePts);
 			}
@@ -471,18 +458,14 @@ struct arg_end* end = arg_end(200);
 		if (szExperimentName[0] != '\0')
 			gDiagnostics.DiagOutMsgOnly(eDLInfo, "This processing reference: %s", szExperimentName);
 
-		gDiagnostics.DiagOutMsgOnly(eDLInfo, "number of threads : %d", NumThreads);
-
 		if (gExperimentID > 0)
 			{
 			int ParamID;
 			ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID, ePTText, (int)strlen(szLogFile), "log", szLogFile);
 			ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID, ePTInt32, (int)sizeof(PMode), "mode", &PMode);
 			ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID, ePTBool, (int)sizeof(bPEReads), "pereads", &bPEReads);
-
-			ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID, ePTInt32, (int)sizeof(NumThreads), "threads", &NumThreads);
+			ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID, ePTBool, (int)sizeof(bPrimaryOnly), "pereads", &bPrimaryOnly);
 			ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID, ePTInt32, (int)sizeof(NumberOfProcessors), "cpus", &NumberOfProcessors);
-
 			ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID, ePTText, (int)strlen(szSQLiteDatabase), "sumrslts", szSQLiteDatabase);
 			ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID, ePTText, (int)strlen(szExperimentName), "experimentname", szExperimentName);
 			ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID, ePTText, (int)strlen(szExperimentDescr), "experimentdescr", szExperimentDescr);
@@ -494,6 +477,7 @@ struct arg_end* end = arg_end(200);
 		gStopWatch.Start();
 		Rslt = 0;
 		Rslt = BenchmarkProcess(PMode,					// processing mode
+								bPrimaryOnly,			// if true then score only primary alignments otherwise score including secondary
 							    bPEReads,				// if true then PE pair processing otherwise SE reads
 								UnalignedBasePts,		// points to apply for each unaligned base
 								AlignedBasePts,			// points to apply for each base aligned to it's ground truth loci
@@ -504,8 +488,7 @@ struct arg_end* end = arg_end(200);
 								szRefGenomeFile,		// reads are against this target genome file
 								szAlignmentsFile,		// input file containing aligned reads (SAM or BAM)
 								szSEReads,				// simulated reads are output to this file (SE or PE1 if PE)
-								szPE2Reads,				// simulated PE2 reads are output to this file if simulating PE reads
-								NumThreads);			// number of worker threads to use
+								szPE2Reads);				// simulated PE2 reads are output to this file if simulating PE reads
 		Rslt = Rslt >= 0 ? 0 : 1;
 		if (gExperimentID > 0)
 		{
@@ -532,6 +515,7 @@ TRandomCombined<CRandomMother, CRandomMersenne> RG((int)time(0));
 
 int
 BenchmarkProcess(eBMProcMode PMode,	// processing mode
+	bool bPrimaryOnly,			// if true then score only primary alignments otherwise score including secondary
 	bool bPEReads,				// true if PE pair reads
 	int UnalignedBasePts,		// points to apply for each unaligned base
 	int AlignedBasePts,			// points to apply for each base aligned to it's ground truth loci
@@ -542,8 +526,7 @@ BenchmarkProcess(eBMProcMode PMode,	// processing mode
 	char* pszRefGenomeFile,		// alignments are against this target genome file
 	char* pszAlignmentsFile,	// input file containing aligned reads (SAM or BAM)
 	char* pszSEReads,			// simulated reads are output to this file (SE or PE1 if PE)
-	char* pszPE2Reads,			// simulated PE2 reads are output to this file if simulating PE reads
-	int NumThreads)				// number of worker threads to use
+	char* pszPE2Reads)			// simulated PE2 reads are output to this file if simulating PE reads
 {
 int Rslt;
 CBenchmark *pBenchmark;
@@ -552,15 +535,15 @@ Rslt = 0;
 
 switch (PMode) {
 	case eBMGenCIGARs:
-		Rslt = pBenchmark->GenObsCIGARs(bPEReads, MaxNumReads, pszObsCIGARsFile, pszRefGenomeFile, pszAlignmentsFile, NumThreads);
+		Rslt = pBenchmark->GenObsCIGARs(bPEReads, MaxNumReads, pszObsCIGARsFile, pszRefGenomeFile, pszAlignmentsFile);
 		break;
 
 	case eBMSimReads:
-		Rslt = pBenchmark->SimReads(bPEReads, MaxNumReads, pszObsCIGARsFile, pszRefGenomeFile, pszSEReads, pszPE2Reads, NumThreads);
+		Rslt = pBenchmark->SimReads(bPEReads, MaxNumReads, pszObsCIGARsFile, pszRefGenomeFile, pszSEReads, pszPE2Reads);
 		break;
 
 	case eBMScore:
-		Rslt = pBenchmark->Score(bPEReads, UnalignedBasePts, AlignedBasePts, SilentTrimAlignBasePts, MisalignedBasePts, pszSEReads, pszPE2Reads, pszAlignmentsFile, NumThreads);
+		Rslt = pBenchmark->Score(bPrimaryOnly,bPEReads, UnalignedBasePts, AlignedBasePts, SilentTrimAlignBasePts, MisalignedBasePts, pszSEReads, pszPE2Reads, pszAlignmentsFile);
 		break;
 	}
 
@@ -769,20 +752,22 @@ if (m_pPE2SimReads != NULL)
 	m_pPE2SimReads = NULL;
 	}
 
+m_bPrimaryOnly = false;
 m_bPEReads = false;				// if true then PE pairs processing otherwise SE reads
-m_MaxNumThreads = 0;			// max number of threads
 m_UnalignedBasePts = 0;			// points to apply for each unaligned base
 m_AlignedBasePts = 0;			// points to apply for each base aligned to it's ground truth loci
-m_SilentTrimAlignBasePts = 0; // points to apply for each base aligned in a silently trimmed read within ground truth loci range
+m_SilentTrimAlignBasePts = 0;	// points to apply for each base aligned in a silently trimmed read within ground truth loci range
 m_MisalignedBasePts = 0;		// points to apply for each base aligned but not to ground truth loci
 m_ObsCIGARBuffLen = 0;
 m_AllocdObsCIGARBuffSize = 0;
 m_AllocdObsErrProfMem = 0;
 m_AllocdObsCIGARBuffSize = 0;
 
+m_TotNumPotentialAlignBases = 0;
+m_TotGroundTruthBases = 0;	// total number of potential ground truth bases which could be matched in an alignment 
 m_NumGroundTruths = 0;		// loaded this many ground truths loaded from simulated reads
 m_UsedGroundTruthsMem = 0;	// loaded ground truths are using this sized memory
-m_AllocdGroundTruthsMem = 0;	// allocated this size memory to hold observed error profiles
+m_AllocdGroundTruthsMem = 0;// allocated this size memory to hold observed error profiles
 m_UnscoredReads = 0;
 m_ScoredReads = 0;
 
@@ -927,8 +912,7 @@ CBenchmark::GenObsCIGARs(bool bPEReads,	// true if PE pair processing otherwise 
 	int MaxNumReads,		// maximum number of aligned reads or read pair alignments to accept for putative error profile processing
 	char* pszObsCIGARsFile,	// write observed error profile CIGARs to this file
 	char* pszRefGenomeFile,	// alignments were against this target genome file
-	char* pszAlignmentsFile,// input file containing alignments of simulated reads (SAM or BAM)
-	int MaxNumThreads)		// max number of worker threads to use
+	char* pszAlignmentsFile)// input file containing alignments of simulated reads (SAM or BAM)
 {
 int Rslt;
 int NumPutativeAlignments;
@@ -953,14 +937,15 @@ int ProfileSeqLen;
 etCIGAROpType TypeOp;
 int NumTypeOps;
 bool bSloughAlignment;
-char szObsCigar[cSRMaxCIGARLen+1];
+char szErrProfile[cSRMaxCIGARLen +1 ];
+char szObsCIGAR[cSRMaxCIGARLen + 1];
+int ObsCIGARLen;
 tsBMObsCIGAR* pObsCIGAR;
 tsBAMalign *pSAMalign;
 
 Reset();
 m_bPEReads = bPEReads;
 m_MaxNumReads = MaxNumReads;
-m_MaxNumThreads = MaxNumThreads;
 strcpy(m_szAlignmentsFile, pszAlignmentsFile);
 strcpy(m_szObsCIGARsFile, pszObsCIGARsFile);
 strcpy(m_szRefGenomeFile, pszRefGenomeFile);
@@ -991,7 +976,7 @@ if (m_pObsErrProfiles == MAP_FAILED)
 	}
 #endif
 
-
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "Creating emperical error profiles file", pszObsCIGARsFile);
 #ifdef _WIN32
 if ((m_hObsSIGARs = open(pszObsCIGARsFile, (_O_RDWR | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC), (_S_IREAD | _S_IWRITE))) == -1)
 #else
@@ -1002,7 +987,7 @@ if ((m_hObsSIGARs = open(pszObsCIGARsFile, O_RDWR | O_CREAT | O_TRUNC, S_IREAD |
 	Reset();
 	return(eBSFerrOpnFile);
 	}
-gDiagnostics.DiagOut(eDLInfo, gszProcName, "Opening SAM/BAM format file %s for processing", pszAlignmentsFile);
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "Opening SAM/BAM alignments file %s from which emperical error profiles will be derived", pszAlignmentsFile);
 if ((Rslt = OpenAlignments(m_szAlignmentsFile)) < 0)
 	{
 	Reset();
@@ -1012,9 +997,9 @@ if ((Rslt = OpenAlignments(m_szAlignmentsFile)) < 0)
 m_pObsCIGARBuff = new char [cBMCIGARAllocBuffSize];
 m_AllocdObsCIGARBuffSize = cBMCIGARAllocBuffSize;
 if(bPEReads)
-	m_ObsCIGARBuffLen = sprintf(m_pObsCIGARBuff,"\"ID\",\"SeqLen\",\"PE1 Strand\",\"CIGAR\",\"PE Insert Size\",\"PE2 Strand\",\"CIGAR\"\n");
+	m_ObsCIGARBuffLen = sprintf(m_pObsCIGARBuff,"\"ID\",\"SeqLen\",\"PE1 Strand\",\"PE1 CIGAR\",\"PE1 Error Profile\",\"PE Insert Size\",\"PE2 Strand\",\"PE2 CIGAR\",\"PE2 Error Profile\"\n");
 else
-	m_ObsCIGARBuffLen = sprintf(m_pObsCIGARBuff, "\"ID\",\"SeqLen\",\"Strand\",\"CIGAR\"\n");
+	m_ObsCIGARBuffLen = sprintf(m_pObsCIGARBuff, "\"ID\",\"SeqLen\",\"Strand\",\"CIGAR\",\"Error Profile\"\n");
 CUtility::SafeWrite(m_hObsSIGARs, m_pObsCIGARBuff, m_ObsCIGARBuffLen);
 m_ObsCIGARBuffLen = 0;
 
@@ -1187,7 +1172,7 @@ while (Rslt >= eBSFSuccess && (LineLen = m_pAlignments->GetNxtSAMline(pszLine)) 
 		
 		}
 
-	// check if alignment only ends with match or soft trimming, and if soft trimming that previous TypeOp is a match
+	// check if alignment only ends with match or soft trimming, and if soft trimming 3' that previous TypeOp is a match
 	if(NumTypeOps > 1)
 		{
 		TypeOp = (etCIGAROpType)(pSAMalign->cigar[NumTypeOps-1] & 0x0f);
@@ -1240,6 +1225,8 @@ while (Rslt >= eBSFSuccess && (LineLen = m_pAlignments->GetNxtSAMline(pszLine)) 
 		continue;
 		}
 
+	// read CIGAR is packed, decode into an ASCII string
+	ObsCIGARLen = DecodeCIGAR(pSAMalign->flag_nc & 0x0ff, pSAMalign->cigar,sizeof(szObsCIGAR),szObsCIGAR);
 	// take read and using the alignment CIGAR as a guide then regenerate a CIGAR which states which bases are exact matches and which mismatch the target sequence
 	ReadOfs = 0;
 	CigarIdx = 0;
@@ -1248,7 +1235,7 @@ while (Rslt >= eBSFSuccess && (LineLen = m_pAlignments->GetNxtSAMline(pszLine)) 
 	NumMismatches = 0;
 	ProfileSeqLen = 0;
 	AlignLoci = pSAMalign->pos;
-	szObsCigar[0] = '\0';
+	szErrProfile[0] = '\0';
 	bSloughAlignment = false;
 	while ((CurOpIdx = GetClaimOps(pSAMalign, CurOpIdx, &NumOps, &TypeOp)) > 0)
 		{
@@ -1279,32 +1266,32 @@ while (Rslt >= eBSFSuccess && (LineLen = m_pAlignments->GetNxtSAMline(pszLine)) 
 			if (NumMatches > 0)
 				{
 				ProfileSeqLen += NumMatches;
-				CigarIdx += sprintf(&szObsCigar[CigarIdx], "%d=", NumMatches);
+				CigarIdx += sprintf(&szErrProfile[CigarIdx], "%d=", NumMatches);
 				NumMatches = 0;
 				}
 			else
 				if (NumMismatches > 0)
 					{
 					ProfileSeqLen += NumMismatches;
-					CigarIdx += sprintf(&szObsCigar[CigarIdx], "%dX", NumMismatches);
+					CigarIdx += sprintf(&szErrProfile[CigarIdx], "%dX", NumMismatches);
 					NumMismatches = 0;
 					}
 			switch (TypeOp) {
 				case eCOPInsert:		//	'I'  insertion relative to target - consumes query sequence only
 					ProfileSeqLen += NumOps;
-					CigarIdx += sprintf(&szObsCigar[CigarIdx], "%dI", NumOps);
+					CigarIdx += sprintf(&szErrProfile[CigarIdx], "%dI", NumOps);
 					continue;
 
 				case eCOPDelete:	// 'D'  deletion relative to target - consumes reference sequence only
-					CigarIdx += sprintf(&szObsCigar[CigarIdx], "%dD", NumOps);
+					CigarIdx += sprintf(&szErrProfile[CigarIdx], "%dD", NumOps);
 					continue;
 
 				case eCOPSkipRegion:	//	'N'  skipped region relative to target - intron?  - consumes reference sequence only
-					CigarIdx += sprintf(&szObsCigar[CigarIdx], "%dN", NumOps);
+					CigarIdx += sprintf(&szErrProfile[CigarIdx], "%dN", NumOps);
 					continue;
 
 				case eCOPPadding:		//	'P' padding (silent deletion from padded reference) consumes neither query or reference sequence
-					CigarIdx += sprintf(&szObsCigar[CigarIdx], "%dP", NumOps);
+					CigarIdx += sprintf(&szErrProfile[CigarIdx], "%dP", NumOps);
 					continue;
 				}
 			}
@@ -1323,7 +1310,7 @@ while (Rslt >= eBSFSuccess && (LineLen = m_pAlignments->GetNxtSAMline(pszLine)) 
 				if (NumMismatches > 0)
 					{
 					ProfileSeqLen += NumMismatches;
-					CigarIdx += sprintf(&szObsCigar[CigarIdx], "%dX", NumMismatches);
+					CigarIdx += sprintf(&szErrProfile[CigarIdx], "%dX", NumMismatches);
 					NumMismatches = 0;
 					}
 				NumMatches++;
@@ -1333,7 +1320,7 @@ while (Rslt >= eBSFSuccess && (LineLen = m_pAlignments->GetNxtSAMline(pszLine)) 
 				if (NumMatches > 0)
 					{
 					ProfileSeqLen += NumMatches;
-					CigarIdx += sprintf(&szObsCigar[CigarIdx], "%d=", NumMatches);
+					CigarIdx += sprintf(&szErrProfile[CigarIdx], "%d=", NumMatches);
 					NumMatches = 0;
 					}
 				NumMismatches++;
@@ -1346,14 +1333,14 @@ while (Rslt >= eBSFSuccess && (LineLen = m_pAlignments->GetNxtSAMline(pszLine)) 
 	if (NumMatches > 0)
 		{
 		ProfileSeqLen += NumMatches;
-		CigarIdx += sprintf(&szObsCigar[CigarIdx], "%d=", NumMatches);
+		CigarIdx += sprintf(&szErrProfile[CigarIdx], "%d=", NumMatches);
 		NumMatches = 0;
 		}
 	else
 		if (NumMismatches > 0)
 			{
 			ProfileSeqLen += NumMismatches;
-			CigarIdx += sprintf(&szObsCigar[CigarIdx], "%dX", NumMismatches);
+			CigarIdx += sprintf(&szErrProfile[CigarIdx], "%dX", NumMismatches);
 			NumMismatches = 0;
 			}
 
@@ -1393,18 +1380,20 @@ while (Rslt >= eBSFSuccess && (LineLen = m_pAlignments->GetNxtSAMline(pszLine)) 
 	pObsCIGAR->ReadLen = ProfileSeqLen;
 	pObsCIGAR->InsertSize = abs(pSAMalign->tlen);
 	pObsCIGAR->Flags = (pSAMalign->flag_nc >> 16) & 0x0000ffff;
-	strncpy((char *)&pObsCIGAR->NameCIGAR, pSAMalign->read_name, pSAMalign->NumReadNameBytes);
+	strncpy((char *)&pObsCIGAR->NameCIGARErrProfile, pSAMalign->read_name, pSAMalign->NumReadNameBytes);
 	if (pSAMalign->NumReadNameBytes > 3 && 
 			pSAMalign->read_name[pSAMalign->NumReadNameBytes - 3] == '/' && (pSAMalign->read_name[pSAMalign->NumReadNameBytes - 2] == '1' || pSAMalign->read_name[pSAMalign->NumReadNameBytes - 2] == '2'))
 		{
 		pObsCIGAR->NameLen = pSAMalign->NumReadNameBytes - 3;
-		pObsCIGAR->NameCIGAR[pObsCIGAR->NameLen-1] = '\0';
+		pObsCIGAR->NameCIGARErrProfile[pObsCIGAR->NameLen-1] = '\0';
 		}
 	else
 		pObsCIGAR->NameLen = pSAMalign->NumReadNameBytes;
-	pObsCIGAR->CIGARlen = CigarIdx + 1;
-	strcpy((char*)&pObsCIGAR->NameCIGAR[pObsCIGAR->NameLen], szObsCigar);
-	pObsCIGAR->Size = (uint16_t)sizeof(tsBMObsCIGAR) + pObsCIGAR->NameLen + pObsCIGAR->CIGARlen - 1;
+	pObsCIGAR->ErrProfileLen = CigarIdx + 1;
+	pObsCIGAR->ObsCIGARlen = ObsCIGARLen + 1;
+	strcpy((char*)&pObsCIGAR->NameCIGARErrProfile[pObsCIGAR->NameLen], szObsCIGAR);
+	strcpy((char*)&pObsCIGAR->NameCIGARErrProfile[pObsCIGAR->NameLen + pObsCIGAR->ObsCIGARlen], szErrProfile);
+	pObsCIGAR->Size = (uint16_t)sizeof(tsBMObsCIGAR) + pObsCIGAR->NameLen + pObsCIGAR->ObsCIGARlen + pObsCIGAR->ErrProfileLen - 1;
 	m_UsedObsErrProfMem += pObsCIGAR->Size;
 	NumAcceptedAlignments += 1;
 	if(NumAcceptedAlignments >= (bPEReads ? MaxNumReads * 2 : MaxNumReads))
@@ -1420,7 +1409,6 @@ if (NumAcceptedAlignments < (bPEReads ? cBMMinReads * 2 : cBMMinReads))
 	}
 
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "Processing of %d SAM/BAM CIGAR alignments completed, putatively accepted %d for use as read simulation error profiles", NumPutativeAlignments, NumAcceptedAlignments);
-
 
 if(bPEReads)
 	{
@@ -1448,7 +1436,7 @@ if(bPEReads)
 			NumShortReads++;
 			continue;
 			}
-		if(stricmp((char *)pObsCIGAR->NameCIGAR, (char*)pNxtObsCIGAR->NameCIGAR))
+		if(stricmp((char *)pObsCIGAR->NameCIGARErrProfile, (char*)pNxtObsCIGAR->NameCIGARErrProfile))
 			{
 			NumUnableToPair++;
 			continue;
@@ -1461,10 +1449,14 @@ if(bPEReads)
 			}
 
 		NumPairs += 1;
-		m_ObsCIGARBuffLen += sprintf(&m_pObsCIGARBuff[m_ObsCIGARBuffLen],"%d,%d,%c,%s,%d,%c,%s\n", 
+		m_ObsCIGARBuffLen += sprintf(&m_pObsCIGARBuff[m_ObsCIGARBuffLen],"%d,%d,%c,%s,%s,%d,%c,%s,%s\n", 
 			NumPairs, pObsCIGAR->ReadLen,
-			(pObsCIGAR->Flags & 0x10) ? '-' : '+',&pObsCIGAR->NameCIGAR[pObsCIGAR->NameLen], 
-			 pObsCIGAR->InsertSize, (pNxtObsCIGAR->Flags & 0x10) ? '-' : '+', &pNxtObsCIGAR->NameCIGAR[pObsCIGAR->NameLen]);
+			(pObsCIGAR->Flags & 0x10) ? '-' : '+',
+			&pObsCIGAR->NameCIGARErrProfile[pObsCIGAR->NameLen], 
+			&pObsCIGAR->NameCIGARErrProfile[pObsCIGAR->NameLen + pObsCIGAR->ObsCIGARlen],
+			pObsCIGAR->InsertSize, (pNxtObsCIGAR->Flags & 0x10) ? '-' : '+', 
+			&pNxtObsCIGAR->NameCIGARErrProfile[pNxtObsCIGAR->NameLen], 
+			&pNxtObsCIGAR->NameCIGARErrProfile[pNxtObsCIGAR->NameLen + pNxtObsCIGAR->ObsCIGARlen]);
 		if ((m_ObsCIGARBuffLen + 1000) >= m_AllocdObsCIGARBuffSize)
 			{
 			CUtility::SafeWrite(m_hObsSIGARs, m_pObsCIGARBuff, m_ObsCIGARBuffLen);
@@ -1478,7 +1470,7 @@ if(bPEReads)
 		m_ObsCIGARBuffLen = 0;
 		}
 	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Reported %d PE read pair error profiles to '%s' with read lengths of %dbp", NumPairs, pszObsCIGARsFile, MaxProfileSeqLen);
-	delete pSortAssoc;
+	delete []pSortAssoc;
 	}
 else
 	{ // SE read error profiles
@@ -1489,8 +1481,8 @@ else
 		if (pObsCIGAR->ReadLen == MaxProfileSeqLen)	// some may have slipped through before it was known what read lengths were in original sequenced reads prior to any alignment trimming
 			{
 			NumSEs += 1;
-			m_ObsCIGARBuffLen += sprintf(&m_pObsCIGARBuff[m_ObsCIGARBuffLen], "%d,%d,%c,%s\n", NumSEs, pObsCIGAR->ReadLen,
-				(pObsCIGAR->Flags & 0x10) ? '-' : '+', &pObsCIGAR->NameCIGAR[pObsCIGAR->NameLen]);
+			m_ObsCIGARBuffLen += sprintf(&m_pObsCIGARBuff[m_ObsCIGARBuffLen], "%d,%d,%c,%s,%s\n", NumSEs, pObsCIGAR->ReadLen,
+				(pObsCIGAR->Flags & 0x10) ? '-' : '+', &pObsCIGAR->NameCIGARErrProfile[pObsCIGAR->NameLen], &pObsCIGAR->NameCIGARErrProfile[pObsCIGAR->NameLen + pObsCIGAR->ObsCIGARlen]);
 			if((m_ObsCIGARBuffLen + 1000) >= m_AllocdObsCIGARBuffSize)
 				{
 				CUtility::SafeWrite(m_hObsSIGARs, m_pObsCIGARBuff, m_ObsCIGARBuffLen);
@@ -1508,13 +1500,18 @@ else
 		}
 	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Reported %d SE read error profiles to '%s' with read lengths of %dbp", NumSEs, pszObsCIGARsFile, MaxProfileSeqLen);
 	}
-gDiagnostics.DiagOut(eDLInfo, gszProcName, "NumPEInconsistentStrands: %d, NumShortReads: %d, NumUnableToPair: %d, NumCIGARErrs: %d, NumCIGARLenErrs: %d, NumNonCvtdSoftClips: %d, NumUnknownRefs: %d, NumFragSizeBounds: %d, NumReadLenBounds: %d",
-	NumPEInconsistentStrands,NumShortReads,NumUnableToPair,NumCIGARErrs,NumCIGARLenErrs,NumNonCvtdSoftClips,NumUnknownRefs,NumFragSizeBounds,NumReadLenBounds);
 
-gDiagnostics.DiagOut(eDLInfo, gszProcName, "NumSecAlignments: %d,NumNoMateReads: %d,NumCIGARSUnknown: %d,NumUnmapped: %d,NumMissingFeatures: %d",
-		NumSecAlignments,NumNoMateReads,NumCIGARSUnknown,NumUnmapped,NumMissingFeatures);
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "Unable to accept reads because -");
+gDiagnostics.DiagOutMsgOnly(eDLInfo, "missing features: %u, unmapped: %u, CIGAR missing: %u, CIGARs: %u, CIGAR len : % u",
+	NumMissingFeatures, NumUnmapped, NumCIGARSUnknown, NumCIGARErrs, NumCIGARLenErrs);
+gDiagnostics.DiagOutMsgOnly(eDLInfo, "no mate: %u, unable to pair: %d, PE strands: %u, not primary: %u",
+	NumNoMateReads, NumUnableToPair, NumPEInconsistentStrands, NumSecAlignments);
+gDiagnostics.DiagOutMsgOnly(eDLInfo, "short reads: %u, len: %u, frag size: %u",
+	NumShortReads, NumReadLenBounds, NumFragSizeBounds);
+gDiagnostics.DiagOutMsgOnly(eDLInfo, "unknown ref: %u,  ,soft clip neg loci: %u",
+	NumUnknownRefs, NumNonCvtdSoftClips);
 
-delete pszLine;
+delete []pszLine;
 delete pSAMalign;
 Reset();
 return(0);
@@ -1527,8 +1524,7 @@ CBenchmark::SimReads(bool bPEReads,		// true if PE pair processing otherwise SE 
 		char* pszCIGARsFile,		// read in observed CIGARs from this file
 		char* pszRefGenomeFile,		// reads are against this target genome file
 		char* pszSEReads,			// simulated reads are output to this file (SE or PE1 if PE)
-		char* pszPE2Reads,			// simulated PE2 reads are output to this file if simulating PE reads
-		int MaxNumThreads)			// number of worker threads to use
+		char* pszPE2Reads)			// simulated PE2 reads are output to this file if simulating PE reads
 {
 int Rslt;
 uint8_t SESeq[cBMMaxReadLen];
@@ -1539,16 +1535,23 @@ int SEStartLoci;
 int SEChromID;
 tsBMPackedCIGARs* pCurCIGAR;
 int SeqIdx;
-int NumSimReads = 0;
+int NumSimReads;
+uint32_t CurCIGAR;
+int CIGARIdx;
+etCIGAROpType CurOpType;
+uint8_t* pPermuteBase;
+int CurOpCnt;
+int ReadSeqIdx;
+int CurLoci;
 
 Reset();
 m_bPEReads = bPEReads;
 m_MaxNumReads = MaxNumReads;
-m_MaxNumThreads = MaxNumThreads;
 strcpy(m_szObsCIGARsFile, pszCIGARsFile);
 strcpy(m_szRefGenomeFile, pszRefGenomeFile);
 strcpy(m_szSEReads, pszSEReads);
-strcpy(m_szPE2Reads, pszPE2Reads);
+if(bPEReads)
+	strcpy(m_szPE2Reads, pszPE2Reads);
 
 #ifdef _WIN32
 m_hSEReads = open(pszSEReads, O_CREATETRUNC);
@@ -1615,104 +1618,49 @@ if((Rslt = InitObsErrProfile(pszCIGARsFile)) != eBSFSuccess)	// read from this o
 	return(Rslt);
 	}
 
-
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "SimReads: Starting to simulate %s ...", m_bPEReads ? "PE read pairs" : "SE reads");
 // iterate over all the error profiles untill MaxNumReads sequences or pair of sequences have been generated
-
 NumSimReads = 0;
 pCurCIGAR = (tsBMPackedCIGARs*)m_pObsErrProfiles;
 for(SeqIdx = 0; SeqIdx < MaxNumReads; SeqIdx++)
 	{
-	// randomly select a target chrom and starting loci
-	// iterate over the observed CIGAR and build up a sequence from starting loci with induced errors as per CIGAR
-	// output as the PE1 or SE read
-	if((SEStartLoci = ChooseRandStartLoci(pCurCIGAR->PEInsertSize,&SEChromID)) < 0)
+	int Retries = 1000000;
+	while(--Retries)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "SimReads: unable to locate a random chrom.loci for fragment size %u", pCurCIGAR->PEInsertSize);
-		break;
-		}
-	PE2ChromID = SEChromID;
-	// iterate over CIGARs
-	uint32_t CurCIGAR;
-	int CIGARIdx = 0;
-	etCIGAROpType CurOpType;
-	uint8_t* pPermuteBase;
-	int CurOpCnt;
-	int ReadSeqIdx;
-	int CurLoci = SEStartLoci;
-	for(ReadSeqIdx = 0; ReadSeqIdx < pCurCIGAR->ReadLen; )
-		{
-		CurCIGAR = pCurCIGAR->CIGAROps[CIGARIdx++];
-		if (CIGARIdx > pCurCIGAR->PE1NumCIGAROps)
-			break;
-		CurOpType = (etCIGAROpType)(CurCIGAR & 0x0000f);
-		CurOpCnt = (CurCIGAR >> 4) & 0x0fffffff;
-		switch(CurOpType) {
-			case eCOPMatch:			//	'M' aligned but could be either matching or mismatching, here it is treated as though exactly matching
-			case eCOPALignMatch:	//  '=' aligned as exactly matching, consume both query and reference sequence
-				m_pGenome->GetSeq(SEChromID,CurLoci, &SESeq[ReadSeqIdx], CurOpCnt);
-				CurLoci += CurOpCnt;
-				ReadSeqIdx += CurOpCnt;
-				continue;
-		
-			case eCOPALignMismatch:	// 'X' aligned but as a mismatch, consumes both query and reference sequence
-				m_pGenome->GetSeq(SEChromID, CurLoci, &SESeq[ReadSeqIdx], CurOpCnt); // get sequence but then permute
-				pPermuteBase = &SESeq[ReadSeqIdx];
-				for(int PermuteIdx = 0; PermuteIdx < CurOpCnt; PermuteIdx++, pPermuteBase++)
-					*pPermuteBase = (*pPermuteBase + 2) & 0x03;
-				CurLoci += CurOpCnt;
-				ReadSeqIdx += CurOpCnt;
-				continue;
-
-			case eCOPSoftClip:				//	'S'  soft clipping - consumes query sequence only
-			case eCOPInsert:				//	'I'  insertion relative to target - consumes query sequence only
-				m_pGenome->GetSeq(SEChromID, CurLoci, &SESeq[ReadSeqIdx], CurOpCnt); // get sequence but then permute so will not match when aligning
-				pPermuteBase = &SESeq[ReadSeqIdx];
-				for (int PermuteIdx = 0; PermuteIdx < CurOpCnt; PermuteIdx++, pPermuteBase++)
-					*pPermuteBase = (*pPermuteBase + 2) & 0x03;
-				CurLoci += CurOpCnt;
-				ReadSeqIdx += CurOpCnt;		// no changes to target loci
-				continue;
-
-			case eCOPSkipRegion:    	    //	'N'  skipped region relative to target - intron?  - consumes reference sequence only
-			case eCOPDelete:				// 'D'  deletion relative to target - consumes reference sequence only
-				CurLoci += CurOpCnt;		// no change to ReadSeqIdx
-				continue;
-
-			case eCOPHardClip:				// 'H'  hard clipping
-				m_pGenome->GetSeq(SEChromID, CurLoci, &SESeq[ReadSeqIdx], CurOpCnt); // get sequence but then permute so shouldn't match when aligning
-				pPermuteBase = &SESeq[ReadSeqIdx];
-				for (int PermuteIdx = 0; PermuteIdx < CurOpCnt; PermuteIdx++, pPermuteBase++)
-					*pPermuteBase = (*pPermuteBase + 2) & 0x03;
-				CurLoci += CurOpCnt;
-				ReadSeqIdx += CurOpCnt;		// no changes to target loci
-				continue;
-			}
-		}
-
-	if (m_bPEReads)
-		{
-		CIGARIdx = pCurCIGAR->PE1NumCIGAROps;
-		PE2StartLoci = pCurCIGAR->PEInsertSize + SEStartLoci - RefSeqConsumedLen(pCurCIGAR->PE2NumCIGAROps, &pCurCIGAR->CIGAROps[CIGARIdx]);
-		CurLoci = PE2StartLoci;
-		for (ReadSeqIdx = 0; ReadSeqIdx < pCurCIGAR->ReadLen; )
+		// randomly select a target chrom and starting loci
+		// iterate over the observed CIGAR and build up a sequence from starting loci with induced errors as per CIGAR
+		// output as the PE1 or SE read
+		if(!m_bPEReads)
+			pCurCIGAR->PEInsertSize = RefSeqConsumedLen(pCurCIGAR->PE1NumCIGAROps, pCurCIGAR->CIGAROpsErrProfOps);
+		if((SEStartLoci = ChooseRandStartLoci(pCurCIGAR->PEInsertSize,&SEChromID)) < 0)
 			{
-			CurCIGAR = pCurCIGAR->CIGAROps[CIGARIdx++];
-			if (CIGARIdx > pCurCIGAR->PE1NumCIGAROps + pCurCIGAR->PE2NumCIGAROps)
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "SimReads: unable to locate a random chrom.loci for fragment size %u", pCurCIGAR->PEInsertSize);
+			break;
+			}
+		PE2ChromID = SEChromID;
+		
+		// iterate over CIGARs
+		CurLoci = SEStartLoci;
+		CIGARIdx = pCurCIGAR->PE1NumCIGAROps;
+		for(ReadSeqIdx = 0; ReadSeqIdx < pCurCIGAR->ReadLen; )
+			{
+			CurCIGAR = pCurCIGAR->CIGAROpsErrProfOps[CIGARIdx++];
+			if (CIGARIdx > pCurCIGAR->PE1NumCIGAROps + pCurCIGAR->PE1NumErrProfOps)
 				break;
 			CurOpType = (etCIGAROpType)(CurCIGAR & 0x0000f);
 			CurOpCnt = (CurCIGAR >> 4) & 0x0fffffff;
-			switch (CurOpType) {
+			switch(CurOpType) {
 				case eCOPMatch:			//	'M' aligned but could be either matching or mismatching, here it is treated as though exactly matching
 				case eCOPALignMatch:	//  '=' aligned as exactly matching, consume both query and reference sequence
-					m_pGenome->GetSeq(SEChromID, CurLoci, &PE2Seq[ReadSeqIdx], CurOpCnt);
+					m_pGenome->GetSeq(SEChromID,CurLoci, &SESeq[ReadSeqIdx], CurOpCnt);
 					CurLoci += CurOpCnt;
 					ReadSeqIdx += CurOpCnt;
 					continue;
-
+		
 				case eCOPALignMismatch:	// 'X' aligned but as a mismatch, consumes both query and reference sequence
-					m_pGenome->GetSeq(SEChromID, CurLoci, &PE2Seq[ReadSeqIdx], CurOpCnt); // get sequence but then permute
-					pPermuteBase = &PE2Seq[ReadSeqIdx];
-					for (int PermuteIdx = 0; PermuteIdx < CurOpCnt; PermuteIdx++, pPermuteBase++)
+					m_pGenome->GetSeq(SEChromID, CurLoci, &SESeq[ReadSeqIdx], CurOpCnt); // get sequence but then permute
+					pPermuteBase = &SESeq[ReadSeqIdx];
+					for(int PermuteIdx = 0; PermuteIdx < CurOpCnt; PermuteIdx++, pPermuteBase++)
 						*pPermuteBase = (*pPermuteBase + 2) & 0x03;
 					CurLoci += CurOpCnt;
 					ReadSeqIdx += CurOpCnt;
@@ -1720,11 +1668,10 @@ for(SeqIdx = 0; SeqIdx < MaxNumReads; SeqIdx++)
 
 				case eCOPSoftClip:				//	'S'  soft clipping - consumes query sequence only
 				case eCOPInsert:				//	'I'  insertion relative to target - consumes query sequence only
-					m_pGenome->GetSeq(SEChromID, CurLoci, &PE2Seq[ReadSeqIdx], CurOpCnt); // get sequence but then permute so will not match when aligning
-					pPermuteBase = &PE2Seq[ReadSeqIdx];
+					m_pGenome->GetSeq(SEChromID, CurLoci, &SESeq[ReadSeqIdx], CurOpCnt); // get sequence but then permute so will not match when aligning
+					pPermuteBase = &SESeq[ReadSeqIdx];
 					for (int PermuteIdx = 0; PermuteIdx < CurOpCnt; PermuteIdx++, pPermuteBase++)
 						*pPermuteBase = (*pPermuteBase + 2) & 0x03;
-					CurLoci += CurOpCnt;
 					ReadSeqIdx += CurOpCnt;		// no changes to target loci
 					continue;
 
@@ -1734,20 +1681,99 @@ for(SeqIdx = 0; SeqIdx < MaxNumReads; SeqIdx++)
 					continue;
 
 				case eCOPHardClip:				// 'H'  hard clipping
-					m_pGenome->GetSeq(SEChromID, CurLoci, &PE2Seq[ReadSeqIdx], CurOpCnt); // get sequence but then permute so shouldn't match when aligning
+					m_pGenome->GetSeq(SEChromID, CurLoci, &SESeq[ReadSeqIdx], CurOpCnt); // get sequence but then permute so shouldn't match when aligning
 					pPermuteBase = &SESeq[ReadSeqIdx];
 					for (int PermuteIdx = 0; PermuteIdx < CurOpCnt; PermuteIdx++, pPermuteBase++)
 						*pPermuteBase = (*pPermuteBase + 2) & 0x03;
-					CurLoci += CurOpCnt;
 					ReadSeqIdx += CurOpCnt;		// no changes to target loci
 					continue;
 				}
 			}
+		// need to ensure that reads have at most only a couple of indeterminates otherwise alignments likely to be very difficult
+		int NumNs = 0;
+		for (int BaseIdx = 0; BaseIdx < pCurCIGAR->ReadLen; BaseIdx++)
+			if (SESeq[BaseIdx] >= eBaseN)
+				NumNs++;
+		if (NumNs > pCurCIGAR->ReadLen / 5)
+			continue;				// retry for a read without excessive number of indeterminates
+
+		if (m_bPEReads)
+			{
+			CIGARIdx = pCurCIGAR->PE1NumCIGAROps + pCurCIGAR->PE1NumErrProfOps + pCurCIGAR->PE2NumCIGAROps;
+			PE2StartLoci = pCurCIGAR->PEInsertSize + SEStartLoci - RefSeqConsumedLen(pCurCIGAR->PE2NumErrProfOps, &pCurCIGAR->CIGAROpsErrProfOps[CIGARIdx]);
+			CurLoci = PE2StartLoci;
+			for (ReadSeqIdx = 0; ReadSeqIdx < pCurCIGAR->ReadLen; )
+				{
+				CurCIGAR = pCurCIGAR->CIGAROpsErrProfOps[CIGARIdx++];
+				if (CIGARIdx > pCurCIGAR->PE1NumCIGAROps + pCurCIGAR->PE1NumErrProfOps + pCurCIGAR->PE2NumCIGAROps + pCurCIGAR->PE2NumErrProfOps)
+					break;
+				CurOpType = (etCIGAROpType)(CurCIGAR & 0x0000f);
+				CurOpCnt = (CurCIGAR >> 4) & 0x0fffffff;
+				switch (CurOpType) {
+					case eCOPMatch:			//	'M' aligned but could be either matching or mismatching, here it is treated as though exactly matching
+					case eCOPALignMatch:	//  '=' aligned as exactly matching, consume both query and reference sequence
+						m_pGenome->GetSeq(SEChromID, CurLoci, &PE2Seq[ReadSeqIdx], CurOpCnt);
+						CurLoci += CurOpCnt;
+						ReadSeqIdx += CurOpCnt;
+						continue;
+
+					case eCOPALignMismatch:	// 'X' aligned but as a mismatch, consumes both query and reference sequence
+						m_pGenome->GetSeq(SEChromID, CurLoci, &PE2Seq[ReadSeqIdx], CurOpCnt); // get sequence but then permute
+						pPermuteBase = &PE2Seq[ReadSeqIdx];
+						for (int PermuteIdx = 0; PermuteIdx < CurOpCnt; PermuteIdx++, pPermuteBase++)
+							*pPermuteBase = (*pPermuteBase + 2) & 0x03;
+						CurLoci += CurOpCnt;
+						ReadSeqIdx += CurOpCnt;
+						continue;
+
+					case eCOPSoftClip:				//	'S'  soft clipping - consumes query sequence only
+					case eCOPInsert:				//	'I'  insertion relative to target - consumes query sequence only
+						m_pGenome->GetSeq(SEChromID, CurLoci, &PE2Seq[ReadSeqIdx], CurOpCnt); // get sequence but then permute so will not match when aligning
+						pPermuteBase = &PE2Seq[ReadSeqIdx];
+						for (int PermuteIdx = 0; PermuteIdx < CurOpCnt; PermuteIdx++, pPermuteBase++)
+							*pPermuteBase = (*pPermuteBase + 2) & 0x03;
+						ReadSeqIdx += CurOpCnt;		// no changes to target loci
+						continue;
+
+					case eCOPSkipRegion:    	    //	'N'  skipped region relative to target - intron?  - consumes reference sequence only
+					case eCOPDelete:				// 'D'  deletion relative to target - consumes reference sequence only
+						CurLoci += CurOpCnt;		// no change to ReadSeqIdx
+						continue;
+
+					case eCOPHardClip:				// 'H'  hard clipping
+						m_pGenome->GetSeq(SEChromID, CurLoci, &PE2Seq[ReadSeqIdx], CurOpCnt); // get sequence but then permute so shouldn't match when aligning
+						pPermuteBase = &PE2Seq[ReadSeqIdx];
+						for (int PermuteIdx = 0; PermuteIdx < CurOpCnt; PermuteIdx++, pPermuteBase++)
+							*pPermuteBase = (*pPermuteBase + 2) & 0x03;
+						ReadSeqIdx += CurOpCnt;		// no changes to target loci
+						continue;
+					}
+				}
+			}
+		// need to ensure that reads have at most only a couple of indeterminates otherwise alignments likely to be very problematic
+		NumNs = 0;
+		for(int BaseIdx = 0; BaseIdx < pCurCIGAR->ReadLen; BaseIdx++)
+			if(PE2Seq[BaseIdx] >= eBaseN)
+				NumNs++;
+		if (NumNs > pCurCIGAR->ReadLen / 5)
+			continue;				// retry for a read without excessive number of indeterminates
+		break;
 		}
-	// just a check; end loci - start loci should match the fragment length, if not then there is a major problem!
-	int InsertSize = CurLoci - SEStartLoci;
-	if(InsertSize != pCurCIGAR->PEInsertSize)
-		gDiagnostics.DiagOut(eDLWarn, gszProcName, "SimReads: Expected insert size of %d, sim was %d", pCurCIGAR->PEInsertSize, InsertSize);
+
+	if(!Retries)		// if exhusted retries looking for reads without too many indeterminates
+		{
+		gDiagnostics.DiagOut(eDLWarn, gszProcName, "SimReads: Unable to locate ground truth read with less than 5% of indeterminate bases");
+		Reset();
+		return(eBSFerrRead);
+		}
+
+	if(m_bPEReads)
+		{
+		// just a check; end loci - start loci should match the fragment length, if not then there is a major problem!
+		int InsertSize = CurLoci - SEStartLoci;
+		if(InsertSize != pCurCIGAR->PEInsertSize)
+			gDiagnostics.DiagOut(eDLWarn, gszProcName, "SimReads: Expected insert size of %d, sim was %d", pCurCIGAR->PEInsertSize, InsertSize);
+		}
 
 	NumSimReads += 1;
 	// if read strand was '-' then reverse complement before writing out
@@ -1766,7 +1792,7 @@ for(SeqIdx = 0; SeqIdx < MaxNumReads; SeqIdx++)
 		}
 	
 	pCurCIGAR = (tsBMPackedCIGARs*)((uint8_t *)pCurCIGAR + pCurCIGAR->Size);
-	if((uint8_t*)pCurCIGAR >= m_pObsErrProfiles + m_UsedObsErrProfMem)	// start back at first profile?
+	if((uint8_t*)pCurCIGAR >= m_pObsErrProfiles + m_UsedObsErrProfMem)	// recycle error profiles by starting back at first
 		pCurCIGAR = (tsBMPackedCIGARs*)m_pObsErrProfiles;
 	}
 
@@ -1797,7 +1823,7 @@ for(SeqIdx = 0; SeqIdx < MaxNumReads; SeqIdx++)
 		close(m_hPE2Reads);
 		m_hPE2Reads = -1;
 		}
-
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "SimReads: Generated %d %s", NumSimReads, m_bPEReads ? "PE read pairs":"SE reads");
 Reset();
 return(Rslt);
 }
@@ -1809,19 +1835,24 @@ CBenchmark::DecodeCIGAR(int NumPackedOps,			// number of packed CIGAR ops in
 	char* pszCIGAR)				// decode into this buffer
 {
 int Idx;
+int strCIGAROfs;
 etCIGAROpType OpType;
 char ChrOp;
 int NumOps;
 int NumChrs;
+int Cnt;
 
 if(NumPackedOps < 1 || pPackedOPs == NULL || MaxCIGARChrs <= 3 || pszCIGAR == NULL)
 	return(0);
-NumChrs = 0;
+strCIGAROfs = 0;
 for(Idx = 0; Idx < NumPackedOps; Idx++, pPackedOPs++)
 	{
 	OpType = (etCIGAROpType)(*pPackedOPs & 0x0f);
 	NumOps = (*pPackedOPs >> 4) & 0x0fffffff;
-	NumChrs += 2+(NumOps / 10); // allowing for OpType as well as numerical digits for NumOps
+	Cnt = NumOps;
+	NumChrs = 2;
+	while((Cnt /= 10) > 0)
+		NumChrs+=1;
 	if(NumChrs >= MaxCIGARChrs)
 		return(0);
 
@@ -1865,7 +1896,8 @@ for(Idx = 0; Idx < NumPackedOps; Idx++, pPackedOPs++)
 		default:		// unrecognised CIGAR operation
 			return(-1);
 		}
-	pszCIGAR += sprintf(pszCIGAR,"%d%c", NumOps, ChrOp);
+	strCIGAROfs += sprintf(&pszCIGAR[strCIGAROfs],"%d%c", NumOps, ChrOp);
+	MaxCIGARChrs -= NumChrs;
 	}
 return((int)strlen(pszCIGAR));
 }
@@ -1930,7 +1962,7 @@ if(bPE2)
 	Strand = pCurCIGAR->FlgPE2Strand ? '-' : '+';
 	strcpy(szReadNameSfx,"PE.2");
 	SEPE = '2';
-	DecodeCIGAR(pCurCIGAR->PE2NumCIGAROps,&pCurCIGAR->CIGAROps[pCurCIGAR->PE1NumCIGAROps], sizeof(szCIGAR),szCIGAR);
+	DecodeCIGAR(pCurCIGAR->PE2NumCIGAROps,&pCurCIGAR->CIGAROpsErrProfOps[pCurCIGAR->PE1NumCIGAROps + pCurCIGAR->PE1NumErrProfOps], sizeof(szCIGAR),szCIGAR);
 	}
 else
 	{
@@ -1945,9 +1977,9 @@ else
 		strcpy(szReadNameSfx, "SE");
 		SEPE = '0';
 		}
-	DecodeCIGAR(pCurCIGAR->PE1NumCIGAROps, pCurCIGAR->CIGAROps, sizeof(szCIGAR), szCIGAR);
+	DecodeCIGAR(pCurCIGAR->PE1NumCIGAROps, pCurCIGAR->CIGAROpsErrProfOps, sizeof(szCIGAR), szCIGAR);
 	}
-int Len = sprintf(pChr, ">SR%d%s %c %d %s %d %c %s %d\n", SeqID, szReadNameSfx, SEPE, pCurCIGAR->ReadLen, szChromName, StartLoci, Strand,szCIGAR, pCurCIGAR->ID);
+int Len = sprintf(pChr, ">SR%d%s %c %d %s %d %c %s %d\n", SeqID, szReadNameSfx, SEPE, pCurCIGAR->ReadLen, szChromName, StartLoci+1, Strand,szCIGAR, pCurCIGAR->ID);
 *pOutBuffIdx += Len;
 pChr += Len;
 LineLen = 0;
@@ -1998,7 +2030,7 @@ CBenchmark::LoadGroundTruths(char* pszSESimReads,	// load ground truths for SE o
 int Rslt;
 int NumDescrs;
 int NumEls;
-char szDescriptor[100];
+char szDescriptor[301];
 int DescrLen;
 char szReadName[80];
 int SubID;
@@ -2006,7 +2038,7 @@ int ReadLen;
 char szRefChrom[80];
 uint32_t StartLoci;
 char Strand;
-char szCIGAR[100];
+char szCIGAR[251];
 uint32_t ReadID;
 tsBMGroundTruth *pGroundTruth;
 
@@ -2039,7 +2071,6 @@ if (m_pGroundTruths == MAP_FAILED)
 }
 #endif
 
-
 	// parse fasta file containing ground truths
 if ((m_pSESimReads = new CFasta()) == NULL)
 	{
@@ -2047,11 +2078,11 @@ if ((m_pSESimReads = new CFasta()) == NULL)
 	Reset();
 	return(eBSFerrObj);
 	}
-if ((Rslt = m_pSESimReads->Open(m_szSEReads)) != eBSFSuccess)
+if ((Rslt = m_pSESimReads->Open(pszSESimReads)) != eBSFSuccess)
 	{
 	while (m_pSESimReads->NumErrMsgs())
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, m_pSESimReads->GetErrMsg());
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to open input fasta file containing simulated reads '%s'", m_szSEReads);
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to open input fasta file containing simulated reads '%s'", pszSESimReads);
 	Reset();
 	return(Rslt);
 	}
@@ -2067,14 +2098,14 @@ while ((Rslt = m_pSESimReads->ReadSequence()) > eBSFSuccess)
 		{
 		NumDescrs += 1;
 		DescrLen = m_pSESimReads->ReadDescriptor(szDescriptor, sizeof(szDescriptor));
-		if ((NumEls = sscanf(szDescriptor, "%80s %d %d %80s %u %c %80s %u", szReadName, &SubID, &ReadLen, szRefChrom, &StartLoci, &Strand, szCIGAR, &ReadID)) != 8)
+		if ((NumEls = sscanf(szDescriptor, "%80s %d %d %80s %u %c %200s %u", szReadName, &SubID, &ReadLen, szRefChrom, &StartLoci, &Strand, szCIGAR, &ReadID)) != 8)
 			{
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to parse fasta descriptor %d for ground truth of originating loci from '%s'", NumDescrs, pszSESimReads);
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Descriptor: %s", szDescriptor);
 			Reset();
 			return(eBSFerrFastqDescr);
 			}
-		ReadMatchScore(ReadLen, szCIGAR, m_AlignedBasePts, &Score);
+		m_TotGroundTruthBases += ReadMatchScore(ReadLen, szCIGAR, m_AlignedBasePts, &Score);
 		m_MaxBaseAlignmentScore += Score;
 		
 		if ((cSRAllocdObsErrProfMemChunk / 10) >= (m_AllocdGroundTruthsMem - m_UsedGroundTruthsMem))
@@ -2107,7 +2138,7 @@ while ((Rslt = m_pSESimReads->ReadSequence()) > eBSFSuccess)
 		pGroundTruth->FlgPE2 = (SubID == 2) ? 1 : 0;
 		pGroundTruth->FlgStrand = Strand == '-' ? 1 : 0;
 		pGroundTruth->ReadLen = ReadLen;
-		pGroundTruth->StartLoci = StartLoci;
+		pGroundTruth->StartLoci = StartLoci - 1;		// required as currently 1 based to suit SAM requirements but later will be comparing with a 0 based loci
 		strcpy((char *)pGroundTruth->NameChromCIGAR, szReadName);
 		strcpy((char*)&pGroundTruth->NameChromCIGAR[pGroundTruth->NameLen + 1], szRefChrom);
 		strcpy((char*)&pGroundTruth->NameChromCIGAR[pGroundTruth->NameLen + pGroundTruth->ChromNameLen + 2], szCIGAR);
@@ -2127,11 +2158,11 @@ if (m_bPEReads && pszPE2SimReads != NULL)
 		Reset();
 		return(eBSFerrObj);
 		}
-	if ((Rslt = m_pPE2SimReads->Open(m_szPE2Reads)) != eBSFSuccess)
+	if ((Rslt = m_pPE2SimReads->Open(pszPE2SimReads)) != eBSFSuccess)
 		{
 		while (m_pPE2SimReads->NumErrMsgs())
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, m_pPE2SimReads->GetErrMsg());
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to open input fasta file containing simulated reads '%s'", m_szPE2Reads);
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to open input fasta file containing PE2 simulated reads '%s'", pszPE2SimReads);
 		Reset();
 		return(Rslt);
 		}
@@ -2149,7 +2180,7 @@ if (m_bPEReads && pszPE2SimReads != NULL)
 				Reset();
 				return(eBSFerrFastqDescr);
 				}
-			ReadMatchScore(ReadLen, szCIGAR, m_AlignedBasePts, &Score);
+			m_TotGroundTruthBases += ReadMatchScore(ReadLen, szCIGAR, m_AlignedBasePts, &Score);
 			m_MaxBaseAlignmentScore += Score;
 
 			if ((cSRAllocdObsErrProfMemChunk / 10) >= (m_AllocdGroundTruthsMem - m_UsedGroundTruthsMem))
@@ -2182,7 +2213,7 @@ if (m_bPEReads && pszPE2SimReads != NULL)
 			pGroundTruth->FlgPE2 = (SubID == 2) ? 1 : 0;
 			pGroundTruth->FlgStrand = Strand == '-' ? 1 : 0;
 			pGroundTruth->ReadLen = ReadLen;
-			pGroundTruth->StartLoci = StartLoci;
+			pGroundTruth->StartLoci = StartLoci - 1;
 			strcpy((char*)pGroundTruth->NameChromCIGAR, szReadName);
 			strcpy((char*)&pGroundTruth->NameChromCIGAR[pGroundTruth->NameLen + 1], szRefChrom);
 			strcpy((char*)&pGroundTruth->NameChromCIGAR[pGroundTruth->NameLen + pGroundTruth->ChromNameLen + 2], szCIGAR);
@@ -2233,38 +2264,59 @@ do {
 return(NULL);
 }
 
+
+//Op BAM Description                                          Consumes query    Consumes reference 
+//M  0   alignment match(can be a sequence match or mismatch) yes               yes 
+//I  1   insertion to the reference                           yes               no 
+//D  2   deletion from the reference                          no                yes 
+//N  3   skipped region from the reference                    no                yes 
+//S  4   soft clipping(clipped sequences present in SEQ)      yes               no 
+//H  5   hard clipping(clipped sequences NOT present in SEQ)  no                no 
+//P  6   padding(silent deletion from padded reference)       no                no 
+//=  7   sequence match                                       yes               yes
+//X  8   sequence mismatch                                    yes               yes
 int
-CBenchmark::Score(bool bPEReads,	// true if PE pair processing otherwise SE reads
+CBenchmark::Score(bool bPrimaryOnly,// score only primary alignments otherwise score including secondary
+		bool bPEReads,				// if true only PE pair processing otherwise score as if SE reads
 		int UnalignedBasePts,		// points to apply for each unaligned base
 		int AlignedBasePts,			// points to apply for each base aligned to it's ground truth loci
 		int SilentTrimAlignBasePts, // points to apply for each base aligned in a silently trimmed read within ground truth loci range
 		int MisalignedBasePts,		// points to apply for each base aligned but not to ground truth loci
 		char* pszSEReads,			// input simulated reads which contain ground truths from this file for SE or PE1 if PE
 		char* pszPE2Reads,			// input simulated reads which contain ground truths from this file for PE2 if PE
-		char* pszAlignmentsFile,	// input file containing alignments of simulated reads (SAM or BAM)
-		int MaxNumThreads)			// number of worker threads to use
+		char* pszAlignmentsFile)	// input file containing alignments of simulated reads (SAM or BAM)
 {
 int Rslt;
-
 Reset();
+m_bPrimaryOnly = bPrimaryOnly;
 m_bPEReads = bPEReads;
 m_UnalignedBasePts = UnalignedBasePts;
 m_AlignedBasePts = AlignedBasePts;
 m_SilentTrimAlignBasePts = SilentTrimAlignBasePts;
 m_MisalignedBasePts = MisalignedBasePts;
 m_MaxNumReads = 0;
-m_MaxNumThreads = MaxNumThreads;
 strcpy(m_szAlignmentsFile, pszAlignmentsFile);
 strcpy(m_szSEReads, pszSEReads);
-strcpy(m_szPE2Reads, pszPE2Reads);
+if(bPEReads)
+	strcpy(m_szPE2Reads, pszPE2Reads);
+else
+	m_szPE2Reads[0] = '\0';
 m_MaxBaseAlignmentScore = 0;
+m_NumBasesLociCorrect = 0;
+m_NumBasesLociIncorrect = 0;
+m_NumBasesLociUnclaimed = 0;
+memset(m_ReadOverlapHistogram,0,sizeof(m_ReadOverlapHistogram));
 
 if(bPEReads)
-	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Processing PE ground truth reads from PE1: '%s', PE2: '%s'", pszSEReads, pszPE2Reads);
+	{
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Loading PE ground truth reads from PE1: '%s'", pszSEReads);
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Loading PE ground truth reads from PE2: '%s'", pszPE2Reads);
+	}
 else
-	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Processing SE ground truth reads from '%s'", pszSEReads);
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Loading SE ground truth reads from '%s'", pszSEReads);
 if((Rslt = LoadGroundTruths(pszSEReads, pszPE2Reads)) < 1)
 	return(Rslt);
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "Total of %u ground truth reads loaded having %lld ground truth bases", m_NumGroundTruths, m_TotGroundTruthBases);
 
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "Opening alignments in: '%s'", pszAlignmentsFile);
 if ((Rslt = OpenAlignments(pszAlignmentsFile)) != eBSFSuccess)
@@ -2375,7 +2427,7 @@ while (Rslt >= eBSFSuccess && (LineLen = m_pAlignments->GetNxtSAMline(pszLine)) 
 		continue;
 		}
 
-	if ((pSAMalign->flag_nc >> 16) & 0x0100)	// only interested in primary reads
+	if (m_bPrimaryOnly && (pSAMalign->flag_nc >> 16) & 0x0100)	// only interested in primary reads
 		{
 		m_UnscoredReads++;
 		NumNotPrimary++;
@@ -2400,17 +2452,27 @@ while (Rslt >= eBSFSuccess && (LineLen = m_pAlignments->GetNxtSAMline(pszLine)) 
 	pGroundTruth->FlgAligned = true;
 
 	// find out how many bases in alignment could be potentially scored
+	int64_t PotentialAlgnBases;
 	int64_t PotentialBaseScore;
-	ReadMatchScore(pGroundTruth->ReadLen, (char*)&pGroundTruth->NameChromCIGAR[pGroundTruth->NameLen + pGroundTruth->ChromNameLen + 2], m_AlignedBasePts, &PotentialBaseScore);
+	
+	PotentialAlgnBases = ReadMatchScore(pGroundTruth->ReadLen, (char*)&pGroundTruth->NameChromCIGAR[pGroundTruth->NameLen + pGroundTruth->ChromNameLen + 2], m_AlignedBasePts, &PotentialBaseScore);
+	if (PotentialAlgnBases <= 0)
+		{
+		NumScoredAlignments++;
+		m_ReadOverlapHistogram[0] += 1;
+		continue;
+		}
 	AlignedPotentialScore += PotentialBaseScore;
-
+	m_TotNumPotentialAlignBases += PotentialAlgnBases;
 		// aligned to same chrom as ground truth?
 	if(stricmp((char *)&pGroundTruth->NameChromCIGAR[pGroundTruth->NameLen+1], pSAMalign->szRefSeqName))
 		{
 		int64_t BaseScore;
 		ReadMatchScore(pGroundTruth->ReadLen, (char *)&pGroundTruth->NameChromCIGAR[pGroundTruth->NameLen+ pGroundTruth->ChromNameLen+2], m_MisalignedBasePts, &BaseScore);
 		m_TotBaseAlignmentScore += BaseScore;
+		m_NumBasesLociIncorrect += PotentialAlgnBases;
 		NumScoredAlignments++;
+		m_ReadOverlapHistogram[0] += 1;
 		pGroundTruth->FlgRefChromErr = true;
 		NumErrChroms++;
 		continue;
@@ -2421,16 +2483,20 @@ while (Rslt >= eBSFSuccess && (LineLen = m_pAlignments->GetNxtSAMline(pszLine)) 
 		int64_t BaseScore;
 		ReadMatchScore(pGroundTruth->ReadLen, (char*)&pGroundTruth->NameChromCIGAR[pGroundTruth->NameLen + pGroundTruth->ChromNameLen + 2], m_MisalignedBasePts, &BaseScore);
 		m_TotBaseAlignmentScore += BaseScore;
+		m_NumBasesLociIncorrect += PotentialAlgnBases;
+		m_ReadOverlapHistogram[0] += 1;
 		NumScoredAlignments++;
 		pGroundTruth->FlgStrandErr = true;
 		NumErrStrands++;
 		continue;
 		}
-	if(pGroundTruth->FlgPE2 != (((pSAMalign->flag_nc >> 16) & 0x080) == 0x080))
+	if(bPEReads && (pGroundTruth->FlgPE2 != (((pSAMalign->flag_nc >> 16) & 0x080) == 0x080)))
 		{
 		int64_t BaseScore;
 		ReadMatchScore(pGroundTruth->ReadLen, (char*)&pGroundTruth->NameChromCIGAR[pGroundTruth->NameLen + pGroundTruth->ChromNameLen + 2], m_MisalignedBasePts, &BaseScore);
 		m_TotBaseAlignmentScore += BaseScore;
+		m_NumBasesLociIncorrect += PotentialAlgnBases;
+		m_ReadOverlapHistogram[0] += 1;
 		NumScoredAlignments++;
 		pGroundTruth->FlgPE2Err = true;
 		NumErrPE2++;
@@ -2438,16 +2504,25 @@ while (Rslt >= eBSFSuccess && (LineLen = m_pAlignments->GetNxtSAMline(pszLine)) 
 		}
 
 	int64_t BaseScore;
-	ScoreAlignment(pSAMalign, pGroundTruth,&BaseScore);
+	int BasesMatched;
+	BasesMatched = ScoreAlignment(pSAMalign, pGroundTruth,&BaseScore);
 	m_TotBaseAlignmentScore += BaseScore;
+	m_ReadOverlapHistogram[(((int64_t)BasesMatched*100) + 50)/ PotentialAlgnBases]+=1;
 	NumScoredAlignments++;
 	}
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "Completed scoring alignments in: '%s'", pszAlignmentsFile);
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "There were a total of %u alignments scored containing %lld potential ground truth matching bases", NumScoredAlignments, m_TotNumPotentialAlignBases);
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "%u alignments classified as misaligned due to: chrom: %u, strand: %u, PE mismatch: %u ", NumErrChroms+NumErrStrands+ NumErrPE2,NumErrChroms,NumErrStrands, NumErrPE2);
+gDiagnostics.DiagOut(eDLInfo, gszProcName,"Bases loci correct: %d, misaligned: %d, unaligned: %d", m_NumBasesLociCorrect, m_NumBasesLociIncorrect, m_NumBasesLociUnclaimed);
 double BaseScoreRate = (double)m_TotBaseAlignmentScore/m_MaxBaseAlignmentScore;
 double AlignBaseScoreRate = (double)m_TotBaseAlignmentScore/AlignedPotentialScore;
-gDiagnostics.DiagOut(eDLInfo, gszProcName,"Alignment base score rate relative to total ground truth simulation bases is %1.6f", BaseScoreRate);
-gDiagnostics.DiagOut(eDLInfo, gszProcName, "Alignment base score rate relative to aligned ground truth simulation bases is %1.6f", AlignBaseScoreRate);
-delete pszLine;
+gDiagnostics.DiagOut(eDLInfo, gszProcName,"Alignment base score rate relative to background ground truth simulation bases is %1.6f", BaseScoreRate);
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "Alignment base score rate relative to actually aligned read ground truth simulation bases is %1.6f", AlignBaseScoreRate);
+
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "Aligned reads with ground truth bases percentage overlap histogram:");
+for(int Idx = 0; Idx < 101; Idx++)
+	gDiagnostics.DiagOutMsgOnly(eDLInfo, "%u%%: %u", Idx, m_ReadOverlapHistogram[Idx]);
+delete []pszLine;
 delete pSAMalign;
 Reset();
 return(Rslt);
@@ -2633,7 +2708,8 @@ int NumOpTypes;
 int NumMatches;
 uint32_t OpTypes[cMaxBAMCigarOps];
 etCIGAROpType OpType;
-*pScore = 0;
+if(pScore != NULL)
+	*pScore = 0;
 
 // total the number of matches in the CIGAR profile
 if ((NumOpTypes = ParseObsCIGAR(pszCIGAR, ReadLen, cMaxBAMCigarOps, OpTypes)) < 1)
@@ -2645,16 +2721,26 @@ for(int Idx = 0; Idx < NumOpTypes; Idx++)
 	if(OpType == eCOPMatch || OpType == eCOPALignMatch || OpType == eCOPALignMismatch)
 		NumMatches += (OpTypes[Idx] >> 4 )& 0x0fffffff;
 	}
-*pScore = (int64_t)NumMatches * MatchPts;
+if(pScore != NULL)
+	*pScore = (int64_t)NumMatches * MatchPts;
 return(NumMatches);
 }
 
-int
+//Op BAM Description                                          Consumes query    Consumes reference 
+//M  0   alignment match(can be a sequence match or mismatch) yes               yes 
+//I  1   insertion to the reference                           yes               no 
+//D  2   deletion from the reference                          no                yes 
+//N  3   skipped region from the reference                    no                yes 
+//S  4   soft clipping(clipped sequences present in SEQ)      yes               no 
+//H  5   hard clipping(clipped sequences NOT present in SEQ)  no                no 
+//P  6   padding(silent deletion from padded reference)       no                no 
+//=  7   sequence match                                       yes               yes
+//X  8   sequence mismatch                                    yes               yes
+int				// returns number of correctly aligned base matches
 CBenchmark::ScoreAlignment(tsBAMalign* pAlignment,			// claimed alignment
 							tsBMGroundTruth *pGroundTruth,	// ground truth for this alignment
 							int64_t* pBaseScore)			// returned base alignment score
 {
-int Rslt;
 int NumGroundTruthOpTypes;
 int NumClaimOpTypes;
 int GroundTruthNumOps;
@@ -2662,17 +2748,18 @@ int ClaimNumOps;
 uint32_t GroundTruthOps[cMaxBAMCigarOps];
 
 if(pAlignment == NULL || pGroundTruth == NULL || pBaseScore == NULL)
-	return(eBSFerrParams);
+	return(0);
 *pBaseScore = 0;
 
 // parse ground truth CIGAR into packed GroundTruthOps
 if ((NumGroundTruthOpTypes = ParseObsCIGAR((char*)&pGroundTruth->NameChromCIGAR[pGroundTruth->NameLen + pGroundTruth->ChromNameLen + 2], pGroundTruth->ReadLen, cMaxBAMCigarOps, GroundTruthOps)) < 1)
-	return(NumGroundTruthOpTypes);
+	return(0);
 
 // if it a silently trimmed claimed sequence then can't really infer which end (could be both) was trimmed
 if (pGroundTruth->ReadLen != pAlignment->l_seq)		// check if silently trimmed
 	{
 	int HardTrimLen = 0;
+	int SilentTrimBaseMatches;
 	if(eCOPHardClip == (etCIGAROpType)(pAlignment->cigar[0] & 0x0f))
 		HardTrimLen = (pAlignment->cigar[0] >> 4) & 0x0fffffff;
 	if (eCOPHardClip == (etCIGAROpType)(pAlignment->cigar[(pAlignment->flag_nc & 0x0ff) - 1] & 0x0f))
@@ -2684,15 +2771,14 @@ if (pGroundTruth->ReadLen != pAlignment->l_seq)		// check if silently trimmed
 		int GroundTruthEnd;
 		int64_t BaseScore;
 		GroundTruthEnd = pGroundTruth->StartLoci + RefSeqConsumedLen(NumGroundTruthOpTypes,GroundTruthOps) - 1;
-		SilentTrimScore = m_MisalignedBasePts;
+		SilentTrimScore = m_SilentTrimAlignBasePts;
 		if((pAlignment->pos + 15) >= (int)pGroundTruth->StartLoci && ((int)pAlignment->end - 15) <= GroundTruthEnd)	// allowing a 15bp latitude!
-			SilentTrimScore = m_SilentTrimAlignBasePts;
-		ReadMatchScore(pGroundTruth->ReadLen, (char*)&pGroundTruth->NameChromCIGAR[pGroundTruth->NameLen + pGroundTruth->ChromNameLen + 2], SilentTrimScore, &BaseScore);
+			SilentTrimBaseMatches = ReadMatchScore(pGroundTruth->ReadLen, (char*)&pGroundTruth->NameChromCIGAR[pGroundTruth->NameLen + pGroundTruth->ChromNameLen + 2], m_SilentTrimAlignBasePts, &BaseScore);
+		m_NumBasesLociCorrect += SilentTrimBaseMatches;	// have to assume these did match - Ugh, Ugh, and Ugh - because what is the alternative, can't just ignore them
 		*pBaseScore = BaseScore;
-		return(0);
+		return(SilentTrimBaseMatches);
 		}
 	}
-
 
 
 NumClaimOpTypes = pAlignment->flag_nc & 0x0ff;
@@ -2748,20 +2834,21 @@ while(GroundTruthSeqIdx < pGroundTruth->ReadLen)
 		}
 
 	switch(ClaimOpType) {
-		case eCOPSoftClip:				//	'S'  claim sequence has been soft clipped
+		case eCOPSoftClip:						//	'S'  claim sequence has been soft clipped
 			switch (GroundTruthOpType) {
 				case eCOPMatch:					// 'M' aligned but could be either matching or mismatching
 					NumLociUnclaimed++;			// not claimed even though ground truth had a match		
-					GroundTruthSeqIdx++;		// ground truth is consuming a base
+					GroundTruthSeqIdx++;		// ground truth is consuming both base and loci
 					GroundTruthLoci++;
 					break;
 
 				case eCOPSoftClip:				// 'S'  soft clipping
-					GroundTruthSeqIdx++;		// ground truth is consuming this base
+					GroundTruthSeqIdx++;		// ground truth is consuming  both base and loci
+					GroundTruthLoci++;			// remember that ground truth loci is from start of read
 					break;
 
-				case eCOPDelete:				// ground truth says that there is a deletion in the read sequence
-					GroundTruthLoci += 1;		// increment truth loci but ground truth is not consuming a read base
+				case eCOPDelete:				// ground truth says that there is a deletion in the target
+					GroundTruthLoci++;			// increment truth loci but ground truth is not consuming a read base
 					break;
 
 				case eCOPPadding:				// silent padding
@@ -2771,10 +2858,10 @@ while(GroundTruthSeqIdx < pGroundTruth->ReadLen)
 					GroundTruthSeqIdx++;		// ground truth is consuming this base but no change in the ground truth loci
 					break;
 				}
-			ClaimedSeqIdx++;
+			ClaimedSeqIdx++;					// claim is only consuming sequence and not loci
 			break;
 
-		case eCOPDelete:				//	'D'  alignment skips over a target subsequence to a new loci in target
+		case eCOPDelete:						//	'D'  alignment skips over a target subsequence to a new loci in target
 			switch (GroundTruthOpType) {
 				case eCOPMatch:					// 'M' aligned but could be either matching or mismatching, consumes query and reference sequence
 					NumLociUnclaimed++;			// not claimed even though ground truth had a match		
@@ -2784,6 +2871,7 @@ while(GroundTruthSeqIdx < pGroundTruth->ReadLen)
 
 				case eCOPSoftClip:				// 'S'  soft clipping
 					GroundTruthSeqIdx++;		// ground truth is consuming this base
+					GroundTruthLoci++;			// and loci
 					break;
 
 				case eCOPDelete:				// ground truth says that there is a deletion in the read sequence
@@ -2797,7 +2885,7 @@ while(GroundTruthSeqIdx < pGroundTruth->ReadLen)
 					GroundTruthSeqIdx++;		// ground truth is consuming this base but no change in the ground truth loci
 					break;
 				}
-			ClaimedLoci += 1;
+			ClaimedLoci++;
 			break;
 
 		case eCOPPadding:				// silent padding
@@ -2810,10 +2898,11 @@ while(GroundTruthSeqIdx < pGroundTruth->ReadLen)
 
 				case eCOPSoftClip:				// 'S'  soft clipping
 					GroundTruthSeqIdx++;		// ground truth is consuming this base
+					GroundTruthLoci++;			// and loci
 					break;
 
 				case eCOPDelete:				// ground truth says that there is a deletion in the read sequence
-					GroundTruthLoci += 1;		// increment truth loci but ground truth is not consuming a read base
+					GroundTruthLoci++;			// increment truth loci but ground truth is not consuming a read base
 					break;
 
 				case eCOPPadding:				// silent padding
@@ -2834,7 +2923,8 @@ while(GroundTruthSeqIdx < pGroundTruth->ReadLen)
 					break;
 
 				case eCOPSoftClip:				// 'S'  soft clipping
-					GroundTruthSeqIdx++;		// ground truth is consuming this base
+					GroundTruthSeqIdx++;		// ground truth is consuming this base and loci
+					GroundTruthLoci++;
 					break;
 
 				case eCOPDelete:				// ground truth says that there is a deletion in the read sequence
@@ -2865,11 +2955,12 @@ while(GroundTruthSeqIdx < pGroundTruth->ReadLen)
 				case eCOPSoftClip:				// 'S'  soft clipping
 					NumLociIncorrect++;
 					GroundTruthSeqIdx++;		// ground truth is consuming this base
+					GroundTruthLoci++;
 					break;
 
 				case eCOPDelete:				// ground truth says that there is a deletion in the read sequence
 					NumLociIncorrect++;
-					GroundTruthLoci += 1;		// increment truth loci but ground truth is not consuming a read base
+					GroundTruthLoci++;		// increment truth loci but ground truth is not consuming a read base
 					break;
 
 				case eCOPPadding:				// silent padding
@@ -2889,9 +2980,11 @@ while(GroundTruthSeqIdx < pGroundTruth->ReadLen)
 	GroundTruthNumOps -=1;
 	ClaimNumOps-=1;
 	}
-
-	*pBaseScore = ((int64_t)NumLociCorrect * m_AlignedBasePts) + ((int64_t)NumLociUnclaimed * m_UnalignedBasePts) + ((int64_t)NumLociIncorrect * m_MisalignedBasePts);
-	return(0);
+m_NumBasesLociCorrect += NumLociCorrect;
+m_NumBasesLociIncorrect += NumLociIncorrect;
+m_NumBasesLociUnclaimed += NumLociUnclaimed;
+*pBaseScore = ((int64_t)NumLociCorrect * m_AlignedBasePts) + ((int64_t)NumLociUnclaimed * m_UnalignedBasePts) + ((int64_t)NumLociIncorrect * m_MisalignedBasePts);
+return(NumLociCorrect);
 }
 
 
@@ -2968,7 +3061,7 @@ CBenchmark::ParseObsCIGAR(char* pszCIGAR, // CIGAR operations
 			return(0);
 		if (Chr >= '0' && Chr <= '9')
 		{
-			if (NumOps > (uint32_t)ReadLen)
+			if (NumOps > (uint32_t)500000)
 				return(0);
 			NumOps *= 10;
 			NumOps += Chr - '0';
@@ -3098,15 +3191,20 @@ CBenchmark::InitObsErrProfile(char* pszInProfFile)	// read from this observed al
 	int CIGARID;
 	char PE1Strand;		// '+' sense or watson, '-' antisense or crick
 	int PE1NumCIGAROps;
+	int PE1NumErrProfOps;
 	int ReadLen;
 	int PEInsertSize;	// PE reads insert size
 	char PE2Strand;		// '+' sense or watson, '-' antisense or crick
 	int PE2NumCIGAROps;
+	int PE2NumErrProfOps;
 	char* pszTxt;
 
-	uint32_t PE1CIGAROps[cMaxBAMCigarOps];
-	uint32_t PE2CIGAROps[cMaxBAMCigarOps];
+	uint32_t PE1ObsCIGAROps[cMaxBAMCigarOps];
+	uint32_t PE2ObsCIGAROps[cMaxBAMCigarOps];
 
+	uint32_t PE1ErrProfOps[cMaxBAMCigarOps * 3];
+	uint32_t PE2ErrProfOps[cMaxBAMCigarOps * 3];
+	
 	tsBMPackedCIGARs* pCurCIGAR;
 	if (pszInProfFile == NULL || pszInProfFile[0] == '\0')
 	{
@@ -3161,7 +3259,7 @@ CBenchmark::InitObsErrProfile(char* pszInProfFile)	// read from this observed al
 
 	int MinExpFields;
 	NumProcessed = 0;
-	MinExpFields = m_bPEReads ? 7 : 3;	// if SE then need at least 4 fields; if PE then need at least 7
+	MinExpFields = m_bPEReads ? 9 : 5;	// if SE then need at least 5 fields; if PE then need at least 9
 	while ((Rslt = m_pObsCIGARProfFile->NextLine()) > 0)	// onto next line containing fields
 		{
 		NumFields = m_pObsCIGARProfFile->GetCurFields();
@@ -3180,7 +3278,9 @@ CBenchmark::InitObsErrProfile(char* pszInProfFile)	// read from this observed al
 		PE2Strand = '\0';
 		PEInsertSize = 0;
 		PE1NumCIGAROps = 0;
+		PE1NumErrProfOps = 0;
 		PE2NumCIGAROps = 0;
+		PE2NumErrProfOps = 0;
 
 		m_pObsCIGARProfFile->GetInt(1, &CIGARID);
 		m_pObsCIGARProfFile->GetInt(2, &ReadLen);
@@ -3188,17 +3288,23 @@ CBenchmark::InitObsErrProfile(char* pszInProfFile)	// read from this observed al
 			continue;
 		m_pObsCIGARProfFile->GetChar(3, &PE1Strand);	// PE1 alignment strand
 		m_pObsCIGARProfFile->GetText(4, &pszTxt);		// PE1 CIGAR
-		if ((PE1NumCIGAROps = ParseObsCIGAR(pszTxt, ReadLen, cMaxBAMCigarOps, &PE1CIGAROps[0])) <= 0)
+		if ((PE1NumCIGAROps = ParseObsCIGAR(pszTxt, ReadLen, cMaxBAMCigarOps, &PE1ObsCIGAROps[0])) <= 0)
+			continue;
+		m_pObsCIGARProfFile->GetText(5, &pszTxt);		// PE1 error profile
+		if ((PE1NumErrProfOps = ParseObsCIGAR(pszTxt, ReadLen, cMaxBAMCigarOps*3, &PE1ErrProfOps[0])) <= 0)
 			continue;
 
 		if (m_bPEReads)
 			{
-			m_pObsCIGARProfFile->GetInt(5, &PEInsertSize);	// PE1-PE2 insert size
-			if (PEInsertSize <= ReadLen)
+			m_pObsCIGARProfFile->GetInt(6, &PEInsertSize);	// PE1-PE2 insert size
+			if (abs(PEInsertSize) <= ReadLen/4)
 				continue;
-			m_pObsCIGARProfFile->GetChar(6, &PE2Strand);	// PE2 alignment strand
-			m_pObsCIGARProfFile->GetText(7, &pszTxt);		// PE2 CIGAR
-			if ((PE2NumCIGAROps = ParseObsCIGAR(pszTxt, ReadLen, cMaxBAMCigarOps, &PE2CIGAROps[0])) == 0)
+			m_pObsCIGARProfFile->GetChar(7, &PE2Strand);	// PE2 alignment strand
+			m_pObsCIGARProfFile->GetText(8, &pszTxt);		// PE2 CIGAR
+			if ((PE2NumCIGAROps = ParseObsCIGAR(pszTxt, ReadLen, cMaxBAMCigarOps, &PE2ObsCIGAROps[0])) == 0)
+				continue;
+			m_pObsCIGARProfFile->GetText(9, &pszTxt);		// PE2 CIGAR
+			if ((PE2NumErrProfOps = ParseObsCIGAR(pszTxt, ReadLen, cMaxBAMCigarOps*3, &PE2ErrProfOps[0])) == 0)
 				continue;
 			}
 
@@ -3230,12 +3336,19 @@ CBenchmark::InitObsErrProfile(char* pszInProfFile)	// read from this observed al
 		pCurCIGAR->FlgPE1Strand = PE1Strand == '-' ? 1 : 0;
 		pCurCIGAR->FlgPE2Strand = PE2Strand == '-' ? 1 : 0;
 		pCurCIGAR->PE1NumCIGAROps = (uint8_t)PE1NumCIGAROps;
+		pCurCIGAR->PE1NumErrProfOps = (uint8_t)PE1NumErrProfOps;
 		pCurCIGAR->PE2NumCIGAROps = (uint8_t)PE2NumCIGAROps;
+		pCurCIGAR->PE2NumErrProfOps = (uint8_t)PE2NumErrProfOps;
 		pCurCIGAR->PEInsertSize = PEInsertSize;
-		memcpy(pCurCIGAR->CIGAROps,PE1CIGAROps, pCurCIGAR->PE1NumCIGAROps * sizeof(uint32_t));
+		memcpy(pCurCIGAR->CIGAROpsErrProfOps, PE1ObsCIGAROps, pCurCIGAR->PE1NumCIGAROps * sizeof(uint32_t));
+		memcpy(&pCurCIGAR->CIGAROpsErrProfOps[PE1NumCIGAROps], PE1ErrProfOps, (int64_t)PE1NumErrProfOps * sizeof(uint32_t));
+
 		if(pCurCIGAR->PE2NumCIGAROps)
-			memcpy(&pCurCIGAR->CIGAROps[PE1NumCIGAROps], PE2CIGAROps, PE2NumCIGAROps * sizeof(uint32_t));
-		pCurCIGAR->Size = (uint16_t)(sizeof(tsBMPackedCIGARs) + ((PE1NumCIGAROps + PE2NumCIGAROps - 1) * (int)sizeof(uint32_t)));
+			{
+			memcpy(&pCurCIGAR->CIGAROpsErrProfOps[PE1NumCIGAROps + PE1NumErrProfOps], PE2ObsCIGAROps, PE2NumCIGAROps * sizeof(uint32_t));
+			memcpy(&pCurCIGAR->CIGAROpsErrProfOps[PE1NumCIGAROps + PE1NumErrProfOps + PE2NumCIGAROps], PE2ErrProfOps, PE2NumErrProfOps * sizeof(uint32_t));
+			}
+		pCurCIGAR->Size = (uint16_t)(sizeof(tsBMPackedCIGARs) + ((PE1NumCIGAROps + PE1NumErrProfOps + PE2NumCIGAROps + PE2NumErrProfOps - 1) * (int)sizeof(uint32_t)));
 
 		m_UsedObsErrProfMem += (size_t)pCurCIGAR->Size;
 		m_NumObsErrProfs += 1;
@@ -3317,7 +3430,7 @@ tsBMObsCIGAR* pEl2 = *(tsBMObsCIGAR**)arg2;
 //int PE2Len = strlen((char*)pEl2->NameCIGAR);
 //if (PE1Len != PE2Len)
 //	return(PE1Len - PE2Len);
-if((Cmp = stricmp((char *)pEl1->NameCIGAR, (char*)pEl2->NameCIGAR))!=0)
+if((Cmp = stricmp((char *)pEl1->NameCIGARErrProfile, (char*)pEl2->NameCIGARErrProfile))!=0)
 	return(Cmp);  // Note:  -1 if pEl1 shorter in length than pEl2 but matches up to strlen(pEl1). +1 if pEl1 longer in length than pEl2 but matches up to strlen(pEl2)
 if(!(pEl1->Flags & 0x01 && pEl2->Flags & 0x01))	// if either not a PE then just return as matching read names
 	return(0);

@@ -45,7 +45,7 @@ m_pAllocSeqNames = NULL;
 m_pAllocSeqNameIDsOfs = NULL;
 m_pSeqNameHashArray = NULL;
 m_pAllocAlignLoci = NULL;
-m_pHypers = NULL;
+m_bMutexesCreated = false;
 Reset();
 }
 
@@ -55,6 +55,16 @@ CMarkers::~CMarkers(void)
 Reset();
 }
 
+
+// this process is not currently multithreaded but one day, real soon, it will be multithreaded :-)
+int
+CMarkers::Init(int NumThreads)	//Initialise resources for specified number of threads
+{
+int Rslt;
+if((Rslt=CreateMutexes())!= eBSFSuccess)
+	return(Rslt);
+return(eBSFSuccess);
+}
 
 // Reset
 // Release all allocated resources
@@ -100,11 +110,8 @@ if(m_pSeqNameHashArray != NULL)
 	m_pSeqNameHashArray = NULL;
 	}
 
-if(m_pHypers != NULL)
-	{
-	delete m_pHypers;
-	m_pHypers = NULL;
-	}
+DeleteMutexes();
+m_bMutexesCreated = false;
 m_NumSpecies = 0; 
 m_RefSpeciesID = 0;
 m_NumSeqNames = 0;		
@@ -429,20 +436,13 @@ m_NumSeqNames += 1;
 return(pSeqName->SeqID);
 }
 
-int CMarkers::PreAllocSeqs(int EstNumSeqs, int MeanSeqLen) // preallocate memory for this estimate of number sequences having this mean sequence length
-{
-int Rslt;
-Rslt = m_pHypers->PreAllocMem(EstNumSeqs,MeanSeqLen);
-return(Rslt);
-}
-
 int
-CMarkers::PreAllocSNPs(INT64 EstNumSNPS)	// estimating will be required to process this many SNP loci
+CMarkers::PreAllocEstSNPs(INT64 EstNumSNPS)	// estimating will be required to process this many SNP loci
 {
 size_t memreq; 
 INT64 AllocdAlignLoci;
 
-AllocdAlignLoci = ((99 + EstNumSNPS) * (INT64)105) / (INT64)100;  // allowing for an extra 5% to reduce probability of a realloc being subsequently required if estimate was a little low
+AllocdAlignLoci = ((99 + EstNumSNPS) * (INT64)125) / (INT64)100;  // allowing for an extra 25% to reduce probability of a realloc being subsequently required if estimate was a little low
 memreq = (size_t)AllocdAlignLoci * sizeof(tsAlignLoci); 
 #ifdef _WIN32
 m_pAllocAlignLoci = (tsAlignLoci *) malloc(memreq);	// initial and perhaps the only allocation
@@ -465,6 +465,66 @@ m_AllocMemAlignLoci = memreq;
 m_UsedAlignLoci = 0;
 m_AllocAlignLoci = AllocdAlignLoci;
 memset(m_pAllocAlignLoci,0,memreq);
+return(eBSFSuccess);
+}
+
+int
+CMarkers::PreAllocImpunedSNPs(int NumbIsolates)	// calculate the number of actually required SNP loci from number of reported SNPs and number of isolates
+{
+int64_t NumRefSNPs;
+int64_t TotalRefImpuned;
+tsAlignLoci *pCurLoci;
+uint32_t TargLoci;
+uint32_t TargSeqID;
+uint32_t TargSpeciesID;
+
+
+if(m_pAllocAlignLoci == NULL || m_UsedAlignLoci < 1) // must be at least 1 known SNP loci before any can be impuned!
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "PreAllocImpunedSNPs: need at least one known SNP loci before any can be impuned!");
+	return(eBSFerrParams);
+	}
+
+// ensure sorting of known SNPs has been completed as will be iterating over these in order to calculate additional impuned SNP loci structure instances required
+SortTargSeqLociSpecies();
+// determine number of distinct SNP loci
+pCurLoci = m_pAllocAlignLoci;
+TargLoci = pCurLoci->TargLoci;
+TargSeqID = pCurLoci->TargSeqID;
+TargSpeciesID = pCurLoci->TargSpeciesID;
+NumRefSNPs = 1;
+for(int64_t Idx = 0; Idx < m_UsedAlignLoci; Idx++, pCurLoci++)
+	if(pCurLoci->TargLoci != TargLoci || TargSeqID != pCurLoci->TargSeqID || TargSpeciesID != pCurLoci->TargSpeciesID)
+		{
+		TargLoci = pCurLoci->TargLoci;
+		TargSeqID = pCurLoci->TargSeqID;
+		TargSpeciesID = pCurLoci->TargSpeciesID;
+		NumRefSNPs++;
+		}
+TotalRefImpuned = (NumRefSNPs * NumbIsolates);
+
+if ((TotalRefImpuned + 100) > m_AllocAlignLoci)	// play safe when increasing allocation
+	{
+	size_t memreq;
+	memreq = (TotalRefImpuned+100) * sizeof(tsAlignLoci);
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "PreAllocImpunedSNPs: memory re-allocation to %lld from %lld bytes", (INT64)memreq, (INT64)m_AllocMemAlignLoci);
+
+#ifdef _WIN32
+	pCurLoci = (tsAlignLoci*)realloc(m_pAllocAlignLoci, memreq);
+#else
+	pCurLoci = (tsAlignLoci*)mremap(m_pAllocAlignLoci, m_AllocMemAlignLoci, memreq, MREMAP_MAYMOVE);
+	if (pCurLoci == MAP_FAILED)
+		pCurLoci = NULL;
+#endif
+	if (pCurLoci == NULL)
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "PreAllocImpunedSNPs: Memory re-allocation to %lld bytes - %s", (INT64)memreq, strerror(errno));
+		return(eBSFerrMem);
+		}
+	m_pAllocAlignLoci = pCurLoci;
+	m_AllocMemAlignLoci = memreq;
+	m_AllocAlignLoci = TotalRefImpuned + 100;
+	}
 return(eBSFSuccess);
 }
 
@@ -776,6 +836,7 @@ UINT16 ProbeSpeciesID;
 int MinLength = 50;
 int MaxLength = 1000;
 UINT16 ImputFlags;
+CHyperEls *pHypers;
 
 if((ProbeSpeciesID = NameToSpeciesID(pszProbeSpecies)) < 1)
 	{
@@ -789,23 +850,17 @@ if((RefSpeciesID = NameToSpeciesID(pszRefSpecies)) < 1)
 	}
 
 
-if(m_pHypers != NULL)
-	{
-	m_pHypers->Reset();
-	delete m_pHypers;
-	m_pHypers = NULL;
-	}
-
-if((m_pHypers = new CHyperEls)==NULL)
+if((pHypers = new CHyperEls)==NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to instantiate CHyperEls");
 	return(eBSFerrObj);
 	}
 
 if(EstNumSeqs != 0)
-	if((Rslt = m_pHypers->PreAllocMem(EstNumSeqs,EstSeqLen)) != eBSFSuccess)
+	if((Rslt = pHypers->PreAllocMem(EstNumSeqs,EstSeqLen)) != eBSFSuccess)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to prealloc allocate memory for sequences");
+		delete pHypers;
 		return(eBSFerrObj);
 		}
 
@@ -820,42 +875,45 @@ ImputFlags = cFlgImputCnts;
 switch(FileType) {
 	case eCFTopenerr:		// unable to open file for reading
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to open file: '%s'",pszAlignFile);
+		delete pHypers;
 		return(eBSFerrOpnFile);
 
 	case eCFTlenerr:		// file length is insufficent to classify type
 		gDiagnostics.DiagOut(eDLInfo,gszProcName,"Unable to classify file type (insuffient data points): '%s'",pszAlignFile);
+		delete pHypers; 
 		return(eBSFerrFileAccess);
 
 	case eCFTunknown:		// unable to reliably classify
 		gDiagnostics.DiagOut(eDLInfo,gszProcName,"Unable to reliably classify file type: '%s'",pszAlignFile);
+		delete pHypers; 
 		return(eBSFerrFileType);
 
 	case eCFTCSV:			// file has been classified as being CSV
 		gDiagnostics.DiagOut(eDLInfo,gszProcName,"Parsing CSV file (%d..%d): '%s'",MinLength,MaxLength,pszAlignFile);
-		if((Rslt = m_pHypers->ParseCSVFileElements(pszAlignFile,MinLength,MaxLength,eCSVFdefault)) < 0)
+		if((Rslt = pHypers->ParseCSVFileElements(pszAlignFile,MinLength,MaxLength,eCSVFdefault)) < 0)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Parse errors in CSV file (%d..%d): '%s'",MinLength,MaxLength,pszAlignFile);
-			Reset();
+			delete pHypers;
 			return(Rslt);
 			}
 		break;
 
 	case eCFTBED:			// file has been classified as being BED
 		gDiagnostics.DiagOut(eDLInfo,gszProcName,"Parsing BED file (%d..%d): '%s'",MinLength,MaxLength,pszAlignFile);
-		if((Rslt = m_pHypers->ParseBEDFileElements(pszAlignFile,MinLength,MaxLength)) < 0)
+		if((Rslt = pHypers->ParseBEDFileElements(pszAlignFile,MinLength,MaxLength)) < 0)
 			{	
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Parse errors in BED file (%d..%d): '%s'",MinLength,MaxLength,pszAlignFile);
-			Reset();
+			delete pHypers; 
 			return(Rslt);
 			}
 		break;
 
 	case eCFTSAM:			// file has been classified as being SAM
 		gDiagnostics.DiagOut(eDLInfo,gszProcName,"Parsing SAM file (%d..%d): '%s'",MinLength,MaxLength,pszAlignFile);
-		if((Rslt = m_pHypers->ParseSAMFileElements(pszAlignFile,MinLength,MaxLength,bSeqs)) < 0)
+		if((Rslt = pHypers->ParseSAMFileElements(pszAlignFile,MinLength,MaxLength,bSeqs)) < 0)
 			{	
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Processing errors in SAM/BAM file (%d..%d): '%s'",MinLength,MaxLength,pszAlignFile);
-			Reset();
+			delete pHypers; 
 			return(Rslt);
 			}
 		ImputFlags = cFlgAlignCnts;
@@ -863,23 +921,19 @@ switch(FileType) {
 
 	default:
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to classify file type: '%s'",pszAlignFile);
-		Reset();
+		delete pHypers; 
 		return(eBSFerrFileType);
 	}
 
 
-NumEls = m_pHypers->NumEls();
+NumEls = pHypers->NumEls();
 if(NumEls == 0)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"No elements with length range %d..%d in file: '%s'",MinLength,MaxLength,pszAlignFile);
-	Reset();
+	delete pHypers;
 	return(Rslt);
 	}
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Loaded and parsed %d elements",NumEls);
-
-//gDiagnostics.DiagOut(eDLInfo,gszProcName,"Now identifying split (microInDels or splice junction spanning?) elements...",NumEls);
-//NumSplitEls = m_pHypers->IdentifySplitElements();					// identify any split elements which may be present
-//gDiagnostics.DiagOut(eDLInfo,gszProcName,"Identified %d split (microInDels or splice junction spanning?) elements",NumSplitEls);
 
 // try to find overlaps on to SNPs called on other species where this probe species is not represented!
 bool bProbeAligned;
@@ -932,7 +986,7 @@ for(AlignIdx = 0; AlignIdx < UsedAlignLoci; AlignIdx++)
 		if(CurTargSeqID != PrevTargSeqID || pszTargSeq == NULL)
 			{
 			pszTargSeq = SeqIDtoName(CurTargSeqID);
-			HyperChromID = m_pHypers->GetChromID(pszTargSeq);
+			HyperChromID = pHypers->GetChromID(pszTargSeq);
 			PrevTargSeqID = CurTargSeqID;
 			}
 
@@ -945,7 +999,7 @@ for(AlignIdx = 0; AlignIdx < UsedAlignLoci; AlignIdx++)
 			NumOverlapping = 0;
 		else
 			{
-			NumOverlapping = m_pHypers->LocateLociBaseCnts(HyperChromID,CurTargLociLoci,&ProbeCntA,&ProbeCntC,&ProbeCntG,&ProbeCntT,&ProbeCntN);
+			NumOverlapping = pHypers->LocateLociBaseCnts(HyperChromID,CurTargLociLoci,&ProbeCntA,&ProbeCntC,&ProbeCntG,&ProbeCntT,&ProbeCntN);
 
 			if(NumOverlapping == 0 || (ProbeCntA == 0 && ProbeCntC == 0 && ProbeCntG == 0 && ProbeCntT == 0 && ProbeCntN == 0))
 				{
@@ -995,7 +1049,7 @@ for(AlignIdx = 0; AlignIdx < UsedAlignLoci; AlignIdx++)
 		if(Rslt64 < 1)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddImputedAlignments: AddLoci returned error %d",(int)Rslt64);
-			Reset();
+			delete pHypers;
 			return(Rslt64);			
 			}
 
@@ -1018,7 +1072,7 @@ if(!bProbeAligned)
 	if(CurTargSeqID != PrevTargSeqID || pszTargSeq == NULL)
 		{
 		pszTargSeq = SeqIDtoName(CurTargSeqID);
-		HyperChromID = m_pHypers->GetChromID(pszTargSeq);
+		HyperChromID = pHypers->GetChromID(pszTargSeq);
 		PrevTargSeqID = CurTargSeqID;
 		}
 	ProbeCntA = 0;
@@ -1030,7 +1084,7 @@ if(!bProbeAligned)
 		NumOverlapping = 0;
 	else
 		{
-		NumOverlapping = m_pHypers->LocateLociBaseCnts(HyperChromID,CurTargLociLoci,&ProbeCntA,&ProbeCntC,&ProbeCntG,&ProbeCntT,&ProbeCntN);
+		NumOverlapping = pHypers->LocateLociBaseCnts(HyperChromID,CurTargLociLoci,&ProbeCntA,&ProbeCntC,&ProbeCntG,&ProbeCntT,&ProbeCntN);
 
 		if(NumOverlapping == 0 || (ProbeCntA == 0 && ProbeCntC == 0 && ProbeCntG == 0 && ProbeCntT == 0 && ProbeCntN == 0))
 			{
@@ -1081,12 +1135,12 @@ if(!bProbeAligned)
 	if(Rslt64 < 1)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddImputedAlignments: AddLoci returned error %d",(int)Rslt64);
-		Reset();
+		delete pHypers;
 		return(Rslt64);
 		}	
 	pAlign = &m_pAllocAlignLoci[AlignIdx];
 	}
-
+delete pHypers;
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Added %d loci with alignments, %d loci with no alignments",TotOverlapping,TotNonOverlapping);
 return(TotOverlapping);
 }
@@ -1360,6 +1414,142 @@ if(pszBuff != NULL)
 return(NumReported);
 }
 
+int
+CMarkers::CreateMutexes(void)
+{
+	if (m_bMutexesCreated)
+		return(eBSFSuccess);
+
+#ifdef _WIN32
+	InitializeSRWLock(&m_hRwLock);
+#else
+	if (pthread_rwlock_init(&m_hRwLock, NULL) != 0)
+	{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Fatal: unable to create rwlock");
+		return(eBSFerrInternal);
+	}
+#endif
+
+#ifdef _WIN32
+	if ((m_hMtxIterReads = CreateMutex(NULL, false, NULL)) == NULL)
+	{
+#else
+	if (pthread_mutex_init(&m_hMtxIterReads, NULL) != 0)
+	{
+		pthread_rwlock_destroy(&m_hRwLock);
+#endif
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Fatal: unable to create mutex");
+		return(eBSFerrInternal);
+	}
+
+#ifdef _WIN32
+	if ((m_hMtxMHReads = CreateMutex(NULL, false, NULL)) == NULL)
+	{
+#else
+	if (pthread_mutex_init(&m_hMtxMHReads, NULL) != 0)
+	{
+#endif
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Fatal: unable to create mutex");
+#ifdef _WIN32
+		CloseHandle(m_hMtxIterReads);
+#else
+		pthread_rwlock_destroy(&m_hRwLock);
+		pthread_mutex_destroy(&m_hMtxIterReads);
+#endif
+		return(eBSFerrInternal);
+	}
+
+	m_bMutexesCreated = true;
+	return(eBSFSuccess);
+	}
+
+void
+CMarkers::DeleteMutexes(void)
+{
+	if (!m_bMutexesCreated)
+		return;
+#ifdef _WIN32
+	CloseHandle(m_hMtxIterReads);
+	CloseHandle(m_hMtxMHReads);
+#else
+	pthread_mutex_destroy(&m_hMtxIterReads);
+	pthread_mutex_destroy(&m_hMtxMHReads);
+	pthread_rwlock_destroy(&m_hRwLock);
+#endif
+	m_bMutexesCreated = false;
+}
+
+void
+CMarkers::AcquireSerialise(void)
+{
+#ifdef _WIN32
+	WaitForSingleObject(m_hMtxIterReads, INFINITE);
+#else
+	pthread_mutex_lock(&m_hMtxIterReads);
+#endif
+}
+
+void
+CMarkers::ReleaseSerialise(void)
+{
+#ifdef _WIN32
+	ReleaseMutex(m_hMtxIterReads);
+#else
+	pthread_mutex_unlock(&m_hMtxIterReads);
+#endif
+}
+
+void
+CMarkers::AcquireSerialiseMH(void)
+{
+#ifdef _WIN32
+	WaitForSingleObject(m_hMtxMHReads, INFINITE);
+#else
+	pthread_mutex_lock(&m_hMtxMHReads);
+#endif
+}
+
+void
+CMarkers::ReleaseSerialiseMH(void)
+{
+#ifdef _WIN32
+	ReleaseMutex(m_hMtxMHReads);
+#else
+	pthread_mutex_unlock(&m_hMtxMHReads);
+#endif
+}
+
+void
+CMarkers::AcquireLock(bool bExclusive)
+{
+#ifdef _WIN32
+	if (bExclusive)
+		AcquireSRWLockExclusive(&m_hRwLock);
+	else
+		AcquireSRWLockShared(&m_hRwLock);
+#else
+	if (bExclusive)
+		pthread_rwlock_wrlock(&m_hRwLock);
+	else
+		pthread_rwlock_rdlock(&m_hRwLock);
+#endif
+}
+
+void
+CMarkers::ReleaseLock(bool bExclusive)
+{
+
+#ifdef _WIN32
+	if (bExclusive)
+		ReleaseSRWLockExclusive(&m_hRwLock);
+	else
+		ReleaseSRWLockShared(&m_hRwLock);
+#else
+	pthread_rwlock_unlock(&m_hRwLock);
+#endif
+}
+
+
 static tsAlignLoci *gpAllocAlignLoci;		// as allocated to hold alignment loci;
 
 INT64
@@ -1367,15 +1557,22 @@ CMarkers::SortTargSeqLociSpecies(void)
 {
 // check if anything to sort ....
 if(m_pAllocAlignLoci == NULL || m_UsedAlignLoci == 0)
+	{
+	m_bSorted = false;
 	return(0);
+	}
 
-if(m_UsedAlignLoci == 1)
+if (m_UsedAlignLoci == 1)
+	{
+	m_bSorted = true;
 	return(1);
+	}
 	
 if(!m_bSorted)
 	{
 	gpAllocAlignLoci = m_pAllocAlignLoci;
 	qsort(gpAllocAlignLoci,m_UsedAlignLoci,sizeof(tsAlignLoci),QSortAlignSeqLociSpecies);
+	m_bSorted = true;
 	}
 return(m_UsedAlignLoci);
 }

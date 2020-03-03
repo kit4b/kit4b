@@ -31,23 +31,20 @@ const int cDfltMinQueryLenAlignedPct = 75;  // to be accepted a query sequence m
 
 const int cMinPathScore = 25;		// user specified min allowed path score before that path will be reported
 const int cDfltPathScore = 75;		// default minimum path score before that path will be reported
-const int cMaxPathScore = 50000;		// user specified max minimum allowed path score before that path will be reported
-
-const int cDfltMaxExtnScoreThres = 12; // default extension score threshold, core overlap extensions with extension score above this threshold are terminated; extension score += 2 if mismatch, extension score -= 1 if match and score > 0
-const int cMaxMaxExtnScoreThres = 30;  // maximum accepted extension score threshold, core overlap extensions with extension score above this threshold are terminated; extension score += 2 if mismatch, extension score -= 1 if match and score > 0
+const int cMaxPathScore = 100000;		// user specified max minimum allowed path score before that path will be reported
 
 const int cMaxOverlapFloat = 8;		// allowing for overlap float of at most this many bases, needed because the cores with extensions are independent and may be overextended
 
-const int cDfltMaxPathsToReport = 10;	// by default report at most this many scoring paths for any query sequence
+const int cDfltMaxPathsToReport = 1;	// by default report at most this many scoring paths for any query sequence
 
 
 const int cDfltExactMatchScore = 1;		// default score for an exact match
 const int cMinExactMatchScore = 1;		// user specified minimum score for an exact match
-const int cMaxExactMatchScore = 50;		// user specified maximum score for an exact match
+const int cMaxExactMatchScore = 10;		// user specified maximum score for an exact match
 
 const int cDfltMismatchScore = 2;		// default cost for mismatches when scoring
 const int cMinMismatchScore = 1;		// user specified minimum cost for mismatches when scoring
-const int cMaxMismatchScore = 50;		// user specified maximum cost for mismatches when scoring
+const int cMaxMismatchScore = 10;		// user specified maximum cost for mismatches when scoring
 
 // using affine gap scoring but limiting the gap extension cost to just the first 100bp
 const int cDfltGapOpenScore = 5;	// default cost for opening path gap when scoring path
@@ -74,7 +71,7 @@ const int cMaxDescrLen = 128;				// allow for fasta descriptors (incl identifier
 const int cSAMtruncSeqLen = 16000;			// SAM format is really designed for short read sequences, down stream apps may have problems handling alignments with long query sequences so slough sequences longer than this length if SAM output
 const int cAllocQuerySeqLen = 0x0200000;	// initially allocate to hold a query sequence of up to this length (2Mbp), will be realloc'd if needed for longer query sequences
 const int cMaxQuerySeqLen = (cAllocQuerySeqLen * 8);    // can handle query sequences of up to this maximal length (16Mbp), longer sequences will be truncated to this length and the user warned
-const int cMaxReadAheadQuerySeqs = 20000;	// read ahead and enqueue up to at most this many query sequences
+const int cMaxReadAheadQuerySeqs = 50000;	// read ahead and enqueue up to at most this many query sequences
 
 const int cNumAllocdAlignNodes = 200000;  // allow each query sequence to have up to this many aligned subsequences
 
@@ -112,7 +109,7 @@ typedef struct TAG_sQuerySeq {
     int SeqID;						// monotonically increasing unique sequence identifier
 	char szQueryIdent[cMaxQuerySeqIdentLen+1];	// fasta identifier
 	int QuerySeqLen;				// query sequence length
-	UINT8 *pQuerySeq;				// allocated to hold sequence 
+	uint8_t *pQuerySeq;				// allocated to hold sequence 
 } tsQuerySeq;
 
 typedef struct TAG_sLoadQuerySeqsThreadPars {
@@ -145,10 +142,10 @@ typedef struct TAG_sThreadQuerySeqsPars {
 #endif
 	bool bIsSAMOutput;				// will be true if aligning for SAM output format with PE processing capability
 	bool bIsSAMPE;					// will be true if aligning SAM PE
-	UINT32 NumAllocdAlignNodes;				// number of allocated alignment nodes
+	uint32_t NumAllocdAlignNodes;				// number of allocated alignment nodes
 	tsQueryAlignNodes *pAllocdAlignNodes;	// allocated to hold aligned subsequences
 	tsQueryAlignNodes **ppFirst2Rpts;		// allocated to hold ptrs to alignment nodes which are marked as being FlgFirst2tRpt
-	UINT32 NumAllocdAlignNodesPE2;				// number of allocated alignment nodes
+	uint32_t NumAllocdAlignNodesPE2;				// number of allocated alignment nodes
 	tsQueryAlignNodes *pAllocdAlignNodesPE2;	// allocated to hold aligned PE2 subsequences
 	tsQueryAlignNodes **ppFirst2RptsPE2;		// allocated to hold ptrs to PE2 alignment nodes which are marked as being FlgFirst2tRpt
 	int *pRslt;						// write intermediate result codes to this location
@@ -161,15 +158,14 @@ typedef struct TAG_sThreadQuerySeqsPars {
 class CBlitz
 {
 	etBLZPMode m_ProcMode;			// processing mode
+	int m_SampleNthRawRead;			// sample every Nth raw read (or read pair) for processing (1..10000)
 	etBLZSensitivity m_Sensitivity;  // alignment sensitivity 0 - standard, 1 - high, 2 - very high, 3 - low sensitivity
 	eALStrand m_AlignStrand;		// align on to watson, crick or both strands of target
-	int m_ExtnScoreThres;			// seed extensions terminate if the mismatches score is increased above this threshold; when extending seed matches are scored with -1 if current score > 0, and mismatches scored with 2
 	int m_CoreLen;					// use this core length as the exactly matching seed length to be 5' and 3' extended whilst no more than m_MaxSubRate
 	int m_CoreDelta;				// offset cores by this many bp
-	int m_MaxInsertLen;				// SAM output, accept observed insert sizes of at most this (default = 50000)
+	int m_MaxInsertLen;				// SAM output, accept observed insert sizes of at most this (default = 100000)
 	int m_QueryLenAlignedPct;    	// only report alignment paths if the percentage of total aligned bases to the query sequence length is at least this percentage (1..100)
 	int m_MaxIter;					// max allowed iterations (depth) per subsegmented sequence (core) when matching that subsegment
-	int m_MinExtdCoreLen;			// cores with flank extensions must be at least this length
 	int m_MaxOccKMerDepth;			// maximum depth to explore over-occurring core K-mers
 	int m_MinPathScore;				// to be reported alignment paths on any target sequence must score at least this value
 	int m_MaxPathsToReport;			// report at most this many alignment paths for any query
@@ -187,9 +183,9 @@ class CBlitz
 
 	char *m_pszSfxFile;				// target as suffix array
 	char *m_pszOutFile;				// where to write alignments
-	UINT32 m_ReportedPaths;			// total number of aligned paths reported
-	UINT32 m_QueriesPaths;			// this many query sequences had at least one reported path
-	UINT32 m_NumQueriesProc;		// total number of query sequences processed
+	uint32_t m_ReportedPaths;			// total number of aligned paths reported
+	uint32_t m_QueriesPaths;			// this many query sequences had at least one reported path
+	uint32_t m_NumQueriesProc;		// total number of query sequences processed
 
 	CSQLitePSL *m_pSQLitePSL;		// used when outputting PSL rows directly into SQLite database
 	int m_ExprID;					// experiment identifier allocated when initialising database with experiment details
@@ -211,7 +207,7 @@ class CBlitz
 
 	uint32_t *m_pKmerOccsDist;		// allocated to hold Kmer count distributions (up to cMaxOccKMerDepth counts)
 	
-	UINT8 m_TermBackgoundThreads; // if non-zero then all background threads are to immediately terminate processing
+	uint8_t m_TermBackgoundThreads; // if non-zero then all background threads are to immediately terminate processing
 
 
 	int m_NumThreads;				// number of worker threads to use
@@ -267,6 +263,7 @@ public:
 	~CBlitz();
 	int
 	Process(etBLZPMode PMode,			// processing mode
+			int SampleNthRawRead,		// sample every Nth raw read (or read pair) for processing (1..10000)
 			char *pszExprName,				// experiment name
 			char *pszExprDescr,				// experiment description
 			char *pszParams,				// string containing blitz parameters
@@ -279,7 +276,6 @@ public:
 			int  CoreLen,					// use this core length as the exactly matching seed length to be 5' and 3' extended whilst no more than m_MaxSubRate
 			int  CoreDelta,					// offset cores by this many bp
 			int MaxInsertLen,				// SAM output, accept observed insert sizes of at most this (default = 50000)
-			int MaxExtnScoreThres,			// terminate overlap extension if curent extension score more than this; if mismatch then extension score += 2, if match and score > 0 then score -= 1 
 			int MaxOccKMerDepth,			// maximum depth to explore over-occurring core K-mers
 			int  MinPathScore,				// only report alignment paths on any target sequence if the path score is >= this minimum score
 			int QueryLenAlignedPct,			// only report alignment paths if the percentage of total aligned bases to the query sequence length is at least this percentage (1..100)
@@ -296,7 +292,7 @@ public:
 	int ProcAlignQuerySeqs(tsThreadQuerySeqsPars *pPars);
 	int ProcAlignSAMQuerySeqsSE(tsThreadQuerySeqsPars *pPars);	// align as SE only reporting alignments in SAM file format
 	int ProcAlignSAMQuerySeqsPE(tsThreadQuerySeqsPars *pPars);	// align as PE only reporting alignments in SAM file format
-	int	ReportNonAligned(char *pszDescPE1, int LenSeqPE1, UINT8 *pSeqPE1, char *pszDescPE2 = NULL, int LenSeqPE2 = 0, UINT8 *pSeqPE2 = NULL);
+	int	ReportNonAligned(char *pszDescPE1, int LenSeqPE1, uint8_t *pSeqPE1, char *pszDescPE2 = NULL, int LenSeqPE2 = 0, uint8_t *pSeqPE2 = NULL);
 
 	teBSFrsltCodes // When SAM aligning then will be aligning sequencing reads which are length truncated to be no longer than cSAMtruncSeqLen bases
 		LoadSAMRawReads(bool bIsPairReads,	// true if paired end processing - PE1 reads in pszPE1File and PE2 reads in pszPE2File
@@ -306,37 +302,36 @@ public:
 	int										// returned enqueued query identifier
 		EnqueueQuerySeq(char *pszQueryIdent,    // query identifier
 			int QuerySeqLen,				// query sequence length
-			UINT8 *pQuerySeq,				// query sequence
+			uint8_t *pQuerySeq,				// query sequence
 			char *pszQueryIdentPE2 = NULL,    // PE2 query identifier parsed from fasta descriptor
 			int QuerySeqLenPE2 = 0,				// PE2 query sequence length
-			UINT8 *pQuerySeqPE2 = NULL);       // PE2 query sequence
+			uint8_t *pQuerySeqPE2 = NULL);       // PE2 query sequence
 
 
 	int										// number of sequences returned, 0 if none to be dequeued, < 0 if errors
-		DequeueQuerySeq(int WaitSecs,		// if no sequences available to be dequeued then wait at most this many seconds for a sequence to become available
-			int MaxLenQueryIdent,			// maximum length query identifier
+		DequeueQuerySeq(int MaxLenQueryIdent,			// maximum length query identifier
 			int *pSeqID,					// returned sequence identifier
 			char *pszQueryIdent,			// where to return query identifier
 			int *pQuerySeqLen,				// where to return query sequence length
-			UINT8 **pDequeuedQuerySeq,		// where to return ptr to dequeued query sequence, caller is responsible for deleting memory allocated to hold the returned sequence (delete *pDequeuedQuerySeq)
+			uint8_t **pDequeuedQuerySeq,		// where to return ptr to dequeued query sequence, caller is responsible for deleting memory allocated to hold the returned sequence (delete *pDequeuedQuerySeq)
 			int *pSeqIDPE2 = NULL,			// if SAM PE: returned PE2 sequence identifier
 			char *pszQueryIdentPE2 = NULL,	// if SAM PE: where to return PE2 query identifier
 			int *pQuerySeqLenPE2 = NULL,	// if SAM PE: where to return PE2 query sequence length
-			UINT8 **pDequeuedQuerySeqPE2 = NULL);	// if SAM PE: where to return ptr to dequeued PE2 query sequence, caller is responsible for deleting memory allocated to hold the returned sequence (delete *pDequeuedQuerySeqPE2)
+			uint8_t **pDequeuedQuerySeqPE2 = NULL);	// if SAM PE: where to return ptr to dequeued PE2 query sequence, caller is responsible for deleting memory allocated to hold the returned sequence (delete *pDequeuedQuerySeqPE2)
 
 	int
-		BlocksAlignStats(UINT32 *pMatches,	// returned number of bases that match that aren't repeats
-					UINT32 *pmisMatches,	// returned number of bases that don't match
-					UINT32 *prepMatches,	// returned number of bases that match but are part of repeats
-					UINT32 *pnCount,		// returned number of 'N' bases
+		BlocksAlignStats(uint32_t *pMatches,	// returned number of bases that match that aren't repeats
+					uint32_t *pmisMatches,	// returned number of bases that don't match
+					uint32_t *prepMatches,	// returned number of bases that match but are part of repeats
+					uint32_t *pnCount,		// returned number of 'N' bases
 				char  Strand,				// query sequence strand, '+' or '-')
-				UINT8 *pQuerySeq,			// the query sequence
-				UINT32 qSize,				// Query sequence size
-				UINT32 TargSeqID,			// CSfxArray sequence identifier
-				UINT32 tSize,				// Target sequence size 
-				UINT32 TargPathStartOfs,	// at this starting offset
-				UINT32 TargPathEndOfs,		// ending at this offset (inclusive)
-				UINT32 NumPathNodes,		// number of alignment nodes in alignment path
+				uint8_t *pQuerySeq,			// the query sequence
+				uint32_t qSize,				// Query sequence size
+				uint32_t TargSeqID,			// CSfxArray sequence identifier
+				uint32_t tSize,				// Target sequence size 
+				uint32_t TargPathStartOfs,	// at this starting offset
+				uint32_t TargPathEndOfs,		// ending at this offset (inclusive)
+				uint32_t NumPathNodes,		// number of alignment nodes in alignment path
 				int SortedPathIdx,
 				tsQueryAlignNodes *pAlignNodes,		// alignment nodes
 				tsQueryAlignNodes **ppFirst2Rpts); // allocated to hold ptrs to alignment nodes which are marked as being FlgFirst2tRpt
@@ -346,33 +341,44 @@ public:
 			uint32_t MaxKMerCnts,				// max number of target occurrences which ranges from 0 to MaxKMerCnts inclusive
 			uint32_t *pKmerOccsDist);			// array of length MaxKMerCnts + 1 which holds number of query K-mers having target occurrences
 
-	UINT32							// returned number of high scoring path head nodes
+	uint32_t							// returned number of high scoring path head nodes
 		IdentifyHighScorePaths(int MinPathScore,			// only report paths having at least this minimum score
 			int  MaxPathsToReport,		// report at most this many alignment paths for any query
-			UINT32 QueryLen,			// query length
-			UINT32 NumNodes,			// number of alignment nodes
+			uint32_t QueryLen,			// query length
+			uint32_t NumNodes,			// number of alignment nodes
 			tsQueryAlignNodes *pAlignNodes,		// alignment nodes
 			tsQueryAlignNodes **ppFirst2Rpts);	// allocated to hold ptrs to alignment nodes which are marked as being FlgFirst2tRpt
 
-	UINT32	// returns number of nodes in characterised path
-		CharacterisePath(UINT32 SortedPathIdx,		// index of paths head node
+	uint32_t	// returns number of nodes in characterised path
+		CharacterisePath(uint32_t QueryLen,			// query length
+				uint8_t* pQuerySeq,					// the query sequence as etSeqBase's
+				uint32_t SortedPathIdx,				// index of paths head node
 				tsQueryAlignNodes *pAlignNodes,		// alignment nodes
 				tsQueryAlignNodes **ppFirst2Rpts,	// allocated to hold ptrs to alignment nodes which are marked as being FlgFirst2tRpt
-				UINT32 *pQueryPathEndOfs,			// query path ends at this offset
-				UINT32 *pTargPathEndOfs,			// target path ends at this offset
-				UINT32 *pqNumInsert = NULL,			// qNumInsert, Number of inserts in query
-				UINT32 *pqBaseInsert = NULL,		// qBaseInsert, Number of bases inserted in query
-				UINT32 *ptNumInsert = NULL,			// tNumInsert, Number of inserts in target
-				UINT32 *tBaseInsert = NULL);		// tBaseInsert, Number of bases inserted in target
+				uint32_t *pQueryPathEndOfs,			// query path ends at this offset
+				uint32_t *pTargPathEndOfs,			// target path ends at this offset
+				uint32_t *pqNumInsert = NULL,			// qNumInsert, Number of inserts in query
+				uint32_t *pqBaseInsert = NULL,		// qBaseInsert, Number of bases inserted in query
+				uint32_t *ptNumInsert = NULL,			// tNumInsert, Number of inserts in target
+				uint32_t *tBaseInsert = NULL);		// tBaseInsert, Number of bases inserted in target
+
+	// Frequently there will be gaps between nodes and these gaps need to be closed through interpolation
+	uint32_t			// number of nodes after consolidation
+		ConsolidateNodes(bool bSense,		// if true then query sequence is aligning antisense to target
+				uint32_t QueryLen,					// query length
+				uint8_t* pQuerySeq,					// the query sequence as etSeqBase's
+				uint32_t SortedPathIdx,				// alignment path starts from this node - 0 based 
+				tsQueryAlignNodes* pAlignNodes,		// alignment nodes
+				tsQueryAlignNodes** ppFirst2Rpts);	// allocated to hold ptrs to alignment nodes which are marked as being FlgFirst2tRpt
 
 
 	int			// number of reported paths 
-		Report( UINT32 MinPathScore,			// only report paths having at least this minimum score
-				UINT32  MaxPathsToReport,		// report at most this many alignment paths for any query
+		Report( uint32_t MinPathScore,			// only report paths having at least this minimum score
+				uint32_t  MaxPathsToReport,		// report at most this many alignment paths for any query
 				char *pszQuerySeqIdent,		// query sequence name 
-				UINT32 QueryLen,			// query length
-				UINT8 *pQuerySeq,			// the query sequence
-				UINT32 NumNodes,			// number of alignment nodes
+				uint32_t QueryLen,			// query length
+				uint8_t *pQuerySeq,			// the query sequence
+				uint32_t NumNodes,			// number of alignment nodes
 				tsQueryAlignNodes *pAlignNodes, // alignment nodes
 				tsQueryAlignNodes **ppFirst2Rpts);	// allocated to hold ptrs to alignment nodes which are marked as being FlgFirst2tRpt
 
@@ -380,120 +386,120 @@ public:
 
 
 	int	// reporting alignment as SQLite PSL format 
-		ReportAsSQLitePSL(UINT32 Matches,				// Number of bases that match that aren't repeats
-						UINT32 misMatches,			// Number of bases that don't match
-						UINT32 repMatches,			// Number of bases that match but are part of repeats
-						UINT32 nCount,				// Number of 'N' bases
-						UINT32	qNumInsert,			// Number of inserts in query
-						UINT32 qBaseInsert,			// Number of bases inserted in query
-						UINT32 tNumInsert,			// Number of inserts in target
-						UINT32 tBaseInsert,			// Number of bases inserted in target
+		ReportAsSQLitePSL(uint32_t Matches,				// Number of bases that match that aren't repeats
+						uint32_t misMatches,			// Number of bases that don't match
+						uint32_t repMatches,			// Number of bases that match but are part of repeats
+						uint32_t nCount,				// Number of 'N' bases
+						uint32_t	qNumInsert,			// Number of inserts in query
+						uint32_t qBaseInsert,			// Number of bases inserted in query
+						uint32_t tNumInsert,			// Number of inserts in target
+						uint32_t tBaseInsert,			// Number of bases inserted in target
 						char  Strand,				// query sequence strand, '+' or '-'
 						char *pszQuerySeqIdent,     // this query sequence
-						UINT32 qSize,				// Query sequence size
-						UINT32 qStart,				// Alignment start position in query
-						UINT32 qEnd,				// Alignment end position in query
+						uint32_t qSize,				// Query sequence size
+						uint32_t qStart,				// Alignment start position in query
+						uint32_t qEnd,				// Alignment end position in query
 						char *pszTargName,			// aligning to this target
-						UINT32 tSize,				// Target sequence size 
-						UINT32 TargPathStartOfs,	// at this starting offset
-						UINT32 TargPathEndOfs,		// ending at this offset (inclusive)
-						UINT32 NumPathNodes,		// number of alignment nodes in alignment path
+						uint32_t tSize,				// Target sequence size 
+						uint32_t TargPathStartOfs,	// at this starting offset
+						uint32_t TargPathEndOfs,		// ending at this offset (inclusive)
+						uint32_t NumPathNodes,		// number of alignment nodes in alignment path
 						int SortedPathIdx,
 						tsQueryAlignNodes *pAlignNodes,		// alignment nodes
 						tsQueryAlignNodes **ppFirst2Rpts); // allocated to hold ptrs to alignment nodes which are marked as being FlgFirst2tRpt
 
 
 	int		// reporting alignment as PSL format
-			ReportAsPSL(UINT32 Matches,			// Number of bases that match that aren't repeats
-					UINT32 misMatches,			// Number of bases that don't match
-					UINT32 repMatches,			// Number of bases that match but are part of repeats
-					UINT32 nCount,				// Number of 'N' bases
-					UINT32	qNumInsert,			// Number of inserts in query
-					UINT32 qBaseInsert,			// Number of bases inserted in query
-					UINT32 tNumInsert,			// Number of inserts in target
-					UINT32 tBaseInsert,			// Number of bases inserted in target
+			ReportAsPSL(uint32_t Matches,			// Number of bases that match that aren't repeats
+					uint32_t misMatches,			// Number of bases that don't match
+					uint32_t repMatches,			// Number of bases that match but are part of repeats
+					uint32_t nCount,				// Number of 'N' bases
+					uint32_t	qNumInsert,			// Number of inserts in query
+					uint32_t qBaseInsert,			// Number of bases inserted in query
+					uint32_t tNumInsert,			// Number of inserts in target
+					uint32_t tBaseInsert,			// Number of bases inserted in target
 					char  Strand,				// query sequence strand, '+' or '-'
 					char *pszQuerySeqIdent,     // this query sequence
-					UINT32 qSize,				// Query sequence size
-					UINT32 qStart,				// Alignment start position in query
-					UINT32 qEnd,				// Alignment end position in query
+					uint32_t qSize,				// Query sequence size
+					uint32_t qStart,				// Alignment start position in query
+					uint32_t qEnd,				// Alignment end position in query
 					char *pszTargName,			// aligning to this target
-					UINT32 tSize,				// Target sequence size 
-					UINT32 TargPathStartOfs,	// at this starting offset
-					UINT32 TargPathEndOfs,		// ending at this offset (inclusive)
-					UINT32 NumPathNodes,		// number of alignment nodes in alignment path
+					uint32_t tSize,				// Target sequence size 
+					uint32_t TargPathStartOfs,	// at this starting offset
+					uint32_t TargPathEndOfs,		// ending at this offset (inclusive)
+					uint32_t NumPathNodes,		// number of alignment nodes in alignment path
 					int SortedPathIdx,
 					tsQueryAlignNodes *pAlignNodes,		// alignment nodes
 					tsQueryAlignNodes **ppFirst2Rpts);  // allocated to hold ptrs to alignment nodes which are marked as being FlgFirst2tRpt
 
 	int		// reporting alignment as PSLX format
-			ReportAsPSLX(UINT32 Matches,			// Number of bases that match that aren't repeats
-					UINT32 misMatches,			// Number of bases that don't match
-					UINT32 repMatches,			// Number of bases that match but are part of repeats
-					UINT32 nCount,				// Number of 'N' bases
-					UINT32	qNumInsert,			// Number of inserts in query
-					UINT32 qBaseInsert,			// Number of bases inserted in query
-					UINT32 tNumInsert,			// Number of inserts in target
-					UINT32 tBaseInsert,			// Number of bases inserted in target
+			ReportAsPSLX(uint32_t Matches,			// Number of bases that match that aren't repeats
+					uint32_t misMatches,			// Number of bases that don't match
+					uint32_t repMatches,			// Number of bases that match but are part of repeats
+					uint32_t nCount,				// Number of 'N' bases
+					uint32_t	qNumInsert,			// Number of inserts in query
+					uint32_t qBaseInsert,			// Number of bases inserted in query
+					uint32_t tNumInsert,			// Number of inserts in target
+					uint32_t tBaseInsert,			// Number of bases inserted in target
 					char  Strand,				// query sequence strand, '+' or '-'
 					char *pszQuerySeqIdent,     // this query sequence
-					UINT32 qSize,				// Query sequence size
-					UINT8 *pQuerySeq,			// the query sequence
-					UINT32 qStart,				// Alignment start position in query
-					UINT32 qEnd,				// Alignment end position in query
-					UINT32 TargSeqID,			// CSfxArray sequence identifier
+					uint32_t qSize,				// Query sequence size
+					uint8_t *pQuerySeq,			// the query sequence
+					uint32_t qStart,				// Alignment start position in query
+					uint32_t qEnd,				// Alignment end position in query
+					uint32_t TargSeqID,			// CSfxArray sequence identifier
 					char *pszTargName,			// aligning to this target
-					UINT32 tSize,				// Target sequence size 
-					UINT32 TargPathStartOfs,	// at this starting offset
-					UINT32 TargPathEndOfs,		// ending at this offset (inclusive)
-					UINT32 NumPathNodes,		// number of alignment nodes in alignment path
+					uint32_t tSize,				// Target sequence size 
+					uint32_t TargPathStartOfs,	// at this starting offset
+					uint32_t TargPathEndOfs,		// ending at this offset (inclusive)
+					uint32_t NumPathNodes,		// number of alignment nodes in alignment path
 					int SortedPathIdx,
 					tsQueryAlignNodes *pAlignNodes,		// alignment nodes
 					tsQueryAlignNodes **ppFirst2Rpts);  // allocated to hold ptrs to alignment nodes which are marked as being FlgFirst2tRpt
 
 	int		// reporting alignment as SAM format
-		ReportAsSAM(UINT32 Flags,		// use as reported SAM flags
+		ReportAsSAM(uint32_t Flags,		// use as reported SAM flags
 			char  Strand,				// query sequence strand, '+' or '-'
-			UINT32 AlignScore,			// alignment has this score
+			uint32_t AlignScore,			// alignment has this score
 			char *pszQuerySeqIdent,     // this query sequence
-			UINT32 qSize,				// Query sequence size
-			UINT8 *pQuerySeq,			// the query sequence
-			UINT32 qStart,				// Alignment start position in query
-			UINT32 qEnd,				// Alignment end position in query
+			uint32_t qSize,				// Query sequence size
+			uint8_t *pQuerySeq,			// the query sequence
+			uint32_t qStart,				// Alignment start position in query
+			uint32_t qEnd,				// Alignment end position in query
 			char *pszTargName,			// aligning to this target
-			UINT32 tSize,				// Target sequence size 
-			UINT32 TargPathStartOfs,	// at this starting offset
-			UINT32 TargPathEndOfs,		// ending at this offset (inclusive)
+			uint32_t tSize,				// Target sequence size 
+			uint32_t TargPathStartOfs,	// at this starting offset
+			uint32_t TargPathEndOfs,		// ending at this offset (inclusive)
 			char RNEXT,					// Reference sequence name of the primary alignment of the NEXT read in the template, '*' if unknown, '=' if PE and both ends align to same reference
-			UINT32 PNEXT,				// 1-based Position of the primary alignment of the NEXT read in the template. Set as 0 when the information is unavailable
+			uint32_t PNEXT,				// 1-based Position of the primary alignment of the NEXT read in the template. Set as 0 when the information is unavailable
 			int TLEN,					// signed template length, If all segments are mapped to the same reference, the unsigned observed template length equals the number of bases from the leftmost mapped base to the rightmost mapped base
-			UINT32 NumPathNodes,		// number of alignment nodes in alignment path
+			uint32_t NumPathNodes,		// number of alignment nodes in alignment path
 			int SortedPathIdx,
 			tsQueryAlignNodes *pAlignNodes,		// alignment nodes
 			tsQueryAlignNodes **ppFirst2Rpts);  // allocated to hold ptrs to alignment nodes which are marked as being FlgFirst2tRpt
 
 	int		// reporting alignment as MAF format
 			ReportAsMAF(int PathScore,			// score for this path
-					UINT32 Matches,				// Number of bases that match that aren't repeats
-					UINT32 misMatches,			// Number of bases that don't match
-					UINT32 repMatches,			// Number of bases that match but are part of repeats
-					UINT32 nCount,				// Number of 'N' bases
-					UINT32	qNumInsert,			// Number of inserts in query
-					UINT32 qBaseInsert,			// Number of bases inserted in query
-					UINT32 tNumInsert,			// Number of inserts in target
-					UINT32 tBaseInsert,			// Number of bases inserted in target
+					uint32_t Matches,				// Number of bases that match that aren't repeats
+					uint32_t misMatches,			// Number of bases that don't match
+					uint32_t repMatches,			// Number of bases that match but are part of repeats
+					uint32_t nCount,				// Number of 'N' bases
+					uint32_t	qNumInsert,			// Number of inserts in query
+					uint32_t qBaseInsert,			// Number of bases inserted in query
+					uint32_t tNumInsert,			// Number of inserts in target
+					uint32_t tBaseInsert,			// Number of bases inserted in target
 					char  Strand,				// query sequence strand, '+' or '-'
 					char *pszQuerySeqIdent,     // this query sequence
-					UINT32 qSize,				// Query sequence size
-					UINT8 *pQuerySeq,			// the query sequence
-					UINT32 qStart,				// Alignment start position in query
-					UINT32 qEnd,				// Alignment end position in query
-					UINT32 TargSeqID,			// CSfxArray sequence identifier
+					uint32_t qSize,				// Query sequence size
+					uint8_t *pQuerySeq,			// the query sequence
+					uint32_t qStart,				// Alignment start position in query
+					uint32_t qEnd,				// Alignment end position in query
+					uint32_t TargSeqID,			// CSfxArray sequence identifier
 					char *pszTargName,			// aligning to this target
-					UINT32 tSize,				// Target sequence size 
-					UINT32 TargPathStartOfs,	// at this starting offset
-					UINT32 TargPathEndOfs,		// ending at this offset (inclusive)
-					UINT32 NumPathNodes,		// number of alignment nodes in alignment path
+					uint32_t tSize,				// Target sequence size 
+					uint32_t TargPathStartOfs,	// at this starting offset
+					uint32_t TargPathEndOfs,		// ending at this offset (inclusive)
+					uint32_t NumPathNodes,		// number of alignment nodes in alignment path
 					int SortedPathIdx,
 					tsQueryAlignNodes *pAlignNodes,		// alignment nodes
 					tsQueryAlignNodes **ppFirst2Rpts);  // allocated to hold ptrs to alignment nodes which are marked as being FlgFirst2tRpt
@@ -501,30 +507,30 @@ public:
 	int			// reporting alignment as BED format
 			ReportAsBED(char *pszQuerySeqIdent,     // this query sequence
 					char  Strand,				// query sequence strand, '+' or '-'
-					UINT32 AlignScore,			// alignment has this score
+					uint32_t AlignScore,			// alignment has this score
 					char *pszTargName,			// aligning to this target
-					UINT32 NumPathNodes,		// number of alignment nodes in alignment path
-					UINT32 TargPathStartOfs,	// at this starting offset
-					UINT32 TargPathEndOfs,		// ending at this offset (inclusive)
+					uint32_t NumPathNodes,		// number of alignment nodes in alignment path
+					uint32_t TargPathStartOfs,	// at this starting offset
+					uint32_t TargPathEndOfs,		// ending at this offset (inclusive)
 					int SortedPathIdx,
 					tsQueryAlignNodes *pAlignNodes,		// alignment nodes
 					tsQueryAlignNodes **ppFirst2Rpts); // allocated to hold ptrs to alignment nodes which are marked as being FlgFirst2tRpt
 
-	UINT32	IdentifyHighScorePaths(UINT32 QueryLen,		// query length
-			UINT32 TargSeqLen,					// targeted sequence length
+	uint32_t	IdentifyHighScorePaths(uint32_t QueryLen,		// query length
+			uint32_t TargSeqLen,					// targeted sequence length
 			bool bStrand,						// reporting for paths on this strand - false if sense, true if antisense
-			UINT32 NumNodes,					// reporting on this number of nodes starting from StartNodeIdx
-			UINT32 StartNodeIdx,				// report for nodes starting at this node index (1..NumNodes) which is expected to be the first alignment node of a new target sequence
+			uint32_t NumNodes,					// reporting on this number of nodes starting from StartNodeIdx
+			uint32_t StartNodeIdx,				// report for nodes starting at this node index (1..NumNodes) which is expected to be the first alignment node of a new target sequence
 			tsQueryAlignNodes *pAlignNodes,		// alignment nodes
-			UINT32 MinPathScore,				// only report those series having at least this score
-			UINT32  MaxPathsToReport);			// report at most this many alignment paths for any query
+			uint32_t MinPathScore,				// only report those series having at least this score
+			uint32_t  MaxPathsToReport);			// report at most this many alignment paths for any query
 
-	UINT32											// returned best score for paths starting at pAlignNodes[ExploreNodeIdx]
-		HighScoreSW(UINT32 QueryLen,			// query length
-			UINT32 TargSeqLen,					// targeted sequence length
+	uint32_t											// returned best score for paths starting at pAlignNodes[ExploreNodeIdx]
+		HighScoreSW(uint32_t QueryLen,			// query length
+			uint32_t TargSeqLen,					// targeted sequence length
  			bool bStrand,						// scoring for series on this strand - false if sense, true if antisense
-			UINT32 ExploreNodeIdx,				// node to be explored for maximally scored path
-			UINT32 NumNodes,					// total number of alignment nodes 
+			uint32_t ExploreNodeIdx,				// node to be explored for maximally scored path
+			uint32_t NumNodes,					// total number of alignment nodes 
 			tsQueryAlignNodes *pAlignNodes);	// alignment nodes
 			
 };

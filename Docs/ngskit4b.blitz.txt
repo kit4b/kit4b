@@ -3,9 +3,9 @@ Blat-like ngskit4b local aligner
 
 This document is derived from documentation supplied with BioKanga 4.2.0
 
-Version 0.4.6
+Version 0.5.8
 ===========================
-Released January 16th 2020
+Released March 3rd 2020
 
 
 This subprocess is used to perform a local alignment, similar to Blat or
@@ -57,6 +57,9 @@ Indexing Options:
         Alignment processing mode:
 		0 - Currently just the standard alignment mode is supported
 
+-#, --samplenthrawread=<int>
+		Sample every Nth raw read or read pair for processing (default 1, range 1..10000)
+
 -s, --sensitivity=<int>
 	Sensitivity controls the defaults used for the core or seed length,
 	the core delta, over occurring seed alignments, and minimum path
@@ -72,6 +75,15 @@ Indexing Options:
 	0 - align both sense (+) and antisense (-)
 	1 - align sense (+) only
 	2 - align antisense (-) only
+
+-j, --mismatchscore=<int>
+	Penalise score for bp mismatches (default is 2, range 1..10)
+
+-J, --exactmatchscore=<int> 
+	Score exact bp matching (default is 1, range 1..10)
+
+-g, --gapopenscore=<int>
+	Penalise score for gap openings (default is 5, range 1..50)
 
 -C, --corelen=<int>
   	Specifies the core (seed) K-mer length to use when seeding alignment
@@ -92,28 +104,25 @@ Indexing Options:
 	Default is 0 for auto determination, user specified range range 100 to
 	20000.
 
--e, --extnscorethres=<int>
-  	Extension score threshold, core overlap extensions with extension
-	score above this threshold are terminated; extension score += 2 if
-	mismatch, extension score -= 1 if match and score > 0 (default is 12)
-
 -p, --minpathscore=<int>
   	Minimum required alignment path score before that path will be
 	reported.
-	Default is 0 for auto determination, range 50..500
+	Default is 0 for auto determination, range 25..50000
 
 -a, --querylendpct=<int>
   	Minimum required percentage of query sequence length aligned before
 	the path will be reported.
-	Default is that at least 25% of query sequence be aligned, and the
-	user specified range is from 5% to 100%.
+	Default is that at least 75% of query sequence be aligned, and the
+	user specified range is from 20% to 100%.
 
 -P, --maxpathstoreport=<int>
   	There can be many putative paths for a given combination of
 	query and target sequences. Use this parameter to restrict the
 	maximum number of paths which can be reported for any of the
 	query to target combinations.
-	The default is 10 and can be user specified to be 1 or more.
+	The default is 1 and can be user specified to be in range 1..10
+	NOTE: If PE processing then a single highest scoring pair path
+		  is reported.
 
 -M, --format=<int>
   	The output alignments format can be specified as:
@@ -126,7 +135,7 @@ Indexing Options:
 
 -D, --maxinsertlen=<int>
 	SAM output, accept observed insert sizes of at most this
-	(default = 50000, range 1000 to 1000000)
+	(default = 100000, range 1000 to 1000000)
 
 -i, --in=<file>
   	Load input query sequences to be aligned from this file

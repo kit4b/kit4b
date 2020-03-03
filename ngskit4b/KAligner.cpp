@@ -91,7 +91,7 @@ CKAligner::Align(etPMode PMode,			// processing mode
 		bool bPEcircularised,			// experimental - true if processing for PE spaning circularised fragments
 		bool bPEInsertLenDist,			// experimental - true if stats file to include PE insert length distributions for each transcript
 		eALStrand AlignStrand,			// align on to watson, crick or both strands of target
-		int MinChimericLen,				// minimum chimeric length as a percentage (0 to disable, otherwise 25..99) of probe sequence length: negative if chimeric diagnostics to be reported
+		int MinChimericLen,				// minimum chimeric length as a percentage (0 to disable, otherwise 15..99) of probe sequence length: negative if chimeric diagnostics to be reported
 		bool bChimericRpt,				// report chimeric trimming detail for individual reads (default is not to report)
 		int microInDelLen,				// microInDel length maximum
 		int SpliceJunctLen,				// maximum splice junction length when aligning RNAseq reads
@@ -495,7 +495,7 @@ if(Rslt < eBSFSuccess)
 	Reset(false);
 	return(Rslt);
 	}
-
+	
 if(m_bReportChimerics)
 	{
 	char szChimericsFile[_MAX_PATH];
@@ -6163,7 +6163,7 @@ else
 		}
 	}
 
-MAPQ = 255;
+MAPQ = 254;		// SAM recommendation is that no mapping quality should be the maximum of 255 ????
 
 CigarIdx = 0;
 if(pReadHit->NAR == eNARAccepted)
@@ -6199,11 +6199,13 @@ if(pReadHit->NAR == eNARAccepted)
 		Seg1RightTrimLen = pReadHit->HitLoci.Hit.Seg[1].TrimRight;
 		if(pReadHit->HitLoci.Hit.FlgSplice == 1)  // splice
 			{
+			MAPQ -= 20;
 			GapLen = (int)pReadHit->HitLoci.Hit.Seg[1].MatchLoci - (int)(pReadHit->HitLoci.Hit.Seg[0].MatchLoci + pReadHit->HitLoci.Hit.Seg[0].MatchLen);
 			pBAMalign->cigar[CigarIdx++] = GapLen << 4 | 3;		// 'N'
 			}
 		else   // else if an InDel
 			{
+			MAPQ -= 10;
 			if(pReadHit->HitLoci.Hit.FlgInsert)
 				{
 				GapLen = pReadHit->ReadLen -
@@ -6246,6 +6248,9 @@ if(pReadHit->NAR == eNARAccepted)
 		PNext = AdjStartLoci(&pPEReadHit->HitLoci.Hit.Seg[0]);
 	else
 		PNext = -1;
+	MAPQ = max(1,(int)(MAPQ * ((double)(Seg0Hitlen + Seg1Hitlen) / pReadHit->ReadLen)));
+	if(MAPQ > 254)
+		MAPQ = 254;
 	QNameLen = 1 + (int)strlen(pszQName);
 	pBAMalign->NumReadNameBytes = QNameLen;
 	strcpy(pBAMalign->read_name,pszQName);
@@ -6277,7 +6282,7 @@ else   // treating as being unaligned
 	pBAMalign->next_refID = -1;
 	pBAMalign->pos = -1;
 	pBAMalign->end = 0;
-	pBAMalign->bin_mq_nl = MAPQ << 8 | QNameLen;
+	pBAMalign->bin_mq_nl = (128 << 8) | QNameLen;
 	pBAMalign->next_pos = -1;
 	pBAMalign->tlen = 0;
 	pBAMalign->l_seq = pReadHit->ReadLen;
@@ -8949,38 +8954,29 @@ gDiagnostics.DiagOut(eDLInfo,gszProcName,"Genome assembly suffix array loaded");
 	// large genomes require larger cores, more sensitive alignments require smaller cores
 m_BlockTotSeqLen = m_pSfxArray->GetTotSeqsLen();
 
-if (m_BlockTotSeqLen <= 500000)							// covers mitochrondria and plastids
-	m_MinCoreLen = cMinCoreLen;
-else
-	if (m_BlockTotSeqLen <= 20000000)				    // covers yeast
-		m_MinCoreLen = cMinCoreLen + 3;
-	else
-		if (m_BlockTotSeqLen <= 250000000)		    // covers arabidopsis and fly
-			m_MinCoreLen = cMinCoreLen + 7;
-		else
-			if (m_BlockTotSeqLen <= 3500000000)		    // covers human
-				m_MinCoreLen = cMinCoreLen + 8;
-			else
-				m_MinCoreLen = cMinCoreLen + 11; 		// covers the big plant guys...
-
+int AutoCoreLen = 1;
+while (m_BlockTotSeqLen >>= 2)
+	AutoCoreLen++;
+AutoCoreLen -= 1;
+m_MinCoreLen = max(cMinCoreLen, AutoCoreLen);
 
 // MaxNumSlides is per 100bp of read length
 // more slides enables higher sensitivity but negatively impacts on alignment throughput
 switch(m_PMode) {
 	case ePMUltraSens:				// ultra sensitive - much slower
-		MaxNumSlides = 9;			// leave m_MinCoreLen at it's minimum
+		m_MinCoreLen -= 2;
+		MaxNumSlides = 9;			
 		break;
 	case ePMMoreSens:				// more sensitive - slower
-		m_MinCoreLen += 1;
+		m_MinCoreLen -= 1;
 		MaxNumSlides = 8;
 		break;
 	case ePMdefault:				// default processing mode
-		m_MinCoreLen += 2;
 		MaxNumSlides = 8;
 		break;
-	default:				// less sensitive but quicker
-		m_MinCoreLen += 8;
-		MaxNumSlides = 20;
+	default:						// less sensitive but quicker
+		m_MinCoreLen += 2;
+		MaxNumSlides = 6;
 		break;
 	}
 m_MaxNumSlides = MaxNumSlides;

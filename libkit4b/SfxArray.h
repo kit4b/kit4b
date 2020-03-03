@@ -142,12 +142,11 @@ typedef struct TAG_sQueryAlignNodes {
 	UINT8 Flg2Rpt:1;									// set 1 if this node part of path which meets minimum scoring critera
 	UINT8 FlgScored:1;									// set 0 if unscored, 1 if scored and HiScore, HiScorePathNextIdx are valid
 	INT32 QueryID;										// query sequence identifer
-	UINT32 QueryStartOfs;								// starting at this loci
-	UINT32 TargSeqID;									// aligning to thid target sequence identifer
-	UINT32 TargStartOfs;								// starting at this loci
+	UINT32 QueryStartOfs;								// alignment is starting from this query sequence offset
 	UINT32 AlignLen;									// alignment length
+	UINT32 TargSeqID;									// aligning to thid target sequence identifer
+	UINT32 TargSeqLoci;									// starting at this loci
 	UINT32 NumMismatches;								// aligns with this number of mismatching nucleotides
-	UINT32 CurCoreSegOfs;								// query core used to seed this alignment node was from this sequence offset
 	INT32 HiScore;										// highest cumulative score for nodes along highest scoring path starting with this node (includes this node's score)
 	UINT32 HiScorePathNextIdx;							// if > 0 then idex-1 of next node on currently highest scoring path; 0 if no other nodes on path
 	UINT32 NxtHashMatch;								// aligned nodes with same hash over same target and alignment sense are linked 
@@ -765,14 +764,14 @@ public:
 			LocateQuerySeqs(UINT32 QuerySeqID,			// identifies this query sequence
   						 etSeqBase *pProbeSeq,			// probe
 						 UINT32 ProbeLen,				// probe length
-						 UINT32 m_MaxMMThres,			// seed extensions terminate if the mismatches score is increased above this threshold; when extending seed matches are scored with 1 and mismatches scored with 2
 						 UINT32 CoreLen,				// core window length
 						 UINT32 CoreDelta,				// core window offset increment (1..n)
 						 eALStrand Align2Strand,		// align to this strand
-						 UINT32 MinMatchLen,			// putative alignments must be at least this length
 						 UINT32 MaxHits,				// (IN) process for at most this number of hits
 						 tsQueryAlignNodes *pHits,		// where to return hits (at most MaxHits)
-						 UINT32 CurMaxIter);			// max allowed iterations per subsegmented sequence when matching that subsegment
+						 UINT32 CurMaxIter,				// max allowed iterations per subsegmented sequence when matching that subsegment
+						 int BaseMatchPts = 1,			// award this many points for matching bases when extending 5' and 3' flanks
+						 int BaseMismatchPts = 3);		// penalise this many points for mismatching bases when extending 5' and 3' flanks
 
 			
 	int						// < 0 if errors, 0 if no matches, 1..MaxHits, or MaxHits+1 if additional matches have been sloughed

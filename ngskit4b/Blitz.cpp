@@ -1,18 +1,18 @@
 /*
 This toolkit is a source base clone of 'BioKanga' release 4.4.2 (https://github.com/csiro-crop-informatics/biokanga) and contains
 significant source code changes enabling new functionality and resulting process parameterisation changes. These changes have resulted in
-incompatibilty with 'BioKanga'.
+incompatibility with 'BioKanga'.
 
-Because of the potentential for confusion by users unaware of functionality and process parameterisation changes then the modified source base
+Because of the potential for confusion by users unaware of functionality and process parameterisation changes then the modified source base
 and resultant compiled executables have been renamed to 'kit4b' - K-mer Informed Toolkit for Bioinformatics.
 The renaming will force users of the 'BioKanga' toolkit to examine scripting which is dependent on existing 'BioKanga'
 parameterisations so as to make appropriate changes if wishing to utilise 'kit4b' parameterisations and functionality.
 
-'kit4b' is being released under the Opensource Software License Agreement (GPLv3)
+'kit4b' is being released under the Open-source Software License Agreement (GPLv3)
 'kit4b' is Copyright (c) 2019
 Please contact Dr Stuart Stephen < stuartjs@g3web.com > if you have any questions regarding 'kit4b'.
 
-Orginal 'BioKanga' copyright notice has been retained and immediately follows this notice..
+Original 'BioKanga' copyright notice has been retained and immediately follows this notice..
 */
 /*
  * CSIRO Open Source Software License Agreement (GPLv3)
@@ -43,6 +43,7 @@ Orginal 'BioKanga' copyright notice has been retained and immediately follows th
 
 int
 Process(etBLZPMode PMode,				// processing mode
+		int SampleNthRawRead,		// sample every Nth raw read (or read pair) for processing (1..10000)
 		char *pszExprName,				// experiment name
 		char *pszExprDescr,				// experiment description
 		char *pszParams,				// string containing blitz parameters
@@ -54,8 +55,7 @@ Process(etBLZPMode PMode,				// processing mode
 		int GapOpenScore,				// decrease score by this for each gap open
 		int  CoreLen,					// use this core length as the exactly matching seed length to be 5' and 3' extended
 		int  CoreDelta,					// offset cores by this many bp
-		int MaxInsertLen,				// SAM output, accept observed insert sizes of at most this (default = 50000)
-		int MaxExtnScoreThres,			// terminate overlap extension if curent extension score more than this; if mismatch then extension score += 2, if match and score > 0 then score -= 1 
+		int MaxInsertLen,				// SAM output, accept observed insert sizes of at most this (default = 100000)
 		int MaxOccKMerDepth,			// maximum depth to explore over-occurring core K-mers
 		int  MinPathScore,				// only report alignment paths on any target sequence if the path score is >= this minimum score
 		int QueryLenAlignedPct,			// only report alignment paths if the percentage of total aligned bases to the query sequence length is at least this percentage (1..100)
@@ -93,6 +93,7 @@ bool KMerDist;				// true if K_mer counts distributions to be reported
 
 int NumberOfProcessors;		// number of installed CPUs
 int NumThreads;				// number of threads (0 defaults to number of CPUs)
+int SampleNthRawRead;		// sample every Nth raw read (or read pair) for processing (1..10000)
 int Sensitivity;			// sensitivity 0 - standard, 1 - high, 2 - very high, 3 - low sensitivity (default is 0)
 
 int MismatchScore;			// decrease score by this for each mismatch bp
@@ -102,8 +103,7 @@ int GapOpenScore;			// decrease score by this for each gap open
 int CoreLen;				// use this core length as the exactly matching seed length to be 5' and 3' extended whilst no more than m_MaxSubRate
 int CoreDelta;				// offset cores by this many bp
 int MaxOccKMerDepth;		// maximum depth to explore over-occurring core K-mers
-int MaxExtnScoreThres;		// terminate overlap extension if current extension score more than this; if mismatch then extension score += 2, if match and score > 0 then score -= 1 
-int MaxInsertLen;			// SAM output, accept observed insert sizes of at most this (default = 50000)
+int MaxInsertLen;			// SAM output, accept observed insert sizes of at most this (default = 100000)
 
 int  MinPathScore;			// only report alignment paths on any target sequence if the path score is >= this minimum score
 int QueryLenAlignedPct;		// only report alignment paths if the percentage of total aligned bases to the query sequence length is at least this percentage (1..100)
@@ -126,6 +126,7 @@ struct arg_int *FileLogLevel=arg_int0("f", "FileLogLevel",		"<int>","Level of di
 struct arg_file *LogFile = arg_file0("F","log","<file>",		"diagnostics log file");
 
 struct arg_int *pmode = arg_int0("m","mode","<int>",		    "alignment processing mode: 0 - standard");
+struct arg_int* samplenthrawread = arg_int0("#", "samplenthrawread", "<int>", "sample every Nth raw read or read pair for processing (default 1, range 1..10000)");
 struct arg_int *format = arg_int0("M","format","<int>",		    "output format: 0 - PSL, 1 - PSLX, 2 - MAF, 3 - BED, 4 - SQLite, 5 - SAM (default 0 - PSL)");
 struct arg_file *inputfile = arg_file1("i","in","<file>",		"input sequences to align from this file (or PE1 if PE processing when SAM output format mode");
 struct arg_file *inputfilepe2 = arg_file0("u", "inpe2", "<file>", "PE2 input sequences to align from this file if PE processing with SAM output format mode");
@@ -138,24 +139,23 @@ struct arg_file *outfile = arg_file1("o","out","<file>",		"output alignments to 
 
 struct arg_int *maxocckmerdepth = arg_int0("k","maxocckmerdepth","<int>",	"maximum depth to explore over-occurring seed K-mers (default is 0 for auto, range 100 to 20000)");
 struct arg_int *sensitivity = arg_int0("s","sensitivity","<int>",	"sensitivity 0 - standard, 1 - high, 2 - very high, 3 - low sensitivity (default is 0)");
-struct arg_int *maxextnscorethres = arg_int0("e","extnscorethres","<int>",	"extension score threshold, core overlap extensions with extension score above this threshold are terminated;\n\t\t\t\textension score += 2 if mismatch, extension score -= 1 if match and score > 0 (default is 12)");
 
-struct arg_int *mismatchscore = arg_int0("j","mismatchscore","<int>",	"penalise score for bp mismatches (default is 2, range 1..50)");
-struct arg_int *exactmatchscore = arg_int0("J","exactmatchscore","<int>",	"score exact bp matching (default is 1, range 1..50)");
+struct arg_int *mismatchscore = arg_int0("j","mismatchscore","<int>",	"penalise score for bp mismatches (default is 2, range 1..10)");
+struct arg_int *exactmatchscore = arg_int0("J","exactmatchscore","<int>",	"score exact bp matching (default is 1, range 1..10)");
 struct arg_int *gapopenscore = arg_int0("g","gapopenscore","<int>",	"penalise score for gap openings (default is 5, range 1..50)");
 
 struct arg_int *coredelta = arg_int0("c","coredelta","<int>",	"core (seed) delta (default is 0 for auto, range 1..corelen)");
 struct arg_int *corelen = arg_int0("C","corelen","<int>",		"core (seed) length (default is 0 for auto, range 8..100)");
 
-struct arg_int  *maxinsertlen = arg_int0("D", "maxinsertlen", "<int>",		"SAM output, accept observed insert sizes of at most this (default = 50000, range 1000 to 1000000)");
+struct arg_int  *maxinsertlen = arg_int0("D", "maxinsertlen", "<int>",		"SAM output, accept observed insert sizes of at most this (default = 100000, range 1000 to 1000000)");
 
 struct arg_int *minpathscore = arg_int0("p","minpathscore","<int>",		"minimum alignment path score (default is 0 for auto, range 25..50000)");
 struct arg_int *querylendpct = arg_int0("a","querylendpct","<int>",		"minimum required percentage of query sequence aligned (default is 75, range 20 to 100)");
 
-struct arg_int *maxpathstoreport = arg_int0("P","maxpathstoreport","<int>",	"report at most this many highest scored alignment paths for each query (default is 10)");
+struct arg_int *maxpathstoreport = arg_int0("P","maxpathstoreport","<int>",	"report at most this many highest scored alignment paths for each query (default is 1)");
 
 
-struct arg_int *threads = arg_int0("T","threads","<int>",		"number of processing threads 0..128 (defaults to 0 which sets threads to number of CPU cores)");
+struct arg_int *threads = arg_int0("T","threads","<int>",			"number of processing threads 0..128 (defaults to 0 which sets threads to number of CPU cores)");
 
 struct arg_file *summrslts = arg_file0("q","sumrslts","<file>",		"Output results summary to this SQLite3 database file");
 struct arg_str *experimentname = arg_str0("w","experimentname","<str>",		"experiment name SQLite3 database file");
@@ -166,7 +166,7 @@ struct arg_end *end = arg_end(200);
 void *argtable[] = {help,version,FileLogLevel,LogFile,
 					kmerdist,
 					summrslts,experimentname,experimentdescr,
-					pmode,sensitivity,alignstrand,mismatchscore,exactmatchscore,gapopenscore,coredelta,corelen,maxinsertlen,maxocckmerdepth,maxextnscorethres,minpathscore,querylendpct,maxpathstoreport,format,
+					pmode,samplenthrawread,sensitivity,alignstrand,mismatchscore,exactmatchscore,gapopenscore,coredelta,corelen,maxinsertlen,maxocckmerdepth,minpathscore,querylendpct,maxpathstoreport,format,
 					inputfile,inputfilepe2,sfxfile,outfile,threads,
 					end};
 
@@ -307,6 +307,13 @@ if (!argerrors)
 		exit(1);
 		}
 
+	SampleNthRawRead = samplenthrawread->count ? samplenthrawread->ival[0] : 1;
+	if (SampleNthRawRead < 1)
+		SampleNthRawRead = 1;
+	else
+		if (SampleNthRawRead > 10000)
+			SampleNthRawRead = 10000;
+
 	KMerDist = kmerdist->count > 0 ? true : false;
 
 	Sensitivity = sensitivity->count ? sensitivity->ival[0] : (int)eBLZSdefault;
@@ -359,7 +366,7 @@ if (!argerrors)
 
 	if (FMode == eBLZRsltsSAM)
 		{
-		MaxInsertLen = maxinsertlen->count ? maxinsertlen->ival[0] : 50000;
+		MaxInsertLen = maxinsertlen->count ? maxinsertlen->ival[0] : 100000;
 		if(MaxInsertLen == 0)
 			MaxInsertLen = 50000;
 		if (MaxInsertLen < 1000 || MaxInsertLen > 1000000)
@@ -395,13 +402,6 @@ if (!argerrors)
 		exit(1);
 		}
 
-	MaxExtnScoreThres = maxextnscorethres->count ?  maxextnscorethres->ival[0] : -1;	// -1 used when autodeterming the threshold
-	if(MaxExtnScoreThres != -1 && (MaxExtnScoreThres < 0 || MaxExtnScoreThres > cMaxMaxExtnScoreThres))
-		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: maximum extension score threshold '-e%d' specified outside of range %d..%d\n",MaxExtnScoreThres,0,cMaxMaxExtnScoreThres);
-		exit(1);
-		}
-
 	MinPathScore = minpathscore->count ?  minpathscore->ival[0] : MinPathScore;
 	if(MinPathScore != 0 && (MinPathScore < cMinPathScore) || MinPathScore > cMaxPathScore)
 		{
@@ -410,9 +410,9 @@ if (!argerrors)
 		}
 
 	MaxPathsToReport = maxpathstoreport->count ?  maxpathstoreport->ival[0] : cDfltMaxPathsToReport;
-	if(MaxPathsToReport < 1)
+	if(MaxPathsToReport < 1 || MaxPathsToReport > 10)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: maximum number of highest scoring paths per query '-P%d' must be at least 1\n",MaxPathsToReport);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: maximum number of highest scoring paths per query '-P%d' must be in range 1..10\n",MaxPathsToReport);
 		exit(1);
 		}
 
@@ -460,7 +460,7 @@ if (!argerrors)
 			break;
 		}
 	gDiagnostics.DiagOutMsgOnly(eDLInfo,"Alignment processing is : '%s'",pszDescr);
-
+	gDiagnostics.DiagOutMsgOnly(eDLInfo, "Raw read or paired reads sampling is : every %u", SampleNthRawRead);
 	gDiagnostics.DiagOutMsgOnly(eDLInfo,"Experiment name : '%s'",szExperimentName);
 	gDiagnostics.DiagOutMsgOnly(eDLInfo,"Experiment description : '%s'",szExperimentDescr);
 	gDiagnostics.DiagOutMsgOnly(eDLInfo, "Reporting K-mer counts distributions : '%s'", KMerDist ? "Yes" : "No");
@@ -496,10 +496,6 @@ if (!argerrors)
 	gDiagnostics.DiagOutMsgOnly(eDLInfo,"Exact match score : %d",ExactMatchScore);
 	gDiagnostics.DiagOutMsgOnly(eDLInfo,"Gap open score penalty : %d",GapOpenScore);
 
-	if(MaxExtnScoreThres == -1)
-		gDiagnostics.DiagOutMsgOnly(eDLInfo,"Core extension score threshold : Auto");
-	else
-		gDiagnostics.DiagOutMsgOnly(eDLInfo,"Core extension score threshold : %d",MaxExtnScoreThres);
 	if(CoreLen == 0)
 		gDiagnostics.DiagOutMsgOnly(eDLInfo,"Core length : Auto");
 	else
@@ -549,7 +545,10 @@ if (!argerrors)
 	if(szInputFilePE2[0] == '\0')
 		gDiagnostics.DiagOutMsgOnly(eDLInfo,"input query sequences file: '%s'",szInputFile);
 	else
-		gDiagnostics.DiagOutMsgOnly(eDLInfo, "input query sequences PE1 file: '%s', PE2 file: '%s'", szInputFile, szInputFilePE2);
+		{
+		gDiagnostics.DiagOutMsgOnly(eDLInfo, "input query sequences PE1 file: '%s'", szInputFile);
+		gDiagnostics.DiagOutMsgOnly(eDLInfo, "input query sequences PE2 file: '%s'", szInputFilePE2);
+		}
 	gDiagnostics.DiagOutMsgOnly(eDLInfo,"input target sequence(s) suffix array file: '%s'",szTargFile);
 	gDiagnostics.DiagOutMsgOnly(eDLInfo,"output results file: '%s'",szRsltsFile);
 
@@ -564,6 +563,7 @@ if (!argerrors)
 		int ParamID;
 		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTText,(int)strlen(szLogFile),"log",szLogFile);
 		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,(int)sizeof(PMode),"mode",&PMode);
+		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID, ePTInt32, (int)sizeof(SampleNthRawRead), "samplenthrawread", &SampleNthRawRead);
 		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,(int)sizeof(KMerDist),"kmerdist",&KMerDist);
 		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID, ePTInt32, (int)sizeof(Sensitivity), "sensitivity", &Sensitivity);
 		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,(int)sizeof(MismatchScore),"mismatchscore",&MismatchScore);
@@ -575,7 +575,6 @@ if (!argerrors)
 		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,(int)sizeof(CoreLen),"corelen",&CoreLen);
 		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,(int)sizeof(CoreDelta),"coredelta",&CoreDelta);
 		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID, ePTInt32, (int)sizeof(MaxInsertLen), "maxinsertlen", &MaxInsertLen);
-		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,(int)sizeof(MaxExtnScoreThres),"extnscorethres",&MaxExtnScoreThres);
 		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,(int)sizeof(MaxOccKMerDepth),"maxocckmerdepth",&MaxOccKMerDepth);
 		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,(int)sizeof(MinPathScore),"minpathscore",&MinPathScore);
 		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,(int)sizeof(QueryLenAlignedPct),"querylendpct",&QueryLenAlignedPct);
@@ -594,16 +593,15 @@ if (!argerrors)
 		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTText,(int)strlen(szExperimentDescr),"experimentdescr",szExperimentDescr);
 		}
 
-	sprintf(szBlitzParams,"mode: %d sensitivity: %d mismatchscore: %d exactmatchscore: %d gapopenscore: %d alignstrand: %d corelen: %d coredelta: %d maxinsertlen: %d extnscorethres: %d maxocckmerdepth: %d minpathscore: %d querylendpct: %d maxpathstoreport: %d",
-							PMode, Sensitivity, MismatchScore, ExactMatchScore, GapOpenScore,AlignStrand,CoreLen,CoreDelta, MaxInsertLen,MaxExtnScoreThres,MaxOccKMerDepth,MinPathScore,QueryLenAlignedPct,MaxPathsToReport);
+	sprintf(szBlitzParams,"mode: %d sensitivity: %d mismatchscore: %d exactmatchscore: %d gapopenscore: %d alignstrand: %d corelen: %d coredelta: %d maxinsertlen: %d maxocckmerdepth: %d minpathscore: %d querylendpct: %d maxpathstoreport: %d",
+							PMode, Sensitivity, MismatchScore, ExactMatchScore, GapOpenScore,AlignStrand,CoreLen,CoreDelta, MaxInsertLen,MaxOccKMerDepth,MinPathScore,QueryLenAlignedPct,MaxPathsToReport);
 
 #ifdef _WIN32
 	SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
 #endif
 	gStopWatch.Start();
-	Rslt = Process((etBLZPMode)PMode,szExperimentName,szExperimentDescr,szBlitzParams, KMerDist,(etBLZSensitivity)Sensitivity,(eALStrand)AlignStrand,MismatchScore,ExactMatchScore,GapOpenScore,CoreLen, CoreDelta, MaxInsertLen,
-							MaxExtnScoreThres,MaxOccKMerDepth,
-							MinPathScore,QueryLenAlignedPct,MaxPathsToReport,(etBLZRsltsFomat)FMode,szInputFile,szInputFilePE2,szTargFile,szRsltsFile,NumThreads);
+	Rslt = Process((etBLZPMode)PMode, SampleNthRawRead,szExperimentName,szExperimentDescr,szBlitzParams, KMerDist,(etBLZSensitivity)Sensitivity,(eALStrand)AlignStrand,MismatchScore,ExactMatchScore,GapOpenScore,CoreLen, CoreDelta, MaxInsertLen,
+							MaxOccKMerDepth, MinPathScore,QueryLenAlignedPct,MaxPathsToReport,(etBLZRsltsFomat)FMode,szInputFile,szInputFilePE2,szTargFile,szRsltsFile,NumThreads);
 	Rslt = Rslt >=0 ? 0 : 1;
 	if(gExperimentID > 0)
 		{
@@ -629,6 +627,7 @@ return 0;
 
 int
 Process(etBLZPMode PMode,				// processing mode
+		int SampleNthRawRead,		// sample every Nth raw read (or read pair) for processing (1..10000)
 		char *pszExprName,				// experiment name
 		char *pszExprDescr,				// experiment description
 		char *pszParams,				// string containing blitz parameters
@@ -641,7 +640,6 @@ Process(etBLZPMode PMode,				// processing mode
 		int  CoreLen,					// use this core length as the exactly matching seed length to be 5' and 3' extended whilst no more than m_MaxSubRate
 		int  CoreDelta,					// offset cores by this many bp
 		int MaxInsertLen,				// SAM output, accept observed insert sizes of at most this (default = 50000)
-		int MaxExtnScoreThres,			// terminate overlap extension if curent extension score more than this; if mismatch then extension score += 2, if match and score > 0 then score -= 1 
 		int MaxOccKMerDepth,			// maximum depth to explore over-occurring core K-mers
 		int  MinPathScore,				// only report alignment paths on any target sequence if the path score is >= this minimum score
 		int QueryLenAlignedPct,				// only report alignment paths if the percentage of total aligned bases to the query sequence length is at least this percentage (1..100)
@@ -661,7 +659,7 @@ if((pBlitzer = new CBlitz)==NULL)
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: Unable to instantiate CAligner");
 	return(eBSFerrObj);
 	}
-Rslt = pBlitzer->Process(PMode,pszExprName,pszExprDescr,pszParams,KMerDist,Sensitivity,AlignStrand,MismatchScore,ExactMatchScore,GapOpenScore,CoreLen,CoreDelta,MaxInsertLen,MaxExtnScoreThres,MaxOccKMerDepth,
+Rslt = pBlitzer->Process(PMode, SampleNthRawRead,pszExprName,pszExprDescr,pszParams,KMerDist,Sensitivity,AlignStrand,MismatchScore,ExactMatchScore,GapOpenScore,CoreLen,CoreDelta,MaxInsertLen,MaxOccKMerDepth,
 				MinPathScore,QueryLenAlignedPct,MaxPathsToReport,RsltsFormat,pszInputFile,pszInputFilePE2,pszSfxFile,pszOutFile,NumThreads);
 delete pBlitzer;
 return(Rslt);
@@ -692,9 +690,9 @@ m_AllocdQuerySeqs = 0;
 m_pQuerySeqs = NULL;
 m_pSQLitePSL=NULL;
 m_ProcMode = eBLZPMdefault;
+m_SampleNthRawRead = 1;
 m_Sensitivity = eBLZSdefault;				
 m_AlignStrand = eALSboth;	
-m_ExtnScoreThres = cDfltMaxExtnScoreThres;
 m_CoreLen = cDfltCoreLen;
 m_CoreDelta = (cDfltCoreLen+1)/2;
 m_MaxInsertLen = 0;
@@ -947,10 +945,11 @@ pthread_rwlock_unlock(&m_hRwLock);
 
 int
 CBlitz::Process(etBLZPMode PMode,		// processing mode
+		int SampleNthRawRead,			// sample every Nth raw read (or read pair) for processing (1..10000)
 		char *pszExprName,				// experiment name
 		char *pszExprDescr,				// experiment description
 		char *pszParams,				// string containing blitz parameters
-		bool KMerDist,				// true if K_mer counts distributions to be reported
+		bool KMerDist,					// true if K_mer counts distributions to be reported
 		etBLZSensitivity Sensitivity,	// sensitivity 0 - standard, 1 - high, 2 - very high, 3 - low sensitivity
 		eALStrand AlignStrand,			// align on to watson, crick or both strands of target
 		int MismatchScore,				// decrease score by this for each mismatch bp
@@ -959,7 +958,6 @@ CBlitz::Process(etBLZPMode PMode,		// processing mode
 		int  CoreLen,					// use this core length (0 if determined from total target sequence length) as the exactly matching seed length to be 5' and 3' extended whilst no more than m_MaxSubRate
 		int  CoreDelta,					// offset cores by this many bp
 		int MaxInsertLen,				// SAM output, accept observed insert sizes of at most this (default = 50000)
-		int MaxExtnScoreThres,			// terminate overlap extension if curent extension score more than this; if mismatch then extension score += 2, if match and score > 0 then score -= 1 
 		int MaxOccKMerDepth,			// maximum depth to explore over-occurring core K-mers
 		int  MinPathScore,				// only report alignment paths on any target sequence if the path score is >= this minimum score
 		int QueryLenAlignedPct,			// only report alignment paths if the percentage of total aligned bases to the query sequence length is at least this percentage (1..100)
@@ -975,6 +973,7 @@ int Rslt;
 Init();
 
 m_ProcMode = PMode;
+m_SampleNthRawRead = SampleNthRawRead;
 m_Sensitivity = Sensitivity;				
 m_AlignStrand = AlignStrand;	
 m_MismatchScore = MismatchScore;
@@ -985,7 +984,6 @@ m_CoreDelta = CoreDelta;
 m_MaxInsertLen = MaxInsertLen;
 m_MaxOccKMerDepth = MaxOccKMerDepth;		
 m_MinPathScore = MinPathScore;	
-m_ExtnScoreThres = MaxExtnScoreThres;
 m_QueryLenAlignedPct = QueryLenAlignedPct;
 m_MaxPathsToReport = MaxPathsToReport;
 m_RsltsFormat = RsltsFormat;	
@@ -1058,12 +1056,12 @@ gDiagnostics.DiagOut(eDLInfo,gszProcName,"Genome assembly suffix array loaded");
 // from the total sequence length then determine the core length to use
 // the autodetermined core length is that length such that on average there would be expected less than one copy of the core sequence in a random sequence of same length as targeted genome
 UINT64 TotSeqsLen = m_pSfxArray->GetTotSeqsLen();
-int AutoCoreLen = 2;
-while(TotSeqsLen >>= 2)
-	AutoCoreLen++;
 
 if(CoreLen == 0)
 	{
+	int AutoCoreLen = 1;
+	while (TotSeqsLen >>= 2)
+		AutoCoreLen++;
 	CoreLen = AutoCoreLen;
 
 	switch(Sensitivity) {
@@ -1084,28 +1082,23 @@ if(CoreLen == 0)
 	m_CoreLen = CoreLen;
 	}
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "Using core length : %d", m_CoreLen);
-m_pSfxArray->InitialiseCoreKMers(m_CoreLen);
-m_MinExtdCoreLen = m_CoreLen + 1;	// allows for a core match onto target to have been extended by at least 1 base even if that base was a mismatch 
-gDiagnostics.DiagOut(eDLInfo, gszProcName, "Using minimum extended core length : %d", m_MinExtdCoreLen);
 
 if(CoreDelta == 0)
 	{
 	switch(Sensitivity) {
 		case eBLZSdefault:			// default sensitivity
-			CoreDelta = min((CoreLen+1) / 2, 4);
+			CoreDelta = max((CoreLen+1) / 2, 4);
 			break;
 		case eBLZSMoreSens:			// more sensitive - slower
-			CoreDelta = min((CoreLen+2) / 3, 3);
+			CoreDelta = max((CoreLen+2) / 3, 3);
 			break;
 		case eBLZSUltraSens:		// ultra sensitive - much slower
-			CoreDelta = min((CoreLen+3) / 4, 2);
+			CoreDelta = max((CoreLen+3) / 4, 2);
 			break;
 		case eBLZSLessSens:			// less sensitive - quicker
 		default:
-			CoreDelta = min((CoreLen + 1) / 2, 8);;
+			CoreDelta = max((CoreLen + 1) / 2, 8);;
 		}
-	if(CoreDelta == 0)
-		CoreDelta = 1;
 	m_CoreDelta = CoreDelta;
 	}
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "Using core delta : %d", m_CoreDelta);
@@ -1122,31 +1115,22 @@ switch(Sensitivity) {
 	case eBLZSdefault:			// default sensitivity
 		if(!MaxOccKMerDepth)
 			m_MaxIter = cDfltSensCoreIters;
-		if(MaxExtnScoreThres == -1)
-			m_ExtnScoreThres = cDfltMaxExtnScoreThres;
 		break;
 	case eBLZSMoreSens:			// more sensitive - slower
 		if(!MaxOccKMerDepth)
 			m_MaxIter = cMoreSensCoreIters;
-		if(MaxExtnScoreThres == -1)
-			m_ExtnScoreThres = cDfltMaxExtnScoreThres + 1;
 		break;
 	case eBLZSUltraSens:			// ultra sensitive - much slower
 		if(!MaxOccKMerDepth)
 			m_MaxIter = cUltraSensCoreIters;
-		if(MaxExtnScoreThres == -1)
-			m_ExtnScoreThres = cDfltMaxExtnScoreThres + 2;
 		break;
 	case eBLZSLessSens:			// less sensitive - quicker
 	default:
 		if(!MaxOccKMerDepth)
 			m_MaxIter = cMinSensCoreIters;
-		if(MaxExtnScoreThres == -1)
-			m_ExtnScoreThres = cDfltMaxExtnScoreThres - 1;
 		break;
 	}
 
-gDiagnostics.DiagOut(eDLInfo,gszProcName,"Using overlap extension threshold score : %d",m_ExtnScoreThres);
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Using maximum depth to explore over-occurring seed K-mers : %d",m_MaxIter);
 
 m_pSfxArray->SetMaxIter(m_MaxIter);
@@ -1212,7 +1196,7 @@ if(RsltsFormat == eBLZRsltsSQLite)
 
 	// add summary instances for all the target sequences
 	char szSeqIdent[100];
-	UINT32 SeqLen;
+	uint32_t SeqLen;
 	int NumEntryIDs;
 	int CurEntryID;
 	NumEntryIDs = m_pSfxArray->GetNumEntries();
@@ -1326,7 +1310,7 @@ if((m_hOutFile = open(pszOutFile,O_WRONLY | O_CREAT,S_IREAD | S_IWRITE))!=-1)
 			m_szLineBuffIdx = sprintf(m_pszLineBuff, "@HD\tVN:1.4\tSO:unsorted\n");
 			// add the target sequences to SAM header
 			char szSeqIdent[100];
-			UINT32 SeqLen;
+			uint32_t SeqLen;
 			int NumEntryIDs;
 			int CurEntryID;
 			NumEntryIDs = m_pSfxArray->GetNumEntries();
@@ -1538,12 +1522,12 @@ Sleep(2000);
 #else
 sleep(2);
 #endif
-UINT32 ReportedPaths;
-UINT32 PrevReportedPaths = 0;
-UINT32 QueriesPaths;
-UINT32 PrevQueriesPaths = 0;
-UINT32 NumQueriesProc;
-UINT32 PrevNumQueriesProc = 0;
+uint32_t ReportedPaths;
+uint32_t PrevReportedPaths = 0;
+uint32_t QueriesPaths;
+uint32_t PrevQueriesPaths = 0;
+uint32_t NumQueriesProc;
+uint32_t PrevNumQueriesProc = 0;
 
 
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Progress: Generated 0 alignment paths for 0 query %s sequences from 0 processed", bIsSAMPE ? "paired" : "single");
@@ -1621,7 +1605,7 @@ return(0);
 }
 
 int
-CBlitz::ReportNonAligned(char *pszDescPE1, int LenSeqPE1, UINT8 *pSeqPE1, char *pszDescPE2, int LenSeqPE2, UINT8 *pSeqPE2)
+CBlitz::ReportNonAligned(char *pszDescPE1, int LenSeqPE1, uint8_t *pSeqPE1, char *pszDescPE2, int LenSeqPE2, uint8_t *pSeqPE2)
 {
 char Base;
 int LineLen;
@@ -1725,106 +1709,108 @@ int NumQueryPathsRprtd;
 int NumMatches;
 int QuerySeqLen;
 int SeqID;
-UINT8 *pQuerySeq;
+uint8_t *pQuerySeq;
 char szQuerySeqIdent[cMaxQuerySeqIdentLen + 1];
-UINT32 NumHeadNodes;
-bool bQueryAtLeast1Path;
-UINT32 SAMFlags;
+uint32_t NumHeadNodes;
+uint32_t SAMFlags;
 
 tsQueryAlignNodes *pHeadNode;
 bool bStrand;
-UINT32 PathHiScore;
-UINT32 MinPathHiScore;
-UINT32 SortedPathIdx;
-UINT32 NumPathNodes;
-UINT32 QueryPathStartOfs;
-UINT32 QueryPathEndOfs;
-UINT32 TargPathStartOfs;
-UINT32 TargPathEndOfs;
-UINT32 TargSeqLen;
+int PathHiScore;
+int MinPathHiScore;
+uint32_t SortedPathIdx;
+uint32_t NumPathNodes;
+uint32_t QueryPathStartOfs;
+uint32_t QueryPathEndOfs;
+uint32_t TargPathStartOfs;
+uint32_t TargPathEndOfs;
+uint32_t TargSeqLen;
 char szTargName[100];
 int MinPathScore;
 
-while((Rslt = DequeueQuerySeq(120, cMaxQuerySeqIdentLen + 1, &SeqID, szQuerySeqIdent, &QuerySeqLen, &pQuerySeq)) == 1)
+while((Rslt = DequeueQuerySeq(cMaxQuerySeqIdentLen + 1, &SeqID, szQuerySeqIdent, &QuerySeqLen, &pQuerySeq)) == 1)
 	{
 	AcquireSerialise();
 	m_NumQueriesProc += 1;
 	ReleaseSerialise();
 
 	NumQueryPathsRprtd = 0;
-	bQueryAtLeast1Path = false;
-	MaxIter = max(m_MaxIter / 5, 100);
-	MinPathHiScore = ((QuerySeqLen - 5) * m_ExactMatchScore) / 2;
-	
-	do {
-		NumMatches = m_pSfxArray->LocateQuerySeqs(SeqID, pQuerySeq, QuerySeqLen, m_ExtnScoreThres, m_CoreLen, m_CoreDelta, m_AlignStrand, m_CoreLen, pPars->NumAllocdAlignNodes, pPars->pAllocdAlignNodes, MaxIter);
-		if(NumMatches >= 1)
-			{
-			if (NumMatches > 1)	// sorting by TargSeqID.QueryID.FlgStrand.TargStartOfs.QueryStartOfs
-				qsort(pPars->pAllocdAlignNodes, NumMatches, sizeof(tsQueryAlignNodes), SortQueryAlignNodes);
-			if(m_MinPathScore > 0)
-				MinPathScore = m_MinPathScore;
-			else
-				MinPathScore = (QuerySeqLen * m_ExactMatchScore)/2;
+	MaxIter = m_MaxIter;
 
-			NumHeadNodes = IdentifyHighScorePaths(MinPathScore, m_MaxPathsToReport, QuerySeqLen, NumMatches, pPars->pAllocdAlignNodes, pPars->ppFirst2Rpts);
-			if (NumHeadNodes)
+	NumMatches = m_pSfxArray->LocateQuerySeqs(SeqID, pQuerySeq, QuerySeqLen, m_CoreLen, m_CoreDelta, m_AlignStrand, pPars->NumAllocdAlignNodes, pPars->pAllocdAlignNodes, MaxIter, m_ExactMatchScore,m_MismatchScore);
+	if(NumMatches >= 1)
+		{
+		if (NumMatches > 1)	// sorting by TargSeqID.QueryID.FlgStrand.TargStartOfs.QueryStartOfs
+			qsort(pPars->pAllocdAlignNodes, NumMatches, sizeof(tsQueryAlignNodes), SortQueryAlignNodes);
+		if(m_MinPathScore > 0)
+			MinPathScore = m_MinPathScore;
+		else
+			MinPathScore = ((QuerySeqLen - 5) * m_ExactMatchScore) / 3;
+		MinPathHiScore = MinPathScore;
+
+		NumHeadNodes = IdentifyHighScorePaths(MinPathScore, m_MaxPathsToReport, QuerySeqLen, NumMatches, pPars->pAllocdAlignNodes, pPars->ppFirst2Rpts);
+		if (NumHeadNodes)
+			{
+			for (SortedPathIdx = 0; SortedPathIdx < min(NumHeadNodes, (uint32_t)m_MaxPathsToReport); SortedPathIdx++)
 				{
-				for (SortedPathIdx = 0; SortedPathIdx < min(NumHeadNodes, (UINT32)m_MaxPathsToReport); SortedPathIdx++)
+				pHeadNode = pPars->ppFirst2Rpts[SortedPathIdx];
+				bStrand = pHeadNode->FlgStrand ? true : false;
+				ConsolidateNodes(bStrand,QuerySeqLen, pQuerySeq, SortedPathIdx, pPars->pAllocdAlignNodes, pPars->ppFirst2Rpts);
+				if ((NumPathNodes = CharacterisePath(QuerySeqLen,pQuerySeq,SortedPathIdx, pPars->pAllocdAlignNodes, pPars->ppFirst2Rpts, &QueryPathEndOfs, &TargPathEndOfs)) == 0)
+					continue;
+			
+				PathHiScore = pHeadNode->HiScore;
+				PathHiScore = (int)(((double)PathHiScore / ((int64_t)QuerySeqLen * m_ExactMatchScore)) * 255.0);
+				if(PathHiScore >= MinPathHiScore)
 					{
-					if ((NumPathNodes = CharacterisePath(SortedPathIdx, pPars->pAllocdAlignNodes, pPars->ppFirst2Rpts, &QueryPathEndOfs, &TargPathEndOfs)) == 0)
-						continue;
+					bStrand = pHeadNode->FlgStrand ? true : false;
+					TargPathStartOfs = pHeadNode->TargSeqLoci;
+					QueryPathStartOfs = pHeadNode->QueryStartOfs;
 			
-					pHeadNode = pPars->ppFirst2Rpts[SortedPathIdx];
-					PathHiScore = pHeadNode->HiScore;
-					PathHiScore = (int)(((double)PathHiScore / ((int64_t)QuerySeqLen * m_ExactMatchScore)) * 255.0);
-					if(PathHiScore >= MinPathHiScore)
-						{
-						bStrand = pHeadNode->FlgStrand ? true : false;
-						TargPathStartOfs = pHeadNode->TargStartOfs;
-						QueryPathStartOfs = pHeadNode->QueryStartOfs;
-			
-						TargSeqLen = m_pSfxArray->GetSeqLen(pHeadNode->TargSeqID);
-						m_pSfxArray->GetIdentName(pHeadNode->TargSeqID, sizeof(szTargName), szTargName);
-						if (bStrand == true)
-							SAMFlags = cSAMFlgAS;
-						else
-							SAMFlags = 0;
-						ReportAsSAM(SAMFlags,
-							bStrand == true ? '-' : '+',
-							PathHiScore,
-							szQuerySeqIdent, QuerySeqLen, pQuerySeq, QueryPathStartOfs, QueryPathEndOfs,
-							szTargName, TargSeqLen, TargPathStartOfs, TargPathEndOfs,
-							'*', 0, 0,
-							NumPathNodes, SortedPathIdx, pPars->pAllocdAlignNodes, pPars->ppFirst2Rpts);
-						NumQueryPathsRprtd += 1;
-						bQueryAtLeast1Path = true;
-						}
+					TargSeqLen = m_pSfxArray->GetSeqLen(pHeadNode->TargSeqID);
+					m_pSfxArray->GetIdentName(pHeadNode->TargSeqID, sizeof(szTargName), szTargName);
+					if (bStrand == true)
+						SAMFlags = cSAMFlgAS;
+					else
+						SAMFlags = 0;
+					if(NumQueryPathsRprtd > 0)
+						SAMFlags |= cSAMFlgNotPrimary;
+					ReportAsSAM(SAMFlags,				// use as reported SAM flags
+						bStrand == true ? '-' : '+',	// query sequence strand, '+' or '-'
+						PathHiScore,					// score for this path
+						szQuerySeqIdent,				// identifies this query sequence
+						QuerySeqLen,					// Query sequence length
+						pQuerySeq,						// the query sequence as etSeqBase's
+						QueryPathStartOfs,				// Alignment start offset in query, 0..QSize-1
+						QueryPathEndOfs,				// Alignment end position in query
+						szTargName,						// aligning to this target
+						TargSeqLen,						// Target sequence size
+						TargPathStartOfs+1,				// target alignment starts at this starting loci, 1..TargSeqLen
+						TargPathEndOfs+1,				// ending at this loci (inclusive)
+						'*',							// Reference sequence name of the primary alignment of the NEXT read in the template, '*' if unknown, '=' if PE and both ends align to same reference
+						0,								// 1-based Position of the primary alignment of the NEXT read in the template. Set as 0 when the information is unavailable
+						0,							    // signed template length, If all segments are mapped to the same reference, the signed observed template length equals the number of bases from the leftmost mapped base to the rightmost mapped base
+						NumPathNodes,					// number of alignment nodes in alignment path
+						SortedPathIdx,					// alignment path starts from this node - 0 based
+						pPars->pAllocdAlignNodes,		// alignment nodes
+						pPars->ppFirst2Rpts);			// allocated to hold ptrs to alignment nodes which are marked as being FlgFirst2tRpt
+					NumQueryPathsRprtd += 1;
 					}
 				}
 			}
-		if(NumQueryPathsRprtd)
-			{
-			AcquireSerialise();
-			m_ReportedPaths += NumQueryPathsRprtd;
-			m_QueriesPaths++;
-			ReleaseSerialise();
-			continue;
-			}
-		if(MaxIter < m_MaxIter)
-			{
-			MaxIter = m_MaxIter;
-			MinPathHiScore = ((QuerySeqLen - 5) * m_ExactMatchScore) / 3;
-			}
-		else
-			{
-			ReportNonAligned(szQuerySeqIdent, QuerySeqLen, pQuerySeq);
-			break;
-			}
 		}
-	while(!bQueryAtLeast1Path);
+	if(NumQueryPathsRprtd)
+		{
+		AcquireSerialise();
+		m_ReportedPaths += NumQueryPathsRprtd;
+		m_QueriesPaths++;
+		ReleaseSerialise();
+		}
+	else
+		ReportNonAligned(szQuerySeqIdent, QuerySeqLen, pQuerySeq);
+	delete pQuerySeq;
 	}
-delete pQuerySeq;
+
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "Progress: Thread %d completed", pPars->ThreadIdx);
 return(0);
 }
@@ -1833,240 +1819,264 @@ int
 CBlitz::ProcAlignSAMQuerySeqsPE(tsThreadQuerySeqsPars *pPars)
 {
 int Rslt;
-int NumQueryPathsRprtd;
-int NumMatches;
-int QuerySeqLen;
-int SeqID;
-UINT8 *pQuerySeq;
+int MaxIter;
+int NumQueryPathsRprtdPE1;
+int NumMatchesPE1;
+int QuerySeqLenPE1;
+int SeqIDPE1;
+uint8_t *pQuerySeqPE1;
 char szQuerySeqIdent[cMaxQuerySeqIdentLen + 1];
 int NumQueryPathsRprtdPE2;
 int NumMatchesPE2;
 int QuerySeqLenPE2;
 int SeqIDPE2;
-UINT8 *pQuerySeqPE2;
+uint8_t *pQuerySeqPE2;
 char szQuerySeqIdentPE2[cMaxQuerySeqIdentLen + 1];
 
-UINT32 NumHeadNodes;
-UINT32 NumHeadNodesPE2;
+uint32_t NumHeadNodesPE1;
+uint32_t NumHeadNodesPE2;
 
 bool bQueryAtLeast1Path;
-UINT32 SAMFlags;
+uint32_t SAMFlags;
 
-tsQueryAlignNodes *pHeadNode;
-bool bStrand;
-int MinPathScore;
-UINT32 PathHiScore;
-UINT32 SortedPathIdx;
-UINT32 NumPathNodes;
-UINT32 QueryPathStartOfs;
-UINT32 QueryPathEndOfs;
-UINT32 TargPathStartOfs;
-UINT32 TargPathEndOfs;
-UINT32 TargSeqLen;
+tsQueryAlignNodes *pHeadNodePE1;
+bool bStrandPE1;
+int MinPathScorePE1;
+int MinPathHiScorePE1;
+int PathHiScorePE1;
+uint32_t SortedPathIdxPE1;
+uint32_t NumPathNodesPE1;
+uint32_t QueryPathStartOfsPE1;
+uint32_t QueryPathEndOfsPE1;
+uint32_t TargPathStartOfsPE1;
+uint32_t TargPathEndOfsPE1;
+uint32_t TargSeqLenPE1;
 tsQueryAlignNodes *pHeadNodePE2;
 bool bStrandPE2;
-UINT32 PathHiScorePE2;
-UINT32 SortedPathIdxPE2;
-UINT32 NumPathNodesPE2;
-UINT32 QueryPathStartOfsPE2;
-UINT32 QueryPathEndOfsPE2;
-UINT32 TargPathStartOfsPE2;
-UINT32 TargPathEndOfsPE2;
-UINT32 TargSeqLenPE2;
+int MinPathScorePE2;
+int PathHiScorePE2;
+int MinPathHiScorePE2;
+uint32_t SortedPathIdxPE2;
+uint32_t NumPathNodesPE2;
+uint32_t QueryPathStartOfsPE2;
+uint32_t QueryPathEndOfsPE2;
+uint32_t TargPathStartOfsPE2;
+uint32_t TargPathEndOfsPE2;
+uint32_t TargSeqLenPE2;
 
 INT64 DeltaPathStarts;
-UINT32 CombinedScore;
+uint32_t CombinedScore;
 
-UINT32 NoHeadNodes;
+uint32_t NoHeadNodes;
 char szTargName[100];
 char szTargNamePE2[100];
 
-NumQueryPathsRprtd = 0;
+NumQueryPathsRprtdPE1 = 0;
 NumQueryPathsRprtdPE2 = 0;
 NoHeadNodes = 0;
 bQueryAtLeast1Path = false;
 
-while((Rslt = DequeueQuerySeq(120, cMaxQuerySeqIdentLen + 1, &SeqID, szQuerySeqIdent, &QuerySeqLen, &pQuerySeq, &SeqIDPE2, szQuerySeqIdentPE2, &QuerySeqLenPE2, &pQuerySeqPE2))==2)
+MaxIter = m_MaxIter;
+int CoreDelta = m_CoreDelta;
+
+// getting 2 reads at a time, PE1 and PE2
+while((Rslt = DequeueQuerySeq(cMaxQuerySeqIdentLen + 1, &SeqIDPE1, szQuerySeqIdent, &QuerySeqLenPE1, &pQuerySeqPE1, &SeqIDPE2, szQuerySeqIdentPE2, &QuerySeqLenPE2, &pQuerySeqPE2))==2)
 	{
 	AcquireSerialise();
 	m_NumQueriesProc += 1;
 	ReleaseSerialise();
 	bQueryAtLeast1Path = false;
 
-	int CoreDelta = max(m_CoreLen,m_CoreDelta);
-	UINT32 MinPathHiScore = ((QuerySeqLen - 5) * m_ExactMatchScore) / 2;
+		// starting with none overlapping cores, expecting around 50% of reads to have at least a couple of non-overlapping cores
 	int NumNoPE1Matches = 0;
 	int NumNoPE2Matches = 0;
 
 	do {
 		NumQueryPathsRprtdPE2 = 0;
-		NumQueryPathsRprtd = 0;
-		NumHeadNodes = 0;
+		NumQueryPathsRprtdPE1 = 0;
+		NumHeadNodesPE1 = 0;
 		NumHeadNodesPE2 = 0;
-		// NOTE: actually locating 1 more high scoring paths than requested. This is so that - especially relevant if only a single path to be reported - if the initial highest scoring pair is not within the
-		// maximum insert size then there is a chance the next highest scoring paths will be
-		NumMatches = m_pSfxArray->LocateQuerySeqs(SeqID, pQuerySeq, QuerySeqLen, m_ExtnScoreThres, m_CoreLen, CoreDelta, m_AlignStrand, m_CoreLen, pPars->NumAllocdAlignNodes, pPars->pAllocdAlignNodes, m_MaxIter);
-		if (NumMatches)
+		NumMatchesPE1 = m_pSfxArray->LocateQuerySeqs(SeqIDPE1, pQuerySeqPE1, QuerySeqLenPE1, m_CoreLen, CoreDelta, m_AlignStrand, pPars->NumAllocdAlignNodes, pPars->pAllocdAlignNodes, MaxIter, m_ExactMatchScore, m_MismatchScore);
+		if (NumMatchesPE1)
 			{
-			if (NumMatches > 1)	// sorting by TargSeqID.QueryID.FlgStrand.TargStartOfs.QueryStartOfs
-				qsort(pPars->pAllocdAlignNodes, NumMatches, sizeof(tsQueryAlignNodes), SortQueryAlignNodes);
+			if (NumMatchesPE1 > 1)	// sorting by TargSeqID.QueryID.FlgStrand.TargStartOfs.QueryStartOfs
+				qsort(pPars->pAllocdAlignNodes, NumMatchesPE1, sizeof(tsQueryAlignNodes), SortQueryAlignNodes);
 			if (m_MinPathScore > 0)
-				MinPathScore = m_MinPathScore;
+				MinPathScorePE1 = m_MinPathScore;
 			else
-				MinPathScore = (QuerySeqLen * m_ExactMatchScore) / 2;
-			NumHeadNodes = IdentifyHighScorePaths(MinPathScore, m_MaxPathsToReport + 1, QuerySeqLen, NumMatches, pPars->pAllocdAlignNodes, pPars->ppFirst2Rpts);
+				MinPathScorePE1 = ((QuerySeqLenPE1 - 5) * m_ExactMatchScore) / 3;
+			MinPathHiScorePE1 = MinPathScorePE1;
+			NumHeadNodesPE1 = IdentifyHighScorePaths(MinPathScorePE1, m_MaxPathsToReport+2, QuerySeqLenPE1, NumMatchesPE1, pPars->pAllocdAlignNodes, pPars->ppFirst2Rpts);
 			}
 		else
 			NumNoPE1Matches++;
 
-		if(NumHeadNodes > 0)
+		if(NumHeadNodesPE1 > 0)
 			{
-			NumMatchesPE2 = m_pSfxArray->LocateQuerySeqs(SeqIDPE2, pQuerySeqPE2, QuerySeqLenPE2, m_ExtnScoreThres, m_CoreLen, CoreDelta, m_AlignStrand, m_CoreLen, pPars->NumAllocdAlignNodesPE2, pPars->pAllocdAlignNodesPE2, m_MaxIter);
+			NumMatchesPE2 = m_pSfxArray->LocateQuerySeqs(SeqIDPE2, pQuerySeqPE2, QuerySeqLenPE2, m_CoreLen, CoreDelta, m_AlignStrand, pPars->NumAllocdAlignNodesPE2, pPars->pAllocdAlignNodesPE2, MaxIter, m_ExactMatchScore, m_MismatchScore);
 			if (NumMatchesPE2)
 				{
 				if (NumMatchesPE2 > 1)	// sorting by TargSeqID.QueryID.FlgStrand.TargStartOfs.QueryStartOfs
 					qsort(pPars->pAllocdAlignNodesPE2, NumMatchesPE2, sizeof(tsQueryAlignNodes), SortQueryAlignNodes);
 				if (m_MinPathScore > 0)
-					MinPathScore = m_MinPathScore;
+					MinPathScorePE2 = m_MinPathScore;
 				else
-					MinPathScore = (QuerySeqLen * m_ExactMatchScore) / 2;
-				NumHeadNodesPE2 = IdentifyHighScorePaths(MinPathScore, m_MaxPathsToReport + 1, QuerySeqLenPE2, NumMatchesPE2, pPars->pAllocdAlignNodesPE2, pPars->ppFirst2RptsPE2);
+					MinPathScorePE2 = ((QuerySeqLenPE2 - 5) * m_ExactMatchScore) / 3;
+				MinPathHiScorePE2 = MinPathScorePE2;
+				NumHeadNodesPE2 = IdentifyHighScorePaths(MinPathScorePE2, m_MaxPathsToReport+2, QuerySeqLenPE2, NumMatchesPE2, pPars->pAllocdAlignNodesPE2, pPars->ppFirst2RptsPE2);
 				}
 			else
 				NumNoPE2Matches++;
 			}
 
 		// following is an attempt to actually pair the PEs!!!!
-		if(NumHeadNodes && NumHeadNodesPE2)		// need to have both PE1 and PE2 alignments!
+		if(NumHeadNodesPE1 && NumHeadNodesPE2)		// need to have both PE1 and PE2 alignments!
 			{
-			UINT32 BestCombinedScore = 0;
-			UINT32 BestDeltaPathStart = m_MaxInsertLen;
-			UINT32 BestSortedPathIdx = 0;
-			UINT32 BestSortedPathIdxPE2 = 0;
-			for (SortedPathIdx = 0; NumQueryPathsRprtd < m_MaxPathsToReport && SortedPathIdx < min(NumHeadNodes, (UINT32)m_MaxPathsToReport + 1); SortedPathIdx++)
+			uint32_t BestCombinedScore = 0;
+			uint32_t BestDeltaPathStart = m_MaxInsertLen;
+			uint32_t BestSortedPathIdxPE1 = 0;
+			uint32_t BestSortedPathIdxPE2 = 0;
+			for (SortedPathIdxPE1 = 0; NumQueryPathsRprtdPE1 < m_MaxPathsToReport && SortedPathIdxPE1 < min(NumHeadNodesPE1, (uint32_t)m_MaxPathsToReport + 1); SortedPathIdxPE1++)
 				{
-				if ((NumPathNodes = CharacterisePath(SortedPathIdx, pPars->pAllocdAlignNodes, pPars->ppFirst2Rpts, &QueryPathEndOfs, &TargPathEndOfs)) == 0)
+				pHeadNodePE1 = pPars->ppFirst2Rpts[SortedPathIdxPE1];
+				ConsolidateNodes(pHeadNodePE1->FlgStrand,QuerySeqLenPE1, pQuerySeqPE1, SortedPathIdxPE1, pPars->pAllocdAlignNodes, pPars->ppFirst2Rpts);
+				if ((NumPathNodesPE1 = CharacterisePath(QuerySeqLenPE1,pQuerySeqPE1,SortedPathIdxPE1, pPars->pAllocdAlignNodes, pPars->ppFirst2Rpts, &QueryPathEndOfsPE1, &TargPathEndOfsPE1)) == 0)
 					continue;
-				pHeadNode = pPars->ppFirst2Rpts[SortedPathIdx];
-				PathHiScore = pHeadNode->HiScore;
-				PathHiScore = (int)(((double)PathHiScore / ((int64_t)QuerySeqLen * m_ExactMatchScore)) * 255.0);
-				if (PathHiScore >= MinPathHiScore)
+				
+				PathHiScorePE1 = pHeadNodePE1->HiScore;
+				PathHiScorePE1 = (int)(((double)PathHiScorePE1 / ((int64_t)QuerySeqLenPE1 * m_ExactMatchScore)) * 255.0);
+				if (PathHiScorePE1 >= MinPathHiScorePE1)
 					{
-					bStrand = pHeadNode->FlgStrand ? false : true;
-					TargPathStartOfs = pHeadNode->TargStartOfs;
-					QueryPathStartOfs = pHeadNode->QueryStartOfs;
-					for (SortedPathIdxPE2 = 0; SortedPathIdxPE2 < min(NumHeadNodesPE2, (UINT32)m_MaxPathsToReport + 1); SortedPathIdxPE2++)
+					bStrandPE1 = pHeadNodePE1->FlgStrand ? false : true;
+					TargPathStartOfsPE1 = pHeadNodePE1->TargSeqLoci;
+					QueryPathStartOfsPE1 = pHeadNodePE1->QueryStartOfs;
+					for (SortedPathIdxPE2 = 0; SortedPathIdxPE2 < min(NumHeadNodesPE2, (uint32_t)m_MaxPathsToReport + 1); SortedPathIdxPE2++)
 						{
-						if ((NumPathNodesPE2 = CharacterisePath(SortedPathIdxPE2, pPars->pAllocdAlignNodesPE2, pPars->ppFirst2RptsPE2, &QueryPathEndOfsPE2, &TargPathEndOfsPE2)) == 0)
-							continue;
 						pHeadNodePE2 = pPars->ppFirst2RptsPE2[SortedPathIdxPE2];
-						if(pHeadNode->TargSeqID != pHeadNodePE2->TargSeqID ||		// both PE1 and PE2 must align to same target and be antisense to each other 
-							bStrand == (bStrandPE2 = (pHeadNodePE2->FlgStrand ? false : true)))
+						ConsolidateNodes(pHeadNodePE2->FlgStrand,QuerySeqLenPE2, pQuerySeqPE2, SortedPathIdxPE2, pPars->pAllocdAlignNodesPE2, pPars->ppFirst2RptsPE2);
+						if ((NumPathNodesPE2 = CharacterisePath(QuerySeqLenPE2, pQuerySeqPE2, SortedPathIdxPE2, pPars->pAllocdAlignNodesPE2, pPars->ppFirst2RptsPE2, &QueryPathEndOfsPE2, &TargPathEndOfsPE2)) == 0)
+							continue;
+						if(pHeadNodePE1->TargSeqID != pHeadNodePE2->TargSeqID ||		// both PE1 and PE2 must align to same target and be antisense to each other 
+							bStrandPE1 == (bStrandPE2 = (pHeadNodePE2->FlgStrand ? false : true)))
 							continue;
 						PathHiScorePE2 = pHeadNodePE2->HiScore;
-						PathHiScorePE2 = (int)(((double)PathHiScorePE2 / ((int64_t)QuerySeqLen * m_ExactMatchScore)) * 255.0);
-						if (PathHiScorePE2 >= MinPathHiScore)
+						PathHiScorePE2 = (int)(((double)PathHiScorePE2 / ((int64_t)QuerySeqLenPE2 * m_ExactMatchScore)) * 255.0);
+						if (PathHiScorePE2 >= MinPathHiScorePE2)
 							{
 							// select that pair which are shortest distance apart and having maximal combined scores
 							// very rough pairing used because one or both of the ends may only be partially aligned and so true start/ends are unknown
-							TargPathStartOfsPE2 = pHeadNodePE2->TargStartOfs;
-							DeltaPathStarts = (INT64)(UINT64)TargPathStartOfsPE2 - (INT64)(UINT64)TargPathStartOfs;
-							if(bStrand)
-								{
-								if(DeltaPathStarts < -50)	// small offset allowed in case the other paired end had been trimmed in order to align
-									continue;
-								}
-							else
-								{
-								if (DeltaPathStarts > 50)	// small offset allowed in case the other paired end had been trimmed in order to align
-									continue;
-								}
-							DeltaPathStarts = abs(DeltaPathStarts);
-							if((UINT32)DeltaPathStarts > BestDeltaPathStart)
+							TargPathStartOfsPE2 = pHeadNodePE2->TargSeqLoci;
+							DeltaPathStarts = abs((INT64)(UINT64)TargPathStartOfsPE2 - (INT64)(UINT64)TargPathStartOfsPE1);
+							if(DeltaPathStarts > m_MaxInsertLen + 100)
 								continue;
-							CombinedScore = PathHiScore + PathHiScorePE2;
+							if((uint32_t)DeltaPathStarts > BestDeltaPathStart)
+								continue;
+							CombinedScore = PathHiScorePE1 + PathHiScorePE2;
 							if(BestCombinedScore > 0 && CombinedScore < BestCombinedScore)
 								continue;
 							if(CombinedScore >= BestCombinedScore && DeltaPathStarts <= BestDeltaPathStart)
 								{
 								BestCombinedScore = CombinedScore;
-								BestDeltaPathStart = (UINT32)DeltaPathStarts;
-								BestSortedPathIdx = SortedPathIdx;
+								BestDeltaPathStart = (uint32_t)DeltaPathStarts;
+								BestSortedPathIdxPE1 = SortedPathIdxPE1;
 								BestSortedPathIdxPE2 = SortedPathIdxPE2;
 								}
 							}
 						}
 					}
-				if (BestCombinedScore > 0)
-					{
-					NumPathNodes = CharacterisePath(BestSortedPathIdx, pPars->pAllocdAlignNodes, pPars->ppFirst2Rpts, &QueryPathEndOfs, &TargPathEndOfs);
-					NumPathNodesPE2 = CharacterisePath(BestSortedPathIdxPE2, pPars->pAllocdAlignNodesPE2, pPars->ppFirst2RptsPE2, &QueryPathEndOfsPE2, &TargPathEndOfsPE2);
-					pHeadNode = pPars->ppFirst2Rpts[BestSortedPathIdx];
-					pHeadNodePE2 = pPars->ppFirst2RptsPE2[BestSortedPathIdxPE2];
-					bStrand = pHeadNode->FlgStrand ? true : false;
-					bStrandPE2 = pHeadNodePE2->FlgStrand ? true : false;
-					TargPathStartOfs = pHeadNode->TargStartOfs;
-					TargPathStartOfsPE2 = pHeadNodePE2->TargStartOfs;
-					QueryPathStartOfs = pHeadNode->QueryStartOfs;
-					QueryPathStartOfsPE2 = pHeadNodePE2->QueryStartOfs;
-					PathHiScore = pHeadNode->HiScore;
-					PathHiScorePE2 = pHeadNodePE2->HiScore;
-					TargSeqLen = m_pSfxArray->GetSeqLen(pHeadNode->TargSeqID);
-					TargSeqLenPE2 = m_pSfxArray->GetSeqLen(pHeadNodePE2->TargSeqID);
-					m_pSfxArray->GetIdentName(pHeadNode->TargSeqID, sizeof(szTargName), szTargName);
-					m_pSfxArray->GetIdentName(pHeadNodePE2->TargSeqID, sizeof(szTargNamePE2), szTargNamePE2);
-					PathHiScore = (int)(((double)PathHiScore / (QuerySeqLen * m_ExactMatchScore)) * 255.0);
-					PathHiScorePE2 = (int)(((double)PathHiScorePE2 / (QuerySeqLenPE2 * m_ExactMatchScore)) * 255.0);
-					SAMFlags = cSAMFlgReadPaired | cSAMFlgReadPairMap | cSAMFlgPE1;
-					if(bStrand == true)
-						SAMFlags |= cSAMFlgAS;
-					ReportAsSAM(SAMFlags,
-						bStrand == true ? '-' : '+',
-						PathHiScore,
-						szQuerySeqIdent, QuerySeqLen, pQuerySeq, QueryPathStartOfs, QueryPathEndOfs,
-						szTargName, TargSeqLen, TargPathStartOfs, TargPathEndOfs,
-						'=', TargPathStartOfsPE2,0,
-						NumPathNodes, BestSortedPathIdx, pPars->pAllocdAlignNodes, pPars->ppFirst2Rpts);
+				}
+			if (BestCombinedScore > 0)
+				{
+				NumPathNodesPE1 = CharacterisePath(QuerySeqLenPE1, pQuerySeqPE1, BestSortedPathIdxPE1, pPars->pAllocdAlignNodes, pPars->ppFirst2Rpts, &QueryPathEndOfsPE1, &TargPathEndOfsPE1);
+				NumPathNodesPE2 = CharacterisePath(QuerySeqLenPE2, pQuerySeqPE2, BestSortedPathIdxPE2, pPars->pAllocdAlignNodesPE2, pPars->ppFirst2RptsPE2, &QueryPathEndOfsPE2, &TargPathEndOfsPE2);
+				pHeadNodePE1 = pPars->ppFirst2Rpts[BestSortedPathIdxPE1];
+				pHeadNodePE2 = pPars->ppFirst2RptsPE2[BestSortedPathIdxPE2];
+				bStrandPE1 = pHeadNodePE1->FlgStrand ? true : false;
+				bStrandPE2 = pHeadNodePE2->FlgStrand ? true : false;
+				TargPathStartOfsPE1 = pHeadNodePE1->TargSeqLoci;
+				TargPathStartOfsPE2 = pHeadNodePE2->TargSeqLoci;
+				QueryPathStartOfsPE1 = pHeadNodePE1->QueryStartOfs;
+				QueryPathStartOfsPE2 = pHeadNodePE2->QueryStartOfs;
+				PathHiScorePE1 = pHeadNodePE1->HiScore;
+				PathHiScorePE2 = pHeadNodePE2->HiScore;
+				TargSeqLenPE1 = TargSeqLenPE2 = m_pSfxArray->GetSeqLen(pHeadNodePE1->TargSeqID);
+				m_pSfxArray->GetIdentName(pHeadNodePE1->TargSeqID, sizeof(szTargName), szTargName);
+				strcpy(szTargNamePE2, szTargName);
+				PathHiScorePE1 = (int)(((double)PathHiScorePE1 / ((double)QuerySeqLenPE1 * m_ExactMatchScore)) * 255.0);
+				PathHiScorePE2 = (int)(((double)PathHiScorePE2 / ((double)QuerySeqLenPE2 * m_ExactMatchScore)) * 255.0);
+				SAMFlags = cSAMFlgReadPaired | cSAMFlgReadPairMap | cSAMFlgPE1;
+				if(bStrandPE1 == true)
+					SAMFlags |= cSAMFlgAS;
+				else
+					SAMFlags |= cSAMFlgMateAS;
+				if (NumQueryPathsRprtdPE1 > 0)
+					SAMFlags |= cSAMFlgNotPrimary;
+				ReportAsSAM(SAMFlags,						// use as reported SAM flags
+					bStrandPE1 == true ? '-' : '+',			// query sequence strand, '+' or '-'
+					PathHiScorePE1,							// score for this path
+					szQuerySeqIdent,						// identifies this query sequence
+					QuerySeqLenPE1,							// Query sequence length
+					pQuerySeqPE1,							// the query sequence as etSeqBase's
+					QueryPathStartOfsPE1,					// Alignment start offset in query, 0..QSize-1
+					QueryPathEndOfsPE1,						// Alignment end position in query
+					szTargName,								// aligning to this target
+					TargSeqLenPE1,							// Target sequence size
+					TargPathStartOfsPE1 + 1,				// target alignment starts at this starting loci, 1..TargSeqLenPE1
+					TargPathEndOfsPE1 + 1,					// ending at this loci (inclusive) 
+					'=',									// Reference sequence name of the primary alignment of the NEXT read in the template, '*' if unknown, '=' if PE and both ends align to same reference
+					TargPathStartOfsPE2 + 1,				// 1-based Position of the primary alignment of the NEXT read in the template. Set as 0 when the information is unavailable
+					(TargPathEndOfsPE2 + 1) - TargPathStartOfsPE1,// signed template length, If all segments are mapped to the same reference, the signed observed template length equals the number of bases from the leftmost mapped base to the rightmost mapped base
+					NumPathNodesPE1,						// number of alignment nodes in alignment path
+					BestSortedPathIdxPE1,					// alignment path starts from this node - 0 based 
+					pPars->pAllocdAlignNodes,				// alignment nodes
+					pPars->ppFirst2Rpts);					// allocated to hold ptrs to alignment nodes which are marked as being FlgFirst2tRpt
+				NumQueryPathsRprtdPE1 += 1;
 
-					SAMFlags = cSAMFlgReadPaired | cSAMFlgReadPairMap | cSAMFlgPE2;
-					if (bStrand == true)
-						SAMFlags |= cSAMFlgAS;
-					ReportAsSAM(SAMFlags,
-						bStrandPE2 == true ? '-' : '+',
-						PathHiScorePE2,
-						szQuerySeqIdentPE2, QuerySeqLenPE2, pQuerySeqPE2, QueryPathStartOfsPE2, QueryPathEndOfsPE2,
-						szTargNamePE2, TargSeqLenPE2, TargPathStartOfsPE2, TargPathEndOfsPE2,
-						'=', TargPathStartOfs, 0,
-						NumPathNodesPE2, BestSortedPathIdxPE2, pPars->pAllocdAlignNodesPE2, pPars->ppFirst2RptsPE2);
-					NumQueryPathsRprtd += 1;
-					bQueryAtLeast1Path = true;
-					}
+				SAMFlags = cSAMFlgReadPaired | cSAMFlgReadPairMap | cSAMFlgPE2;
+				if (bStrandPE2 == true)
+					SAMFlags |= cSAMFlgAS;
+				else
+					SAMFlags |= cSAMFlgMateAS;
+				if (NumQueryPathsRprtdPE2 > 0)
+					SAMFlags |= cSAMFlgNotPrimary;
+				ReportAsSAM(SAMFlags,						// use as reported SAM flags
+					bStrandPE2 == true ? '-' : '+',			// query sequence strand, '+' or '-'
+					PathHiScorePE2,							// score for this path
+					szQuerySeqIdentPE2,						// identifies this query sequence
+					QuerySeqLenPE2,							// Query sequence length
+					pQuerySeqPE2,							// the query sequence as etSeqBase's
+					QueryPathStartOfsPE2,					// Alignment start offset in query, 0..QSize-1
+					QueryPathEndOfsPE2,						// Alignment end position in query
+					szTargNamePE2,							// aligning to this target
+					TargSeqLenPE2,							// Target sequence size
+					TargPathStartOfsPE2 + 1,				// target alignment starts at this starting loci, 1..TargSeqLenPE2
+					TargPathEndOfsPE2 + 1,					// target alignment ending at this offset (inclusive)
+					'=',									// Reference sequence name of the primary alignment of the NEXT read in the template, '*' if unknown, '=' if PE and both ends align to same reference
+					TargPathStartOfsPE1 + 1,				// 1-based Position of the primary alignment of the NEXT read in the template. Set as 0 when the information is unavailable
+					(TargPathEndOfsPE2 + 1) - TargPathStartOfsPE1,// signed template length, If all segments are mapped to the same reference, the signed observed template length equals the number of bases from the leftmost mapped base to the rightmost mapped base
+					NumPathNodesPE2,						// number of alignment nodes in alignment path
+					BestSortedPathIdxPE2,					// alignment path starts from this node - 0 based
+					pPars->pAllocdAlignNodesPE2,			// alignment nodes
+					pPars->ppFirst2RptsPE2);				// allocated to hold ptrs to alignment nodes which are marked as being FlgFirst2tRpt
+				NumQueryPathsRprtdPE2 += 1;
+				bQueryAtLeast1Path = true;
 				}
 			}
-		if (NumQueryPathsRprtd == m_MaxPathsToReport)
+		if (NumQueryPathsRprtdPE1 || NumQueryPathsRprtdPE2)
 			{
 			AcquireSerialise();
-			m_ReportedPaths += NumQueryPathsRprtd;
+			m_ReportedPaths += (NumQueryPathsRprtdPE1 + NumQueryPathsRprtdPE2);
 			m_QueriesPaths++;
 			ReleaseSerialise();
 			continue;
 			}
-		if (CoreDelta > m_CoreDelta)
-			{
-			CoreDelta = m_CoreDelta;
-			MinPathHiScore = ((QuerySeqLen - 5) * m_ExactMatchScore) / 3;
-			}
-		else
-			{
-			ReportNonAligned(szQuerySeqIdent, QuerySeqLen, pQuerySeq, szQuerySeqIdentPE2, QuerySeqLenPE2, pQuerySeqPE2);
-			break;
-			}
+		ReportNonAligned(szQuerySeqIdent, QuerySeqLenPE1, pQuerySeqPE2, szQuerySeqIdentPE2, QuerySeqLenPE2, pQuerySeqPE2);
+		bQueryAtLeast1Path = true;
 		}
 	while (!bQueryAtLeast1Path);
+	delete pQuerySeqPE1;
+	delete pQuerySeqPE2;
 	}
-delete pQuerySeq;
-delete pQuerySeqPE2;
-
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "Progress: Thread %d completed", pPars->ThreadIdx);
 return(0);
 }
@@ -2076,69 +2086,68 @@ int
 CBlitz::ProcAlignQuerySeqs(tsThreadQuerySeqsPars *pPars) 
 {
 int Rslt;
+int MaxIter;
 int NumQueryPathsRprtd;
 int NumQueriesProc;
-int PrevNumQueriesProc;
 int NumMatches;
 int QuerySeqLen;
-int MinPathScore;
 int SeqID;
-UINT8 *pQuerySeq;
-char szQuerySeqIdent[cMaxQuerySeqIdentLen+1];
-
+uint8_t* pQuerySeq;
+char szQuerySeqIdent[cMaxQuerySeqIdentLen + 1];
+uint32_t NumHeadNodes;
+int MinPathScore;
 NumQueriesProc = 0;
-PrevNumQueriesProc = 0;
-while((Rslt = DequeueQuerySeq(120,sizeof(szQuerySeqIdent),&SeqID,szQuerySeqIdent,&QuerySeqLen,&pQuerySeq))==1)
+while((Rslt = DequeueQuerySeq(sizeof(szQuerySeqIdent),&SeqID,szQuerySeqIdent,&QuerySeqLen,&pQuerySeq))==1)
 	{
+	AcquireSerialise();
+	m_NumQueriesProc += 1;
+	ReleaseSerialise();
 	NumQueriesProc += 1;
-	NumMatches = m_pSfxArray->LocateQuerySeqs(SeqID,pQuerySeq,QuerySeqLen,m_ExtnScoreThres,m_CoreLen,m_CoreDelta,m_AlignStrand,m_MinExtdCoreLen,pPars->NumAllocdAlignNodes,pPars->pAllocdAlignNodes,m_MaxIter);
+	NumQueryPathsRprtd = 0;
+	MaxIter = m_MaxIter;
+	NumMatches = m_pSfxArray->LocateQuerySeqs(SeqID,pQuerySeq,QuerySeqLen,m_CoreLen,m_CoreDelta,m_AlignStrand,pPars->NumAllocdAlignNodes,pPars->pAllocdAlignNodes,m_MaxIter, m_ExactMatchScore, m_MismatchScore);
 	if(NumMatches)
 		{
 		if(NumMatches > 1)	// sorting by TargSeqID.QueryID.FlgStrand.TargStartOfs.QueryStartOfs
 			qsort(pPars->pAllocdAlignNodes,NumMatches,sizeof(tsQueryAlignNodes),SortQueryAlignNodes);
-		if(m_MinPathScore == 0)
-			MinPathScore = (QuerySeqLen * m_ExactMatchScore) / 2;
-		else
+		if (m_MinPathScore > 0)
 			MinPathScore = m_MinPathScore;
+		else
+			MinPathScore = ((QuerySeqLen - 5) * m_ExactMatchScore) / 3;
+
+		NumHeadNodes = IdentifyHighScorePaths(MinPathScore, m_MaxPathsToReport, QuerySeqLen, NumMatches, pPars->pAllocdAlignNodes, pPars->ppFirst2Rpts);
+
 		NumQueryPathsRprtd = Report(MinPathScore,m_MaxPathsToReport,szQuerySeqIdent,QuerySeqLen,pQuerySeq,NumMatches,pPars->pAllocdAlignNodes,pPars->ppFirst2Rpts);
 		AcquireSerialise();
 		if(NumQueryPathsRprtd > 0)
 			m_QueriesPaths += 1;
-		m_NumQueriesProc += NumQueriesProc - PrevNumQueriesProc;
 		ReleaseSerialise();
-		PrevNumQueriesProc = NumQueriesProc;
 		}
 	delete pQuerySeq;
 	}
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Progress: Thread %d completed, processed %d query sequences",pPars->ThreadIdx,NumQueriesProc);
-if(NumQueriesProc > PrevNumQueriesProc)
-	{
-	AcquireSerialise();
-	m_NumQueriesProc += NumQueriesProc - PrevNumQueriesProc;
-	ReleaseSerialise();
-	}
 return(0);
 }
 
 // locates and identifies the highest scoring smith-waterman path
 // returns the highest score for all paths explored starting at the current node
 // NOTE: recursive!!!
-UINT32											// returned best score for paths starting at pAlignNodes[ExploreNodeIdx]
-CBlitz::HighScoreSW(UINT32 QueryLen,			// query length
-			UINT32 TargSeqLen,					// targeted sequence length
+uint32_t											// returned best score for paths starting at pAlignNodes[ExploreNodeIdx]
+CBlitz::HighScoreSW(uint32_t QueryLen,			// query length
+			uint32_t TargSeqLen,					// targeted sequence length
  			bool bStrand,						// scoring for series on this strand - false if sense, true if antisense
-			UINT32 ExploreNodeIdx,				// node to be explored for maximally scored path
-			UINT32 NumNodes,					// total number of alignment nodes 
+			uint32_t ExploreNodeIdx,				// node to be explored for maximally scored path
+			uint32_t NumNodes,					// total number of alignment nodes 
 			tsQueryAlignNodes *pAlignNodes)	// alignment nodes
 {
-UINT32 BestHighScore;
-UINT32 NodeIdx;
-UINT32 CurNodeScore;
-UINT32 GapScore;
-UINT32 GapLen;
-UINT32 TargGapLen;
-UINT32 QueryGapLen;
-UINT32 PutHighScore;
+uint32_t BestHighScore;
+uint32_t NodeIdx;
+uint32_t CurNodeScore;
+uint32_t GapScore;
+uint32_t GapLen;
+uint32_t TargGapLen;
+uint32_t QueryGapLen;
+uint32_t PutHighScore;
 tsQueryAlignNodes *pCurNode;
 tsQueryAlignNodes *pExploreNode;
 pCurNode = &pAlignNodes[ExploreNodeIdx - 1];
@@ -2167,14 +2176,14 @@ for(NodeIdx = 1; NodeIdx <= NumNodes; NodeIdx++,pExploreNode++)
 	if(pExploreNode->Flg2Rpt || pExploreNode->FlgStrand != (bStrand ? 1 : 0))		// skip if already path to be reported, or if not requested strand
 		continue;
 
-	if(pExploreNode->TargStartOfs < (pCurNode->TargStartOfs + pCurNode->AlignLen - cMaxOverlapFloat))	// allowing for possible overlaps on the target sequence
+	if(pExploreNode->TargSeqLoci < (pCurNode->TargSeqLoci + pCurNode->AlignLen - cMaxOverlapFloat))	// allowing for possible overlaps on the target sequence
 		continue;
-	if(pExploreNode->TargStartOfs > (pCurNode->TargStartOfs + pCurNode->AlignLen + cGapMaxLength))		// if gap too large then assuming not on same path
+	if(pExploreNode->TargSeqLoci > (pCurNode->TargSeqLoci + pCurNode->AlignLen + cGapMaxLength))		// if gap too large then assuming not on same path
 		continue;
 	if(pExploreNode->QueryStartOfs < (pCurNode->QueryStartOfs + pCurNode->AlignLen - cMaxOverlapFloat))   // allowing for possible overlaps on on the query sequence
 		continue;
 	QueryGapLen = abs((int)(pExploreNode->QueryStartOfs - (pCurNode->QueryStartOfs + pCurNode->AlignLen)));
-	TargGapLen = abs((int)(pExploreNode->TargStartOfs - (pCurNode->TargStartOfs + pCurNode->AlignLen)));
+	TargGapLen = abs((int)(pExploreNode->TargSeqLoci - (pCurNode->TargSeqLoci + pCurNode->AlignLen)));
 	GapLen = (int)sqrt(((double)QueryGapLen * QueryGapLen) + ((double)TargGapLen * TargGapLen));
 	GapScore = 1 + ((GapLen / 10) * cGapExtendCost);
 	if(GapScore > cGapExtendCostLimit)
@@ -2204,21 +2213,21 @@ return(pCurNode->HiScore);
 // expectation is that nodes will have been sorted in TargSeqID.QueryID.FlgStrand.QueryStartOfs.TargStartOfs ascending order
 // essentially is dynamic programming (a.k smith-waterman) using nodes instead of the sequences as the nodes already contain
 // matching + mismatches along the diagonals
-UINT32		// returns count of paths meeting scoring threshold
-CBlitz::IdentifyHighScorePaths(UINT32 QueryLen,	// query length
-			UINT32 TargSeqLen,					// targeted sequence length
+uint32_t		// returns count of paths meeting scoring threshold
+CBlitz::IdentifyHighScorePaths(uint32_t QueryLen,	// query length
+			uint32_t TargSeqLen,					// targeted sequence length
 			bool bStrand,						// reporting for paths on this strand - false if sense, true if antisense
-			UINT32 NumNodes,					// reporting on this number of nodes starting from StartNodeIdx
-			UINT32 StartNodeIdx,				// report for nodes starting at this node index (1..NumNodes) which is expected to be the first alignment node of a new target sequence
+			uint32_t NumNodes,					// reporting on this number of nodes starting from StartNodeIdx
+			uint32_t StartNodeIdx,				// report for nodes starting at this node index (1..NumNodes) which is expected to be the first alignment node of a new target sequence
 			tsQueryAlignNodes *pAlignNodes,		// alignment nodes
-			UINT32 MinPathScore,				// only interested in paths having at least this score
-			UINT32  MaxPathsToReport)			// report at most this many alignment paths for any query
+			uint32_t MinPathScore,				// only interested in paths having at least this score
+			uint32_t  MaxPathsToReport)			// report at most this many alignment paths for any query
 {
-UINT32 PutBestHighScore;
-UINT32 BestHighScore;
-UINT32 BestHighScoreNodeIdx;
-UINT32 CurNodeIdx;
-UINT32 NumPutPaths2Rpt;
+uint32_t PutBestHighScore;
+uint32_t BestHighScore;
+uint32_t BestHighScoreNodeIdx;
+uint32_t CurNodeIdx;
+uint32_t NumPutPaths2Rpt;
 tsQueryAlignNodes *pCurNode;
 tsQueryAlignNodes *pAlignSeqNodes;
 
@@ -2256,8 +2265,8 @@ do {
 	// if best path score meets the minimum required then mark 1st node as being the first and all nodes on path to be putatively reported
 	if(BestHighScore >= MinPathScore)
 		{
-		UINT32 CurPathNodeIdx = BestHighScoreNodeIdx;
-		UINT32 PathAlignedLen = 0;
+		uint32_t CurPathNodeIdx = BestHighScoreNodeIdx;
+		uint32_t PathAlignedLen = 0;
 
 		do {
 			pCurNode = &pAlignSeqNodes[CurPathNodeIdx-1];
@@ -2265,7 +2274,7 @@ do {
 			CurPathNodeIdx = pCurNode->HiScorePathNextIdx;
 			}
 		while(CurPathNodeIdx != 0);
-		if(((PathAlignedLen * 100) / QueryLen) >= (UINT32)m_QueryLenAlignedPct)
+		if(((PathAlignedLen * 100) / QueryLen) >= (uint32_t)m_QueryLenAlignedPct)
 			{
 			CurPathNodeIdx = BestHighScoreNodeIdx;
 			do {
@@ -2293,35 +2302,35 @@ return(NumPutPaths2Rpt);
 
 
 int				// number of blocks processed
-CBlitz::BlocksAlignStats(UINT32 *pMatches,			// returned number of bases that match that aren't repeats
-					UINT32 *pmisMatches,			// returned number of bases that don't match
-					UINT32 *prepMatches,			// returned number of bases that match but are part of repeats
-					UINT32 *pnCount,				// returned number of 'N' bases
-				char  Strand,						// query sequence strand, '+' or '-')
-				UINT8 *pQuerySeq,					// the query sequence
-				UINT32 qSize,						// Query sequence size
-				UINT32 TargSeqID,					// CSfxArray sequence identifier
-				UINT32 tSize,						// Target sequence size 
-				UINT32 TargPathStartOfs,			// at this starting offset
-				UINT32 TargPathEndOfs,				// ending at this offset (inclusive)
-				UINT32 NumPathNodes,				// number of alignment nodes in alignment path
+CBlitz::BlocksAlignStats(uint32_t *pMatches,			// returned number of bases that match that aren't repeats
+					uint32_t *pmisMatches,			// returned number of bases that don't match
+					uint32_t *prepMatches,			// returned number of bases that match but are part of repeats
+					uint32_t *pnCount,				// returned number of 'N' bases
+				char  Strand,						// query sequence strand, '+' or '-'
+				uint8_t *pQuerySeq,					// the query sequence
+				uint32_t qSize,						// Query sequence size
+				uint32_t TargSeqID,					// CSfxArray sequence identifier
+				uint32_t tSize,						// Target sequence size 
+				uint32_t TargPathStartOfs,			// at this starting offset
+				uint32_t TargPathEndOfs,				// ending at this offset (inclusive)
+				uint32_t NumPathNodes,				// number of alignment nodes in alignment path
 				int SortedPathIdx,
 				tsQueryAlignNodes *pAlignNodes,		// alignment nodes
 				tsQueryAlignNodes **ppFirst2Rpts) // allocated to hold ptrs to alignment nodes which are marked as being FlgFirst2tRpt
 {
-UINT32 Matches;
-UINT32 misMatches;
-UINT32 nCount;
-UINT32 TotMatches;
-UINT32 TotMisMatches;
-UINT32 TotNCount;
-UINT32 Idx;
+uint32_t Matches;
+uint32_t misMatches;
+uint32_t nCount;
+uint32_t TotMatches;
+uint32_t TotMisMatches;
+uint32_t TotNCount;
+uint32_t Idx;
 int NumBlocks;
-UINT32 MaxBlockSize;
+uint32_t MaxBlockSize;
 tsQueryAlignNodes *pCurNode;
 tsQueryAlignNodes *pHeadNode;
-UINT8 *pTSeq;
-UINT8 *pQSeq;
+uint8_t *pTSeq;
+uint8_t *pQSeq;
 etSeqBase *pTargBase;
 etSeqBase *pQueryBase;
 
@@ -2349,9 +2358,9 @@ do {
 	}
 while(pCurNode != NULL);
 
-if((pTSeq = new UINT8 [MaxBlockSize])==NULL)
+if((pTSeq = new uint8_t [MaxBlockSize])==NULL)
 	return(eBSFerrMem);
-if((pQSeq = new UINT8 [MaxBlockSize])==NULL)
+if((pQSeq = new uint8_t [MaxBlockSize])==NULL)
 	{
 	delete pTSeq;
 	return(eBSFerrMem);
@@ -2368,7 +2377,7 @@ do {
 	misMatches = 0;
 	nCount = 0;
 	NumBlocks += 1;
-	m_pSfxArray->GetSeq(TargSeqID,pCurNode->TargStartOfs,pTSeq,pCurNode->AlignLen);
+	m_pSfxArray->GetSeq(TargSeqID,pCurNode->TargSeqLoci,pTSeq,pCurNode->AlignLen);
 	if(Strand == '-')
 		{
 		memcpy(pQSeq,&pQuerySeq[qSize - (pCurNode->QueryStartOfs + pCurNode->AlignLen)],pCurNode->AlignLen);
@@ -2418,24 +2427,24 @@ return(NumBlocks);
 
 // reporting alignment as SQLite PSL format
 int 
-CBlitz::ReportAsSQLitePSL(UINT32 Matches,				// Number of bases that match that aren't repeats
-					UINT32 misMatches,			// Number of bases that don't match
-					UINT32 repMatches,			// Number of bases that match but are part of repeats
-					UINT32 nCount,				// Number of 'N' bases
-					UINT32	qNumInsert,			// Number of inserts in query
-					UINT32 qBaseInsert,			// Number of bases inserted in query
-					UINT32 tNumInsert,			// Number of inserts in target
-					UINT32 tBaseInsert,			// Number of bases inserted in target
+CBlitz::ReportAsSQLitePSL(uint32_t Matches,				// Number of bases that match that aren't repeats
+					uint32_t misMatches,			// Number of bases that don't match
+					uint32_t repMatches,			// Number of bases that match but are part of repeats
+					uint32_t nCount,				// Number of 'N' bases
+					uint32_t	qNumInsert,			// Number of inserts in query
+					uint32_t qBaseInsert,			// Number of bases inserted in query
+					uint32_t tNumInsert,			// Number of inserts in target
+					uint32_t tBaseInsert,			// Number of bases inserted in target
 					char  Strand,				// query sequence strand, '+' or '-'
 					char *pszQuerySeqIdent,     // this query sequence
-					UINT32 qSize,				// Query sequence size
-					UINT32 qStart,				// Alignment start position in query
-					UINT32 qEnd,				// Alignment end position in query
+					uint32_t qSize,				// Query sequence size
+					uint32_t qStart,				// Alignment start position in query
+					uint32_t qEnd,				// Alignment end position in query
 					char *pszTargName,			// aligning to this target
-					UINT32 tSize,				// Target sequence size 
-					UINT32 TargPathStartOfs,	// at this starting offset
-					UINT32 TargPathEndOfs,		// ending at this offset (inclusive)
-					UINT32 NumPathNodes,		// number of alignment nodes in alignment path
+					uint32_t tSize,				// Target sequence size 
+					uint32_t TargPathStartOfs,	// at this starting offset
+					uint32_t TargPathEndOfs,		// ending at this offset (inclusive)
+					uint32_t NumPathNodes,		// number of alignment nodes in alignment path
 					int SortedPathIdx,
 					tsQueryAlignNodes *pAlignNodes,		// alignment nodes
 					tsQueryAlignNodes **ppFirst2Rpts) // allocated to hold ptrs to alignment nodes which are marked as being FlgFirst2tRpt
@@ -2445,12 +2454,12 @@ int Identity;           // Alignment identity (using Blat 100.0 - pslCalcMilliBa
 int StrandQStart;
 int StrandQEnd;
 char szStrand[2];
-UINT32 *pBlockLens;
-UINT32 *pQueryBlockStarts;
-UINT32 *pTargBlockStarts;
-UINT32 BlockLens[5000];
-UINT32 QueryBlockStarts[5000];
-UINT32 TargBlockStarts[5000];
+uint32_t *pBlockLens;
+uint32_t *pQueryBlockStarts;
+uint32_t *pTargBlockStarts;
+uint32_t BlockLens[5000];
+uint32_t QueryBlockStarts[5000];
+uint32_t TargBlockStarts[5000];
 
 tsQueryAlignNodes *pCurNode;
 
@@ -2467,7 +2476,7 @@ pTargBlockStarts = TargBlockStarts;
 do {
 	*pBlockLens++ = pCurNode->AlignLen;
 	*pQueryBlockStarts++ = pCurNode->QueryStartOfs;
-	*pTargBlockStarts++ = pCurNode->TargStartOfs;
+	*pTargBlockStarts++ = pCurNode->TargSeqLoci;
 	if(pCurNode->HiScorePathNextIdx > 0)
 		pCurNode = &pAlignNodes[pCurNode->HiScorePathNextIdx-1];
 	else
@@ -2489,24 +2498,24 @@ return(NumPathNodes);
 
 // reporting alignment as PSL format
 int 
-CBlitz::ReportAsPSL(UINT32 Matches,				// Number of bases that match that aren't repeats
-					UINT32 misMatches,			// Number of bases that don't match
-					UINT32 repMatches,			// Number of bases that match but are part of repeats
-					UINT32 nCount,				// Number of 'N' bases
-					UINT32	qNumInsert,			// Number of inserts in query
-					UINT32 qBaseInsert,			// Number of bases inserted in query
-					UINT32 tNumInsert,			// Number of inserts in target
-					UINT32 tBaseInsert,			// Number of bases inserted in target
+CBlitz::ReportAsPSL(uint32_t Matches,				// Number of bases that match that aren't repeats
+					uint32_t misMatches,			// Number of bases that don't match
+					uint32_t repMatches,			// Number of bases that match but are part of repeats
+					uint32_t nCount,				// Number of 'N' bases
+					uint32_t	qNumInsert,			// Number of inserts in query
+					uint32_t qBaseInsert,			// Number of bases inserted in query
+					uint32_t tNumInsert,			// Number of inserts in target
+					uint32_t tBaseInsert,			// Number of bases inserted in target
 					char  Strand,				// query sequence strand, '+' or '-'
 					char *pszQuerySeqIdent,     // this query sequence
-					UINT32 qSize,				// Query sequence size
-					UINT32 qStart,				// Alignment start position in query
-					UINT32 qEnd,				// Alignment end position in query
+					uint32_t qSize,				// Query sequence size
+					uint32_t qStart,				// Alignment start position in query
+					uint32_t qEnd,				// Alignment end position in query
 					char *pszTargName,			// aligning to this target
-					UINT32 tSize,				// Target sequence size 
-					UINT32 TargPathStartOfs,	// at this starting offset
-					UINT32 TargPathEndOfs,		// ending at this offset (inclusive)
-					UINT32 NumPathNodes,		// number of alignment nodes in alignment path
+					uint32_t tSize,				// Target sequence size 
+					uint32_t TargPathStartOfs,	// at this starting offset
+					uint32_t TargPathEndOfs,		// ending at this offset (inclusive)
+					uint32_t NumPathNodes,		// number of alignment nodes in alignment path
 					int SortedPathIdx,
 					tsQueryAlignNodes *pAlignNodes,		// alignment nodes
 					tsQueryAlignNodes **ppFirst2Rpts) // allocated to hold ptrs to alignment nodes which are marked as being FlgFirst2tRpt
@@ -2554,7 +2563,7 @@ m_pszLineBuff[m_szLineBuffIdx++] = '\t';
 // target starts
 pCurNode = ppFirst2Rpts[SortedPathIdx];
 do {
-	m_szLineBuffIdx += sprintf(&m_pszLineBuff[m_szLineBuffIdx],"%u,",pCurNode->TargStartOfs);
+	m_szLineBuffIdx += sprintf(&m_pszLineBuff[m_szLineBuffIdx],"%u,",pCurNode->TargSeqLoci);
 	if(pCurNode->HiScorePathNextIdx > 0)
 		pCurNode = &pAlignNodes[pCurNode->HiScorePathNextIdx-1];
 	else
@@ -2574,31 +2583,31 @@ return(NumPathNodes);
 
 // reporting alignment as PSLX format
 int 
-CBlitz::ReportAsPSLX(UINT32 Matches,				// Number of bases that match that aren't repeats
-					UINT32 misMatches,			// Number of bases that don't match
-					UINT32 repMatches,			// Number of bases that match but are part of repeats
-					UINT32 nCount,				// Number of 'N' bases
-					UINT32	qNumInsert,			// Number of inserts in query
-					UINT32 qBaseInsert,			// Number of bases inserted in query
-					UINT32 tNumInsert,			// Number of inserts in target
-					UINT32 tBaseInsert,			// Number of bases inserted in target
+CBlitz::ReportAsPSLX(uint32_t Matches,				// Number of bases that match that aren't repeats
+					uint32_t misMatches,			// Number of bases that don't match
+					uint32_t repMatches,			// Number of bases that match but are part of repeats
+					uint32_t nCount,				// Number of 'N' bases
+					uint32_t	qNumInsert,			// Number of inserts in query
+					uint32_t qBaseInsert,			// Number of bases inserted in query
+					uint32_t tNumInsert,			// Number of inserts in target
+					uint32_t tBaseInsert,			// Number of bases inserted in target
 					char  Strand,				// query sequence strand, '+' or '-'
 					char *pszQuerySeqIdent,     // this query sequence
-					UINT32 qSize,				// Query sequence size
-					UINT8 *pQuerySeq,			// the query sequence
-					UINT32 qStart,				// Alignment start position in query
-					UINT32 qEnd,				// Alignment end position in query
-					UINT32 TargSeqID,			// CSfxArray sequence identifier
+					uint32_t qSize,				// Query sequence size
+					uint8_t *pQuerySeq,			// the query sequence
+					uint32_t qStart,				// Alignment start position in query
+					uint32_t qEnd,				// Alignment end position in query
+					uint32_t TargSeqID,			// CSfxArray sequence identifier
 					char *pszTargName,			// aligning to this target
-					UINT32 tSize,				// Target sequence size 
-					UINT32 TargPathStartOfs,	// at this starting offset
-					UINT32 TargPathEndOfs,		// ending at this offset (inclusive)
-					UINT32 NumPathNodes,		// number of alignment nodes in alignment path
+					uint32_t tSize,				// Target sequence size 
+					uint32_t TargPathStartOfs,	// at this starting offset
+					uint32_t TargPathEndOfs,		// ending at this offset (inclusive)
+					uint32_t NumPathNodes,		// number of alignment nodes in alignment path
 					int SortedPathIdx,
 					tsQueryAlignNodes *pAlignNodes,		// alignment nodes
 					tsQueryAlignNodes **ppFirst2Rpts) // allocated to hold ptrs to alignment nodes which are marked as being FlgFirst2tRpt
 {
-UINT32 MaxBlockSize;
+uint32_t MaxBlockSize;
 etSeqBase *pCurSeq;
 tsQueryAlignNodes *pCurNode;
 
@@ -2647,7 +2656,7 @@ m_pszLineBuff[m_szLineBuffIdx++] = '\t';
 // target starts
 pCurNode = ppFirst2Rpts[SortedPathIdx];
 do {
-	m_szLineBuffIdx += sprintf(&m_pszLineBuff[m_szLineBuffIdx],"%u,",pCurNode->TargStartOfs);
+	m_szLineBuffIdx += sprintf(&m_pszLineBuff[m_szLineBuffIdx],"%u,",pCurNode->TargSeqLoci);
 	if(pCurNode->HiScorePathNextIdx > 0)
 		pCurNode = &pAlignNodes[pCurNode->HiScorePathNextIdx-1];
 	else
@@ -2656,7 +2665,7 @@ do {
 while(pCurNode != NULL);
 
 // allocate to hold the maximally sized sequence block
-if((pCurSeq = new UINT8 [10 + TargPathEndOfs - TargPathStartOfs])==NULL)	// inplace translation to ascii so allow a few extra for terminagting '\0'	
+if((pCurSeq = new uint8_t [10 + TargPathEndOfs - TargPathStartOfs])==NULL)	// inplace translation to ascii so allow a few extra for terminagting '\0'	
 	{
 	ReleaseSerialise();
 	return(eBSFerrMem);
@@ -2696,7 +2705,7 @@ do {
 		CUtility::SafeWrite(m_hOutFile,m_pszLineBuff,m_szLineBuffIdx);
 		m_szLineBuffIdx = 0;
 		}
-	m_pSfxArray->GetSeq(TargSeqID,pCurNode->TargStartOfs,pCurSeq,pCurNode->AlignLen);
+	m_pSfxArray->GetSeq(TargSeqID,pCurNode->TargSeqLoci,pCurSeq,pCurNode->AlignLen);
 	m_szLineBuffIdx += sprintf(&m_pszLineBuff[m_szLineBuffIdx],"%s,",CSeqTrans::MapSeq2Ascii(pCurSeq,pCurNode->AlignLen,(char *)pCurSeq));
 	if(pCurNode->HiScorePathNextIdx > 0)
 		pCurNode = &pAlignNodes[pCurNode->HiScorePathNextIdx-1];
@@ -2718,113 +2727,231 @@ if(pCurSeq!=NULL)
 return(NumPathNodes);
 }
 
+// Frequently there will be gaps between nodes and
+// these gaps need to be closed through interpolation
+uint32_t			// number of nodes after consolidation
+CBlitz::ConsolidateNodes(bool bSense,				// if true then query sequence is aligning antisense to target
+				uint32_t QueryLen,					// query length
+				uint8_t* pQuerySeq,					// the query sequence as etSeqBase's
+				uint32_t SortedPathIdx,				// alignment path starts from this node - 0 based 
+				tsQueryAlignNodes* pAlignNodes,		// alignment nodes
+				tsQueryAlignNodes** ppFirst2Rpts)	// allocated to hold ptrs to alignment nodes which are marked as being FlgFirst2tRpt
+{
+bool bCurBaseMatch;
+bool bNxtBaseMatch;
+int DeltaQuery;
+int DeltaTarg;
+uint32_t CurTargLoci;
+uint32_t NxtTargLoci;
+etSeqBase* pCurSeq;
+etSeqBase CurTargBase;
+etSeqBase* pNxtSeq;
+etSeqBase NxtTargBase;
+tsQueryAlignNodes* pCurNode;
+tsQueryAlignNodes* pNxtNode;
+uint32_t NumConsolidatedNodes;
+NumConsolidatedNodes = 0;
+pCurNode = ppFirst2Rpts[SortedPathIdx];			// starting from first node in path
+if(pCurNode->HiScorePathNextIdx == 0)
+	return(1);
+if (bSense)
+	CSeqTrans::ReverseComplement(QueryLen, (etSeqBase*)pQuerySeq);
+while(pCurNode->HiScorePathNextIdx != 0)
+	{
+	NumConsolidatedNodes+=1;
+	pNxtNode = &pAlignNodes[pCurNode->HiScorePathNextIdx - 1];
+	DeltaQuery = pNxtNode->QueryStartOfs - (pCurNode->QueryStartOfs + pCurNode->AlignLen - 1);	// normally if at an InDel edge then difference should be 1 base
+	DeltaTarg = pNxtNode->TargSeqLoci - (pCurNode->TargSeqLoci + pCurNode->AlignLen - 1);		// normally if just +1 then next node is a direct extension
+	if (DeltaQuery < 0 || DeltaQuery > 1)
+		{
+		if (DeltaQuery > 1)			// mind {close} the gap ...
+			{
+			pCurSeq = &pQuerySeq[pCurNode->QueryStartOfs + pCurNode->AlignLen];
+			pNxtSeq = &pQuerySeq[pNxtNode->QueryStartOfs - 1];
+			CurTargLoci = pCurNode->TargSeqLoci + pCurNode->AlignLen;
+			NxtTargLoci = pNxtNode->TargSeqLoci - 1;
+			while (DeltaQuery-- > 1)
+				{
+				CurTargBase = m_pSfxArray->GetBase(pCurNode->TargSeqID, CurTargLoci);
+				NxtTargBase = m_pSfxArray->GetBase(pNxtNode->TargSeqID, NxtTargLoci);
+				bCurBaseMatch = *pCurSeq == CurTargBase;
+				bNxtBaseMatch = *pNxtSeq == NxtTargBase;
+				if(bCurBaseMatch)
+					{
+					pCurNode->AlignLen++;
+					CurTargLoci++;
+					pCurSeq++;
+					}
+				else
+					{
+					pNxtNode->AlignLen++;
+					pNxtNode->QueryStartOfs--;
+					pNxtNode->TargSeqLoci--;
+					if (!bNxtBaseMatch)
+						pNxtNode->NumMismatches++;
+					NxtTargLoci--;
+					pNxtSeq--;
+					}
+				}
+			}
+		else
+			{
+			pCurSeq = &pQuerySeq[pCurNode->QueryStartOfs + pCurNode->AlignLen - 1];
+			pNxtSeq = &pQuerySeq[pNxtNode->QueryStartOfs];
+			CurTargLoci = pCurNode->TargSeqLoci + pCurNode->AlignLen - 1;
+			NxtTargLoci = pNxtNode->TargSeqLoci;
+			while (DeltaQuery++ < 1)
+				{
+				CurTargBase = m_pSfxArray->GetBase(pCurNode->TargSeqID, CurTargLoci);
+				NxtTargBase = m_pSfxArray->GetBase(pNxtNode->TargSeqID, NxtTargLoci);
+				bCurBaseMatch = *pCurSeq == CurTargBase;
+				bNxtBaseMatch = *pNxtSeq == NxtTargBase;
+				if (bNxtBaseMatch)
+					{
+					pCurNode->AlignLen--;
+					if (!bCurBaseMatch)
+						pCurNode->NumMismatches--;
+					CurTargLoci--;
+					pCurSeq--;
+					}
+				else									
+					{
+					pNxtNode->AlignLen++;
+					pNxtNode->QueryStartOfs++;
+					pNxtNode->TargSeqLoci++;
+					if (!bNxtBaseMatch)
+						pNxtNode->NumMismatches--;
+					NxtTargLoci++;
+					pNxtSeq++;
+					}
+				}
+			}
+		}
+	DeltaQuery = pNxtNode->QueryStartOfs - (pCurNode->QueryStartOfs + pCurNode->AlignLen - 1);	// normally if at an InDel edge then difference should be 1 base
+	DeltaTarg = pNxtNode->TargSeqLoci - (pCurNode->TargSeqLoci + pCurNode->AlignLen - 1);		// normally if just +1 then next node is a direct extension
+	if(DeltaQuery == 1 && DeltaTarg == 1)
+		{
+		pCurNode->HiScorePathNextIdx = pNxtNode->HiScorePathNextIdx;
+		pCurNode->AlignLen += pNxtNode->AlignLen;
+		pCurNode->NumMismatches += pNxtNode->NumMismatches;
+		continue;
+		}
+	else
+		pCurNode = pNxtNode;
+	if (pCurNode->HiScorePathNextIdx == 0)
+		NumConsolidatedNodes++;
+	}
+if (bSense)
+	CSeqTrans::ReverseComplement(QueryLen, (etSeqBase *)pQuerySeq);
+return(NumConsolidatedNodes);
+}
+
 int		// reporting alignment as SAM format
-CBlitz::ReportAsSAM(UINT32 Flags,	// use as reported SAM flags
+CBlitz::ReportAsSAM(uint32_t Flags,	// use as the reported SAM flags
 	char  Strand,				// query sequence strand, '+' or '-'
-	UINT32 PathScore,			// score for this path
-	char *pszQuerySeqIdent,     // this query sequence
-	UINT32 qSize,				// Query sequence size
-	UINT8 *pQuerySeq,			// the query sequence
-	UINT32 qStart,				// Alignment start position in query
-	UINT32 qEnd,				// Alignment end position in query
+	uint32_t PathScore,			// score for this path
+	char *pszQuerySeqIdent,     // identifies this query sequence
+	uint32_t qSize,				// Query sequence length
+	uint8_t *pQuerySeq,			// the query sequence as etSeqBase's
+	uint32_t qStart,				// Alignment start offset in query, 0..qSize-1
+	uint32_t qEnd,				// Alignment end position in query
 	char *pszTargName,			// aligning to this target
-	UINT32 tSize,				// Target sequence size 
-	UINT32 TargPathStartOfs,	// at this starting offset
-	UINT32 TargPathEndOfs,		// ending at this offset (inclusive)
+	uint32_t tSize,				// Target sequence size 
+	uint32_t TargPathStartOfs,	// target alignment starts at this starting loci, 1..tSize
+	uint32_t TargPathEndOfs,		// target alignment ending at this offset (inclusive)
 	char RNEXT,					// Reference sequence name of the primary alignment of the NEXT read in the template, '*' if unknown, '=' if PE and both ends align to same reference
-	UINT32 PNEXT,				// 1-based Position of the primary alignment of the NEXT read in the template. Set as 0 when the information is unavailable
-	int TLEN,					// signed template length, If all segments are mapped to the same reference, the unsigned observed template length equals the number of bases from the leftmost mapped base to the rightmost mapped base
-	UINT32 NumPathNodes,		// number of alignment nodes in alignment path
-	int SortedPathIdx,
+	uint32_t PNEXT,				// 1-based Position of the primary alignment of the NEXT read in the template. Set as 0 when the information is unavailable
+	int TLEN,					// signed template length, If all segments are mapped to the same reference, the signed observed template length equals the number of bases from the leftmost mapped base to the rightmost mapped base
+	uint32_t NumPathNodes,		// number of alignment nodes in alignment path
+	int SortedPathIdx,			// alignment path starts from this node - 0 based 
 	tsQueryAlignNodes *pAlignNodes,		// alignment nodes
 	tsQueryAlignNodes **ppFirst2Rpts)  // allocated to hold ptrs to alignment nodes which are marked as being FlgFirst2tRpt
 {
-etSeqBase *pCurSeq;
-tsQueryAlignNodes *pCurNode;
-etSeqBase CurSeq[cSAMtruncSeqLen+1];
-char szLineBuff[cSAMtruncSeqLen + 2 * (cMaxQuerySeqIdentLen) + 100];
-int BuffIdx;
+	etSeqBase* pCurSeq;
+	tsQueryAlignNodes* pCurNode;
+	etSeqBase CurSeq[cSAMtruncSeqLen + 1];
+	char szLineBuff[cSAMtruncSeqLen + 2 * (cMaxQuerySeqIdentLen)+100];
+	int BuffIdx;
 
-pCurSeq = NULL;
+	pCurSeq = NULL;
 
-BuffIdx = sprintf(szLineBuff,"%s\t%d\t%s\t%d\t%d\t", pszQuerySeqIdent,Flags, pszTargName, TargPathStartOfs+1, PathScore >= 255 ? 255 : PathScore);
-if(qStart > 0)
-	BuffIdx += sprintf(&szLineBuff[BuffIdx],"%uS",qStart);
+	BuffIdx = sprintf(szLineBuff, "%s\t%d\t%s\t%d\t%d\t", pszQuerySeqIdent, Flags, pszTargName, TargPathStartOfs, PathScore >= 254 ? 254 : PathScore);
+	if (qStart > 0)
+		BuffIdx += sprintf(&szLineBuff[BuffIdx], "%uS", qStart);
 
-UINT32 PrevQueryEndOfs = qStart;
-UINT32 PrevTargEndOfs = TargPathStartOfs;
+	uint32_t PrevQueryEndOfs = qStart;
+	uint32_t PrevTargEndOfs = TargPathStartOfs;
 
-pCurNode = ppFirst2Rpts[SortedPathIdx];
-do {
-	if(pCurNode->QueryStartOfs > PrevQueryEndOfs)
-		BuffIdx += sprintf(&szLineBuff[BuffIdx], "%uI", pCurNode->QueryStartOfs - PrevQueryEndOfs);
-	if (pCurNode->TargStartOfs > PrevTargEndOfs)
+	pCurNode = ppFirst2Rpts[SortedPathIdx];
+	do {
+		if (pCurNode->QueryStartOfs > PrevQueryEndOfs)
+			BuffIdx += sprintf(&szLineBuff[BuffIdx], "%uI", pCurNode->QueryStartOfs - PrevQueryEndOfs);
+		if (pCurNode->TargSeqLoci > PrevTargEndOfs)
 		{
-		if((pCurNode->TargStartOfs - PrevTargEndOfs) < 20)
-			BuffIdx += sprintf(&szLineBuff[BuffIdx], "%uD", pCurNode->TargStartOfs - PrevTargEndOfs);
-		else
-			BuffIdx += sprintf(&szLineBuff[BuffIdx], "%uN", pCurNode->TargStartOfs - PrevTargEndOfs);	// larger insertion in target, treat as though insertion was due to intron spanning 
+			if ((pCurNode->TargSeqLoci - PrevTargEndOfs) < 20)
+				BuffIdx += sprintf(&szLineBuff[BuffIdx], "%uD", pCurNode->TargSeqLoci - PrevTargEndOfs);
+			else
+				BuffIdx += sprintf(&szLineBuff[BuffIdx], "%uN", pCurNode->TargSeqLoci - PrevTargEndOfs);	// larger insertion in target, treat as though insertion was due to intron spanning 
 		}
-	BuffIdx += sprintf(&szLineBuff[BuffIdx], "%uM", pCurNode->AlignLen);
-	PrevQueryEndOfs = pCurNode->QueryStartOfs + pCurNode->AlignLen;
-	PrevTargEndOfs = pCurNode->TargStartOfs + pCurNode->AlignLen;
-	if (pCurNode->HiScorePathNextIdx > 0)
-		pCurNode = &pAlignNodes[pCurNode->HiScorePathNextIdx - 1];
-	else
-		pCurNode = NULL;
-	} 
-while (pCurNode != NULL);
-if ((qEnd + 1) < qSize)
-	BuffIdx += sprintf(&szLineBuff[BuffIdx], "%uS", qSize - qEnd - 1);
-BuffIdx += sprintf(&szLineBuff[BuffIdx], "\t%c\t%u\t%d\t", RNEXT, PNEXT, TLEN);
+		BuffIdx += sprintf(&szLineBuff[BuffIdx], "%uM", pCurNode->AlignLen);
+		PrevQueryEndOfs = pCurNode->QueryStartOfs + pCurNode->AlignLen;
+		PrevTargEndOfs = pCurNode->TargSeqLoci + pCurNode->AlignLen;
+		if (pCurNode->HiScorePathNextIdx > 0)
+			pCurNode = &pAlignNodes[pCurNode->HiScorePathNextIdx - 1];
+		else
+			pCurNode = NULL;
+	} while (pCurNode != NULL);
+	if ((qEnd + 1) < qSize)
+		BuffIdx += sprintf(&szLineBuff[BuffIdx], "%uS", qSize - qEnd - 1);
+	BuffIdx += sprintf(&szLineBuff[BuffIdx], "\t%c\t%u\t%d\t", RNEXT, PNEXT, TLEN);
 
-memcpy(CurSeq, pQuerySeq, qSize);
-if(Strand == '-')
-	CSeqTrans::ReverseComplement(qSize, CurSeq);
-BuffIdx += sprintf(&szLineBuff[BuffIdx], "%s\t*\n", CSeqTrans::MapSeq2Ascii(CurSeq, qSize, (char *)CurSeq));
+	memcpy(CurSeq, pQuerySeq, qSize);
+	if (Strand == '-')
+		CSeqTrans::ReverseComplement(qSize, CurSeq);
+	BuffIdx += sprintf(&szLineBuff[BuffIdx], "%s\t*\n", CSeqTrans::MapSeq2Ascii(CurSeq, qSize, (char*)CurSeq));
 
-AcquireSerialise();
-if (m_szLineBuffIdx >= (cAlignRprtBufferSize - (2 * BuffIdx)))
+	AcquireSerialise();
+	if (m_szLineBuffIdx >= (cAlignRprtBufferSize - (2 * BuffIdx)))
 	{
-	CUtility::SafeWrite(m_hOutFile, m_pszLineBuff, m_szLineBuffIdx);
-	m_szLineBuffIdx = 0;
+		CUtility::SafeWrite(m_hOutFile, m_pszLineBuff, m_szLineBuffIdx);
+		m_szLineBuffIdx = 0;
 	}
-memcpy(&m_pszLineBuff[m_szLineBuffIdx], szLineBuff, BuffIdx);
-m_szLineBuffIdx += BuffIdx;
-ReleaseSerialise();
-return(NumPathNodes);
+	memcpy(&m_pszLineBuff[m_szLineBuffIdx], szLineBuff, BuffIdx);
+	m_szLineBuffIdx += BuffIdx;
+	ReleaseSerialise();
+	return(NumPathNodes);
 }
 
 // reporting alignment as MAF format
 int 
 CBlitz::ReportAsMAF(int PathScore,				// score for this path
-					UINT32 Matches,				// Number of bases that match that aren't repeats
-					UINT32 misMatches,			// Number of bases that don't match
-					UINT32 repMatches,			// Number of bases that match but are part of repeats
-					UINT32 nCount,				// Number of 'N' bases
-					UINT32	qNumInsert,			// Number of inserts in query
-					UINT32 qBaseInsert,			// Number of bases inserted in query
-					UINT32 tNumInsert,			// Number of inserts in target
-					UINT32 tBaseInsert,			// Number of bases inserted in target
+					uint32_t Matches,				// Number of bases that match that aren't repeats
+					uint32_t misMatches,			// Number of bases that don't match
+					uint32_t repMatches,			// Number of bases that match but are part of repeats
+					uint32_t nCount,				// Number of 'N' bases
+					uint32_t	qNumInsert,			// Number of inserts in query
+					uint32_t qBaseInsert,			// Number of bases inserted in query
+					uint32_t tNumInsert,			// Number of inserts in target
+					uint32_t tBaseInsert,			// Number of bases inserted in target
 					char  Strand,				// query sequence strand, '+' or '-'
 					char *pszQuerySeqIdent,     // this query sequence
-					UINT32 qSize,				// Query sequence size
-					UINT8 *pQuerySeq,			// the query sequence
-					UINT32 qStart,				// Alignment start position in query
-					UINT32 qEnd,				// Alignment end position in query
-					UINT32 TargSeqID,			// CSfxArray sequence identifier
+					uint32_t qSize,				// Query sequence size
+					uint8_t *pQuerySeq,			// the query sequence
+					uint32_t qStart,				// Alignment start position in query
+					uint32_t qEnd,				// Alignment end position in query
+					uint32_t TargSeqID,			// CSfxArray sequence identifier
 					char *pszTargName,			// aligning to this target
-					UINT32 tSize,				// Target sequence size 
-					UINT32 TargPathStartOfs,	// at this starting offset
-					UINT32 TargPathEndOfs,		// ending at this offset (inclusive)
-					UINT32 NumPathNodes,		// number of alignment nodes in alignment path
+					uint32_t tSize,				// Target sequence size 
+					uint32_t TargPathStartOfs,	// at this starting offset
+					uint32_t TargPathEndOfs,		// ending at this offset (inclusive)
+					uint32_t NumPathNodes,		// number of alignment nodes in alignment path
 					int SortedPathIdx,
 					tsQueryAlignNodes *pAlignNodes,		// alignment nodes
 					tsQueryAlignNodes **ppFirst2Rpts) // allocated to hold ptrs to alignment nodes which are marked as being FlgFirst2tRpt
 {
-UINT32 MaxBlockSize;
+uint32_t MaxBlockSize;
 tsQueryAlignNodes *pCurNode;
-UINT8 *pCurSeq;
+uint8_t *pCurSeq;
 
 // // allocate buffering for maximal sized alignment block
 MaxBlockSize = 0;
@@ -2839,7 +2966,7 @@ do {
 	}
 while(pCurNode != NULL);
 
-if((pCurSeq = new UINT8 [10 + MaxBlockSize])==NULL)	// inplace translation to ascii so allow a few extra for terminating '\0'	
+if((pCurSeq = new uint8_t [10 + MaxBlockSize])==NULL)	// inplace translation to ascii so allow a few extra for terminating '\0'	
 	return(eBSFerrMem);
 
 AcquireSerialise();
@@ -2857,11 +2984,11 @@ do {
 		m_szLineBuffIdx = 0;
 		}	
 	m_szLineBuffIdx += sprintf(&m_pszLineBuff[m_szLineBuffIdx],"\na\tscore=%d",pCurNode->HiScore);
-	m_szLineBuffIdx += sprintf(&m_pszLineBuff[m_szLineBuffIdx],"\ns\t%s\t%u\t%u\t%c\t%u\t",pszTargName,pCurNode->TargStartOfs,pCurNode->AlignLen,'+',tSize);
-	m_pSfxArray->GetSeq(TargSeqID,pCurNode->TargStartOfs,pCurSeq,pCurNode->AlignLen);
+	m_szLineBuffIdx += sprintf(&m_pszLineBuff[m_szLineBuffIdx],"\ns\t%s\t%u\t%u\t%c\t%u\t",pszTargName,pCurNode->TargSeqLoci,pCurNode->AlignLen,'+',tSize);
+	m_pSfxArray->GetSeq(TargSeqID,pCurNode->TargSeqLoci,pCurSeq,pCurNode->AlignLen);
 	m_szLineBuffIdx += sprintf(&m_pszLineBuff[m_szLineBuffIdx],"%s",CSeqTrans::MapSeq2Ascii(pCurSeq,pCurNode->AlignLen,(char *)pCurSeq));
 
-	m_szLineBuffIdx += sprintf(&m_pszLineBuff[m_szLineBuffIdx],"\ns\t%s\t%u\t%u\t%c\t%u\t",pszQuerySeqIdent,pCurNode->TargStartOfs,pCurNode->AlignLen,Strand,qSize);
+	m_szLineBuffIdx += sprintf(&m_pszLineBuff[m_szLineBuffIdx],"\ns\t%s\t%u\t%u\t%c\t%u\t",pszQuerySeqIdent,pCurNode->TargSeqLoci,pCurNode->AlignLen,Strand,qSize);
 	if(Strand == '-')
 		{
 		memcpy(pCurSeq,&pQuerySeq[qSize - (pCurNode->QueryStartOfs + pCurNode->AlignLen)],pCurNode->AlignLen);
@@ -2948,17 +3075,17 @@ return(0);
 int 
 CBlitz::ReportAsBED(char *pszQuerySeqIdent,     // this query sequence
 					char  Strand,				// query sequence strand, '+' or '-'
-					UINT32 AlignScore,			// alignment has this score
+					uint32_t AlignScore,			// alignment has this score
 					char *pszTargName,			// aligning to this target
-					UINT32 NumPathNodes,		// number of alignment nodes in alignment path
-					UINT32 TargPathStartOfs,	// at this starting offset
-					UINT32 TargPathEndOfs,		// ending at this offset (inclusive)
+					uint32_t NumPathNodes,		// number of alignment nodes in alignment path
+					uint32_t TargPathStartOfs,	// at this starting offset
+					uint32_t TargPathEndOfs,		// ending at this offset (inclusive)
 					int SortedPathIdx,
 					tsQueryAlignNodes *pAlignNodes,		// alignment nodes
 					tsQueryAlignNodes **ppFirst2Rpts) // allocated to hold ptrs to alignment nodes which are marked as being FlgFirst2tRpt
 {
 tsQueryAlignNodes *pCurNode;
-AlignScore = (UINT32)(10 * sqrt(AlignScore));
+AlignScore = (uint32_t)(10 * sqrt(AlignScore));
 if(AlignScore > 1000)
 	AlignScore = 1000;
 AcquireSerialise();
@@ -2982,7 +3109,7 @@ while(pCurNode != NULL);
 m_pszLineBuff[m_szLineBuffIdx++] = '\t';
 pCurNode = ppFirst2Rpts[SortedPathIdx];
 do {
-	m_szLineBuffIdx += sprintf(&m_pszLineBuff[m_szLineBuffIdx],"%u",pCurNode->TargStartOfs - TargPathStartOfs);
+	m_szLineBuffIdx += sprintf(&m_pszLineBuff[m_szLineBuffIdx],"%u",pCurNode->TargSeqLoci - TargPathStartOfs);
 	if(pCurNode->HiScorePathNextIdx > 0)
 		{
 		m_pszLineBuff[m_szLineBuffIdx++] = ',';
@@ -3004,20 +3131,20 @@ return(NumPathNodes);
 }
 
 
-UINT32							// returned number of high scoring path head nodes
+uint32_t							// returned number of high scoring path head nodes
 CBlitz::IdentifyHighScorePaths(int MinPathScore,			// only report paths having at least this minimum score
 		int  MaxPathsToReport,		// report at most this many alignment paths for any query
-		UINT32 QueryLen,			// query length
-		UINT32 NumNodes,			// number of alignment nodes
+		uint32_t QueryLen,			// query length
+		uint32_t NumNodes,			// number of alignment nodes
 		tsQueryAlignNodes *pAlignNodes,		// alignment nodes
 		tsQueryAlignNodes **ppFirst2Rpts)	// allocated to hold ptrs to alignment nodes which are marked as being FlgFirst2tRpt
 {
 tsQueryAlignNodes *pCurrentNode;
-UINT32 CurTargSeqID;
-UINT32 CurTargMatchNodes;
-UINT32 NodeIdx;
-UINT32 CurTargSeqLen;
-UINT32 CurNumHeadNodes;
+uint32_t CurTargSeqID;
+uint32_t CurTargMatchNodes;
+uint32_t NodeIdx;
+uint32_t CurTargSeqLen;
+uint32_t CurNumHeadNodes;
 
 pCurrentNode = pAlignNodes;
 CurTargSeqID = 0;
@@ -3025,10 +3152,12 @@ CurTargMatchNodes = 0;
 CurNumHeadNodes = 0;
 
 // nodes will have been sorted in TargSeqID.QueryID.FlgStrand.QueryStartOfs.TargStartOfs ascending order
-UINT32 StartTargNodeIdx;
-UINT32 EndTargNodeIdx;
-UINT32 NumPutPaths;
+uint32_t StartTargNodeIdx;
+uint32_t EndTargNodeIdx;
+uint32_t NumPutPaths;
 
+if(MaxPathsToReport < 1)
+	MaxPathsToReport = 1;
 NumPutPaths = 0;
 CurTargSeqID = pCurrentNode->TargSeqID;
 CurTargMatchNodes = 0;
@@ -3062,40 +3191,41 @@ for (NodeIdx = 1; NodeIdx <= NumNodes; NodeIdx++, pCurrentNode++)
 if (CurNumHeadNodes > 1)			// sort by highest scoring path descending
 	qsort(ppFirst2Rpts, CurNumHeadNodes, sizeof(tsQueryAlignNodes *), SortHighScoreDescend);
 
-return(CurNumHeadNodes);
+return(min((uint32_t)MaxPathsToReport,CurNumHeadNodes));
 }
 
-UINT32	// returns number of nodes in characterised path
-CBlitz::CharacterisePath(UINT32 SortedPathIdx,
+uint32_t				// returns number of nodes in characterised path
+CBlitz::CharacterisePath(uint32_t QueryLen,				// query length
+					uint8_t* pQuerySeq,					// the query sequence as etSeqBase's
+					uint32_t SortedPathIdx,				// index of paths head node
 					tsQueryAlignNodes *pAlignNodes,		// alignment nodes
 					tsQueryAlignNodes **ppFirst2Rpts,	// allocated to hold ptrs to alignment nodes which are marked as being FlgFirst2tRpt
-					UINT32 *pQueryPathEndOfs,			// query path ends at this offset
-					UINT32 *pTargPathEndOfs,			// target path ends at this offset
-					UINT32 *pqNumInsert,				// qNumInsert, Number of inserts in query
-					UINT32 *pqBaseInsert,				// qBaseInsert, Number of bases inserted in query
-					UINT32 *ptNumInsert,				// tNumInsert, Number of inserts in target
-					UINT32 *ptBaseInsert)				// tBaseInsert, Number of bases inserted in target
+					uint32_t *pQueryPathEndOfs,			// query path ends at this offset
+					uint32_t *pTargPathEndOfs,			// target path ends at this offset
+					uint32_t *pqNumInsert,				// qNumInsert, Number of inserts in query
+					uint32_t *pqBaseInsert,				// qBaseInsert, Number of bases inserted in query
+					uint32_t *ptNumInsert,				// tNumInsert, Number of inserts in target
+					uint32_t *ptBaseInsert)				// tBaseInsert, Number of bases inserted in target
 {
-UINT32 CurPathNodeIdx;
-UINT32 QueryPathStartOfs;
-UINT32 TargPathStartOfs;
-UINT32 QueryPathEndOfs;
-UINT32 TargPathEndOfs;
-UINT32 TotalMMs;
-UINT32 NumPathNodes;
-UINT32	qNumInsert;			// Number of inserts in query
-UINT32 qBaseInsert;			// Number of bases inserted in query
-UINT32 tNumInsert;			// Number of inserts in target
-UINT32 tBaseInsert;			// Number of bases inserted in target
+uint32_t CurPathNodeIdx;
+uint32_t QueryPathStartOfs;
+uint32_t TargPathStartOfs;
+uint32_t QueryPathEndOfs;
+uint32_t TargPathEndOfs;
+uint32_t TotalMMs;
+uint32_t NumPathNodes;
+uint32_t	qNumInsert;			// Number of inserts in query
+uint32_t qBaseInsert;			// Number of bases inserted in query
+uint32_t tNumInsert;			// Number of inserts in target
+uint32_t tBaseInsert;			// Number of bases inserted in target
 int TargGap;
 int QueryGap;
-UINT32 TotalAlignLen;
+uint32_t TotalAlignLen;
 bool bStrand;
 int PathHiScore;
-UINT32 TargSeqLen;
+uint32_t TargSeqLen;
 char szTargName[100];
 tsQueryAlignNodes *pCurNode;
-
 
 pCurNode = ppFirst2Rpts[SortedPathIdx];
 bStrand = pCurNode->FlgStrand ? true : false;
@@ -3103,11 +3233,11 @@ PathHiScore = pCurNode->HiScore;
 m_pSfxArray->GetIdentName(pCurNode->TargSeqID, sizeof(szTargName), szTargName);
 TargSeqLen = m_pSfxArray->GetSeqLen(pCurNode->TargSeqID);
 QueryPathStartOfs = pCurNode->QueryStartOfs;
-TargPathStartOfs = pCurNode->TargStartOfs;
+TargPathStartOfs = pCurNode->TargSeqLoci;
 TotalMMs = pCurNode->NumMismatches;
 TotalAlignLen = pCurNode->AlignLen;
 QueryPathEndOfs = pCurNode->QueryStartOfs + pCurNode->AlignLen - 1;
-TargPathEndOfs = pCurNode->TargStartOfs + pCurNode->AlignLen - 1;
+TargPathEndOfs = pCurNode->TargSeqLoci + pCurNode->AlignLen - 1;
 NumPathNodes = 1;
 qNumInsert = 0;
 qBaseInsert = 0;
@@ -3115,14 +3245,14 @@ tNumInsert = 0;
 tBaseInsert = 0;
 
 tsQueryAlignNodes *pTT = pCurNode;
-UINT32 QueryPathEndOfsTT = QueryPathEndOfs;
-UINT32 TargPathEndOfsTT = TargPathEndOfs;
+uint32_t QueryPathEndOfsTT = QueryPathEndOfs;
+uint32_t TargPathEndOfsTT = TargPathEndOfs;
 int DeltaGap;
 while ((CurPathNodeIdx = pTT->HiScorePathNextIdx) != 0)
 	{
 	pTT = &pAlignNodes[CurPathNodeIdx - 1];
 	QueryGap = pTT->QueryStartOfs - QueryPathEndOfsTT - 1;
-	TargGap = pTT->TargStartOfs - TargPathEndOfsTT - 1;
+	TargGap = pTT->TargSeqLoci - TargPathEndOfsTT - 1;
 	if (QueryGap < 0 || TargGap < 0)
 		{
 		if (QueryGap >= 0)	// if query gap is >= 0 then targ gap must be < 0
@@ -3135,23 +3265,23 @@ while ((CurPathNodeIdx = pTT->HiScorePathNextIdx) != 0)
 				DeltaGap = abs(min(QueryGap, TargGap));
 			}
 		pTT->QueryStartOfs += DeltaGap;
-		pTT->TargStartOfs += DeltaGap;
+		pTT->TargSeqLoci += DeltaGap;
 		pTT->AlignLen -= DeltaGap;
 		}
 
 	QueryPathEndOfsTT = pTT->QueryStartOfs + pTT->AlignLen - 1;
-	TargPathEndOfsTT = pTT->TargStartOfs + pTT->AlignLen - 1;
+	TargPathEndOfsTT = pTT->TargSeqLoci + pTT->AlignLen - 1;
 	}
 
 while ((CurPathNodeIdx = pCurNode->HiScorePathNextIdx) != 0)
 	{
 	pCurNode = &pAlignNodes[CurPathNodeIdx - 1];
 	QueryGap = pCurNode->QueryStartOfs - QueryPathEndOfs - 1;
-	TargGap = pCurNode->TargStartOfs - TargPathEndOfs - 1;
+	TargGap = pCurNode->TargSeqLoci - TargPathEndOfs - 1;
 	TotalMMs += pCurNode->NumMismatches;
 	TotalAlignLen += pCurNode->AlignLen;
 	QueryPathEndOfs = pCurNode->QueryStartOfs + pCurNode->AlignLen - 1;
-	TargPathEndOfs = pCurNode->TargStartOfs + pCurNode->AlignLen - 1;
+	TargPathEndOfs = pCurNode->TargSeqLoci + pCurNode->AlignLen - 1;
 	if (QueryGap > 0)
 		{
 		qNumInsert += 1;
@@ -3180,30 +3310,30 @@ return(NumPathNodes);
 }
 
 int											// returns number of reported paths
-CBlitz::Report(UINT32 MinPathScore,			// only report paths having at least this minimum score
-				UINT32  MaxPathsToReport,		// report at most this many alignment paths for any query
+CBlitz::Report(uint32_t MinPathScore,			// only report paths having at least this minimum score
+				uint32_t  MaxPathsToReport,		// report at most this many alignment paths for any query
 				char *pszQuerySeqIdent,		// query sequence 
-				UINT32 QueryLen,			// query length
-				UINT8 *pQuerySeq,			// the query sequence
-				UINT32 NumNodes,			// number of alignment nodes
+				uint32_t QueryLen,			// query length
+				uint8_t *pQuerySeq,			// the query sequence
+				uint32_t NumNodes,			// number of alignment nodes
 				tsQueryAlignNodes *pAlignNodes,		// alignment nodes
 				tsQueryAlignNodes **ppFirst2Rpts)	// allocated to hold ptrs to alignment nodes which are marked as being FlgFirst2tRpt
 {
 bool bStrand;
 int PathHiScore;
-UINT32 TargSeqLen;
-UINT32 SortedPathIdx;
-UINT32 NumHeadNodes;
-UINT32 NumPathNodes;
-UINT32 QueryPathStartOfs;
-UINT32 QueryPathEndOfs;
-UINT32 TargPathStartOfs;
-UINT32 TargPathEndOfs;
-UINT32	qNumInsert;			// Number of inserts in query
-UINT32 qBaseInsert;			// Number of bases inserted in query
-UINT32 tNumInsert;			// Number of inserts in target
-UINT32 tBaseInsert;			// Number of bases inserted in target
-UINT32 PathsReported;
+uint32_t TargSeqLen;
+uint32_t SortedPathIdx;
+uint32_t NumHeadNodes;
+uint32_t NumPathNodes;
+uint32_t QueryPathStartOfs;
+uint32_t QueryPathEndOfs;
+uint32_t TargPathStartOfs;
+uint32_t TargPathEndOfs;
+uint32_t	qNumInsert;			// Number of inserts in query
+uint32_t qBaseInsert;			// Number of bases inserted in query
+uint32_t tNumInsert;			// Number of inserts in target
+uint32_t tBaseInsert;			// Number of bases inserted in target
+uint32_t PathsReported;
 char szTargName[100];
 tsQueryAlignNodes *pHeadNode;
 
@@ -3213,19 +3343,21 @@ if((NumHeadNodes = IdentifyHighScorePaths(MinPathScore, MaxPathsToReport,QueryLe
 PathsReported = 0;
 for(SortedPathIdx=0; SortedPathIdx < min((int)NumHeadNodes,MaxPathsToReport); SortedPathIdx++)
 	{
-	if((NumPathNodes = CharacterisePath(SortedPathIdx, pAlignNodes, ppFirst2Rpts, &QueryPathEndOfs, &TargPathEndOfs, &qNumInsert, &qBaseInsert, &tNumInsert, &tBaseInsert)) == 0)
-		continue;
-	PathsReported += 1;
 	pHeadNode = ppFirst2Rpts[SortedPathIdx];
 	bStrand = pHeadNode->FlgStrand ? true : false;
-	TargPathStartOfs = pHeadNode->TargStartOfs;
+	ConsolidateNodes(pHeadNode->FlgStrand,QueryLen, pQuerySeq, SortedPathIdx, pAlignNodes, ppFirst2Rpts);
+	if((NumPathNodes = CharacterisePath(QueryLen,pQuerySeq,SortedPathIdx, pAlignNodes, ppFirst2Rpts, &QueryPathEndOfs, &TargPathEndOfs, &qNumInsert, &qBaseInsert, &tNumInsert, &tBaseInsert)) == 0)
+		continue;
+	PathsReported += 1;
+	
+	TargPathStartOfs = pHeadNode->TargSeqLoci;
 	QueryPathStartOfs = pHeadNode->QueryStartOfs;
 	PathHiScore = pHeadNode->HiScore;
 	TargSeqLen = m_pSfxArray->GetSeqLen(pHeadNode->TargSeqID);
 	m_pSfxArray->GetIdentName(pHeadNode->TargSeqID, sizeof(szTargName), szTargName);
 
 	// recalc total matches, mismatches, indeterminates as the block lengths and starting offsets may have been modified
-	UINT32 Matches,MisMatches,NumbNs;
+	uint32_t Matches,MisMatches,NumbNs;
 	BlocksAlignStats(&Matches,&MisMatches,NULL,&NumbNs,bStrand == true ? '-' : '+',pQuerySeq,QueryLen, pHeadNode->TargSeqID,TargSeqLen,TargPathStartOfs,TargPathEndOfs,NumPathNodes,SortedPathIdx,pAlignNodes,ppFirst2Rpts);
 
 	switch(m_RsltsFormat) {
@@ -3269,7 +3401,7 @@ for(SortedPathIdx=0; SortedPathIdx < min((int)NumHeadNodes,MaxPathsToReport); So
 			break;
 
 		case eBLZRsltsMAF:
-			PathHiScore = (int)(((double)PathHiScore / (QueryLen * m_ExactMatchScore)) * 999.0);
+			PathHiScore = (int)(((double)PathHiScore / ((double)QueryLen * m_ExactMatchScore)) * 999.0);
 			ReportAsMAF(PathHiScore,Matches,MisMatches,0,NumbNs,			// TotalAlignLen -TotalMMs,TotalMMs,0,0,
 									qNumInsert,								// qNumInsert, Number of inserts in query
 									qBaseInsert,							// qBaseInsert, Number of bases inserted in query
@@ -3283,7 +3415,7 @@ for(SortedPathIdx=0; SortedPathIdx < min((int)NumHeadNodes,MaxPathsToReport); So
 			break;
 
 		case eBLZRsltsBED:
-			PathHiScore = (int)(((double)PathHiScore / (QueryLen * m_ExactMatchScore)) * 999.0);
+			PathHiScore = (int)(((double)PathHiScore / ((double)QueryLen * m_ExactMatchScore)) * 999.0);
 			ReportAsBED(pszQuerySeqIdent,bStrand == true ? '-' : '+',PathHiScore,szTargName,NumPathNodes,TargPathStartOfs,TargPathEndOfs,SortedPathIdx,pAlignNodes,ppFirst2Rpts);
 			break;
 		}
@@ -3363,27 +3495,27 @@ return(eBSFSuccess);
 int												// returned enqueued query identifier
 CBlitz::EnqueueQuerySeq(char *pszQueryIdent,    // query identifier parsed from fasta descriptor
 			int QuerySeqLen,					// query sequence length
-			UINT8 *pQuerySeq,					// query sequence
+			uint8_t *pQuerySeq,					// query sequence
 			char *pszQueryIdentPE2,				// PE2 query identifier parsed from fasta descriptor
 			int QuerySeqLenPE2,					// PE2 query sequence length
-			UINT8 *pQuerySeqPE2)				// PE2 query sequence
+			uint8_t *pQuerySeqPE2)				// PE2 query sequence
 {
 int Idx;
 int SeqID;
-UINT8 *pSeq;
-UINT8 *pSeqPE2;
+uint8_t *pSeq;
+uint8_t *pSeqPE2;
 tsQuerySeq *psQuery;
 bool bTermBackgoundThreads;
 
-if((pSeq = new UINT8 [QuerySeqLen]) == NULL)
+if((pSeq = new uint8_t [QuerySeqLen]) == NULL)
 	return(eBSFerrMem);
 memcpy(pSeq,pQuerySeq,QuerySeqLen);
 
 if(QuerySeqLenPE2 > 0 && pQuerySeqPE2 != NULL && pszQueryIdentPE2 != NULL && pszQueryIdentPE2[0] != '\0')
 	{
-	if ((pSeqPE2 = new UINT8[QuerySeqLenPE2]) == NULL)
+	if ((pSeqPE2 = new uint8_t[QuerySeqLenPE2]) == NULL)
 		{
-		delete pSeq;
+		delete []pSeq;
 		return(eBSFerrMem);
 		}
 	memcpy(pSeqPE2, pQuerySeqPE2, QuerySeqLenPE2);
@@ -3391,7 +3523,8 @@ if(QuerySeqLenPE2 > 0 && pQuerySeqPE2 != NULL && pszQueryIdentPE2 != NULL && psz
 else
 	pSeqPE2 = NULL;
 
-// any room left in query sequence queue?
+// any room left in query sequence queue to accept this sequence(s)?
+int BackoffMS = 1;	// backoff attempting to acquire lock progressively from 1 to 1024ms to give readers more opportunity to remove sequences from queue
 while(1) {
 	AcquireLock(true);
 	if((m_NumQuerySeqs + 1) < m_AllocdQuerySeqs)  // + 1 so can push 2 reads as a minimum on to queue so can queue PE reads
@@ -3400,16 +3533,18 @@ while(1) {
 	ReleaseLock(true);
 	if(bTermBackgoundThreads)	// need to immediately self-terminate?
 		{
-		delete pSeq;
+		delete []pSeq;
 		if(pSeqPE2 != NULL)
-			delete pSeqPE2;
-		return(0);
+			delete []pSeqPE2;
+		return(eBSFSuccess);
 		}
 #ifdef _WIN32
-	Sleep(5);			// sleep for 5ms waiting for queue space to take additional sequences
+	Sleep((DWORD)BackoffMS);			// sleep for waiting for queue space to take additional sequences
 #else
-	usleep(5 * 1000);	// sleep for 5ms waiting for queue space to take additional sequences
+	usleep(BackoffMS * 1000);	// sleep for 5ms waiting for queue space to take additional sequences
 #endif
+	if(BackoffMS < 1024)
+		BackoffMS *= 2;
 	}
 Idx = (m_NxtQuerySeqIdx + m_NumQuerySeqs) % m_AllocdQuerySeqs;
 psQuery = &m_pQuerySeqs[Idx];
@@ -3438,21 +3573,20 @@ return(SeqID);
 }
 
 int										// number of sequences returned, 0 if none to be dequeued, < 0 if errors
-CBlitz::DequeueQuerySeq(int WaitSecs,		// if no sequences available to be dequeued then wait at most this many seconds for a sequence to become available
-	int MaxLenQueryIdent,			// maximum length query identifier
+CBlitz::DequeueQuerySeq(int MaxLenQueryIdent,			// maximum length query identifier
 	int *pSeqID,					// returned sequence identifier
 	char *pszQueryIdent,			// where to return query identifier
 	int *pQuerySeqLen,				// where to return query sequence length
-	UINT8 **pDequeuedQuerySeq,		// where to return ptr to dequeued query sequence, caller is responsible for deleting memory allocated to hold the returned sequence (delete *pDequeuedQuerySeq)
+	uint8_t **pDequeuedQuerySeq,		// where to return ptr to dequeued query sequence, caller is responsible for deleting memory allocated to hold the returned sequence (delete *pDequeuedQuerySeq)
 	int *pSeqIDPE2,			// if SAM PE: returned PE2 sequence identifier
 	char *pszQueryIdentPE2,	// if SAM PE: where to return PE2 query identifier
 	int *pQuerySeqLenPE2,	// if SAM PE: where to return PE2 query sequence length
-	UINT8 **pDequeuedQuerySeqPE2)	// if SAM PE: where to return ptr to dequeued PE2 query sequence, caller is responsible for deleting memory allocated to hold the returned sequence (delete *pDequeuedQuerySeqPE2)
+	uint8_t **pDequeuedQuerySeqPE2)	// if SAM PE: where to return ptr to dequeued PE2 query sequence, caller is responsible for deleting memory allocated to hold the returned sequence (delete *pDequeuedQuerySeqPE2)
 {
 int Num2Dequeue;
 bool bTermBackgoundThreads;
 bool bAllQuerySeqsLoaded;
-UINT8 *pSeq;
+uint8_t *pSeq;
 tsQuerySeq *psQuery;
 
 
@@ -3473,11 +3607,8 @@ else
 	}
 
 // any sequences available to be dequeued?
-if(WaitSecs < 0)
-	WaitSecs = 1;
-else
-	WaitSecs *= 20;			// 50ms sleeps waiting for sequences available in queue
-while(WaitSecs--) {
+int BackoffMS = 1;	// backoff attempting to acquire lock progressively from 1 to 256ms to give writer more opportunity to add sequences to queue
+while(1) {
 	AcquireLock(true);
 	if((bTermBackgoundThreads = m_TermBackgoundThreads != 0 ? true : false)==true)
 		{
@@ -3490,13 +3621,13 @@ while(WaitSecs--) {
 	ReleaseLock(true);
 	if(bAllQuerySeqsLoaded)	
 		return(eBSFSuccess);
-	if(WaitSecs <= 0)
-		return(cBSFTimeout);
 #ifdef _WIN32
-	Sleep(50);			// sleep for 50ms waiting for sequences to be queued
+	Sleep((DWORD)BackoffMS);	// sleep waiting for at least Num2Dequeue sequences to be queued
 #else
-	usleep(50*1000);	// sleep for 50ms waiting for sequences to be queued
+	usleep(BackoffMS *1000);	
 #endif
+	if(BackoffMS < 256)
+		BackoffMS *= 2;
 	}
 
 psQuery = &m_pQuerySeqs[m_NxtQuerySeqIdx++];
@@ -3544,24 +3675,25 @@ CBlitz::LoadSAMRawReads(bool bIsPairReads,	// true if paired end processing - PE
 {
 teBSFrsltCodes Rslt;
 int Idx;
-UINT8 *pReadBuff;
+uint8_t *pReadBuff;
 int PE1NumDescrReads;
 int PE1DescrLen;
-UINT8 szPE1DescrBuff[cMaxDescrLen];
+uint8_t szPE1DescrBuff[cMaxDescrLen];
 int PE1ReadLen;
-UINT8 PE1ReadBuff[cSAMtruncSeqLen+1];
+uint8_t PE1ReadBuff[cSAMtruncSeqLen+1];
 int PE1NumReadsAccepted;
 int PE1NumUnderlength;
 int PE1NumOverlength;
 
 int PE2NumDescrReads;
 int PE2DescrLen;
-UINT8 szPE2DescrBuff[cMaxDescrLen];
+uint8_t szPE2DescrBuff[cMaxDescrLen];
 int PE2ReadLen;
-UINT8 PE2ReadBuff[cSAMtruncSeqLen+1];
+uint8_t PE2ReadBuff[cSAMtruncSeqLen+1];
 int PE2NumReadsAccepted;
 int PE2NumUnderlength;
 int PE2NumOverlength;
+int NxtToSample;
 
 CFasta PE1Fasta;
 CFasta PE2Fasta;
@@ -3603,7 +3735,7 @@ PE2NumDescrReads = 0;
 PE2NumReadsAccepted = 0;
 PE2NumUnderlength = 0;
 PE2NumOverlength = 0;
-
+NxtToSample = m_SampleNthRawRead;
 while ((Rslt = (teBSFrsltCodes)(PE1ReadLen = PE1Fasta.ReadSequence(PE1ReadBuff, sizeof(PE1ReadBuff) - 1, true, false))) > eBSFSuccess)
 	{
 	if (m_TermBackgoundThreads != 0)	// need to immediately self-terminate?
@@ -3636,7 +3768,6 @@ while ((Rslt = (teBSFrsltCodes)(PE1ReadLen = PE1Fasta.ReadSequence(PE1ReadBuff, 
 			return(eBSFerrParse);
 			}
 
-
 			// if paired end processing then also load PE2 read
 		if (bIsPairReads)
 			{
@@ -3651,7 +3782,6 @@ while ((Rslt = (teBSFrsltCodes)(PE1ReadLen = PE1Fasta.ReadSequence(PE1ReadBuff, 
 				m_bAllQuerySeqsLoaded = true;
 				m_LoadQuerySeqsRslt = eBSFerrParse;
 				ReleaseLock(true);
-				return(eBSFerrParse);
 				return(eBSFerrParse);
 				}
 
@@ -3698,6 +3828,14 @@ while ((Rslt = (teBSFrsltCodes)(PE1ReadLen = PE1Fasta.ReadSequence(PE1ReadBuff, 
 				return(eBSFerrParse);
 				}
 
+			}
+
+		if (m_SampleNthRawRead > 1)
+			{
+			NxtToSample += 1;
+			if (m_SampleNthRawRead > NxtToSample)
+				continue;
+			NxtToSample = 0;
 			}
 
 		// ensure sequence lengths are within acceptable range
@@ -3820,19 +3958,20 @@ CFasta Fasta;
 CFasta FastaPE2;
 unsigned char *pSeqBuff;
 unsigned char *pMskBase;
-UINT32 MskIdx;
+uint32_t MskIdx;
 size_t BuffOfs;
 size_t AllocdBuffSize;
 size_t AvailBuffSize;
 char szName[_MAX_PATH];
 char szDescription[cMaxDescrLen+1];
-UINT32 SeqLen;
+uint32_t SeqLen;
 int Descrlen;
 bool bFirstEntry;
 bool bEntryCreated;
 bool bTruncSeq;
 int Rslt;
 int SeqID;
+int NxtToSample;
 int *pRslt = pPars->pRslt;
 AcquireLock(true);
 m_bAllQuerySeqsLoaded = false;
@@ -3854,7 +3993,7 @@ if((Rslt=Fasta.Open(m_pszInputFile,true))!=eBSFSuccess)
 AllocdBuffSize = (size_t)cAllocQuerySeqLen;
 if((pSeqBuff = (unsigned char *)malloc(AllocdBuffSize)) == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcLoadQuerySeqsFile:- Unable to allocate memory (%u bytes) for sequence buffer",(UINT32)cAllocQuerySeqLen);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcLoadQuerySeqsFile:- Unable to allocate memory (%u bytes) for sequence buffer",(uint32_t)cAllocQuerySeqLen);
 	Fasta.Close();
 	*pRslt = eBSFerrMem;
 	AcquireLock(true);
@@ -3870,6 +4009,7 @@ bEntryCreated = false;
 bTruncSeq = false;
 SeqID = 0;
 BuffOfs = 0;
+NxtToSample = m_SampleNthRawRead;
 while((Rslt = SeqLen = Fasta.ReadSequence(&pSeqBuff[BuffOfs],(int)min(AvailBuffSize,(size_t)cMaxQuerySeqLen),true,false)) > eBSFSuccess)
 	{
 	if(m_TermBackgoundThreads != 0)	// requested to immediately self-terminate?
@@ -3912,6 +4052,14 @@ while((Rslt = SeqLen = Fasta.ReadSequence(&pSeqBuff[BuffOfs],(int)min(AvailBuffS
 	if(bTruncSeq)
 		continue;
 
+	if (m_SampleNthRawRead > 1)
+		{
+		NxtToSample += 1;
+		if (m_SampleNthRawRead > NxtToSample)
+			continue;
+		NxtToSample = 0;
+		}
+
 	// remove any repeat masking flags
 	pMskBase = &pSeqBuff[BuffOfs];
 	for(MskIdx = 0; MskIdx < SeqLen; MskIdx++,pMskBase++)
@@ -3934,7 +4082,7 @@ while((Rslt = SeqLen = Fasta.ReadSequence(&pSeqBuff[BuffOfs],(int)min(AvailBuffS
 		unsigned char *pTmp;
 		if((pTmp = (unsigned char *)realloc(pSeqBuff,NewSize))==NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcLoadQuerySeqsFile:- Unable to reallocate memory (%u bytes) for sequence buffer",(UINT32)NewSize);
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcLoadQuerySeqsFile:- Unable to reallocate memory (%u bytes) for sequence buffer",(uint32_t)NewSize);
 			Rslt = eBSFerrMem;
 			break;
 			}
@@ -3988,9 +4136,9 @@ if(pEl1->QueryStartOfs > pEl2->QueryStartOfs)
 	return(1);
 if(pEl1->QueryStartOfs < pEl2->QueryStartOfs)
 	return(-1);
-if(pEl1->TargStartOfs > pEl2->TargStartOfs)
+if(pEl1->TargSeqLoci > pEl2->TargSeqLoci)
 	return(1);
-if(pEl1->TargStartOfs < pEl2->TargStartOfs)
+if(pEl1->TargSeqLoci < pEl2->TargSeqLoci)
 	return(-1);
 return(0);
 }

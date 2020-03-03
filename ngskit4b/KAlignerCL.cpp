@@ -55,7 +55,7 @@ KProcess(etPMode PMode,					// processing mode
 		bool bPEcircularised,			// experimental - true if processing for PE spaning circularised fragments
 		bool bPEInsertLenDist,			// true if stats file to include PE insert length distributions for each transcript
 		eALStrand AlignStrand,			// align on to watson, crick or both strands of target
-		int MinChimericLen,				// minimum chimeric length as a percentage (0 to disable, otherwise 25..99) of probe sequence length: negative if chimeric diagnostics to be reported
+		int MinChimericLen,				// minimum chimeric length as a percentage (0 to disable, otherwise 15..99) of probe sequence length: negative if chimeric diagnostics to be reported
 		bool bChimericRpt,				// report chimeric trimming detail for individual reads (default is not to report)
 		int microInDelLen,				// microInDel length maximum
 		int SpliceJunctLen,				// maximum splice junction length when aligning RNAseq reads
@@ -151,7 +151,7 @@ int MinAcceptReadLen;				// only accepting reads for alignment if at least this 
 int MaxAcceptReadLen;				// only accepting reads for alignment if no longer than this length after any end trimming
 int MaxRptSAMSeqsThres;		// report all SAM chroms or sequences to SAM header if number of reference chroms <= this limit (defaults to 10000)
 int AlignStrand;			// align on to watson, crick or both strands of target
-int MinChimericLen;			// minimum chimeric length as a percentage (0 to disable, otherwise 25..99) of probe sequence length: negative if chimeric diagnostics to be reported
+int MinChimericLen;			// minimum chimeric length as a percentage (0 to disable, otherwise 15..99) of probe sequence length: negative if chimeric diagnostics to be reported
 bool bChimericRpt;			// report chimeric trimming detail for individual reads (default is not to report)
 int microInDelLen;			// microInDel length maximum
 int SpliceJunctLen;			// maximum splice junction length when aligning RNAseq reads
@@ -231,15 +231,15 @@ struct arg_file *pe2inputfiles = arg_filen("u","pair","<file>",0,cMaxInFileSpecs
 struct arg_file *priorityregionfile = arg_file0("B","priorityregionfile","<file>",	"prioritise exact match alignments to loci regions in this BED file");
 struct arg_lit  *nofiltpriority = arg_lit0("V","nofiltpriority",  "do not filter priority region alignments");
 
-struct arg_int  *pairminlen = arg_int0("d","pairminlen","<int>", "accept paired end alignments with observed insert sizes of at least this (default = 100)");
-struct arg_int  *pairmaxlen = arg_int0("D","pairmaxlen","<int>", "accept paired end alignments with observed insert sizes of at most this (default = 1000)");
+struct arg_int  *pairminlen = arg_int0("d","pairminlen","<int>", "accept paired end alignments with observed insert sizes of at least this (minimum 25, default = 100)");
+struct arg_int  *pairmaxlen = arg_int0("D","pairmaxlen","<int>", "accept paired end alignments with observed insert sizes of at most this (maximum 10000, default = 1000)");
 struct arg_lit  *pairstrand = arg_lit0("E","pairstrand",         "5' and 3' are on same strand");
 
 struct arg_int  *alignstrand = arg_int0("Q","alignstrand","<int>", "align to this strand: 0 either, 1 Sense '+', 2 Antisense '-' (default is to align to either strand)");
 
 struct arg_int  *samplenthrawread = arg_int0("#","samplenthrawread","<int>", "sample every Nth raw read or read pair for processing (default 1, range 1..10000)");
 
-struct arg_int  *minchimericlen = arg_int0("c","minchimeric","<int>", "minimum chimeric length as a percentage of probe length (default is 0 to disable, otherwise 25..99)");
+struct arg_int  *minchimericlen = arg_int0("c","minchimeric","<int>", "minimum chimeric length as a percentage of probe length (default is 0 to disable, otherwise 15..99)");
 struct arg_lit  *chimericrpt = arg_lit0("0","chimericrpt",     "report chimeric trimming detail for individual reads (default is not to report)");
 
 
@@ -278,7 +278,6 @@ struct arg_str  *title = arg_str0("t","title","<string>",       "track title");
 
 struct arg_str  *ExcludeChroms = arg_strn("Z","chromexclude",	"<string>",0,cMaxExcludeChroms,"high priority - regular expressions defining chromosomes to exclude");
 struct arg_str  *IncludeChroms = arg_strn("z","chromeinclude",	"<string>",0,cMaxIncludeChroms,"low priority - regular expressions defining chromosomes to include");
-struct arg_int *threads = arg_int0("T","threads","<int>",		"number of processing threads 0..128 (defaults to 0 which sets threads to number of CPU cores)");
 
 struct arg_int *maxmlmatches = arg_int0("R","maxmulti","<int>",	"allow any read to match at most this many genome loci then process according to mlmode (default is 5)");
 struct arg_lit *clampmaxmulti = arg_lit0("X","clampmaxmulti",	 "treat reads mapping to more than limit set with '-R<n>' as if exactly <n> matches (default is not to further process reads exceeding limit set with '-R<n>')");
@@ -300,6 +299,8 @@ struct arg_int *trim3 = arg_int0("Y","trim3","<int>",		"trim this number of base
 
 struct arg_int *minacceptreadlen = arg_int0("l","minacceptreadlen","<int>",		"after any end trimming only accept read for further processing if read is at least this length (default is 50bp, range 15..2000)");
 struct arg_int *maxacceptreadlen = arg_int0("L","maxacceptreadlen","<int>",		"after any end trimming only accept read for further processing if read is at no longer than this length (default is 500bp, range minacceptreadlen..2000)");
+
+struct arg_int* threads = arg_int0("T", "threads", "<int>", "number of processing threads 0..128 (defaults to 0 which sets threads to number of CPU cores)");
 
 struct arg_file *summrslts = arg_file0("q","sumrslts","<file>",		"Output results summary to this SQLite3 database file");
 struct arg_str *experimentname = arg_str0("w","experimentname","<str>",		"experiment name SQLite3 database file");
@@ -675,9 +676,9 @@ if (!argerrors)
 			exit(1);
 			}
 		PairMaxLen = pairmaxlen->count ? pairmaxlen->ival[0] : max(cDfltPairMaxLen,PairMinLen);
-		if(PairMaxLen < PairMinLen || PairMaxLen > cPairMaxLen)
+		if(PairMaxLen < max(1,PairMinLen) || PairMaxLen > cPairMaxLen)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: paired end apparent max length '-D%d' must be in range %d..%d\n",PairMaxLen,PairMinLen,cPairMaxLen);
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: paired end apparent max length '-D%d' must be in range %d..%d\n",PairMaxLen, max(1, PairMinLen),cPairMaxLen);
 			exit(1);
 			}
 		bPairStrand = pairstrand->count ? true : false;
@@ -691,9 +692,9 @@ if (!argerrors)
 		}
 
 	MinChimericLen = minchimericlen->count ? minchimericlen->ival[0] : 0;
-	if(MinChimericLen != 0 && !(abs(MinChimericLen) >= 25 && abs(MinChimericLen) <= 99))
+	if(MinChimericLen != 0 && !(abs(MinChimericLen) >= 15 && abs(MinChimericLen) <= 99))
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: minimum chimeric length percentage '-c%d' specified outside of range 25..99\n",abs(MinChimericLen));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: minimum chimeric length percentage '-c%d' specified outside of range 15..99\n",abs(MinChimericLen));
 		exit(1);
 		}
 
@@ -1528,7 +1529,7 @@ KProcess(etPMode PMode,					// processing mode
 		bool bPEcircularised,			// experimental - true if processing for PE spaning circularised fragments
 		bool bPEInsertLenDist,			// true if stats file to include PE insert length distributions for each transcript
 		eALStrand AlignStrand,			// align on to watson, crick or both strands of target
-		int MinChimericLen,				// minimum chimeric length as a percentage (0 to disable, otherwise 25..99) of probe sequence
+		int MinChimericLen,				// minimum chimeric length as a percentage (0 to disable, otherwise 15..99) of probe sequence
 		bool bChimericRpt,				// report chimeric trimming detail for individual reads (default is not to report)
 		int microInDelLen,				// microInDel length maximum
 		int SpliceJunctLen,				// maximum splice junction length when aligning RNAseq reads
@@ -1594,13 +1595,13 @@ Rslt = pKAligner->Align(PMode,			// processing mode
 			bSOLiD,						// if true then processing in colorspace
 			bBisulfite,					// if true then process for bisulfite methylation patterning
 			PEproc,						// paired reads alignment processing mode
-			PairMinLen,					// accept paired end alignments with observed insert size of at least this (default = 100)
+			PairMinLen,					// accept paired end alignments with observed insert size of at least this (default = 50)
 			PairMaxLen,					// accept paired end alignments with observed insert size of at most this (default = 1000)
 			bPairStrand,				// accept paired ends if on same strand
 			bPEcircularised,			// experimental - true if processing for PE spaning circularised fragments
 			bPEInsertLenDist,			// experimental - true if stats file to include PE insert length distributions for each transcript
 			AlignStrand,				// align on to watson, crick or both strands of target
-			MinChimericLen,				// minimum chimeric length as a percentage (0 to disable, otherwise 25..99) of probe sequence
+			MinChimericLen,				// minimum chimeric length as a percentage (0 to disable, otherwise 15..99) of probe sequence
 			bChimericRpt,				// report chimeric trimming detail for individual reads (default is not to report)
 			microInDelLen,				// microInDel length maximum
 			SpliceJunctLen,				// maximum splice junction length when aligning RNAseq reads

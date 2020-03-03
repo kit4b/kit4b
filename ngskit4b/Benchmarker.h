@@ -30,11 +30,12 @@ typedef enum _TAG_eBMProcModes {
 typedef struct TAG_sBMObsCIGAR {
 	uint16_t Size;			// total size of this structure instance
 	uint8_t NameLen;		// read name length
-	uint8_t CIGARlen;		// CIGAR length
+	uint8_t ObsCIGARlen;	// observed CIGAR length
+	uint16_t ErrProfileLen;		// error profile for read
 	uint16_t Flags;			// same as flags in SAM format specification
 	int32_t ReadLen;		// read length
 	int32_t InsertSize;		// if PE pair then insert size
-	uint8_t NameCIGAR[1];	// read name concatenated with CIGAR
+	uint8_t NameCIGARErrProfile[1];	// read name concatenated with observed CIGAR from read and then the read error profile
 } tsBMObsCIGAR;
 
 typedef struct TAG_sBMChromSeq {
@@ -50,10 +51,12 @@ typedef struct TAG_sBMPackedCIGARs {
 	uint16_t ReadLen;					// read length
 	uint8_t FlgPE1Strand : 1;			// PE1 strand - 0 if watson, 1 if crick
 	uint8_t FlgPE2Strand : 1;			// PE2 strand - 0 if watson, 1 if crick
-	uint8_t PE1NumCIGAROps;				// number of PE1 CIGAR operators
-	uint8_t PE2NumCIGAROps;				// number of PE2 CIGAR operators
+	uint16_t PE1NumCIGAROps;			// number of PE1 CIGAR operators
+	uint16_t PE1NumErrProfOps;			// number of PE1 error profile operators
+	uint16_t PE2NumCIGAROps;			// number of PE2 CIGAR operators
+	uint16_t PE2NumErrProfOps;			// number of PE1 error profile operators
 	uint32_t PEInsertSize;				// if PE then insert size
-	uint32_t CIGAROps[1];				// place holder for read CIGAR operations; PE1 first followed by PE2
+	uint32_t CIGAROpsErrProfOps[1];		// place holder for read CIGAR + error profile operations; PE1 first followed by PE2
 } tsBMPackedCIGARs;
 
 typedef struct TAG_sBMGroundTruth {
@@ -80,12 +83,20 @@ typedef struct TAG_sBMGroundTruth {
 class CBenchmark {
 	int64_t m_MaxBaseAlignmentScore;		// maximum acheivable base alignment scores - assumes all ground truth reads were correctly aligned with no alignment errors
 	int64_t m_TotBaseAlignmentScore;		// sum of all base alignment scores over all claimed alignments with respect to the ground truth alignments
-	bool m_bPEReads;				// if true then PE pair processing otherwise SE reads
-	int m_MaxNumThreads;			// max number of threads
+	int64_t m_TotGroundTruthBases;			// total number of all ground truth bases which could have been aligned
+	bool m_bPrimaryOnly;			// if true then only score primary read alignments otherwise score all including secondary
+	bool m_bPEReads;				// if true then PE pair only processing otherwise treating all reads as if SE reads
 	int m_UnalignedBasePts;			// points to apply for each unaligned base
 	int m_AlignedBasePts;			// points to apply for each base aligned to it's ground truth loci
 	int m_SilentTrimAlignBasePts;	// points to apply for each base aligned in a silently trimmed read within ground truth loci range
 	int m_MisalignedBasePts;		// points to apply for each base aligned but not to ground truth loci
+
+	uint64_t m_TotNumPotentialAlignBases;	// number of match bases in actual alignments which potentially could have been aligned to ground truth
+	uint64_t m_NumBasesLociCorrect;			// total number of bases aligned correctly to ground truth loci
+	uint64_t m_NumBasesLociIncorrect;		// total number of bases aligned incorrectly to ground truth loci
+	uint64_t m_NumBasesLociUnclaimed;		// total number of ground truth bases which were not aligned
+
+	uint32_t m_ReadOverlapHistogram[101];	// histogram of read alignments by percentile proportion of read bases in reads overlapping with ground truth read bases
 
 	int m_MaxNumReads;				// maximum number of alignment CIGARs to process or number of simulated reads or read pairs 
 
@@ -145,8 +156,8 @@ class CBenchmark {
 	int		// returned number of potential base matches in CIGAR
 		ReadMatchScore(int ReadLen,			// read sequence length
 						char *pszCIGAR,		// '\0' terminated CIGAR with alignment profile
-						int MatchPts,		// pts for each base in alignment profile which is a potential match - could be Pts for match, mismatch, or unaligned
-						int64_t *pScore);	// returned number of matches * MatchPts
+						int MatchPts = 0,		// pts for each base in alignment profile which is a potential match - could be Pts for match, mismatch, or unaligned
+						int64_t *pScore = NULL); // returned number of matches * MatchPts
 
 	int
 		ScoreAlignment(tsBAMalign* pAlignment,			// claimed alignment
@@ -222,8 +233,7 @@ public:
 				int MaxNumReads,		// maximum number of aligned reads or read pair alignments to process
 				char* pszObsCIGARsFile,	// write observed CIGARs to this file
 				char* pszRefGenomeFile,	// alignments were against this target genome file
-				char* pszAlignmentsFile,	// input file containing alignments of simulated reads (SAM or BAM)
-				int MaxNumThreads);			// max number of worker threads to use
+				char* pszAlignmentsFile);	// input file containing alignments of simulated reads (SAM or BAM)
 
 	int
 		SimReads(bool bPEReads,		// true if PE pair processing otherwise SE reads
@@ -231,21 +241,18 @@ public:
 			char* pszCIGARsFile,		// read in observed CIGARs from this file
 			char* pszGroundTruthFile,	// simulated reads ground truth (MAGIC and loci for each simulated read)) are writen to this file
 			char* pszSEReads,			// simulated reads are output to this file (SE or PE1 if PE)
-			char* pszPE2Reads,			// simulated PE2 reads are output to this file if simulating PE reads
-			int MaxNumThreads);			// max number of worker threads to use
-
+			char* pszPE2Reads);			// simulated PE2 reads are output to this file if simulating PE reads
 
 
 	int
-		Score(bool bPEReads,		// true if PE pair processing otherwise SE reads
+		Score(bool bPrimaryOnly,		// score only primary alignments otherwise score including secondary
+			bool bPEReads,				// true if PE pair processing otherwise score all alignments as SE
 			int UnalignedBasePts,		// points to apply for each unaligned base
 			int AlignedBasePts,			// points to apply for each base aligned to it's ground truth loci
 			int SilentTrimAlignBasePts, // points to apply for each base aligned in a silently trimmed read within ground truth loci range
 			int MisalignedBasePts,		// points to apply for each base aligned but not to ground truth loci
 			char* pszSEReads,			// input simulated reads which contain ground truths from this file for SE or PE1 if PE
 			char* pszPE2Reads,			// input simulated reads which contain ground truths from this file for PE2 if PE
-			char* pszAlignmentsFile,	// input file containing alignments of simulated reads (SAM or BAM)
-			int MaxNumThreads);			// max number of worker threads to use
-
+			char* pszAlignmentsFile);   // input file containing alignments of simulated reads (SAM or BAM)
 
 };

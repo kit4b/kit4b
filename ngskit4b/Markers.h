@@ -77,9 +77,6 @@ const size_t cAllocMinDiffSeqNames = (sizeof(tsSeqName) + cMaxLenName) * 100; //
 
 class CMarkers
 {
-
-	CHyperEls *m_pHypers;					// to hold alignments from csv, bed or sam file
-
 	tsSNPSSpecies *m_pCurSpecies;			// currently processed species
 	UINT16 m_NumSpecies;						// current number of species in m_Species (also includes the reference species)
 	UINT16 m_RefSpeciesID;						// identifer for species identified as being the reference species
@@ -118,6 +115,28 @@ class CMarkers
 				UINT32 ProbeCntN,		// number instances probe base N aligned to TargRefBase
 				UINT16 Flags);			// any loci associated flags
 
+
+	bool m_bMutexesCreated;			// will be set true if synchronisation mutexes have been created
+	int CreateMutexes(void);
+	void DeleteMutexes(void);
+	void AcquireSerialise(void);
+	void ReleaseSerialise(void);
+	void AcquireSerialiseMH(void);
+	void ReleaseSerialiseMH(void);
+	void AcquireLock(bool bExclusive);
+	void ReleaseLock(bool bExclusive);
+
+#ifdef _WIN32
+	HANDLE m_hMtxIterReads;
+	HANDLE m_hMtxMHReads;
+	SRWLOCK m_hRwLock;
+	HANDLE m_hThreadLoadQuerySeqs;
+#else
+	pthread_mutex_t m_hMtxIterReads;
+	pthread_mutex_t m_hMtxMHReads;
+	pthread_rwlock_t m_hRwLock;
+#endif
+
 	bool m_bSorted;								// set true if alignments sorted
 	static int QSortAlignSeqLociSpecies(const void *arg1, const void *arg2); // qsorts alignment loci by TargSeqID,TargLoci,ProbeSpeciesID ascending
 
@@ -125,6 +144,8 @@ public:
 	CMarkers(void);
 	~CMarkers(void);
 	void Reset(void);	// clears all allocated resources
+
+	int Init(int NumThreads); //Initialise resources for specified number of threads
 
 	INT64		// qsorts alignment loci by TargSeqID,TargLoci,ProbeSpeciesID ascending
 		SortTargSeqLociSpecies(void);
@@ -165,9 +186,8 @@ public:
 	char *								// returned sequence name
 		SeqIDtoName(UINT32 SeqID);		// sequence identifier for which name is to be returned
 
-	int PreAllocSNPs(INT64 EstNumSNPS);	// preallocate memory for this many estimated SNP loci
-	int PreAllocSeqs(int EstNumSeqs, int MeanSeqLen); // preallocate memory for this estimate of number sequences having this mean sequence length
-
+	int PreAllocEstSNPs(INT64 EstNumSNPS);	// preallocate memory for this many estimated SNP loci
+	int PreAllocImpunedSNPs(int NumbIsolates);	// when all known SNPs have been loaded then can allocate for additional impuned SNPs using number of isolates
 
 	INT64 AddLoci(char *pszTargSpecies,	// reads were aligned to this cultivar or species
 				char *pszTargSeq,		// alignments to this sequence - could be a chrom/contig/transcript - from pszSpecies

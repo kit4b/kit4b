@@ -55,7 +55,7 @@ ProcessArtefactReduce(etARPMode PMode,	// processing mode; currently eAR2Fasta, 
 		int MinSeqLen,		            // filter out input sequences (after any trimming) which are less than this length (default is 80bp, range 50..500)
 		int TrimSeqLen,					// trim sequences to be no longer than this length (default is 0 for no length trimming, MinSeqLen...1000)
 		int MinOverlap,					// minimum required overlap (in % of read length) or <= 0 if no overlap processing
-		int MinFlankLen,				// non-overlapping flank must be at least this length (defults to 1, else range 1bp to 25bp, only applies if overlap processing)
+		int MinFlankLen,				// non-overlapping flank must be at least this length (defaults to 1, else range 1bp to 25bp, only applies if overlap processing)
 		int SampleNth,					// process every Nth reads
 		int Zreads,						// maximum number of reads to accept for processing from any file
 		bool bDedupeIndependent,		// if paired end preprocessing then treat as if single ended when deuping
