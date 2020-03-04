@@ -20,3 +20,6 @@ Release 0.5.2 - initial release of the alignment benchmarking framework - subjec
 Release 0.5.3 - now clean compiles, no warnings, with gcc 9.2 on Ubuntu 18.04
 Release 0.5.5 - fix for 'ngskit4b snpmarkers -m1' bug (incomplete rows in generated SNP marker file) has been applied
 Release 0.5.8 - benchmarking now matured with all functionality implemented
+Release 0.5.9 - minimap2 SAM file headers may be missing '@VN' version and
+		sort order line. Fix applied to bypass check for SAM header version line.
+

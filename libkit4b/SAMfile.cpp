@@ -327,8 +327,10 @@ if(SAMType >= eSFTBAM)
 	}
 else
 	{
-	// try reading in intial header and check that it does look like a SAM
-	// accepting as SAM if first line starts with '@HD\tVN:'
+	// try reading in initial header and check that it does look like a SAM
+	// accepting as SAM if first line starts with '@HD\tVN: or if '@SQ\t'
+	// seems that minimap2 doesn't bother with having a SAM version as first line with sort order - ugh, ugh and ugh again
+	// so needing to check also for reference sequence dictionary 
 	if(SAMType == eSFTSAMgz)
 		{
 		if((CurBAMLen = gzread(gzInSAMfile,szBAMHdr,100)) < 100)
@@ -349,7 +351,7 @@ else
 			}
 		close(hInSAMfile);
 		}
-	if(strnicmp((const char *)szBAMHdr,"@HD\tVN:",6))
+	if (strnicmp((const char*)szBAMHdr, "@HD\tVN:", 6) && strnicmp((const char*)szBAMHdr, "@SQ\t", 3))
 		{
 		if(bErrMessages)  gDiagnostics.DiagOut(eDLFatal,gszProcName,"IsSAM: opened file, invalid SAM header: '%s'",pszSAMFile);
 		return(eSFTSAMUnknown);
@@ -368,15 +370,13 @@ if(pszSAMFile == NULL || pszSAMFile[0] == '\0')
 	return(eBSFerrParams);
 
 Reset();
-
+strcpy(m_szSAMfileName, pszSAMFile);
 if((m_SAMFileType = IsSAM(pszSAMFile, true)) == eSFTSAMUnknown)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Open: unable to determine SAM file type for '%s'",m_szSAMfileName);
 	Reset();
 	return(eBSFerrOpnFile);
 	}
-
-strcpy(m_szSAMfileName,pszSAMFile);
 
 if(m_SAMFileType != eSFTSAMgz)
 	{
@@ -453,8 +453,10 @@ if(m_SAMFileType >= eSFTBAM)
 	}
 else
 	{
-	// try reading in intial header and check that it does look like a SAM
-	// accepting as SAM if first line starts with '@HD\tVN:'
+	// try reading in initial header and check that it does look like a SAM
+	// accepting as SAM if first line starts with '@HD\tVN: or if '@SQ\t'
+	// seems that minimap2 doesn't bother with having a SAM version as first line with sort order - ugh, ugh and ugh again
+	// so needing to check also for reference sequence dictionary
 	if(m_SAMFileType == eSFTSAMgz)
 		{
 		if((m_CurBAMLen = gzread(m_gzInSAMfile,m_pBAM,100)) < 100)
@@ -475,9 +477,9 @@ else
 			}
 		lseek(m_hInSAMfile,0,SEEK_SET);
 		}
-	if(strnicmp((const char *)m_pBAM,"@HD\tVN:",6))
+	if(strnicmp((const char*)m_pBAM, "@HD\tVN:", 6) && strnicmp((const char*)m_pBAM, "@SQ\t", 3))
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Open: Not a SAM format file '%s'",m_szSAMfileName);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Open: Not a SAM format file '%s', has no header version or ",m_szSAMfileName);
 		Reset();
 		return(eBSFerrOpnFile);
 		}
@@ -1633,7 +1635,7 @@ if(m_SAMFileType >= eSFTBAM_BAI && (size_t)(UINT64)SeqLen > cMaxCSIRefSeqLen)
 	return(eBSFerrOfs);
 	}
 
-if((m_CurBAMLen + 1000) > m_AllocBAMSize)	// ensure sufficent memory allocated to hold this new reference sequence
+if((m_CurBAMLen + 1000) > m_AllocBAMSize)	// ensure sufficient memory allocated to hold this new reference sequence
 	{
 	UINT8 *pTmp;
 	pTmp = (UINT8 *)realloc(m_pBAM,m_AllocBAMSize + cAllocBAMSize);
