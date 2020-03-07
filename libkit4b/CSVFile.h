@@ -42,7 +42,7 @@ class CCSVFile  : public CErrorCodes
 	int m_hFile;			// opened file
 	INT64 m_StatFileSize;		// file size as returned by stat() when file initially opened
 	char m_szFileName[_MAX_PATH+1];	// name of file
-	bool m_bEOF;			// true when CSV file read upto EOF
+	bool m_bEOF;			// true when CSV file read up to EOF
 
 	UINT32 m_EstNumRows;	// file is estimated to hold this many rows
 	INT32 m_EstMaxFields;	// estimated to hold this max number of fields for any row

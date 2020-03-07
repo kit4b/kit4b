@@ -22,4 +22,5 @@ Release 0.5.5 - fix for 'ngskit4b snpmarkers -m1' bug (incomplete rows in genera
 Release 0.5.8 - benchmarking now matured with all functionality implemented
 Release 0.5.9 - minimap2 SAM file headers may be missing '@VN' version and
 		sort order line. Fix applied to bypass check for SAM header version line.
+Release 0.6.1 - 'ngskit4b benchmark' now has the option to directly generate a CSV file containing benchmarking results
 

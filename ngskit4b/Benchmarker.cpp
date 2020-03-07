@@ -44,6 +44,10 @@ BenchmarkProcess(eBMProcMode PMode,			// processing mode
 				char *pszObsCIGARsFile,		// observed CIGARs are in this file
 				char *pszRefGenomeFile,		// reads are against this target genome file
 				char *pszAlignmentsFile,	// input file containing aligned reads (SAM or BAM)
+				char *pszResultsFile,		// benchmarking m2 results file
+				char *pszExperimentDescr,	// experiment descriptor by which benchmarking results can be identified in szResultsFile 
+				char* pszControlAligner,	// control aligner generating error profile from which simulated reads were generated 
+				char* pszScoredAligner,		// aligner aligning simulated reads and which was scored
 				char *pszSEReads,			// simulated reads are output to this file (SE or PE1 if PE)  (input when scoring as contains ground truth)
 				char *pszPE2Reads);			// simulated PE2 reads are output to this file if simulating PE reads (input when scoring as contains ground truth)
 
@@ -85,10 +89,12 @@ char szRefGenomeFile[_MAX_PATH];// reads are against this target genome file
 char szAlignmentsFile[_MAX_PATH];	// input file containing aligned reads (SAM or BAM)
 char szSEReads[_MAX_PATH];		// simulated reads are output to this file (SE or PE1 if PE)
 char szPE2Reads[_MAX_PATH];		// simulated PE2 reads are output to this file if simulating PE reads
+char szResultsFile[_MAX_PATH];	// benchmarking m2 results file
 
-char szSQLiteDatabase[_MAX_PATH];	// results summaries to this SQLite file
-char szExperimentName[cMaxDatasetSpeciesChrom + 1];	// experiment name
-char szExperimentDescr[1000];		// describes experiment
+char szExperimentDescr[cMaxDatasetSpeciesChrom + 1];	// describes experiment
+char szControlAligner[cMaxDatasetSpeciesChrom + 1];		// control aligner generating error profile from which simulated reads were generated 
+char szScoredAligner[cMaxDatasetSpeciesChrom + 1];		// aligner aligning simulated reads and which was scored
+
 
 struct arg_lit* help = arg_lit0("h", "help", "print this help and exit");
 struct arg_lit* version = arg_lit0("v", "version,ver", "print version information and exit");
@@ -104,6 +110,8 @@ struct arg_lit* pereads = arg_lit0("p", "pe",				"set if PE pairs processing oth
 struct arg_file* refgenome = arg_file0("I", "refgenome", "<file>",	"alignment reference genome suffix array ('ngskit4b index' generated) file");
 struct arg_file* reads = arg_file0("o", "reads", "<file>",			"simulated reads to this file SE or PE1 if PE reads, or from if scoring");
 struct arg_file* pe2reads = arg_file0("O", "pe2reads", "<file>",	"simulated reads to this file if PE reads, or from if scoring");
+struct arg_file* results = arg_file0("s", "results", "<file>",		"summary benchmark results when scoring are written to this CSV file");
+
 
 struct arg_file* cigars = arg_file0("c", "CIGARs", "<file>",		"observed CIGARs R/W this file");
 
@@ -112,16 +120,16 @@ struct arg_int* silenttrimaligdbasepts = arg_int0("J", "silenttrimalignbasepts",
 struct arg_int* unalignedbasepts = arg_int0("k", "unalignedbasepts", "<int>",	"unaligned base points (defaults to 0)");
 struct arg_int* misalignedbasepts = arg_int0("l", "misalignedbasepts", "<int>",	"incorrectly aligned base points (defaults to -2");
 struct arg_int* maxnumreads = arg_int0("r", "maxnumreads", "<int>", "process for this number of reads or read pairs if PE (defaults to 10000000");
-
-struct arg_file* summrslts = arg_file0("q", "sumrslts", "<file>", "Output results summary to this SQLite3 database file");
-struct arg_str* experimentname = arg_str0("w", "experimentname", "<str>", "experiment name SQLite3 database file");
-struct arg_str* experimentdescr = arg_str0("W", "experimentdescr", "<str>", "experiment description SQLite3 database file");
+struct arg_str* experimentdescr = arg_str0("e", "experiment", "<str>", "experiment description");
+struct arg_str* controlaligner = arg_str0("a", "controlaligner", "<str>", "Control aligner used for derivation of empirical error profiles");
+struct arg_str* scoredaligner = arg_str0("A", "scoredaligner", "<str>", "Scored aligner used to align simulated reads");
 
 struct arg_end* end = arg_end(200);
 
 	void* argtable[] = { help,version,FileLogLevel,LogFile,
-						pmode, inalignments,pereads,refgenome,reads,pe2reads,scoreprimaryonly,cigars,alignedbasepts,silenttrimaligdbasepts,unalignedbasepts,misalignedbasepts,maxnumreads,
-						summrslts,experimentname,experimentdescr,end };
+						pmode, inalignments,pereads,refgenome,reads,pe2reads,results,scoreprimaryonly,cigars,alignedbasepts,
+						silenttrimaligdbasepts,unalignedbasepts,misalignedbasepts,maxnumreads,
+						controlaligner,scoredaligner,experimentdescr,end };
 
 	char** pAllArgs;
 	int argerrors;
@@ -188,71 +196,18 @@ struct arg_end* end = arg_end(200);
 		gExperimentID = 0;
 		gProcessID = 0;
 		gProcessingID = 0;
-		szSQLiteDatabase[0] = '\0';
-		szExperimentName[0] = '\0';
 		szExperimentDescr[0] = '\0';
-
-
-		if (experimentname->count)
-		{
-			strncpy(szExperimentName, experimentname->sval[0], sizeof(szExperimentName));
-			szExperimentName[sizeof(szExperimentName) - 1] = '\0';
-			CUtility::TrimQuotedWhitespcExtd(szExperimentName);
-			CUtility::ReduceWhitespace(szExperimentName);
-		}
-
-		if (strlen(szExperimentName) < 1)
-			strcpy(szExperimentName, "N/A");
-
-		if (experimentdescr->count)
-		{
-			strncpy(szExperimentDescr, experimentdescr->sval[0], sizeof(szExperimentDescr) - 1);
-			szExperimentDescr[sizeof(szExperimentDescr) - 1] = '\0';
-			CUtility::TrimQuotedWhitespcExtd(szExperimentDescr);
-			CUtility::ReduceWhitespace(szExperimentDescr);
-		}
-		if (strlen(szExperimentDescr) < 1)
-			strcpy(szExperimentDescr, "N/A");
-
-		gExperimentID = 0;
-		gProcessID = 0;
-		gProcessingID = 0;
-		szSQLiteDatabase[0] = '\0';
-
-		if (summrslts->count)
-		{
-			strncpy(szSQLiteDatabase, summrslts->filename[0], sizeof(szSQLiteDatabase) - 1);
-			szSQLiteDatabase[sizeof(szSQLiteDatabase) - 1] = '\0';
-			CUtility::TrimQuotedWhitespcExtd(szSQLiteDatabase);
-			if (strlen(szSQLiteDatabase) < 1)
-			{
-				gDiagnostics.DiagOut(eDLFatal, gszProcName, "Error: After removal of whitespace, no SQLite database specified with '-q<filespec>' option");
-				return(1);
-			}
-
-			gExperimentID = gSQLiteSummaries.StartExperiment(szSQLiteDatabase, false, true, szExperimentName, szExperimentName, szExperimentDescr);
-			if (gExperimentID < 1)
-				return(1);
-			gProcessID = gSQLiteSummaries.AddProcess((char*)gpszSubProcess->pszName, (char*)gpszSubProcess->pszName, (char*)gpszSubProcess->pszFullDescr);
-			if (gProcessID < 1)
-				return(1);
-			gProcessingID = gSQLiteSummaries.StartProcessing(gExperimentID, gProcessID, (char*)kit4bversion);
-			if (gProcessingID < 1)
-				return(1);
-			gDiagnostics.DiagOut(eDLInfo, gszProcName, "Initialised SQLite database '%s' for results summary collection", szSQLiteDatabase);
-			gDiagnostics.DiagOut(eDLInfo, gszProcName, "SQLite database experiment identifier for '%s' is %d", szExperimentName, gExperimentID);
-			gDiagnostics.DiagOut(eDLInfo, gszProcName, "SQLite database process identifier for '%s' is %d", (char*)gpszSubProcess->pszName, gProcessID);
-			gDiagnostics.DiagOut(eDLInfo, gszProcName, "SQLite database processing instance identifier is %d", gProcessingID);
-		}
-		else
-			szSQLiteDatabase[0] = '\0';
-
+		
 		// ensure all filenames are initialised in case not user specified
 		szCIGARsFile[0] = '\0';
 		szRefGenomeFile[0] = '\0';
 		szAlignmentsFile[0] = '\0';
+		szControlAligner[0] = '\0';
+		szScoredAligner[0] = '\0';
 		szSEReads[0] = '\0';
 		szPE2Reads[0] = '\0';
+		szResultsFile[0] = '\0';
+
 		bPEReads = false;
 		UnalignedBasePts = 0;
 		AlignedBasePts = 0;
@@ -265,6 +220,45 @@ struct arg_end* end = arg_end(200);
 			{
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Error: Processing mode '-m%d' specified outside of range %d..%d\n", PMode, eBMGenCIGARs, (int)eBMScore);
 			exit(1);
+			}
+
+		if(PMode == eBMScore)
+			{
+			if (experimentdescr->count)
+				{
+				strncpy(szExperimentDescr, experimentdescr->sval[0], sizeof(szExperimentDescr) - 1);
+				szExperimentDescr[sizeof(szExperimentDescr) - 1] = '\0';
+				CUtility::TrimQuotedWhitespcExtd(szExperimentDescr);
+				CUtility::ReduceWhitespace(szExperimentDescr);
+				}
+			if (strlen(szExperimentDescr) < 1)
+				strcpy(szExperimentDescr, "N/A");
+
+			if (controlaligner->count)
+				{
+				strncpy(szControlAligner, controlaligner->sval[0], sizeof(szExperimentDescr) - 1);
+				szControlAligner[sizeof(szControlAligner) - 1] = '\0';
+				CUtility::TrimQuotedWhitespcExtd(szControlAligner);
+				CUtility::ReduceWhitespace(szControlAligner);
+				}
+			if (strlen(szControlAligner) < 1)
+				strcpy(szControlAligner, "N/A");
+
+			if (scoredaligner->count)
+				{
+				strncpy(szScoredAligner, scoredaligner->sval[0], sizeof(szExperimentDescr) - 1);
+				szScoredAligner[sizeof(szScoredAligner) - 1] = '\0';
+				CUtility::TrimQuotedWhitespcExtd(szScoredAligner);
+				CUtility::ReduceWhitespace(szScoredAligner);
+				}
+			if (strlen(szScoredAligner) < 1)
+				strcpy(szScoredAligner, "N/A");
+			}
+		else
+			{
+			szExperimentDescr[0] = '\0';
+			szControlAligner[0] = '\0';
+			szScoredAligner[0] = '\0';
 			}
 
 
@@ -386,6 +380,11 @@ struct arg_end* end = arg_end(200);
 					strcpy(szPE2Reads, pe2reads->filename[0]);
 					CUtility::TrimQuotedWhitespcExtd(szPE2Reads);
 					}
+				if (results->count)
+					{
+					strcpy(szResultsFile, results->filename[0]);
+					CUtility::TrimQuotedWhitespcExtd(szResultsFile);
+					}
 				}
 			if (bPEReads)
 				{
@@ -442,7 +441,8 @@ struct arg_end* end = arg_end(200);
 			gDiagnostics.DiagOutMsgOnly(eDLInfo, "%s file : '%s'", bPEReads ? "PE1" : "SE", szSEReads);
 		if (szPE2Reads[0] != '\0')
 			gDiagnostics.DiagOutMsgOnly(eDLInfo, "PE2 file : '%s'", szPE2Reads);
-
+		if(szResultsFile[0] != '\0')
+			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Scoring results appended to this CSV file : '%s'", szResultsFile);
 
 		if(PMode == eBMScore)
 			{
@@ -452,24 +452,12 @@ struct arg_end* end = arg_end(200);
 			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Unaligned base score points: %d", UnalignedBasePts);
 			}
 
-		gDiagnostics.DiagOutMsgOnly(eDLInfo, "Experiment name : '%s'", szExperimentName);
-		gDiagnostics.DiagOutMsgOnly(eDLInfo, "Experiment description : '%s'", szExperimentDescr);
-
-		if (szExperimentName[0] != '\0')
-			gDiagnostics.DiagOutMsgOnly(eDLInfo, "This processing reference: %s", szExperimentName);
-
-		if (gExperimentID > 0)
-			{
-			int ParamID;
-			ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID, ePTText, (int)strlen(szLogFile), "log", szLogFile);
-			ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID, ePTInt32, (int)sizeof(PMode), "mode", &PMode);
-			ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID, ePTBool, (int)sizeof(bPEReads), "pereads", &bPEReads);
-			ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID, ePTBool, (int)sizeof(bPrimaryOnly), "pereads", &bPrimaryOnly);
-			ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID, ePTInt32, (int)sizeof(NumberOfProcessors), "cpus", &NumberOfProcessors);
-			ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID, ePTText, (int)strlen(szSQLiteDatabase), "sumrslts", szSQLiteDatabase);
-			ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID, ePTText, (int)strlen(szExperimentName), "experimentname", szExperimentName);
-			ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID, ePTText, (int)strlen(szExperimentDescr), "experimentdescr", szExperimentDescr);
-		}
+		if (szExperimentDescr[0] != '\0')
+			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Experiment description: %s", szExperimentDescr);
+		if (szControlAligner[0] != '\0')
+			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Control aligner used for derivation of empirical error profiles: %s", szControlAligner);
+		if (szScoredAligner[0] != '\0')
+			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Scored aligner used to align simulated reads: %s", szScoredAligner);
 
 #ifdef _WIN32
 		SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
@@ -487,8 +475,12 @@ struct arg_end* end = arg_end(200);
 								szCIGARsFile,			// observed CIGARs are in this file
 								szRefGenomeFile,		// reads are against this target genome file
 								szAlignmentsFile,		// input file containing aligned reads (SAM or BAM)
+								szResultsFile,			// benchmarking m2 results file
+								szExperimentDescr,		// experiment descriptor by which benchmarking results can be identified in szResultsFile 
+								szControlAligner,		// control aligner generating error profile from which simulated reads were generated 
+								szScoredAligner,		// aligner aligning simulated reads and which was scored
 								szSEReads,				// simulated reads are output to this file (SE or PE1 if PE)
-								szPE2Reads);				// simulated PE2 reads are output to this file if simulating PE reads
+								szPE2Reads);			// simulated PE2 reads are output to this file if simulating PE reads
 		Rslt = Rslt >= 0 ? 0 : 1;
 		if (gExperimentID > 0)
 		{
@@ -525,6 +517,10 @@ BenchmarkProcess(eBMProcMode PMode,	// processing mode
 	char* pszObsCIGARsFile,		// observed CIGARs are in this file
 	char* pszRefGenomeFile,		// alignments are against this target genome file
 	char* pszAlignmentsFile,	// input file containing aligned reads (SAM or BAM)
+	char* pszResultsFile,		// benchmarking m2 results appended to this CSV file
+	char* pszExperimentDescr,	// experiment descriptor by which benchmarking results can be identified in szResultsFile 
+	char* pszControlAligner,	// control aligner generating error profile from which simulated reads were generated 
+	char* pszScoredAligner,		// aligner aligning simulated reads and which was scored
 	char* pszSEReads,			// simulated reads are output to this file (SE or PE1 if PE)
 	char* pszPE2Reads)			// simulated PE2 reads are output to this file if simulating PE reads
 {
@@ -543,7 +539,8 @@ switch (PMode) {
 		break;
 
 	case eBMScore:
-		Rslt = pBenchmark->Score(bPrimaryOnly,bPEReads, UnalignedBasePts, AlignedBasePts, SilentTrimAlignBasePts, MisalignedBasePts, pszSEReads, pszPE2Reads, pszAlignmentsFile);
+		Rslt = pBenchmark->Score(bPrimaryOnly,bPEReads, UnalignedBasePts, AlignedBasePts, SilentTrimAlignBasePts, MisalignedBasePts, 
+					pszResultsFile,pszExperimentDescr, pszControlAligner, pszScoredAligner,pszSEReads, pszPE2Reads, pszAlignmentsFile);
 		break;
 	}
 
@@ -976,7 +973,7 @@ if (m_pObsErrProfiles == MAP_FAILED)
 	}
 #endif
 
-gDiagnostics.DiagOut(eDLInfo, gszProcName, "Creating emperical error profiles file", pszObsCIGARsFile);
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "Creating empirical error profiles file", pszObsCIGARsFile);
 #ifdef _WIN32
 if ((m_hObsSIGARs = open(pszObsCIGARsFile, (_O_RDWR | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC), (_S_IREAD | _S_IWRITE))) == -1)
 #else
@@ -987,7 +984,7 @@ if ((m_hObsSIGARs = open(pszObsCIGARsFile, O_RDWR | O_CREAT | O_TRUNC, S_IREAD |
 	Reset();
 	return(eBSFerrOpnFile);
 	}
-gDiagnostics.DiagOut(eDLInfo, gszProcName, "Opening SAM/BAM alignments file %s from which emperical error profiles will be derived", pszAlignmentsFile);
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "Opening SAM/BAM alignments file %s from which empirical error profiles will be derived", pszAlignmentsFile);
 if ((Rslt = OpenAlignments(m_szAlignmentsFile)) < 0)
 	{
 	Reset();
@@ -1624,9 +1621,16 @@ NumSimReads = 0;
 pCurCIGAR = (tsBMPackedCIGARs*)m_pObsErrProfiles;
 for(SeqIdx = 0; SeqIdx < MaxNumReads; SeqIdx++)
 	{
-	int Retries = 1000000;
-	while(--Retries)
+	int NumNs = 0;
+	int Retries = 0;
+	while(++Retries)
 		{
+		if (Retries > 1000000)		// if after 1M retries then give up on trying to locate ground truth read sequences with less than 5% of indeterminates?
+			{	
+			gDiagnostics.DiagOut(eDLWarn, gszProcName, "SimReads: Unable to locate a ground truth read sequence containing no more than 5%% of indeterminate bases");
+			Reset();
+			return(eBSFerrRead);
+			}
 		// randomly select a target chrom and starting loci
 		// iterate over the observed CIGAR and build up a sequence from starting loci with induced errors as per CIGAR
 		// output as the PE1 or SE read
@@ -1689,82 +1693,76 @@ for(SeqIdx = 0; SeqIdx < MaxNumReads; SeqIdx++)
 					continue;
 				}
 			}
-		// need to ensure that reads have at most only a couple of indeterminates otherwise alignments likely to be very difficult
-		int NumNs = 0;
+		// need to ensure that PE2 ground truth read sequences have no more than 5% indeterminates otherwise alignments likely to be very problematic
+		NumNs = 0;
 		for (int BaseIdx = 0; BaseIdx < pCurCIGAR->ReadLen; BaseIdx++)
 			if (SESeq[BaseIdx] >= eBaseN)
 				NumNs++;
-		if (NumNs > pCurCIGAR->ReadLen / 5)
+		if (NumNs > (pCurCIGAR->ReadLen / 20))
 			continue;				// retry for a read without excessive number of indeterminates
+		
+		if (!m_bPEReads)			// no point in looking for a PE2 if not PE processing
+			break;
 
-		if (m_bPEReads)
+			// Paired Ends so need to locate PE2
+		CIGARIdx = pCurCIGAR->PE1NumCIGAROps + pCurCIGAR->PE1NumErrProfOps + pCurCIGAR->PE2NumCIGAROps;
+		PE2StartLoci = pCurCIGAR->PEInsertSize + SEStartLoci - RefSeqConsumedLen(pCurCIGAR->PE2NumErrProfOps, &pCurCIGAR->CIGAROpsErrProfOps[CIGARIdx]);
+		CurLoci = PE2StartLoci;
+		for (ReadSeqIdx = 0; ReadSeqIdx < pCurCIGAR->ReadLen; )
 			{
-			CIGARIdx = pCurCIGAR->PE1NumCIGAROps + pCurCIGAR->PE1NumErrProfOps + pCurCIGAR->PE2NumCIGAROps;
-			PE2StartLoci = pCurCIGAR->PEInsertSize + SEStartLoci - RefSeqConsumedLen(pCurCIGAR->PE2NumErrProfOps, &pCurCIGAR->CIGAROpsErrProfOps[CIGARIdx]);
-			CurLoci = PE2StartLoci;
-			for (ReadSeqIdx = 0; ReadSeqIdx < pCurCIGAR->ReadLen; )
-				{
-				CurCIGAR = pCurCIGAR->CIGAROpsErrProfOps[CIGARIdx++];
-				if (CIGARIdx > pCurCIGAR->PE1NumCIGAROps + pCurCIGAR->PE1NumErrProfOps + pCurCIGAR->PE2NumCIGAROps + pCurCIGAR->PE2NumErrProfOps)
-					break;
-				CurOpType = (etCIGAROpType)(CurCIGAR & 0x0000f);
-				CurOpCnt = (CurCIGAR >> 4) & 0x0fffffff;
-				switch (CurOpType) {
-					case eCOPMatch:			//	'M' aligned but could be either matching or mismatching, here it is treated as though exactly matching
-					case eCOPALignMatch:	//  '=' aligned as exactly matching, consume both query and reference sequence
-						m_pGenome->GetSeq(SEChromID, CurLoci, &PE2Seq[ReadSeqIdx], CurOpCnt);
-						CurLoci += CurOpCnt;
-						ReadSeqIdx += CurOpCnt;
-						continue;
+			CurCIGAR = pCurCIGAR->CIGAROpsErrProfOps[CIGARIdx++];
+			if (CIGARIdx > pCurCIGAR->PE1NumCIGAROps + pCurCIGAR->PE1NumErrProfOps + pCurCIGAR->PE2NumCIGAROps + pCurCIGAR->PE2NumErrProfOps)
+				break;
+			CurOpType = (etCIGAROpType)(CurCIGAR & 0x0000f);
+			CurOpCnt = (CurCIGAR >> 4) & 0x0fffffff;
+			switch (CurOpType) {
+				case eCOPMatch:			//	'M' aligned but could be either matching or mismatching, here it is treated as though exactly matching
+				case eCOPALignMatch:	//  '=' aligned as exactly matching, consume both query and reference sequence
+					m_pGenome->GetSeq(SEChromID, CurLoci, &PE2Seq[ReadSeqIdx], CurOpCnt);
+					CurLoci += CurOpCnt;
+					ReadSeqIdx += CurOpCnt;
+					continue;
 
-					case eCOPALignMismatch:	// 'X' aligned but as a mismatch, consumes both query and reference sequence
-						m_pGenome->GetSeq(SEChromID, CurLoci, &PE2Seq[ReadSeqIdx], CurOpCnt); // get sequence but then permute
-						pPermuteBase = &PE2Seq[ReadSeqIdx];
-						for (int PermuteIdx = 0; PermuteIdx < CurOpCnt; PermuteIdx++, pPermuteBase++)
-							*pPermuteBase = (*pPermuteBase + 2) & 0x03;
-						CurLoci += CurOpCnt;
-						ReadSeqIdx += CurOpCnt;
-						continue;
+				case eCOPALignMismatch:	// 'X' aligned but as a mismatch, consumes both query and reference sequence
+					m_pGenome->GetSeq(SEChromID, CurLoci, &PE2Seq[ReadSeqIdx], CurOpCnt); // get sequence but then permute
+					pPermuteBase = &PE2Seq[ReadSeqIdx];
+					for (int PermuteIdx = 0; PermuteIdx < CurOpCnt; PermuteIdx++, pPermuteBase++)
+						*pPermuteBase = (*pPermuteBase + 2) & 0x03;
+					CurLoci += CurOpCnt;
+					ReadSeqIdx += CurOpCnt;
+					continue;
 
-					case eCOPSoftClip:				//	'S'  soft clipping - consumes query sequence only
-					case eCOPInsert:				//	'I'  insertion relative to target - consumes query sequence only
-						m_pGenome->GetSeq(SEChromID, CurLoci, &PE2Seq[ReadSeqIdx], CurOpCnt); // get sequence but then permute so will not match when aligning
-						pPermuteBase = &PE2Seq[ReadSeqIdx];
-						for (int PermuteIdx = 0; PermuteIdx < CurOpCnt; PermuteIdx++, pPermuteBase++)
-							*pPermuteBase = (*pPermuteBase + 2) & 0x03;
-						ReadSeqIdx += CurOpCnt;		// no changes to target loci
-						continue;
+				case eCOPSoftClip:				//	'S'  soft clipping - consumes query sequence only
+				case eCOPInsert:				//	'I'  insertion relative to target - consumes query sequence only
+					m_pGenome->GetSeq(SEChromID, CurLoci, &PE2Seq[ReadSeqIdx], CurOpCnt); // get sequence but then permute so will not match when aligning
+					pPermuteBase = &PE2Seq[ReadSeqIdx];
+					for (int PermuteIdx = 0; PermuteIdx < CurOpCnt; PermuteIdx++, pPermuteBase++)
+						*pPermuteBase = (*pPermuteBase + 2) & 0x03;
+					ReadSeqIdx += CurOpCnt;		// no changes to target loci
+					continue;
 
-					case eCOPSkipRegion:    	    //	'N'  skipped region relative to target - intron?  - consumes reference sequence only
-					case eCOPDelete:				// 'D'  deletion relative to target - consumes reference sequence only
-						CurLoci += CurOpCnt;		// no change to ReadSeqIdx
-						continue;
+				case eCOPSkipRegion:    	    //	'N'  skipped region relative to target - intron?  - consumes reference sequence only
+				case eCOPDelete:				// 'D'  deletion relative to target - consumes reference sequence only
+					CurLoci += CurOpCnt;		// no change to ReadSeqIdx
+					continue;
 
-					case eCOPHardClip:				// 'H'  hard clipping
-						m_pGenome->GetSeq(SEChromID, CurLoci, &PE2Seq[ReadSeqIdx], CurOpCnt); // get sequence but then permute so shouldn't match when aligning
-						pPermuteBase = &PE2Seq[ReadSeqIdx];
-						for (int PermuteIdx = 0; PermuteIdx < CurOpCnt; PermuteIdx++, pPermuteBase++)
-							*pPermuteBase = (*pPermuteBase + 2) & 0x03;
-						ReadSeqIdx += CurOpCnt;		// no changes to target loci
-						continue;
-					}
+				case eCOPHardClip:				// 'H'  hard clipping
+					m_pGenome->GetSeq(SEChromID, CurLoci, &PE2Seq[ReadSeqIdx], CurOpCnt); // get sequence but then permute so shouldn't match when aligning
+					pPermuteBase = &PE2Seq[ReadSeqIdx];
+					for (int PermuteIdx = 0; PermuteIdx < CurOpCnt; PermuteIdx++, pPermuteBase++)
+						*pPermuteBase = (*pPermuteBase + 2) & 0x03;
+					ReadSeqIdx += CurOpCnt;		// no changes to target loci
+					continue;
 				}
 			}
-		// need to ensure that reads have at most only a couple of indeterminates otherwise alignments likely to be very problematic
-		NumNs = 0;
-		for(int BaseIdx = 0; BaseIdx < pCurCIGAR->ReadLen; BaseIdx++)
-			if(PE2Seq[BaseIdx] >= eBaseN)
-				NumNs++;
-		if (NumNs > pCurCIGAR->ReadLen / 5)
-			continue;				// retry for a read without excessive number of indeterminates
-		break;
-		}
 
-	if(!Retries)		// if exhusted retries looking for reads without too many indeterminates
-		{
-		gDiagnostics.DiagOut(eDLWarn, gszProcName, "SimReads: Unable to locate ground truth read with less than 5% of indeterminate bases");
-		Reset();
-		return(eBSFerrRead);
+		// need to ensure that PE2 ground truth read sequences have no more than 5% indeterminates otherwise alignments likely to be very problematic
+		NumNs = 0;
+		for (int BaseIdx = 0; BaseIdx < pCurCIGAR->ReadLen; BaseIdx++)
+			if (PE2Seq[BaseIdx] >= eBaseN)
+				NumNs++;
+		if (NumNs <= (pCurCIGAR->ReadLen / 20))
+			break;
 		}
 
 	if(m_bPEReads)
@@ -2282,6 +2280,10 @@ CBenchmark::Score(bool bPrimaryOnly,// score only primary alignments otherwise s
 		int AlignedBasePts,			// points to apply for each base aligned to it's ground truth loci
 		int SilentTrimAlignBasePts, // points to apply for each base aligned in a silently trimmed read within ground truth loci range
 		int MisalignedBasePts,		// points to apply for each base aligned but not to ground truth loci
+		char* pszResultsFile,		// benchmarking m2 results appended to this CSV file
+		char* pszExperimentDescr,	// experiment descriptor by which benchmarking results can be identified in szResultsFile
+		char *pszControlAligner,	// control aligner generating error profile from which simulated reads were generated 
+		char *pszScoredAligner,		// aligner aligning simulated reads and which was scored
 		char* pszSEReads,			// input simulated reads which contain ground truths from this file for SE or PE1 if PE
 		char* pszPE2Reads,			// input simulated reads which contain ground truths from this file for PE2 if PE
 		char* pszAlignmentsFile)	// input file containing alignments of simulated reads (SAM or BAM)
@@ -2297,6 +2299,14 @@ m_MisalignedBasePts = MisalignedBasePts;
 m_MaxNumReads = 0;
 strcpy(m_szAlignmentsFile, pszAlignmentsFile);
 strcpy(m_szSEReads, pszSEReads);
+if(pszResultsFile != NULL && pszResultsFile[0] != '\0')
+	strcpy(m_szResultsFile,pszResultsFile);
+else
+	m_szResultsFile[0] = '\0';
+if (pszExperimentDescr != NULL && pszExperimentDescr[0] != '\0')
+	strcpy(m_szExperimentDescr, pszExperimentDescr);
+else
+	m_szExperimentDescr[0] = '\0';
 if(bPEReads)
 	strcpy(m_szPE2Reads, pszPE2Reads);
 else
@@ -2511,9 +2521,11 @@ while (Rslt >= eBSFSuccess && (LineLen = m_pAlignments->GetNxtSAMline(pszLine)) 
 	NumScoredAlignments++;
 	}
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "Completed scoring alignments in: '%s'", pszAlignmentsFile);
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "Experiment: %s", pszExperimentDescr);
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "Control Aligner: '%s' Scored Aligner: '%s'",pszControlAligner,pszScoredAligner);
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "There were a total of %u alignments scored containing %lld potential ground truth matching bases", NumScoredAlignments, m_TotNumPotentialAlignBases);
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "%u alignments classified as misaligned due to: chrom: %u, strand: %u, PE mismatch: %u ", NumErrChroms+NumErrStrands+ NumErrPE2,NumErrChroms,NumErrStrands, NumErrPE2);
-gDiagnostics.DiagOut(eDLInfo, gszProcName,"Bases loci correct: %d, misaligned: %d, unaligned: %d", m_NumBasesLociCorrect, m_NumBasesLociIncorrect, m_NumBasesLociUnclaimed);
+gDiagnostics.DiagOut(eDLInfo, gszProcName,"Bases loci correct: %lld, misaligned: %lld, unaligned: %lld", m_NumBasesLociCorrect, m_NumBasesLociIncorrect, m_NumBasesLociUnclaimed);
 double BaseScoreRate = (double)m_TotBaseAlignmentScore/m_MaxBaseAlignmentScore;
 double AlignBaseScoreRate = (double)m_TotBaseAlignmentScore/AlignedPotentialScore;
 gDiagnostics.DiagOut(eDLInfo, gszProcName,"Alignment base score rate relative to background ground truth simulation bases is %1.6f", BaseScoreRate);
@@ -2522,6 +2534,54 @@ gDiagnostics.DiagOut(eDLInfo, gszProcName, "Alignment base score rate relative t
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "Aligned reads with ground truth bases percentage overlap histogram:");
 for(int Idx = 0; Idx < 101; Idx++)
 	gDiagnostics.DiagOutMsgOnly(eDLInfo, "%u%%: %u", Idx, m_ReadOverlapHistogram[Idx]);
+
+if(m_szResultsFile[0] != '\0')
+	{
+	int hRslts;
+	int LineBuffIdx;
+	char szLineBuffer[10000];
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Opening/Creating summary results CSV file", m_szResultsFile);
+	#ifdef _WIN32
+	if((hRslts = open(m_szResultsFile,  _O_APPEND | _O_CREAT | _O_TEXT | _O_RDWR, _S_IREAD | _S_IWRITE))==-1)
+	#else
+	if ((hRslts = open(m_szResultsFile, O_RDWR | O_CREAT, S_IREAD | S_IWRITE)) == -1)
+	#endif
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Unable to open/create summary results CSV file - '%s' - %s", m_szResultsFile, strerror(errno));
+		Reset();
+		return(eBSFerrOpnFile);
+		}
+	long FileOfs = lseek(hRslts, 0, SEEK_END);
+	if(FileOfs == 0)		// must be a new results file so write out a header line
+		{
+		LineBuffIdx = sprintf(szLineBuffer, "\"Experiment\",\"Control Aligner\",\"Scored Aligner\",\"Scored Alignment File\",\"Number Scored Alignments\",\"Total Potential Alignment Bases\",");
+		LineBuffIdx += sprintf(&szLineBuffer[LineBuffIdx],"\"Reads Classified As Misaligned\",\"Wrong Chrom\",\"Wrong Strand\",\"PE Mismatch\",");
+		LineBuffIdx += sprintf(&szLineBuffer[LineBuffIdx],"\"Bases loci correct\",\"Bases loci incorrect\",\"Bases Unaligned\",");
+		LineBuffIdx += sprintf(&szLineBuffer[LineBuffIdx], "\"Background Bases Relative Score\",\"Aligned Read Bases Relative Score\"");
+		for (int Idx = 0; Idx < 101; Idx++)
+			LineBuffIdx += sprintf(&szLineBuffer[LineBuffIdx], ",RBO %u%%", Idx);
+		LineBuffIdx += sprintf(&szLineBuffer[LineBuffIdx], "\n");
+		CUtility::SafeWrite(hRslts, szLineBuffer, LineBuffIdx);
+		}
+
+	LineBuffIdx = sprintf(szLineBuffer,"\"%s\",\"%s\",\"%s\",\"%s\",", pszExperimentDescr, pszControlAligner, pszScoredAligner,pszAlignmentsFile);
+	LineBuffIdx += sprintf(&szLineBuffer[LineBuffIdx], "%u,%lld,", NumScoredAlignments, (INT64)m_TotNumPotentialAlignBases);
+	LineBuffIdx += sprintf(&szLineBuffer[LineBuffIdx], "%u,%u,%u,%u,", NumErrChroms + NumErrStrands + NumErrPE2, NumErrChroms, NumErrStrands, NumErrPE2);
+	LineBuffIdx += sprintf(&szLineBuffer[LineBuffIdx], "%lld,%lld,%lld,", (INT64)m_NumBasesLociCorrect, (INT64)m_NumBasesLociIncorrect, (INT64)m_NumBasesLociUnclaimed);
+	LineBuffIdx += sprintf(&szLineBuffer[LineBuffIdx], "%1.6f,%1.6f",BaseScoreRate, AlignBaseScoreRate);
+	for (int Idx = 0; Idx < 101; Idx++)
+		LineBuffIdx += sprintf(&szLineBuffer[LineBuffIdx],",%u", m_ReadOverlapHistogram[Idx]);
+	LineBuffIdx += sprintf(&szLineBuffer[LineBuffIdx], "\n");
+	CUtility::SafeWrite(hRslts, szLineBuffer, LineBuffIdx);
+#ifdef _WIN32
+	_commit(hRslts);
+#else
+	fsync(hRslts);
+#endif
+	close(hRslts);
+	hRslts = -1;
+	}
+
 delete []pszLine;
 delete pSAMalign;
 Reset();

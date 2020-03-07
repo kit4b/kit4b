@@ -353,14 +353,14 @@ if (!argerrors)
 	CoreLen = corelen->count ?  corelen->ival[0] : CoreLen;
 	if(CoreLen != 0 && (CoreLen < cMinCoreLen) || CoreLen > cMaxCoreLen)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: core or seed length '-s%d' specified outside of range %d..%d\n",CoreLen,cMinCoreLen,cMaxCoreLen);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: core or seed length '-C%d' specified outside of range %d..%d\n",CoreLen,cMinCoreLen,cMaxCoreLen);
 		exit(1);
 		}
 
 	CoreDelta = coredelta->count ?  coredelta->ival[0] : CoreDelta;
 	if((CoreDelta != 0 && CoreDelta < cMinCoreDelta) || CoreDelta > CoreLen)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: core delta '-s%d' specified outside of range %d..%d\n",CoreDelta,cMinCoreDelta, CoreLen);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: core delta '-c%d' specified outside of range %d..%d\n",CoreDelta,cMinCoreDelta, cMaxCoreLen);
 		exit(1);
 		}
 
@@ -368,7 +368,7 @@ if (!argerrors)
 		{
 		MaxInsertLen = maxinsertlen->count ? maxinsertlen->ival[0] : 100000;
 		if(MaxInsertLen == 0)
-			MaxInsertLen = 50000;
+			MaxInsertLen = 100000;
 		if (MaxInsertLen < 1000 || MaxInsertLen > 1000000)
 			{
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Error: maximum Insert length '-D%d' specified outside of range 1000..1000000\n", MaxInsertLen);

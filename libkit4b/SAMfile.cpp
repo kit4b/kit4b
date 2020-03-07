@@ -1459,7 +1459,7 @@ else  // reading from BAM
 			szQual[l_seq] = '\0';
 			}
 		m_CurInBAMIdx += l_seq;
-		if((m_CurInBAMIdx - StartInBamIdx) != block_size)	// if not exhusted current block then must be optional tags
+		if((m_CurInBAMIdx - StartInBamIdx) != block_size)	// if not exhausted current block then there must be optional tags
 			{
 			// TODO: tag processing ....
 			m_CurInBAMIdx =  StartInBamIdx + block_size;

@@ -91,10 +91,10 @@ class CBenchmark {
 	int m_SilentTrimAlignBasePts;	// points to apply for each base aligned in a silently trimmed read within ground truth loci range
 	int m_MisalignedBasePts;		// points to apply for each base aligned but not to ground truth loci
 
-	uint64_t m_TotNumPotentialAlignBases;	// number of match bases in actual alignments which potentially could have been aligned to ground truth
-	uint64_t m_NumBasesLociCorrect;			// total number of bases aligned correctly to ground truth loci
-	uint64_t m_NumBasesLociIncorrect;		// total number of bases aligned incorrectly to ground truth loci
-	uint64_t m_NumBasesLociUnclaimed;		// total number of ground truth bases which were not aligned
+	int64_t m_TotNumPotentialAlignBases;	// number of match bases in actual alignments which potentially could have been aligned to ground truth
+	int64_t m_NumBasesLociCorrect;			// total number of bases aligned correctly to ground truth loci
+	int64_t m_NumBasesLociIncorrect;		// total number of bases aligned incorrectly to ground truth loci
+	int64_t m_NumBasesLociUnclaimed;		// total number of ground truth bases which were not aligned
 
 	uint32_t m_ReadOverlapHistogram[101];	// histogram of read alignments by percentile proportion of read bases in reads overlapping with ground truth read bases
 
@@ -106,6 +106,8 @@ class CBenchmark {
 	char m_szAlignmentsFile[_MAX_PATH];	// input file containing aligned reads (SAM or BAM)
 	char m_szSEReads[_MAX_PATH];		// simulated reads are output to this file (SE or PE1 if PE)
 	char m_szPE2Reads[_MAX_PATH];		// simulated PE2 reads are output to this file if simulating PE reads
+	char m_szResultsFile[_MAX_PATH];	// benchmarking m2 results appended to this CSV file
+	char m_szExperimentDescr[cMaxDatasetSpeciesChrom + 1];	// experiment descriptor by which benchmarking results can be identified in szResultsFile
 
 	INT64 m_GenomeLen;				// total genome length including concatenators
 	INT32 m_GenomeScaledLen;		// sum of all chrom scaled lengths, will always be less than INT_MAX
@@ -251,6 +253,10 @@ public:
 			int AlignedBasePts,			// points to apply for each base aligned to it's ground truth loci
 			int SilentTrimAlignBasePts, // points to apply for each base aligned in a silently trimmed read within ground truth loci range
 			int MisalignedBasePts,		// points to apply for each base aligned but not to ground truth loci
+			char* pszResultsFile,		// benchmarking m2 results appended to this CSV file
+			char* pszExperimentDescr,	// experiment descriptor by which benchmarking results can be identified in szResultsFile
+			char* pszControlAligner,	// control aligner generating error profile from which simulated reads were generated 
+			char* pszScoredAligner,		// aligner aligning simulated reads and which was scored
 			char* pszSEReads,			// input simulated reads which contain ground truths from this file for SE or PE1 if PE
 			char* pszPE2Reads,			// input simulated reads which contain ground truths from this file for PE2 if PE
 			char* pszAlignmentsFile);   // input file containing alignments of simulated reads (SAM or BAM)
