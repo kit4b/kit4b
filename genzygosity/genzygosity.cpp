@@ -699,17 +699,17 @@ m_TotSfxEntriesLen = (UINT32)m_pSfxArray->GetTotSeqsLen();
 int MaxIter;
 switch(PMode) {
 	case ePMdefault:			// default processing mode
-		MaxIter = cDfltSensCoreIters;
+		MaxIter = cDfltGZSensCoreIters;
 		break;
 	case ePMMoreSens:			// more sensitive - slower
-		MaxIter = cMoreSensCoreIters;
+		MaxIter = cMoreGZSensCoreIters;
 		break;
 	case ePMUltraSens:			// ultra sensitive - much slower
-		MaxIter = cUltraSensCoreIters;
+		MaxIter = cUltraGZSensCoreIters;
 		break;
 	case ePMLessSens:			// less sensitive - quicker
 	default:
-		MaxIter = cMinSensCoreIters;
+		MaxIter = cMinGZSensCoreIters;
 	}
 m_MaxIter = MaxIter;
 m_pSfxArray->SetMaxIter(m_MaxIter);
@@ -1015,12 +1015,12 @@ gDiagnostics.DiagOut(eDLInfo,gszProcName,"Genome assembly suffix array loaded");
 m_BlockTotSeqLen = m_pSfxArray->GetTotSeqsLen();
 
 if(m_BlockTotSeqLen < 20000000)				    // covers yeast
-	m_MinCoreLen = cMinCoreLen;
+	m_MinCoreLen = cMinGZCoreLen;
 else
 	if(m_BlockTotSeqLen < 250000000)		    // covers arabidopsis and fly
-		m_MinCoreLen = cMinCoreLen+3;
+		m_MinCoreLen = cMinGZCoreLen +3;
 	else
-		m_MinCoreLen = cMinCoreLen+5;			// covers the big guys...
+		m_MinCoreLen = cMinGZCoreLen +5;			// covers the big guys...
 
 switch(m_PMode) {
 	case ePMUltraSens:				// ultra sensitive - much slower

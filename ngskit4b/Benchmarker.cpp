@@ -2448,7 +2448,7 @@ while (Rslt >= eBSFSuccess && (LineLen = m_pAlignments->GetNxtSAMline(pszLine)) 
 		{
 		if(++NumNoGroundTruths == 1)
 			{
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Alignment read name ('%s') does not match any ground truth read names - alignments nust be from ground truth simulated reads", pSAMalign->read_name);
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Alignment read name ('%s') does not match any ground truth read names - alignments must be from ground truth simulated reads", pSAMalign->read_name);
 			delete pszLine;
 			delete pSAMalign;
 			Reset();

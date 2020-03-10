@@ -17,7 +17,7 @@
 #endif
 
 
-const int cMaxInBuffSize  = 10000000;	// read in chunks of this size from source fasta file
+const int cMaxSMFInBuffSize  = 10000000;	// read in chunks of this size from source fasta file
 const int cMaxOutBuffSize = 10000000;	// and write in chunks of this size to output fasta file
 
 const int cDfltMaxTotSeqLen = 100000000; // default max total sequence length
@@ -340,10 +340,10 @@ if(pszGenome != NULL && pszGenome[0] != '\0')
 else
 	ProcParams.szGenome[0] = '\0';
 
-if((ProcParams.pInBuffer = new unsigned char [cMaxInBuffSize])==NULL)
+if((ProcParams.pInBuffer = new unsigned char [cMaxSMFInBuffSize])==NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Unable to allocate memory (%d bytes) for input buffering", 
-				cMaxInBuffSize);
+		cMaxSMFInBuffSize);
 	return(eBSFerrMem);
 	}
 
@@ -398,7 +398,7 @@ if((Chr = pParams->PushedBack) > 0)
 	}
 if(pParams->InBuffIdx == -1 || pParams->InBuffIdx >= pParams->NumInBuffer)
 	{
-	pParams->NumInBuffer = read(pParams->hInFile,pParams->pInBuffer,cMaxInBuffSize);
+	pParams->NumInBuffer = read(pParams->hInFile,pParams->pInBuffer, cMaxSMFInBuffSize);
 	if(pParams->NumInBuffer <= 0)
 		{
 		pParams->InBuffIdx = -1;

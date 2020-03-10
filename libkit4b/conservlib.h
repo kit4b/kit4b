@@ -51,5 +51,7 @@
 #include "./GTFFile.h"
 #include "./GFFFile.h"
 #include "./sqlite3.h"
+#include "./CSQLitePSL.h"
+#include "./CBlitz.h"
 
 

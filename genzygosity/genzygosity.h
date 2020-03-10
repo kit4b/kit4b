@@ -11,13 +11,13 @@ const int cMaxAllowedSubs = 30;			// allow at most this many aligner induced sub
 const int cDfltMaxMatches = 5000;		// default : allow at most this many subsequence matches before filtering out the subsequence
 const int cMaxMaxMatches = 1000000;		// allow at most this many subsequence matches before filtering out the subsequence
 
-const int cMinCoreLen = 5;				// absolute minimum core length supported
-const int cMaxCoreLen = 100;			// maximum core length supported
+const int cMinGZCoreLen = 5;				// absolute minimum core length supported
+const int cMaxGZCoreLen = 100;			// maximum core length supported
 const double cDfltzygosityThreshold = 0.25f; // default Zygosity threshold
-const int cDfltSensCoreIters  = 5000;	// default sensitivity core explore depth 
-const int cMoreSensCoreIters  = 25000;	// more sensitivity core explore depth
-const int cUltraSensCoreIters = 50000;	// ultra sensitivity core explore depth
-const int cMinSensCoreIters   = 1000;	// min sensitivity core explore depth
+const int cDfltGZSensCoreIters  = 5000;	// default sensitivity core explore depth 
+const int cMoreGZSensCoreIters  = 25000;	// more sensitivity core explore depth
+const int cUltraGZSensCoreIters = 50000;	// ultra sensitivity core explore depth
+const int cMinGZSensCoreIters   = 1000;	// min sensitivity core explore depth
 
 const int cDfltMaxNs = 1;				// default max number of indeterminate 'N's in the read or aligned to subsequence
 const int cMaxNs = 5;					// allow user to specify at most this number of 'N's in the read or aligned to subsequence

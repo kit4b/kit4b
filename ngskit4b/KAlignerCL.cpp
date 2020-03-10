@@ -232,7 +232,7 @@ struct arg_file *priorityregionfile = arg_file0("B","priorityregionfile","<file>
 struct arg_lit  *nofiltpriority = arg_lit0("V","nofiltpriority",  "do not filter priority region alignments");
 
 struct arg_int  *pairminlen = arg_int0("d","pairminlen","<int>", "accept paired end alignments with observed insert sizes of at least this (minimum 25, default = 100)");
-struct arg_int  *pairmaxlen = arg_int0("D","pairmaxlen","<int>", "accept paired end alignments with observed insert sizes of at most this (maximum 10000, default = 1000)");
+struct arg_int  *pairmaxlen = arg_int0("D","pairmaxlen","<int>", "accept paired end alignments with observed insert sizes of at most this (maximum 100000, default = 1000)");
 struct arg_lit  *pairstrand = arg_lit0("E","pairstrand",         "5' and 3' are on same strand");
 
 struct arg_int  *alignstrand = arg_int0("Q","alignstrand","<int>", "align to this strand: 0 either, 1 Sense '+', 2 Antisense '-' (default is to align to either strand)");

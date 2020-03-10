@@ -17,7 +17,7 @@
 const int cMaxIncludeChroms = 20;		// max number of include chromosomes regular expressions
 const int cMaxExcludeChroms = 20;		// max number of exclude chromosomes regular expressions
 
-const int cMaxInBuffSize  = 10000000;	// read in chunks of this size from source BLAST file
+const int cMaxB2CSVInBuffSize  = 10000000;	// read in chunks of this size from source BLAST file
 const int cMaxOutBuffSize = 10000000;	// and write in chunks of this size to output csv file
 
 const int cMaxLenBLASTline = 1000;		// max length BLAST line expected - just a guess!
@@ -423,7 +423,7 @@ if((Chr = pParams->PushedBack) > 0)
 	}
 if(pParams->InBuffIdx == -1 || pParams->InBuffIdx >= pParams->NumInBuffer)
 	{
-	pParams->NumInBuffer = read(pParams->hBLASTinFile,pParams->pInBuffer,cMaxInBuffSize);
+	pParams->NumInBuffer = read(pParams->hBLASTinFile,pParams->pInBuffer, cMaxB2CSVInBuffSize);
 	if(pParams->NumInBuffer <= 0)
 		{
 		pParams->InBuffIdx = -1;
@@ -487,10 +487,10 @@ ProcParams.NumInBuffer = 0;
 ProcParams.PushedBack = 0;
 strcpy(ProcParams.szOutFile,pszOutFile);
 
-if((ProcParams.pInBuffer = new unsigned char [cMaxInBuffSize])==NULL)
+if((ProcParams.pInBuffer = new unsigned char [cMaxB2CSVInBuffSize])==NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Unable to allocate memory (%d bytes) for input buffering", 
-				cMaxInBuffSize);
+		cMaxB2CSVInBuffSize);
 	return(eBSFerrMem);
 	}
 

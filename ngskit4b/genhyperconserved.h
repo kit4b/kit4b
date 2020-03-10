@@ -2,7 +2,7 @@
 
 const int cMAtotMaxSeqAlignLen = 0x0fffffff; // total (over all aligned species) max seq length that can be buffered in concatenated seqs
 
-const int cMinCoreLen = 1;				// allow core lengths to be specified down to cMinCoreLen
+const int cHCMinCoreLen = 1;			// allow core lengths to be specified down to cMinCoreLen
 const int cDfltMinCoreLen = 50;			// if core lengths not specified then default to cDfltMinCoreLen
 const int cMaxMinCoreLen = 10000;		// minimum core lengths can be specified up to this length
 

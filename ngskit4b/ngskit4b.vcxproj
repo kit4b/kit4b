@@ -179,7 +179,6 @@
     <ClInclude Include="kit4bdna.h" />
     <ClInclude Include="genhyperconserved.h" />
     <ClInclude Include="KAligner.h" />
-    <ClInclude Include="Blitz.h" />
     <ClInclude Include="deNovoAssemb.h" />
     <ClInclude Include="FastaNxx.h" />
     <ClInclude Include="FilterSAMAlignments.h" />
@@ -197,7 +196,6 @@
     <ClInclude Include="SNPLoci.h" />
     <ClInclude Include="SQLiteDE.h" />
     <ClInclude Include="SQLiteMarkers.h" />
-    <ClInclude Include="SQLitePSL.h" />
     <ClInclude Include="SQLiteSummaries.h" />
     <ClInclude Include="SSRdiscovery.h" />
     <ClInclude Include="stdafx.h" />
@@ -253,7 +251,6 @@
     <ClCompile Include="SNPLoci.cpp" />
     <ClCompile Include="SQLiteDE.cpp" />
     <ClCompile Include="SQLiteMarkers.cpp" />
-    <ClCompile Include="SQLitePSL.cpp" />
     <ClCompile Include="SQLiteSummaries.cpp" />
     <ClCompile Include="SSRdiscovery.cpp" />
     <ClCompile Include="stdafx.cpp">

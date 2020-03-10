@@ -178,6 +178,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="argtable3.h" />
+    <ClInclude Include="CBlitz.h" />
+    <ClInclude Include="CSQLitePSL.h" />
     <ClInclude Include="kit4bversion.h" />
     <ClInclude Include="Contaminants.h" />
     <ClInclude Include="AlignValidate.h" />
@@ -241,6 +243,7 @@
     <ClCompile Include="argtable3.cpp">
       <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Level3</WarningLevel>
     </ClCompile>
+    <ClCompile Include="CBlitz.cpp" />
     <ClCompile Include="Contaminants.cpp" />
     <ClCompile Include="AlignValidate.cpp" />
     <ClCompile Include="BEDfile.cpp" />
@@ -250,6 +253,7 @@
     <ClCompile Include="Conformation.cpp" />
     <ClCompile Include="ConfSW.cpp" />
     <ClCompile Include="conservlib.cpp" />
+    <ClCompile Include="CSQLitePSL.cpp" />
     <ClCompile Include="CSVFile.cpp" />
     <ClCompile Include="CVS2BED.cpp" />
     <ClCompile Include="DataPoints.cpp" />

@@ -5819,9 +5819,6 @@ UINT32 NumTargSeqProc;
 
 bool bFirstIter;				// set false after the first subsequence core returned by LocateFirstExact has been processed
 
-INT64 LastTargIdx;
-UINT32 NumCopies;
-
 UINT32 PatIdx;
 INT64 TargSeqLeftIdx;
 INT64 ProbeSeqLeftIdx;
@@ -5926,13 +5923,15 @@ do
 		if((CurCoreSegOfs + CoreLen + CurCoreDelta) > ProbeLen)
 			CurCoreDelta = ProbeLen - (CurCoreSegOfs + CoreLen);
 
+		if (m_pOccKMerClas != NULL && CoreLen == m_OccKMerLen && (OverOccKMerClas(CoreLen, &pProbeSeq[CurCoreSegOfs]) != 1))	// 1 if number of K-mers of CoreLen is within range 1..max
+			continue;
+
 		TargIdx = LocateFirstExact(&pProbeSeq[CurCoreSegOfs],CoreLen,pTarg,m_pSfxBlock->SfxElSize,pSfxArray,0,0,SfxLen-1);
 		if(TargIdx == 0)        // 0 if no core segment matches
 			continue;			// try for match on next core segment after shifting core to right
 
 		TargIdx -= 1;
 		IterCnt = 0;
-		NumCopies = 0;
 		bFirstIter = true;		// set false after the first subsequence core returned by LocateFirstExact has been processed
 		while(!CurMaxIter || IterCnt < CurMaxIter)
 			{
@@ -5944,15 +5943,6 @@ do
 				// ensure not about to iterate past end of suffix array!
 				if((TargIdx + 1) >= (INT64)m_pSfxBlock->ConcatSeqLen || (SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,TargIdx+1) + CoreLen) >  (INT64)m_pSfxBlock->ConcatSeqLen)
 					break;
-
-				if(IterCnt == 100 && !NumCopies)
-					{
-					// check how many more exact copies there are of the current probe subsequence, if too many then don't bother exploring these
-					LastTargIdx = LocateLastExact(&pProbeSeq[CurCoreSegOfs],CoreLen,pTarg,m_pSfxBlock->SfxElSize,pSfxArray,0,TargIdx-1,SfxLen-1);
-					NumCopies = LastTargIdx > 0 ? (UINT32)(1 + LastTargIdx - TargIdx) : 0;
-					if(CurMaxIter && NumCopies > (UINT32)CurMaxIter)		// only checking at the 100th iteration allows a little slack
-						break;										// try next core segment
-					}
 
 				// check that this new putative core is still matching
 				pTargBase = &pTarg[SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,TargIdx+1)];
@@ -7126,7 +7116,6 @@ INT64 ProbeSeqLeftIdx;
 int TargMatchLen;
 
 int SpliceJunctLenLimit;
-INT64 LastTargIdx;
 UINT32 NumCopies;
 
 etSeqBase BisBase;
@@ -7190,6 +7179,10 @@ do
 				CurCoreSegOfs = ProbeLen - CoreLen;
 				break;
 			}
+
+		if (m_pOccKMerClas != NULL && CoreLen == m_OccKMerLen && (OverOccKMerClas(CoreLen, &pProbeSeq[CurCoreSegOfs]) != 1))	// 1 if number of K-mers of CoreLen is within range 1..max
+			continue;
+
 		TargIdx = LocateFirstExact(&pProbeSeq[CurCoreSegOfs],CoreLen,pTarg,m_pSfxBlock->SfxElSize,pSfxArray,0,0,SfxLen-1);
 		if(TargIdx == 0)        // 0 if no core segment matches
 			continue;			// try for match on next core segment after shifting core to right
@@ -7204,15 +7197,6 @@ do
 				// ensure not about to iterate past end of suffix array!
 				if((TargIdx + 1) >= (INT64)m_pSfxBlock->ConcatSeqLen || (SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,TargIdx+1) + (Phase == 0 ? ProbeLen : CoreLen)) >=  (INT64)m_pSfxBlock->ConcatSeqLen)
 					break;
-
-				if(IterCnt == 100 && !NumCopies)
-					{
-					// check how many more exact copies there are of the current probe subsequence, if too many then don't bother exploring these
-					LastTargIdx = LocateLastExact(&pProbeSeq[CurCoreSegOfs],CoreLen,pTarg,m_pSfxBlock->SfxElSize,pSfxArray,0,TargIdx-1,SfxLen-1);
-					NumCopies = LastTargIdx > 0 ? (UINT32)(1 + LastTargIdx - TargIdx) : 0;
-					if(CurMaxIter && NumCopies > (UINT32)CurMaxIter)		// only checking at the 100th iteration allows a little slack
-						break;										// try next core segment
-					}
 
 				// check that this new putative core is still matching
 				pTargBase = &pTarg[SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,TargIdx+1)];
@@ -7276,79 +7260,77 @@ do
 			NumTargSeqProc += 1;
 			IterCnt += 1;
 
+			pTargBase = &pTarg[TargSeqLeftIdx];
+			pProbeBase = pProbeSeq;
+
+				// explore for a splice junction to right if matched on core at 5' end of probe (phase 0)
+			if(Phase == 0)
 				{
-			    pTargBase = &pTarg[TargSeqLeftIdx];
-				pProbeBase = pProbeSeq;
-
-					// explore for a splice junction to right if matched on core at 5' end of probe (phase 0)
-				if(Phase == 0)
+				SpliceJunctLenLimit = (int)(m_pSfxBlock->ConcatSeqLen - TargSeqLeftIdx);
+				if(SpliceJunctLenLimit > (cMinJunctAlignSep + cMinJunctSegLen))
 					{
-					SpliceJunctLenLimit = (int)(m_pSfxBlock->ConcatSeqLen - TargSeqLeftIdx);
-					if(SpliceJunctLenLimit > (cMinJunctAlignSep + cMinJunctSegLen))
+					SpliceJunctLenLimit -= (cMinJunctAlignSep + cMinJunctSegLen);
+					if(SpliceJunctLenLimit > MaxSpliceJunctLen)
+						SpliceJunctLenLimit = MaxSpliceJunctLen;
+
+					RsltRightSplice = ExploreSpliceRight(CurStrand,			// aligning on this strand
+						SpliceJunctLenLimit,				// any junction not allowed to be longer than this
+						MaxTotMM,							// can be at most this many mismatches in total
+						CoreLen,							// core length used
+						ProbeLen,							// length of probe excluding any eBaseEOS
+						pProbeBase,							// pts to probe sequence
+						TargSeqLeftIdx,						// pTarg corresponds to this suffix index
+ 						m_pSfxBlock->ConcatSeqLen,				// total length of target
+						pTargBase,							// pts to target sequence
+						&RightHitLoci);						// where to return alignment loci
+
+					if(RsltRightSplice > 0 &&  RightHitLoci.Score >= pHits->Score)
 						{
-						SpliceJunctLenLimit -= (cMinJunctAlignSep + cMinJunctSegLen);
-						if(SpliceJunctLenLimit > MaxSpliceJunctLen)
-							SpliceJunctLenLimit = MaxSpliceJunctLen;
-
-						RsltRightSplice = ExploreSpliceRight(CurStrand,			// aligning on this strand
-							SpliceJunctLenLimit,				// any junction not allowed to be longer than this
-							MaxTotMM,							// can be at most this many mismatches in total
-							CoreLen,							// core length used
-							ProbeLen,							// length of probe excluding any eBaseEOS
-							pProbeBase,							// pts to probe sequence
-							TargSeqLeftIdx,						// pTarg corresponds to this suffix index
- 							m_pSfxBlock->ConcatSeqLen,				// total length of target
-						   pTargBase,							// pts to target sequence
-						   &RightHitLoci);						// where to return alignment loci
-
-						if(RsltRightSplice > 0 &&  RightHitLoci.Score >= pHits->Score)
+						if(RightHitLoci.Score == pHits->Score)
 							{
-							if(RightHitLoci.Score == pHits->Score)
-								{
-								if(pHits->Seg[0].MatchLoci == RightHitLoci.Seg[0].MatchLoci)
-									continue;
-								if(++BestScoreInstances > MaxHits)
-									continue;
-								}
-							else
-								BestScoreInstances = 0;
-							pHits[BestScoreInstances++] = RightHitLoci;
+							if(pHits->Seg[0].MatchLoci == RightHitLoci.Seg[0].MatchLoci)
+								continue;
+							if(++BestScoreInstances > MaxHits)
+								continue;
 							}
+						else
+							BestScoreInstances = 0;
+						pHits[BestScoreInstances++] = RightHitLoci;
 						}
 					}
+				}
 
-				// explore for a splice junction to the left if matched on core at 3' end of probe (phase 1)
-				if(Phase == 1 && (TargSeqLeftIdx >= (UINT32)(CurCoreSegOfs + cMinJunctSegLen)))
+			// explore for a splice junction to the left if matched on core at 3' end of probe (phase 1)
+			if(Phase == 1 && (TargSeqLeftIdx >= (UINT32)(CurCoreSegOfs + cMinJunctSegLen)))
+				{
+				SpliceJunctLenLimit = (int)min(TargSeqLeftIdx, (UINT32)MaxSpliceJunctLen);
+				if(SpliceJunctLenLimit >= (cMinJunctAlignSep + cMinJunctSegLen))
 					{
-					SpliceJunctLenLimit = (int)min(TargSeqLeftIdx, (UINT32)MaxSpliceJunctLen);
-					if(SpliceJunctLenLimit >= (cMinJunctAlignSep + cMinJunctSegLen))
+					SpliceJunctLenLimit -= cMinJunctSegLen;
+
+					RsltLeftSplice = ExploreSpliceLeft(CurStrand,							// aligning on this strand
+						SpliceJunctLenLimit,		// any junction has to be no longer than this length
+						MaxTotMM,				// can be at most this many mismatches in total
+						CoreLen,					// core length used
+						ProbeLen,				// length of probe excluding any eBaseEOS
+						pProbeBase,				// pts to probe sequence
+						TargSeqLeftIdx,	        // pTargBase corresponds to this suffix index
+						m_pSfxBlock->ConcatSeqLen,		// total length of target
+						pTargBase,				// pts to target sequence
+						&LeftHitLoci);			// where to return alignment loci
+
+					if(RsltLeftSplice > 0 &&  LeftHitLoci.Score >= pHits->Score)
 						{
-						SpliceJunctLenLimit -= cMinJunctSegLen;
-
-						RsltLeftSplice = ExploreSpliceLeft(CurStrand,							// aligning on this strand
-						   SpliceJunctLenLimit,		// any junction has to be no longer than this length
-						   MaxTotMM,				// can be at most this many mismatches in total
-						   CoreLen,					// core length used
-						   ProbeLen,				// length of probe excluding any eBaseEOS
-						   pProbeBase,				// pts to probe sequence
-						   TargSeqLeftIdx,	        // pTargBase corresponds to this suffix index
-						   m_pSfxBlock->ConcatSeqLen,		// total length of target
-						   pTargBase,				// pts to target sequence
-						   &LeftHitLoci);			// where to return alignment loci
-
-						if(RsltLeftSplice > 0 &&  LeftHitLoci.Score >= pHits->Score)
+						if(LeftHitLoci.Score == pHits->Score)
 							{
-							if(LeftHitLoci.Score == pHits->Score)
-								{
-								if(pHits->Seg[0].MatchLoci == LeftHitLoci.Seg[0].MatchLoci)
-									continue;
-								if(++BestScoreInstances > MaxHits)
-									continue;
-								}
-							else
-								BestScoreInstances = 0;;
-							pHits[BestScoreInstances++] = LeftHitLoci;
+							if(pHits->Seg[0].MatchLoci == LeftHitLoci.Seg[0].MatchLoci)
+								continue;
+							if(++BestScoreInstances > MaxHits)
+								continue;
 							}
+						else
+							BestScoreInstances = 0;;
+						pHits[BestScoreInstances++] = LeftHitLoci;
 						}
 					}
 				}
@@ -7441,7 +7423,6 @@ etSeqBase *pProbeBase;
 etSeqBase *pTargBase;
 char CurStrand;
 INT64 TargIdx;
-INT64 LastTargIdx;
 UINT32 NumCopies;
 
 UINT32 NumTargSeqProc;
@@ -7510,6 +7491,10 @@ do
 				CurCoreSegOfs = ProbeLen - CoreLen;
 				break;
 			}
+
+		if (m_pOccKMerClas != NULL && CoreLen == m_OccKMerLen && (OverOccKMerClas(CoreLen, &pProbeSeq[CurCoreSegOfs]) != 1))	// 1 if number of K-mers of CoreLen is within range 1..max
+			continue;
+
 		TargIdx = LocateFirstExact(&pProbeSeq[CurCoreSegOfs],CoreLen,pTarg,m_pSfxBlock->SfxElSize,pSfxArray,0,0,SfxLen-1);
 		if(TargIdx == 0)        // 0 if no core segment matches
 			continue;			// try for match on next core segment after shifting core to right
@@ -7524,15 +7509,6 @@ do
 				// ensure not about to iterate past end of suffix array!
 				if((TargIdx + 1) >= (INT64)m_pSfxBlock->ConcatSeqLen || (SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,TargIdx+1) + CoreLen) >  (INT64)m_pSfxBlock->ConcatSeqLen)
 					break;
-
-				if(IterCnt == 100 && !NumCopies)
-					{
-					// check how many more exact copies there are of the current probe subsequence, if too many then don't bother exploring these
-					LastTargIdx = LocateLastExact(&pProbeSeq[CurCoreSegOfs],CoreLen,pTarg,m_pSfxBlock->SfxElSize,pSfxArray,0,TargIdx-1,SfxLen-1);
-					NumCopies = LastTargIdx > 0 ? (UINT32)(1 + LastTargIdx - TargIdx) : 0;
-					if(CurMaxIter && NumCopies > (UINT32)CurMaxIter)		// only checking at the 100th iteration allows a little slack
-						break;										// try next core segment
-					}
 
 				// check that this new putative core is still matching
 				pTargBase = &pTarg[SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,TargIdx+1)];
@@ -7709,8 +7685,8 @@ for(Idx = 0; Idx < min(MaxHits,BestScoreInstances); Idx++,pCurHit++)
 		return(eHRnone);
 	if((pEntry2 = MapChunkHit2Entry(pCurHit->Seg[1].MatchLoci))==NULL)
 		return(eHRnone);
-	if(pEntry->EntryID != pEntry2->EntryID)			// InDels must only be accepted if intra-chromosome; Not sure as to how but occassionally ExploreInDelMatchLeft/Right
-		return(eHRnone);							// are identifying intra-chrom InDels in the Wheat GSS assembly, not observered in any other assembly
+	if(pEntry->EntryID != pEntry2->EntryID)			// InDels must only be accepted if intra-chromosome; Not sure as to how but occasionally ExploreInDelMatchLeft/Right
+		return(eHRnone);							// are identifying intra-chrom InDels in the Wheat GSS assembly, not observed in any other assembly
 													// This should be investigated so this check is a short term work around...
 
 	pCurHit->Seg[0].ChromID = pEntry->EntryID;
@@ -7796,7 +7772,8 @@ if(Rslt == 0 && microInDelLen > 0)
 	//    This is a rather compute intensive function, in order to get some reasonable throughput-
 	//	  a) the CoreLen is increased to be a min of either (ProbeLen-1)/2 or (CoreLen * 2) so as to reduce the number of internal processing iterations
 	//    b) the MaxTotMM is clamped to be at most cMaxJunctAlignMM
-	SpliceCore = min((CoreLen * 2), (ProbeLen-1)/2);
+// changed - smaller cores are likely to have more hits
+	SpliceCore = CoreLen;
 	Rslt = LocateInDels(ExtdProcFlags,ReadID,microInDelLen,MaxTotMM > cMaxMicroInDelMM ? cMaxMicroInDelMM : MaxTotMM,SpliceCore,Align2Strand,pLowHitInstances,
 								pLowMMCnt,pNxtLowMMCnt,pProbeSeq,ProbeLen,1,pHits,&BestInDelScore,m_MaxIter,NumAllocdIdentNodes,pAllocsIdentNodes);
 	if(Rslt != 0)
@@ -7809,8 +7786,8 @@ if(Rslt == 0 && MaxSpliceJunctLen > 0)
 	//	  a) the CoreLen is increased to be a min of either (ProbeLen-1)/2 or (CoreLen * 2) so as to reduce the number of internal processing iterations
 	//    b) the MaxTotMM is clamped to be at most cMaxJunctAlignMM
 	{
-
-	SpliceCore = min((CoreLen * 2), (ProbeLen-1)/2);
+// changed - smaller cores are likely to have more hits, was: SpliceCore = min((CoreLen * 2), (ProbeLen - 1) / 2);
+	SpliceCore = CoreLen;
 	Rslt=LocateSpliceJuncts(ExtdProcFlags,ReadID,MaxSpliceJunctLen,MaxTotMM > cMaxJunctAlignMM ? cMaxJunctAlignMM : MaxTotMM,
 						SpliceCore,Align2Strand,pLowHitInstances,
 								pLowMMCnt,pNxtLowMMCnt,pProbeSeq,ProbeLen,1,pHits,&BestInDelScore,m_MaxIter,NumAllocdIdentNodes,pAllocsIdentNodes);
@@ -8852,7 +8829,7 @@ for(MMIdx = 0; MMIdx <= TotMM && cMinJunctSegLen	< (ProbeLen - ProbeMMOfss[MMIdx
 			}
 
 		// following splice scoring is a little convoluted because we really are not too sure as to what strand a read really originated from
-		// especially if Illumina so we first try the strand cannonical splicesites and if no match then try the antisense splicesites but give
+		// especially if Illumina so we first try the strand canonical splicesites and if no match then try the antisense splicesites but give
 		// higher score if on the expected strand
 		if(CurStrand == '+')
 			{

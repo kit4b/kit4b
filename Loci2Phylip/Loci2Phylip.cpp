@@ -18,9 +18,9 @@ const int cDNADistRsltLen = cMAFmaxSpecies * cMAFmaxSpecies * 10;	// max length 
 
 const int cMAtotMaxSeqAlignLen = 0x0ffffff; // total (over all aligned species) max seq length that can be buffered in concatenated seqs
 
-const int cMinCoreLen = 4;				// allow core lengths to be specified down to cMinCoreLen
-const int cDfltCoreLen= 50;				// if core lengths not specified then default to cDfltMinCoreLen
-const int cMaxCoreLen = 10000;			// minimum core lengths can be specified upto this length
+const int cMinL2PCoreLen = 4;				// allow core lengths to be specified down to cMinCoreLen
+const int cDfltL2PCoreLen= 50;				// if core lengths not specified then default to cDfltMinCoreLen
+const int cMaxL2PCoreLen = 10000;			// minimum core lengths can be specified upto this length
 
 const int cMaxFlankLen = 10000;			// allow flanks of upto this many bases to be requested
 
@@ -534,23 +534,23 @@ if (!argerrors)
 		iFlankLen = cMaxFlankLen;
 		}
 
-	iMinCoreLen = MinCoreLen->count ? MinCoreLen->ival[0] : cDfltCoreLen;
-	if(iMinCoreLen < cMinCoreLen)
+	iMinCoreLen = MinCoreLen->count ? MinCoreLen->ival[0] : cDfltL2PCoreLen;
+	if(iMinCoreLen < cMinL2PCoreLen)
 		{
-		printf("\nSpecified minimum core length '-n%d' < %d, assuming you meant %d",iMinCoreLen,cMinCoreLen,cMinCoreLen);
-		iMinCoreLen = cMinCoreLen;
+		printf("\nSpecified minimum core length '-n%d' < %d, assuming you meant %d",iMinCoreLen, cMinL2PCoreLen, cMinL2PCoreLen);
+		iMinCoreLen = cMinL2PCoreLen;
 		}
 	else
 		{
-		if(iMinCoreLen > cMaxCoreLen)
+		if(iMinCoreLen > cMaxL2PCoreLen)
 			{
-			printf("\nSpecified minimum core length '-n%d' > %d, assuming you meant %d",iMinCoreLen,cMaxCoreLen,cMaxCoreLen);
-			iMinCoreLen = cMaxCoreLen;
+			printf("\nSpecified minimum core length '-n%d' > %d, assuming you meant %d",iMinCoreLen, cMaxL2PCoreLen, cMaxL2PCoreLen);
+			iMinCoreLen = cMaxL2PCoreLen;
 			}
 		}
 
 
-	iMaxCoreLen = MaxCoreLen->count ? MaxCoreLen->ival[0] : cMaxCoreLen;
+	iMaxCoreLen = MaxCoreLen->count ? MaxCoreLen->ival[0] : cMaxL2PCoreLen;
 	if(iMaxCoreLen < iMinCoreLen)
 		{
 		printf("\nSpecified maximum hyper length '-n%d' < %d, assuming you meant %d",iMaxCoreLen,iMinCoreLen,iMinCoreLen);
@@ -558,10 +558,10 @@ if (!argerrors)
 		}
 	else
 		{
-		if(iMaxCoreLen > cMaxCoreLen)
+		if(iMaxCoreLen > cMaxL2PCoreLen)
 			{
-			printf("\nSpecified maximum core length was '-n%d' > %d, assuming you meant '-n%d'",iMaxCoreLen,cMaxCoreLen,cMaxCoreLen);
-			iMaxCoreLen = cMaxCoreLen;
+			printf("\nSpecified maximum core length was '-n%d' > %d, assuming you meant '-n%d'",iMaxCoreLen, cMaxL2PCoreLen, cMaxL2PCoreLen);
+			iMaxCoreLen = cMaxL2PCoreLen;
 			}
 		}
 

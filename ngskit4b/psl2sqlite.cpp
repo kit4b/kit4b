@@ -29,7 +29,6 @@ Please contact Dr Stuart Stephen < stuartjs@g3web.com > if you have any question
 #endif
 
 #include "ngskit4b.h"
-#include "SQLitePSL.h"
 
 int 
 Process(int PMode,					// processing mode, 0 to delete any existing then create new SQLite, 1 to append to existing SQLite
@@ -68,9 +67,9 @@ int MinIdentity;						// minimum required identity
 int MinScore;							// minimum required score
 int MinMatches;							// minimum required base matches
 
-char szExprName[cMaxIdntNameLen];		// name of this experiment
-char szExprDescr[cMaxIdntDescrLen];		// describes experiment
-char szBlatParams[cMaxIdntDescrLen];	// Blat parameters used
+char szExprName[cMaxPSLIdntNameLen];		// name of this experiment
+char szExprDescr[cMaxPSLIdntDescrLen];		// describes experiment
+char szBlatParams[cMaxPSLIdntDescrLen];	// Blat parameters used
 char szQueryFile[_MAX_PATH];	// Blat query file name
 char szTargetFile[_MAX_PATH];   // Blat target file name
 

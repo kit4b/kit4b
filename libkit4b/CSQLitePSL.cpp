@@ -28,14 +28,12 @@ Orginal 'BioKanga' copyright notice has been retained and immediately follows th
 
 #if _WIN32
 #include <process.h>
-#include "../libkit4b/commhdrs.h"
+#include "./commhdrs.h"
 #else
 #include <sys/mman.h>
 #include <pthread.h>
-#include "../libkit4b/commhdrs.h"
+#include "./commhdrs.h"
 #endif
-
-#include "SQLitePSL.h"
 
 // Following database schema is utilised
 // Tables
@@ -321,7 +319,7 @@ m_UsedAlignmentSummariesSize = 0;
 memset(m_AlignSummaryInstancesOfs,0,sizeof(m_AlignSummaryInstancesOfs));
 
 size_t memreq;
-memreq = ((size_t)cAllocAlignSummaryInsts * (sizeof(tsAlignSummary) + (size_t)cMaxSeqNameLen));
+memreq = ((size_t)cAllocAlignSummaryInsts * (sizeof(tsAlignSummary) + (size_t)cMaxPSLSeqNameLen));
 #ifdef _WIN32
 m_pAlignmentSummaries = (tsAlignSummary *) malloc(memreq);	// initial and perhaps the only allocation
 if(m_pAlignmentSummaries == NULL)
@@ -584,9 +582,9 @@ tsAlignSummary *pATarg;
 
 // always ensure that sufficent memory has been allocated for at least 2 more summary instances to be allocated
 // this is to ensure both pAQuery and pATarg will be consistent even if one or both required a alignment summary instance to be created
-if((m_allocAlignmentSummariesSize - m_UsedAlignmentSummariesSize) < (2 * (sizeof(tsAlignSummary) + (size_t)(cMaxSeqNameLen))))
+if((m_allocAlignmentSummariesSize - m_UsedAlignmentSummariesSize) < (2 * (sizeof(tsAlignSummary) + (size_t)(cMaxPSLSeqNameLen))))
 	{
-	size_t memreq = m_allocAlignmentSummariesSize + (cAllocAlignSummaryInsts * (sizeof(tsAlignSummary) + (size_t)(cMaxSeqNameLen)));
+	size_t memreq = m_allocAlignmentSummariesSize + (cAllocAlignSummaryInsts * (sizeof(tsAlignSummary) + (size_t)(cMaxPSLSeqNameLen)));
  #ifdef _WIN32
 	m_pAlignmentSummaries = (tsAlignSummary *) realloc((UINT8 *)m_pAlignmentSummaries,memreq);
 #else
@@ -1081,11 +1079,11 @@ int QBasesInDels;		// number of bases total in all InDels in query
 int TNumInDels;			// number of InDel seqs in target
 int TBasesInDels;		// number of bases total in all InDels in target
 char szStrand[10];		// '+' or '-' for query strand, optionally followed by '+' or '-' for target genomic strand when using translated alignments
-char szQName[cMaxSeqNameLen+1];			// query sequence name
+char szQName[cMaxPSLSeqNameLen+1];			// query sequence name
 int  QSize;				// query sequence size
 int  QStart;			// alignment start psn in query
 int  QEnd;				// alignment end psn in query
-char szTName[cMaxSeqNameLen+1];			// target sequence name
+char szTName[cMaxPSLSeqNameLen+1];			// target sequence name
 int  TSize;				// target sequence size
 int  TStart;			// alignment start psn in target
 int  TEnd;				// alignment end psn in target

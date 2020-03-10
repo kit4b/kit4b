@@ -203,7 +203,7 @@ if(m_bAsyncLoading)
 
 Reset();
 m_bAsyncLoading = true;
-if((m_pQuerySeqs = new tsQuerySeq [MaxReadahead]) == NULL)
+if((m_pQuerySeqs = new tsPBQuerySeq[MaxReadahead]) == NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Failed to allocate memory for query sequences");
 	Reset();
@@ -234,7 +234,7 @@ void *LoadReadsFileThread(void * pThreadPars)
 #endif
 {
 int Rslt;
-tsLoadQuerySeqsThreadPars *pPars = (tsLoadQuerySeqsThreadPars *)pThreadPars;			// makes it easier not having to deal with casts!
+tsLoadPBQuerySeqsThreadPars *pPars = (tsLoadPBQuerySeqsThreadPars *)pThreadPars;			// makes it easier not having to deal with casts!
 CPacBioUtility *pPacBioUtility = (CPacBioUtility *)pPars->pThis;
 
 Rslt = pPacBioUtility->ProcLoadReadsFile(pPars);
@@ -250,7 +250,7 @@ pthread_exit(NULL);
 int
 CPacBioUtility::InitLoadQuerySeqs(void)
 {
-tsLoadQuerySeqsThreadPars ThreadPars;
+tsLoadPBQuerySeqsThreadPars ThreadPars;
 
 // initiate loading the reads
 m_ThreadLoadQuerySeqsRslt = -1;
@@ -296,7 +296,7 @@ CPacBioUtility::EnqueueQuerySeq(char *pszQueryIdent,    // query identifier pars
 int Idx;
 int SeqID;
 UINT8 *pSeq;
-tsQuerySeq *psQuery;
+tsPBQuerySeq*psQuery;
 if(m_TermBackgoundThreads != 0)	// need to immediately self-terminate?
 	return(0);
 if((pSeq = new UINT8 [QuerySeqLen]) == NULL)
@@ -326,8 +326,8 @@ SeqID = ++m_TotSeqIDs;
 psQuery->SeqID = SeqID;
 psQuery->pQuerySeq = pSeq;
 psQuery->QuerySeqLen = QuerySeqLen; 
-strncpy(psQuery->szQueryIdent,pszQueryIdent,cMaxQuerySeqIdentLen);
-psQuery->szQueryIdent[cMaxQuerySeqIdentLen] = '\0';
+strncpy(psQuery->szQueryIdent,pszQueryIdent,cMaxPBQuerySeqIdentLen);
+psQuery->szQueryIdent[cMaxPBQuerySeqIdentLen] = '\0';
 m_NumQuerySeqs += 1;
 ReleaseLock(true);
 return(SeqID);
@@ -342,7 +342,7 @@ CPacBioUtility::DequeueQuerySeq(int WaitSecs,		// if no sequences available to b
 {
 bool bAllQuerySeqsLoaded;
 UINT8 *pSeq;
-tsQuerySeq *psQuery;
+tsPBQuerySeq*psQuery;
 
 // any sequences available to be dequeued?
 if(WaitSecs < 0)
@@ -378,7 +378,7 @@ return(pSeq);
 }
 
 int
-CPacBioUtility::ProcLoadReadsFile(tsLoadQuerySeqsThreadPars *pPars)
+CPacBioUtility::ProcLoadReadsFile(tsLoadPBQuerySeqsThreadPars *pPars)
 {
 CFasta Fasta;
 unsigned char *pSeqBuff;
@@ -446,10 +446,10 @@ for(FileIdx = 0; FileIdx < m_NumInputFiles; FileIdx++)
 			}
 
 		// note malloc is used as can then simply realloc to expand as may later be required
-		AllocdBuffSize = (size_t)cAllocQuerySeqLen;
+		AllocdBuffSize = (size_t)cAllocPBQuerySeqLen;
 		if((pSeqBuff = (unsigned char *)malloc(AllocdBuffSize)) == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcLoadReadsFile:- Unable to allocate memory (%u bytes) for sequence buffer",(UINT32)cAllocQuerySeqLen);
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcLoadReadsFile:- Unable to allocate memory (%u bytes) for sequence buffer",(UINT32)cAllocPBQuerySeqLen);
 			Fasta.Close();
 			*pRslt = eBSFerrMem;
 			AcquireLock(true);
@@ -459,7 +459,7 @@ for(FileIdx = 0; FileIdx < m_NumInputFiles; FileIdx++)
 			ReleaseLock(true);
 			return(eBSFerrMem);
 			}
-		AvailBuffSize = cAllocQuerySeqLen;
+		AvailBuffSize = cAllocPBQuerySeqLen;
 
 		bFirstEntry = true;
 		bEntryCreated = false;
@@ -519,19 +519,19 @@ for(FileIdx = 0; FileIdx < m_NumInputFiles; FileIdx++)
 
 			BuffOfs += SeqLen;
 
-			if(BuffOfs > cMaxQuerySeqLen)	// truncate at cMaxQuerySeqLen
+			if(BuffOfs > cMaxPBQuerySeqLen)	// truncate at cMaxQuerySeqLen
 				{
-				gDiagnostics.DiagOut(eDLWarn,gszProcName,"ProcLoadReadsFile:- Truncating overlength query sequence '%s' to %d",szName,cMaxQuerySeqLen);
-				BuffOfs = cMaxQuerySeqLen;
+				gDiagnostics.DiagOut(eDLWarn,gszProcName,"ProcLoadReadsFile:- Truncating overlength query sequence '%s' to %d",szName,cMaxPBQuerySeqLen);
+				BuffOfs = cMaxPBQuerySeqLen;
 				AvailBuffSize = AllocdBuffSize - BuffOfs;
 				bTruncSeq = true;
 				continue;
 				}
 			AvailBuffSize -= SeqLen;
 
-			if(AvailBuffSize < (size_t)(cAllocQuerySeqLen / 2))
+			if(AvailBuffSize < (size_t)(cAllocPBQuerySeqLen / 2))
 				{
-				size_t NewSize = (size_t)cAllocQuerySeqLen + AllocdBuffSize;
+				size_t NewSize = (size_t)cAllocPBQuerySeqLen + AllocdBuffSize;
 				unsigned char *pTmp;
 				if((pTmp = (unsigned char *)realloc(pSeqBuff,NewSize))==NULL)
 					{

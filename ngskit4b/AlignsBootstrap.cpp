@@ -830,7 +830,7 @@ CFasta Fasta;
 
 switch(SeqSrc) {
 	case ePMBSSQuerySeqs:	// sequence loaded from query sequence
-		MaxSeqLen = cMaxQuerySeqLen;
+		MaxSeqLen = cABMaxQuerySeqLen;
 		break;
 
 	case ePMBSSTargSeqs:	// sequence loaded from target sequence
@@ -1059,7 +1059,7 @@ CAlignsBootstrap::AlignQueriesToTargs(bool bSenseOnly,	// true if to align sense
 						UINT32 EndQuerySeqIdx,			// through to this query sequence inclusive
 						int MaxSubs)				// accepting at most this percentage of bases of query length to be mismatches
 {
-UINT8 RevCplQBases[cMaxQuerySeqLen+1];
+UINT8 RevCplQBases[cABMaxQuerySeqLen +1];
 tsSeqAllocs *pQSeqs;
 tsSeqAllocs *pQAssemb;	
 tsSeqBlock *pQBlock;

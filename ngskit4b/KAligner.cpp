@@ -362,17 +362,17 @@ if(pszLociConstraintsFile != NULL && pszLociConstraintsFile[0] != '\0')
 int MaxIter;
 switch(PMode) {
 	case ePMdefault:			// default processing mode
-		MaxIter = cDfltSensCoreIters;
+		MaxIter = cDfltKASensCoreIters;
 		break;
 	case ePMMoreSens:			// more sensitive - slower
-		MaxIter = cMoreSensCoreIters;
+		MaxIter = cMoreKASensCoreIters;
 		break;
 	case ePMUltraSens:			// ultra sensitive - much slower
-		MaxIter = cUltraSensCoreIters;
+		MaxIter = cUltraKASensCoreIters;
 		break;
 	case ePMLessSens:			// less sensitive - quicker
 	default:
-		MaxIter = cMinSensCoreIters;
+		MaxIter = cMinKASensCoreIters;
 	}
 m_pSfxArray->SetMaxIter(MaxIter);
 
@@ -3537,7 +3537,6 @@ int
 CKAligner::ReportAlignStats(void)		// report basic alignment statistics
 {
 int Rslt;
-char szChromName[128];
 UINT32 NumUniques = 0;
 UINT32 NumPlusHits = 0;
 UINT32 NumNoMatches = 0;
@@ -3553,8 +3552,6 @@ UINT32 NumIndels = 0;
 UINT32 NumSpliced = 0;
 UINT32 PrevTargEntry = 0;
 UINT32 NumTrimmed = 0;
-
-
 
 UINT32 NARUnaligned = 0;				// read has yet to be aligned
 UINT32 NARAccepted = 0;					// read has been accepted as being aligned
@@ -3601,103 +3598,6 @@ while((pReadHit = IterReads(pReadHit))!=NULL)
 				NumSpliced += 1;
 			if(pReadHit->HitLoci.FlagTR)
 				NumTrimmed += 1;
-			pReadHit->HitLoci.FlagIA = 0;
-			pReadHit->HitLoci.FlagCA = 0;
-			if(bSimReads || NumUniques == 1)				  // check if simulated reads containing loci
-				{
-				bool bRandReadSeq;
-				int x1;
-				char szxChrom[100];
-				char szx1Chrom[100];
-				char szx2Chrom[100];
-				char szSimType[100];
-				int xStart;
-				int xEnd;
-				int xLen;
-				char xStrand;
-				int xErrs;
-				int Its;
-				bRandReadSeq = false;
-				// >lcl|usimreads|00000001|gnl|UG|Ta#S58887126|330|429|100|+|0|0|0
-				// >lcl|usimreads|00000001  
-				// |gnl|UG|Ta#S58887126
-				// |330|429|100|+|0|0|0
-				Its = sscanf((char *)pReadHit->Read,"%[^|]|usimreads|%d|%[^|]|%d|%d|%d|%c|%d",szSimType,&x1,szxChrom,&xStart,&xEnd,&xLen,&xStrand,&xErrs);
-				if(Its >= 6)
-					{
-					bSimReads = true;
-					if(!stricmp(szSimType,"lcl"))
-						bRandReadSeq = false;
-					else
-						bRandReadSeq = true;
-					}
-				else
-					{
-					Its = sscanf((char *)pReadHit->Read,"%[^|]|usimreads|%d|%[^|]|%[^|]|%[^|]|%d|%d|%d|%c|%d",szSimType,&x1,szxChrom,szx1Chrom,szx2Chrom,&xStart,&xEnd,&xLen,&xStrand,&xErrs);
-					if(Its < 8) 
-						bSimReads = false;
-					else
-						{
-						strcat(szxChrom,"|");
-						strcat(szxChrom,szx1Chrom);
-						strcat(szxChrom,"|");
-						strcat(szxChrom,szx2Chrom);
-						bSimReads = true;
-						if(!stricmp(szSimType,"lcl"))
-							bRandReadSeq = false;
-						else
-							bRandReadSeq = true;
-						}
-					}
-
-				if(pReadHit->HitLoci.Hit.Seg[0].ChromID != (UINT32)PrevTargEntry)
-					{
-					m_pSfxArray->GetIdentName(pReadHit->HitLoci.Hit.Seg[0].ChromID,sizeof(szChromName),szChromName);
-					PrevTargEntry = pReadHit->HitLoci.Hit.Seg[0].ChromID;
-					}
-
-				if(!bSimReads)
-					break;
-
-				if(stricmp(szChromName,szxChrom))
-					{
-					NumReadsMisaligned += 1;
-					pReadHit->HitLoci.FlagIA = 1;
-					break;
-					}
-
-				int LeftOfs;
-				int RightOfs;
-
-				// the determination as to if a read has been correctly aligned is a little crude but will generally be correct
-				// the crudeness arises because a read may not have been segmented during the alignment process although it originated from a microInDel or
-				// splice junction so only one of the edges will be correct. This could have been because there were insufficient mismatches in a flank
-				// to have been worth the cost of exploring as a potential segmented alignment.
-				// Another complication is auto-edge trimming resulting in alignments with edges not coincident with the source simulated read loci.
-				// The flow here is to classify the alignments into three groups:
-				// a)	both edges are coincident with the source simulated reads edge loci
-				// b)   one edge only is coincident
-				// c)   neither edge is coincident
-				LeftOfs = (INT32)pReadHit->HitLoci.Hit.Seg[0].MatchLoci;
-				if(pReadHit->HitLoci.FlagSegs)
-					RightOfs = (INT32)pReadHit->HitLoci.Hit.Seg[1].MatchLoci + pReadHit->HitLoci.Hit.Seg[1].MatchLen - 1;
-				else
-					RightOfs = LeftOfs + pReadHit->HitLoci.Hit.Seg[0].MatchLen - 1;
-
-				if(LeftOfs == xStart || RightOfs == xEnd)
-					{
-					if(LeftOfs != xStart || RightOfs != xEnd)
-						NumReads1EdgeAligned += 1;
-					else
-						NumReads2EdgeAligned += 1;
-					pReadHit->HitLoci.FlagCA = 1;
-					}
-				else
-					{
-					NumReadsMisaligned += 1;
-					pReadHit->HitLoci.FlagIA = 1;
-					}
-				}
 			break;
 
 		case eNARNs:					// not accepted because contains too many indeterminate bases
@@ -6616,34 +6516,17 @@ while((pReadHit = IterSortedReads(pReadHit))!=NULL)
 					bSkipBEDformat = true;
 				}
 
-		if(pReadHit->HitLoci.FlagIA == 1)
-			{
-			if(pReadHit->HitLoci.Hit.FlgInDel)
-				pszAlignType = "iari";
-			else
-				if(pReadHit->HitLoci.Hit.FlgSplice)
-					pszAlignType = "iarj";
-				else
-					{
-					pszAlignType = "iar";
-					if(m_FMode > eFMbed)
-						bSkipBEDformat = true;
-					}
-			}
+		if(pReadHit->HitLoci.Hit.FlgInDel)
+			pszAlignType = "ari";
 		else
-			{
-			if(pReadHit->HitLoci.Hit.FlgInDel)
-				pszAlignType = "ari";
+			if(pReadHit->HitLoci.Hit.FlgSplice)
+				pszAlignType = "arj";
 			else
-				if(pReadHit->HitLoci.Hit.FlgSplice)
-					pszAlignType = "arj";
-				else
-					{
-					pszAlignType = "ar";
-					if(m_FMode > eFMbed)
-						bSkipBEDformat = true;
-					}
-			}
+				{
+				pszAlignType = "ar";
+				if(m_FMode > eFMbed)
+					bSkipBEDformat = true;
+				}
 
 		tsSegLoci *pSeg;
 		int SegIdx;
@@ -6942,7 +6825,7 @@ tsSegLoci *pSeg;
 int ReadHitBuffIdx;						// index into output szReadHits
 
 tBSFEntryID PrevTargEntry;
-UINT8 ReadHit[sizeof(tsReadHit) + cMaxDescrLen + cMaxFastQSeqLen + 10];
+UINT8 ReadHit[sizeof(tsReadHit) + cMaxKADescrLen + cMaxFastQSeqLen + 10];
 tsReadHit *pMultiHit;
 
 m_MaxAlignLen = 0;
@@ -8958,7 +8841,7 @@ int AutoCoreLen = 1;
 while (m_BlockTotSeqLen >>= 2)
 	AutoCoreLen++;
 AutoCoreLen -= 1;
-m_MinCoreLen = max(cMinCoreLen, AutoCoreLen);
+m_MinCoreLen = max(cKAMinCoreLen, AutoCoreLen);
 
 // MaxNumSlides is per 100bp of read length
 // more slides enables higher sensitivity but negatively impacts on alignment throughput
@@ -11048,7 +10931,7 @@ UINT8 Qphred;
 
 int PE1NumDescrReads;
 int PE1DescrLen;
-UINT8 szPE1DescrBuff[cMaxDescrLen];
+UINT8 szPE1DescrBuff[cMaxKADescrLen];
 int PE1ReadLen;
 UINT8 szPE1ReadBuff[cMaxReadLen];
 int PE1QualLen;
@@ -11061,7 +10944,7 @@ int PE1NumOverlength;
 
 int PE2NumDescrReads;
 int PE2DescrLen;
-UINT8 szPE2DescrBuff[cMaxDescrLen];
+UINT8 szPE2DescrBuff[cMaxKADescrLen];
 int PE2ReadLen;
 UINT8 szPE2ReadBuff[cMaxReadLen];
 int PE2QualLen;
@@ -11259,7 +11142,7 @@ while((Rslt = (teBSFrsltCodes)(PE1ReadLen = PE1Fasta.ReadSequence(szPE1ReadBuff,
 	if(PE1ReadLen == eBSFFastaDescr)		// just read a descriptor line which would be as expected for multifasta or fastq
 		{
 		PE1DescrLen = PE1Fasta.ReadDescriptor((char *)szPE1DescrBuff,sizeof(szPE1DescrBuff)-1);
-		szPE1DescrBuff[cMaxDescrLen-1] = '\0';
+		szPE1DescrBuff[cMaxKADescrLen-1] = '\0';
 		PE1ReadLen = PE1Fasta.ReadSequence(szPE1ReadBuff,sizeof(szPE1ReadBuff)-1);
 		if(PE1ReadLen < 0 || PE1ReadLen == eBSFFastaDescr || PE1ReadLen > cMaxReadLen)
 			{
@@ -11291,7 +11174,7 @@ while((Rslt = (teBSFrsltCodes)(PE1ReadLen = PE1Fasta.ReadSequence(szPE1ReadBuff,
 			if(PE2ReadLen == eBSFFastaDescr)		// just read a descriptor line which would be as expected for multifasta or fastq
 				{
 				PE2DescrLen = PE2Fasta.ReadDescriptor((char *)szPE2DescrBuff,sizeof(szPE2DescrBuff)-1);
-				szPE2DescrBuff[cMaxDescrLen-1] = '\0';
+				szPE2DescrBuff[cMaxKADescrLen-1] = '\0';
 				PE2ReadLen = PE2Fasta.ReadSequence(szPE2ReadBuff,sizeof(szPE2ReadBuff)-1);
 				if(PE2ReadLen < 0  || PE1ReadLen == eBSFFastaDescr  || PE1ReadLen > cMaxReadLen)
 					{

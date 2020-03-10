@@ -1,9 +1,9 @@
 #pragma once
 
-const int cMaxQuerySeqIdentLen = 80;		// allow for fasta sequence identifer of upto this length
-const int cAllocQuerySeqLen = 0x030000;	// initially allocate to hold a query sequence of up to this length, will be realloc'd if needed for longer query sequences
-const int cMaxQuerySeqLen = (cAllocQuerySeqLen * 32);    // can handle query sequences of up to this maximal length, longer sequences will be truncated to this length and the user warned
-const int cMaxReadAheadQuerySeqs = 4000;	// read ahead and enqueue up to at most this many query sequences
+const int cMaxPBQuerySeqIdentLen = 80;		// allow for fasta sequence identifer of upto this length
+const int cAllocPBQuerySeqLen = 0x030000;	// initially allocate to hold a query sequence of up to this length, will be realloc'd if needed for longer query sequences
+const int cMaxPBQuerySeqLen = (cAllocPBQuerySeqLen * 32);    // can handle query sequences of up to this maximal length, longer sequences will be truncated to this length and the user warned
+const int cMaxPBReadAheadQuerySeqs = 4000;	// read ahead and enqueue up to at most this many query sequences
 
 
 const int cMinSWQuickQueryLen = 20;				// SWQuick() accepting query sequences down to this length
@@ -32,14 +32,14 @@ typedef struct TAG_sSMRTBellHitz {
 	int LocOfs;				// offset + 1 within the pacbio read at which the initial tetramer was identified
 } tsSMRTBellHitz;
 
-typedef struct TAG_sQuerySeq {
+typedef struct TAG_sPBQuerySeq {
     int SeqID;						// monotonically increasing unique sequence identifier
-	char szQueryIdent[cMaxQuerySeqIdentLen+1];	// fasta identifier
+	char szQueryIdent[cMaxPBQuerySeqIdentLen+1];	// fasta identifier
 	int QuerySeqLen;				// query sequence length
 	UINT8 *pQuerySeq;				// allocated to hold sequence 
-} tsQuerySeq;
+} tsPBQuerySeq;
 
-typedef struct TAG_sLoadQuerySeqsThreadPars {
+typedef struct TAG_sLoadPBQuerySeqsThreadPars {
 	int ThreadIdx;					// uniquely identifies this thread
 	void *pThis;					// will be initialised to pt to CBlitz instance
 
@@ -52,7 +52,7 @@ typedef struct TAG_sLoadQuerySeqsThreadPars {
 #endif
 	int *pRslt;						// write intermediate result codes to this location
 	int Rslt;						// returned result code
-} tsLoadQuerySeqsThreadPars;
+} tsLoadPBQuerySeqsThreadPars;
 
 typedef struct TAG_sSWQuickHit {
 	int HiScore;					// hit has this maximal score
@@ -81,7 +81,7 @@ class CPacBioUtility
 	int m_NumQuerySeqs;				// number of query sequences currently in m_pQuerySeqs
 	int m_NxtQuerySeqIdx;			// index into m_pQuerySeqs[] at which to dequeue the next query sequence
 	int m_AllocdQuerySeqs;			// number of query sequences allocated
-	tsQuerySeq *m_pQuerySeqs;		// allocated to hold array of query sequences
+	tsPBQuerySeq*m_pQuerySeqs;		// allocated to hold array of query sequences
 	
 	bool m_bAllQuerySeqsLoaded;			// set true when all query sequences have been parsed and loaded
 	teBSFrsltCodes m_LoadQuerySeqsRslt;	// set with exit code from background query sequences load thread, read after checking if m_bAllQuerySeqsLoaded has been set
@@ -122,11 +122,11 @@ public:
 
 	void Reset(void);
 	
-	int ProcLoadReadsFile(tsLoadQuerySeqsThreadPars *pPars);
+	int ProcLoadReadsFile(tsLoadPBQuerySeqsThreadPars *pPars);
 
 	teBSFrsltCodes StartAsyncLoadSeqs(int NumInputFiles,			// number of input files
 									char **ppszInputFiles,		// names (wildcards allowed) of input files containing reads to be filtered
-									int MaxReadahead = cMaxReadAheadQuerySeqs);	 // read ahead for at most this number of sequences
+									int MaxReadahead = cMaxPBReadAheadQuerySeqs);	 // read ahead for at most this number of sequences
 
 	UINT8 *										// returned dequeued sequence, caller is responsible for deleting memory allocated to hold the returned sequence (delete pRetSeq;)
 		DequeueQuerySeq(int WaitSecs,		// if no sequences available to be dequeued then wait at most this many seconds for a sequence to become available

@@ -28,7 +28,7 @@ const UINT32 cDfltSamplingAttempts = 10000;		// default is to allow this many sa
 
 const int cMaxAssembSeqLen = 0x5fffffff;	// accepting individual assembly sequences if no longer than this length
 
-const int cMaxQuerySeqLen = 0x0ffff;		// accepting individual query sequences if no longer than this length
+const int cABMaxQuerySeqLen = 0x0ffff;		// accepting individual query sequences if no longer than this length
 const int cMaxTargSeqLen = 0x0fffff;		// accepting individual target sequences if no longer than this length
 
 const int cNumSeqDescrs = 1000;				// initially allocate for this number of block descriptors

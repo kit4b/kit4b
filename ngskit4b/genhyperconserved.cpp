@@ -365,10 +365,10 @@ if (!argerrors)
 					}
 				else
 					{
-					if(iMinUltraLen < cMinCoreLen)
+					if(iMinUltraLen < cHCMinCoreLen)
 						{
-						printf("\nSpecified minimum ultra length was '-n%d' < %d, assuming you meant '-n%d'",iMinUltraLen,cMinCoreLen,cMinCoreLen);
-						iMinUltraLen = cMinCoreLen;
+						printf("\nSpecified minimum ultra length was '-n%d' < %d, assuming you meant '-n%d'",iMinUltraLen,cHCMinCoreLen,cHCMinCoreLen);
+						iMinUltraLen = cHCMinCoreLen;
 						}
 					else
 						if(iMinUltraLen > cMaxMinCoreLen)
@@ -396,10 +396,10 @@ if (!argerrors)
 
 		if(iMinHyperLen > 0)	// Note: will only process minimum required identity if hypercore length was specified > 0
 			{
-			if(iMinHyperLen < cMinCoreLen)
+			if(iMinHyperLen < cHCMinCoreLen)
 				{
-				printf("\nSpecified minimum hyper length '-N%d' < %d, assuming you meant '-N%d'",iMinHyperLen,cMinCoreLen,cMinCoreLen);
-				iMinHyperLen = cMinCoreLen;
+				printf("\nSpecified minimum hyper length '-N%d' < %d, assuming you meant '-N%d'",iMinHyperLen, cHCMinCoreLen, cHCMinCoreLen);
+				iMinHyperLen = cHCMinCoreLen;
 				}
 			else
 				if(iMinHyperLen > cMaxMinCoreLen)

@@ -16,11 +16,11 @@
 const int cMaxIncludeChroms = 20;		// max number of include chromosomes regular expressions
 const int cMaxExcludeChroms = 20;		// max number of exclude chromosomes regular expressions
 
-const int cMaxInBuffSize  = 10000000;	// read in chunks of this size from source psl file
+const int cMaxP2CInBuffSize  = 10000000;	// read in chunks of this size from source psl file
 const int cMaxOutBuffSize = 10000000;	// and write in chunks of this size to output csv file
 
-const int cMaxLenPSLline = 32000;		// max length PSL line expected - just a guess!
-const int cMaxNumPSLblocks = 1000;		// max number of blocks in any PSL alignment - again just a guess!
+const int cMaxP2CLenPSLline = 32000;		// max length PSL line expected - just a guess!
+const int cMaxP2CNumPSLblocks = 1000;		// max number of blocks in any PSL alignment - again just a guess!
 
 typedef struct TAG_sPSLline {
 	int Matches;			// number of matches which aren't repeats
@@ -42,9 +42,9 @@ typedef struct TAG_sPSLline {
 	int  tStart;			// alignment start psn in target
 	int  tEnd;				// alignment end psn in target
 	int  blockCount;		// number of blocks in the alignment
-	int  blockSizes[cMaxNumPSLblocks];		// sizes of each block
-	int  qStarts[cMaxNumPSLblocks];			// starting psn of each block in query
-	int  tStarts[cMaxNumPSLblocks];			// starting psn of each block in target
+	int  blockSizes[cMaxP2CNumPSLblocks];		// sizes of each block
+	int  qStarts[cMaxP2CNumPSLblocks];			// starting psn of each block in query
+	int  tStarts[cMaxP2CNumPSLblocks];			// starting psn of each block in target
 	} tsPSLline;
 
 
@@ -456,7 +456,7 @@ if((Chr = pParams->PushedBack) > 0)
 	}
 if(pParams->InBuffIdx == -1 || pParams->InBuffIdx >= pParams->NumInBuffer)
 	{
-	pParams->NumInBuffer = read(pParams->hPSLinFile,pParams->pInBuffer,cMaxInBuffSize);
+	pParams->NumInBuffer = read(pParams->hPSLinFile,pParams->pInBuffer, cMaxP2CInBuffSize);
 	if(pParams->NumInBuffer <= 0)
 		{
 		pParams->InBuffIdx = -1;
@@ -520,10 +520,10 @@ ProcParams.NumInBuffer = 0;
 ProcParams.PushedBack = 0;
 strcpy(ProcParams.szOutFile,pszOutFile);
 
-if((ProcParams.pInBuffer = new unsigned char [cMaxInBuffSize])==NULL)
+if((ProcParams.pInBuffer = new unsigned char [cMaxP2CInBuffSize])==NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Unable to allocate memory (%d bytes) for input buffering", 
-				cMaxInBuffSize);
+		cMaxP2CInBuffSize);
 	return(eBSFerrMem);
 	}
 
@@ -532,10 +532,10 @@ ProcParams.InBuffIdx = 0;
 ProcParams.NumInBuffer = 0;
 ProcParams.PushedBack = 0;
 
-if((ProcParams.pszLineBuff = new char [cMaxLenPSLline])==NULL)
+if((ProcParams.pszLineBuff = new char [cMaxP2CLenPSLline])==NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Unable to allocate memory (%d bytes) for PSL line buffer", 
-				cMaxLenPSLline);
+		cMaxP2CLenPSLline);
 	
 	Cleanup(&ProcParams);
 	return(eBSFerrMem);

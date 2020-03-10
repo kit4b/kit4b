@@ -262,7 +262,8 @@ public:
 	CBlitz();
 	~CBlitz();
 	int
-	Process(etBLZPMode PMode,			// processing mode
+	Process(char *pszProcessName,		// name of process requesting blitz alignments
+			etBLZPMode PMode,			// processing mode
 			int SampleNthRawRead,		// sample every Nth raw read (or read pair) for processing (1..10000)
 			char *pszExprName,				// experiment name
 			char *pszExprDescr,				// experiment description

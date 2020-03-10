@@ -41,7 +41,7 @@ const int cDfltRHamming = 3;			// restricted hamming default limit
 const int cMaxRHamming = 10;			// restricted hamming upper limit
 const int cMaxNthRHamming = 100;		// sampling is to sample every Nth K-mer, with Nth is the range 1..cSampRHamming
 
-const int cMinCoreLen = 4;				// restricted hamming minimum core length supported
+const int cMinRHCoreLen = 4;				// restricted hamming minimum core length supported
 
 const int cMaxNumNodes = 10000;			// allow for upto this many nodes if processing is distributed over multiple nodes
 
@@ -365,7 +365,7 @@ if (!argerrors)
 			}
 
 		CoreLen = SeqLen/(RHamm+1);
-		if(CoreLen < cMinCoreLen)
+		if(CoreLen < cMinRHCoreLen)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Restricted hamming limit '-r%d' is incompatible with k-mer sequence length '-k%d'",RHamm,SeqLen);
 			exit(1);

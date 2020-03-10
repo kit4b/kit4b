@@ -15,9 +15,9 @@
 const int cMAFReqSpecies = 2;				// number of species to be specified
 const int cMAtotMaxSeqAlignLen = 0x0ffffff; // total (over all aligned species) max seq length that can be buffered in concatenated seqs
 
-const int cMinCoreLen = 4;				// allow core lengths to be specified down to cMinCoreLen
-const int cDfltCoreLen= 10;				// if core lengths not specified then default to cDfltMinCoreLen
-const int cMaxCoreLen = 1000000;		// minimum core lengths can be specified upto this length
+const int cMinGAL2VCoreLen = 4;				// allow core lengths to be specified down to cMinCoreLen
+const int cDfltGAL2VCoreLen= 10;				// if core lengths not specified then default to cDfltMinCoreLen
+const int cMaxGAL2VCoreLen = 1000000;		// minimum core lengths can be specified upto this length
 
 const int cMaxIncludeFiles = 10;		// maximun number of include region filter files
 const int cMaxExcludeFiles = 10;		// maximun number of exclude region filter files
@@ -547,23 +547,23 @@ if (!argerrors)
 		}
 
 
-	iMinCoreLen = MinCoreLen->count ? MinCoreLen->ival[0] : cDfltCoreLen;
-	if(iMinCoreLen < cMinCoreLen)
+	iMinCoreLen = MinCoreLen->count ? MinCoreLen->ival[0] : cDfltGAL2VCoreLen;
+	if(iMinCoreLen < cMinGAL2VCoreLen)
 		{
-		printf("\nSpecified minimum core length '-n%d' < %d, assuming you meant %d",iMinCoreLen,cMinCoreLen,cMinCoreLen);
-		iMinCoreLen = cMinCoreLen;
+		printf("\nSpecified minimum core length '-n%d' < %d, assuming you meant %d",iMinCoreLen, cMinGAL2VCoreLen, cMinGAL2VCoreLen);
+		iMinCoreLen = cMinGAL2VCoreLen;
 		}
 	else
 		{
-		if(iMinCoreLen > cMaxCoreLen)
+		if(iMinCoreLen > cMaxGAL2VCoreLen)
 			{
-			printf("\nSpecified minimum core length '-n%d' > %d, assuming you meant %d",iMinCoreLen,cMaxCoreLen,cMaxCoreLen);
-			iMinCoreLen = cMaxCoreLen;
+			printf("\nSpecified minimum core length '-n%d' > %d, assuming you meant %d",iMinCoreLen, cMaxGAL2VCoreLen, cMaxGAL2VCoreLen);
+			iMinCoreLen = cMaxGAL2VCoreLen;
 			}
 		}
 
 
-	iMaxCoreLen = MaxCoreLen->count ? MaxCoreLen->ival[0] : cMaxCoreLen;
+	iMaxCoreLen = MaxCoreLen->count ? MaxCoreLen->ival[0] : cMaxGAL2VCoreLen;
 	if(iMaxCoreLen < iMinCoreLen)
 		{
 		printf("\nSpecified maximum hyper length '-n%d' < %d, assuming you meant %d",iMaxCoreLen,iMinCoreLen,iMinCoreLen);
@@ -571,10 +571,10 @@ if (!argerrors)
 		}
 	else
 		{
-		if(iMaxCoreLen > cMaxCoreLen)
+		if(iMaxCoreLen > cMaxGAL2VCoreLen)
 			{
-			printf("\nSpecified maximum core length was '-n%d' > %d, assuming you meant '-n%d'",iMaxCoreLen,cMaxCoreLen,cMaxCoreLen);
-			iMaxCoreLen = cMaxCoreLen;
+			printf("\nSpecified maximum core length was '-n%d' > %d, assuming you meant '-n%d'",iMaxCoreLen, cMaxGAL2VCoreLen, cMaxGAL2VCoreLen);
+			iMaxCoreLen = cMaxGAL2VCoreLen;
 			}
 		}
 

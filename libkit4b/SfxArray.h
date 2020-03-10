@@ -545,7 +545,7 @@ public:
 		InitOverOccKMers(int KMerLen,			// will be processing for over occuring KMers of this length (max cMaxKmerLen)
 					int MaxKMerOccs);			// which if there are more than MaxKMerOccs instances will be classified as an over-occurance
 
-	int											// 0: no instances, 1: number occurances <= m_MaxKMerOccs, 2: number occurances > m_MaxKMerOccs
+	int											// 0: no instances, 1: number occurrences <= m_MaxKMerOccs, 2: number occurrences > m_MaxKMerOccs
 		OverOccKMerClas(int KMerLen,			// KMer length, checked and must be equal to m_OccKMerLen
 					etSeqBase *pSeq);			// return over occurance classification for this sequence
 
