@@ -78,14 +78,14 @@ m_ProcMode = eBLZPMdefault;
 m_SampleNthRawRead = 1;
 m_Sensitivity = eBLZSdefault;				
 m_AlignStrand = eALSboth;	
-m_CoreLen = cDfltCoreLen;
-m_CoreDelta = (cDfltCoreLen+1)/2;
+m_CoreLen = cDfltBlitzCoreLen;
+m_CoreDelta = (cDfltBlitzCoreLen+1)/2;
 m_MaxInsertLen = 0;
-m_MaxQuerySeqLen = cMaxQuerySeqLen;
-m_MaxOccKMerDepth = cDfltSensCoreIters;
-m_QueryLenAlignedPct = cDfltMinQueryLenAlignedPct;
-m_MinPathScore = cDfltPathScore;
-m_MaxPathsToReport = cDfltMaxPathsToReport;
+m_MaxQuerySeqLen = cMaxBlitzQuerySeqLen;
+m_MaxOccKMerDepth = cDfltBlitzSensCoreIters;
+m_QueryLenAlignedPct = cDfltBlitzMinQueryLenAlignedPct;
+m_MinPathScore = cDfltBlitzPathScore;
+m_MaxPathsToReport = cDfltBlitzMaxPathsToReport;
 m_AlignPathID = 0;
 m_RsltsFormat = eBLZRsltsPSL;	
 m_pszInputFile = NULL;
@@ -379,20 +379,20 @@ m_pszSfxFile = pszSfxFile;
 m_pszOutFile = pszOutFile;		
 m_NumThreads = NumThreads;	
 
-if((m_pszLineBuff = new char [cAlignRprtBufferSize]) == NULL)
+if((m_pszLineBuff = new char [cAlignBlitzRprtBufferSize]) == NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Failed to allocate memory for alignment report buffering");
 	Reset(false);
 	return(eBSFerrMem);
 	}
 
-if((m_pQuerySeqs = new tsQuerySeq [cMaxReadAheadQuerySeqs]) == NULL)
+if((m_pQuerySeqs = new tsQuerySeq [cMaxBlitzReadAheadQuerySeqs]) == NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Failed to allocate memory for query sequences");
 	Reset(false);
 	return(eBSFerrMem);
 	}
-m_AllocdQuerySeqs = cMaxReadAheadQuerySeqs;
+m_AllocdQuerySeqs = cMaxBlitzReadAheadQuerySeqs;
 m_NumQuerySeqs = 0;
 m_NxtQuerySeqIdx = 0;
 m_TotSeqIDs = 0;
@@ -463,10 +463,14 @@ if(CoreLen == 0)
 		default:
 			CoreLen += 2;
 		}
-	if(CoreLen > cMaxCoreLen)
-		CoreLen = cMaxCoreLen;
-	m_CoreLen = CoreLen;
 	}
+if(CoreLen < cMinBlitzCoreLen)
+	CoreLen = cMinBlitzCoreLen;
+else
+	if (CoreLen > cMaxBlitzCoreLen)
+		CoreLen = cMaxBlitzCoreLen;
+m_CoreLen = CoreLen;
+
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "Using core length : %d", m_CoreLen);
 
 if(CoreDelta == 0)
@@ -483,10 +487,10 @@ if(CoreDelta == 0)
 			break;
 		case eBLZSLessSens:			// less sensitive - quicker
 		default:
-			CoreDelta = max((CoreLen + 1) / 2, 8);;
+			CoreDelta = max((CoreLen + 1) / 2, 8);
 		}
-	m_CoreDelta = CoreDelta;
 	}
+m_CoreDelta = CoreDelta;
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "Using core delta : %d", m_CoreDelta);
 
 m_MinPathScore = MinPathScore;
@@ -500,20 +504,20 @@ m_MaxIter = MaxOccKMerDepth;
 switch(Sensitivity) {
 	case eBLZSdefault:			// default sensitivity
 		if(!MaxOccKMerDepth)
-			m_MaxIter = cDfltSensCoreIters;
+			m_MaxIter = cDfltBlitzSensCoreIters;
 		break;
 	case eBLZSMoreSens:			// more sensitive - slower
 		if(!MaxOccKMerDepth)
-			m_MaxIter = cMoreSensCoreIters;
+			m_MaxIter = cMoreBlitzSensCoreIters;
 		break;
 	case eBLZSUltraSens:			// ultra sensitive - much slower
 		if(!MaxOccKMerDepth)
-			m_MaxIter = cUltraSensCoreIters;
+			m_MaxIter = cUltraBlitzSensCoreIters;
 		break;
 	case eBLZSLessSens:			// less sensitive - quicker
 	default:
 		if(!MaxOccKMerDepth)
-			m_MaxIter = cMinSensCoreIters;
+			m_MaxIter = cMinBlitzSensCoreIters;
 		break;
 	}
 
@@ -533,20 +537,20 @@ if(CoreLen <= cMaxKmerLen)
 
 if(KMerDist == true)
 	{
-	if ((m_pKmerOccsDist = new uint32_t[cMaxOccKMerDepth + 1]) == NULL)				// allocated to hold Kmer count distributions (up to cMaxOccKMerDepth counts)
+	if ((m_pKmerOccsDist = new uint32_t[cMaxBlitzOccKMerDepth + 1]) == NULL)				// allocated to hold Kmer count distributions (up to cMaxOccKMerDepth counts)
 		{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Failed to allocate memory for KMer distribution counts");
 		Reset(false);
 		return(eBSFerrMem);
 		}
-	memset(m_pKmerOccsDist, 0, sizeof(int) * (cMaxOccKMerDepth + 1));
-	m_pSfxArray->InitKMerCountDists(cMaxOccKMerDepth + 1, m_pKmerOccsDist);
+	memset(m_pKmerOccsDist, 0, sizeof(int) * (cMaxBlitzOccKMerDepth + 1));
+	m_pSfxArray->InitKMerCountDists(cMaxBlitzOccKMerDepth + 1, m_pKmerOccsDist);
 	}
 
 if(RsltsFormat == eBLZRsltsSAM)
-	m_MaxQuerySeqLen = cSAMtruncSeqLen;		// truncating SAM query sequences at this length
+	m_MaxQuerySeqLen = cSAMBlitztruncSeqLen;		// truncating SAM query sequences at this length
 else
-	m_MaxQuerySeqLen = cMaxQuerySeqLen;
+	m_MaxQuerySeqLen = cMaxBlitzQuerySeqLen;
 
 if(RsltsFormat == eBLZRsltsSQLite)
 	{
@@ -705,7 +709,7 @@ if((m_hOutFile = open(pszOutFile,O_WRONLY | O_CREAT,S_IREAD | S_IWRITE))!=-1)
 				m_pSfxArray->GetIdentName(CurEntryID, sizeof(szSeqIdent) - 1, szSeqIdent);
 				SeqLen = m_pSfxArray->GetSeqLen(CurEntryID);
 				m_szLineBuffIdx += sprintf(&m_pszLineBuff[m_szLineBuffIdx], "@SQ\tAS:%s\tSN:%s\tLN:%u\n", m_szTargSpecies,szSeqIdent, SeqLen);
-				if (m_szLineBuffIdx > (cAlignRprtBufferSize * 9) / 10)
+				if (m_szLineBuffIdx > (cAlignBlitzRprtBufferSize * 9) / 10)
 					{
 					CUtility::SafeWrite(m_hOutFile, m_pszLineBuff, m_szLineBuffIdx);
 					m_szLineBuffIdx = 0;
@@ -721,7 +725,7 @@ if((m_hOutFile = open(pszOutFile,O_WRONLY | O_CREAT,S_IREAD | S_IWRITE))!=-1)
 
 m_szLineBuffIdx = 0;
 
-InitQuerySeqThreads(NumThreads,cNumAllocdAlignNodes);	
+InitQuerySeqThreads(NumThreads,cNumBlitzAllocdAlignNodes);	
 
 // pickup the query sequence loader thread, if the alignment processing threads all finished then the loader thread should also have finished
 #ifdef _WIN32
@@ -794,7 +798,7 @@ if(m_pKmerOccsDist != NULL)
 		return(eBSFerrCreateFile);
 		}
 
-	ReportKMerDist(m_CoreLen,cMaxOccKMerDepth, m_pKmerOccsDist);
+	ReportKMerDist(m_CoreLen,cMaxBlitzOccKMerDepth, m_pKmerOccsDist);
 
 #ifdef _WIN32
 	_commit(m_hOutFile);
@@ -876,17 +880,17 @@ for (ThreadIdx = 1; ThreadIdx <= NumThreads; ThreadIdx++, pThread++)
 	{
 	pThread->ThreadIdx = ThreadIdx;
 	pThread->pThis = this;
-	pThread->pAllocdAlignNodes = new tsQueryAlignNodes [cNumAllocdAlignNodes];
-	pThread->ppFirst2Rpts = new tsQueryAlignNodes * [cNumAllocdAlignNodes];
-	pThread->NumAllocdAlignNodes = cNumAllocdAlignNodes;
+	pThread->pAllocdAlignNodes = new tsQueryAlignNodes [cNumBlitzAllocdAlignNodes];
+	pThread->ppFirst2Rpts = new tsQueryAlignNodes * [cNumBlitzAllocdAlignNodes];
+	pThread->NumAllocdAlignNodes = cNumBlitzAllocdAlignNodes;
 
 	pThread->bIsSAMOutput = m_RsltsFormat == eBLZRsltsSAM ? true : false;
 	pThread->bIsSAMPE = bIsSAMPE;
 	if(pThread->bIsSAMPE)
 		{
-		pThread->pAllocdAlignNodesPE2 = new tsQueryAlignNodes[cNumAllocdAlignNodes];
-		pThread->ppFirst2RptsPE2 = new tsQueryAlignNodes *[cNumAllocdAlignNodes];
-		pThread->NumAllocdAlignNodesPE2 = cNumAllocdAlignNodes;
+		pThread->pAllocdAlignNodesPE2 = new tsQueryAlignNodes[cNumBlitzAllocdAlignNodes];
+		pThread->ppFirst2RptsPE2 = new tsQueryAlignNodes *[cNumBlitzAllocdAlignNodes];
+		pThread->NumAllocdAlignNodesPE2 = cNumBlitzAllocdAlignNodes;
 		}
 	else
 		{
@@ -996,11 +1000,11 @@ CBlitz::ReportNonAligned(char *pszDescPE1, int LenSeqPE1, uint8_t *pSeqPE1, char
 char Base;
 int LineLen;
 int IdxPE1;
-char szFastaBuffPE1[((cMaxQuerySeqIdentLen + 3) + cSAMtruncSeqLen + ((cSAMtruncSeqLen + 80) / 79)) * 2];
+char szFastaBuffPE1[((cMaxBlitzQuerySeqIdentLen + 3) + cSAMBlitztruncSeqLen + ((cSAMBlitztruncSeqLen + 80) / 79)) * 2];
 int FastaBuffIdxPE1;
 
 int IdxPE2;
-char szFastaBuffPE2[((cMaxQuerySeqIdentLen + 3) + cSAMtruncSeqLen + ((cSAMtruncSeqLen + 80) / 79)) * 2];
+char szFastaBuffPE2[((cMaxBlitzQuerySeqIdentLen + 3) + cSAMBlitztruncSeqLen + ((cSAMBlitztruncSeqLen + 80) / 79)) * 2];
 int FastaBuffIdxPE2;
 
 szFastaBuffPE1[0] = '\0';
@@ -1096,7 +1100,7 @@ int NumMatches;
 int QuerySeqLen;
 int SeqID;
 uint8_t *pQuerySeq;
-char szQuerySeqIdent[cMaxQuerySeqIdentLen + 1];
+char szQuerySeqIdent[cMaxBlitzQuerySeqIdentLen + 1];
 uint32_t NumHeadNodes;
 uint32_t SAMFlags;
 
@@ -1114,7 +1118,7 @@ uint32_t TargSeqLen;
 char szTargName[100];
 int MinPathScore;
 
-while((Rslt = DequeueQuerySeq(cMaxQuerySeqIdentLen + 1, &SeqID, szQuerySeqIdent, &QuerySeqLen, &pQuerySeq)) == 1)
+while((Rslt = DequeueQuerySeq(cMaxBlitzQuerySeqIdentLen + 1, &SeqID, szQuerySeqIdent, &QuerySeqLen, &pQuerySeq)) == 1)
 	{
 	AcquireSerialise();
 	m_NumQueriesProc += 1;
@@ -1211,13 +1215,13 @@ int NumMatchesPE1;
 int QuerySeqLenPE1;
 int SeqIDPE1;
 uint8_t *pQuerySeqPE1;
-char szQuerySeqIdent[cMaxQuerySeqIdentLen + 1];
+char szQuerySeqIdent[cMaxBlitzQuerySeqIdentLen + 1];
 int NumQueryPathsRprtdPE2;
 int NumMatchesPE2;
 int QuerySeqLenPE2;
 int SeqIDPE2;
 uint8_t *pQuerySeqPE2;
-char szQuerySeqIdentPE2[cMaxQuerySeqIdentLen + 1];
+char szQuerySeqIdentPE2[cMaxBlitzQuerySeqIdentLen + 1];
 
 uint32_t NumHeadNodesPE1;
 uint32_t NumHeadNodesPE2;
@@ -1266,7 +1270,7 @@ MaxIter = m_MaxIter;
 int CoreDelta = m_CoreDelta;
 
 // getting 2 reads at a time, PE1 and PE2
-while((Rslt = DequeueQuerySeq(cMaxQuerySeqIdentLen + 1, &SeqIDPE1, szQuerySeqIdent, &QuerySeqLenPE1, &pQuerySeqPE1, &SeqIDPE2, szQuerySeqIdentPE2, &QuerySeqLenPE2, &pQuerySeqPE2))==2)
+while((Rslt = DequeueQuerySeq(cMaxBlitzQuerySeqIdentLen + 1, &SeqIDPE1, szQuerySeqIdent, &QuerySeqLenPE1, &pQuerySeqPE1, &SeqIDPE2, szQuerySeqIdentPE2, &QuerySeqLenPE2, &pQuerySeqPE2))==2)
 	{
 	AcquireSerialise();
 	m_NumQueriesProc += 1;
@@ -1479,7 +1483,7 @@ int NumMatches;
 int QuerySeqLen;
 int SeqID;
 uint8_t* pQuerySeq;
-char szQuerySeqIdent[cMaxQuerySeqIdentLen + 1];
+char szQuerySeqIdent[cMaxBlitzQuerySeqIdentLen + 1];
 int MinPathScore;
 NumQueriesProc = 0;
 while((Rslt = DequeueQuerySeq(sizeof(szQuerySeqIdent),&SeqID,szQuerySeqIdent,&QuerySeqLen,&pQuerySeq))==1)
@@ -1559,18 +1563,18 @@ for(NodeIdx = 1; NodeIdx <= NumNodes; NodeIdx++,pExploreNode++)
 	if(pExploreNode->Flg2Rpt || pExploreNode->FlgStrand != (bStrand ? 1 : 0))		// skip if already path to be reported, or if not requested strand
 		continue;
 
-	if(pExploreNode->TargSeqLoci < (pCurNode->TargSeqLoci + pCurNode->AlignLen - cMaxOverlapFloat))	// allowing for possible overlaps on the target sequence
+	if(pExploreNode->TargSeqLoci < (pCurNode->TargSeqLoci + pCurNode->AlignLen - cMaxBlitzOverlapFloat))	// allowing for possible overlaps on the target sequence
 		continue;
-	if(pExploreNode->TargSeqLoci > (pCurNode->TargSeqLoci + pCurNode->AlignLen + cGapMaxLength))		// if gap too large then assuming not on same path
+	if(pExploreNode->TargSeqLoci > (pCurNode->TargSeqLoci + pCurNode->AlignLen + cGapBlitzMaxLength))		// if gap too large then assuming not on same path
 		continue;
-	if(pExploreNode->QueryStartOfs < (pCurNode->QueryStartOfs + pCurNode->AlignLen - cMaxOverlapFloat))   // allowing for possible overlaps on on the query sequence
+	if(pExploreNode->QueryStartOfs < (pCurNode->QueryStartOfs + pCurNode->AlignLen - cMaxBlitzOverlapFloat))   // allowing for possible overlaps on on the query sequence
 		continue;
 	QueryGapLen = abs((int)(pExploreNode->QueryStartOfs - (pCurNode->QueryStartOfs + pCurNode->AlignLen)));
 	TargGapLen = abs((int)(pExploreNode->TargSeqLoci - (pCurNode->TargSeqLoci + pCurNode->AlignLen)));
 	GapLen = (int)sqrt(((double)QueryGapLen * QueryGapLen) + ((double)TargGapLen * TargGapLen));
-	GapScore = 1 + ((GapLen / 10) * cGapExtendCost);
-	if(GapScore > cGapExtendCostLimit)
-		GapScore = cGapExtendCostLimit;
+	GapScore = 1 + ((GapLen / 10) * cGapBlitzExtendCost);
+	if(GapScore > cGapBlitzExtendCostLimit)
+		GapScore = cGapBlitzExtendCostLimit;
 	GapScore += m_GapOpenScore;
 
 	if(pExploreNode->FlgScored)			// if node being explored already scored then accept that score
@@ -1906,7 +1910,7 @@ CBlitz::ReportAsPSL(uint32_t Matches,				// Number of bases that match that aren
 tsQueryAlignNodes *pCurNode;
 
 AcquireSerialise();
-if(m_szLineBuffIdx > (cAlignRprtBufferSize * 9) / 10)
+if(m_szLineBuffIdx > (cAlignBlitzRprtBufferSize * 9) / 10)
 	{
 	CUtility::SafeWrite(m_hOutFile,m_pszLineBuff,m_szLineBuffIdx);
 	m_szLineBuffIdx = 0;
@@ -1954,7 +1958,7 @@ do {
 	}
 while(pCurNode != NULL);
 m_szLineBuffIdx += sprintf(&m_pszLineBuff[m_szLineBuffIdx],"\n");	
-if(m_szLineBuffIdx > (cAlignRprtBufferSize * 9) / 10)
+if(m_szLineBuffIdx > (cAlignBlitzRprtBufferSize * 9) / 10)
 	{
 	CUtility::SafeWrite(m_hOutFile,m_pszLineBuff,m_szLineBuffIdx);
 	m_szLineBuffIdx = 0;
@@ -1996,7 +2000,7 @@ tsQueryAlignNodes *pCurNode;
 
 pCurSeq = NULL;
 AcquireSerialise();
-if(m_szLineBuffIdx > (cAlignRprtBufferSize * 9) / 10)
+if(m_szLineBuffIdx > (cAlignBlitzRprtBufferSize * 9) / 10)
 	{
 	CUtility::SafeWrite(m_hOutFile,m_pszLineBuff,m_szLineBuffIdx);
 	m_szLineBuffIdx = 0;
@@ -2058,7 +2062,7 @@ if((pCurSeq = new uint8_t [10 + TargPathEndOfs - TargPathStartOfs])==NULL)	// in
 // query starts
 pCurNode = ppFirst2Rpts[SortedPathIdx];
 do {
-	if((m_szLineBuffIdx + pCurNode->AlignLen) > (cAlignRprtBufferSize * 9) / 10)
+	if((m_szLineBuffIdx + pCurNode->AlignLen) > (cAlignBlitzRprtBufferSize * 9) / 10)
 		{
 		CUtility::SafeWrite(m_hOutFile,m_pszLineBuff,m_szLineBuffIdx);
 		m_szLineBuffIdx = 0;
@@ -2083,7 +2087,7 @@ m_pszLineBuff[m_szLineBuffIdx++] = '\t';
 // get target sequences for each block and report these
 pCurNode = ppFirst2Rpts[SortedPathIdx];
 do {
-	if((m_szLineBuffIdx + pCurNode->AlignLen) > (cAlignRprtBufferSize * 9) / 10)
+	if((m_szLineBuffIdx + pCurNode->AlignLen) > (cAlignBlitzRprtBufferSize * 9) / 10)
 		{
 		CUtility::SafeWrite(m_hOutFile,m_pszLineBuff,m_szLineBuffIdx);
 		m_szLineBuffIdx = 0;
@@ -2098,7 +2102,7 @@ do {
 while(pCurNode != NULL);
 
 m_szLineBuffIdx += sprintf(&m_pszLineBuff[m_szLineBuffIdx],"\n");	
-if(m_szLineBuffIdx > (cAlignRprtBufferSize * 9) / 10)
+if(m_szLineBuffIdx > (cAlignBlitzRprtBufferSize * 9) / 10)
 	{
 	CUtility::SafeWrite(m_hOutFile,m_pszLineBuff,m_szLineBuffIdx);
 	m_szLineBuffIdx = 0;
@@ -2252,8 +2256,8 @@ CBlitz::ReportAsSAM(uint32_t Flags,	// use as the reported SAM flags
 {
 	etSeqBase* pCurSeq;
 	tsQueryAlignNodes* pCurNode;
-	etSeqBase CurSeq[cSAMtruncSeqLen + 1];
-	char szLineBuff[cSAMtruncSeqLen + 2 * (cMaxQuerySeqIdentLen)+100];
+	etSeqBase CurSeq[cSAMBlitztruncSeqLen + 1];
+	char szLineBuff[cSAMBlitztruncSeqLen + 2 * (cMaxBlitzQuerySeqIdentLen)+100];
 	int BuffIdx;
 
 	pCurSeq = NULL;
@@ -2294,7 +2298,7 @@ CBlitz::ReportAsSAM(uint32_t Flags,	// use as the reported SAM flags
 	BuffIdx += sprintf(&szLineBuff[BuffIdx], "%s\t*\n", CSeqTrans::MapSeq2Ascii(CurSeq, qSize, (char*)CurSeq));
 
 	AcquireSerialise();
-	if (m_szLineBuffIdx >= (cAlignRprtBufferSize - (2 * BuffIdx)))
+	if (m_szLineBuffIdx >= (cAlignBlitzRprtBufferSize - (2 * BuffIdx)))
 	{
 		CUtility::SafeWrite(m_hOutFile, m_pszLineBuff, m_szLineBuffIdx);
 		m_szLineBuffIdx = 0;
@@ -2353,7 +2357,7 @@ if((pCurSeq = new uint8_t [10 + MaxBlockSize])==NULL)	// inplace translation to 
 	return(eBSFerrMem);
 
 AcquireSerialise();
-if(m_szLineBuffIdx > (cAlignRprtBufferSize * 9) / 10)
+if(m_szLineBuffIdx > (cAlignBlitzRprtBufferSize * 9) / 10)
 	{
 	CUtility::SafeWrite(m_hOutFile,m_pszLineBuff,m_szLineBuffIdx);
 	m_szLineBuffIdx = 0;
@@ -2361,7 +2365,7 @@ if(m_szLineBuffIdx > (cAlignRprtBufferSize * 9) / 10)
 
 pCurNode = ppFirst2Rpts[SortedPathIdx];
 do {
-	if((m_szLineBuffIdx + pCurNode->AlignLen) > (cAlignRprtBufferSize * 9) / 10)
+	if((m_szLineBuffIdx + pCurNode->AlignLen) > (cAlignBlitzRprtBufferSize * 9) / 10)
 		{
 		CUtility::SafeWrite(m_hOutFile,m_pszLineBuff,m_szLineBuffIdx);
 		m_szLineBuffIdx = 0;
@@ -2420,7 +2424,7 @@ for (DistIdx = 0; DistIdx <= MaxKMerCnts; DistIdx++, pOccsDist++)
 	}
 
 
-if (m_szLineBuffIdx > (cAlignRprtBufferSize * 9) / 10)
+if (m_szLineBuffIdx > (cAlignBlitzRprtBufferSize * 9) / 10)
 	{
 	CUtility::SafeWrite(m_hOutFile, m_pszLineBuff, m_szLineBuffIdx);
 	m_szLineBuffIdx = 0;
@@ -2439,7 +2443,7 @@ for(DistIdx = 0; DistIdx <= MaxKMerCnts; DistIdx++, pKmerOccsDist++)
 	m_szLineBuffIdx += sprintf(&m_pszLineBuff[m_szLineBuffIdx], "%u,%u, %u, %lu,%lu,%f,%f\n",
 #endif
 							DistIdx, *pKmerOccsDist, DistIdx == 0 ? *pKmerOccsDist : DistIdx * *pKmerOccsDist, CummulativeQKmers, CummulativeTKmers, PropCummulativeQKmers, PropCummulativeTKmers);
-	if (m_szLineBuffIdx > (cAlignRprtBufferSize * 9) / 10)
+	if (m_szLineBuffIdx > (cAlignBlitzRprtBufferSize * 9) / 10)
 		{
 		CUtility::SafeWrite(m_hOutFile, m_pszLineBuff, m_szLineBuffIdx);
 		m_szLineBuffIdx = 0;
@@ -2472,7 +2476,7 @@ AlignScore = (uint32_t)(10 * sqrt(AlignScore));
 if(AlignScore > 1000)
 	AlignScore = 1000;
 AcquireSerialise();
-if(m_szLineBuffIdx > (cAlignRprtBufferSize * 9) / 10)
+if(m_szLineBuffIdx > (cAlignBlitzRprtBufferSize * 9) / 10)
 	{
 	CUtility::SafeWrite(m_hOutFile,m_pszLineBuff,m_szLineBuffIdx);
 	m_szLineBuffIdx = 0;
@@ -2503,7 +2507,7 @@ do {
 	}
 while(pCurNode != NULL);
 m_szLineBuffIdx += sprintf(&m_pszLineBuff[m_szLineBuffIdx],"\n");
-if(m_szLineBuffIdx > (cAlignRprtBufferSize * 9) / 10)
+if(m_szLineBuffIdx > (cAlignBlitzRprtBufferSize * 9) / 10)
 	{
 	CUtility::SafeWrite(m_hOutFile,m_pszLineBuff,m_szLineBuffIdx);
 	m_szLineBuffIdx = 0;
@@ -2681,13 +2685,13 @@ if(pTargPathEndOfs != NULL)
 	*pTargPathEndOfs = TargPathEndOfs;
 if(pQueryPathEndOfs != NULL)
 	*pQueryPathEndOfs = QueryPathEndOfs;
-if(pqNumInsert + NULL)
+if(pqNumInsert != NULL)
 	*pqNumInsert = qNumInsert;
-if (pqBaseInsert + NULL)
+if (pqBaseInsert != NULL)
 	*pqBaseInsert = qBaseInsert;
-if (ptNumInsert + NULL)
+if (ptNumInsert != NULL)
 	*ptNumInsert = tNumInsert;
-if (ptBaseInsert + NULL)
+if (ptBaseInsert != NULL)
 	*ptBaseInsert = tBaseInsert;
 return(NumPathNodes);
 }
@@ -2935,8 +2939,8 @@ SeqID = ++m_TotSeqIDs;
 psQuery->SeqID = SeqID;
 psQuery->pQuerySeq = pSeq;
 psQuery->QuerySeqLen = QuerySeqLen; 
-strncpy(psQuery->szQueryIdent,pszQueryIdent,cMaxQuerySeqIdentLen);
-psQuery->szQueryIdent[cMaxQuerySeqIdentLen] = '\0';
+strncpy(psQuery->szQueryIdent,pszQueryIdent,cMaxBlitzQuerySeqIdentLen);
+psQuery->szQueryIdent[cMaxBlitzQuerySeqIdentLen] = '\0';
 m_NumQuerySeqs += 1;
 
 if(pSeqPE2 != NULL)
@@ -2947,8 +2951,8 @@ if(pSeqPE2 != NULL)
 	psQuery->SeqID = SeqID;
 	psQuery->pQuerySeq = pSeqPE2;
 	psQuery->QuerySeqLen = QuerySeqLenPE2;
-	strncpy(psQuery->szQueryIdent, pszQueryIdentPE2, cMaxQuerySeqIdentLen);
-	psQuery->szQueryIdent[cMaxQuerySeqIdentLen] = '\0';
+	strncpy(psQuery->szQueryIdent, pszQueryIdentPE2, cMaxBlitzQuerySeqIdentLen);
+	psQuery->szQueryIdent[cMaxBlitzQuerySeqIdentLen] = '\0';
 	m_NumQuerySeqs += 1;
 	}
 ReleaseLock(true);
@@ -3061,18 +3065,18 @@ int Idx;
 uint8_t *pReadBuff;
 int PE1NumDescrReads;
 int PE1DescrLen;
-uint8_t szPE1DescrBuff[cMaxDescrLen];
+uint8_t szPE1DescrBuff[cMaxBlitzDescrLen];
 int PE1ReadLen;
-uint8_t PE1ReadBuff[cSAMtruncSeqLen+1];
+uint8_t PE1ReadBuff[cSAMBlitztruncSeqLen +1];
 int PE1NumReadsAccepted;
 int PE1NumUnderlength;
 int PE1NumOverlength;
 
 int PE2NumDescrReads;
 int PE2DescrLen;
-uint8_t szPE2DescrBuff[cMaxDescrLen];
+uint8_t szPE2DescrBuff[cMaxBlitzDescrLen];
 int PE2ReadLen;
-uint8_t PE2ReadBuff[cSAMtruncSeqLen+1];
+uint8_t PE2ReadBuff[cSAMBlitztruncSeqLen +1];
 int PE2NumReadsAccepted;
 int PE2NumUnderlength;
 int PE2NumOverlength;
@@ -3128,7 +3132,7 @@ while ((Rslt = (teBSFrsltCodes)(PE1ReadLen = PE1Fasta.ReadSequence(PE1ReadBuff, 
 	if (PE1ReadLen == eBSFFastaDescr)		// just read a descriptor line which is expected for multifasta or fastq
 		{
 		PE1DescrLen = PE1Fasta.ReadDescriptor((char *)szPE1DescrBuff, sizeof(szPE1DescrBuff) - 1);
-		szPE1DescrBuff[cMaxDescrLen - 1] = '\0';
+		szPE1DescrBuff[cMaxBlitzDescrLen - 1] = '\0';
 		for (Idx = 0; Idx < cMaxDescrIDLen - 1; Idx++)
 			{
 			if (szPE1DescrBuff[Idx] == '\0' || isspace(szPE1DescrBuff[Idx]))
@@ -3175,7 +3179,7 @@ while ((Rslt = (teBSFrsltCodes)(PE1ReadLen = PE1Fasta.ReadSequence(PE1ReadBuff, 
 			if (PE2ReadLen == eBSFFastaDescr)		// just read a descriptor line which would be as expected for multifasta or fastq
 				{
 				PE2DescrLen = PE2Fasta.ReadDescriptor((char *)szPE2DescrBuff, sizeof(szPE2DescrBuff) - 1);
-				szPE2DescrBuff[cMaxDescrLen - 1] = '\0';
+				szPE2DescrBuff[cMaxBlitzDescrLen - 1] = '\0';
 				for (Idx = 0; Idx < cMaxDescrIDLen - 1; Idx++)
 					{
 					if (szPE2DescrBuff[Idx] == '\0' || isspace(szPE2DescrBuff[Idx]))
@@ -3222,7 +3226,7 @@ while ((Rslt = (teBSFrsltCodes)(PE1ReadLen = PE1Fasta.ReadSequence(PE1ReadBuff, 
 			}
 
 		// ensure sequence lengths are within acceptable range
-		if (PE1ReadLen > cSAMtruncSeqLen)
+		if (PE1ReadLen > cSAMBlitztruncSeqLen)
 			{
 			PE1NumOverlength += 1;
 			continue;
@@ -3234,7 +3238,7 @@ while ((Rslt = (teBSFrsltCodes)(PE1ReadLen = PE1Fasta.ReadSequence(PE1ReadBuff, 
 			}
 		if(bIsPairReads)
 			{
-			if (PE2ReadLen > cSAMtruncSeqLen)
+			if (PE2ReadLen > cSAMBlitztruncSeqLen)
 				{
 				PE2NumOverlength += 1;
 				continue;
@@ -3315,7 +3319,7 @@ gDiagnostics.DiagOut(eDLInfo, gszProcName, "LoadReads: Total of %1.9d reads pars
 if (PE1NumUnderlength > 0)
 	gDiagnostics.DiagOut(eDLWarn, gszProcName, "Load: total of %d under length ( < %dbp ) sequences sloughed from file '%s'", PE1NumUnderlength, m_CoreLen, pszPE1File);
 if (PE1NumOverlength > 0)
-	gDiagnostics.DiagOut(eDLWarn, gszProcName, "Load: total of %d over length ( > %dbp ) sequences sloughed from file '%s'", PE1NumOverlength, cSAMtruncSeqLen, pszPE1File);
+	gDiagnostics.DiagOut(eDLWarn, gszProcName, "Load: total of %d over length ( > %dbp ) sequences sloughed from file '%s'", PE1NumOverlength, cSAMBlitztruncSeqLen, pszPE1File);
 
 if (bIsPairReads)
 	{
@@ -3323,7 +3327,7 @@ if (bIsPairReads)
 	if (PE2NumUnderlength > 0)
 		gDiagnostics.DiagOut(eDLWarn, gszProcName, "Load: total of %d under length ( < %dbp ) sequences sloughed from file '%s'", PE2NumUnderlength, m_CoreLen, pszPE2File);
 	if (PE2NumOverlength > 0)
-		gDiagnostics.DiagOut(eDLWarn, gszProcName, "Load: total of %d over length sequences ( > %dbp ) sloughed from file '%s'", PE2NumOverlength, cSAMtruncSeqLen, pszPE2File);
+		gDiagnostics.DiagOut(eDLWarn, gszProcName, "Load: total of %d over length sequences ( > %dbp ) sloughed from file '%s'", PE2NumOverlength, cSAMBlitztruncSeqLen, pszPE2File);
 	}
 AcquireLock(true);
 m_bAllQuerySeqsLoaded = true;
@@ -3346,7 +3350,7 @@ size_t BuffOfs;
 size_t AllocdBuffSize;
 size_t AvailBuffSize;
 char szName[_MAX_PATH];
-char szDescription[cMaxDescrLen+1];
+char szDescription[cMaxBlitzDescrLen+1];
 uint32_t SeqLen;
 int Descrlen;
 bool bFirstEntry;
@@ -3373,10 +3377,10 @@ if((Rslt=Fasta.Open(m_pszInputFile,true))!=eBSFSuccess)
 	}
 
 // note malloc is used as can then simply realloc to expand as may later be required
-AllocdBuffSize = (size_t)cAllocQuerySeqLen;
+AllocdBuffSize = (size_t)cAllocBlitzQuerySeqLen;
 if((pSeqBuff = (unsigned char *)malloc(AllocdBuffSize)) == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcLoadQuerySeqsFile:- Unable to allocate memory (%u bytes) for sequence buffer",(uint32_t)cAllocQuerySeqLen);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcLoadQuerySeqsFile:- Unable to allocate memory (%u bytes) for sequence buffer",(uint32_t)cAllocBlitzQuerySeqLen);
 	Fasta.Close();
 	*pRslt = eBSFerrMem;
 	AcquireLock(true);
@@ -3385,7 +3389,7 @@ if((pSeqBuff = (unsigned char *)malloc(AllocdBuffSize)) == NULL)
 	ReleaseLock(true);
 	return(eBSFerrMem);
 	}
-AvailBuffSize = cAllocQuerySeqLen;
+AvailBuffSize = cAllocBlitzQuerySeqLen;
 
 bFirstEntry = true;
 bEntryCreated = false;
@@ -3393,7 +3397,7 @@ bTruncSeq = false;
 SeqID = 0;
 BuffOfs = 0;
 NxtToSample = m_SampleNthRawRead;
-while((Rslt = SeqLen = Fasta.ReadSequence(&pSeqBuff[BuffOfs],(int)min(AvailBuffSize,(size_t)cMaxQuerySeqLen),true,false)) > eBSFSuccess)
+while((Rslt = SeqLen = Fasta.ReadSequence(&pSeqBuff[BuffOfs],(int)min(AvailBuffSize,(size_t)cMaxBlitzQuerySeqLen),true,false)) > eBSFSuccess)
 	{
 	if(m_TermBackgoundThreads != 0)	// requested to immediately self-terminate?
 		{
@@ -3409,7 +3413,7 @@ while((Rslt = SeqLen = Fasta.ReadSequence(&pSeqBuff[BuffOfs],(int)min(AvailBuffS
 			if((Rslt=EnqueueQuerySeq(szName,(int)BuffOfs,pSeqBuff)) <= eBSFSuccess)
 				break;
 			}
-		Descrlen = Fasta.ReadDescriptor(szDescription, cMaxDescrLen);
+		Descrlen = Fasta.ReadDescriptor(szDescription, cMaxBlitzDescrLen);
 		// An assumption - will one day bite real hard - is that the
 		// fasta descriptor line starts with some form of unique identifier.
 		// Use this identifier as the entry name.
@@ -3459,9 +3463,9 @@ while((Rslt = SeqLen = Fasta.ReadSequence(&pSeqBuff[BuffOfs],(int)min(AvailBuffS
 		}
 	AvailBuffSize -= SeqLen;
 
-	if(AvailBuffSize < (size_t)(cAllocQuerySeqLen / 2))
+	if(AvailBuffSize < (size_t)(cAllocBlitzQuerySeqLen / 2))
 		{
-		size_t NewSize = (size_t)cAllocQuerySeqLen + AllocdBuffSize;
+		size_t NewSize = (size_t)cAllocBlitzQuerySeqLen + AllocdBuffSize;
 		unsigned char *pTmp;
 		if((pTmp = (unsigned char *)realloc(pSeqBuff,NewSize))==NULL)
 			{

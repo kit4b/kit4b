@@ -22,12 +22,19 @@ Orginal 'BioKanga' copyright notice has been retained and immediately follows th
  */
 
 #include "stdafx.h"
-#ifdef _WIN32
-#include "./commhdrs.h"
-#else
-#include "./commhdrs.h"
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
 #endif
 
+#if _WIN32
+#include <process.h>
+#include "./commhdrs.h"
+#else
+#include <sys/mman.h>
+#include <pthread.h>
+#include "./commhdrs.h"
+#endif
 CAlignValidate::CAlignValidate(void)
 {
 m_pAlignSeqs = NULL;

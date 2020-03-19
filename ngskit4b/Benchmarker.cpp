@@ -115,10 +115,10 @@ struct arg_file* results = arg_file0("s", "results", "<file>",		"summary benchma
 
 struct arg_file* cigars = arg_file0("c", "CIGARs", "<file>",		"observed CIGARs R/W this file");
 
-struct arg_int* alignedbasepts = arg_int0("j", "alignedbasepts", "<int>",		"correctly aligned base points (defaults to 2");
+struct arg_int* alignedbasepts = arg_int0("j", "alignedbasepts", "<int>",		"correctly aligned base points (defaults to 10");
 struct arg_int* silenttrimaligdbasepts = arg_int0("J", "silenttrimalignbasepts", "<int>", "silently trimmed alignment within truth bounds base points (defaults to 1)");
-struct arg_int* unalignedbasepts = arg_int0("k", "unalignedbasepts", "<int>",	"unaligned base points (defaults to 0)");
-struct arg_int* misalignedbasepts = arg_int0("l", "misalignedbasepts", "<int>",	"incorrectly aligned base points (defaults to -2");
+struct arg_int* unalignedbasepts = arg_int0("k", "unalignedbasepts", "<int>",	"unaligned base penalty (defaults to -1)");
+struct arg_int* misalignedbasepts = arg_int0("l", "misalignedbasepts", "<int>",	"incorrectly aligned base penalty (defaults to -50");
 struct arg_int* maxnumreads = arg_int0("r", "maxnumreads", "<int>", "process for this number of reads or read pairs if PE (defaults to 10000000");
 struct arg_str* experimentdescr = arg_str0("e", "experiment", "<str>", "experiment description");
 struct arg_str* controlaligner = arg_str0("a", "controlaligner", "<str>", "Control aligner used for derivation of empirical error profiles");
@@ -354,10 +354,10 @@ struct arg_end* end = arg_end(200);
 					MisalignedBasePts = -1;
 			UnalignedBasePts = unalignedbasepts->count ? unalignedbasepts->ival[0] : cBMDfltUnalignedBasePts;
 			if (UnalignedBasePts >= AlignedBasePts)
-				MisalignedBasePts = AlignedBasePts - 1;
+				UnalignedBasePts = AlignedBasePts - 1;
 			else
 				if (UnalignedBasePts <= MisalignedBasePts)
-					MisalignedBasePts = MisalignedBasePts + 1;
+					UnalignedBasePts = MisalignedBasePts + 1;
 			}
 
 		if (PMode == eBMSimReads || PMode == eBMScore)
@@ -448,8 +448,8 @@ struct arg_end* end = arg_end(200);
 			{
 			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Aligned base score points: %d", AlignedBasePts);
 			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Aligned silently trimmed read base score points: %d", SilentTrimAlignBasePts);
-			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Misaligned base score points: %d", MisalignedBasePts);
-			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Unaligned base score points: %d", UnalignedBasePts);
+			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Misaligned base score penalty: %d", MisalignedBasePts);
+			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Unaligned base score penalty: %d", UnalignedBasePts);
 			}
 
 		if (szExperimentDescr[0] != '\0')
@@ -759,10 +759,14 @@ m_ObsCIGARBuffLen = 0;
 m_AllocdObsCIGARBuffSize = 0;
 m_AllocdObsErrProfMem = 0;
 m_AllocdObsCIGARBuffSize = 0;
-
-m_TotNumPotentialAlignBases = 0;
+m_TotNumPotentialAlignBases = 0;	// number of match bases in actual alignments which potentially could have been aligned to ground truth
+m_NumBasesLociCorrect = 0;			// total number of bases aligned correctly to ground truth loci
+m_NumBasesLociIncorrect = 0;		// total number of bases aligned incorrectly to ground truth loci
+m_NumBasesLociUnclaimed = 0;		// total number of ground truth bases which were not aligned
+m_NumSilentTrimBaseMatches = 0;		// total number of bases accepted as aligned even though in reads which have been silently trimmed - neighter soft or hard trimmed
 m_TotGroundTruthBases = 0;	// total number of potential ground truth bases which could be matched in an alignment 
 m_NumGroundTruths = 0;		// loaded this many ground truths loaded from simulated reads
+
 m_UsedGroundTruthsMem = 0;	// loaded ground truths are using this sized memory
 m_AllocdGroundTruthsMem = 0;// allocated this size memory to hold observed error profiles
 m_UnscoredReads = 0;
@@ -2035,6 +2039,7 @@ int SubID;
 int ReadLen;
 char szRefChrom[80];
 uint32_t StartLoci;
+int PotentialBasesAligning;
 char Strand;
 char szCIGAR[251];
 uint32_t ReadID;
@@ -2087,8 +2092,6 @@ if ((Rslt = m_pSESimReads->Open(pszSESimReads)) != eBSFSuccess)
 
 // iterate over all reads and parse their descriptor lines as these contain the ground truth for each individual read
 // at same time accumulate best case base match score
-m_MaxBaseAlignmentScore = 0;
-int64_t Score;
 NumDescrs = 0;
 while ((Rslt = m_pSESimReads->ReadSequence()) > eBSFSuccess)
 	{
@@ -2103,8 +2106,8 @@ while ((Rslt = m_pSESimReads->ReadSequence()) > eBSFSuccess)
 			Reset();
 			return(eBSFerrFastqDescr);
 			}
-		m_TotGroundTruthBases += ReadMatchScore(ReadLen, szCIGAR, m_AlignedBasePts, &Score);
-		m_MaxBaseAlignmentScore += Score;
+		PotentialBasesAligning = PotentialMatchBases(ReadLen, szCIGAR);
+		m_TotGroundTruthBases += PotentialBasesAligning;
 		
 		if ((cSRAllocdObsErrProfMemChunk / 10) >= (m_AllocdGroundTruthsMem - m_UsedGroundTruthsMem))
 		{
@@ -2135,6 +2138,8 @@ while ((Rslt = m_pSESimReads->ReadSequence()) > eBSFSuccess)
 		pGroundTruth->CIGARLen = (int8_t)strlen(szCIGAR);
 		pGroundTruth->FlgPE2 = (SubID == 2) ? 1 : 0;
 		pGroundTruth->FlgStrand = Strand == '-' ? 1 : 0;
+		pGroundTruth->PotentialBasesAligning = PotentialBasesAligning;
+		pGroundTruth->MaxActualBasesAligned = 0;
 		pGroundTruth->ReadLen = ReadLen;
 		pGroundTruth->StartLoci = StartLoci - 1;		// required as currently 1 based to suit SAM requirements but later will be comparing with a 0 based loci
 		strcpy((char *)pGroundTruth->NameChromCIGAR, szReadName);
@@ -2178,9 +2183,9 @@ if (m_bPEReads && pszPE2SimReads != NULL)
 				Reset();
 				return(eBSFerrFastqDescr);
 				}
-			m_TotGroundTruthBases += ReadMatchScore(ReadLen, szCIGAR, m_AlignedBasePts, &Score);
-			m_MaxBaseAlignmentScore += Score;
-
+			PotentialBasesAligning = PotentialMatchBases(ReadLen, szCIGAR);
+			m_TotGroundTruthBases += PotentialBasesAligning;
+			
 			if ((cSRAllocdObsErrProfMemChunk / 10) >= (m_AllocdGroundTruthsMem - m_UsedGroundTruthsMem))
 			{
 				size_t memreq = m_AllocdGroundTruthsMem + (size_t)cSRAllocdObsErrProfMemChunk;
@@ -2210,6 +2215,8 @@ if (m_bPEReads && pszPE2SimReads != NULL)
 			pGroundTruth->CIGARLen = (int8_t)strlen(szCIGAR);
 			pGroundTruth->FlgPE2 = (SubID == 2) ? 1 : 0;
 			pGroundTruth->FlgStrand = Strand == '-' ? 1 : 0;
+			pGroundTruth->PotentialBasesAligning = PotentialBasesAligning;
+			pGroundTruth->MaxActualBasesAligned = 0;
 			pGroundTruth->ReadLen = ReadLen;
 			pGroundTruth->StartLoci = StartLoci - 1;
 			strcpy((char*)pGroundTruth->NameChromCIGAR, szReadName);
@@ -2311,7 +2318,6 @@ if(bPEReads)
 	strcpy(m_szPE2Reads, pszPE2Reads);
 else
 	m_szPE2Reads[0] = '\0';
-m_MaxBaseAlignmentScore = 0;
 m_NumBasesLociCorrect = 0;
 m_NumBasesLociIncorrect = 0;
 m_NumBasesLociUnclaimed = 0;
@@ -2381,7 +2387,6 @@ NumLociErrs = 0;
 NumCorrectChroms = 0;
 NumErrPE2 = 0;
 
-m_TotBaseAlignmentScore = 0;
 m_ScoredReads = 0;
 m_UnscoredReads = 0;
 
@@ -2437,7 +2442,7 @@ while (Rslt >= eBSFSuccess && (LineLen = m_pAlignments->GetNxtSAMline(pszLine)) 
 		continue;
 		}
 
-	if (m_bPrimaryOnly && (pSAMalign->flag_nc >> 16) & 0x0100)	// only interested in primary reads
+	if (m_bPrimaryOnly && (pSAMalign->flag_nc >> 16) & 0x0100)	// only interested in primary reads?
 		{
 		m_UnscoredReads++;
 		NumNotPrimary++;
@@ -2463,23 +2468,18 @@ while (Rslt >= eBSFSuccess && (LineLen = m_pAlignments->GetNxtSAMline(pszLine)) 
 
 	// find out how many bases in alignment could be potentially scored
 	int64_t PotentialAlgnBases;
-	int64_t PotentialBaseScore;
-	
-	PotentialAlgnBases = ReadMatchScore(pGroundTruth->ReadLen, (char*)&pGroundTruth->NameChromCIGAR[pGroundTruth->NameLen + pGroundTruth->ChromNameLen + 2], m_AlignedBasePts, &PotentialBaseScore);
+
+	PotentialAlgnBases = PotentialMatchBases(pGroundTruth->ReadLen, (char*)&pGroundTruth->NameChromCIGAR[pGroundTruth->NameLen + pGroundTruth->ChromNameLen + 2]);
 	if (PotentialAlgnBases <= 0)
 		{
 		NumScoredAlignments++;
 		m_ReadOverlapHistogram[0] += 1;
 		continue;
 		}
-	AlignedPotentialScore += PotentialBaseScore;
 	m_TotNumPotentialAlignBases += PotentialAlgnBases;
 		// aligned to same chrom as ground truth?
 	if(stricmp((char *)&pGroundTruth->NameChromCIGAR[pGroundTruth->NameLen+1], pSAMalign->szRefSeqName))
 		{
-		int64_t BaseScore;
-		ReadMatchScore(pGroundTruth->ReadLen, (char *)&pGroundTruth->NameChromCIGAR[pGroundTruth->NameLen+ pGroundTruth->ChromNameLen+2], m_MisalignedBasePts, &BaseScore);
-		m_TotBaseAlignmentScore += BaseScore;
 		m_NumBasesLociIncorrect += PotentialAlgnBases;
 		NumScoredAlignments++;
 		m_ReadOverlapHistogram[0] += 1;
@@ -2490,9 +2490,6 @@ while (Rslt >= eBSFSuccess && (LineLen = m_pAlignments->GetNxtSAMline(pszLine)) 
 	NumCorrectChroms++;
 	if(pGroundTruth->FlgStrand != (((pSAMalign->flag_nc >> 16) & 0x010)== 0x010))
 		{
-		int64_t BaseScore;
-		ReadMatchScore(pGroundTruth->ReadLen, (char*)&pGroundTruth->NameChromCIGAR[pGroundTruth->NameLen + pGroundTruth->ChromNameLen + 2], m_MisalignedBasePts, &BaseScore);
-		m_TotBaseAlignmentScore += BaseScore;
 		m_NumBasesLociIncorrect += PotentialAlgnBases;
 		m_ReadOverlapHistogram[0] += 1;
 		NumScoredAlignments++;
@@ -2502,9 +2499,6 @@ while (Rslt >= eBSFSuccess && (LineLen = m_pAlignments->GetNxtSAMline(pszLine)) 
 		}
 	if(bPEReads && (pGroundTruth->FlgPE2 != (((pSAMalign->flag_nc >> 16) & 0x080) == 0x080)))
 		{
-		int64_t BaseScore;
-		ReadMatchScore(pGroundTruth->ReadLen, (char*)&pGroundTruth->NameChromCIGAR[pGroundTruth->NameLen + pGroundTruth->ChromNameLen + 2], m_MisalignedBasePts, &BaseScore);
-		m_TotBaseAlignmentScore += BaseScore;
 		m_NumBasesLociIncorrect += PotentialAlgnBases;
 		m_ReadOverlapHistogram[0] += 1;
 		NumScoredAlignments++;
@@ -2513,21 +2507,37 @@ while (Rslt >= eBSFSuccess && (LineLen = m_pAlignments->GetNxtSAMline(pszLine)) 
 		continue;
 		}
 
-	int64_t BaseScore;
-	int BasesMatched;
-	BasesMatched = ScoreAlignment(pSAMalign, pGroundTruth,&BaseScore);
-	m_TotBaseAlignmentScore += BaseScore;
-	m_ReadOverlapHistogram[(((int64_t)BasesMatched*100) + 50)/ PotentialAlgnBases]+=1;
+	uint32_t BasesMatched;
+	BasesMatched = ActualMatchBases(pSAMalign, pGroundTruth);
+	m_ReadOverlapHistogram[(((int64_t)BasesMatched*100) + 50) / PotentialAlgnBases]+=1;
 	NumScoredAlignments++;
 	}
+
+// iterate over ground truths and count number of bases still unclaimed
+m_NumBasesLociUnclaimed = 0;
+pGroundTruth = (tsBMGroundTruth *)m_pGroundTruths;
+for(uint32_t GTIdx = 0; GTIdx < m_NumGroundTruths; GTIdx++)
+	{
+	m_NumBasesLociUnclaimed += (int64_t)(pGroundTruth->PotentialBasesAligning - pGroundTruth->MaxActualBasesAligned);
+	pGroundTruth = (tsBMGroundTruth*)((uint8_t *)pGroundTruth + pGroundTruth->Size);
+	}
+
+double MaxBaseAlignmentScore = (double)m_TotGroundTruthBases * m_AlignedBasePts;
+double TotBaseAlignmentScore = ((double)m_NumBasesLociCorrect * m_AlignedBasePts) + ((double)m_NumBasesLociIncorrect * m_MisalignedBasePts) + 
+						((double)m_NumSilentTrimBaseMatches * m_SilentTrimAlignBasePts) + ((double)m_NumBasesLociUnclaimed * m_UnalignedBasePts);
+
+double BaseScoreRate = TotBaseAlignmentScore / MaxBaseAlignmentScore;
+double AlignBaseScoreRate = (((double)m_NumBasesLociCorrect * m_AlignedBasePts) + ((double)m_NumBasesLociIncorrect * m_MisalignedBasePts) + ((double)m_NumSilentTrimBaseMatches * m_SilentTrimAlignBasePts)) /
+											(((double)m_NumBasesLociCorrect + m_NumBasesLociIncorrect + m_NumSilentTrimBaseMatches) * (double)m_AlignedBasePts);
+
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "Completed scoring alignments in: '%s'", pszAlignmentsFile);
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "Experiment: %s", pszExperimentDescr);
-gDiagnostics.DiagOut(eDLInfo, gszProcName, "Control Aligner: '%s' Scored Aligner: '%s'",pszControlAligner,pszScoredAligner);
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "Control aligner: '%s' Scored Aligner: '%s'",pszControlAligner,pszScoredAligner);
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "Ground truth reads: %u Ground truth bases : %lld", m_NumGroundTruths, (INT64)m_TotGroundTruthBases);
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "There were a total of %u alignments scored containing %lld potential ground truth matching bases", NumScoredAlignments, m_TotNumPotentialAlignBases);
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "%u alignments classified as misaligned due to: chrom: %u, strand: %u, PE mismatch: %u ", NumErrChroms+NumErrStrands+ NumErrPE2,NumErrChroms,NumErrStrands, NumErrPE2);
 gDiagnostics.DiagOut(eDLInfo, gszProcName,"Bases loci correct: %lld, misaligned: %lld, unaligned: %lld", m_NumBasesLociCorrect, m_NumBasesLociIncorrect, m_NumBasesLociUnclaimed);
-double BaseScoreRate = (double)m_TotBaseAlignmentScore/m_MaxBaseAlignmentScore;
-double AlignBaseScoreRate = (double)m_TotBaseAlignmentScore/AlignedPotentialScore;
+
 gDiagnostics.DiagOut(eDLInfo, gszProcName,"Alignment base score rate relative to background ground truth simulation bases is %1.6f", BaseScoreRate);
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "Alignment base score rate relative to actually aligned read ground truth simulation bases is %1.6f", AlignBaseScoreRate);
 
@@ -2554,7 +2564,7 @@ if(m_szResultsFile[0] != '\0')
 	long FileOfs = lseek(hRslts, 0, SEEK_END);
 	if(FileOfs == 0)		// must be a new results file so write out a header line
 		{
-		LineBuffIdx = sprintf(szLineBuffer, "\"Experiment\",\"Control Aligner\",\"Scored Aligner\",\"Scored Alignment File\",\"Number Scored Alignments\",\"Total Potential Alignment Bases\",");
+		LineBuffIdx = sprintf(szLineBuffer, "\"Experiment\",\"Control Aligner\",\"Scored Aligner\",\"Scored Alignment File\",\"Ground truth reads\",\"Ground truth bases\",\"Potential scored reads\",\"Potential scored bases\",");
 		LineBuffIdx += sprintf(&szLineBuffer[LineBuffIdx],"\"Reads Classified As Misaligned\",\"Wrong Chrom\",\"Wrong Strand\",\"PE Mismatch\",");
 		LineBuffIdx += sprintf(&szLineBuffer[LineBuffIdx],"\"Bases loci correct\",\"Bases loci incorrect\",\"Bases Unaligned\",");
 		LineBuffIdx += sprintf(&szLineBuffer[LineBuffIdx], "\"Background Bases Relative Score\",\"Aligned Read Bases Relative Score\"");
@@ -2565,6 +2575,7 @@ if(m_szResultsFile[0] != '\0')
 		}
 
 	LineBuffIdx = sprintf(szLineBuffer,"\"%s\",\"%s\",\"%s\",\"%s\",", pszExperimentDescr, pszControlAligner, pszScoredAligner,pszAlignmentsFile);
+	LineBuffIdx += sprintf(&szLineBuffer[LineBuffIdx], "%u,%lld,", m_NumGroundTruths, (INT64)m_TotGroundTruthBases);
 	LineBuffIdx += sprintf(&szLineBuffer[LineBuffIdx], "%u,%lld,", NumScoredAlignments, (INT64)m_TotNumPotentialAlignBases);
 	LineBuffIdx += sprintf(&szLineBuffer[LineBuffIdx], "%u,%u,%u,%u,", NumErrChroms + NumErrStrands + NumErrPE2, NumErrChroms, NumErrStrands, NumErrPE2);
 	LineBuffIdx += sprintf(&szLineBuffer[LineBuffIdx], "%lld,%lld,%lld,", (INT64)m_NumBasesLociCorrect, (INT64)m_NumBasesLociIncorrect, (INT64)m_NumBasesLociUnclaimed);
@@ -2759,17 +2770,13 @@ return(OpCnt);
 }
 
 int		// returned number of potential base matches in CIGAR
-CBenchmark::ReadMatchScore(int ReadLen,			// read sequence length
-	char* pszCIGAR,		// '\0' terminated CIGAR with alignment profile
-	int MatchPts,		// pts for each base in alignment profile which is a potential match - could be Pts for match, mismatch, or unaligned
-	int64_t* pScore)	// returned number of matches * MatchPts
+CBenchmark::PotentialMatchBases(int ReadLen,			// read sequence length
+			char* pszCIGAR)		// '\0' terminated CIGAR with alignment profile
 {
 int NumOpTypes;
 int NumMatches;
 uint32_t OpTypes[cMaxBAMCigarOps];
 etCIGAROpType OpType;
-if(pScore != NULL)
-	*pScore = 0;
 
 // total the number of matches in the CIGAR profile
 if ((NumOpTypes = ParseObsCIGAR(pszCIGAR, ReadLen, cMaxBAMCigarOps, OpTypes)) < 1)
@@ -2781,8 +2788,6 @@ for(int Idx = 0; Idx < NumOpTypes; Idx++)
 	if(OpType == eCOPMatch || OpType == eCOPALignMatch || OpType == eCOPALignMismatch)
 		NumMatches += (OpTypes[Idx] >> 4 )& 0x0fffffff;
 	}
-if(pScore != NULL)
-	*pScore = (int64_t)NumMatches * MatchPts;
 return(NumMatches);
 }
 
@@ -2796,10 +2801,9 @@ return(NumMatches);
 //P  6   padding(silent deletion from padded reference)       no                no 
 //=  7   sequence match                                       yes               yes
 //X  8   sequence mismatch                                    yes               yes
-int				// returns number of correctly aligned base matches
-CBenchmark::ScoreAlignment(tsBAMalign* pAlignment,			// claimed alignment
-							tsBMGroundTruth *pGroundTruth,	// ground truth for this alignment
-							int64_t* pBaseScore)			// returned base alignment score
+int				// returns number of claimed base matches which were ground truth bases
+CBenchmark::ActualMatchBases(tsBAMalign* pAlignment,			// claimed alignment
+							tsBMGroundTruth *pGroundTruth)	// ground truth for this alignment
 {
 int NumGroundTruthOpTypes;
 int NumClaimOpTypes;
@@ -2807,9 +2811,8 @@ int GroundTruthNumOps;
 int ClaimNumOps;
 uint32_t GroundTruthOps[cMaxBAMCigarOps];
 
-if(pAlignment == NULL || pGroundTruth == NULL || pBaseScore == NULL)
+if(pAlignment == NULL || pGroundTruth == NULL)
 	return(0);
-*pBaseScore = 0;
 
 // parse ground truth CIGAR into packed GroundTruthOps
 if ((NumGroundTruthOpTypes = ParseObsCIGAR((char*)&pGroundTruth->NameChromCIGAR[pGroundTruth->NameLen + pGroundTruth->ChromNameLen + 2], pGroundTruth->ReadLen, cMaxBAMCigarOps, GroundTruthOps)) < 1)
@@ -2827,15 +2830,14 @@ if (pGroundTruth->ReadLen != pAlignment->l_seq)		// check if silently trimmed
 	if (pGroundTruth->ReadLen != pAlignment->l_seq + HardTrimLen) // if not equal then alignment read has been silently trimmed or incorrectly reported
 		{
 		// does claimed loci range fall within the ground truth loci range, if so then score with m_SilentTrimAlignBasePts otherwise score with m_MisalignedBasePts
-		int SilentTrimScore;
 		int GroundTruthEnd;
-		int64_t BaseScore;
+		SilentTrimBaseMatches = 0;
 		GroundTruthEnd = pGroundTruth->StartLoci + RefSeqConsumedLen(NumGroundTruthOpTypes,GroundTruthOps) - 1;
-		SilentTrimScore = m_SilentTrimAlignBasePts;
 		if((pAlignment->pos + 15) >= (int)pGroundTruth->StartLoci && ((int)pAlignment->end - 15) <= GroundTruthEnd)	// allowing a 15bp latitude!
-			SilentTrimBaseMatches = ReadMatchScore(pGroundTruth->ReadLen, (char*)&pGroundTruth->NameChromCIGAR[pGroundTruth->NameLen + pGroundTruth->ChromNameLen + 2], m_SilentTrimAlignBasePts, &BaseScore);
-		m_NumBasesLociCorrect += SilentTrimBaseMatches;	// have to assume these did match - Ugh, Ugh, and Ugh - because what is the alternative, can't just ignore them
-		*pBaseScore = BaseScore;
+			SilentTrimBaseMatches = pGroundTruth->PotentialBasesAligning;
+		m_NumSilentTrimBaseMatches += SilentTrimBaseMatches;	// have to assume these did match - Ugh, Ugh, and Ugh - because what is the alternative, can't just ignore them
+		if (pGroundTruth->MaxActualBasesAligned < SilentTrimBaseMatches)
+			pGroundTruth->MaxActualBasesAligned = SilentTrimBaseMatches;
 		return(SilentTrimBaseMatches);
 		}
 	}
@@ -2847,7 +2849,6 @@ int ClaimedReadOfs = 0;
 int ExpectReadOfs = 0;;
 int NumLociCorrect = 0;
 int NumLociIncorrect = 0;
-int NumLociUnclaimed = 0;
 int ClaimOpIdx;
 int GroundTruthOpIdx;
 int ClaimedLoci;
@@ -2897,7 +2898,6 @@ while(GroundTruthSeqIdx < pGroundTruth->ReadLen)
 		case eCOPSoftClip:						//	'S'  claim sequence has been soft clipped
 			switch (GroundTruthOpType) {
 				case eCOPMatch:					// 'M' aligned but could be either matching or mismatching
-					NumLociUnclaimed++;			// not claimed even though ground truth had a match		
 					GroundTruthSeqIdx++;		// ground truth is consuming both base and loci
 					GroundTruthLoci++;
 					break;
@@ -2924,7 +2924,6 @@ while(GroundTruthSeqIdx < pGroundTruth->ReadLen)
 		case eCOPDelete:						//	'D'  alignment skips over a target subsequence to a new loci in target
 			switch (GroundTruthOpType) {
 				case eCOPMatch:					// 'M' aligned but could be either matching or mismatching, consumes query and reference sequence
-					NumLociUnclaimed++;			// not claimed even though ground truth had a match		
 					GroundTruthSeqIdx++;		// ground truth is consuming a base
 					GroundTruthLoci++;
 					break;
@@ -2951,7 +2950,6 @@ while(GroundTruthSeqIdx < pGroundTruth->ReadLen)
 		case eCOPPadding:				// silent padding
 			switch (GroundTruthOpType) {
 				case eCOPMatch:					// 'M' aligned but could be either matching or mismatching, consumes query and reference sequence
-					NumLociUnclaimed++;			// not claimed even though ground truth had a match		
 					GroundTruthSeqIdx++;		// ground truth is consuming a base
 					GroundTruthLoci++;
 					break;
@@ -2977,7 +2975,6 @@ while(GroundTruthSeqIdx < pGroundTruth->ReadLen)
 		case eCOPInsert:				// 'I' insertion
 			switch (GroundTruthOpType) {
 				case eCOPMatch:					// 'M' aligned but could be either matching or mismatching, consumes query and reference sequence
-					NumLociUnclaimed++;			// not claimed even though ground truth had a match		
 					GroundTruthSeqIdx++;		// ground truth is consuming a base
 					GroundTruthLoci++;
 					break;
@@ -3042,8 +3039,8 @@ while(GroundTruthSeqIdx < pGroundTruth->ReadLen)
 	}
 m_NumBasesLociCorrect += NumLociCorrect;
 m_NumBasesLociIncorrect += NumLociIncorrect;
-m_NumBasesLociUnclaimed += NumLociUnclaimed;
-*pBaseScore = ((int64_t)NumLociCorrect * m_AlignedBasePts) + ((int64_t)NumLociUnclaimed * m_UnalignedBasePts) + ((int64_t)NumLociIncorrect * m_MisalignedBasePts);
+if (pGroundTruth->MaxActualBasesAligned < (NumLociCorrect + NumLociIncorrect))
+	pGroundTruth->MaxActualBasesAligned = (NumLociCorrect + NumLociIncorrect);
 return(NumLociCorrect);
 }
 

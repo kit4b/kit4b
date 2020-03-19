@@ -1,12 +1,12 @@
 #pragma once
 
 // base points will be silently clamped such that MisalignedBasePts < 0, AlignedBasePts > 0 and MisalignedBasePts < UnalignedBasePts < AlignedBasePts
-const int cBMMinPts = -10;					// base points minimum for MisalignedBasePts and UnalignedBasePts
-const int cBMMaxPts = 10;					// base points max for AlignedBasePts and UnalignedBasePts
-const int cBMDfltUnalignedBasePts = 0;			// default points to apply for each unaligned base
-const int cBMDfltAlignedBasePts = 2;			// default points to apply for each base aligned to it's ground truth loci
-const int cBMDfltSilentTrimAlignBasePts = 1;	// if read was silently trimed and falls within ground truth loci range then credit as aligned - Ugh, Ugh and Ugh again 
-const int cBMDfltMisalignedBasePts = -2;		// default points to apply for each base aligned but not to ground truth loci
+const int cBMMinPts = -100;					// base points minimum for MisalignedBasePts and UnalignedBasePts
+const int cBMMaxPts = 100;					// base points max for AlignedBasePts and UnalignedBasePts
+const int cBMDfltUnalignedBasePts = -1;			// default penalty to apply for each unaligned base
+const int cBMDfltAlignedBasePts = 10;			// default points to apply for each base aligned to it's ground truth loci
+const int cBMDfltSilentTrimAlignBasePts = 1;	// if read was silently trimmed and falls within ground truth loci range then credit as aligned - Ugh, Ugh and Ugh again 
+const int cBMDfltMisalignedBasePts = -50;		// default penalty to apply for each base aligned but not to ground truth loci
 
 // silently clamping number of reads, SE or PE pairs, to be within following ranges
 const int cBMMaxReads = 100000000;		// max number of reads or read pairs to process for MAGIC simulations
@@ -74,6 +74,8 @@ typedef struct TAG_sBMGroundTruth {
 	uint8_t FlgRefChromErr : 1;			// aligned to incorrect ref chrom
 	uint8_t FlgPE2Err : 1;				// aligned pair end is incorrect - alignment PE2 does not match ground truth PE2
 	uint16_t ReadLen;					// ground truth is for a simulated read of this length
+	uint16_t PotentialBasesAligning;	// potentially this ground truth read has this many bases aligning to the target
+	uint16_t MaxActualBasesAligned;		// max bases aligned of any alignment 'of this ground truth read
 	uint8_t NameChromCIGAR[1];			// read name concatenated chromosome name concatenated with CIGAR
 } tsBMGroundTruth;
 
@@ -81,8 +83,6 @@ typedef struct TAG_sBMGroundTruth {
 #pragma pack()
 
 class CBenchmark {
-	int64_t m_MaxBaseAlignmentScore;		// maximum acheivable base alignment scores - assumes all ground truth reads were correctly aligned with no alignment errors
-	int64_t m_TotBaseAlignmentScore;		// sum of all base alignment scores over all claimed alignments with respect to the ground truth alignments
 	int64_t m_TotGroundTruthBases;			// total number of all ground truth bases which could have been aligned
 	bool m_bPrimaryOnly;			// if true then only score primary read alignments otherwise score all including secondary
 	bool m_bPEReads;				// if true then PE pair only processing otherwise treating all reads as if SE reads
@@ -95,6 +95,7 @@ class CBenchmark {
 	int64_t m_NumBasesLociCorrect;			// total number of bases aligned correctly to ground truth loci
 	int64_t m_NumBasesLociIncorrect;		// total number of bases aligned incorrectly to ground truth loci
 	int64_t m_NumBasesLociUnclaimed;		// total number of ground truth bases which were not aligned
+	int64_t m_NumSilentTrimBaseMatches;		// total number of bases accepted as aligned even though in reads which have been silently trimmed - neighter soft or hard trimmed
 
 	uint32_t m_ReadOverlapHistogram[101];	// histogram of read alignments by percentile proportion of read bases in reads overlapping with ground truth read bases
 
@@ -156,15 +157,13 @@ class CBenchmark {
 	int OpenAlignments(char* pszAlignmentsFile);// input file containing aligned reads (SAM or BAM)
 
 	int		// returned number of potential base matches in CIGAR
-		ReadMatchScore(int ReadLen,			// read sequence length
-						char *pszCIGAR,		// '\0' terminated CIGAR with alignment profile
-						int MatchPts = 0,		// pts for each base in alignment profile which is a potential match - could be Pts for match, mismatch, or unaligned
-						int64_t *pScore = NULL); // returned number of matches * MatchPts
+		PotentialMatchBases(int ReadLen,			// read sequence length
+						char *pszCIGAR);		// '\0' terminated CIGAR with alignment profile
 
-	int
-		ScoreAlignment(tsBAMalign* pAlignment,			// claimed alignment
-			tsBMGroundTruth* pGroundTruth,	// ground truth for this alignment
-			int64_t* pBaseScore);		// returned base alignment score
+	int    // returns number of claimed base matches which were ground truth bases
+		ActualMatchBases(tsBAMalign* pAlignment,			// claimed alignment
+			tsBMGroundTruth* pGroundTruth);	// ground truth for this alignment
+			
 
 	int
 		AdjustAlignment(etCIGAROpType OpType,	// alignment operator type

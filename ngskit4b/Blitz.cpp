@@ -321,7 +321,7 @@ if (!argerrors)
 		exit(1);
 		}
 
-	QueryLenAlignedPct = querylendpct->count ? querylendpct->ival[0] : cDfltMinQueryLenAlignedPct;
+	QueryLenAlignedPct = querylendpct->count ? querylendpct->ival[0] : cDfltBlitzMinQueryLenAlignedPct;
 	if(QueryLenAlignedPct < 1 || QueryLenAlignedPct > 100)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Percentage of query sequence aligned '-a%d' specified outside of range 1..100\n",QueryLenAlignedPct);
@@ -349,16 +349,16 @@ if (!argerrors)
 		}
 
 	CoreLen = corelen->count ?  corelen->ival[0] : CoreLen;
-	if(CoreLen != 0 && (CoreLen < cMinCoreLen) || CoreLen > cMaxCoreLen)
+	if(CoreLen != 0 && (CoreLen < cMinBlitzCoreLen) || CoreLen > cMaxBlitzCoreLen)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: core or seed length '-C%d' specified outside of range %d..%d\n",CoreLen,cMinCoreLen,cMaxCoreLen);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: core or seed length '-C%d' specified outside of range %d..%d\n",CoreLen,cMinBlitzCoreLen,cMaxBlitzCoreLen);
 		exit(1);
 		}
 
 	CoreDelta = coredelta->count ?  coredelta->ival[0] : CoreDelta;
-	if((CoreDelta != 0 && CoreDelta < cMinCoreDelta) || CoreDelta > CoreLen)
+	if((CoreDelta != 0 && CoreDelta < cMinBlitzCoreDelta) || CoreDelta > CoreLen)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: core delta '-c%d' specified outside of range %d..%d\n",CoreDelta,cMinCoreDelta, cMaxCoreLen);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: core delta '-c%d' specified outside of range %d..%d\n",CoreDelta,cMinBlitzCoreDelta, cMaxBlitzCoreLen);
 		exit(1);
 		}
 
@@ -374,40 +374,40 @@ if (!argerrors)
 			}
 		}
 
-	MismatchScore = mismatchscore->count ?  mismatchscore->ival[0] : cDfltMismatchScore;
-	if(MismatchScore < cMinMismatchScore || MismatchScore > cMaxMismatchScore)
+	MismatchScore = mismatchscore->count ?  mismatchscore->ival[0] : cDfltBlitzMismatchScore;
+	if(MismatchScore < cMinBlitzMismatchScore || MismatchScore > cMaxBlitzMismatchScore)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: mismatch penalty '-s%d' specified outside of range %d..%d\n",MismatchScore,cMinMismatchScore,cMaxMismatchScore);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: mismatch penalty '-s%d' specified outside of range %d..%d\n",MismatchScore,cMinBlitzMismatchScore,cMaxBlitzMismatchScore);
 		exit(1);
 		}
-	ExactMatchScore = exactmatchscore->count ?  exactmatchscore->ival[0] : cDfltExactMatchScore;
-	if(ExactMatchScore < cMinExactMatchScore || ExactMatchScore > cMaxExactMatchScore)
+	ExactMatchScore = exactmatchscore->count ?  exactmatchscore->ival[0] : cDfltBlitzExactMatchScore;
+	if(ExactMatchScore < cMinBlitzExactMatchScore || ExactMatchScore > cMaxBlitzExactMatchScore)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: exact match score '-s%d' specified outside of range %d..%d\n",ExactMatchScore,cMinExactMatchScore,cMaxExactMatchScore);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: exact match score '-s%d' specified outside of range %d..%d\n",ExactMatchScore,cMinBlitzExactMatchScore,cMaxBlitzExactMatchScore);
 		exit(1);
 		}
-	GapOpenScore = gapopenscore->count ?  gapopenscore->ival[0] : cDfltGapOpenScore;
-	if(GapOpenScore < cMinGapOpenScore || GapOpenScore > cMaxGapOpenScore)
+	GapOpenScore = gapopenscore->count ?  gapopenscore->ival[0] : cDfltBlitzGapOpenScore;
+	if(GapOpenScore < cMinBlitzGapOpenScore || GapOpenScore > cMaxBlitzGapOpenScore)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: gap open penalty '-s%d' specified outside of range %d..%d\n",GapOpenScore,cMinGapOpenScore,cMaxGapOpenScore);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: gap open penalty '-s%d' specified outside of range %d..%d\n",GapOpenScore,cMinBlitzGapOpenScore,cMaxBlitzGapOpenScore);
 		exit(1);
 		}
 
 	MaxOccKMerDepth = maxocckmerdepth->count ?  maxocckmerdepth->ival[0] : 0;
-	if(MaxOccKMerDepth != 0 && (MaxOccKMerDepth < cMinOccKMerDepth) || MaxOccKMerDepth > cMaxOccKMerDepth)
+	if(MaxOccKMerDepth != 0 && (MaxOccKMerDepth < cMinBlitzOccKMerDepth) || MaxOccKMerDepth > cMaxBlitzOccKMerDepth)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: maximum depth to explore over-occurring seed K-mers '-k%d' specified outside of range %d..%d\n",MaxOccKMerDepth,cMinOccKMerDepth,cMaxOccKMerDepth);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: maximum depth to explore over-occurring seed K-mers '-k%d' specified outside of range %d..%d\n",MaxOccKMerDepth,cMinBlitzOccKMerDepth,cMaxBlitzOccKMerDepth);
 		exit(1);
 		}
 
 	MinPathScore = minpathscore->count ?  minpathscore->ival[0] : MinPathScore;
-	if(MinPathScore != 0 && (MinPathScore < cMinPathScore) || MinPathScore > cMaxPathScore)
+	if(MinPathScore != 0 && (MinPathScore < cMinBlitzPathScore) || MinPathScore > cMaxBlitzPathScore)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: minimum path score '-p%d' specified outside of range %d..%d\n",MinPathScore,cMinPathScore,cMaxPathScore);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: minimum path score '-p%d' specified outside of range %d..%d\n",MinPathScore,cMinBlitzPathScore,cMaxBlitzPathScore);
 		exit(1);
 		}
 
-	MaxPathsToReport = maxpathstoreport->count ?  maxpathstoreport->ival[0] : cDfltMaxPathsToReport;
+	MaxPathsToReport = maxpathstoreport->count ?  maxpathstoreport->ival[0] : cDfltBlitzMaxPathsToReport;
 	if(MaxPathsToReport < 1 || MaxPathsToReport > 10)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: maximum number of highest scoring paths per query '-P%d' must be in range 1..10\n",MaxPathsToReport);

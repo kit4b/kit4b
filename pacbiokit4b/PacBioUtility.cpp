@@ -466,7 +466,7 @@ for(FileIdx = 0; FileIdx < m_NumInputFiles; FileIdx++)
 		bTruncSeq = false;
 		SeqID = 0;
 		BuffOfs = 0;
-		while((Rslt = SeqLen = Fasta.ReadSequence(&pSeqBuff[BuffOfs],(int)min(AvailBuffSize,(size_t)cMaxQuerySeqLen),true,false)) > eBSFSuccess)
+		while((Rslt = SeqLen = Fasta.ReadSequence(&pSeqBuff[BuffOfs],(int)min(AvailBuffSize,(size_t)cMaxPBQuerySeqLen),true,false)) > eBSFSuccess)
 			{
 			if(m_TermBackgoundThreads != 0)	// requested to immediately self-terminate?
 				{

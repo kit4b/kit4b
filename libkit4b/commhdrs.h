@@ -22,6 +22,7 @@
 #include <stdarg.h>
 #include <ftw.h>
 #include <fnmatch.h>
+#include <stdint.h>
 #endif
 #include <sys/timeb.h>
 #include <math.h>

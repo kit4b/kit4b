@@ -23,59 +23,59 @@ Orginal 'BioKanga' copyright notice has been retained and immediately follows th
 
 #pragma once
 
-const int cMinCoreLen = 8;			// minimum allowed core or seed length
-const int cDfltCoreLen = 20;		// default core or seed length
-const int cMaxCoreLen = 100;		// max allowed core or seed length
+const int cMinBlitzCoreLen = 8;			// minimum allowed core or seed length
+const int cDfltBlitzCoreLen = 20;		// default core or seed length
+const int cMaxBlitzCoreLen = 100;		// max allowed core or seed length
 
-const int cDfltMinQueryLenAlignedPct = 75;  // to be accepted a query sequence must align over at least this percentage (1..100) of it's length onto target
+const int cDfltBlitzMinQueryLenAlignedPct = 75;  // to be accepted a query sequence must align over at least this percentage (1..100) of it's length onto target
 
-const int cMinPathScore = 25;		// user specified min allowed path score before that path will be reported
-const int cDfltPathScore = 75;		// default minimum path score before that path will be reported
-const int cMaxPathScore = 100000;		// user specified max minimum allowed path score before that path will be reported
+const int cMinBlitzPathScore = 25;		// user specified min allowed path score before that path will be reported
+const int cDfltBlitzPathScore = 75;		// default minimum path score before that path will be reported
+const int cMaxBlitzPathScore = 100000;		// user specified max minimum allowed path score before that path will be reported
 
-const int cMaxOverlapFloat = 8;		// allowing for overlap float of at most this many bases, needed because the cores with extensions are independent and may be overextended
+const int cMaxBlitzOverlapFloat = 8;		// allowing for overlap float of at most this many bases, needed because the cores with extensions are independent and may be overextended
 
-const int cDfltMaxPathsToReport = 1;	// by default report at most this many scoring paths for any query sequence
+const int cDfltBlitzMaxPathsToReport = 1;	// by default report at most this many scoring paths for any query sequence
 
 
-const int cDfltExactMatchScore = 1;		// default score for an exact match
-const int cMinExactMatchScore = 1;		// user specified minimum score for an exact match
-const int cMaxExactMatchScore = 10;		// user specified maximum score for an exact match
+const int cDfltBlitzExactMatchScore = 1;		// default score for an exact match
+const int cMinBlitzExactMatchScore = 1;			// user specified minimum score for an exact match
+const int cMaxBlitzExactMatchScore = 10;		// user specified maximum score for an exact match
 
-const int cDfltMismatchScore = 2;		// default cost for mismatches when scoring
-const int cMinMismatchScore = 1;		// user specified minimum cost for mismatches when scoring
-const int cMaxMismatchScore = 10;		// user specified maximum cost for mismatches when scoring
+const int cDfltBlitzMismatchScore = 2;		// default cost for mismatches when scoring
+const int cMinBlitzMismatchScore = 1;		// user specified minimum cost for mismatches when scoring
+const int cMaxBlitzMismatchScore = 10;		// user specified maximum cost for mismatches when scoring
 
 // using affine gap scoring but limiting the gap extension cost to just the first 100bp
-const int cDfltGapOpenScore = 5;	// default cost for opening path gap when scoring path
-const int cMinGapOpenScore = 1;		// user specified minimum cost for opening path gap when scoring path
-const int cMaxGapOpenScore = 50;	// user specified maximum cost for opening path gap when scoring path
+const int cDfltBlitzGapOpenScore = 5;	// default cost for opening path gap when scoring path
+const int cMinBlitzGapOpenScore = 1;		// user specified minimum cost for opening path gap when scoring path
+const int cMaxBlitzGapOpenScore = 50;	// user specified maximum cost for opening path gap when scoring path
 
-const int cGapExtendCost = 1;		// cost for extending gap per 10bp extension when scoring path
-const int cGapExtendCostLimit = 10;	// clamp gap extension cost to be no more than this
-const int cGapMaxLength = 500000;   // treat any gaps longer than this length as being not on same path - allows for RNA-seq with skipped exons
+const int cGapBlitzExtendCost = 1;		// cost for extending gap per 10bp extension when scoring path
+const int cGapBlitzExtendCostLimit = 10;	// clamp gap extension cost to be no more than this
+const int cGapBlitzMaxLength = 500000;   // treat any gaps longer than this length as being not on same path - allows for RNA-seq with skipped exons
 
-const int cMinCoreDelta = 1;		// minimum allowed core shift delta in bp
-const int cMaxCoreDelta = 50;		// max allowed core shift delta in bp
+const int cMinBlitzCoreDelta = 1;		// minimum allowed core shift delta in bp
+const int cMaxBlitzCoreDelta = 50;		// max allowed core shift delta in bp
 
-const int cDfltSensCoreIters  = 1500;	// default sensitivity core explore depth 
-const int cMoreSensCoreIters  = 2000;	// more sensitivity core explore depth
-const int cUltraSensCoreIters = 3000;	// ultra sensitivity core explore depth
-const int cMinSensCoreIters   = 750;	// min sensitivity core explore depth
+const int cDfltBlitzSensCoreIters  = 1500;	// default sensitivity core explore depth 
+const int cMoreBlitzSensCoreIters  = 2000;	// more sensitivity core explore depth
+const int cUltraBlitzSensCoreIters = 3000;	// ultra sensitivity core explore depth
+const int cMinBlitzSensCoreIters   = 750;	// min sensitivity core explore depth
 
-const int cMinOccKMerDepth = 100;       // user can override the core exploration search depth from this minimum 
-const int cMaxOccKMerDepth = 20000;		// up to this maximum 
+const int cMinBlitzOccKMerDepth = 100;       // user can override the core exploration search depth from this minimum 
+const int cMaxBlitzOccKMerDepth = 20000;		// up to this maximum 
 
-const int cMaxQuerySeqIdentLen = 80;		// allow for fasta sequence identifiers of upto this length 
-const int cMaxDescrLen = 128;				// allow for fasta descriptors (incl identifiers) of up to this length
-const int cSAMtruncSeqLen = 16000;			// SAM format is really designed for short read sequences, down stream apps may have problems handling alignments with long query sequences so slough sequences longer than this length if SAM output
-const int cAllocQuerySeqLen = 0x0200000;	// initially allocate to hold a query sequence of up to this length (2Mbp), will be realloc'd if needed for longer query sequences
-const int cMaxQuerySeqLen = (cAllocQuerySeqLen * 8);    // can handle query sequences of up to this maximal length (16Mbp), longer sequences will be truncated to this length and the user warned
-const int cMaxReadAheadQuerySeqs = 50000;	// read ahead and enqueue up to at most this many query sequences
+const int cMaxBlitzQuerySeqIdentLen = 80;		// allow for fasta sequence identifiers of upto this length 
+const int cMaxBlitzDescrLen = 128;				// allow for fasta descriptors (incl identifiers) of up to this length
+const int cSAMBlitztruncSeqLen = 16000;			// SAM format is really designed for short read sequences, down stream apps may have problems handling alignments with long query sequences so slough sequences longer than this length if SAM output
+const int cAllocBlitzQuerySeqLen = 0x0200000;	// initially allocate to hold a query sequence of up to this length (2Mbp), will be realloc'd if needed for longer query sequences
+const int cMaxBlitzQuerySeqLen = (cAllocBlitzQuerySeqLen * 8);    // can handle query sequences of up to this maximal length (16Mbp), longer sequences will be truncated to this length and the user warned
+const int cMaxBlitzReadAheadQuerySeqs = 50000;	// read ahead and enqueue up to at most this many query sequences
 
-const int cNumAllocdAlignNodes = 200000;  // allow each query sequence to have up to this many aligned subsequences
+const int cNumBlitzAllocdAlignNodes = 200000;  // allow each query sequence to have up to this many aligned subsequences
 
-const int cAlignRprtBufferSize = 500000; // buffer for buffering alignment results ready to write to file
+const int cAlignBlitzRprtBufferSize = 500000; // buffer for buffering alignment results ready to write to file
 
 #pragma pack(1)
 
@@ -107,7 +107,7 @@ typedef enum TAG_eBLZRsltsFomat {
 
 typedef struct TAG_sQuerySeq {
     int SeqID;						// monotonically increasing unique sequence identifier
-	char szQueryIdent[cMaxQuerySeqIdentLen+1];	// fasta identifier
+	char szQueryIdent[cMaxBlitzQuerySeqIdentLen+1];	// fasta identifier
 	int QuerySeqLen;				// query sequence length
 	uint8_t *pQuerySeq;				// allocated to hold sequence 
 } tsQuerySeq;
@@ -196,7 +196,7 @@ class CBlitz
 	int m_hOutFile;					// results output file handle
 	int m_szLineBuffIdx;			// offset into m_pszLineBuff at which to next write
 	char *m_pszLineBuff;			// allocated to hold output line buffering
-	CSfxArray *m_pSfxArray;		// suffix array holds genome of interest
+	CSfxArray *m_pSfxArray;			// suffix array holds genome of interest
 	char m_szTargSpecies[cMaxDatasetSpeciesChrom+1]; // suffix array was generated over this targeted species
 
 	int m_TotSeqIDs;				// total number of query sequences which have been parsed and enqueued
@@ -356,8 +356,8 @@ public:
 				uint32_t SortedPathIdx,				// index of paths head node
 				tsQueryAlignNodes *pAlignNodes,		// alignment nodes
 				tsQueryAlignNodes **ppFirst2Rpts,	// allocated to hold ptrs to alignment nodes which are marked as being FlgFirst2tRpt
-				uint32_t *pQueryPathEndOfs,			// query path ends at this offset
-				uint32_t *pTargPathEndOfs,			// target path ends at this offset
+				uint32_t *pQueryPathEndOfs = NULL,			// query path ends at this offset
+				uint32_t *pTargPathEndOfs = NULL,			// target path ends at this offset
 				uint32_t *pqNumInsert = NULL,			// qNumInsert, Number of inserts in query
 				uint32_t *pqBaseInsert = NULL,		// qBaseInsert, Number of bases inserted in query
 				uint32_t *ptNumInsert = NULL,			// tNumInsert, Number of inserts in target
@@ -524,13 +524,13 @@ public:
 			uint32_t StartNodeIdx,				// report for nodes starting at this node index (1..NumNodes) which is expected to be the first alignment node of a new target sequence
 			tsQueryAlignNodes *pAlignNodes,		// alignment nodes
 			uint32_t MinPathScore,				// only report those series having at least this score
-			uint32_t  MaxPathsToReport);			// report at most this many alignment paths for any query
+			uint32_t  MaxPathsToReport);		// report at most this many alignment paths for any query
 
-	uint32_t											// returned best score for paths starting at pAlignNodes[ExploreNodeIdx]
+	uint32_t									// returned best score for paths starting at pAlignNodes[ExploreNodeIdx]
 		HighScoreSW(uint32_t QueryLen,			// query length
-			uint32_t TargSeqLen,					// targeted sequence length
+			uint32_t TargSeqLen,				// targeted sequence length
  			bool bStrand,						// scoring for series on this strand - false if sense, true if antisense
-			uint32_t ExploreNodeIdx,				// node to be explored for maximally scored path
+			uint32_t ExploreNodeIdx,			// node to be explored for maximally scored path
 			uint32_t NumNodes,					// total number of alignment nodes 
 			tsQueryAlignNodes *pAlignNodes);	// alignment nodes
 			
