@@ -207,7 +207,8 @@ class CBenchmark {
 			char* pszPE2SimReads);	// load ground truths for PE2 if PE simulated reads
 
 	tsBMGroundTruth*		// returned ground truth which matches
-		LocateGroundTruth(tsBAMalign* pSAMalign);	// this alignment by name
+		LocateGroundTruth(tsBAMalign* pSAMalign,	// this alignment by name
+							bool b2ndInPair);		// if true (assumes PE ground truths) then locate PE2
 
 	int			// choosen loci on length proportional randomly selected chromosome, -1 if unable to choose a chromosome meeting critera
 		ChooseRandStartLoci(int FragSize,		// ensure can generate this sized fragment starting at chrom/loci

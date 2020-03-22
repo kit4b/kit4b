@@ -1923,7 +1923,6 @@ char *pOutBuff;
 char* pChr;
 char Strand;
 etSeqBase* pBase;
-char szReadNameSfx[5];
 char szChromName[cMaxDatasetSpeciesChrom+1];
 char szCIGAR[100];
 
@@ -1962,7 +1961,6 @@ szChromName[cMaxDatasetSpeciesChrom] = '\0';
 if(bPE2)
 	{
 	Strand = pCurCIGAR->FlgPE2Strand ? '-' : '+';
-	strcpy(szReadNameSfx,"PE.2");
 	SEPE = '2';
 	DecodeCIGAR(pCurCIGAR->PE2NumCIGAROps,&pCurCIGAR->CIGAROpsErrProfOps[pCurCIGAR->PE1NumCIGAROps + pCurCIGAR->PE1NumErrProfOps], sizeof(szCIGAR),szCIGAR);
 	}
@@ -1970,18 +1968,12 @@ else
 	{
 	Strand = pCurCIGAR->FlgPE1Strand ? '-' : '+';
 	if(bPEReads)
-		{
- 		strcpy(szReadNameSfx, "PE.1");
 		SEPE = '1';
-		}
 	else
-		{
-		strcpy(szReadNameSfx, "SE");
 		SEPE = '0';
-		}
 	DecodeCIGAR(pCurCIGAR->PE1NumCIGAROps, pCurCIGAR->CIGAROpsErrProfOps, sizeof(szCIGAR), szCIGAR);
 	}
-int Len = sprintf(pChr, ">SR%d%s %c %d %s %d %c %s %d\n", SeqID, szReadNameSfx, SEPE, pCurCIGAR->ReadLen, szChromName, StartLoci+1, Strand,szCIGAR, pCurCIGAR->ID);
+int Len = sprintf(pChr, ">SR%d %c %d %s %d %c %s %d\n", SeqID, SEPE, pCurCIGAR->ReadLen, szChromName, StartLoci+1, Strand,szCIGAR, pCurCIGAR->ID);
 *pOutBuffIdx += Len;
 pChr += Len;
 LineLen = 0;
@@ -2246,7 +2238,8 @@ return(1);
 }
 
 tsBMGroundTruth*		// returned ground truth which matches
-CBenchmark::LocateGroundTruth(tsBAMalign* pSAMalign)	// this alignment by name
+CBenchmark::LocateGroundTruth(tsBAMalign* pSAMalign,	// this alignment by name
+							  bool b2ndInPair)			// if true (assumes PE ground truths) then locate PE2
 {
 int TargPsn;
 int IdxLo;
@@ -2259,8 +2252,14 @@ do {
 	TargPsn = (IdxLo + IdxHi) / 2;
 	pGroundTruth = m_ppGroundTruthIdx[TargPsn];
 	if((Rslt = stricmp((char *)pGroundTruth->NameChromCIGAR, pSAMalign->read_name))==0)
-		return(pGroundTruth);
-	
+		{
+		if(pGroundTruth->FlgPE2 == b2ndInPair)
+			return(pGroundTruth);
+		if(b2ndInPair)
+			return(m_ppGroundTruthIdx[TargPsn+1]);
+		else
+			return(m_ppGroundTruthIdx[TargPsn-1]);
+		}
 	if (Rslt > 0)
 		IdxHi = TargPsn - 1;
 	else
@@ -2449,7 +2448,7 @@ while (Rslt >= eBSFSuccess && (LineLen = m_pAlignments->GetNxtSAMline(pszLine)) 
 		continue;
 		}
 
-	if ((pGroundTruth = LocateGroundTruth(pSAMalign)) == NULL) //fails if read name not a simulated read name
+	if ((pGroundTruth = LocateGroundTruth(pSAMalign, ((pSAMalign->flag_nc >> 16) & 0x080)==0x080)) == NULL) //fails if read name not a simulated read name or not matching ground truth SE/PE
 		{
 		if(++NumNoGroundTruths == 1)
 			{
@@ -3502,10 +3501,6 @@ CBenchmark::SortGroundTruths(const void* arg1, const void* arg2)
 	int Cmp;
 	tsBMGroundTruth* pEl1 = *(tsBMGroundTruth**)arg1;
 	tsBMGroundTruth* pEl2 = *(tsBMGroundTruth**)arg2;
-//	int PE1Len = strlen((char*)pEl1->NameChromCIGAR);
-//	int PE2Len = strlen((char*)pEl2->NameChromCIGAR);
-//	if(PE1Len != PE2Len)
-//		return(PE1Len - PE2Len);
 	if ((Cmp = stricmp((char*)pEl1->NameChromCIGAR, (char*)pEl2->NameChromCIGAR)) != 0)
 		return(Cmp); // Note:  -1 if pEl1 shorter in length than pEl2 but matches up to strlen(pEl1). +1 if pEl1 longer in length than pEl2 but matches up to strlen(pEl2)
 	if (!(pEl1->FlgPE2 || pEl2->FlgPE2))	// if either not a PE then just return as must be SE

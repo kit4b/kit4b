@@ -25,4 +25,5 @@ Release 0.5.9 - minimap2 SAM file headers may be missing '@VN' version and
 Release 0.6.1 - 'ngskit4b benchmark' now has the option to directly generate a CSV file containing benchmarking results
 Release 0.6.5 - Refactored CBlitz to be an accessible library component in 'libkit4b'
 Release 0.7.0 - 'blitz' throughput performance improvements, 'benchmark' improved scoring of unaligned bases
+Release 0.7.1 - 'benchmark' processing now enbles hisat2 PE alignments, improved 'kalign' filtering of very short chimerically trimmed PE reads
 

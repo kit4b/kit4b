@@ -2850,7 +2850,7 @@ if(m_bPEcircularised)
 		SeqFragLen = 1 + (int)PE2StartLoci - (int)PE1EndLoci;
 	}
 else
-	SeqFragLen = 1 + abs((int)PE2EndLoci - (int)PE1StartLoci);
+	SeqFragLen = 1 + max(PE1EndLoci, PE2EndLoci) - min(PE1StartLoci, PE2StartLoci);
 
 if(SeqFragLen < 0)			// treat as inconsistent strand if fragment length is negative 
 	return(-1);
