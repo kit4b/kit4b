@@ -26,4 +26,4 @@ Release 0.6.1 - 'ngskit4b benchmark' now has the option to directly generate a C
 Release 0.6.5 - Refactored CBlitz to be an accessible library component in 'libkit4b'
 Release 0.7.0 - 'blitz' throughput performance improvements, 'benchmark' improved scoring of unaligned bases
 Release 0.7.1 - 'benchmark' processing now enbles hisat2 PE alignments, improved 'kalign' filtering of very short chimerically trimmed PE reads
-
+Release 0.7.2 - Bugfix (Yes, kit4b does have these!) for di/trisnp calling
