@@ -10,7 +10,7 @@ The renaming will force users of the 'PacBioKanga' toolkit to examine scripting 
 parameterisations so as to make appropriate changes if wishing to utilise 'kit4b' parameterisations and functionality.
 
 'kit4pacbio' is being released under the Opensource Software License Agreement (GPLv3)
-'kit4pacbio' is Copyright (c) 2019, Dr Stuart Stephen
+'kit4pacbio' is Copyright (c) 2019, 2020, Dr Stuart Stephen
 Please contact Dr Stuart Stephen < stuartjs@g3bio.com > if you have any questions regarding 'kit4b'.
 
 Orginal 'BioKanga' copyright notice has been retained and is as follows.

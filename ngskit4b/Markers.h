@@ -9,7 +9,7 @@ The renaming will force users of the 'BioKanga' toolkit to examine scripting whi
 parameterisations so as to make appropriate changes if wishing to utilise 'kit4b' parameterisations and functionality.
 
 'kit4b' is being released under the Opensource Software License Agreement (GPLv3)
-'kit4b' is Copyright (c) 2019
+'kit4b' is Copyright (c) 2019, 2020
 Please contact Dr Stuart Stephen < stuartjs@g3web.com > if you have any questions regarding 'kit4b'.
 
 Orginal 'BioKanga' copyright notice has been retained and immediately follows this notice..
@@ -79,8 +79,8 @@ class CMarkers
 {
 	tsSNPSSpecies *m_pCurSpecies;			// currently processed species
 	UINT16 m_NumSpecies;						// current number of species in m_Species (also includes the reference species)
-	UINT16 m_RefSpeciesID;						// identifer for species identified as being the reference species
-	tsSNPSSpecies m_Species[cMaxMarkerSpecies];	// array of currently known species
+	UINT16 m_RefSpeciesID;						// identifier for species identified as being the reference species
+	tsSNPSSpecies m_Species[cMaxMarkerSpecies+1];	// array of currently known species/cultivars - 1 additional to account for reference species (m_Species[0])
 
 	UINT32 m_NumSeqNames;			// currently there are this many sequence names
 	UINT64 m_UsedMemSeqNames;		// memory currently used for sequence names
@@ -90,7 +90,7 @@ class CMarkers
 	UINT64  m_AllocMemSeqNameIDsOfs;	// memory allocated for sequence m_pSeqNameIDsOfs
 	UINT64 *m_pAllocSeqNameIDsOfs;		// allocated to hold sequence identifiers to sequence offsets in m_pAllocSeqNames
 
-	UINT32 m_UsedNameHashArray;			// currently using this entries in the SeqNameHashArray
+	UINT32 m_UsedNameHashArray;			// currently using this number of entries in the SeqNameHashArray
 	UINT64 *m_pSeqNameHashArray;		// allocated to hold offsets into m_pAllocSeqNames for sequence name hashes
 
 	UINT8 m_szCurSeqName[cMaxLenName+1];	// holds last processed sequence name
@@ -137,7 +137,8 @@ class CMarkers
 	pthread_rwlock_t m_hRwLock;
 #endif
 
-	bool m_bSorted;								// set true if alignments sorted
+	bool m_bSorted;									// set true if alignments sorted
+	CMTqsort m_MTqsort;								// using multithreaded sorting
 	static int QSortAlignSeqLociSpecies(const void *arg1, const void *arg2); // qsorts alignment loci by TargSeqID,TargLoci,ProbeSpeciesID ascending
 
 public:

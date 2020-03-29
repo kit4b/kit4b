@@ -9,7 +9,7 @@ The renaming will force users of the 'BioKanga' toolkit to examine scripting whi
 parameterisations so as to make appropriate changes if wishing to utilise 'kit4b' parameterisations and functionality.
 
 'kit4b' is being released under the Open-source Software License Agreement (GPLv3)
-'kit4b' is Copyright (c) 2019
+'kit4b' is Copyright (c) 2019, 2020
 Please contact Dr Stuart Stephen < stuartjs@g3web.com > if you have any questions regarding 'kit4b'.
 
 Original 'BioKanga' copyright notice has been retained and immediately follows this notice..

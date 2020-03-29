@@ -1,9 +1,3 @@
-/*
-'kit4b' and related utility source code is released under the Opensource Software License Agreement (GPLv3)
-Copyright (c) 2019, Stuart Stephen
-Please contact Dr Stuart Stephen < stuartjs@g3web.com > if you have any questions regarding 'kit4b'.
-*/
-
 // stdafx.h : include file for standard system include files,
 // or project specific include files that are used frequently, but
 // are changed infrequently

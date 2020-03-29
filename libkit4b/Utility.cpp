@@ -9,7 +9,7 @@ The renaming will force users of the 'BioKanga' toolkit to examine scripting whi
 parameterisations so as to make appropriate changes if wishing to utilise 'kit4b' parameterisations and functionality.
 
 'kit4b' is being released under the Opensource Software License Agreement (GPLv3)
-'kit4b' is Copyright (c) 2019
+'kit4b' is Copyright (c) 2019, 2020
 Please contact Dr Stuart Stephen < stuartjs@g3web.com > if you have any questions regarding 'kit4b'.
 
 Orginal 'BioKanga' copyright notice has been retained and immediately follows this notice..
@@ -798,7 +798,7 @@ return(pszText);
 }
 
 
-const int cMaxNumOptions = 1024;		// allow at most this many options in option file
+const int cMaxNumOptions = 4000;		// allow at most this many options in option file, increased from 1024 because snpmarkers needs to handle up to 1000 different isolates 
 const int cMaxOptionLen  = 1024;		// any single option can be of this length
 const int cMaxOptionLineLen = 8196;		// allow for option lines to be upto this length, one line can contain multiple options
 const int cMaxTotOptionsLen = (cMaxNumOptions * 101);	// allow for options to total at most this many chars - assumes options average 100 chars incl '\0' separators

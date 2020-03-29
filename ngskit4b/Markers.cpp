@@ -9,7 +9,7 @@ The renaming will force users of the 'BioKanga' toolkit to examine scripting whi
 parameterisations so as to make appropriate changes if wishing to utilise 'kit4b' parameterisations and functionality.
 
 'kit4b' is being released under the Opensource Software License Agreement (GPLv3)
-'kit4b' is Copyright (c) 2019
+'kit4b' is Copyright (c) 2019, 2020
 Please contact Dr Stuart Stephen < stuartjs@g3web.com > if you have any questions regarding 'kit4b'.
 
 Orginal 'BioKanga' copyright notice has been retained and immediately follows this notice..
@@ -163,7 +163,7 @@ if(m_NumSpecies > 0)
 		}
 	}
 
-if(m_NumSpecies == cMaxMarkerSpecies)
+if(m_NumSpecies == cMaxMarkerSpecies+1)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddSpecies: Attempted to add more (%s) than the max (%d) supported species names",pszSpecies,cMaxMarkerSpecies);
 	return(0);
@@ -507,7 +507,7 @@ if ((TotalRefImpuned + 100) > m_AllocAlignLoci)	// play safe when increasing all
 	{
 	size_t memreq;
 	memreq = (TotalRefImpuned+100) * sizeof(tsAlignLoci);
-	gDiagnostics.DiagOut(eDLInfo, gszProcName, "PreAllocImpunedSNPs: memory re-allocation to %lld from %lld bytes", (INT64)memreq, (INT64)m_AllocMemAlignLoci);
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "PreAllocImpunedSNPs: memory re-allocation to %lld from %lld bytes for estimated %lld impuned SNPs", (INT64)memreq, (INT64)m_AllocMemAlignLoci, (INT64)TotalRefImpuned);
 
 #ifdef _WIN32
 	pCurLoci = (tsAlignLoci*)realloc(m_pAllocAlignLoci, memreq);
@@ -1158,7 +1158,7 @@ INT64 AlignIdx;
 tsAlignLoci *pAlign;
 tsAlignLoci *pAlignSpecies;
 tsAlignLoci *pAlignSpeciesA;
-int NumSpecies = m_NumSpecies-1;
+int NumSpecies = m_NumSpecies-1; // note: m_NumSpecies includes reference species name so need to subtract 1 to get number of cultivars/isolates
 int SpeciesIdx;
 int SpeciesIdxA;
 int BaseIdx;
@@ -1170,9 +1170,23 @@ int NumSpeciesWithCnts;
 
 SortTargSeqLociSpecies();
 
+time_t Then = time(NULL);
+time_t Now;
+INT64 NumLociProc = 0;
+INT64 PutSNPLoci = m_UsedAlignLoci / (INT64)(m_NumSpecies - 1);
 pAlign = &m_pAllocAlignLoci[0];
 for(AlignIdx = 0; AlignIdx < m_UsedAlignLoci; AlignIdx += NumSpecies, pAlign += NumSpecies)
 	{
+	if ((NumLociProc % 100000) == 0)
+		{
+		Now = time(NULL);
+		if ((Now - Then) >= 60)
+			{
+			gDiagnostics.DiagOut(eDLInfo, gszProcName, "Filtering: Processed %lld from %lld putative SNP loci", NumLociProc, PutSNPLoci);
+			Then += 60;
+			}
+		}
+	NumLociProc++;
 	NumSpeciesWithCnts = 0;
 	pAlignSpecies = pAlign;
 	for(SpeciesIdx = 0; SpeciesIdx < NumSpecies; SpeciesIdx++,pAlignSpecies += 1)
@@ -1228,6 +1242,7 @@ for(AlignIdx = 0; AlignIdx < m_UsedAlignLoci; AlignIdx += NumSpecies, pAlign += 
 	for(SpeciesIdx = 0; SpeciesIdx < NumSpecies; SpeciesIdx++,pAlignSpecies += 1)
 		pAlignSpecies->NumSpeciesWithCnts = NumSpeciesWithCnts; 
 	}
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "Filtered: Processed %lld from %lld putative SNP loci", NumLociProc, PutSNPLoci);
 return(0);
 }
 
@@ -1247,11 +1262,11 @@ char *pszBuff;
 int BuffIdx;
 char cBase;
 tsAlignLoci *pAlign;
-UINT32 CurTargLoci;
-UINT32 CurTargSeqID;
-char *pszRefSeq;
+tsAlignLoci *pTmpAlign;
+UINT16 ChkIdx;
+char *pszTargSeq;
+UINT32 NumCultivars;
 UINT32 PrevTargSeqID;
-bool bFirstReport;
 INT64 NumSloughed;
 INT64 NumReported;
 
@@ -1283,39 +1298,61 @@ if((pszBuff = new char [cRptBuffSize]) == NULL)
 	return(eBSFerrMem);
 	}
 
+NumCultivars = m_NumSpecies - 1;
 BuffIdx = 0;
 BuffIdx += sprintf(&pszBuff[BuffIdx],"\"%s:TargSeq\",\"Loci\",\"TargBase\",\"NumSpeciesWithCnts\"",pszRefGenome);
-for(Idx = 0; Idx < (UINT32)m_NumSpecies-1; Idx++)
+for(Idx = 0; Idx < NumCultivars; Idx++)
+	{
 	BuffIdx += sprintf(&pszBuff[BuffIdx],",\"%s:CntsSrc\",\"%s:Base\",\"%s:Score\",\"%s:BaseCntTot\",\"%s:BaseCntA\",\"%s:BaseCntC\",\"%s:BaseCntG\",\"%s:BaseCntT\",\"%s:BaseCntN\"",
 				pszRelGenomes[Idx],pszRelGenomes[Idx],pszRelGenomes[Idx],pszRelGenomes[Idx],pszRelGenomes[Idx],pszRelGenomes[Idx],pszRelGenomes[Idx],pszRelGenomes[Idx],pszRelGenomes[Idx]);
-
-CUtility::SafeWrite(m_hOutFile,pszBuff,BuffIdx);
-BuffIdx = 0;
+	if((BuffIdx + (cRptBuffSize/4)) > cRptBuffSize)
+		{
+		CUtility::SafeWrite(m_hOutFile, pszBuff, BuffIdx);
+		BuffIdx = 0;
+		}
+	}
+if(BuffIdx > 0)
+	{
+	CUtility::SafeWrite(m_hOutFile,pszBuff,BuffIdx);
+	BuffIdx = 0;
+	}
 
 pAlign = &m_pAllocAlignLoci[0];
-CurTargLoci = pAlign->TargLoci;
-CurTargSeqID = pAlign->TargSeqID;
 PrevTargSeqID = 0;
-pszRefSeq = NULL;
-bFirstReport = true;
+pszTargSeq = NULL;
 NumSloughed = 0;
 NumReported = 0;
-for(Idx = 0; Idx < m_UsedAlignLoci; Idx++, pAlign++)
+time_t Then = time(NULL);
+time_t Now;
+INT64 LociIdx;
+INT64 NumLociProc = 0;
+INT64 PutSNPLoci = m_UsedAlignLoci / (INT64)NumCultivars;
+for(LociIdx = 0; LociIdx < m_UsedAlignLoci; LociIdx += NumCultivars)
 	{
-	if(MinSpeciesWithCnts > pAlign->NumSpeciesWithCnts)
+	if((NumLociProc % 10000)==0)
 		{
-		Idx += (m_NumSpecies - 2);
-		pAlign += (m_NumSpecies - 2);
+		Now = time(NULL);
+		if ((Now - Then) >= 60)
+			{
+			gDiagnostics.DiagOut(eDLInfo, gszProcName, "Reporting: Processed %lld from %lld putative SNP loci accepting %lld", NumLociProc, PutSNPLoci, NumReported);
+			Then += 60;
+			}
+		}
+	NumLociProc++;
+	pAlign = &m_pAllocAlignLoci[LociIdx];
+	if(pAlign->NumSpeciesWithCnts < MinSpeciesWithCnts)
+		{
+		NumSloughed++;
 		continue;
 		}
 
 	// user may have requested that only variants between the cultivars are of interest; if all cultivars have same variant, even if different to reference, then slough
-	if(bSloughRefOnly && (bFirstReport || pAlign->TargLoci != CurTargLoci || pAlign->TargSeqID != CurTargSeqID))	// starting new row
+	if(bSloughRefOnly)	
 		{
-		tsAlignLoci *pTmpAlign = pAlign;
+		pTmpAlign = pAlign;
 		UINT8 CultBase = 0x0ff;
-		int ChkIdx;
-		for(ChkIdx = 0; ChkIdx < m_NumSpecies - 1; ChkIdx++,pTmpAlign++)
+		
+		for(ChkIdx = 0; ChkIdx < NumCultivars; ChkIdx++,pTmpAlign++)
 			{
 			if(!pTmpAlign->FiltLowTotBases)
 				{
@@ -1326,76 +1363,73 @@ for(Idx = 0; Idx < m_UsedAlignLoci; Idx++, pAlign++)
 						break;
 				}
 			}
-		if(ChkIdx == m_NumSpecies - 1)	// all cultivar bases same?
+		if(ChkIdx == NumCultivars)	// all cultivar bases same or below filtering threshold?
 			{
-			pAlign = pTmpAlign - 1;
-			Idx += ChkIdx - 1;
 			NumSloughed += 1;
 			continue;
 			}
 		}
 
-	if(bFirstReport || pAlign->TargLoci != CurTargLoci || pAlign->TargSeqID != CurTargSeqID)		// start new row...
-		{
-		bFirstReport = false;
-		CurTargLoci = pAlign->TargLoci;
-		CurTargSeqID = pAlign->TargSeqID;
-		// new row start here 
-		switch(pAlign->TargRefBase) {
-			case eBaseA:
-				cBase = 'A';
-				break;
-			case eBaseC:
-				cBase = 'C';
-				break;
-			case eBaseG:
-				cBase = 'G';
-				break;
-			case eBaseT:
-				cBase = 'T';
-				break;
-			case eBaseN:
-				cBase = 'N';
-				break;
-			}
+	pTmpAlign = pAlign;
+	switch(pTmpAlign->TargRefBase) {
+		case eBaseA:
+			cBase = 'A';
+			break;
+		case eBaseC:
+			cBase = 'C';
+			break;
+		case eBaseG:
+			cBase = 'G';
+			break;
+		case eBaseT:
+			cBase = 'T';
+			break;
+		case eBaseN:
+			cBase = 'N';
+			break;
+		}
 
-		if(pszRefSeq == NULL || pAlign->TargSeqID != PrevTargSeqID)
+	if(pszTargSeq == NULL || pTmpAlign->TargSeqID != PrevTargSeqID)
+		{
+		if((pszTargSeq = SeqIDtoName(pTmpAlign->TargSeqID))==NULL)
 			{
-			pszRefSeq = SeqIDtoName(pAlign->TargSeqID);
-			PrevTargSeqID = pAlign->TargSeqID;
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Report: unable to locate target sequence name for identifier: %u", pTmpAlign->TargSeqID);
+			delete []pszBuff;
+			Reset();
+			return(eBSFerrInternal);
 			}
-		BuffIdx += sprintf(&pszBuff[BuffIdx],"\n\"%s\",%d,\"%c\",%d",pszRefSeq,pAlign->TargLoci,cBase,pAlign->NumSpeciesWithCnts);
-		if((BuffIdx + 500) > cRptBuffSize)
+		PrevTargSeqID = pTmpAlign->TargSeqID;
+		}
+	BuffIdx += sprintf(&pszBuff[BuffIdx], "\n\"%s\",%d,\"%c\",%d", pszTargSeq, pTmpAlign->TargLoci, cBase, pTmpAlign->NumSpeciesWithCnts);
+		
+	for(ChkIdx = 0; ChkIdx < (UINT16)NumCultivars; ChkIdx++, pTmpAlign++)
+		{
+		switch(pTmpAlign->CultSpecBase) {
+				case eBaseA:
+					cBase = 'A';
+					break;
+				case eBaseC:
+					cBase = 'C';
+					break;
+				case eBaseG:
+					cBase = 'G';
+					break;
+				case eBaseT:
+					cBase = 'T';
+					break;
+				case eBaseN:
+					cBase = 'N';
+					break;
+				}
+		BuffIdx += sprintf(&pszBuff[BuffIdx],",\"%c\",\"%c\",%u,%u,%u,%u,%u,%u,%u",(pAlign->Flags & cFlgSNPcnts) ? 'S' : 'I',	cBase,
+						(uint32_t)pTmpAlign->CultSpecBaseConf, pTmpAlign->TotBases, pTmpAlign->ProbeBaseCnts[0], pTmpAlign->ProbeBaseCnts[1], pTmpAlign->ProbeBaseCnts[2], pTmpAlign->ProbeBaseCnts[3], pTmpAlign->ProbeBaseCnts[4]);
+		if((BuffIdx + (cRptBuffSize / 8)) > cRptBuffSize)
 			{
 			CUtility::SafeWrite(m_hOutFile,pszBuff,BuffIdx);
 			BuffIdx = 0;
 			}
-		NumReported += 1;
 		}
-	switch(pAlign->CultSpecBase) {
-			case eBaseA:
-				cBase = 'A';
-				break;
-			case eBaseC:
-				cBase = 'C';
-				break;
-			case eBaseG:
-				cBase = 'G';
-				break;
-			case eBaseT:
-				cBase = 'T';
-				break;
-			case eBaseN:
-				cBase = 'N';
-				break;
-			}
-	BuffIdx += sprintf(&pszBuff[BuffIdx],",\"%c\",\"%c\",%d,%d,%d,%d,%d,%d,%d",pAlign->Flags & cFlgSNPcnts ? 'S' : 'I',
-						cBase,pAlign->CultSpecBaseConf,pAlign->TotBases,pAlign->ProbeBaseCnts[0],pAlign->ProbeBaseCnts[1],pAlign->ProbeBaseCnts[2],pAlign->ProbeBaseCnts[3],pAlign->ProbeBaseCnts[4]);
-	if((BuffIdx + 500) > cRptBuffSize)
-		{
-		CUtility::SafeWrite(m_hOutFile,pszBuff,BuffIdx);
-		BuffIdx = 0;
-		}
+	NumReported += 1;
 	}
 if(BuffIdx && pszBuff != NULL)
 	{
@@ -1409,8 +1443,10 @@ fsync(m_hOutFile);
 #endif
 close(m_hOutFile);
 m_hOutFile = -1;
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "Reported: Processed %lld from %lld putative SNP loci accepting %lld", NumLociProc, PutSNPLoci, NumReported);
 if(pszBuff != NULL)
-	delete pszBuff;
+	delete []pszBuff;
+
 return(NumReported);
 }
 
@@ -1570,8 +1606,9 @@ if (m_UsedAlignLoci == 1)
 	
 if(!m_bSorted)
 	{
+	// trying with 16 threads to see what throughput improvement we gain over a single threaded approach
 	gpAllocAlignLoci = m_pAllocAlignLoci;
-	qsort(gpAllocAlignLoci,m_UsedAlignLoci,sizeof(tsAlignLoci),QSortAlignSeqLociSpecies);
+	m_MTqsort.qsort(gpAllocAlignLoci, m_UsedAlignLoci, sizeof(tsAlignLoci), QSortAlignSeqLociSpecies);
 	m_bSorted = true;
 	}
 return(m_UsedAlignLoci);

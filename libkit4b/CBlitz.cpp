@@ -9,7 +9,7 @@ The renaming will force users of the 'BioKanga' toolkit to examine scripting whi
 parameterisations so as to make appropriate changes if wishing to utilise 'kit4b' parameterisations and functionality.
 
 'kit4b' is being released under the Open-source Software License Agreement (GPLv3)
-'kit4b' is Copyright (c) 2019
+'kit4b' is Copyright (c) 2019, 2020
 Please contact Dr Stuart Stephen < stuartjs@g3web.com > if you have any questions regarding 'kit4b'.
 
 Original 'BioKanga' copyright notice has been retained and immediately follows this notice..
@@ -1301,7 +1301,7 @@ while((Rslt = DequeueQuerySeq(cMaxBlitzQuerySeqIdentLen + 1, &SeqIDPE1, szQueryS
 		else
 			NumNoPE1Matches++;
 
-		if(NumHeadNodesPE1 > 0)
+		if(NumHeadNodesPE1 > 0)		// can't have a pair if no PE1's !
 			{
 			NumMatchesPE2 = m_pSfxArray->LocateQuerySeqs(SeqIDPE2, pQuerySeqPE2, QuerySeqLenPE2, m_CoreLen, CoreDelta, m_AlignStrand, pPars->NumAllocdAlignNodesPE2, pPars->pAllocdAlignNodesPE2, MaxIter, m_ExactMatchScore, m_MismatchScore);
 			if (NumMatchesPE2)
@@ -1460,6 +1460,8 @@ while((Rslt = DequeueQuerySeq(cMaxBlitzQuerySeqIdentLen + 1, &SeqIDPE1, szQueryS
 			ReleaseSerialise();
 			continue;
 			}
+
+		// this where PE reads could be treated as being orphans without aligned mates and reported through SAM ...
 		ReportNonAligned(szQuerySeqIdent, QuerySeqLenPE1, pQuerySeqPE2, szQuerySeqIdentPE2, QuerySeqLenPE2, pQuerySeqPE2);
 		bQueryAtLeast1Path = true;
 		}

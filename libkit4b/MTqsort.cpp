@@ -9,7 +9,7 @@ The renaming will force users of the 'BioKanga' toolkit to examine scripting whi
 parameterisations so as to make appropriate changes if wishing to utilise 'kit4b' parameterisations and functionality.
 
 'kit4b' is being released under the Opensource Software License Agreement (GPLv3)
-'kit4b' is Copyright (c) 2019
+'kit4b' is Copyright (c) 2019, 2020
 Please contact Dr Stuart Stephen < stuartjs@g3web.com > if you have any questions regarding 'kit4b'.
 
 Orginal 'BioKanga' copyright notice has been retained and immediately follows this notice..
@@ -355,7 +355,7 @@ recurse:
 		NumElsCurPart < cMaxUseThreadQsort &&
 		ThreadQSort(pCurPartStart,NumElsCurPart,ElSize, CompareFunc)))
 		{
-		if (NumElsCurPart <= cMergeSortThres)										// with small number of els then more efficent to do a insert sort than continueing with the qsort
+		if (NumElsCurPart <= cMergeSortThres)										// with small number of els then more efficient to do a insert sort than continuing with the qsort
 			InsertSort(pCurPartStart, pCurPartEnd, ElSize, CompareFunc);
 		else 
 			 {		

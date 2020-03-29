@@ -9,7 +9,7 @@ The renaming will force users of the 'BioKanga' toolkit to examine scripting whi
 parameterisations so as to make appropriate changes if wishing to utilise 'kit4b' parameterisations and functionality.
 
 'kit4b' is being released under the Opensource Software License Agreement (GPLv3)
-'kit4b' is Copyright (c) 2019
+'kit4b' is Copyright (c) 2019, 2020
 Please contact Dr Stuart Stephen < stuartjs@g3web.com > if you have any questions regarding 'kit4b'.
 
 Orginal 'BioKanga' copyright notice has been retained and immediately follows this notice..
@@ -95,18 +95,16 @@ int MinSpeciesWithCnts;			// only report markers where at least this number of s
 
 
 char szRefGenome[cMaxLenName+1];	// reference genome against which other relative genomes were aligned
+char* pszRelGenomes[cMaxMarkerSpecies + 1];  // names of relative genome names
+char* pszSNPFiles[cMaxMarkerSpecies + 1];  // input SNP files
+char* pszAlignFiles[cMaxMarkerSpecies + 1];  // input alignment files
 
 int NumRelGenomes;			// number of relative genome names
-char *pszRelGenomes[cMaxMarkerSpecies+1];  // names of relative genome names
-
 int NumSNPFiles;			// number of input SNP files
-char *pszSNPFiles[cMaxMarkerSpecies+1];  // input SNP files
-
 int NumAlignFiles;			// number of input alignment files
-char *pszAlignFiles[cMaxMarkerSpecies+1];  // input alignment files
+
 
 char szMarkerFile[_MAX_PATH];		// write markers to this file
-
 
 char szSQLiteDatabase[_MAX_PATH];	// results summaries to this SQLite file
 char szExperimentName[cMaxDatasetSpeciesChrom+1];			// experiment name
@@ -356,7 +354,7 @@ if (!argerrors)
 
 	if(!snpfiles->count)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: No input SNP file(s) specified with with '-i<filespec>' option)");
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: No input SNP file(s) specified with '-i<filespec>' option)");
 		exit(1);
 		}
 
@@ -717,9 +715,14 @@ if(Rslt == 0)
 CurAlignLoci = pMarkers->NumAlignLoci();			// report on total number of accepted SNP alignments
 InitalAlignLoci = PrevAlignLoci = CurAlignLoci;
 
-gDiagnostics.DiagOut(eDLFatal, gszProcName, "Sorting %%lld known SNPs loaded from SNP files...", CurAlignLoci);
+gDiagnostics.DiagOut(eDLFatal, gszProcName, "Sorting %lld known SNPs loaded from SNP files...", CurAlignLoci);
 pMarkers->SortTargSeqLociSpecies();				// must be sorted ....
-pMarkers->PreAllocImpunedSNPs(NumSNPFiles);
+if((Rslt = pMarkers->PreAllocImpunedSNPs(NumSNPFiles)) != eBSFSuccess)
+	{
+	delete pMarkers;
+	return(Rslt);
+	}
+
 gDiagnostics.DiagOut(eDLFatal, gszProcName, "Now checking for imputed alignments where no SNP called in one or more cultivars...");
 for(FileIdx = 0; FileIdx < NumAlignFiles; FileIdx++)
 	{
@@ -741,7 +744,7 @@ for(FileIdx = 0; FileIdx < NumAlignFiles; FileIdx++)
 	}
 
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Total SNPs %lld of which %lld are from imputed alignments",CurAlignLoci, CurAlignLoci - InitalAlignLoci);
-gDiagnostics.DiagOut(eDLFatal, gszProcName, "Sorting %%lld known and imputed SNPs ...", CurAlignLoci);
+gDiagnostics.DiagOut(eDLFatal, gszProcName, "Sorting %lld known and imputed SNPs ...", CurAlignLoci);
 Rslt64 = pMarkers->SortTargSeqLociSpecies();
 gDiagnostics.DiagOut(eDLFatal, gszProcName, "Applying filtering ...");
 pMarkers->IdentSpeciesSpec(AltSpeciesMaxCnt,	// max count allowed for base being processed in any other species, 0 if no limit
