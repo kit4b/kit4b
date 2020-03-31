@@ -5,7 +5,7 @@ const char cDfltCommentChar = '#';	// default character used as a comment line i
 const char cDfltTextChar = '"';		// default character used to quote text in CSV file
 
 
-const int cCSVMaxFields   = 2048;	// max number of fields
+const int cCSVMaxFields   = (1000*8) + 10;	// max number of fields (snpmarkers can result in CSV files with upto this many fields!!!)
 const int cCSVDfltFields  = 100;	// default number of fields
 const int cCSVMinFields   = 10;		// can always handle at least 10 fields
 
@@ -15,7 +15,7 @@ const int cCSVDfltFieldLen = 200;		// default length of any single field support
 const int cCSVMinFieldLen  = 10;		// can always handle fields of at least this size
 
 // Note: the '10' in the following two consts is to allow for comma separators plus some whitespace
-const int cCSVMaxLineLen  = (cCSVMaxFieldLen * 4);	// max number of characters which can be buffered in any line
+const int cCSVMaxLineLen  = (cCSVMaxFieldLen * 100);	// max number of characters which can be buffered in any line
 const int cCSVDfltLineLenx = cCSVDfltFields * (cCSVDfltFieldLen + 10);// default number of characters which can be buffered
 const int cCSVMinLineLenx  = cCSVMinFields * (cCSVMinFieldLen + 10);// minimum number of characters which can be buffered
 

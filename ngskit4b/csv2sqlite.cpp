@@ -129,9 +129,8 @@ char szDescr[cMaxIdntDescrLen+1];		// describes experimental conditions
 
 char szAssemb[cMaxIdntNameLen+1];		// targeted assembly against which reads were aligned
 
-char szSpeciesList[(cMaxIdntNameLen + 10) * cMaxExprCultivars];		// individual species parsed from this comma/tab/space separated list
 int NumSNPSpecies;						 // number of SNP species used when aligning
-char *pszSNPSpecies[cMaxExprCultivars];  // SNP called species or cultivars
+char* pszSNPSpecies[cMaxExprCultivars];  // SNP called species
 
 char szInFile[_MAX_PATH];	// parse markers from this CSV file
 char szOutFile[_MAX_PATH];	// write markers to this created SQLite database
@@ -146,7 +145,7 @@ struct arg_int *mode = arg_int0("m","mode","<int>",				"Processing mode: 0 parse
 struct arg_str *name = arg_str1("n","name","<str>",				"Name by which experiment is identified");
 struct arg_str *descr = arg_str0("N","descr","<str>",			"Description of experimental conditions");
 struct arg_str *assemb = arg_str1("a","assemb","<str>",			"Cultivar/species used as target assembly when originally aligning reads");
-struct arg_str *snpspecies = arg_str1("s","snpspecies","<str>", "Cultivar/species names, comma/tab/space separated, order specific, SNP called against targeted assembly");
+struct arg_str* snpspecies = arg_strn("R", "snpspecies", "<snpspecies>", 1, 1000, "Cultivar/species names, order specific - must match the column order in snpmarkers CSV file");
 struct arg_file *infile = arg_file1("i","in","<file>",		    "Input CSV file containing SNPs");
 struct arg_file *outfile = arg_file1("o","out","<file>",		"Output SNPs to this SQLite database");
 
@@ -250,37 +249,26 @@ if (!argerrors)
 		return(1);
 		}
 
-	strncpy(szSpeciesList,snpspecies->sval[0],sizeof(szSpeciesList));
-	szSpeciesList[sizeof(szSpeciesList)-1] = '\0';
-	SQLRemoveQuotes(szSpeciesList);
-	char *pChr = szSpeciesList;
-	char *pStartChr;
-	char Chr;
-	int CurSpeciesLen;
-	NumSNPSpecies=0;
-	CurSpeciesLen = 0;
-	pStartChr = pChr;
-	while((Chr = *pChr++) != '\0')
+	if (!snpspecies->count)
+	{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Error: No SNP marker species or cultivar specified with '-R<snpspecies>' parameter)");
+		exit(1);
+	}
+	for (NumSNPSpecies = Idx = 0; NumSNPSpecies < 1000 && Idx < snpspecies->count; Idx++)
 		{
-		if(Chr == ' ' || Chr == '\t' || Chr == ',')	// treat these as delimiters
-			{
-			pChr[-1] = '\0';
-			if(CurSpeciesLen != 0)
-				{
-				pszSNPSpecies[NumSNPSpecies++] = pStartChr;
-				CurSpeciesLen = 0;
-				}
-			pStartChr = pChr;
-			continue;
-			}
-		CurSpeciesLen += 1;
+		pszSNPSpecies[Idx] = NULL;
+		if (pszSNPSpecies[NumSNPSpecies] == NULL)
+			pszSNPSpecies[NumSNPSpecies] = new char[_MAX_PATH];
+		strncpy(pszSNPSpecies[NumSNPSpecies], snpspecies->sval[Idx], _MAX_PATH);
+		pszSNPSpecies[NumSNPSpecies][_MAX_PATH - 1] = '\0';
+		CUtility::TrimQuotedWhitespcExtd(pszSNPSpecies[NumSNPSpecies]);
+		if (pszSNPSpecies[NumSNPSpecies][0] != '\0')
+			NumSNPSpecies++;
 		}
-	if(CurSpeciesLen)
-		pszSNPSpecies[NumSNPSpecies++] = pStartChr;
 
-	if(!NumSNPSpecies)
+	if (!NumSNPSpecies)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Expected at least one SNP species");
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Error: Expected at least one SNP species or cultivar to be specified");
 		return(1);
 		}
 

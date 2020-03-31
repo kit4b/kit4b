@@ -12,7 +12,7 @@ parameterisations so as to make appropriate changes if wishing to utilise 'kit4b
 'kit4b' is Copyright (c) 2019, 2020
 Please contact Dr Stuart Stephen < stuartjs@g3web.com > if you have any questions regarding 'kit4b'.
 
-Orginal 'BioKanga' copyright notice has been retained and immediately follows this notice..
+Original 'BioKanga' copyright notice has been retained and immediately follows this notice..
 */
 /*
  * CSIRO Open Source Software License Agreement (GPLv3)
@@ -1177,7 +1177,7 @@ INT64 PutSNPLoci = m_UsedAlignLoci / (INT64)(m_NumSpecies - 1);
 pAlign = &m_pAllocAlignLoci[0];
 for(AlignIdx = 0; AlignIdx < m_UsedAlignLoci; AlignIdx += NumSpecies, pAlign += NumSpecies)
 	{
-	if ((NumLociProc % 100000) == 0)
+	if ((NumLociProc % 10000) == 0)
 		{
 		Now = time(NULL);
 		if ((Now - Then) >= 60)

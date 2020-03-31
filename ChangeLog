@@ -28,4 +28,5 @@ Release 0.7.0 - 'blitz' throughput performance improvements, 'benchmark' improve
 Release 0.7.1 - 'benchmark' processing now enbles hisat2 PE alignments, improved 'kalign' filtering of very short chimerically trimmed PE reads
 Release 0.7.2 - Bugfix (Yes, kit4b does have these!) for di/trisnp calling
 Release 0.7.3 - Bugfix (Yes, another! ) for snpmarkers when processing extremely large numbers (billions) of putative SNP loci
+Release 0.7.4 - Increased number of species/cultivars/isolates which 'ngskit4b snpm2sql' to be a maximum of 1000
   

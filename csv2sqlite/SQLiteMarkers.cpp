@@ -963,7 +963,11 @@ if(pCSV == NULL)
 	CloseDatabase(true);
 	return(eBSFerrObj);
 	}
-
+if(CSVtype == 1)
+	{
+	pCSV->SetMaxFields((cMaxExprCultivars * 8) + 4); // snpmarkers can handle up to cMaxExprCultivars cultivars
+	pCSV->SetMaxLineLen((50 * cMaxExprCultivars * 8) + 4); // snpmarkers header can be very long!
+	}
 if((Rslt=pCSV->Open(pszInFile))!=eBSFSuccess)
 	{
 	while(pCSV->NumErrMsgs())
@@ -980,6 +984,8 @@ int NumCultivars;
 char *pszSeqName;
 int SeqID;
 NumElsRead = 0;
+
+
 while((Rslt=pCSV->NextLine()) > 0)			// onto next line containing fields
 	{
 	if(!(NumElsRead % (bSafe ? 5000 : 100000)) && NumElsRead > 0)

@@ -3,7 +3,7 @@
 const int cMaxIdntNameLen = 50;		// experiment identifiers and other names can be if this maximal length
 const int cMaxSeqNameLen = 50;		// targeted sequence names can be if this maximal length
 const int cMaxIdntDescrLen = 200;	// allow experiment conditions, and other descriptive fields, to be described by text of this maximal length
-const int cMaxExprCultivars = 20;	// can process markers from CSV file which were generated from at most this many cultivars
+const int cMaxExprCultivars = 1000;	// can process markers from CSV file which were generated from at most this many cultivars
 
 const int cMaxMRASeqs = 100;		// cache the last 100 sequence identifiers
 

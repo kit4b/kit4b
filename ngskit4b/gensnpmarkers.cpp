@@ -333,7 +333,7 @@ if (!argerrors)
 
 	if(!relgenomes->count)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: No alignment from genome name(s) specified with with '-R<relgenomes>' option)");
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: No alignment from genome name(s) specified with '-R<relgenomes>' option)");
 		exit(1);
 		}
 	for(NumRelGenomes=Idx=0;NumRelGenomes < cMaxMarkerSpecies && Idx < relgenomes->count; Idx++)
