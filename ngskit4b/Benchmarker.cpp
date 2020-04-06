@@ -1240,6 +1240,12 @@ while (Rslt >= eBSFSuccess && (LineLen = m_pAlignments->GetNxtSAMline(pszLine)) 
 	bSloughAlignment = false;
 	while ((CurOpIdx = GetClaimOps(pSAMalign, CurOpIdx, &NumOps, &TypeOp)) > 0)
 		{
+		if(NumOps > 1000000)			// have to have some limit on the number of CIGAR operations, let's just have an arbitrary, but reasonable, high limit!
+			{
+			NumCIGARErrs++;
+			bSloughAlignment = true;
+			break;
+			}
 		if(TypeOp == eCOPSoftClip)			// if soft clipping then note that the start ref loci needs to be adjusted back to read start!!!
 			{
 			if(CurOpIdx == 2)
@@ -3009,7 +3015,6 @@ while(GroundTruthSeqIdx < pGroundTruth->ReadLen)
 					break;
 
 				case eCOPSoftClip:				// 'S'  soft clipping
-					NumLociIncorrect++;
 					GroundTruthSeqIdx++;		// ground truth is consuming this base
 					GroundTruthLoci++;
 					break;
@@ -3038,8 +3043,12 @@ while(GroundTruthSeqIdx < pGroundTruth->ReadLen)
 	}
 m_NumBasesLociCorrect += NumLociCorrect;
 m_NumBasesLociIncorrect += NumLociIncorrect;
+
 if (pGroundTruth->MaxActualBasesAligned < (NumLociCorrect + NumLociIncorrect))
 	pGroundTruth->MaxActualBasesAligned = (NumLociCorrect + NumLociIncorrect);
+
+if(pGroundTruth->PotentialBasesAligning < pGroundTruth->MaxActualBasesAligned) // it possible that some aligners are able to align across hard/soft trimmed reads simply because thay are accepting more mismatches
+	pGroundTruth->MaxActualBasesAligned = pGroundTruth->PotentialBasesAligning; // so limit MaxActualBasesAligned to PotentialBasesAligning
 return(NumLociCorrect);
 }
 

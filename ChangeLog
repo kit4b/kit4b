@@ -29,4 +29,6 @@ Release 0.7.1 - 'benchmark' processing now enbles hisat2 PE alignments, improved
 Release 0.7.2 - Bugfix (Yes, kit4b does have these!) for di/trisnp calling
 Release 0.7.3 - Bugfix (Yes, another! ) for snpmarkers when processing extremely large numbers (billions) of putative SNP loci
 Release 0.7.4 - Increased number of species/cultivars/isolates which 'ngskit4b snpm2sql' to be a maximum of 1000
+Release 0.7.5 - Blitz improvements enabling improved short K-mer core handling where targeted sequences contain homopolymer repeats of K-mer size
+              - Benchmarking better handling of soft/hard clipping alignments whereby some aligners were formerly penalised when mismatch allowances enabled alignments into soft/hardclipped subsequences   
   

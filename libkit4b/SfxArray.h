@@ -38,6 +38,17 @@ const int cScoreInDelOpn = 20;		// score (subtract) opening an InDel as this
 const int cScoreInDelExtn = 1;		// score (subtract) extending an opened InDel as this
 const int cMaxAlignOpcodesLen = 256;  // limit alignment opcodes + length bytes to be at most this length
 
+const int cGapSAExtendCost = 1;		// cost for extending gap per 10bp extension when scoring path
+const int cGapSAExtendCostLimit = 10;	// clamp gap extension cost to be no more than this
+const int cGapSAMaxLength = 500000;   // treat any gaps longer than this length as being not on same path - allows for RNA-seq with skipped exons
+const int cMaxSAOverlapFloat = 8;		// allowing for overlap float of at most this many bases, needed because the cores with extensions are independent and may be overextended
+
+// scoring used with IdentifyHighScorePaths() and HighScoreSW()
+const int cDfltSAExactMatchScore = 1;		// default sparse SW default score for an exact match
+const int cDfltSAMismatchScore = 2;			// default cost for mismatches when scoring
+const int cDfltSAGapOpenScore = 5;			// default cost for opening path gap when scoring path
+const int cDfltSAMinQueryLenAlignedPct = 75;  // to be accepted a query sequence must align over at least this percentage (1..100) of it's length onto target
+
 // PacBio processing
 const int cMinPacBioSeedCoreLen = 8;							// user can specify seed cores down to this minimum length
 const int cMaxPacBioSeedCoreLen = 100;							// user can specify seed cores up to to this maximum length
@@ -141,6 +152,7 @@ typedef struct TAG_sQueryAlignNodes {
 	UINT8 FlgFirst2tRpt:1;								// set 1 if this node determined to be the 1st node in path which meets minimum scoring critera
 	UINT8 Flg2Rpt:1;									// set 1 if this node part of path which meets minimum scoring critera
 	UINT8 FlgScored:1;									// set 0 if unscored, 1 if scored and HiScore, HiScorePathNextIdx are valid
+	UINT8 FlgRedundant:1;								// set if this alignment node is considered as being redundant and not to be further processed
 	INT32 QueryID;										// query sequence identifer
 	UINT32 QueryStartOfs;								// alignment is starting from this query sequence offset
 	UINT32 AlignLen;									// alignment length
@@ -322,7 +334,10 @@ class CSfxArray : public CErrorCodes, protected CEndian
 	bool m_bColorspace;							// TRUE if colorspace (SOLiD) processing
 
 	int m_MaxIter;								// max allowed iterations (depth) per subsegmented sequence when matching that subsegment
-
+	int m_MismatchScore;						// decrease score by this for each mismatch bp
+	int m_ExactMatchScore;						// increase score by this for each exactly matching bp
+	int m_QueryLenAlignedPct;    				// only report alignment paths if the percentage of total aligned bases to the query sequence length is at least this percentage (1..100)
+	int m_GapOpenScore;							// decrease score by this for each gap open
 	int m_MaxMMExploreInDel;					// if more than this number of mismatches then explore microInDels
 	int m_MaxInDelLen;							// any microInDel InDel must be <= this length
 	int m_MinInDelSeqLen;						// only explore for InDel if there is at least this length sequence which may be InDel'd

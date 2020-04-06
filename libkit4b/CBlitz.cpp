@@ -110,11 +110,20 @@ m_TermBackgoundThreads = 0x01;	// need to require any background threads to self
 if(m_hOutFile != -1)
 	{
 	if(bSync)
+		{
+		AcquireSerialise();
+		if (m_szLineBuffIdx)
+			{
+			CUtility::SafeWrite(m_hOutFile, m_pszLineBuff, m_szLineBuffIdx);
+			m_szLineBuffIdx = 0;
+			}
+		ReleaseSerialise();
 #ifdef _WIN32
 		_commit(m_hOutFile);
 #else
 		fsync(m_hOutFile);
 #endif
+		}
 	close(m_hOutFile);
 	m_hOutFile = -1;
 	}
@@ -445,7 +454,7 @@ UINT64 TotSeqsLen = m_pSfxArray->GetTotSeqsLen();
 
 if(CoreLen == 0)
 	{
-	int AutoCoreLen = 1;
+	int AutoCoreLen = 2;
 	while (TotSeqsLen >>= 2)
 		AutoCoreLen++;
 	CoreLen = AutoCoreLen;
@@ -987,6 +996,22 @@ for (ThreadIdx = 0; ThreadIdx < NumThreads; ThreadIdx++, pThread++)
 	pThread->NumAllocdAlignNodesPE2 = 0;
 	}
 
+if (m_hOutFile)
+	{
+	if(m_szLineBuffIdx)
+		{
+		CUtility::SafeWrite(m_hOutFile, m_pszLineBuff, m_szLineBuffIdx);
+		m_szLineBuffIdx = 0;
+		}
+#ifdef _WIN32
+	_commit(m_hOutFile);
+#else
+	fsync(m_hOutFile);
+#endif
+	close(m_hOutFile);
+	m_hOutFile = -1;
+	}
+
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Completed reporting %u alignment paths for %u query %s sequences from %d processed",m_ReportedPaths,m_QueriesPaths, bIsSAMPE ? "paired" : "single", m_NumQueriesProc);
 
 if(pThreads != NULL)
@@ -1332,7 +1357,6 @@ while((Rslt = DequeueQuerySeq(cMaxBlitzQuerySeqIdentLen + 1, &SeqIDPE1, szQueryS
 				ConsolidateNodes(pHeadNodePE1->FlgStrand,QuerySeqLenPE1, pQuerySeqPE1, SortedPathIdxPE1, pPars->pAllocdAlignNodes, pPars->ppFirst2Rpts);
 				if ((NumPathNodesPE1 = CharacterisePath(QuerySeqLenPE1,pQuerySeqPE1,SortedPathIdxPE1, pPars->pAllocdAlignNodes, pPars->ppFirst2Rpts, &QueryPathEndOfsPE1, &TargPathEndOfsPE1)) == 0)
 					continue;
-				
 				PathHiScorePE1 = pHeadNodePE1->HiScore;
 				PathHiScorePE1 = (int)(((double)PathHiScorePE1 / ((int64_t)QuerySeqLenPE1 * m_ExactMatchScore)) * 255.0);
 				if (PathHiScorePE1 >= MinPathHiScorePE1)
@@ -1569,7 +1593,7 @@ for(NodeIdx = 1; NodeIdx <= NumNodes; NodeIdx++,pExploreNode++)
 		continue;
 	if(pExploreNode->TargSeqLoci > (pCurNode->TargSeqLoci + pCurNode->AlignLen + cGapBlitzMaxLength))		// if gap too large then assuming not on same path
 		continue;
-	if(pExploreNode->QueryStartOfs < (pCurNode->QueryStartOfs + pCurNode->AlignLen - cMaxBlitzOverlapFloat))   // allowing for possible overlaps on on the query sequence
+	if(pExploreNode->QueryStartOfs < (pCurNode->QueryStartOfs + pCurNode->AlignLen - cMaxBlitzOverlapFloat))   // allowing for possible overlaps on the query sequence
 		continue;
 	QueryGapLen = abs((int)(pExploreNode->QueryStartOfs - (pCurNode->QueryStartOfs + pCurNode->AlignLen)));
 	TargGapLen = abs((int)(pExploreNode->TargSeqLoci - (pCurNode->TargSeqLoci + pCurNode->AlignLen)));
@@ -1636,7 +1660,7 @@ do {
 		pCurNode->HiScore = 0;
 		pCurNode->HiScorePathNextIdx = 0;
 		}
-	BestHighScore = 0; // temp change back to: MinPathScore - 1;
+	BestHighScore = 0; 
 	BestHighScoreNodeIdx = 0;
 	pCurNode = pAlignSeqNodes;
 	for(CurNodeIdx = 1; CurNodeIdx <= NumNodes; CurNodeIdx++,pCurNode++)
@@ -2139,15 +2163,15 @@ etSeqBase NxtTargBase;
 tsQueryAlignNodes* pCurNode;
 tsQueryAlignNodes* pNxtNode;
 uint32_t NumConsolidatedNodes;
-NumConsolidatedNodes = 0;
+
 pCurNode = ppFirst2Rpts[SortedPathIdx];			// starting from first node in path
 if(pCurNode->HiScorePathNextIdx == 0)
 	return(1);
 if (bSense)
 	CSeqTrans::ReverseComplement(QueryLen, (etSeqBase*)pQuerySeq);
+NumConsolidatedNodes = 1;				
 while(pCurNode->HiScorePathNextIdx != 0)
 	{
-	NumConsolidatedNodes+=1;
 	pNxtNode = &pAlignNodes[pCurNode->HiScorePathNextIdx - 1];
 	DeltaQuery = pNxtNode->QueryStartOfs - (pCurNode->QueryStartOfs + pCurNode->AlignLen - 1);	// normally if at an InDel edge then difference should be 1 base
 	DeltaTarg = pNxtNode->TargSeqLoci - (pCurNode->TargSeqLoci + pCurNode->AlignLen - 1);		// normally if just +1 then next node is a direct extension
@@ -2165,19 +2189,23 @@ while(pCurNode->HiScorePathNextIdx != 0)
 				NxtTargBase = m_pSfxArray->GetBase(pNxtNode->TargSeqID, NxtTargLoci);
 				bCurBaseMatch = *pCurSeq == CurTargBase;
 				bNxtBaseMatch = *pNxtSeq == NxtTargBase;
+				if(!(bCurBaseMatch || bNxtBaseMatch) || (bCurBaseMatch && bNxtBaseMatch)) // semi-random tie breaker!
+					bCurBaseMatch = (DeltaQuery & 0x01) ? true : false;
 				if(bCurBaseMatch)
 					{
 					pCurNode->AlignLen++;
+					if(*pCurSeq != CurTargBase)
+						pCurNode->NumMismatches++;
 					CurTargLoci++;
 					pCurSeq++;
 					}
 				else
 					{
 					pNxtNode->AlignLen++;
+					if (*pNxtSeq != NxtTargBase)
+						pNxtNode->NumMismatches++;
 					pNxtNode->QueryStartOfs--;
 					pNxtNode->TargSeqLoci--;
-					if (!bNxtBaseMatch)
-						pNxtNode->NumMismatches++;
 					NxtTargLoci--;
 					pNxtSeq--;
 					}
@@ -2195,20 +2223,22 @@ while(pCurNode->HiScorePathNextIdx != 0)
 				NxtTargBase = m_pSfxArray->GetBase(pNxtNode->TargSeqID, NxtTargLoci);
 				bCurBaseMatch = *pCurSeq == CurTargBase;
 				bNxtBaseMatch = *pNxtSeq == NxtTargBase;
+				if (!(bCurBaseMatch || bNxtBaseMatch) || (bCurBaseMatch && bNxtBaseMatch)) // semi-random tie breaker!
+					bNxtBaseMatch = (DeltaQuery & 0x01) ? true : false;
 				if (bNxtBaseMatch)
 					{
 					pCurNode->AlignLen--;
-					if (!bCurBaseMatch)
+					if (*pCurSeq != CurTargBase)
 						pCurNode->NumMismatches--;
 					CurTargLoci--;
 					pCurSeq--;
 					}
 				else									
 					{
-					pNxtNode->AlignLen++;
+					pNxtNode->AlignLen--;
 					pNxtNode->QueryStartOfs++;
 					pNxtNode->TargSeqLoci++;
-					if (!bNxtBaseMatch)
+					if (*pNxtSeq != NxtTargBase)
 						pNxtNode->NumMismatches--;
 					NxtTargLoci++;
 					pNxtSeq++;
@@ -2216,18 +2246,30 @@ while(pCurNode->HiScorePathNextIdx != 0)
 				}
 			}
 		}
+	if (pCurNode->AlignLen == 0)
+		{
+		pCurNode->HiScorePathNextIdx = pNxtNode->HiScorePathNextIdx;
+		pCurNode->AlignLen = pNxtNode->AlignLen;
+		pCurNode->NumMismatches = pNxtNode->NumMismatches;
+		continue;
+		}
+	else
+		if (pNxtNode->AlignLen == 0)
+			{
+			pCurNode->HiScorePathNextIdx = pNxtNode->HiScorePathNextIdx;
+			continue;
+			}
 	DeltaQuery = pNxtNode->QueryStartOfs - (pCurNode->QueryStartOfs + pCurNode->AlignLen - 1);	// normally if at an InDel edge then difference should be 1 base
 	DeltaTarg = pNxtNode->TargSeqLoci - (pCurNode->TargSeqLoci + pCurNode->AlignLen - 1);		// normally if just +1 then next node is a direct extension
-	if(DeltaQuery == 1 && DeltaTarg == 1)
+	if(DeltaQuery == 1 && DeltaTarg == 1) // can merge if coincident
 		{
 		pCurNode->HiScorePathNextIdx = pNxtNode->HiScorePathNextIdx;
 		pCurNode->AlignLen += pNxtNode->AlignLen;
 		pCurNode->NumMismatches += pNxtNode->NumMismatches;
 		continue;
 		}
-	else
-		pCurNode = pNxtNode;
-	if (pCurNode->HiScorePathNextIdx == 0)
+	pCurNode = pNxtNode;
+	if (pCurNode->HiScorePathNextIdx != 0)
 		NumConsolidatedNodes++;
 	}
 if (bSense)
@@ -2282,6 +2324,8 @@ CBlitz::ReportAsSAM(uint32_t Flags,	// use as the reported SAM flags
 			else
 				BuffIdx += sprintf(&szLineBuff[BuffIdx], "%uN", pCurNode->TargSeqLoci - PrevTargEndOfs);	// larger insertion in target, treat as though insertion was due to intron spanning 
 		}
+		if(pCurNode->AlignLen == 0)
+			pCurNode->AlignLen = 0;
 		BuffIdx += sprintf(&szLineBuff[BuffIdx], "%uM", pCurNode->AlignLen);
 		PrevQueryEndOfs = pCurNode->QueryStartOfs + pCurNode->AlignLen;
 		PrevTargEndOfs = pCurNode->TargSeqLoci + pCurNode->AlignLen;

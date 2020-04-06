@@ -663,7 +663,7 @@ gDiagnostics.DiagOut(eDLInfo,gszProcName,"Assembly suffix array loaded");
 
 
 // ensure that all the targeted pseudo-chromosomes are in the suffix array, and that there are other chromosomes (other species) in addition to those targeted
-// at same time the pseudo-chromosome ID's and lengths are retreived
+// at same time the pseudo-chromosome ID's and lengths are retrieved
 m_NumSfxEntries = m_pSfxArray->GetNumEntries();
 if(m_NumSfxEntries < 1)
 	{

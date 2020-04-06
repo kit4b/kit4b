@@ -6448,263 +6448,351 @@ memset(pKMerCntDist,0,sizeof(UINT32) * MaxKMerCnts);
 return(eBSFSuccess);
 }
 
+
 //
 // LocateQuerySeqs
 // Utilises a sliding core
 int						// < 0 if errors, 0 if no matches or change, 1 if mumber of matches accepted, 2 MMDelta criteria not met, 3 too many match instances
 CSfxArray::LocateQuerySeqs(UINT32 QuerySeqID,			// identifies this query sequence
-  						 etSeqBase *pProbeSeq,			// probe
-						 UINT32 ProbeLen,				// probe length
-						 UINT32 CoreLen,				// core window length
-						 UINT32 CoreDelta,				// core window offset increment (1..n)
-						 eALStrand Align2Strand,		// align to this strand
-						 UINT32 MaxHits,				// (IN) process for at most this number of hits
-						 tsQueryAlignNodes *pHits,		// where to return hits (at most MaxHits)
-						 UINT32 CurMaxIter,				// max allowed iterations per subsegmented sequence when matching that subsegment
-						int BaseMatchPts,				// award this many points for matching bases when extending 5' and 3' flanks
-						int BaseMismatchPts)			// penalise this many points for mismatching bases when extending 5' and 3' flanks
+	etSeqBase* pProbeSeq,			// probe
+	UINT32 ProbeLen,				// probe length
+	UINT32 CoreLen,				// core window length
+	UINT32 CoreDelta,				// core window offset increment (1..n)
+	eALStrand Align2Strand,		// align to this strand
+	UINT32 MaxHits,				// (IN) process for at most this number of hits
+	tsQueryAlignNodes* pHits,		// where to return hits (at most MaxHits)
+	UINT32 CurMaxIter,				// max allowed iterations per subsegmented sequence when matching that subsegment
+	int BaseMatchPts,				// award this many points for matching bases when extending 5' and 3' flanks
+	int BaseMismatchPts)			// penalise this many points for mismatching bases when extending 5' and 3' flanks
 
 {
-UINT32 CurCoreSegOfs;				// current core segment relative start
-UINT32 IterCnt;					// count iterator for current segment target matches
-UINT32 NumMatches;					// number of hit instances thus far
-char CurStrand;
-INT64 TargIdx;
-UINT32 NumCopies;
-INT64 TargSeqLeftIdx;
+	UINT32 CurCoreSegOfs;				// current core segment relative start
+	UINT32 IterCnt;					// count iterator for current segment target matches
+	UINT32 NumMatches;					// number of hit instances thus far
+	char CurStrand;
+	INT64 TargIdx;
+	UINT32 NumCopies;
+	INT64 TargSeqLeftIdx;
 
-UINT32 TargSeqID;
-UINT32 TargSeqLoci;
-UINT32 CurNumCoreSlides;
-UINT32 CurCoreDelta;
-tsQueryAlignNodes *pCurHit;
-UINT32 SeqIdx;
-UINT32 Flank3Len;
-UINT8 TargBase;
-UINT32 Flank5Len;
-UINT8 ProbeBase;
-etSeqBase* pProbeBase;
-etSeqBase* pTargBase;
-UINT32 RptTargIdx;
+	UINT32 TargSeqID;
+	UINT32 TargSeqLoci;
+	UINT32 CurNumCoreSlides;
+	UINT32 CurCoreDelta;
+	tsQueryAlignNodes* pCurHit;
+	tsQueryAlignNodes* pPrevHit;
+	UINT32 SeqIdx;
+	UINT32 Flank3Len;
+	UINT8 TargBase;
+	UINT32 Flank5Len;
+	UINT8 ProbeBase;
+	etSeqBase* pProbeBase;
+	etSeqBase* pTargBase;
+	UINT32 RptTargIdx;
 
-UINT32 TargHash[256];		// matched target identifiers and match sense are hashed: bit 0 == sense, bits 1..7 low order 0..6 of target identifier
-UINT32 HashIdx;
+	UINT32 TargHash[256];		// matched target identifiers and match sense are hashed: bit 0 == sense, bits 1..7 low order 0..6 of target identifier
+	UINT32 HashIdx;
 
-etSeqBase *pTarg;			// target sequence
-void *pSfxArray;			// target sequence suffix array
-INT64 SfxLen;				// number of suffixs in pSfxArray
-tsSfxEntry *pEntry;
+	etSeqBase* pTarg;			// target sequence
+	void* pSfxArray;			// target sequence suffix array
+	INT64 SfxLen;				// number of suffixs in pSfxArray
+	tsSfxEntry* pEntry;
 
-// ensure suffix array block loaded for iteration!
-if(m_pSfxBlock == NULL || m_pSfxBlock->ConcatSeqLen == 0)
-	return(eBSFerrInternal);
+	// ensure suffix array block loaded for iteration!
+	if (m_pSfxBlock == NULL || m_pSfxBlock->ConcatSeqLen == 0)
+		return(eBSFerrInternal);
 
-pTarg = (etSeqBase *)&m_pSfxBlock->SeqSuffix[0];
-pSfxArray = (void *)&m_pSfxBlock->SeqSuffix[m_pSfxBlock->ConcatSeqLen];
-SfxLen = m_pSfxBlock->ConcatSeqLen;
+	pTarg = (etSeqBase*)&m_pSfxBlock->SeqSuffix[0];
+	pSfxArray = (void*)&m_pSfxBlock->SeqSuffix[m_pSfxBlock->ConcatSeqLen];
+	SfxLen = m_pSfxBlock->ConcatSeqLen;
 
-memset(TargHash,0,sizeof(TargHash));
+	memset(TargHash, 0, sizeof(TargHash));
 
-NumMatches = 0;
+	NumMatches = 0;
 
-pCurHit = NULL;
+	pCurHit = NULL;
 
-CurNumCoreSlides = 0;
-
-if(Align2Strand == eALSCrick)
-	{
-	CSeqTrans::ReverseComplement(ProbeLen,pProbeSeq);
-	CurStrand = '-';
-	}
-else
-	CurStrand = '+';
-
-do
-	{
-	CurCoreDelta = CoreDelta;
 	CurNumCoreSlides = 0;
-	for(CurCoreSegOfs = 0;
-		CurCoreSegOfs < (UINT32)(ProbeLen - CoreLen); 
-	    CurNumCoreSlides += 1,
-	    CurCoreSegOfs += CurCoreDelta)
+
+	if (Align2Strand == eALSCrick)
+	{
+		CSeqTrans::ReverseComplement(ProbeLen, pProbeSeq);
+		CurStrand = '-';
+	}
+	else
+		CurStrand = '+';
+
+	do
+	{
+		CurCoreDelta = CoreDelta;
+		CurNumCoreSlides = 0;
+		for (CurCoreSegOfs = 0;
+			CurCoreSegOfs < (UINT32)(ProbeLen - CoreLen);
+			CurNumCoreSlides += 1,
+			CurCoreSegOfs += CurCoreDelta)
 		{
-		if(((int)CurCoreSegOfs + CoreLen + CurCoreDelta) > ProbeLen)
-			CurCoreDelta = ProbeLen - (CurCoreSegOfs + CoreLen);
+			if (((int)CurCoreSegOfs + CoreLen + CurCoreDelta) > ProbeLen)
+				CurCoreDelta = ProbeLen - (CurCoreSegOfs + CoreLen);
 
-		if(m_pOccKMerClas != NULL && CoreLen == m_OccKMerLen && (OverOccKMerClas(CoreLen, &pProbeSeq[CurCoreSegOfs]) != 1))	// 1 if number of K-mers of CoreLen is within range 1..max
-			continue;													// outside of range so try next core
+			if (m_pOccKMerClas != NULL && CoreLen == m_OccKMerLen && (OverOccKMerClas(CoreLen, &pProbeSeq[CurCoreSegOfs]) != 1))	// 1 if number of K-mers of CoreLen is within range 1..max
+				continue;													// outside of range so try next core
 
-		// find first exactly matching and how many are exactly matching
-		NumCopies = NumExactKMers(CurMaxIter, CoreLen, &pProbeSeq[CurCoreSegOfs],&TargIdx);
+			// find first exactly matching and how many are exactly matching
+			NumCopies = NumExactKMers(CurMaxIter, CoreLen, &pProbeSeq[CurCoreSegOfs], &TargIdx);
 
-		// counting number of occurrences for each KMer core?
-		if(m_pKMerCntDist != NULL && m_MaxKMerCnts > 0)
+			// counting number of occurrences for each KMer core?
+			if (m_pKMerCntDist != NULL && m_MaxKMerCnts > 0)
 			{
-			if(NumCopies >= m_MaxKMerCnts)
-				NumCopies = m_MaxKMerCnts-1;
+				if (NumCopies >= m_MaxKMerCnts)
+					NumCopies = m_MaxKMerCnts - 1;
 #ifdef _WIN32
-			InterlockedIncrement((volatile unsigned int *)&m_pKMerCntDist[NumCopies]);
+				InterlockedIncrement((volatile unsigned int*)&m_pKMerCntDist[NumCopies]);
 #else
-			__sync_fetch_and_add(&m_pKMerCntDist[NumCopies], 1);
+				__sync_fetch_and_add(&m_pKMerCntDist[NumCopies], 1);
 #endif
 			}
-		if(NumCopies == 0 || NumCopies >= CurMaxIter || TargIdx == 0)	// if too many exact matches for this core then hopefully there will be a manageable number of matches on the next core
-			continue;
-		UINT64 LastTargIdx = TargIdx + NumCopies - 1;
+			if (NumCopies == 0 || NumCopies >= CurMaxIter || TargIdx == 0)	// if too many exact matches for this core then hopefully there will be a manageable number of matches on the next core
+				continue;
+			UINT64 LastTargIdx = TargIdx + NumCopies - 1;
 
-		TargIdx -= 1;
-		IterCnt = 0;
-		while(IterCnt++ < NumCopies)
+			TargIdx -= 1;
+			IterCnt = 0;
+			while (IterCnt++ < NumCopies)
 			{
-			TargSeqLeftIdx = SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,TargIdx++);
-			pEntry = MapChunkHit2Entry(TargSeqLeftIdx);
-			TargSeqID = pEntry->EntryID;
-			TargSeqLoci = (UINT32)(TargSeqLeftIdx - pEntry->StartOfs);
-			HashIdx = (TargSeqID & 0x07f) << 1 | (CurStrand == '+' ? 0 : 1);
+				TargSeqLeftIdx = SfxOfsToLoci(m_pSfxBlock->SfxElSize, pSfxArray, TargIdx++);
+				pEntry = MapChunkHit2Entry(TargSeqLeftIdx);
+				TargSeqID = pEntry->EntryID;
+				TargSeqLoci = (UINT32)(TargSeqLeftIdx - pEntry->StartOfs);
+				HashIdx = (TargSeqID & 0x07f) << 1 | (CurStrand == '+' ? 0 : 1);
 
-			// have a putative core, check if this core overlaps with an already discovered core extension on to the same targeted sequence
-			if((SeqIdx = TargHash[HashIdx]) != 0)			// only bother checking for match contained within a previous if it is known there was at least one previous core match for this sequence 
+				// have a putative core, check if this core overlaps with an already discovered core extension on to the same targeted sequence
+				if ((SeqIdx = TargHash[HashIdx]) != 0)			// only bother checking for match contained within a previous if it is known there was at least one previous core match for this sequence 
 				{
-				do {
-					pCurHit = &pHits[SeqIdx-1];
-					// current core match is aligning to same target sequence and strand as a previously accepted aligned core match
-					// if current core is contained within the prev alignment then continue checking
-					if(CurCoreSegOfs < pCurHit->QueryStartOfs || ((CurCoreSegOfs +  CoreLen)  > (pCurHit->QueryStartOfs + pCurHit->AlignLen)))
+					do {
+						pCurHit = &pHits[SeqIdx - 1];
+						if (pCurHit->TargSeqID == TargSeqID)
+						{
+							// current core match is aligning to same target sequence and strand as a previously accepted aligned core match
+							// if current core is contained within a prev alignment then continue checking
+							if (CurCoreSegOfs < pCurHit->QueryStartOfs || ((CurCoreSegOfs + CoreLen) > (pCurHit->QueryStartOfs + pCurHit->AlignLen)))
+								continue;
+							if (TargSeqLoci < pCurHit->TargSeqLoci || ((TargSeqLoci + CoreLen) > (pCurHit->TargSeqLoci + pCurHit->AlignLen)))
+								continue;
+							if ((CurCoreSegOfs - pCurHit->QueryStartOfs) == (TargSeqLoci - pCurHit->TargSeqLoci))
+								break;
+						}
+					} while ((SeqIdx = pCurHit->NxtHashMatch) != 0);
+					if (SeqIdx != 0)			// current core part of a previous core extension, try for another targeted sequence
 						continue;
-					if(TargSeqLoci < pCurHit->TargSeqLoci || ((TargSeqLoci +  CoreLen)  > (pCurHit->TargSeqLoci + pCurHit->AlignLen)))
-						continue;
-					if((CurCoreSegOfs - pCurHit->QueryStartOfs) == (TargSeqLoci - pCurHit->TargSeqLoci))
+				}
+
+				// now maximally extend out on the flanks, scoring exacts/mismatches and retaining 5'/3' extensions with highest scores
+				// an affine style score threshold is used when determining how many bp to extend a flank plus the mismatch rate must be no more than 15%
+				// first try 5' extending
+				int Num5MMs;
+				int Num3MMs;
+				int Extn5Score;
+				int Extn3Score;
+				int ExtnFloor;
+
+				Num5MMs = 0;
+				Num3MMs = 0;
+				Extn5Score = CoreLen * BaseMatchPts;
+				ExtnFloor = Extn5Score - (4 * BaseMatchPts); // on 5' extensions, when floor is reached then at least 4 exact matches required to recover back to a potential new high scoring extension
+				int HiScoreScore = Extn5Score;
+				int HiScoreExtnLen = 0;
+				int HiScoreMM = 0;
+				Flank5Len = 0;
+				pTargBase = &pTarg[TargSeqLeftIdx - 1];
+				pProbeBase = &pProbeSeq[CurCoreSegOfs - 1];
+				for (SeqIdx = min(TargSeqLoci, CurCoreSegOfs); SeqIdx > 0; SeqIdx--, pTargBase--, pProbeBase--)
+				{
+					TargBase = *pTargBase & 0x07;
+					ProbeBase = *pProbeBase & 0x07;
+					if (TargBase > eBaseN || ProbeBase > eBaseN)		// mustn't match inter targ or probe sequences
 						break;
+					if (TargBase == eBaseN || ProbeBase == eBaseN || ProbeBase != TargBase)
+					{
+						if (Extn5Score >= ExtnFloor)
+						{
+							if (Extn5Score > ExtnFloor)
+								Extn5Score -= BaseMismatchPts;		// heavily penalise mismatches until floor, aka like affine gap scoring
+							if (Extn5Score < ExtnFloor)
+								Extn5Score = ExtnFloor;
+						}
+						Num5MMs += 1;
 					}
-				while((SeqIdx = pCurHit->NxtHashMatch) != 0);
-				if(SeqIdx != 0)			// current core part of a previous core extension, try for another targeted sequence
+					else
+						Extn5Score += BaseMatchPts;			// exact matches are rewarded
+					Flank5Len += 1;
+					if (Extn5Score >= HiScoreScore && ((Num5MMs * 100) / (Flank5Len + CoreLen)) <= 15) // 15% max mismatch rate allowed on extension
+					{
+						HiScoreScore = Extn5Score;
+						HiScoreExtnLen = Flank5Len;
+						HiScoreMM = Num5MMs;
+						ExtnFloor = HiScoreScore - (4 * BaseMatchPts);
+					}
+				}
+				Flank5Len = HiScoreExtnLen;
+				Num5MMs = HiScoreMM;
+
+				// now try 3' flank extending
+				Flank3Len = 0;
+				Num3MMs = 0;
+				Extn3Score = CoreLen * BaseMatchPts;
+				ExtnFloor = Extn3Score - (4 * BaseMatchPts); // on 3' extensions, when floor is reached then at least 4 exact matches required to recover back to a potential new high scoring extension
+				HiScoreScore = Extn3Score;
+				HiScoreExtnLen = 0;
+				HiScoreMM = 0;
+
+				pTargBase = &pTarg[TargSeqLeftIdx + CoreLen];
+				pProbeBase = &pProbeSeq[CurCoreSegOfs + CoreLen];
+				for (SeqIdx = CurCoreSegOfs + (UINT32)CoreLen, RptTargIdx = TargSeqLoci + (UINT32)CoreLen; SeqIdx < ProbeLen && RptTargIdx < pEntry->SeqLen; SeqIdx++, RptTargIdx++, pTargBase++, pProbeBase++)
+				{
+					TargBase = *pTargBase & 0x07;
+					ProbeBase = *pProbeBase & 0x07;
+					if (TargBase > eBaseN || ProbeBase > eBaseN)		// mustn't match inter targ or probe sequences
+						break;
+
+					if (TargBase == eBaseN || ProbeBase == eBaseN || ProbeBase != TargBase)
+					{
+						if (Extn3Score > ExtnFloor)
+							Extn3Score -= BaseMismatchPts;		// heavily penalise mismatches until floor, aka like affine gap scoring
+						if (Extn3Score < ExtnFloor)
+							Extn3Score = ExtnFloor;
+						Num3MMs += 1;
+					}
+					else
+						Extn3Score += BaseMatchPts;			// exact matches are rewarded
+					Flank3Len += 1;
+					if (Extn3Score >= HiScoreScore && ((Num3MMs * 100) / (Flank3Len + CoreLen)) <= 15) // 15% max mismatch rate allowed on extension
+					{
+						HiScoreScore = Extn3Score;
+						HiScoreExtnLen = Flank3Len;
+						HiScoreMM = Num3MMs;
+						ExtnFloor = HiScoreScore - (4 * BaseMatchPts);
+					}
+				}
+				Flank3Len = HiScoreExtnLen;
+				Num3MMs = HiScoreMM;
+
+				// have a maximally extended core
+				pCurHit = &pHits[NumMatches];
+				pCurHit->AlignNodeID = NumMatches;
+				pCurHit->QueryID = QuerySeqID;
+				pCurHit->QueryStartOfs = CurCoreSegOfs - Flank5Len;
+				pCurHit->TargSeqLoci = (UINT32)(TargSeqLoci - Flank5Len);
+				pCurHit->AlignLen = Flank5Len + CoreLen + Flank3Len;
+				pCurHit->NumMismatches = Num5MMs + Num3MMs;
+				pCurHit->FlgStrand = CurStrand == '+' ? 0 : 1;
+				pCurHit->TargSeqID = TargSeqID;
+
+				pCurHit->Flg2Rpt = 0;
+				pCurHit->FlgFirst2tRpt = 0;
+				pCurHit->FlgScored = 0;
+				pCurHit->FlgRedundant = 0;
+				pCurHit->HiScorePathNextIdx = 0;
+				pCurHit->HiScore = 0;
+
+				tsQueryAlignNodes* pPrevHit;
+				if ((SeqIdx = TargHash[HashIdx]) != 0)
+				{
+					do {
+						pPrevHit = &pHits[SeqIdx - 1];
+						if (!pPrevHit->FlgRedundant && (pPrevHit->FlgStrand == pCurHit->FlgStrand && pPrevHit->TargSeqID == pCurHit->TargSeqID))
+						{
+							// does latest (pCurHit) query aligned subsequence intersect with the PrevHit?
+							// if so then choose longest overlap, mark other as being redundant so it can later be discarded
+							// note that 1bp non-overlap is being treated as if an overlap
+							if (!((pCurHit->QueryStartOfs + pCurHit->AlignLen + CoreLen - 1) < pPrevHit->QueryStartOfs ||
+								pCurHit->QueryStartOfs > (pPrevHit->QueryStartOfs + pPrevHit->AlignLen + CoreLen - 1)))
+							{
+								// check for obvious containment of a much smaller core within a larger core, the much smaller core is discarded
+								if ((pCurHit->AlignLen + CoreLen / 2) <= pPrevHit->AlignLen)
+									pCurHit->FlgRedundant = true;
+								else
+									if (pCurHit->AlignLen >= (pPrevHit->AlignLen + CoreLen / 2))
+										pPrevHit->FlgRedundant = true;
+
+								// check for intersect on target
+								if (!((pCurHit->TargSeqLoci + pCurHit->AlignLen + CoreLen - 1) < pPrevHit->TargSeqLoci ||
+									pCurHit->TargSeqLoci > (pPrevHit->TargSeqLoci + pPrevHit->AlignLen + CoreLen - 1)))
+								{
+									// have intersect on both query and target - need to choose!
+									// currently choosing the longest alignment length and
+									// as a tiebreaker then the lowest number of mismatches followed by discarding pCurHit
+									if (pCurHit->AlignLen < pPrevHit->AlignLen)
+										pCurHit->FlgRedundant = true;
+									else
+										if (pCurHit->AlignLen > pPrevHit->AlignLen)
+											pPrevHit->FlgRedundant = true;
+										else
+											if (pCurHit->NumMismatches >= pPrevHit->NumMismatches)
+												pCurHit->FlgRedundant = true;
+											else
+												pPrevHit->FlgRedundant = true;
+
+								}
+							}
+						}
+					} while ((SeqIdx = pPrevHit->NxtHashMatch) != 0);
+				}
+				if (pCurHit->FlgRedundant)
 					continue;
-				}
-
-
-			// now maximally extend out on the flanks, scoring exacts/mismatches and retaining 5'/3' extensions with highest scores
-			// first try 5' extending
-			int Num5MMs;
-			int Num3MMs;
-			int Extn5Score;
-			int Extn3Score;
-			int ExtnFloor;
-			Num5MMs = 0;
-			Num3MMs = 0;
-			Extn5Score = CoreLen * BaseMatchPts;
-			ExtnFloor = Extn5Score - (5 * BaseMatchPts); // on inital 5' extension, when floor is reached then at least 5 exact matches required to recover back to a potential new high scoring extension
-			int HiScoreScore = Extn5Score;
-			int HiScoreExtnLen = 0;
-			int HiScoreMM = 0;
-			Flank5Len = 0;
-			pTargBase = &pTarg[TargSeqLeftIdx-1];
-			pProbeBase = &pProbeSeq[CurCoreSegOfs-1];
-			for(SeqIdx = min(TargSeqLoci,CurCoreSegOfs); SeqIdx > 0; SeqIdx--,pTargBase--,pProbeBase--)
-				{
-				TargBase = *pTargBase & 0x07;
-				ProbeBase = *pProbeBase & 0x07;
-				if(TargBase > eBaseN || ProbeBase > eBaseN)		// mustn't match inter targ or probe sequences
+				NumMatches += 1;
+				pCurHit->NxtHashMatch = TargHash[HashIdx];
+				TargHash[HashIdx] = NumMatches;
+				if (NumMatches >= MaxHits)
 					break;
-				if (TargBase == eBaseN || ProbeBase == eBaseN || ProbeBase != TargBase)
-					{
-					if(Extn5Score >= ExtnFloor)
-						Extn5Score -= BaseMismatchPts;		// heavily penalise mismatches until floor, aka like affine gap scoring
-					Num5MMs += 1;
-					}
-				else
-					Extn5Score += BaseMatchPts;			// exact matches are rewarded
-				Flank5Len += 1;
-				if(Extn5Score >= HiScoreScore)
-					{
-					HiScoreScore = Extn5Score;
-					HiScoreExtnLen = Flank5Len;
-					HiScoreMM = Num5MMs;
-					ExtnFloor = HiScoreScore - (5 * BaseMatchPts);
-					}
-				}
-			Flank5Len = HiScoreExtnLen;
-			Num5MMs = HiScoreMM;
-
-			// now try 3' flank extending
-			Flank3Len = 0;
-			Num3MMs = 0;
-			Extn3Score = CoreLen * BaseMatchPts;
-			ExtnFloor = Extn5Score - (5 * BaseMatchPts); // on inital 3' extension, when floor is reached then at least 5 exact matches required to recover back to a potential new high scoring extension
-			HiScoreScore = Extn3Score;
-			HiScoreExtnLen = 0;
-			HiScoreMM = 0;
-
-			pTargBase = &pTarg[TargSeqLeftIdx + CoreLen];
-			pProbeBase = &pProbeSeq[CurCoreSegOfs + CoreLen];
-			for(SeqIdx = CurCoreSegOfs + (UINT32)CoreLen, RptTargIdx = TargSeqLoci + (UINT32)CoreLen; SeqIdx < ProbeLen && RptTargIdx < pEntry->SeqLen; SeqIdx++,RptTargIdx++,pTargBase++,pProbeBase++)
-				{
-				TargBase = *pTargBase & 0x07;
-				ProbeBase = *pProbeBase & 0x07;
-				if(TargBase > eBaseN || ProbeBase > eBaseN)		// mustn't match inter targ or probe sequences
-					break;
-				
-				if (TargBase == eBaseN || ProbeBase == eBaseN || ProbeBase != TargBase)
-					{
-					if (Extn3Score >= ExtnFloor)
-						Extn3Score -= BaseMismatchPts;		// heavily penalise mismatches until floor, aka like affine gap scoring
-					Num3MMs += 1;
-					}
-				else
-					Extn3Score += BaseMatchPts;			// exact matches are rewarded
-				Flank3Len += 1;
-				if (Extn3Score >= HiScoreScore)
-					{
-					HiScoreScore = Extn3Score;
-					HiScoreExtnLen = Flank3Len;
-					HiScoreMM = Num3MMs;
-					ExtnFloor = HiScoreScore - (5 * BaseMatchPts);
-					}
-				}
-			Flank3Len = HiScoreExtnLen;
-			Num3MMs = HiScoreMM;
-
-			// have a maximally extended core
-			pCurHit = &pHits[NumMatches++];
-			pCurHit->AlignNodeID = NumMatches;
-			pCurHit->QueryID = QuerySeqID;
-			pCurHit->QueryStartOfs = CurCoreSegOfs - Flank5Len;
-			pCurHit->TargSeqLoci = (UINT32)(TargSeqLoci - Flank5Len);
-			pCurHit->AlignLen = Flank5Len + CoreLen + Flank3Len;
-			pCurHit->NumMismatches = Num5MMs + Num3MMs;
-			pCurHit->FlgStrand = CurStrand == '+' ? 0 : 1;
-			pCurHit->TargSeqID = TargSeqID;
-
-			pCurHit->Flg2Rpt = 0;
-			pCurHit->FlgFirst2tRpt = 0;
-			pCurHit->FlgScored = 0;
-			pCurHit->HiScorePathNextIdx = 0;
-			pCurHit->HiScore = 0;
-			pCurHit->NxtHashMatch = TargHash[HashIdx];
-			TargHash[HashIdx] = NumMatches;
-			if(NumMatches >= MaxHits)
+			}
+			if (NumMatches >= MaxHits)
+			{
+				Align2Strand = eALSnone;					// can't improve so early exit
 				break;
 			}
-		if(NumMatches >= MaxHits)
-			{
-			Align2Strand = eALSnone;					// can't improve so early exit
-			break;
-			}
 		}
-	if(CurStrand == '+' && Align2Strand == eALSboth)	// if just processed watson '+' strand then will need to process crick or '-' strand if processing both strands
+		if (CurStrand == '+' && Align2Strand == eALSboth)	// if just processed watson '+' strand then will need to process crick or '-' strand if processing both strands
 		{
-		CSeqTrans::ReverseComplement(ProbeLen,pProbeSeq);
-		CurStrand = '-';
-		Align2Strand = eALSCrick;
+			CSeqTrans::ReverseComplement(ProbeLen, pProbeSeq);
+			CurStrand = '-';
+			Align2Strand = eALSCrick;
 		}
-	else									// either processed both or just the crick strand so no further processing required
-		Align2Strand = eALSnone;			// two passes max - first on the '+' strand with optional 2nd on '-' strand
+		else									// either processed both or just the crick strand so no further processing required
+			Align2Strand = eALSnone;			// two passes max - first on the '+' strand with optional 2nd on '-' strand
+	} while (!(NumMatches >= MaxHits) && Align2Strand != eALSnone);
+
+	if (CurStrand == '-')									// restore probe sequence if had started processing '-' strand
+		CSeqTrans::ReverseComplement(ProbeLen, pProbeSeq);
+
+	// iterate and remove all alignment nodes marked as being redundant
+	uint32_t NonRedundant = 0;
+	if (NumMatches > 0)
+	{
+#if _ALIGNNODESDIAG_
+		pCurHit = pPrevHit = pHits;
+		gDiagnostics.DiagOutMsgOnly(eDLInfo, "Query (%.8d) has %.5d matches", pCurHit->QueryID, NumMatches);
+		for (SeqIdx = 0; SeqIdx < NumMatches; SeqIdx++, pCurHit++)
+			gDiagnostics.DiagOutMsgOnly(eDLInfo, "P %c,%.3d,%.3d,%.5d", pCurHit->FlgStrand ? '-' : '+', pCurHit->QueryStartOfs, pCurHit->AlignLen, pCurHit->TargSeqLoci);
+#endif
+		if (NumMatches == 1)
+			return(pHits->FlgRedundant ? 0 : 1);
+		pCurHit = pPrevHit = pHits;
+		for (SeqIdx = 0; SeqIdx < NumMatches; SeqIdx++, pCurHit++)
+		{
+			if (pCurHit->FlgRedundant)
+				continue;
+			if (pPrevHit != pCurHit)
+				*pPrevHit = *pCurHit;
+			pPrevHit++;
+			NonRedundant++;
+		}
+#if _ALIGNNODESDIAG_
+		pCurHit = pPrevHit = pHits;
+		gDiagnostics.DiagOutMsgOnly(eDLInfo, "Query (%.8d) has %.5d non-redundant matches", pCurHit->QueryID, NonRedundant);
+		for (SeqIdx = 0; SeqIdx < NonRedundant; SeqIdx++, pCurHit++)
+			gDiagnostics.DiagOutMsgOnly(eDLInfo, "F %c,%.3d,%.3d,%.5d", pCurHit->FlgStrand ? '-' : '+', pCurHit->QueryStartOfs, pCurHit->AlignLen, pCurHit->TargSeqLoci);
+#endif
 	}
-while(!(NumMatches >= MaxHits) && Align2Strand != eALSnone);
-
-if(CurStrand == '-')									// restore probe sequence if had started processing '-' strand
-	CSeqTrans::ReverseComplement(ProbeLen,pProbeSeq);
-
-return(NumMatches);				// MMDelta requirement met and within the multiple hits limit
+	return(NonRedundant);				// number of alignment nodes non-redundant, MMDelta requirement met and within the multiple hits limit
 }
 
 
