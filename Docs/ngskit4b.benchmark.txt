@@ -1,6 +1,6 @@
-Version 0.7.5
+Version 0.8.0
 ===========================
-Released April 4th 2020
+Released April 25th 2020
 
 ngskit4b benchmark
 Benchmark aligners using observed error profiled simulated NGS readsets
@@ -24,6 +24,8 @@ bases which are correctly aligned, misaligned, unaligned and for a special case 
 trimmed but the base lies within the ground truth loci boundaries for that read. Overall scoring is provided for two
 cases – against the background of all putative scoring bases allowing for inclusion of unaligned base weightings into
 the score, and in aligned bases only which is excluding unaligned base weightings.
+A processing mode '-m0' allows the researcher to copy input raw reads into another raw read file limiting the number
+of reads copied to a specified number of reads '-r'; this is generally used on systems which have resource constraints.  
 
 Parameterisation Options:
 
@@ -55,36 +57,41 @@ Parameterisation Options:
 
 -m, --mode=<int>
     Processing mode: 
-		0 - generate observed CIGARs from alignments
-		1:- simulate reads using observed CIGARs
-		2: score base alignments using expected CIGARs
+	    0 - Generate raw reads file(s) from existing fasta file limiting number of raw reads 
+		1 - generate observed CIGARs from alignments
+		2 - simulate reads using observed CIGARs
+		3  score base alignments using expected CIGARs
 
--i, --alignments=<file>
-	input alignments (SAM or BAM) when generating observed CIGARs '-m0' or alignments if scoring using expected CIGARs '-m1'
+-b, --alignments=<file>
+	input alignments (SAM or BAM) when generating observed CIGARs '-m1' or alignments if scoring using expected CIGARs '-m3'
+
+-i, --insereads=<file>
+	input SE reads file, or PE1 reads file if PE processing
+
+-I, --inpe2reads=<file>
+	input PE mate reads file if PE processing
+
+-o, --reads=<file>
+	Write reads to this file SE or PE1 if PE reads processing
+
+-O, --pe2reads=<file>
+	Write PE mate reads to this file if PE reads processing
 
 -p, --pe
 	set if PE pairs processing otherwise SE reads only
 
--I, --refgenome=<file>
+-x, --refgenome=<file>
 	alignment reference genome suffix array ('ngskit4b index' generated) file
 
--o, --reads=<file>
-	Write simulated reads to this file SE or PE1 if PE reads '-m1'
-	Read alignments SAM/BAM from this file if scoring '-m2'
-
--O, --pe2reads=<file>
-	Write simulated PE2 reads to this file if PE reads simulation '-m1'
-	Read alignments PE2 SAM/BAM from this file if scoring '-m2'
-
 -s, --results=<file>      
-	Append summary benchmark score results to this CSV file '-m2'
+	Append summary benchmark score results to this CSV file '-m3'
 
 -P, --primary             
 	Set if only primary alignments are to be scored '-m2'
 
 -c, --CIGARs=<file>       
-	Write observed CIGARs to this CSV file when generating observed CIGAR error profiles '-m0'
-	Read observed CIGAR error profiles from this CSV file when simulating reads '-m1'
+	Write observed CIGARs to this CSV file when generating observed CIGAR error profiles '-m1'
+	Read observed CIGAR error profiles from this CSV file when simulating reads '-m2'
 
 -j, --alignedbasepts=<int> 
 	Reward correctly aligned bases with this many points (defaults to 10)
@@ -99,16 +106,16 @@ Parameterisation Options:
 	Penalise incorrectly aligned bases (defaults to -50)
 
 -r, --maxnumreads=<int>   
-	Limit processing to this number of reads or read pairs if PE (defaults to 10000000)
+	Process for this number of reads or read pairs if PE (defaults to 5000000 if limiting '-m0' or 2000000 if simulating '-m2'
 
 -a, --controlaligner=<str> 
-	Names control aligner used for derivation of empirical error profiles '-m2'
+	Names control aligner used for derivation of empirical error profiles '-m3'
 
 -A, --scoredaligner=<str> 
-	Names aligner used to align simulated reads '-m2'
+	Names aligner used to align simulated reads '-m3'
 
 -e, --experiment=<str>    
-	Brief description of benchmarking experiment '-m2'
+	Brief description of benchmarking experiment '-m3'
 
 
 Note: Options and associated parameters can be entered into an option parameter

@@ -48,8 +48,10 @@ BenchmarkProcess(eBMProcMode PMode,			// processing mode
 				char *pszExperimentDescr,	// experiment descriptor by which benchmarking results can be identified in szResultsFile 
 				char* pszControlAligner,	// control aligner generating error profile from which simulated reads were generated 
 				char* pszScoredAligner,		// aligner aligning simulated reads and which was scored
-				char *pszSEReads,			// simulated reads are output to this file (SE or PE1 if PE)  (input when scoring as contains ground truth)
-				char *pszPE2Reads);			// simulated PE2 reads are output to this file if simulating PE reads (input when scoring as contains ground truth)
+				char* pszOutSEReads,		// SE or PE1 reads are output to this file
+				char* pszOutPE2Reads,		// PE2 reads are output to this file
+				char* pszInSEReads,			// SE or PE1 reads are input from this file
+				char* pszInPE2Reads);		// PE2 reads are input from this file
 
 
 
@@ -87,9 +89,11 @@ int MaxNumReads;			// maximum number of alignment CIGARs to process or number of
 char szCIGARsFile[_MAX_PATH];	// observed CIGARs are in this file
 char szRefGenomeFile[_MAX_PATH];// reads are against this target genome file
 char szAlignmentsFile[_MAX_PATH];	// input file containing aligned reads (SAM or BAM)
-char szSEReads[_MAX_PATH];		// simulated reads are output to this file (SE or PE1 if PE)
-char szPE2Reads[_MAX_PATH];		// simulated PE2 reads are output to this file if simulating PE reads
-char szResultsFile[_MAX_PATH];	// benchmarking m2 results file
+char szOutSEReads[_MAX_PATH];		// SE or PE1 reads are output to this file
+char szOutPE2Reads[_MAX_PATH];		// PE2 reads are output to this file
+char szInSEReads[_MAX_PATH];		// SE or PE1 reads are input from this file
+char szInPE2Reads[_MAX_PATH];		// PE2 reads are input from this file
+char szResultsFile[_MAX_PATH];		// benchmarking m3 results file
 
 char szExperimentDescr[cMaxDatasetSpeciesChrom + 1];	// describes experiment
 char szControlAligner[cMaxDatasetSpeciesChrom + 1];		// control aligner generating error profile from which simulated reads were generated 
@@ -101,25 +105,28 @@ struct arg_lit* version = arg_lit0("v", "version,ver", "print version informatio
 struct arg_int* FileLogLevel = arg_int0("f", "FileLogLevel", "<int>", "Level of diagnostics written to screen and logfile 0=fatal,1=errors,2=info,3=diagnostics,4=debug");
 struct arg_file* LogFile = arg_file0("F", "log", "<file>", "diagnostics log file");
 
-struct arg_int* pmode = arg_int0("m", "mode", "<int>", "processing mode: 0 - generate observed CIGARs from alignments, 1:- simulate reads using observed CIGARs, 2: score base alignments using expected CIGARs");
-struct arg_file* inalignments = arg_file0("i", "alignments", "<file>", "input alignments (SAM or BAM) when generating observed CIGARs or alignments if scoring using expected CIGARs");
+struct arg_int* pmode = arg_int0("m", "mode", "<int>", "processing mode: 0 - restrict number of raw reads or read pairs, 1 - generate observed CIGARs from alignments, 2:- simulate reads using observed CIGARs, 3: score base alignments using expected CIGARs");
+struct arg_file* inalignments = arg_file0("b", "alignments", "<file>", "input alignments (SAM or BAM) when generating observed CIGARs or alignments if scoring using expected CIGARs");
 
 struct arg_lit* scoreprimaryonly = arg_lit0("P", "primary", "set if only primary alignments are to be scored");
 struct arg_lit* pereads = arg_lit0("p", "pe",				"set if PE pairs processing otherwise SE reads only");
 
-struct arg_file* refgenome = arg_file0("I", "refgenome", "<file>",	"alignment reference genome suffix array ('ngskit4b index' generated) file");
-struct arg_file* reads = arg_file0("o", "reads", "<file>",			"simulated reads to this file SE or PE1 if PE reads, or from if scoring");
-struct arg_file* pe2reads = arg_file0("O", "pe2reads", "<file>",	"simulated reads to this file if PE reads, or from if scoring");
-struct arg_file* results = arg_file0("s", "results", "<file>",		"summary benchmark results when scoring are written to this CSV file");
+struct arg_file* refgenome = arg_file0("x", "refgenome", "<file>",	"alignment reference genome suffix array ('ngskit4b index' generated) file");
 
+struct arg_file* insereads = arg_file0("i", "insereads", "<file>",		"input SE or PE1 reads from this file");
+struct arg_file* inpe2reads = arg_file0("I", "inpe2reads", "<file>",	"input PE2 reads from this file");
+struct arg_file* outsereads = arg_file0("o", "outsereads", "<file>",	"output SE or PE1 reads to this file");
+struct arg_file* outpe2reads = arg_file0("O", "outpe2reads", "<file>",	"output PE2 reads to this file");
+
+struct arg_file* results = arg_file0("s", "results", "<file>",		"summary benchmark results when scoring are written to this CSV file");
 
 struct arg_file* cigars = arg_file0("c", "CIGARs", "<file>",		"observed CIGARs R/W this file");
 
-struct arg_int* alignedbasepts = arg_int0("j", "alignedbasepts", "<int>",		"correctly aligned base points (defaults to 10");
-struct arg_int* silenttrimaligdbasepts = arg_int0("J", "silenttrimalignbasepts", "<int>", "silently trimmed alignment within truth bounds base points (defaults to 1)");
-struct arg_int* unalignedbasepts = arg_int0("k", "unalignedbasepts", "<int>",	"unaligned base penalty (defaults to -1)");
-struct arg_int* misalignedbasepts = arg_int0("l", "misalignedbasepts", "<int>",	"incorrectly aligned base penalty (defaults to -50");
-struct arg_int* maxnumreads = arg_int0("r", "maxnumreads", "<int>", "process for this number of reads or read pairs if PE (defaults to 10000000");
+struct arg_int* alignedbasepts = arg_int0("j", "alignedbasepts", "<int>",		"correctly aligned base weighting (defaults to 50");
+struct arg_int* silenttrimaligdbasepts = arg_int0("J", "silenttrimalignbasepts", "<int>", "silently trimmed alignment within truth bounds base weighting (defaults to 25)");
+struct arg_int* unalignedbasepts = arg_int0("k", "unalignedbasepts", "<int>",	"unaligned base weighting (defaults to 20)");
+struct arg_int* misalignedbasepts = arg_int0("l", "misalignedbasepts", "<int>",	"incorrectly aligned base weighting (defaults to 0");
+struct arg_int* maxnumreads = arg_int0("r", "maxnumreads", "<int>", "process for this number of reads or read pairs if PE (defaults to 5000000 if sampling '-m0' or 2000000 if simulating '-m2'");
 struct arg_str* experimentdescr = arg_str0("e", "experiment", "<str>", "experiment description");
 struct arg_str* controlaligner = arg_str0("a", "controlaligner", "<str>", "Control aligner used for derivation of empirical error profiles");
 struct arg_str* scoredaligner = arg_str0("A", "scoredaligner", "<str>", "Scored aligner used to align simulated reads");
@@ -127,7 +134,7 @@ struct arg_str* scoredaligner = arg_str0("A", "scoredaligner", "<str>", "Scored 
 struct arg_end* end = arg_end(200);
 
 	void* argtable[] = { help,version,FileLogLevel,LogFile,
-						pmode, inalignments,pereads,refgenome,reads,pe2reads,results,scoreprimaryonly,cigars,alignedbasepts,
+						pmode, inalignments,pereads,refgenome,insereads,inpe2reads,outsereads,outpe2reads,results,scoreprimaryonly,cigars,alignedbasepts,
 						silenttrimaligdbasepts,unalignedbasepts,misalignedbasepts,maxnumreads,
 						controlaligner,scoredaligner,experimentdescr,end };
 
@@ -204,8 +211,10 @@ struct arg_end* end = arg_end(200);
 		szAlignmentsFile[0] = '\0';
 		szControlAligner[0] = '\0';
 		szScoredAligner[0] = '\0';
-		szSEReads[0] = '\0';
-		szPE2Reads[0] = '\0';
+		szInSEReads[0] = '\0';
+		szInPE2Reads[0] = '\0';
+		szOutSEReads[0] = '\0';
+		szOutPE2Reads[0] = '\0';
 		szResultsFile[0] = '\0';
 
 		bPEReads = false;
@@ -216,9 +225,9 @@ struct arg_end* end = arg_end(200);
 		SilentTrimAlignBasePts = 0;
 
 		PMode = pmode->count ? (eBMProcMode)pmode->ival[0] : eBMGenCIGARs;
-		if (PMode < eBMGenCIGARs || PMode > eBMScore)
+		if (PMode < eBMLimitReads || PMode > eBMScore)
 			{
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Error: Processing mode '-m%d' specified outside of range %d..%d\n", PMode, eBMGenCIGARs, (int)eBMScore);
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Error: Processing mode '-m%d' specified outside of range %d..%d\n", PMode, eBMLimitReads, (int)eBMScore);
 			exit(1);
 			}
 
@@ -324,93 +333,127 @@ struct arg_end* end = arg_end(200);
 
 		bPrimaryOnly = scoreprimaryonly->count ? true : false;
 		bPEReads = pereads->count ? true : false;
-		MaxNumReads = maxnumreads->count ? maxnumreads->ival[0] : cBMDfltReads;
-		if(MaxNumReads > cBMMaxReads)		// silently clamp to be within a reasonable range
-			MaxNumReads = cBMMaxReads;
+		if (PMode == eBMLimitReads)
+			{
+			MaxNumReads = maxnumreads->count ? maxnumreads->ival[0] : cBMDfltLimitReads;
+			if (MaxNumReads > cBMMaxReads)		// silently clamp to be within a reasonable range
+				MaxNumReads = cBMMaxReads;
+			else
+				if (MaxNumReads < cBMMinReads)
+					MaxNumReads = cBMMinReads;
+			}
 		else
-			if (MaxNumReads < cBMMinReads)
-				MaxNumReads = cBMMinReads;
+			{
+			MaxNumReads = maxnumreads->count ? maxnumreads->ival[0] : cBMDfltReads;
+			if(MaxNumReads > cBMMaxReads)		// silently clamp to be within a reasonable range
+				MaxNumReads = cBMMaxReads;
+			else
+				if (MaxNumReads < cBMMinReads)
+					MaxNumReads = cBMMinReads;
+			}
 
 		if (PMode == eBMScore)
 			{
-			AlignedBasePts = alignedbasepts->count ? alignedbasepts->ival[0] : cBMDfltAlignedBasePts;
-			if(AlignedBasePts > cBMMaxPts)
-				AlignedBasePts = cBMMaxPts;
+			AlignedBasePts = alignedbasepts->count ? alignedbasepts->ival[0] : cBMDfltAlignedBaseWtg;
+			if(AlignedBasePts > cBMMaxBaseWtg)		// clamp and report later
+				AlignedBasePts = cBMMaxBaseWtg;
 			else
-				if(AlignedBasePts < 1)				// must always be > 0
-					AlignedBasePts = 1;
-			SilentTrimAlignBasePts = silenttrimaligdbasepts->count ? silenttrimaligdbasepts->ival[0] : cBMDfltSilentTrimAlignBasePts;
-			if (SilentTrimAlignBasePts > AlignedBasePts)
-				SilentTrimAlignBasePts = AlignedBasePts;
-			else
-				if (SilentTrimAlignBasePts < 0)				// must always be >= 0
-					SilentTrimAlignBasePts = 0;
+				if(AlignedBasePts < cBMMinBaseWtg)
+					AlignedBasePts = cBMMinBaseWtg;
 
-			MisalignedBasePts = misalignedbasepts->count ? misalignedbasepts->ival[0] : cBMDfltMisalignedBasePts;
-			if (MisalignedBasePts < cBMMinPts)
-				MisalignedBasePts = cBMMinPts;
+			SilentTrimAlignBasePts = silenttrimaligdbasepts->count ? silenttrimaligdbasepts->ival[0] : cBMDfltSilentTrimAlignBaseWtg;
+			if (SilentTrimAlignBasePts > cBMMaxBaseWtg)
+				SilentTrimAlignBasePts = cBMMaxBaseWtg;
 			else
-				if (MisalignedBasePts >= 0)
-					MisalignedBasePts = -1;
-			UnalignedBasePts = unalignedbasepts->count ? unalignedbasepts->ival[0] : cBMDfltUnalignedBasePts;
-			if (UnalignedBasePts >= AlignedBasePts)
-				UnalignedBasePts = AlignedBasePts - 1;
+				if (SilentTrimAlignBasePts < cBMMinBaseWtg)
+					SilentTrimAlignBasePts = cBMMinBaseWtg;
+
+			UnalignedBasePts = unalignedbasepts->count ? unalignedbasepts->ival[0] : cBMDfltUnalignedBaseWtg;
+			if (UnalignedBasePts > cBMMaxBaseWtg)
+				UnalignedBasePts = cBMMaxBaseWtg;
 			else
-				if (UnalignedBasePts <= MisalignedBasePts)
-					UnalignedBasePts = MisalignedBasePts + 1;
+				if (UnalignedBasePts < cBMMinBaseWtg)
+					UnalignedBasePts = cBMMinBaseWtg;
+
+			MisalignedBasePts = misalignedbasepts->count ? misalignedbasepts->ival[0] : cBMDfltMisalignedBaseWtg;
+			if (MisalignedBasePts > cBMMaxBaseWtg)
+				MisalignedBasePts = cBMMaxBaseWtg;
+			else
+				if (MisalignedBasePts < cBMMinBaseWtg)
+					MisalignedBasePts = cBMMinBaseWtg;
 			}
 
-		if (PMode == eBMSimReads || PMode == eBMScore)
+
+		if(PMode == eBMLimitReads || PMode == eBMSimReads)		// both modes write reads to file
 			{
-			if (reads->count)
+			if (outsereads->count)
 				{
-				strcpy(szSEReads, reads->filename[0]);
-				CUtility::TrimQuotedWhitespcExtd(szSEReads);
+				strcpy(szOutSEReads, outsereads->filename[0]);
+				CUtility::TrimQuotedWhitespcExtd(szOutSEReads);
 				}
-			if (szSEReads[0] == '\0')
+			if (szOutSEReads[0] == '\0')
 				{
-				gDiagnostics.DiagOut(eDLFatal, gszProcName, "Simulation or scoring requested but no %s reads file specified", bPEReads? "PE1" : "SE");
+				gDiagnostics.DiagOut(eDLFatal, gszProcName, "Limit or reads simulation requested but no output %s reads file specified", bPEReads ? "PE1" : "SE");
 				exit(1);
 				}
-
-			if(PMode == eBMScore)
+			if(bPEReads)
 				{
-				if (pe2reads->count)
+				if (outpe2reads->count)
 					{
-					strcpy(szPE2Reads, pe2reads->filename[0]);
-					CUtility::TrimQuotedWhitespcExtd(szPE2Reads);
+					strcpy(szOutPE2Reads, outpe2reads->filename[0]);
+					CUtility::TrimQuotedWhitespcExtd(szOutPE2Reads);
 					}
-				if (results->count)
+				if (szOutPE2Reads[0] == '\0')
 					{
-					strcpy(szResultsFile, results->filename[0]);
-					CUtility::TrimQuotedWhitespcExtd(szResultsFile);
-					}
-				}
-			if (bPEReads)
-				{
-				if (pe2reads->count)
-					{
-					strcpy(szPE2Reads, pe2reads->filename[0]);
-					CUtility::TrimQuotedWhitespcExtd(szPE2Reads);
-					}
-				if (szPE2Reads[0] == '\0')
-					{
-					gDiagnostics.DiagOut(eDLFatal, gszProcName, "Simulation or scoring requested but no PE2 reads file specified");
+					gDiagnostics.DiagOut(eDLFatal, gszProcName, "PE Limit or reads simulation requested but no output PE2 reads file specified");
 					exit(1);
 					}
 				}
-			else
-				szPE2Reads[0] = '\0';
 			}
-		else
+
+		if (PMode == eBMLimitReads || PMode == eBMScore)		// both modes read from file
 			{
-			szSEReads[0] = '\0';
-			szPE2Reads[0] = '\0';
+			if (insereads->count)
+				{
+				strcpy(szInSEReads, insereads->filename[0]);
+				CUtility::TrimQuotedWhitespcExtd(szOutSEReads);
+				}
+			if (szInSEReads[0] == '\0')
+				{
+				gDiagnostics.DiagOut(eDLFatal, gszProcName, "Limit or reads score requested but no input %s reads file specified", bPEReads ? "PE1" : "SE");
+				exit(1);
+				}
+			if (bPEReads)
+				{
+				if (inpe2reads->count)
+					{
+					strcpy(szInPE2Reads, inpe2reads->filename[0]);
+					CUtility::TrimQuotedWhitespcExtd(szInPE2Reads);
+					}
+				if (szInPE2Reads[0] == '\0')
+					{
+					gDiagnostics.DiagOut(eDLFatal, gszProcName, "PE Limit or reads scoring requested but no input PE2 reads file specified");
+					exit(1);
+					}
+				}
+			}
+
+		if(PMode == eBMScore)
+			{
+			if (results->count)
+				{
+				strcpy(szResultsFile, results->filename[0]);
+				CUtility::TrimQuotedWhitespcExtd(szResultsFile);
+				}
 			}
 
 		gDiagnostics.DiagOut(eDLInfo, gszProcName, "Processing parameters:");
 		const char* pszDescr;
 		switch (PMode) {
+			case eBMLimitReads:		// limit number of raw reads which are to be aligned
+				pszDescr = "Limit number of raw reads which are to be aligned";
+				break;
+
 			case eBMGenCIGARs:		// generate observed CIGARs from alignments
 				pszDescr = "Generate observed CIGARs from alignments";
 				break;
@@ -437,19 +480,25 @@ struct arg_end* end = arg_end(200);
 		gDiagnostics.DiagOutMsgOnly(eDLInfo, "Maximum number of %s to be processed : %d", bPEReads ? "PE read pairs" : "SE reads", MaxNumReads);
 		if(PMode == eBMScore)
 			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Scoring is for: %s", bPrimaryOnly ? "Primary alignments only" : "All alignments");
-		if(szSEReads[0] != '\0')
-			gDiagnostics.DiagOutMsgOnly(eDLInfo, "%s file : '%s'", bPEReads ? "PE1" : "SE", szSEReads);
-		if (szPE2Reads[0] != '\0')
-			gDiagnostics.DiagOutMsgOnly(eDLInfo, "PE2 file : '%s'", szPE2Reads);
+		if(szInSEReads[0] != '\0')
+			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Reads %s input from file : '%s'", bPEReads ? "PE1" : "SE", szInSEReads);
+		if (szInPE2Reads[0] != '\0')
+			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Reads PE2 input from file : '%s'", szInPE2Reads);
+
+		if (szOutSEReads[0] != '\0')
+			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Reads %s output to file : '%s'", bPEReads ? "PE1" : "SE", szOutSEReads);
+		if (szOutPE2Reads[0] != '\0')
+			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Reads PE2 output to file : '%s'", szOutPE2Reads);
+
 		if(szResultsFile[0] != '\0')
 			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Scoring results appended to this CSV file : '%s'", szResultsFile);
 
 		if(PMode == eBMScore)
 			{
-			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Aligned base score points: %d", AlignedBasePts);
-			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Aligned silently trimmed read base score points: %d", SilentTrimAlignBasePts);
-			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Misaligned base score penalty: %d", MisalignedBasePts);
-			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Unaligned base score penalty: %d", UnalignedBasePts);
+			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Aligned base weighting: %d", AlignedBasePts);
+			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Aligned silently trimmed read base weighting: %d", SilentTrimAlignBasePts);
+			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Misaligned base weighting: %d", MisalignedBasePts);
+			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Unaligned base weighting: %d", UnalignedBasePts);
 			}
 
 		if (szExperimentDescr[0] != '\0')
@@ -479,8 +528,10 @@ struct arg_end* end = arg_end(200);
 								szExperimentDescr,		// experiment descriptor by which benchmarking results can be identified in szResultsFile 
 								szControlAligner,		// control aligner generating error profile from which simulated reads were generated 
 								szScoredAligner,		// aligner aligning simulated reads and which was scored
-								szSEReads,				// simulated reads are output to this file (SE or PE1 if PE)
-								szPE2Reads);			// simulated PE2 reads are output to this file if simulating PE reads
+								szOutSEReads,			// SE or PE1 reads are output to this file
+								szOutPE2Reads,			// PE2 reads are output to this file
+								szInSEReads,			// SE or PE1 reads are input from this file
+								szInPE2Reads),			// PE2 reads are input from this file
 		Rslt = Rslt >= 0 ? 0 : 1;
 		if (gExperimentID > 0)
 		{
@@ -521,8 +572,10 @@ BenchmarkProcess(eBMProcMode PMode,	// processing mode
 	char* pszExperimentDescr,	// experiment descriptor by which benchmarking results can be identified in szResultsFile 
 	char* pszControlAligner,	// control aligner generating error profile from which simulated reads were generated 
 	char* pszScoredAligner,		// aligner aligning simulated reads and which was scored
-	char* pszSEReads,			// simulated reads are output to this file (SE or PE1 if PE)
-	char* pszPE2Reads)			// simulated PE2 reads are output to this file if simulating PE reads
+	char* pszOutSEReads,		// SE or PE1 reads are output to this file
+	char* pszOutPE2Reads,		// PE2 reads are output to this file
+	char* pszInSEReads,			// SE or PE1 reads are input from this file
+	char *pszInPE2Reads)		// PE2 reads are input from this file
 {
 int Rslt;
 CBenchmark *pBenchmark;
@@ -530,17 +583,21 @@ pBenchmark = new CBenchmark;
 Rslt = 0;
 
 switch (PMode) {
+	case eBMLimitReads:
+		Rslt = pBenchmark->GenLimitReads(bPEReads, MaxNumReads, pszInSEReads, pszInPE2Reads, pszOutSEReads, pszOutPE2Reads);
+		break;
+
 	case eBMGenCIGARs:
 		Rslt = pBenchmark->GenObsCIGARs(bPEReads, MaxNumReads, pszObsCIGARsFile, pszRefGenomeFile, pszAlignmentsFile);
 		break;
 
 	case eBMSimReads:
-		Rslt = pBenchmark->SimReads(bPEReads, MaxNumReads, pszObsCIGARsFile, pszRefGenomeFile, pszSEReads, pszPE2Reads);
+		Rslt = pBenchmark->SimReads(bPEReads, MaxNumReads, pszObsCIGARsFile, pszRefGenomeFile, pszOutSEReads, pszOutPE2Reads);
 		break;
 
 	case eBMScore:
 		Rslt = pBenchmark->Score(bPrimaryOnly,bPEReads, UnalignedBasePts, AlignedBasePts, SilentTrimAlignBasePts, MisalignedBasePts, 
-					pszResultsFile,pszExperimentDescr, pszControlAligner, pszScoredAligner,pszSEReads, pszPE2Reads, pszAlignmentsFile);
+					pszResultsFile,pszExperimentDescr, pszControlAligner, pszScoredAligner, pszInSEReads, pszInPE2Reads, pszAlignmentsFile);
 		break;
 	}
 
@@ -906,6 +963,192 @@ CBenchmark::OpenAlignments(char* pszAlignmentsFile)	// input file containing ali
 	return(eBSFSuccess);
 }
 
+int
+CopyNumReads(int MaxNumReads,		// copy at most this number of reads from pszInFile into pszOutFile
+	char* pszInFile,	// load reads from this file
+	char* pszOutFile)	// write reads to this file
+{
+int Rslt;
+int NumReadsCopied;
+int NumCols;
+int SeqLen;
+int BuffOffs;
+int SeqOfs;
+int Descrlen;
+char * pszLineBuff;
+char szSeqBuff[0x03fff];
+char szDescription[1000];
+int hOutReads;
+CFasta* pReads = NULL;
+pszLineBuff = NULL;
+
+if((pszLineBuff = new char [cBMCIGARAllocBuffSize])==NULL)
+	return(eBSFerrMem);
+
+if ((pReads = new CFasta()) == NULL)
+	{
+	delete []pszLineBuff;
+	return(eBSFerrInternal);
+	}
+if ((Rslt = pReads->Open(pszInFile)) != eBSFSuccess)
+	{
+	delete pReads;
+	delete[]pszLineBuff;
+	return(Rslt);
+	}
+
+#ifdef _WIN32
+if ((hOutReads = open(pszOutFile, (_O_RDWR | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC), (_S_IREAD | _S_IWRITE))) == -1)
+#else
+if ((hOutReads = open(pszOutFile, O_RDWR | O_CREAT | O_TRUNC, S_IREAD | S_IWRITE)) == -1)
+#endif
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Unable to create/truncate output file - '%s' - %s", pszOutFile, strerror(errno));
+	delete pReads;
+	delete[]pszLineBuff;
+	return(eBSFerrOpnFile);
+	}
+
+BuffOffs = 0;
+NumReadsCopied = 0;
+while ((Rslt = SeqLen = pReads->ReadSequence(szSeqBuff, cBMMaxReadLen, false, false)) > eBSFSuccess)
+	{
+	if (SeqLen == eBSFFastaDescr)		// just read a descriptor line
+		{
+		Descrlen = pReads->ReadDescriptor(szDescription, sizeof(szDescription) - 1);
+		BuffOffs += sprintf(&pszLineBuff[BuffOffs], ">%s\n", szDescription);
+		continue;
+		}
+	SeqOfs = 0;
+	while (SeqLen)
+		{
+		NumCols = SeqLen > 79 ? 79 : SeqLen;
+		SeqLen -= NumCols;
+		strncpy(&pszLineBuff[BuffOffs], &szSeqBuff[SeqOfs], NumCols);
+		SeqOfs += NumCols;
+		BuffOffs += NumCols;
+		BuffOffs += sprintf(&pszLineBuff[BuffOffs], "\n");
+		}
+	if(++NumReadsCopied >= MaxNumReads)
+		break;
+	if (BuffOffs + (2 * cBMMaxReadLen) > cBMCIGARAllocBuffSize)
+		{
+		CUtility::SafeWrite(hOutReads, pszLineBuff, BuffOffs);
+		BuffOffs = 0;
+		}
+	}
+if (BuffOffs)
+	CUtility::SafeWrite(hOutReads, pszLineBuff, BuffOffs);
+#ifdef _WIN32
+_commit(hOutReads);
+#else
+fsync(hOutReads);
+#endif
+close(hOutReads);
+
+delete pReads;
+delete []pszLineBuff;
+return(NumReadsCopied);
+}
+
+int				// output was limited to this actual number of reads
+CBenchmark::GenLimitReads(bool bPEReads,	// true if PE pair processing otherwise SE reads
+				int MaxNumReads,		// restrict reads to be at most this many SE reads or PE read pairs
+				char* pszInSEReads,			// SE or PE1 reads are input from this file
+				char* pszInPE2Reads,		// PE2 reads are input from this file
+				char* pszOutSEReads,		// SE or PE1 reads are output to this file
+				char* pszOutPE2Reads)		// PE2 reads are output to this file
+{
+int hOutReads;
+uint32_t EstNumReads;
+int SENumReadsCopied;
+int PE2NumReadsCopied;
+
+Reset();
+if(pszInSEReads == NULL || pszInSEReads[0] == '\0')
+	return(eBSFerrParams);
+if(bPEReads == true && (pszInPE2Reads == NULL || pszInPE2Reads[0] == '\0'))
+	return(eBSFerrParams);
+
+if (pszOutSEReads == NULL || pszOutSEReads[0] == '\0')
+	return(eBSFerrParams);
+if (bPEReads == true && (pszOutPE2Reads == NULL || pszOutPE2Reads[0] == '\0'))
+	return(eBSFerrParams);
+
+CFasta *pFasta = new CFasta;
+
+if((EstNumReads = pFasta->FastaEstSizes(pszInSEReads)) < 1)
+	{
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Unable to open input Fasta/Fastq format file '%s' or insufficient reads", pszInSEReads);
+	delete pFasta;
+	Reset();
+	return(eBSFerrOpnFile);
+	}
+
+if (bPEReads == true && (EstNumReads = pFasta->FastaEstSizes(pszInPE2Reads)) < 10)
+	{
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Unable to open input fasta/fastq format file '%s' or insufficient reads", pszInPE2Reads);
+	delete pFasta;
+	Reset();
+	return(eBSFerrOpnFile);
+	}
+delete pFasta;
+
+#ifdef _WIN32
+if ((hOutReads = open(pszOutSEReads, (_O_RDWR | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC), (_S_IREAD | _S_IWRITE))) == -1)
+#else
+if ((hOutReads = open(pszOutSEReads, O_RDWR | O_CREAT | O_TRUNC, S_IREAD | S_IWRITE)) == -1)
+#endif
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Unable to create/truncate output file - '%s' - %s", pszOutSEReads, strerror(errno));
+	Reset();
+	return(eBSFerrCreateFile);
+	}
+close(hOutReads);
+
+if(bPEReads)
+	{
+#ifdef _WIN32
+	if ((hOutReads = open(pszOutPE2Reads, (_O_RDWR | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC), (_S_IREAD | _S_IWRITE))) == -1)
+#else
+	if ((hOutReads = open(pszOutPE2Reads, O_RDWR | O_CREAT | O_TRUNC, S_IREAD | S_IWRITE)) == -1)
+#endif
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Unable to create/truncate output file - '%s' - %s", pszOutPE2Reads, strerror(errno));
+		Reset();
+		return(eBSFerrCreateFile);
+		}
+	close(hOutReads);
+	}
+
+m_bPEReads = bPEReads;
+m_MaxNumReads = MaxNumReads;
+
+SENumReadsCopied = CopyNumReads(MaxNumReads, pszInSEReads, pszOutSEReads);
+if(SENumReadsCopied < 10)
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Number of limited reads output to '%s':%d", pszOutSEReads, SENumReadsCopied);
+	SENumReadsCopied = eBSFerrParse;
+	}
+
+if(m_bPEReads && SENumReadsCopied >= 10)
+	{
+	PE2NumReadsCopied = CopyNumReads(SENumReadsCopied, pszInPE2Reads, pszOutPE2Reads);
+	if(PE2NumReadsCopied != SENumReadsCopied)
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Number of limited reads output to '%s':%d does not match reads in '%s':%d", pszOutSEReads, SENumReadsCopied, pszOutPE2Reads, PE2NumReadsCopied);
+		SENumReadsCopied = eBSFerrParse;
+		}
+	}
+Reset();
+if(SENumReadsCopied > 0)
+	{
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Successfully made copy of input file '%s' to output file '%s' with number of reads limited to %d", pszInSEReads,pszOutSEReads,SENumReadsCopied);
+	if (m_bPEReads)
+		gDiagnostics.DiagOut(eDLInfo, gszProcName, "Successfully made copy of input file'%s' to output file '%s' with number of reads limited to %d", pszInPE2Reads, pszOutPE2Reads,SENumReadsCopied);
+}
+return(SENumReadsCopied);
+}
 
 
 int
@@ -2527,13 +2770,14 @@ for(uint32_t GTIdx = 0; GTIdx < m_NumGroundTruths; GTIdx++)
 	pGroundTruth = (tsBMGroundTruth*)((uint8_t *)pGroundTruth + pGroundTruth->Size);
 	}
 
-double MaxBaseAlignmentScore = (double)m_TotGroundTruthBases * m_AlignedBasePts;
+double MaxBaseAlignmentScore = (double)(m_TotGroundTruthBases * m_AlignedBasePts)+0.001; // ensure > 0.0
 double TotBaseAlignmentScore = ((double)m_NumBasesLociCorrect * m_AlignedBasePts) + ((double)m_NumBasesLociIncorrect * m_MisalignedBasePts) + 
-						((double)m_NumSilentTrimBaseMatches * m_SilentTrimAlignBasePts) + ((double)m_NumBasesLociUnclaimed * m_UnalignedBasePts);
+						((double)m_NumSilentTrimBaseMatches * m_SilentTrimAlignBasePts) + ((double)m_NumBasesLociUnclaimed * m_UnalignedBasePts)+0.001; // ensure > 0.0
 
-double BaseScoreRate = TotBaseAlignmentScore / MaxBaseAlignmentScore;
-double AlignBaseScoreRate = (((double)m_NumBasesLociCorrect * m_AlignedBasePts) + ((double)m_NumBasesLociIncorrect * m_MisalignedBasePts) + ((double)m_NumSilentTrimBaseMatches * m_SilentTrimAlignBasePts)) /
-											(((double)m_NumBasesLociCorrect + m_NumBasesLociIncorrect + m_NumSilentTrimBaseMatches) * (double)m_AlignedBasePts);
+double BaseScoreRate = min(1.000f,TotBaseAlignmentScore / MaxBaseAlignmentScore);		
+
+double AlignBaseScoreRate = min(1.000f,(((double)m_NumBasesLociCorrect * m_AlignedBasePts) + ((double)m_NumBasesLociIncorrect * m_MisalignedBasePts) + ((double)m_NumSilentTrimBaseMatches * m_SilentTrimAlignBasePts)) /
+											((((double)m_NumBasesLociCorrect + m_NumBasesLociIncorrect + m_NumSilentTrimBaseMatches) * (double)m_AlignedBasePts)+0.001));
 
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "Completed scoring alignments in: '%s'", pszAlignmentsFile);
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "Experiment: %s", pszExperimentDescr);

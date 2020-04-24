@@ -1,16 +1,18 @@
 #pragma once
 
-// base points will be silently clamped such that MisalignedBasePts < 0, AlignedBasePts > 0 and MisalignedBasePts < UnalignedBasePts < AlignedBasePts
-const int cBMMinPts = -100;					// base points minimum for MisalignedBasePts and UnalignedBasePts
-const int cBMMaxPts = 100;					// base points max for AlignedBasePts and UnalignedBasePts
-const int cBMDfltUnalignedBasePts = -1;			// default penalty to apply for each unaligned base
-const int cBMDfltAlignedBasePts = 10;			// default points to apply for each base aligned to it's ground truth loci
-const int cBMDfltSilentTrimAlignBasePts = 1;	// if read was silently trimmed and falls within ground truth loci range then credit as aligned - Ugh, Ugh and Ugh again 
-const int cBMDfltMisalignedBasePts = -50;		// default penalty to apply for each base aligned but not to ground truth loci
+// base weightings will be silently clamped to be in the range of cBMMinPts..cBMMaxPts
+// defaults were chosen to heavily favor correctly aligned bases, and that it is preferable to have unaligned bases rather than misaligned bases
+const int cBMMinBaseWtg = 0;					// base weighting minimum
+const int cBMMaxBaseWtg = 100;					// base weighting max
+const int cBMDfltAlignedBaseWtg = 50;			// default points to apply for each base aligned to it's ground truth loci
+const int cBMDfltSilentTrimAlignBaseWtg = 25;	// default weighting for if read was silently trimmed and falls within ground truth loci range then credit this weighting - Ugh, Ugh and Ugh again 
+const int cBMDfltUnalignedBaseWtg = 20;			// default weighting to apply for each unaligned base
+const int cBMDfltMisalignedBaseWtg = 0;			// default weighting to apply for each base aligned but not to ground truth loci
 
 // silently clamping number of reads, SE or PE pairs, to be within following ranges
 const int cBMMaxReads = 100000000;		// max number of reads or read pairs to process for MAGIC simulations
-const int cBMDfltReads = 5000000;		// default number of reads or read pairs to process for MAGIC simulations
+const int cBMDfltLimitReads = 5000000;	// restrict number of raw reads which are to be aligned
+const int cBMDfltReads = 2000000;		// default number of reads or read pairs to process for MAGIC simulations
 const int cBMMinReads = 100;			// min number of reads or read pairs to process for MAGIC simulations
 const int cBMMinReadLen = 50;			// only processing for read sequences in range cBMMinReadLen
 const int cBMMaxReadLen = 1000;			// upto cBMMaxReadLen inclusive
@@ -20,8 +22,9 @@ const int cBMMaxFragSize = 200000;				// can handle PE fragment sizes upto this 
 const int cBMCIGARAllocBuffSize = 10000000; // allocation size for buffering CIGAR CSV file read/writes and simulated reads
 
 typedef enum _TAG_eBMProcModes {
-	eBMGenCIGARs =  0, // generate observed CIGARs from alignments
-	eBMSimReads,	   // simulate reads using observed CIGARs
+	eBMLimitReads = 0,	// limit number of raw reads which are to be aligned
+	eBMGenCIGARs,		// generate observed CIGARs from alignments
+	eBMSimReads,		// simulate reads using observed CIGARs
 	eBMScore			// score base alignments using ground truth CIGARs and loci
 } eBMProcMode;
 
@@ -229,6 +232,14 @@ class CBenchmark {
 public:
 	CBenchmark();						// instance constructor
 	~CBenchmark();						// instance destructor
+
+	int
+		GenLimitReads(bool bPEReads,	// true if PE pair processing otherwise SE reads
+			int MaxNumReads,			// restrict reads to be at most this many SE reads or PE read pairs
+			char* pszInSEReads,			// SE or PE1 reads are input from this file
+			char* pszInPE2Reads,		// PE2 reads are input from this file
+			char* pszOutSEReads,		// SE or PE1 reads are output to this file
+			char* pszOutPE2Reads);		// PE2 reads are output to this file
 
 	int
 		GenObsCIGARs(bool bPEReads,		// true if PE pair processing otherwise SE reads
