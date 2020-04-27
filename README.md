@@ -1,10 +1,6 @@
 # kit4b 
 **kit4b** - the 'K-mer Informed Toolkit for Bioinformatics' - is an integrated toolkit of high performance bioinformatics processes and subprocesses targeting the challenges of next generation sequencing analytics. 
 
-This toolkit is a source base clone of **BioKanga** release 4.4.2 (https://github.com/csiro-crop-informatics/biokanga) containing significant functionality enhancements, these enhancements have resulted in compromised backward compatibility with **BioKanga**.
-
-**kit4b** is being released under the Opensource Software License Agreement (GPLv3), the same as **BioKanga** licencing.
-
 ## Why YAT (Yet Another Toolkit)
 Compared with other widely used bioinformatics toolkits, **kit4b** provides substantial gains in throughput and quality of processing with integrated functionality providing the majority of bioinformatics workflow processing stages without the need to incorporate third party processing into the workflow.
 
@@ -13,7 +9,8 @@ The **kit4b** toolset contains a number of processes and subprocesses, each of w
 
 The primary process is **ngskitb** targeting NGS workflows which has subprocesses providing functionality to:
 ```
-  * alignment benchmarking
+  * Generate UCSC Personal Genome SNP format output ready for direct loading into the UCSC Genome Browser
+  * Provide aligner benchmarking
   * Generate simulated NGS readsets
   * Process NGS reads and report quality scores with compositional distributions
   * Generate N10..N90 over Fasta sequences
@@ -105,3 +102,9 @@ Contributions are most welcome. To contribute, follow these steps.
 
 ## Issues
 Please report any issues to [github project](https://github.com/kit4b/kit4b/issues).
+
+## Acknowlegement
+This toolkit is a source base clone of **BioKanga** release 4.4.2 (https://github.com/csiro-crop-informatics/biokanga) which has been further developed to contain significant functionality enhancements, these enhancements have resulted in compromised backward compatibility with **BioKanga**.
+
+**kit4b** is being released under the Opensource Software License Agreement (GPLv3), the same as **BioKanga** licencing.
+

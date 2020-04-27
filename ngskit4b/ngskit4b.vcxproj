@@ -193,7 +193,7 @@
     <ClInclude Include="ReadStats.h" />
     <ClInclude Include="RemapLoci.h" />
     <ClInclude Include="Scaffolder.h" />
-    <ClInclude Include="SNPLoci.h" />
+    <ClInclude Include="SNPs2pgSNPs.h" />
     <ClInclude Include="SQLiteDE.h" />
     <ClInclude Include="SQLiteMarkers.h" />
     <ClInclude Include="SQLiteSummaries.h" />
@@ -248,7 +248,7 @@
     <ClCompile Include="RemapLoci.cpp" />
     <ClCompile Include="Scaffolder.cpp" />
     <ClCompile Include="SimReads.cpp" />
-    <ClCompile Include="SNPLoci.cpp" />
+    <ClCompile Include="SNPs2pgSNPs.cpp" />
     <ClCompile Include="SQLiteDE.cpp" />
     <ClCompile Include="SQLiteMarkers.cpp" />
     <ClCompile Include="SQLiteSummaries.cpp" />
