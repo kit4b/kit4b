@@ -90,7 +90,7 @@ SNPs2pgSNPs(int argc, char** argv)
 
 	struct arg_int* pmode = arg_int0("m", "mode", "<int>", "processing mode: 0 kalign SNP calls, 1: snpmarkers calls");
 	struct arg_file* insnps = arg_file1("i", "insnps", "<file>", "input called SNPs or snpmarkers from this CSV file");
-	struct arg_file* outpgsnps = arg_file1("o", "outpgsnps", "<file>", "output in UCSC pgSNP format to this file");
+	struct arg_file* outpgsnps = arg_file1("o", "outpgsnps", "<file>", "output in UCSC pgSNP format to this file (if extn '.cvf' then format will be VCF 4.1)");
 	struct arg_str* experimentdescr = arg_str1("e", "experiment", "<str>", "UCSC pgSNP experiment description");
 	struct arg_str* assemblyname = arg_str1("a", "assembly", "<str>", "UCSC assembly name");
 	struct arg_str* trackname = arg_str1("t", "track", "<str>", "UCSC track name");
@@ -391,14 +391,10 @@ m_AllocdLineBuff = 0;
 m_LineBuffOffs = 0;
 m_szInSNPsFile[0] = '\0';
 m_szOutpgSNPsFile[0] = '\0';
+m_TotNumSNPs = 0;
 }
 
 
-typedef struct TAG_sBaseCnts {
-	etSeqBase Base;     // counts are for this base
-	int Cnts;			// number of counts for this base
-	int QScore;			// this bases pgSNP quality score
-} tsBaseCnts;
 
 int 
 CSNPs2pgSNPs::ProcessSnpmarkersSNPs(void)
@@ -413,7 +409,6 @@ UINT32 RowNumber;
 bool bMarkerFormat;
 int ExpNumFields;
 CStats Stats;
-tsBaseCnts BaseCnts[5];
 char szChrom[cMaxDatasetSpeciesChrom+1];
 eSeqBase  RefBase;
 int StartLoci;
@@ -426,7 +421,6 @@ ExpNumFields = 0;
 m_NumCultivars = 0;
 bMarkerFormat = false;
 StartLoci = -1;
-m_LineBuffOffs = sprintf(m_pszLineBuff, "track type=pgSnp visibility=3 db=%s name=\"%s\" description=\"%s\"\n", m_TargAssemblyName, m_szTrackName, m_szDescription);
 while((Rslt=m_pCSV->NextLine()) > 0)				// onto next line containing fields
 	{
 	RowNumber += 1; 
@@ -588,13 +582,12 @@ while((Rslt=m_pCSV->NextLine()) > 0)				// onto next line containing fields
 
 	// have all cultivars and their counts at the SNP loci
 	// iterate the cultivars and for every cultivar determine which bases are allelic and count occurrences over all cultivars
-	double LocalSeqErrRate;
 	bool bHaveSNP;
 	double PValue;
 
-	LocalSeqErrRate = 0.02; // big assumption is that the background error rate is constant at 0.02 over all cultivars
+	m_LocalSeqErrRate = 0.02; // big assumption is that the background error rate is constant at 0.02 over all cultivars
 	bHaveSNP = false;
-	memset(BaseCnts, 0, sizeof(BaseCnts));
+	memset(m_BaseCnts, 0, sizeof(m_BaseCnts));
 	pCultivar = m_Cultivars;
 	for (CultivarIdx = 0; CultivarIdx < m_NumCultivars; CultivarIdx++, pCultivar++)
 		{
@@ -607,14 +600,14 @@ while((Rslt=m_pCSV->NextLine()) > 0)				// onto next line containing fields
 				(pCultivar->BaseCnts[Idx] / (double)pCultivar->TotalBaseCnts) < m_MinAlleleProp)
 				continue;
 
-			PValue = 1.0 - Stats.Binomial(pCultivar->TotalBaseCnts, pCultivar->BaseCnts[Idx], LocalSeqErrRate); 
+			PValue = 1.0 - Stats.Binomial(pCultivar->TotalBaseCnts, pCultivar->BaseCnts[Idx], m_LocalSeqErrRate);
 			if (PValue > m_PValueThres)
 				continue;
 			else
 				{
-				BaseCnts[Idx].Cnts += 1;
-				if(BaseCnts[Idx].QScore < pCultivar->Score)
-					BaseCnts[Idx].QScore = pCultivar->Score;
+				m_BaseCnts[Idx].Cnts += 1;
+				if(m_BaseCnts[Idx].QScore < pCultivar->Score)
+					m_BaseCnts[Idx].QScore = pCultivar->Score;
 				if(Idx != RefBase)
 					bHaveSNP = true;
 				}
@@ -622,14 +615,6 @@ while((Rslt=m_pCSV->NextLine()) > 0)				// onto next line containing fields
 		}
 	if (!bHaveSNP)
 		continue;
-
-	char Base;
-	int NumAlleles;
-	if ((m_LineBuffOffs + 500) >= m_AllocdLineBuff)
-		{
-		CUtility::SafeWrite(m_hOutpgSNPs, m_pszLineBuff, m_LineBuffOffs);
-		m_LineBuffOffs = 0;
-		}
 
 	// a special case: UCSC references the reference SARS-CoV-2 as being NC_O45512v2,not NC_O45512.2
 	// so change NC_O45512.2 to be NC_O45512v2
@@ -641,46 +626,10 @@ while((Rslt=m_pCSV->NextLine()) > 0)				// onto next line containing fields
 		StartLoci = SNPLoci - 50;
 		if (StartLoci < 0)
 			StartLoci = 0;
-		m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "browser position %s:%d-%d", szChrom, StartLoci, SNPLoci + 50);
+		Report(true,szChrom,StartLoci,SNPLoci+50);
 		}
-	m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "\n%s\t%d\t%d\t", szChrom, SNPLoci, SNPLoci + 1);
-	NumAlleles = 0;
-	for (int Idx = 0; Idx < 4; Idx++)
-		{
-		if (BaseCnts[Idx].Cnts > 0)
-			{
-			if (m_pszLineBuff[m_LineBuffOffs - 1] != '\t')
-				m_pszLineBuff[m_LineBuffOffs++] = '/';
-			switch (Idx) {
-				case 0: Base = 'A'; break;
-				case 1: Base = 'C'; break;
-				case 2: Base = 'G'; break;
-				case 3: Base = 'T'; break;
-				}
-			NumAlleles++;
-			m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "%c", Base);
-			}
-		}
-	m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "\t%d\t", NumAlleles);
-	for (int Idx = 0; Idx < 4; Idx++)
-		{
-		if (BaseCnts[Idx].Cnts > 0)
-			{
-			if (m_pszLineBuff[m_LineBuffOffs - 1] != '\t')
-				m_pszLineBuff[m_LineBuffOffs++] = ',';
-			m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "%d", BaseCnts[Idx].Cnts);
-			}
-		}
-	m_pszLineBuff[m_LineBuffOffs++] = '\t';
-	for (int Idx = 0; Idx < 4; Idx++)
-		{
-		if (BaseCnts[Idx].Cnts > 0)
-			{
-			if (m_pszLineBuff[m_LineBuffOffs - 1] != '\t')
-				m_pszLineBuff[m_LineBuffOffs++] = ',';
-			m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "%d", BaseCnts[Idx].QScore);
-			}
-		}
+	m_RefBase = RefBase;
+	Report(false, szChrom, SNPLoci,0);
 	}
 if (m_LineBuffOffs)
 	{
@@ -712,24 +661,19 @@ CSNPs2pgSNPs::ProcessKalignSNPs(void)
 	int ExpNumFields;
 	int BaseCntsIdx;
 	tsBaseCnts* pBaseCnts1;
-	tsBaseCnts BaseCnts[5];
 	char szChrom[cMaxDatasetSpeciesChrom + 1];
 	eSeqBase  RefBase;
 	int StartLoci;
-	int EndLoci;
 	int SNPLoci;
 	int CntBases;
 	int CntRef;
 	int CntMM;
-	double LocalSeqErrRate;
 	double PValue;
 	bool bHaveSNP;
 	CStats Stats;
 
 	StartLoci = -1;	// used as a flag (StartLoci < 0) to request that browser start position is to be written to pgSNP file
 	
-	m_LineBuffOffs = sprintf(m_pszLineBuff,"track type=pgSnp visibility=3 db=%s name=\"%s\" description=\"%s\"\n", m_TargAssemblyName,m_szTrackName,m_szDescription);
-
 	EstNumSNPs = m_pCSV->EstNumRows();
 	NumSNPsParsed = 0;
 	RowNumber = 0;
@@ -795,8 +739,8 @@ CSNPs2pgSNPs::ProcessKalignSNPs(void)
 		char* pszTxt;
 
 
-		memset(BaseCnts, 0, sizeof(BaseCnts));
-		pBaseCnts1 = &BaseCnts[0];
+		memset(m_BaseCnts, 0, sizeof(m_BaseCnts));
+		pBaseCnts1 = &m_BaseCnts[0];
 		for (BaseCntsIdx = 0; BaseCntsIdx < 5; BaseCntsIdx++, pBaseCnts1++)
 			pBaseCnts1->Base = (etSeqBase)BaseCntsIdx;
 
@@ -819,124 +763,79 @@ CSNPs2pgSNPs::ProcessKalignSNPs(void)
 		m_pCSV->GetInt(12, &CntMM);			// get "Mismatches"
 		CntRef = CntBases - CntMM;
 		m_pCSV->GetText(13, &pszTxt);		// get "RefBase"
-		m_pCSV->GetInt(14, &BaseCnts[0].Cnts);	// get "MMBaseA"
-		m_pCSV->GetInt(15, &BaseCnts[1].Cnts);	// get "MMBaseC"
-		m_pCSV->GetInt(16, &BaseCnts[2].Cnts);	// get "MMBaseG"
-		m_pCSV->GetInt(17, &BaseCnts[3].Cnts);	// get "MMBaseT"
-		m_pCSV->GetInt(18, &BaseCnts[4].Cnts);	// get "MMBaseN"
+		m_pCSV->GetInt(14, &m_BaseCnts[0].Cnts);	// get "MMBaseA"
+		m_pCSV->GetInt(15, &m_BaseCnts[1].Cnts);	// get "MMBaseC"
+		m_pCSV->GetInt(16, &m_BaseCnts[2].Cnts);	// get "MMBaseG"
+		m_pCSV->GetInt(17, &m_BaseCnts[3].Cnts);	// get "MMBaseT"
+		m_pCSV->GetInt(18, &m_BaseCnts[4].Cnts);	// get "MMBaseN"
 		switch (*pszTxt) {
 			case 'a': case 'A':
 				RefBase = eBaseA;
-				BaseCnts[0].Cnts = CntRef;
+				m_BaseCnts[0].Cnts = CntRef;
 				break;
 			case 'c': case 'C':
 				RefBase = eBaseC;
-				BaseCnts[1].Cnts = CntRef;
+				m_BaseCnts[1].Cnts = CntRef;
 				break;
 			case 'g': case 'G':
 				RefBase = eBaseG;
-				BaseCnts[2].Cnts = CntRef;
+				m_BaseCnts[2].Cnts = CntRef;
 				break;
 			case 't': case 'T': case 'u': case 'U':	// U in case RNA alignments..
 				RefBase = eBaseT;
-				BaseCnts[3].Cnts = CntRef;
+				m_BaseCnts[3].Cnts = CntRef;
 				break;
 			case 'n': case 'N':				// unlikely to have a SNP against an indeterminate base but you never know...
 				RefBase = eBaseN;
-				BaseCnts[4].Cnts = CntRef;
+				m_BaseCnts[4].Cnts = CntRef;
 				break;
 			default:
 				gDiagnostics.DiagOut(eDLFatal, gszProcName, "Expected SNP RefBase ('%s') to be one of 'ACGTN' in CSV file '%s' near line %d", pszTxt, m_szInSNPsFile, RowNumber);
 				Reset();
 				return(eBSFerrFieldCnt);
 			}
-		m_pCSV->GetDouble(19, &LocalSeqErrRate);	// get "BackgroundSubRate"
+		m_pCSV->GetDouble(19, &m_LocalSeqErrRate);	// get "BackgroundSubRate"
 
 		bHaveSNP = false;
 		for (int Idx = 0; Idx < 4; Idx++)
 			{
-			if(BaseCnts[Idx].Cnts == 0 ||
-				(BaseCnts[Idx].Cnts / (double)CntBases) < m_MinAlleleProp)
+			if(m_BaseCnts[Idx].Cnts == 0 ||
+				(m_BaseCnts[Idx].Cnts / (double)CntBases) < m_MinAlleleProp)
 				{
-				BaseCnts[Idx].Cnts = 0;
-				BaseCnts[Idx].QScore = 0;
+				m_BaseCnts[Idx].Cnts = 0;
+				m_BaseCnts[Idx].QScore = 0;
 				continue;
 				}
 
-			PValue = 1.0 - Stats.Binomial(CntBases, BaseCnts[Idx].Cnts, LocalSeqErrRate);
+			PValue = 1.0 - Stats.Binomial(CntBases, m_BaseCnts[Idx].Cnts, m_LocalSeqErrRate);
 			if(PValue > m_PValueThres)
 				{
-				BaseCnts[Idx].Cnts = 0;
-				BaseCnts[Idx].QScore = 0;
+				m_BaseCnts[Idx].Cnts = 0;
+				m_BaseCnts[Idx].QScore = 0;
 				}
 			else
 				{
-				BaseCnts[Idx].QScore = 101 - (int)((PValue * 100.0) / m_PValueThres);
+				m_BaseCnts[Idx].QScore = 101 - (int)((PValue * 100.0) / m_PValueThres);
 				if(Idx != RefBase)
 					bHaveSNP = true;
 				}
 			}
-		if(!bHaveSNP)
-			continue;
+	if(!bHaveSNP)
+		continue;
 
-		char Base;
-		int NumAlleles;
-		if ((m_LineBuffOffs + 500) >= m_AllocdLineBuff)
-			{
-			CUtility::SafeWrite(m_hOutpgSNPs, m_pszLineBuff, m_LineBuffOffs);
-			m_LineBuffOffs = 0;
-			}
-
-		// a special case: UCSC references the reference SARS-CoV-2 as being NC_O45512v2,not NC_O45512.2
-		// so change NC_O45512.2 to be NC_O45512v2
-		if (!stricmp(szChrom, "NC_045512.2"))
-			strcpy(szChrom, "NC_045512v2");
+	// a special case: UCSC references the reference SARS-CoV-2 as being NC_O45512v2,not NC_O45512.2
+	// so change NC_O45512.2 to be NC_O45512v2
+	if (!stricmp(szChrom, "NC_045512.2"))
+		strcpy(szChrom, "NC_045512v2");
+	if(StartLoci < 0)
+		{
+		StartLoci = SNPLoci-50;
 		if(StartLoci < 0)
-			{
-			StartLoci = SNPLoci-50;
-			if(StartLoci < 0)
-				StartLoci = 0;
-			EndLoci = SNPLoci+50;
-			m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs],"browser position %s:%d-%d", szChrom,StartLoci,EndLoci);
-			}
-		m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "\n%s\t%d\t%d\t", szChrom, SNPLoci, SNPLoci + 1);
-		NumAlleles = 0;
-		for (int Idx = 0; Idx < 4; Idx++)
-		{
-			if (BaseCnts[Idx].Cnts > 0)
-			{
-				if (m_pszLineBuff[m_LineBuffOffs - 1] != '\t')
-					m_pszLineBuff[m_LineBuffOffs++] = '/';
-				switch (Idx) {
-				case 0: Base = 'A'; break;
-				case 1: Base = 'C'; break;
-				case 2: Base = 'G'; break;
-				case 3: Base = 'T'; break;
-				}
-				NumAlleles++;
-				m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "%c", Base);
-			}
+			StartLoci = 0;
+		Report(true,szChrom,StartLoci, SNPLoci+50);
 		}
-		m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "\t%d\t", NumAlleles);
-		for (int Idx = 0; Idx < 4; Idx++)
-		{
-			if (BaseCnts[Idx].Cnts > 0)
-			{
-				if (m_pszLineBuff[m_LineBuffOffs - 1] != '\t')
-					m_pszLineBuff[m_LineBuffOffs++] = ',';
-				m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "%d", BaseCnts[Idx].Cnts);
-			}
-		}
-		m_pszLineBuff[m_LineBuffOffs++] = '\t';
-		for (int Idx = 0; Idx < 4; Idx++)
-		{
-			if (BaseCnts[Idx].Cnts > 0)
-			{
-				if (m_pszLineBuff[m_LineBuffOffs - 1] != '\t')
-					m_pszLineBuff[m_LineBuffOffs++] = ',';
-				m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "%d", BaseCnts[Idx].QScore);
-			}
-		}
+	m_RefBase = RefBase;
+	Report(false, szChrom, SNPLoci,0);
 	}
 if (m_LineBuffOffs)
 	{
@@ -953,6 +852,134 @@ m_hOutpgSNPs = -1;
 return(0);
 }
 
+// following function is experimental, enabling reporting in three different file formats
+int
+CSNPs2pgSNPs::Report(bool bHeader,		// if true then header line(s) to be generated, otherwise SNPs or alleles
+					char *pszChrom,		// SNP is on this chrom
+					int StartLoci,		// SNP is at this loci
+					int EndLoci)		// if header for eRMFpgSNP then browser end loci
+
+{
+char Base;
+int SumQScores;
+int NumAlleles;
+int Depth;
+
+if(bHeader)
+	{
+	switch (m_ReportFormat) {
+		case eRMFpgSNP:						// report in pgSNP format
+			if(pszChrom == NULL || pszChrom[0] == '\0' || (StartLoci <= 0 && EndLoci <= 0) || EndLoci <= StartLoci)
+				return(eBSFerrInternal);
+
+			m_LineBuffOffs = sprintf(m_pszLineBuff, "track type=pgSnp visibility=3 db=%s name=\"%s\" description=\"%s\"\n", m_TargAssemblyName, m_szTrackName, m_szDescription);
+			m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "browser position %s:%d-%d", pszChrom, StartLoci, EndLoci);
+			break;
+
+		case eRMFvcf:						// report in VCF 4.1 format
+			m_LineBuffOffs = sprintf(m_pszLineBuff, "##fileformat=VCFv4.1\n##source=ngskit4b%s\n##reference=%s\n##INFO=<ID=AF,Number=A,Type=Float,Description=\"Allele Frequency\">\n##FORMAT=<ID=DP,Number=1,Type=Integer,Description=\"Read Depth\">\n",
+										kit4bversion, m_szInSNPsFile);
+			m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n");
+			break;
+
+		}
+	CUtility::SafeWrite(m_hOutpgSNPs, m_pszLineBuff, m_LineBuffOffs);
+	m_LineBuffOffs = 0;
+	}
+else
+	{
+	if ((m_LineBuffOffs + 500) >= m_AllocdLineBuff)
+		{
+		CUtility::SafeWrite(m_hOutpgSNPs, m_pszLineBuff, m_LineBuffOffs);
+		m_LineBuffOffs = 0;
+		}
+	m_TotNumSNPs += 1;
+	switch (m_ReportFormat) {
+		case eRMFpgSNP:						// report in pgSNP format
+			m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "\n%s\t%d\t%d\t", pszChrom, StartLoci, StartLoci + 1);
+			NumAlleles = 0;
+			for (int Idx = 0; Idx < 4; Idx++)
+				{
+				if (m_BaseCnts[Idx].Cnts > 0)
+					{
+					if (m_pszLineBuff[m_LineBuffOffs - 1] != '\t')
+						m_pszLineBuff[m_LineBuffOffs++] = '/';
+					switch (Idx) {
+						case 0: Base = 'A'; break;
+						case 1: Base = 'C'; break;
+						case 2: Base = 'G'; break;
+						case 3: Base = 'T'; break;
+						}
+					NumAlleles++;
+					m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "%c", Base);
+					}
+				}
+			m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "\t%d\t", NumAlleles);
+			for (int Idx = 0; Idx < 4; Idx++)
+				{
+				if (m_BaseCnts[Idx].Cnts > 0)
+					{
+					if (m_pszLineBuff[m_LineBuffOffs - 1] != '\t')
+						m_pszLineBuff[m_LineBuffOffs++] = ',';
+					m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "%d", m_BaseCnts[Idx].Cnts);
+					}
+				}
+			m_pszLineBuff[m_LineBuffOffs++] = '\t';
+			for (int Idx = 0; Idx < 4; Idx++)
+				{
+				if (m_BaseCnts[Idx].Cnts > 0)
+					{
+					if (m_pszLineBuff[m_LineBuffOffs - 1] != '\t')
+						m_pszLineBuff[m_LineBuffOffs++] = ',';
+					m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "%d", m_BaseCnts[Idx].QScore);
+					}
+				}
+			break;
+		case eRMFvcf:						// report in VCF 4.1 format
+			NumAlleles = 0;
+			SumQScores = 0;
+			Depth = 0;
+			m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "%s\t%u\tSNP%d\t%c\t",pszChrom, StartLoci + 1, m_TotNumSNPs, CSeqTrans::MapBase2Ascii(m_RefBase));
+			for (int Idx = 0; Idx < 4; Idx++)
+				{
+				Depth += m_BaseCnts[Idx].Cnts;
+				if(Idx == m_RefBase)
+					continue;
+				if (m_BaseCnts[Idx].Cnts > 0)
+					{
+					if (m_pszLineBuff[m_LineBuffOffs - 1] != '\t')
+						m_pszLineBuff[m_LineBuffOffs++] = ',';
+					switch (Idx) {
+						case 0: Base = 'A'; break;
+						case 1: Base = 'C'; break;
+						case 2: Base = 'G'; break;
+						case 3: Base = 'T'; break;
+						}
+					NumAlleles++;
+					m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "%c", Base);
+					SumQScores += m_BaseCnts[Idx].QScore;
+					}
+				}
+			SumQScores /= NumAlleles;
+			m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "\t%d\tPASS\tAF=", SumQScores);
+			for (int Idx = 0; Idx < 4; Idx++)
+				{
+				if (Idx == m_RefBase)
+					continue;
+				if (m_BaseCnts[Idx].Cnts > 0)
+					{
+					if (m_pszLineBuff[m_LineBuffOffs - 1] != '=')
+						m_pszLineBuff[m_LineBuffOffs++] = ',';
+					m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "%.4f", m_BaseCnts[Idx].Cnts/(double)Depth);
+					}
+				}
+			m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs],";DP=%d\n", Depth);
+			break;
+		}
+	}
+return(eBSFSuccess);
+}
+
 int 
 CSNPs2pgSNPs::Process(eModepgSNP Mode,				// processing mode
 					int MinCoverage,				// must be at least this coverage at SNP site
@@ -965,6 +992,7 @@ CSNPs2pgSNPs::Process(eModepgSNP Mode,				// processing mode
 					char* pszOutFile)				// output SNPs to this UCSC Personal Genome SNP format file
 {
 int Rslt;
+int Len;
 Reset();
 strcpy(m_szInSNPsFile, pszSNPFile);
 strcpy(m_szOutpgSNPsFile, pszOutFile);
@@ -981,6 +1009,18 @@ if ((m_pszLineBuff = new char[cAllocLineBuffSize]) == NULL)
 	return(eBSFerrMem);
 	}
 m_AllocdLineBuff = cAllocLineBuffSize;
+
+// check file extension, if '.vcf' then generate output formated for vcf instead of the default pgSNP format
+if((Len=(int)strlen(pszOutFile)) >= 5 && !stricmp(&pszOutFile[Len-4],".vcf"))
+	{
+	m_ReportFormat = eRMFvcf;
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Process: Output to '%s' is in VCF 4.1 format", pszOutFile);
+	}
+else
+	{
+	m_ReportFormat = eRMFpgSNP;
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Process: Output to '%s' is in UCSC pgSNP format", pszOutFile);
+	}
 
 #ifdef _WIN32
 if ((m_hOutpgSNPs = open(pszOutFile, (_O_RDWR | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC), (_S_IREAD | _S_IWRITE))) == -1)
