@@ -34,3 +34,5 @@ Release 0.7.5 - Blitz improvements enabling improved short K-mer core handling w
 Release 0.8.0 - Added an optional preprocessing phase to benchmark enabling limiting number of raw reads to be processed in the mandatory phase 1 alignments
 Release 0.8.1 - New processing module added to generate UCSC pgSNP format output from kalign or snpmarkers SNP call format output
 Release 0.8.2 - Added support for ouput format VCF 4.1 in addition to existing UCSC pgSNP format when processing kalign or snpmarkers SNP calls by snps2pgsnps
+Release 0.9.0 - Added support for set operations (union,intersect,complement union, complement intersect, subtract) to snps2pgsnps
+
