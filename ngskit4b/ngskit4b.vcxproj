@@ -175,6 +175,7 @@
     <ClInclude Include="ArtefactReduce.h" />
     <ClInclude Include="AssembGraph.h" />
     <ClInclude Include="Benchmarker.h" />
+    <ClInclude Include="LocHap2Bed.h" />
     <ClInclude Include="ngskit4b.h" />
     <ClInclude Include="kit4bdna.h" />
     <ClInclude Include="genhyperconserved.h" />
@@ -206,6 +207,7 @@
     <ClCompile Include="AssembGraph.cpp" />
     <ClCompile Include="Assemble.cpp" />
     <ClCompile Include="Benchmarker.cpp" />
+    <ClCompile Include="LocHap2Bed.cpp" />
     <ClCompile Include="fasta2bed.cpp" />
     <ClCompile Include="ngskit4b.cpp" />
     <ClCompile Include="kit4bax.cpp" />

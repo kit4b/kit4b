@@ -729,7 +729,7 @@ while((LineLen = GetNxtSAMline(pszLine)) > 0)
 	{
 	pszLine[(cMaxReadLen * 3) -1] = '\0';
 	pTxt = TrimWhitespace(pszLine);
-	if(*pTxt=='\0' || *pTxt=='@')	// simply slough lines which were just whitespace or start with '@'
+	if(*pTxt=='\0' || *pTxt=='@' || *pTxt=='>')	// simply slough lines which were just whitespace, start with '@' or '>', bowtie2 intersperses original descriptor + read sequence with the alignment - go figure????
 		continue;					// only interested in the alignments
 	
 	sscanf(pszLine,"%s\t%d\t%s\t%d\t%d\t%s\t%s\t%d\t%d\t%16383s\t",m_szParsedDescriptor, &m_ParsedFlags, m_ParsedszChrom, &m_ParsedStartLoci,&MAPQ,szCigar,szRNext,&PNext,&TLen,m_szParsedSeqBases);

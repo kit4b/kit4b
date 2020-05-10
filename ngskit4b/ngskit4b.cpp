@@ -86,6 +86,7 @@ extern int hammings(int argc, char* argv[]);
 extern int fasta2bed(int argc,char *argv[]);
 extern int BenchmarkAligners(int argc, char* argv[]);
 extern int SNPs2pgSNPs(int argc, char* argv[]);
+extern int LocHap2Bed(int argc, char *argv[]);
 
 
 // inplace text cleaning; any leading/trailing or internal quote characters are removed; excessive whitespace is reduced to single
@@ -140,6 +141,7 @@ tsSubProcess SubProcesses[] = {
 	{"mergeoverlaps","Merge PE Overlaps","Merge PE short insert overlap reads",mergeoverlaps},
 	{"snpmarkers","SNP Markers","SNP alignment derived marker sequences identification",gensnpmarkers},
 	{"snps2pgsnps","SNPs to pgSNPs","Covert SNP calls into UCSC Personal Genome SNP format",SNPs2pgSNPs},
+	{"lochap2bed","Haplotypes to BED","Convert di/triSNP localised haplotype calls into UCSC BED format",LocHap2Bed},
 	{"markerseqs","Marker Seqs","Generate marker sequences from SNP loci",GenMarkerSeqs},
 	{"blitz", "Blat like Local align", "\tBlat like local align genomic sequences", Blitz },
 	{"remaploci","Remap Alignment Loci", "Remap alignment loci", RemapLoci },

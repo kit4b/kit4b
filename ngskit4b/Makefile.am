@@ -8,7 +8,8 @@ ngskit4b_SOURCES= KAlignerCL.cpp Blitz.cpp genDESeq.cpp kit4bax.cpp LocKMers.cpp
 		Aligner.h KAligner.h AssembGraph.h FastaNxx.h kit4bdna.h LocKMers.h MarkerSeq.h PEScaffold.h Scaffolder.h SQLiteDE.h SQLiteSummaries.h \
 		AlignsBootstrap.h Blitz.h FilterSAMAlignments.h ngskit4b.h MapLoci2Feat.h Markers.h ReadStats.h SimReads.h SQLiteMarkers.h \
 		SSRdiscovery.h ArtefactReduce.h deNovoAssemb.h genhyperconserved.h LocateROI.h MarkerKMers.h MergeReadPairs.h RemapLoci.h \
-		Benchmarker.cpp Benchmarker.h SNPs2pgSNPs.h SQLitePSL.h genbioseq.cpp genbiobed.cpp gengoassoc.cpp gengoterms.cpp goassoc.cpp hammings.cpp fasta2bed.cpp
+		Benchmarker.cpp Benchmarker.h SNPs2pgSNPs.h SQLitePSL.h genbioseq.cpp genbiobed.cpp gengoassoc.cpp gengoterms.cpp goassoc.cpp \
+		hammings.cpp fasta2bed.cpp LocHap2Bed.cpp LocHap2Bed.h
 
 # set the include path found by configure
 AM_CPPFLAGS= $(all_includes)
