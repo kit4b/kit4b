@@ -798,7 +798,7 @@ return(pszText);
 }
 
 
-const int cMaxNumOptions = 4000;		// allow at most this many options in option file, increased from 1024 because snpmarkers needs to handle up to 1000 different isolates 
+const int cMaxNumOptions = 16000;		// allow at most this many options in option file, increased from 1024 because snpmarkers needs to handle up to 4000 different isolates 
 const int cMaxOptionLen  = 1024;		// any single option can be of this length
 const int cMaxOptionLineLen = 8196;		// allow for option lines to be upto this length, one line can contain multiple options
 const int cMaxTotOptionsLen = (cMaxNumOptions * 101);	// allow for options to total at most this many chars - assumes options average 100 chars incl '\0' separators

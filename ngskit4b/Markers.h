@@ -25,7 +25,7 @@ Original 'BioKanga' copyright notice has been retained and immediately follows t
 #include "../libkit4b/commdefs.h"
 
 const int cMaxLenName = 100;			// accept species or chrom/contig names of at most this length
-const int cMaxMarkerSpecies = 1000;		// allow at most 1000 different species or cultivars
+const int cMaxMarkerSpecies = 4000;		// allow at most 4000 different species or cultivars
 const int cMaxSeqID = 100000000;		// allow at most 10^8 different target species sequences
 
 // following two constants are used when determining species specific SNPs
@@ -188,7 +188,7 @@ public:
 		SeqIDtoName(UINT32 SeqID);		// sequence identifier for which name is to be returned
 
 	int PreAllocEstSNPs(INT64 EstNumSNPS);	// preallocate memory for this many estimated SNP loci
-	int PreAllocImpunedSNPs(int NumbIsolates);	// when all known SNPs have been loaded then can allocate for additional impuned SNPs using number of isolates
+	int PreAllocImputedSNPs(int NumbIsolates);	// when all known SNPs have been loaded then can allocate for additional imputed SNPs using number of isolates
 
 	INT64 AddLoci(char *pszTargSpecies,	// reads were aligned to this cultivar or species
 				char *pszTargSeq,		// alignments to this sequence - could be a chrom/contig/transcript - from pszSpecies

@@ -66,7 +66,7 @@ const int cDfltMinSNPreads = 5;         // default - must be at least this numbe
 const double cMaxBkgdNoiseThres = 0.20;	// background noise must be <= this value before exploring as being a SNP
 const int cMinSNPreads = 1;             // user can specify down to this many reads covering the loci covering the loci before exploring as a SNP (assumes must be processing error free reads!)
 const int cMaxSNPreads = 100;           // user can specify a max of at least this many reads covering the loci covering the loci before exploring as a SNP
-const double cMinSeqErrRate = 0.01;		// sets a floor on minimum sequencing error rate per base - is used in binominal calculation
+const double cMinSeqErrRate = 0.005;	// sets a floor on minimum sequencing error rate per base - is used in binomial calculation (prior to 0.9.6 was 0.01 which was extremely conservative)
 const double cDfltMinMarkerSNPProp = (1.0/3.0);	// polymorphic bases within marker sequences must be at no more than this proportion of total bases covering the marker loci to be accepted
 
 const int cAllocLociPValues = 100000;   // allocate for putative SNP loci in this many increments

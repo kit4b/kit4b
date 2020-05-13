@@ -469,23 +469,23 @@ return(eBSFSuccess);
 }
 
 int
-CMarkers::PreAllocImpunedSNPs(int NumbIsolates)	// calculate the number of actually required SNP loci from number of reported SNPs and number of isolates
+CMarkers::PreAllocImputedSNPs(int NumbIsolates)	// calculate the number of actually required SNP loci from number of reported SNPs and number of isolates
 {
 int64_t NumRefSNPs;
-int64_t TotalRefImpuned;
+int64_t TotalRefImputed;
 tsAlignLoci *pCurLoci;
 uint32_t TargLoci;
 uint32_t TargSeqID;
 uint32_t TargSpeciesID;
 
 
-if(m_pAllocAlignLoci == NULL || m_UsedAlignLoci < 1) // must be at least 1 known SNP loci before any can be impuned!
+if(m_pAllocAlignLoci == NULL || m_UsedAlignLoci < 1) // must be at least 1 known SNP loci before any can be imputed!
 	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "PreAllocImpunedSNPs: need at least one known SNP loci before any can be impuned!");
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "PreAllocImputedSNPs: need at least one known SNP loci before any can be imputed!");
 	return(eBSFerrParams);
 	}
 
-// ensure sorting of known SNPs has been completed as will be iterating over these in order to calculate additional impuned SNP loci structure instances required
+// ensure sorting of known SNPs has been completed as will be iterating over these in order to calculate additional imputed SNP loci structure instances required
 SortTargSeqLociSpecies();
 // determine number of distinct SNP loci
 pCurLoci = m_pAllocAlignLoci;
@@ -501,13 +501,13 @@ for(int64_t Idx = 0; Idx < m_UsedAlignLoci; Idx++, pCurLoci++)
 		TargSpeciesID = pCurLoci->TargSpeciesID;
 		NumRefSNPs++;
 		}
-TotalRefImpuned = (NumRefSNPs * NumbIsolates);
+TotalRefImputed = (NumRefSNPs * NumbIsolates);
 
-if ((TotalRefImpuned + 100) > m_AllocAlignLoci)	// play safe when increasing allocation
+if ((TotalRefImputed + 100) > m_AllocAlignLoci)	// play safe when increasing allocation
 	{
 	size_t memreq;
-	memreq = (TotalRefImpuned+100) * sizeof(tsAlignLoci);
-	gDiagnostics.DiagOut(eDLInfo, gszProcName, "PreAllocImpunedSNPs: memory re-allocation to %lld from %lld bytes for estimated %lld impuned SNPs", (INT64)memreq, (INT64)m_AllocMemAlignLoci, (INT64)TotalRefImpuned);
+	memreq = (TotalRefImputed+100) * sizeof(tsAlignLoci);
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "PreAllocImputedSNPs: memory re-allocation to %lld from %lld bytes for estimated %lld imputed SNPs", (INT64)memreq, (INT64)m_AllocMemAlignLoci, (INT64)TotalRefImputed);
 
 #ifdef _WIN32
 	pCurLoci = (tsAlignLoci*)realloc(m_pAllocAlignLoci, memreq);
@@ -523,7 +523,7 @@ if ((TotalRefImpuned + 100) > m_AllocAlignLoci)	// play safe when increasing all
 		}
 	m_pAllocAlignLoci = pCurLoci;
 	m_AllocMemAlignLoci = memreq;
-	m_AllocAlignLoci = TotalRefImpuned + 100;
+	m_AllocAlignLoci = TotalRefImputed + 100;
 	}
 return(eBSFSuccess);
 }
@@ -1246,7 +1246,7 @@ gDiagnostics.DiagOut(eDLInfo, gszProcName, "Filtered: Processed %lld from %lld p
 return(0);
 }
 
-const int cRptBuffSize = 0x03ffff;          // will allocate this sized reporting buffer
+const int cRptBuffSize = 0x03fffff;          // will allocate this sized reporting buffer
 INT64 
 CMarkers::Report(char *pszRefGenome,		// reference genome assembly against which other species were aligned
 			int NumRelGenomes,				// number of relative genome names

@@ -99,8 +99,8 @@ struct arg_hdr {
     const char* longopts;  /* String defiing the long options */
     const char* datatype;  /* Description of the argument data type */
     const char* glossary;  /* Description of the option as shown by arg_print_glossary function */
-    int mincount;          /* Minimum number of occurences of this option accepted */
-    int maxcount;          /* Maximum number of occurences if this option accepted */
+    int mincount;          /* Minimum number of occurrences of this option accepted */
+    int maxcount;          /* Maximum number of occurrences if this option accepted */
     void* parent;          /* Pointer to parent arg_xxx struct */
     arg_resetfn* resetfn;  /* Pointer to parent arg_xxx reset function */
     arg_scanfn* scanfn;    /* Pointer to parent arg_xxx scan function */

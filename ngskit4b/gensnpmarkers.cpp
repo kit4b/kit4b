@@ -659,7 +659,7 @@ TotMemToAlloc = (TotMemToAlloc * 115)/100;
 gDiagnostics.DiagOut(eDLFatal,gszProcName,"Estimating minimum total memory requirements to be: %dGB",(int)((TotMemToAlloc + 0x040000000 - 1)/0x040000000));
 
 // try to prealloc for SNPs 
-gDiagnostics.DiagOut(eDLFatal,gszProcName,"Pre-allocating memory for %lld SNP loci allowing 10x additional for impuned SNPS",TotSNPRows);
+gDiagnostics.DiagOut(eDLFatal,gszProcName,"Pre-allocating memory for %lld SNP loci allowing 10x additional for imputed SNPS",TotSNPRows);
 
 if((Rslt = pMarkers->PreAllocEstSNPs(TotSNPRows)) != eBSFSuccess)
 	{
@@ -717,7 +717,7 @@ InitalAlignLoci = PrevAlignLoci = CurAlignLoci;
 
 gDiagnostics.DiagOut(eDLFatal, gszProcName, "Sorting %lld known SNPs loaded from SNP files...", CurAlignLoci);
 pMarkers->SortTargSeqLociSpecies();				// must be sorted ....
-if((Rslt = pMarkers->PreAllocImpunedSNPs(NumSNPFiles)) != eBSFSuccess)
+if((Rslt = pMarkers->PreAllocImputedSNPs(NumSNPFiles)) != eBSFSuccess)
 	{
 	delete pMarkers;
 	return(Rslt);
