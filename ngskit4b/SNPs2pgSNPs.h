@@ -1,9 +1,9 @@
 /*
 Portions of this toolkit are a source base clone of 'BioKanga' release 4.4.2 (https://github.com/csiro-crop-informatics/biokanga) which contain
 significant source code changes enabling new functionality with consequent process parameterisation changes. These changes have resulted in
-incompatibilty with 'BioKanga'.
+incompatibility with 'BioKanga'.
 
-Because of the potentential for confusion by users unaware of functionality and process parameterisation changes then the modified source base
+Because of the potential for confusion by users unaware of functionality and process parameterisation changes then the modified source base
 and resultant compiled executables have been renamed to 'kit4b' - K-mer Informed Toolkit for Bioinformatics.
 The renaming will force users of the 'BioKanga' toolkit to examine scripting which is dependent on existing 'BioKanga'
 parameterisations so as to make appropriate changes if wishing to utilise 'kit4b' parameterisations and functionality.

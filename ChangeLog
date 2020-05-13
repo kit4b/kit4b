@@ -35,4 +35,5 @@ Release 0.8.0 - Added an optional preprocessing phase to benchmark enabling limi
 Release 0.8.1 - New processing module added to generate UCSC pgSNP format output from kalign or snpmarkers SNP call format output
 Release 0.8.2 - Added support for ouput format VCF 4.1 in addition to existing UCSC pgSNP format when processing kalign or snpmarkers SNP calls by snps2pgsnps
 Release 0.9.0 - Added support for set operations (union,intersect,complement union, complement intersect, subtract) to snps2pgsnps
-Release 0.9.5 - New processing module, lochap2bed, added by which localised haplotypes detected by kalign (disnp and trisnp alleles) can be output as a UCSC BED format file 
+Release 0.9.5 - New processing module, lochap2bed, added by which localised haplotypes detected by kalign (disnp and trisnp alleles) can be output as a UCSC BED format file
+Release 0.9.6 - Spelling corrections in copyright notices - no functional code changes

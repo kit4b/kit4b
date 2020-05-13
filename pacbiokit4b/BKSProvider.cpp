@@ -1,9 +1,9 @@
 /*
 This toolkit is a source base clone of 'PacBioKanga' release 4.4.2 (https://github.com/csiro-crop-informatics/biokanga) and contains
 significant source code changes enabling new functionality and resulting process parameterisation changes. These changes have resulted in
-incompatibilty with 'PacBioKanga'.
+incompatibility with 'PacBioKanga'.
 
-Because of the potentential for confusion by users unaware of functionality and process parameterisation changes then the modified source base
+Because of the potential for confusion by users unaware of functionality and process parameterisation changes then the modified source base
 and resultant compiled executables have been renamed to 'kit4bpacbio' - K-mer Informed Toolkit for Bioinformatics with PacBio.
 The renaming will force users of the 'PacBioKanga' toolkit to examine scripting which is dependent on existing 'PacBioKanga'
 parameterisations so as to make appropriate changes if wishing to utilise 'kit4bpacbio' parameterisations and functionality.
@@ -12,7 +12,7 @@ parameterisations so as to make appropriate changes if wishing to utilise 'kit4b
 'kit4pacbio' is Copyright (c) 2019, 2020, Dr Stuart Stephen
 Please contact Dr Stuart Stephen < stuartjs@g3bio.com > if you have any questions regarding 'kit4b'.
 
-Orginal 'BioKanga' copyright notice has been retained and is as follows.
+Original 'BioKanga' copyright notice has been retained and is as follows.
 */
 /*
  * CSIRO Open Source Software License Agreement (GPLv3)
