@@ -32,6 +32,9 @@ const int cMaxSeqID = 100000000;		// allow at most 10^8 different target species
 const int cAltMaxBases = 1;			// must be no more than this number of bases in alternative species
 const double cMinBaseThres = 0.50;  // and species base must be at least this proportion of total bases
 
+const double cDfltLSER = 0.02;			// if local sequencing error rate is unknown then use this default
+const double cFloorLSER = 0.001;		// use a floor to prevent divide by 0 errors whilst processing
+
 const UINT16 cFlgSNPcnts = 0x01;		// alignment base counts parsed from SNP file
 const UINT16 cFlgImputCnts = 0x02;      // alignment base counts imputed from coverage and assumed to be the target reference base
 const UINT16 cFlgAlignCnts = 0x04;		// alignment base counts imputed from alignment sequences
@@ -49,7 +52,7 @@ typedef struct TAG_sAlignLoci {
 	UINT16 NumSpeciesWithCnts;	// number of species at this loci which have TotBases >= reporting threshold
 	UINT32 TotBases;			// sum of base counts in ProbeBaseCnts
 	UINT8 CultSpecBase;			// cultivar specific base allowing identification of this cultivar
-	UINT8 CultSpecBaseConf;		// confidence to ascribe to CultSpecBase (0..100)
+	double LSER;				// Cultivar local sequencing error rate
 	UINT16 Flags;				// any loci associated flags
 	UINT32 ProbeBaseCnts[5];	// indexed by A,C,G,T,N : number instances probe base aligned to TargRefBase 
 } tsAlignLoci;
@@ -102,6 +105,8 @@ class CMarkers
 	size_t m_AllocMemAlignLoci;			// allocation memory size
 	tsAlignLoci *m_pAllocAlignLoci;		// allocated to hold alignment loci 
 
+	double m_LSER;						// if local sequencing error rate unknown then use this default
+
 
 	INT64 AddLoci(UINT16 TargSpeciesID,		// reads were aligned to this cultivar or species
 				UINT32 TargSeqID,		// alignments to this sequence - could be a chrom/contig/transcript - from pszSpecies
@@ -113,6 +118,7 @@ class CMarkers
 				UINT32 ProbeCntG,		// number instances probe base G aligned to TargRefBase
 				UINT32 ProbeCntT,		// number instances probe base T aligned to TargRefBase
 				UINT32 ProbeCntN,		// number instances probe base N aligned to TargRefBase
+				double LSER,			// local sequencing error rate
 				UINT16 Flags);			// any loci associated flags
 
 
@@ -199,7 +205,8 @@ public:
 				UINT32 ProbeCntC,		// number instances probe base C aligned to TargRefBase
 				UINT32 ProbeCntG,		// number instances probe base G aligned to TargRefBase
 				UINT32 ProbeCntT,		// number instances probe base T aligned to TargRefBase
-				UINT32 ProbeCntN);		// number instances probe base N aligned to TargRefBase
+				UINT32 ProbeCntN,		// number instances probe base N aligned to TargRefBase
+				double LSER);			// local sequencing error rate
 
 	int IdentSpeciesSpec(int AltMaxCnt,	// max count allowed for base being processed in any other species, 0 if no limit
 						int MinCnt,		// min count required for base being processed in species

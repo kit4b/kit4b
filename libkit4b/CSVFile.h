@@ -5,7 +5,7 @@ const char cDfltCommentChar = '#';	// default character used as a comment line i
 const char cDfltTextChar = '"';		// default character used to quote text in CSV file
 
 
-const int cCSVMaxFields   = (1000*8) + 10;	// max number of fields (snpmarkers can result in CSV files with upto this many fields!!!)
+const int cCSVMaxFields   = (4000 * 9) + 10;	// max number of fields (snpmarkers can generate CSV files containing up to this many fields!!!)
 const int cCSVDfltFields  = 100;	// default number of fields
 const int cCSVMinFields   = 10;		// can always handle at least 10 fields
 
@@ -110,6 +110,7 @@ public:
 	int GetQuotedIncomplete(int FieldID); // 0 if noerrs, < 0 if errors
 
 	int GetInt(int FieldID,int *pRetInt);	    // parses (atoi) and returns specified field as int
+	int GetUint(int FieldID, uint32_t* pRetUint32); // parses (atoi) and returns specified field as uint32_t
 	int GetLong(int FieldID,long *pRetLong);	// parses (atol) and returns specified field as long
 	int GetInt64(int FieldID,INT64 *pRetInt64);	// parses (atoi64) and returns specified field as INT64
 	int GetDouble(int FieldID,double *pRetDouble); // parses (atof) and returns specified field as double

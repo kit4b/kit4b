@@ -127,6 +127,7 @@ m_pCurSpecies = NULL;
 m_szCurSeqName[0] = '\0';
 m_CurSeqNameID = 0;
 m_bSorted = false; 
+m_LSER = cDfltLSER;
 }
 
 UINT16											// returned species identifier (1..cMaxSpecies)
@@ -545,6 +546,7 @@ CMarkers::AddLoci(UINT16 TargSpeciesID,	// reads were aligned to this cultivar o
 				UINT32 ProbeCntG,		// number instances probe base G aligned to TargRefBase
 				UINT32 ProbeCntT,		// number instances probe base T aligned to TargRefBase
 				UINT32 ProbeCntN,		// number instances probe base U aligned to TargRefBase
+				double LSER,			// local sequencing error rate
 				UINT16 Flags)			// any loci associated flags
 {
 tsAlignLoci *pLoci;
@@ -615,6 +617,7 @@ pLoci->ProbeBaseCnts[1] = ProbeCntC;
 pLoci->ProbeBaseCnts[2] = ProbeCntG;
 pLoci->ProbeBaseCnts[3] = ProbeCntT;
 pLoci->ProbeBaseCnts[4] = ProbeCntN;
+pLoci->LSER = LSER;
 m_bSorted = false;
 return(m_UsedAlignLoci);
 }
@@ -631,7 +634,8 @@ CMarkers::AddLoci(char *pszTargSpecies,	// reads were aligned to this cultivar o
 				UINT32 ProbeCntC,		// number instances probe base C aligned to TargRefBase
 				UINT32 ProbeCntG,		// number instances probe base G aligned to TargRefBase
 				UINT32 ProbeCntT,		// number instances probe base T aligned to TargRefBase
-				UINT32 ProbeCntN)		// number instances probe base U aligned to TargRefBase
+				UINT32 ProbeCntN,		// number instances probe base U aligned to TargRefBase
+				double LSER)				// local sequencing error rate
 {
 UINT16 TargID;
 UINT16 ProbeID;
@@ -650,7 +654,7 @@ TargSeqID = AddTargSeq(pszTargSeq);
 if(TargSeqID == 0)
 	return(-1);
 
-Rslt = AddLoci(TargID,TargSeqID,TargLoci,TargRefBase,ProbeID,ProbeCntA,ProbeCntC,ProbeCntG,ProbeCntT,ProbeCntN,cFlgSNPcnts);
+Rslt = AddLoci(TargID,TargSeqID,TargLoci,TargRefBase,ProbeID,ProbeCntA,ProbeCntC,ProbeCntG,ProbeCntT,ProbeCntN, LSER,cFlgSNPcnts);
 return(Rslt);
 }
 
@@ -676,6 +680,7 @@ int MMBaseC;
 int MMBaseG;
 int MMBaseT;
 int MMBaseN;
+double LSER;
 
 int CoveringBases;
 int NumFilteredOut;
@@ -764,6 +769,10 @@ while((Rslt=pCSV->NextLine()) > 0)	// onto next line containing fields
 		continue;
 		}
 
+	pCSV->GetDouble(19, &LSER);
+	if(LSER < cFloorLSER)		// use a floor to prevent potential div errors later in processing
+		LSER = cFloorLSER;
+
 	switch(pszRefBase[0]) {
 		case 'a': case 'A':
 			RefBase = eBaseA;
@@ -796,7 +805,8 @@ while((Rslt=pCSV->NextLine()) > 0)	// onto next line containing fields
 				MMBaseC,		// number instances probe base C aligned to TargRefBase
 				MMBaseG,		// number instances probe base G aligned to TargRefBase
 				MMBaseT,		// number instances probe base T aligned to TargRefBase
-				MMBaseN);		// number instances probe base U aligned to TargRefBase
+				MMBaseN,		// number instances probe base U aligned to TargRefBase
+				LSER);			// local sequencing error rate
 
 	if(Rslt64 < 1)
 		{
@@ -816,7 +826,7 @@ return(NumElsParsed - NumFilteredOut);
 
 // AddImputedAlignments
 // Add alignments for species where no snp was called but other species do have snp called
-// The call could be because there were none or insufficent reads covering the loci, or there was coverage but no snp!
+// The call could be because there were none or insufficient reads covering the loci, or there was coverage but no snp!
 INT64 
 CMarkers::AddImputedAlignments(int MinBases,			// must be at least this number of reads covering the SNP loci
 					  char *pszRefSpecies,				// this is the reference species 
@@ -826,7 +836,6 @@ CMarkers::AddImputedAlignments(int MinBases,			// must be at least this number o
 					bool bSeqs,							// if alignment file contains the read sequence then impute bases from the actual sequences	
 					int EstNumSeqs,						// estimated number of sequences (0 if no estimate)
 					int EstSeqLen)						// estimated mean sequence length (0 if no estimate)           			
-
 {
 int Rslt;
 INT64 Rslt64;
@@ -962,6 +971,7 @@ TotNonOverlapping = 0;
 AlignIdx = 0;
 bProbeAligned = false;
 PrevTargSeqID = 0;
+CurTargSeqID = 0;
 pszTargSeq = NULL;
 UsedAlignLoci = m_NumSSNPLoci;
 for(AlignIdx = 0; AlignIdx < UsedAlignLoci; AlignIdx++)
@@ -1040,11 +1050,12 @@ for(AlignIdx = 0; AlignIdx < UsedAlignLoci; AlignIdx++)
 				CurTargLociLoci,		// loci within target sequence at which SNPs observed
 				TargRefBase,			// loci has this reference base
 				ProbeSpeciesID,			// reads were aligned from this cultivar or species
-				ProbeCntA,		// number instances probe base A aligned to TargRefBase 
-				ProbeCntC,		// number instances probe base C aligned to TargRefBase
-				ProbeCntG,		// number instances probe base G aligned to TargRefBase
-				ProbeCntT,		// number instances probe base T aligned to TargRefBase
-				ProbeCntN,		// number instances probe base U aligned to TargRefBase
+				ProbeCntA,				// number instances probe base A aligned to TargRefBase 
+				ProbeCntC,				// number instances probe base C aligned to TargRefBase
+				ProbeCntG,				// number instances probe base G aligned to TargRefBase
+				ProbeCntT,				// number instances probe base T aligned to TargRefBase
+				ProbeCntN,				// number instances probe base U aligned to TargRefBase
+				m_LSER,					// defaulting local sequencing error rate
 				ImputFlags);			// user flag to indicate these are imputed counts, not from the SNP file
 		if(Rslt64 < 1)
 			{
@@ -1125,11 +1136,12 @@ if(!bProbeAligned)
 				CurTargLociLoci,		// loci within target sequence at which SNPs observed
 				TargRefBase,			// loci has this reference base
 				ProbeSpeciesID,			// reads were aligned from this cultivar or species
-				ProbeCntA,		// number instances probe base A aligned to TargRefBase 
-				ProbeCntC,		// number instances probe base C aligned to TargRefBase
-				ProbeCntG,		// number instances probe base G aligned to TargRefBase
-				ProbeCntT,		// number instances probe base T aligned to TargRefBase
-				ProbeCntN,		// number instances probe base U aligned to TargRefBase
+				ProbeCntA,				// number instances probe base A aligned to TargRefBase 
+				ProbeCntC,				// number instances probe base C aligned to TargRefBase
+				ProbeCntG,				// number instances probe base G aligned to TargRefBase
+				ProbeCntT,				// number instances probe base T aligned to TargRefBase
+				ProbeCntN,				// number instances probe base U aligned to TargRefBase
+				m_LSER,					// use default local sequencing error rate
 				ImputFlags);			// user flag to indicate these are imputed counts, not from the SNP file
 
 	if(Rslt64 < 1)
@@ -1147,9 +1159,9 @@ return(TotOverlapping);
 
 
 int
-CMarkers::IdentSpeciesSpec(int AltMaxCnt,	// max count allowed for base being processed in any other species, 0 if no limit
-						int MinCnt,		// min count required for base being processed in species
-						double SNPMmajorPC,		// to be processed major putative SNP base must be at least this percentage of total
+CMarkers::IdentSpeciesSpec(int AltMaxCnt,				// max count allowed for base being processed in any other species, 0 if no limit
+						int MinCnt,						// min count required for base being processed in species
+						double SNPMmajorPC,				// to be processed major putative SNP base must be at least this percentage of total
 						int MinSpeciesWithCnts,			// must be at least this number of species with base counts more than MinSpeciesTotCntThres - 0 if no limit 
 						int MinSpeciesTotCntThres)		// individual species must have at least this number of total bases at SNP loci - 0 if no threshold
 
@@ -1195,7 +1207,8 @@ for(AlignIdx = 0; AlignIdx < m_UsedAlignLoci; AlignIdx += NumSpecies, pAlign += 
 		if(pAlignSpecies->TotBases == 0 || (UINT32)MinSpeciesTotCntThres > pAlignSpecies->TotBases)
 			{
 			pAlignSpecies->CultSpecBase = eBaseN;
-			pAlignSpecies->CultSpecBaseConf = 0;
+			if(pAlignSpecies->LSER < cFloorLSER)
+				pAlignSpecies->LSER = m_LSER;
 			pAlignSpecies->FiltLowTotBases = 1;
 			continue;
 			}
@@ -1235,7 +1248,8 @@ for(AlignIdx = 0; AlignIdx < m_UsedAlignLoci; AlignIdx += NumSpecies, pAlign += 
 				}
 
 			pAlignSpecies->CultSpecBase = BestAcceptBase;
-			pAlignSpecies->CultSpecBaseConf = (UINT8)(100 * BestAcceptConf);
+			if(pAlignSpecies->LSER < cFloorLSER)
+				pAlignSpecies->LSER = m_LSER;
 			}
 		}
 	pAlignSpecies = pAlign;
@@ -1303,7 +1317,7 @@ BuffIdx = 0;
 BuffIdx += sprintf(&pszBuff[BuffIdx],"\"%s:TargSeq\",\"Loci\",\"TargBase\",\"NumSpeciesWithCnts\"",pszRefGenome);
 for(Idx = 0; Idx < NumCultivars; Idx++)
 	{
-	BuffIdx += sprintf(&pszBuff[BuffIdx],",\"%s:CntsSrc\",\"%s:Base\",\"%s:Score\",\"%s:BaseCntTot\",\"%s:BaseCntA\",\"%s:BaseCntC\",\"%s:BaseCntG\",\"%s:BaseCntT\",\"%s:BaseCntN\"",
+	BuffIdx += sprintf(&pszBuff[BuffIdx],",\"%s:CntsSrc\",\"%s:Base\",\"%s:LSER\",\"%s:BaseCntTot\",\"%s:BaseCntA\",\"%s:BaseCntC\",\"%s:BaseCntG\",\"%s:BaseCntT\",\"%s:BaseCntN\"",
 				pszRelGenomes[Idx],pszRelGenomes[Idx],pszRelGenomes[Idx],pszRelGenomes[Idx],pszRelGenomes[Idx],pszRelGenomes[Idx],pszRelGenomes[Idx],pszRelGenomes[Idx],pszRelGenomes[Idx]);
 	if((BuffIdx + (cRptBuffSize/4)) > cRptBuffSize)
 		{
@@ -1421,8 +1435,8 @@ for(LociIdx = 0; LociIdx < m_UsedAlignLoci; LociIdx += NumCultivars)
 					cBase = 'N';
 					break;
 				}
-		BuffIdx += sprintf(&pszBuff[BuffIdx],",\"%c\",\"%c\",%u,%u,%u,%u,%u,%u,%u",(pAlign->Flags & cFlgSNPcnts) ? 'S' : 'I',	cBase,
-						(uint32_t)pTmpAlign->CultSpecBaseConf, pTmpAlign->TotBases, pTmpAlign->ProbeBaseCnts[0], pTmpAlign->ProbeBaseCnts[1], pTmpAlign->ProbeBaseCnts[2], pTmpAlign->ProbeBaseCnts[3], pTmpAlign->ProbeBaseCnts[4]);
+		BuffIdx += sprintf(&pszBuff[BuffIdx],",\"%c\",\"%c\",%f,%u,%u,%u,%u,%u,%u",(pAlign->Flags & cFlgSNPcnts) ? 'S' : 'I',	cBase,
+						pTmpAlign->LSER, pTmpAlign->TotBases, pTmpAlign->ProbeBaseCnts[0], pTmpAlign->ProbeBaseCnts[1], pTmpAlign->ProbeBaseCnts[2], pTmpAlign->ProbeBaseCnts[3], pTmpAlign->ProbeBaseCnts[4]);
 		if((BuffIdx + (cRptBuffSize / 8)) > cRptBuffSize)
 			{
 			CUtility::SafeWrite(m_hOutFile,pszBuff,BuffIdx);

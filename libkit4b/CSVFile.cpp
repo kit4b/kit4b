@@ -797,6 +797,18 @@ if(m_hFile == -1)						// file has to be opened!
 return(errno == ERANGE ? eBSFerrNumRange : eBSFSuccess);
 }
 
+int
+CCSVFile::GetUint(int FieldID, uint32_t* pRetUint32)
+{
+
+	if(FieldID < 1 || FieldID > m_CurNumFields)
+		return(eBSFerrFieldID);
+	if(m_hFile == -1)						// file has to be opened!
+		return(eBSFerrFileClosed);
+	*pRetUint32 = (uint32_t)atoi(m_pFields[FieldID - 1].pValue);
+	return(errno == ERANGE ? eBSFerrNumRange : eBSFSuccess);
+}
+
 int 
 CCSVFile::GetLong(int FieldID,long *pRetLong) 
 {
