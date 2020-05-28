@@ -432,14 +432,14 @@ struct cache_arb
 *********************************************************************/
 
 namespace StrImplementation {
-typedef struct {
+typedef struct TAG_tfastLock{
 	long lock;
 	void Enter();
 	void Leave();
 protected:
 	void GetStructAccess();
 	void RlsStructAccess();
-} fastlock;
+	} fastlock;
 }
 
 inline void fastlock::Enter()

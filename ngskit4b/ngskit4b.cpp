@@ -140,7 +140,7 @@ tsSubProcess SubProcesses[] = {
 	{"xfasta","Extract Fasta","Extract fasta sequences from multifasta file",fastaextract},
 	{"mergeoverlaps","Merge PE Overlaps","Merge PE short insert overlap reads",mergeoverlaps},
 	{"snpmarkers","SNP Markers","SNP alignment derived marker sequences identification",gensnpmarkers},
-	{"snps2pgsnps","SNPs to pgSNPs","Covert SNP calls into UCSC Personal Genome SNP format",SNPs2pgSNPs},
+	{"snps2pgsnps","SNPs to pgSNPs","Convert SNP calls into UCSC Personal Genome SNP format",SNPs2pgSNPs},
 	{"lochap2bed","Haplotypes to BED","Convert di/triSNP localised haplotype calls into UCSC BED format",LocHap2Bed},
 	{"markerseqs","Marker Seqs","Generate marker sequences from SNP loci",GenMarkerSeqs},
 	{"blitz", "Blat like Local align", "\tBlat like local align genomic sequences", Blitz },

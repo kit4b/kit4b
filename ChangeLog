@@ -38,4 +38,6 @@ Release 0.9.0 - Added support for set operations (union,intersect,complement uni
 Release 0.9.5 - New processing module, lochap2bed, added by which localised haplotypes detected by kalign (disnp and trisnp alleles) can be output as a UCSC BED format file
 Release 0.9.6 - Spelling corrections in copyright notices - no functional code changes
 Release 0.9.7 - Increased number of cultivars that can be processed by snpmarkers upto a maximum of 4000 (was 1000); kalign now uses a floor of 0.005 (was 0.01) for background substitution rates when SNP calling
-Release 0.9.8 - Snpmarkers carries through background substitution rates from kalign instead of generating it's own score - this is to allow down stream processing applications to recalculate P-values on allelic variations at the SNP sites - required for SARS-CoV-2 mutational landscape analysis when processing for inter-isolate allelic variations.  
+Release 0.9.8 - Snpmarkers carries through background substitution rates from kalign instead of generating it's own score - this is to allow down stream processing applications to recalculate P-values on allelic variations at the SNP sites - required for SARS-CoV-2 mutational landscape analysis when processing for inter-isolate allelic variations. 
+Release 0.9.10- snps2pgsnps can now also generate summary SNP distributions
+

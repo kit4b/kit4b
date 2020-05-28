@@ -1435,7 +1435,7 @@ for(LociIdx = 0; LociIdx < m_UsedAlignLoci; LociIdx += NumCultivars)
 					cBase = 'N';
 					break;
 				}
-		BuffIdx += sprintf(&pszBuff[BuffIdx],",\"%c\",\"%c\",%f,%u,%u,%u,%u,%u,%u",(pAlign->Flags & cFlgSNPcnts) ? 'S' : 'I',	cBase,
+		BuffIdx += sprintf(&pszBuff[BuffIdx],",\"%c\",\"%c\",%f,%u,%u,%u,%u,%u,%u",(pTmpAlign->Flags & cFlgSNPcnts) ? 'S' : 'I',	cBase,
 						pTmpAlign->LSER, pTmpAlign->TotBases, pTmpAlign->ProbeBaseCnts[0], pTmpAlign->ProbeBaseCnts[1], pTmpAlign->ProbeBaseCnts[2], pTmpAlign->ProbeBaseCnts[3], pTmpAlign->ProbeBaseCnts[4]);
 		if((BuffIdx + (cRptBuffSize / 8)) > cRptBuffSize)
 			{

@@ -32,7 +32,7 @@ public:
 	static void splitpath(char *pszFullPath, char *pszDir,
                  char *pFname);
 
-	// utility function for appended a filename suffix onto a base file name starting from the last occurance of a marker char in the base file name
+	// utility function for appended a filename suffix onto a base file name starting from the last occurrence of a marker char in the base file name
 	static int				// returned length of suffixed file name
 		AppendFileNameSuffix(char* pszRetSuffixedName,	// buffer allocated by caller to hold suffixed name
 			char* pszBaseFileName,		// base file name prefix
