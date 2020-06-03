@@ -93,7 +93,7 @@ KProcess(etPMode PMode,					// processing mode
 		char *pszOutFile,				// where to write alignments
 		char *pszSNPFile,				// Output SNPs (CSV format) to this file (default is to output file name with '.snp' appended)
 		char *pszMarkerFile,			// Output markers to this file
-		char *pszSNPCentroidFile,		// Output SNP centorids (CSV format) to this file (default is for no centroid processing)
+		char *pszSNPCentroidFile,		// Output SNP centroid (CSV format) to this file (default is for no centroid processing)
 		char *pszSfxFile,				// target as suffix array
 		char *pszStatsFile,				// aligner induced substitutions stats file
 		char *pszMultiAlignFile,		// file to contain reads which are aligned to multiple locations

@@ -1273,7 +1273,7 @@ for(Idx = 0; Idx < NumInFileSpecs; Idx++)
 		gDiagnostics.DiagOut(eDLInfo,gszProcName,"Processing file '%s'",pszInFile);
 		if((Rslt = ProcessFastaFile(pszInFile)) < eBSFSuccess)
 			{
-			gDiagnostics.DiagOut(eDLWarn,gszProcName,"Failed procesisng file '%s",pszInFile);
+			gDiagnostics.DiagOut(eDLWarn,gszProcName,"Failed processing file '%s",pszInFile);
 			return(Rslt);
 			}
 		gDiagnostics.DiagOut(eDLInfo,gszProcName,"Accepted %u SSRs, rejected %u excessively long",

@@ -6,7 +6,7 @@ const char cDfltTextChar = '"';		// default character used to quote text in CSV 
 
 
 const int cCSVMaxFields   = (4000 * 9) + 10;	// max number of fields (snpmarkers can generate CSV files containing up to this many fields!!!)
-const int cCSVDfltFields  = 100;	// default number of fields
+const int cCSVDfltFields  = 250;	// default number of fields
 const int cCSVMinFields   = 10;		// can always handle at least 10 fields
 
 

@@ -6949,6 +6949,7 @@ CKAligner::OutputSNPs(void)
 	int SNPCentroidIdx;
 	UINT8 Base;
 	tsSNPCentroid* pCentroid;
+	int NumCovReads;
 
 	if (m_pLociPValues == NULL)					// will be NULL first time in
 	{
@@ -6987,10 +6988,10 @@ CKAligner::OutputSNPs(void)
 
 
 	for (Loci = 0; Loci < min(LocalBkgndRateWindow, m_pChromSNPs->ChromLen); Loci++, pSNPWinR++)
-	{
+		{
 		LocalTotMismatches += pSNPWinR->NumNonRefBases;
 		LocalTotMatches += pSNPWinR->NumRefBases;
-	}
+		}
 
 	pLociPValues = m_pLociPValues;
 	m_NumLociPValues = 0;
@@ -6998,13 +6999,12 @@ CKAligner::OutputSNPs(void)
 	pSNPWinL = pSNP;
 	LineLen = 0;
 
-
 	m_MaxDiSNPSep = m_pChromSNPs->MeanReadLen;
 	for (Loci = 0; Loci < m_pChromSNPs->ChromLen; Loci++, pSNP++)
-	{
+		{
 		// determine background expected error rate from window surrounding the current loci
 		if (Loci > LocalBkgndRateWinFlank && (Loci + LocalBkgndRateWinFlank) < m_pChromSNPs->ChromLen)
-		{
+			{
 			// need to ensure that LocalTotMismatches and LocalTotMismatches will never underflow
 			if (LocalTotMismatches >= pSNPWinL->NumNonRefBases)
 				LocalTotMismatches -= pSNPWinL->NumNonRefBases;
@@ -7018,37 +7018,37 @@ CKAligner::OutputSNPs(void)
 			LocalTotMatches += pSNPWinR->NumRefBases;
 			pSNPWinL += 1;
 			pSNPWinR += 1;
-		}
+			}
 
 		TotBases = pSNP->NumNonRefBases + pSNP->NumRefBases;
 		if (TotBases > 0)
-		{
+			{
 			m_LociBasesCovered += 1;
 			m_LociBasesCoverage += TotBases;
-		}
+			}
 
 		if (TotBases < m_MinSNPreads)
 			continue;
 
 		if (m_hSNPCentsfile != -1)
-		{
+			{
 			// get 4bases up/dn stream from loci with SNP and use these to inc centroid counts of from/to counts
 			if (Loci >= cSNPCentfFlankLen && Loci < (m_pChromSNPs->ChromLen - cSNPCentfFlankLen))
-			{
+				{
 				m_pSfxArray->GetSeq(m_pChromSNPs->ChromID, Loci - (UINT32)cSNPCentfFlankLen, SNPFlanks, cSNPCentroidLen);
 				pSNPFlank = &SNPFlanks[cSNPCentroidLen - 1];
 				SNPCentroidIdx = 0;
 				for (SNPFlankIdx = 0; SNPFlankIdx < cSNPCentroidLen; SNPFlankIdx++, pSNPFlank--)
-				{
+					{
 					Base = *pSNPFlank & 0x07;
 					if (Base > eBaseT)
 						break;
 					SNPCentroidIdx |= (Base << (SNPFlankIdx * 2));
-				}
+					}
 				if (SNPFlankIdx == cSNPCentroidLen)
 					m_pSNPCentroids[SNPCentroidIdx].NumInsts += 1;
+				}
 			}
-		}
 
 
 		if (pSNP->NumNonRefBases < cMinSNPreads)
@@ -7059,20 +7059,20 @@ CKAligner::OutputSNPs(void)
 
 		// needing to allocate more memory? NOTE: allowing small safety margin of 10 tsLociPValues
 		if (m_AllocLociPValuesMem < (sizeof(tsLociPValues) * (m_NumLociPValues + 10)))
-		{
+			{
 			size_t memreq = m_AllocLociPValuesMem + (cAllocLociPValues * sizeof(tsLociPValues));
 #ifdef _WIN32
 			pLociPValues = (tsLociPValues*)realloc(m_pLociPValues, memreq);
 			if (pLociPValues == NULL)
-			{
+				{
 #else
-			pLociPValues = (tsLociPValues*)mremap(m_pLociPValues, m_AllocLociPValuesMem, memreq, MREMAP_MAYMOVE);
-			if (pLociPValues == MAP_FAILED)
-			{
+				pLociPValues = (tsLociPValues*)mremap(m_pLociPValues, m_AllocLociPValuesMem, memreq, MREMAP_MAYMOVE);
+				if (pLociPValues == MAP_FAILED)
+				{
 #endif
 				gDiagnostics.DiagOut(eDLFatal, gszProcName, "OutputSNPs: Memory reallocation to %lld bytes failed - %s", memreq, strerror(errno));
 				return(eBSFerrMem);
-			}
+				}
 			m_pLociPValues = pLociPValues;
 			m_AllocLociPValuesMem = memreq;
 			pLociPValues = &m_pLociPValues[m_NumLociPValues];
@@ -7094,15 +7094,43 @@ CKAligner::OutputSNPs(void)
 		if ((LocTMM + LocTM) == 0)
 			LocalSeqErrRate = GlobalSeqErrRate;
 		else
-		{
+			{
 			LocalSeqErrRate = (double)LocTMM / (double)(LocTMM + LocTM);
 			if (LocalSeqErrRate < GlobalSeqErrRate)
 				LocalSeqErrRate = GlobalSeqErrRate;
-		}
+			}
 		if (LocalSeqErrRate > cMaxBkgdNoiseThres)	// don't bother attempting to call if the background is too noisy
 			continue;
 
 		// accepting as being a putative SNP
+
+		// determine frame shifted codon counts for aligned sequences which overlay the SNP site
+		memset(pLociPValues->FrameShiftedCodons,0,sizeof(pLociPValues->FrameShiftedCodons));
+
+		NumCovReads = FrameShiftCodons(m_pChromSNPs->ChromID,	// SNP loci is on this chromosome
+										Loci,					// returned codons are frame shifted relative to this loci
+										&pLociPValues->FrameShiftedCodons[0][0]);	// where to return cnts of frame shifted codons (set of codon counts [3][64])
+
+		// determine the canonical target reference codon in each frame shift
+		int RelLoci;
+		int FrameShift;
+		int FrameCodonIdx;
+		etSeqBase LociBase;
+		for(FrameShift = 0; FrameShift <= 2; FrameShift++)
+			{
+			pLociPValues->FrameShiftedRefCodons[FrameShift] = -1;
+			FrameCodonIdx = 0;
+			for(RelLoci = -1; RelLoci <= 1; RelLoci++)
+				{
+				if((LociBase = (m_pSfxArray->GetBase(m_pChromSNPs->ChromID, Loci + FrameShift + RelLoci) & 0x0ff)) > eBaseT)
+					break;
+				FrameCodonIdx <<= 2;
+				FrameCodonIdx |= LociBase;
+				}
+			if(LociBase <= eBaseT)
+				pLociPValues->FrameShiftedRefCodons[FrameShift] = FrameCodonIdx;
+			}
+		
 		// if outputting as marker sequence then get SNP up/dnstream sequence and report
 		int MarkerStartLoci;
 		int MarkerSeqIdx;
@@ -7115,7 +7143,7 @@ CKAligner::OutputSNPs(void)
 		int MarkerLen;
 		int NumPolymorphicSites;
 		if (m_hMarkerFile != -1)			// output marker sequences? 
-		{
+			{
 			// ensure putative marker sequence would be completely contained within the chromosome
 			if (Loci < (UINT32)m_Marker5Len)
 				continue;
@@ -7293,27 +7321,52 @@ CKAligner::OutputSNPs(void)
 				LineLen += sprintf(&m_pszLineBuff[LineLen], "%s\t%u\tSNP%d\t%c\t%s\t%d\tPASS\tAF=%s;DP=%d\n",
 					szChromName, pLociPValues->Loci + 1, m_TotNumSNPs, CSeqTrans::MapBase2Ascii(pLociPValues->SNPcnts.RefBase),
 					szALTs, SNPPhred, szAltFreq, pLociPValues->NumReads);
-			}
+				}
 			else
-			{
+				{
 				// for consistency now including refbase counts as if nonref - totals across all nonref bases will sum to be same as numreads covering the SNP loci
 				pLociPValues->SNPcnts.NonRefBaseCnts[pLociPValues->SNPcnts.RefBase] = pLociPValues->NumReads - pLociPValues->NumSubs;
-				LineLen += sprintf(&m_pszLineBuff[LineLen], "%d,\"SNP\",\"%s\",\"%s\",%d,%d,1,\"+\",%d,%f,%d,%d,\"%c\",%d,%d,%d,%d,%d,%f,%d,%d,%d,%d\n",
+				LineLen += sprintf(&m_pszLineBuff[LineLen], "%d,\"SNP\",\"%s\",\"%s\",%d,%d,1,\"+\",%d,%f,%d,%d,\"%c\",%d,%d,%d,%d,%d,%f,%d,%d,%d,%d",
 					m_TotNumSNPs, m_szTargSpecies, szChromName, pLociPValues->Loci, pLociPValues->Loci, RelRank, pLociPValues->PValue,
 					pLociPValues->NumReads, pLociPValues->NumSubs,
 					CSeqTrans::MapBase2Ascii(pLociPValues->SNPcnts.RefBase),
 					pLociPValues->SNPcnts.NonRefBaseCnts[0], pLociPValues->SNPcnts.NonRefBaseCnts[1], pLociPValues->SNPcnts.NonRefBaseCnts[2], pLociPValues->SNPcnts.NonRefBaseCnts[3], pLociPValues->SNPcnts.NonRefBaseCnts[4],
 					pLociPValues->LocalBkGndSubRate, pLociPValues->LocalReads, pLociPValues->LocalSubs, pLociPValues->MarkerID, pLociPValues->NumPolymorphicSites);
+				
+				char szCodon[4];
+				for(int FrameIdx = 0; FrameIdx < 3; FrameIdx++)
+					{
+					if(pLociPValues->FrameShiftedRefCodons[FrameIdx] < 0)
+						strcpy(szCodon,"NNN");
+					else
+						{
+						for(int Base = 2; Base >= 0; Base--)
+							{
+							switch((pLociPValues->FrameShiftedRefCodons[FrameIdx] >> (Base * 2)) & 0x03)
+								{
+									case 0: szCodon[Base] = 'A'; break;
+									case 1: szCodon[Base] = 'C'; break;
+									case 2: szCodon[Base] = 'G'; break;
+									case 3: szCodon[Base] = 'T'; break;
+								}
+							}
+						szCodon[3] = '\0';
+						}
+					LineLen += sprintf(&m_pszLineBuff[LineLen], ",\"%s\"", szCodon);
+					for(int CodonIdx = 0; CodonIdx < 64; CodonIdx++)
+						LineLen += sprintf(&m_pszLineBuff[LineLen],",%d", pLociPValues->FrameShiftedCodons[FrameIdx][CodonIdx]);
+					}
+				LineLen += sprintf(&m_pszLineBuff[LineLen],"\n");
+				}
 			}
-		}
 		if ((LineLen + cMaxSeqLen + 1) > cAllocLineBuffSize)
-		{
+			{
 			CUtility::SafeWrite(m_hSNPfile, m_pszLineBuff, LineLen);
 			LineLen = 0;
-		}
+			}
 
 		if (gProcessingID > 0)
-		{
+			{
 			sMonoSNP.MonoSnpPID = m_TotNumSNPs;						// SNP instance, processing instance unique
 			strcpy(sMonoSNP.szElType, "SNP");						// SNP type
 			strcpy(sMonoSNP.szSpecies, m_szTargSpecies);			// SNP located for alignments againts this target/species assembly	
@@ -7338,7 +7391,7 @@ CKAligner::OutputSNPs(void)
 			sMonoSNP.MarkerID = pLociPValues->MarkerID;							// marker identifier
 			sMonoSNP.NumPolymorphicSites = pLociPValues->NumPolymorphicSites;	// number of polymorphic sites within marker
 			gSQLiteSummaries.AddMonoSNP(gExperimentID, gProcessingID, &sMonoSNP);
-		}
+			}
 
 #ifdef _DISNPS_
 		if (!m_bIsSOLiD && m_hDiSNPfile != -1)
@@ -7748,7 +7801,30 @@ else			// else must be either CSV or VCF
 		LineLen += sprintf(&m_pszLineBuff[LineLen],"#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n");
 		}
 	else
-		LineLen = sprintf(m_pszLineBuff,"\"SNP_ID\",\"ElType\",\"Species\",\"Chrom\",\"StartLoci\",\"EndLoci\",\"Len\",\"Strand\",\"Rank\",\"PValue\",\"Bases\",\"Mismatches\",\"RefBase\",\"MMBaseA\",\"MMBaseC\",\"MMBaseG\",\"MMBaseT\",\"MMBaseN\",\"BackgroundSubRate\",\"TotWinBases\",\"TotWinMismatches\",\"MarkerID\",\"NumPolymorphicSites\"\n");
+		{
+		LineLen = sprintf(m_pszLineBuff,"\"SNP_ID\",\"ElType\",\"Species\",\"Chrom\",\"StartLoci\",\"EndLoci\",\"Len\",\"Strand\",\"Rank\",\"PValue\",\"Bases\",\"Mismatches\",\"RefBase\",\"MMBaseA\",\"MMBaseC\",\"MMBaseG\",\"MMBaseT\",\"MMBaseN\",\"BackgroundSubRate\",\"TotWinBases\",\"TotWinMismatches\",\"MarkerID\",\"NumPolymorphicSites\"");
+		
+		char szCodon[4];
+		for(int FrameShift = 0; FrameShift < 3; FrameShift++)
+			{
+			LineLen += sprintf(&m_pszLineBuff[LineLen], ",RefFrame:%d", FrameShift);
+			for(int CodonCnts = 0; CodonCnts < 64; CodonCnts++)
+				{
+				for(int Base = 2; Base >= 0 ; Base--)
+					{
+					switch((CodonCnts >> (Base * 2)) & 0x03) {
+						case 0: szCodon[Base] = 'A'; break;
+						case 1: szCodon[Base] = 'C'; break;
+						case 2: szCodon[Base] = 'G'; break;
+						case 3: szCodon[Base] = 'T'; break;
+						}
+					}
+				szCodon[3] = '\0';
+				LineLen += sprintf(&m_pszLineBuff[LineLen], ",\"RFS%d: %s\"", FrameShift,szCodon);
+				}
+			}
+		LineLen += sprintf(&m_pszLineBuff[LineLen],"\n");
+		}
 	CUtility::SafeWrite(m_hSNPfile,m_pszLineBuff,LineLen);
 	LineLen = 0;
 	}
@@ -10009,6 +10085,147 @@ while((pNxtReadHit != pChromSNPs->pLastReadHit) && (pNxtReadHit = m_ppReadHitsId
 
 return(NULL);
 }
+
+
+// returns counts for all 3 frame shifted codon combination counts for read alignments at SNP loci
+// frame shifts start at -2,-1, 0 relative to SNP loci
+// codon combinations are relative to sense strand
+int
+CKAligner::FrameShiftCodons(UINT32 ChromID,					// SNP loci is on this chromosome
+				 int Loci,				// returned codons are frame shifted relative to this loci
+				 int *pCodons)	// where to return cnts of frame shifted codons (set of codon counts [3][64])
+{
+int NumReads;
+int InFrameCodons[3][64];
+int FrameShift;
+int FrameCodonIdx;
+int RelLoci;
+etSeqBase LociBase;
+tsReadHit* pCurReadHit = NULL;
+if(pCodons == NULL)
+	return(0);
+
+memset(pCodons,0,sizeof(InFrameCodons));
+memset(InFrameCodons, 0, sizeof(InFrameCodons));
+
+if((pCurReadHit = Locate1stReadOverlapLoci(ChromID,Loci))==NULL)
+	return(0);
+NumReads = 0;
+do
+	{
+	if(pCurReadHit->NAR != eNARAccepted || pCurReadHit->HitLoci.Hit.FlgInDel || pCurReadHit->HitLoci.Hit.FlgSplice)
+		continue;
+	NumReads += 1;
+	// for each frame shift then get codon combination
+	for(FrameShift = 0; FrameShift <= 2; FrameShift++)
+		{
+		FrameCodonIdx = 0;
+		for(RelLoci = -1; RelLoci < 2; RelLoci++)
+			{
+			if((LociBase = AdjAlignSNPBase(pCurReadHit, ChromID, Loci + FrameShift + RelLoci)) > eBaseT)
+				break;
+			FrameCodonIdx <<= 2;
+			FrameCodonIdx |= LociBase;
+			}
+		if(LociBase <= eBaseT)
+			InFrameCodons[FrameShift][FrameCodonIdx] += 1;
+		}
+	}
+while((pCurReadHit = IterReadsOverlapLoci(ChromID, Loci, pCurReadHit))!=NULL);
+memcpy(pCodons,InFrameCodons,sizeof(InFrameCodons));
+return(NumReads);
+}
+
+tsReadHit *				// returned lowest sorted read which overlaps ChromID.Loci, NULL if non overlaps
+CKAligner::Locate1stReadOverlapLoci(UINT32 ChromID,				// loci is on this chromosome
+				 int Loci)							// returned read is lowest sorted read which overlaps this loci
+{
+tsReadHit *pCurRead;
+
+int CurStart;
+int CurEnd;
+int64_t MidIdx;
+int64_t HiIdx = m_NumReadsLoaded - 1;
+int64_t LoIdx = 0;
+tsReadHit* pOverlapRead = NULL;
+while(HiIdx >= LoIdx) {
+	MidIdx = (HiIdx + LoIdx)/2;
+	pCurRead = m_ppReadHitsIdx[MidIdx];
+	if(pCurRead->HitLoci.Hit.Seg[0].ChromID == ChromID)
+		{
+		// read aligned to requested chrom
+		CurStart = AdjStartLoci(&pCurRead->HitLoci.Hit.Seg[0]);
+		CurEnd = AdjEndLoci(&pCurRead->HitLoci.Hit.Seg[0]);
+		if(Loci >= CurStart && Loci <= CurEnd)		
+			{
+			pOverlapRead = pCurRead;
+			HiIdx = MidIdx - 1;
+			}
+		if(CurStart > Loci)
+			HiIdx = MidIdx - 1;
+		else
+			LoIdx = MidIdx + 1;
+		continue;
+		}
+
+	if(pCurRead->HitLoci.Hit.Seg[0].ChromID < ChromID)
+		LoIdx = MidIdx+1;
+	else
+		HiIdx = MidIdx - 1;
+	};
+return(pOverlapRead);
+}
+
+tsReadHit*													// located read, or NULL if unable to locate any more reads overlapping loci
+CKAligner::IterReadsOverlapLoci(UINT32 ChromID,				// loci is on this chromosome
+						   int Loci,						// returned reads are required to overlap this loci
+						   tsReadHit* pPrevRead)			// any previously returned read which overlapped loci, NULL if no read previously returned
+{
+bool bNewChrom;
+int CurStart;
+int CurEnd;
+tsReadHit* pNxtReadHit = NULL;
+
+if(pPrevRead->NAR != eNARAccepted)
+	pPrevRead = NULL;
+
+bNewChrom = (pPrevRead == NULL || pPrevRead->HitLoci.Hit.Seg[0].ChromID != ChromID) ? true : false;
+if(pPrevRead != NULL)
+	{
+	CurStart = AdjStartLoci(&pPrevRead->HitLoci.Hit.Seg[0]);
+	if(pPrevRead->HitLoci.Hit.Seg[0].ChromID < ChromID || Loci < CurStart)
+		pPrevRead = NULL;
+	}
+
+while((pNxtReadHit = IterSortedReads(pPrevRead))!=NULL)
+	{
+	if(pNxtReadHit->NAR == eNARAccepted &&
+	   !(pNxtReadHit->HitLoci.Hit.FlgInDel || pNxtReadHit->HitLoci.Hit.FlgSplice))
+		{
+		if(pNxtReadHit->HitLoci.Hit.Seg[0].ChromID != ChromID)	// double check read is aligning on to expected chrom
+			if(bNewChrom)		// loci is on a different chromosome to that previously iterated so keep iterating 
+				{
+				if((pPrevRead = pNxtReadHit) == NULL)
+					return(NULL);
+				continue;
+				}
+			else
+				return(NULL);
+		bNewChrom = false;
+		CurStart = AdjStartLoci(&pNxtReadHit->HitLoci.Hit.Seg[0]);
+		CurEnd = AdjEndLoci(&pNxtReadHit->HitLoci.Hit.Seg[0]);
+
+		if(CurStart <= Loci && CurEnd >= Loci)					// this read overlaps loci?
+			return(pNxtReadHit);
+		if(CurStart > Loci)
+			return(NULL);
+		}
+	if((pPrevRead = pNxtReadHit) == NULL)
+		break;
+	}
+return(NULL);
+}
+
 
 // NumDnUniques
 // Returns number of unique loci to which reads map which are downstream of the specified current read

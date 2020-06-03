@@ -950,7 +950,7 @@ for(CultIdx = 0; CultIdx < NumSpecies; CultIdx++, pCultivar++)
 	{
 	pCultivar->CultID = 0;
 	if(CSVtype == 0)
-		pCultivar->CultIdx = (4 + CultIdx * 9);
+		pCultivar->CultIdx = (4 + (CultIdx * 9));
 	else
 		pCultivar->CultIdx = 0;
 	strcpy(pCultivar->szCultivarName,pszSpeciesNames[CultIdx]);
@@ -1004,6 +1004,8 @@ if(CSVtype == 0)		// marker CSV files can contain a large number of fields
     if(((NumSpecies * 9) + 4) > cCSVDfltFields)
 		pCSV->SetMaxFields((NumSpecies * 9) + 4);
 	}
+else
+	pCSV->SetMaxFields(cAlignNumSSNPXfields);
 
 if((Rslt=pCSV->Open(pszInFile))!=eBSFSuccess)
 	{
@@ -1026,7 +1028,7 @@ while((Rslt=pCSV->NextLine()) > 0)			// onto next line containing fields
 	if(!(NumElsRead % (bSafe ? 5000 : 100000)) && NumElsRead > 0)
 		gDiagnostics.DiagOut(eDLInfo,gszProcName,"Parsed %d lines, Unique target sequences: %d, SNP Loci: %d, SNPs: %d, Markers: %d",NumElsRead, m_NumSeqs,m_NumSNPLoci, m_NumSNPs, m_NumMarkers);
 
-	NumFields = pCSV->GetCurFields();		// SNP files have 23, Marker CSV have 4 + (9 * NumCultivars) fields
+	NumFields = pCSV->GetCurFields();		// SNP files have either cAlignNumSSNPfields or cAlignNumSSNPXfields, Marker CSV have 4 + (9 * NumCultivars) fields
 	switch(CSVtype) {
 		case 0:					// markers
 			NumCultivars = (NumFields - 4)/9;
@@ -1051,9 +1053,9 @@ while((Rslt=pCSV->NextLine()) > 0)			// onto next line containing fields
 			break;
 
 		case 1:					// SNPs
-			if(NumFields != 23)
+			if(!(NumFields == cAlignNumSSNPfields || NumFields == cAlignNumSSNPXfields))
 				{
-				gDiagnostics.DiagOut(eDLFatal,gszProcName,"Expected 'kit4b align' generated SNP CSV file number of fields to be 23 at line %d in '%s', GetCurFields() returned '%d'",NumElsRead,pszInFile,NumFields);
+				gDiagnostics.DiagOut(eDLFatal,gszProcName,"Expected 'kit4b kalign' generated SNP CSV file number of fields to be either 23 or 224 at line %d in '%s', GetCurFields() returned '%d'",NumElsRead,pszInFile,NumFields);
 				delete pCSV;
 				CloseDatabase(true);
 				return(eBSFerrFieldCnt);

@@ -40,4 +40,6 @@ Release 0.9.6 - Spelling corrections in copyright notices - no functional code c
 Release 0.9.7 - Increased number of cultivars that can be processed by snpmarkers upto a maximum of 4000 (was 1000); kalign now uses a floor of 0.005 (was 0.01) for background substitution rates when SNP calling
 Release 0.9.8 - Snpmarkers carries through background substitution rates from kalign instead of generating it's own score - this is to allow down stream processing applications to recalculate P-values on allelic variations at the SNP sites - required for SARS-CoV-2 mutational landscape analysis when processing for inter-isolate allelic variations. 
 Release 0.9.10- snps2pgsnps can now also generate summary SNP distributions
+Release 0.9.12- kalign generates extended SNP CSV formated files containing codon frameshifted distributions; snps2pgsnps can now utilise extended SNP CSVs and a GTF feature file for summary output of synonymous/non-synonymous/wobble codon distributions
+    
 

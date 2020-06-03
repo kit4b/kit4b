@@ -339,7 +339,9 @@ typedef struct TAG_sLociPValues {
 	UINT32 NumReads;	// number of reads aligned at this loci
 	UINT32 NumSubs;		// number of aligner induced substitutions at this loci
 	UINT32 MarkerID;	// generated marker sequence will have this identifier as '>Marker<MarkerID>'
-	UINT32 NumPolymorphicSites; // number of polymorthic sites within the marker sequence
+	UINT32 NumPolymorphicSites; // number of polymorphic sites within the marker sequence
+	int32_t FrameShiftedRefCodons[3]; // reference sequence codons at each frame shift (-1 if no reference sequence codon in a frame shift)
+	int32_t FrameShiftedCodons[3][64]; // counts of read sequence codons at each frame shift
 } tsLociPValues;
 
 typedef struct TAG_sSNPCentroid {
@@ -996,6 +998,21 @@ class CKAligner
 						int StartLoci,				// returned reads are required to overlap both this starting and
 						int EndLoci);				// this ending loci
 
+	tsReadHit*				// returned lowest sorted read which overlaps ChromID.Loci, NULL if non overlaps
+		Locate1stReadOverlapLoci(UINT32 ChromID,				// loci is on this chromosome
+											int Loci);					// returned read is lowest sorted read which overlaps this loci
+
+	tsReadHit*													// located read, or NULL if unable to locate any more reads overlapping loci
+		IterReadsOverlapLoci(UINT32 ChromID,				// loci is on this chromosome
+									 int Loci,			        // returned reads are required to overlap this loci
+									 tsReadHit* pPrevRead);		// any previously returned read which overlapped loci 
+
+	int
+		FrameShiftCodons(UINT32 ChromID,					// SNP loci is on this chromosome
+									int Loci,				// returned codons are frame shifted relative to this loci
+									int *pCodons);	// where to return cnts of frame shifted codons (set of codon counts [3][64])
+									
+									
 	bool	// returns false if no more reads availing for processing by calling thread
 		ThreadedIterReads(tsReadsHitBlock *pRetBlock);
 
