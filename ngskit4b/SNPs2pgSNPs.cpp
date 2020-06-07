@@ -41,92 +41,124 @@ Original 'BioKanga' copyright notice has been retained and immediately follows t
 
 typedef struct TAG_sCodonXlate
 	{
-	uint8_t Idx;		// peptide tRNA complement, aaa (0) ... ttt (63)
-	uint8_t SynGroup;	// synonymous peptide grouping - 0..20 including stop codon
-	char Peptide;		// single char peptide representation
+	uint8_t Idx;		// AminoAcid tRNA complement, aaa (0) ... ttt (63)
+	uint8_t SynGroup;	// synonymous AminoAcid grouping - 0..20 including stop codon
+	double HumanFreqPerK; // frequency (per 1000) at which codon observed in human
+	char AminoAcid;		// single char AminoAcid representation
 	bool bWobble;		// true if a wobble codon, with no cognate tRNA in human
 	} tsCodonXlate;
 
-tsCodonXlate gXlatePeptides[64] = {		// all possible codon peptides (*) slow with no cognate tRNA in human!
-	(0,8,'K',false),	// aaa
-	(1,11,'N',true),		// aac *
-	(2,8,'K',false),	// aag
-	(3,11,'N',false),	// aat
+typedef struct TAG_sAminoAcid
+	{
+	uint8_t SynGroup;	// synonymous amino acid grouping - 0..20 including stop codon
+	char AminoAcid;		// single char symbol
+	char szPeptide[4];	// three char symbol
+	} tsAminoAcid;
 
-	(4,16,'T',false),	// aca
-	(5,16,'T',false),	// acc
-	(6,16,'T',false),	// acg	
-	(7,16,'T',false),	// act
+static tsAminoAcid gAminoAcids[] = {
+	{0,'A',"Ala"},
+	{1,'C',"Cys"},
+	{2,'D',"Asp"},
+	{3,'E',"Gle"},
+	{4,'F',"Phe"},
+	{5,'G',"Gly"},
+	{6,'H',"His"},
+	{7,'I',"Lle"},
+	{8,'K',"Lys"},
+	{9,'L',"Leu"},
+	{10,'M',"Met"},
+	{11,'N',"Asn"},
+	{12,'P',"Pro"},
+	{13,'Q',"Gln"},
+	{14,'R',"Arg"},
+	{15,'S',"Ser"},
+	{16,'T',"Thr"},
+	{17,'V',"Val"},
+	{18,'W',"Trp"},
+	{19,'Y',"Tyr"},
+	{20,'*',"Stp"}};
 
-	(8,14,'R',false),	// aga
-	(9,15,'S',false),	// agc 
-	(10,14,'R',false),	// agg
-	(11,15,'S',true),	// agt *
 
-	(12,7,'I',false),	// ata
-	(13,7,'I',false),	// atc
-	(14,10,'M',false),	// atg	
-	(15,7,'I',false),	// att
+static tsCodonXlate gXlateAminoAcids[] = {		// all possible codon AminoAcids (*) slow with no cognate tRNA in human!
+	{0,8,24.0,'K',false},	// aaa
+	{1,11,19.5,'N',true},	// aac *
+	{2,8,32.9,'K',false},	// aag
+	{3,11,16.7,'N',false},	// aat
 
-	(16,13,'Q',false),	// caa
-	(17,6,'H',false),	// cac 
-	(18,13,'Q',false),	// cag
-	(19,6,'H',true),	// cat *
+	{4,16,14.8,'T',false},	// aca
+	{5,16,19.2,'T',false},	// acc
+	{6,16,6.2,'T',false},	// acg	
+	{7,16,12.8,'T',false},	// act
 
-	(20,12,'P',false),	// cca
-	(21,12,'P',true),	// ccc *
-	(22,12,'P',false),	// ccg	
-	(23,12,'P',false),	// cct
+	{8,14,11.5,'R',false},	// aga
+	{9,15,19.4,'S',false},	// agc 
+	{10,14,11.4,'R',false},	// agg
+	{11,15,11.9,'S',true},	// agt *
 
-	(24,14,'R',false),	// cga
-	(25,14,'R',true),	// cgc *
-	(26,14,'R',false),	// cgg
-	(27,14,'R',false),	// cgt
+	{12,7,7.1,'I',false},	// ata
+	{13,7,21.4,'I',false},	// atc
+	{14,10,22.3,'M',false},	// atg	
+	{15,7,15.7,'I',false},	// att
 
-	(28,9,'L',false),	// cta
-	(29,9,'L',true),	// ctc *
-	(30,9,'L',false),	// ctg	
-	(31,9,'L',false),	// ctt
+	{16,13,11.8,'Q',false},	// caa
+	{17,6,14.9,'H',false},	// cac 
+	{18,13,34.6,'Q',false},	// cag
+	{19,6,10.4,'H',true},	// cat *
 
-	(32,3,'E',false),	// gaa
-	(33,2,'D',false),	// gac 
-	(34,3,'E',false),	// gag
-	(35,2,'D',true),	// gat *
+	{20,12,16.7,'P',false},	// cca
+	{21,12,20.0,'P',true},	// ccc *
+	{22,12,7.0,'P',false},	// ccg	
+	{23,12,17.3,'P',false},	// cct
 
-	(36,0,'A',false),	// gca
-	(37,0,'A',false),	// gcc
-	(38,0,'A',false),	// gcg	
-	(39,0,'A',false),	// gct
+	{24,14,6.3,'R',false},	// cga
+	{25,14,10.9,'R',true},	// cgc *
+	{26,14,11.9,'R',false},	// cgg
+	{27,14,4.7,'R',false},	// cgt
 
-	(40,5,'G',false),	// gga
-	(41,5,'G',false),	// ggc 
-	(42,5,'G',false),	// ggg
-	(43,5,'G',false),	// ggt
+	{28,9,6.9,'L',false},	// cta
+	{29,9,19.4,'L',true},	// ctc *
+	{30,9,40.3,'L',false},	// ctg	
+	{31,9,12.8,'L',false},	// ctt
 
-	(44,17,'V',false),	// gta
-	(45,17,'V',true),	// gtc *
-	(46,17,'V',false),	// gtg	
-	(47,17,'V',false),	// gtt
+	{32,3,29.0,'E',false},	// gaa
+	{33,2,26.0,'D',false},	// gac 
+	{34,3,40.8,'E',false},	// gag
+	{35,2,22.3,'D',true},	// gat *
 
-	(48,20,'*',false),	// taa
-	(49,19,'Y',false),	// tac 
-	(50,20,'*',false),	// tag
-	(51,'Y',false),	// tat
+	{36,0,16.0,'A',false},	// gca
+	{37,0,28.5,'A',false},	// gcc
+	{38,0,7.6,'A',false},	// gcg	
+	{39,0,18.6,'A',false},	// gct
 
-	(52,15,'S',false),	// tca
-	(53,15,'S',true),	// tcc *
-	(54,15,'S',false),	// tcg	
-	(55,15,'S',false),	// tct
+	{40,5,16.3,'G',false},	// gga
+	{41,5,22.8,'G',false},	// ggc 
+	{42,5,16.4,'G',false},	// ggg
+	{43,5,10.8,'G',false},	// ggt
 
-	(56,20,'*',false),	// tga
-	(57,1,'C',false),	// tgc 
-	(58,18,'W',false),	// tgg
-	(59,1,'C',false),	// tgt *
+	{44,17,7.0,'V',false},	// gta
+	{45,17,14.6,'V',true},	// gtc *
+	{46,17,28.9,'V',false},	// gtg	
+	{47,17,10.9,'V',false},	// gtt
 
-	(60,9,'L',false),	// tta
-	(61,4,'F',false),	// ttc
-	(62,9,'L',false),	// ttg	
-	(63,4,'F',true)		// ttt *
+	{48,20,0.7,'*',false},	// taa
+	{49,19,15.6,'Y',false},	// tac 
+	{50,20,0.5,'*',false},	// tag
+	{51,19,12.0,'Y',false},	// tat
+
+	{52,15,11.7,'S',false},	// tca
+	{53,15,17.4,'S',true},	// tcc *
+	{54,15,4.5,'S',false},	// tcg	
+	{55,15,14.6,'S',false},	// tct
+
+	{56,20,1.3,'*',false},	// tga
+	{57,1,12.2,'C',false},	// tgc 
+	{58,18,12.8,'W',false},	// tgg
+	{59,1,9.9,'C',false},	// tgt *
+
+	{60,9,7.2,'L',false},	// tta
+	{61,4,20.4,'F',false},	// ttc
+	{62,9,12.6,'L',false},	// ttg	
+	{63,4,16.9,'F',true}	// ttt *
 	};
 
 int Process(eModepgSSNP Mode,				// processing mode
@@ -1412,7 +1444,7 @@ while ((Rslt = m_pCSV->NextLine()) > 0)				// onto next line containing fields
 	pSNPSite->szChrom[sizeof(pSNPSite->szChrom) - 1] = '\0';
 	m_pCSV->GetUint(5, &pSNPSite->SNPLoci);			// get "StartLoci"
 
-	m_pCSV->GetUint(12, &pSNPSite->TotMismatches);			// get "Mismatches"
+	m_pCSV->GetUint(12, &pSNPSite->TotMismatches);		// get "Mismatches"
 	CntRef = pSNPSite->TotBaseCnts - pSNPSite->TotMismatches;
 	m_pCSV->GetUint(14, &pSNPSite->BaseCnts[0].Cnts);	// get "MMBaseA"
 	m_pCSV->GetUint(15, &pSNPSite->BaseCnts[1].Cnts);	// get "MMBaseC"
@@ -1488,7 +1520,7 @@ while ((Rslt = m_pCSV->NextLine()) > 0)				// onto next line containing fields
 	int FeatureIdx;
 	int FrameShift;
 	int FieldIdx;
-	int PolypeptideCnts[20];
+	int PolypeptideCnts[21];
 	char szRefCodon[4];
 	char *pszRefCodon;
 	int RefCodonIdx;
@@ -1514,11 +1546,16 @@ while ((Rslt = m_pCSV->NextLine()) > 0)				// onto next line containing fields
 				{
 				// which frame shift to use?
 				FrameShift = (pSNPSite->SNPLoci - pFeature->FeatStart) % 3;	// need to determine frame relative to feature start loci
+				if(FrameShift == 1)
+					FrameShift = 0;
+				else
+					if(FrameShift == 0)
+						FrameShift = 1;
 				FieldIdx = cAlignNumSSNPfields + 1 + (65 * FrameShift);
 				m_pCSV->GetText(FieldIdx++, &pszRefCodon);
-				strncpy(szRefCodon, pszRefCodon,sizeof(szRefCodon)-1);
+				strncpy(szRefCodon, pszRefCodon,sizeof(szRefCodon));
 				RefCodonIdx = 0;
-				for(int Idx = 2; Idx >= 0; Idx--)
+				for(int Idx = 0; Idx <= 2; Idx++)
 					{
 					switch(szRefCodon[Idx])
 						{
@@ -1535,7 +1572,7 @@ while ((Rslt = m_pCSV->NextLine()) > 0)				// onto next line containing fields
 								break;
 
 							case 't': case 'T':
-								Base = eBaseG;
+								Base = eBaseT;
 								break;
 
 							case 'n': case 'N':
@@ -1558,19 +1595,32 @@ while ((Rslt = m_pCSV->NextLine()) > 0)				// onto next line containing fields
 				for(AlignCodonIdx = 0; AlignCodonIdx < 64; AlignCodonIdx++)
 					{
 					// what count threshold should be used before treating as noise and thus counts to be ignored???
-					// here I'm using a PV(0.10) which is slightly better than guessing
+					// here I'm requiring at least 2 codon instances covering site with a PValue <= 2*m_PValueThres which is slightly better than guessing
 					if(AlignCodons[AlignCodonIdx] < 2)
 						continue;
 					PValue = 1.0 - Stats.Binomial(SumCodonCnts, AlignCodons[AlignCodonIdx], pSNPSite->LocalSeqErrRate);
 					if(PValue > (m_PValueThres * 2))
 						continue;
 
-					PolypeptideCnts[gXlatePeptides[AlignCodonIdx].SynGroup] += AlignCodons[AlignCodonIdx];
-					if(gXlatePeptides[AlignCodonIdx].SynGroup == gXlatePeptides[RefCodonIdx].SynGroup)
+					// accepting as codon change
+					pFeature->FromAminoAcidChanges[gXlateAminoAcids[RefCodonIdx].SynGroup] += 1;
+					pFeature->ToAminoAcidChanges[gXlateAminoAcids[RefCodonIdx].SynGroup][gXlateAminoAcids[AlignCodonIdx].SynGroup] += 1;
+
+					PolypeptideCnts[gXlateAminoAcids[AlignCodonIdx].SynGroup] += AlignCodons[AlignCodonIdx];
+					if(gXlateAminoAcids[AlignCodonIdx].SynGroup == gXlateAminoAcids[RefCodonIdx].SynGroup)
+						{
 						bIsSynonymous = true;
+						pFeature->NumSiteSynonCodons++;
+						// attempt to see if can pickup on codon bias adaptation towards humans more abundant tRNAs
+						if(gXlateAminoAcids[AlignCodonIdx].HumanFreqPerK > gXlateAminoAcids[RefCodonIdx].HumanFreqPerK)
+							pFeature->NumPosBiasedCodons++;
+						else
+							if(gXlateAminoAcids[AlignCodonIdx].HumanFreqPerK < gXlateAminoAcids[RefCodonIdx].HumanFreqPerK)
+								pFeature->NumNegBiasedCodons++;
+						}
 					else
 						{
-						if(gXlatePeptides[AlignCodonIdx].bWobble)
+						if(gXlateAminoAcids[AlignCodonIdx].bWobble)
 							bIsWobble = true;
 						else
 							bIsNonSynonymous = true;
@@ -1805,7 +1855,9 @@ CSNPs2pgSNPs::ReportFeatSNPcnts(bool bHeader,	// header required
 {
 int FeatIdx;
 int BufIdx;
-char szLineBuff[4096];
+int FromPeptideIdx;
+int ToPeptideIdx;
+char szLineBuff[4000];
 
 if(m_hOutFeatures == -1 || NumFeatures == 0 || pFeatures == NULL)
 	return(0);
@@ -1814,18 +1866,52 @@ if(bHeader)
 	{
 	BufIdx = sprintf(szLineBuff, "\"Chrom\",\"Feature\",\"Start Loci\",\"End Loci\"");
 	BufIdx += sprintf(&szLineBuff[BufIdx], ",\"SNPS\",\"Synonymous\",\"NonSynonymous\",\"Wobble\",\"Excl.Synonymous\",\"Excl.NonSynonymous\",\"Excl.Wobble\"");
-	BufIdx += sprintf(&szLineBuff[BufIdx], ",\"DiracA\",\"DiracC\",\"DiracG\",\"DiracT\"\n");
+	BufIdx += sprintf(&szLineBuff[BufIdx], ",\"SiteSynonymous\",\"NumPosFreqBiasedCodons\",\"NumNegFreqBiasedCodons\"");
+	BufIdx += sprintf(&szLineBuff[BufIdx], ",\"DiracA\",\"DiracC\",\"DiracG\",\"DiracT\"");
+	for(FromPeptideIdx = 0; FromPeptideIdx <= 20; FromPeptideIdx++)
+		{
+		BufIdx += sprintf(&szLineBuff[BufIdx],",\"From:%s\"", gAminoAcids[FromPeptideIdx].szPeptide);
+		for(ToPeptideIdx = 0; ToPeptideIdx <= 20; ToPeptideIdx++)
+			BufIdx += sprintf(&szLineBuff[BufIdx], ",\"To:%s\"", gAminoAcids[ToPeptideIdx].szPeptide);
+		if((BufIdx + 2000) > sizeof(szLineBuff))
+			{
+			CUtility::SafeWrite(m_hOutFeatures, szLineBuff, BufIdx);
+			BufIdx = 0;
+			}
+		}
+	BufIdx += sprintf(&szLineBuff[BufIdx], "\n");
 	}
 
 tsSummaryFeatCnts* pFeature = pFeatures;
+
 for(FeatIdx = 0; FeatIdx < NumFeatures; FeatIdx++, pFeature++)
 	{
-	BufIdx += sprintf(&szLineBuff[BufIdx],"\"%s\",\"%s\",%d,%d",pFeature->szChrom, pFeature->szFeatName, pFeature->FeatStart, pFeature->FeatEnd);
-	BufIdx += sprintf(&szLineBuff[BufIdx],",%d,%d,%d,%d", pFeature->TotSNPs,pFeature->TotSynonymous,pFeature->TotNonSynonymous,pFeature->TotWobble);
-	BufIdx += sprintf(&szLineBuff[BufIdx], ",%d,%d,%d", pFeature->TotExclSynonymous, pFeature->TotExclNonSynonymous, pFeature->TotExclWobble);
-	BufIdx += sprintf(&szLineBuff[BufIdx], ",%d,%d,%d,%d\n", pFeature->DiracCnts[0], pFeature->DiracCnts[1], pFeature->DiracCnts[2], pFeature->DiracCnts[3]);
+	if((BufIdx + 2000) > sizeof(szLineBuff))
+		{
+		CUtility::SafeWrite(m_hOutFeatures, szLineBuff, BufIdx);
+		BufIdx = 0;
+		}
+	BufIdx += sprintf(&szLineBuff[BufIdx],"\"%s\",\"%s\",%u,%u",pFeature->szChrom, pFeature->szFeatName, pFeature->FeatStart, pFeature->FeatEnd);
+	BufIdx += sprintf(&szLineBuff[BufIdx],",%u,%u,%u,%u", pFeature->TotSNPs,pFeature->TotSynonymous,pFeature->TotNonSynonymous,pFeature->TotWobble);
+	BufIdx += sprintf(&szLineBuff[BufIdx], ",%u,%u,%u", pFeature->TotExclSynonymous, pFeature->TotExclNonSynonymous, pFeature->TotExclWobble);
+	BufIdx += sprintf(&szLineBuff[BufIdx], ",%u,%u,%u", pFeature->NumSiteSynonCodons,pFeature->NumPosBiasedCodons, pFeature->NumNegBiasedCodons);
+	BufIdx += sprintf(&szLineBuff[BufIdx], ",%u,%u,%u,%u", pFeature->DiracCnts[0], pFeature->DiracCnts[1], pFeature->DiracCnts[2], pFeature->DiracCnts[3]);
+	for(FromPeptideIdx = 0; FromPeptideIdx <= 20; FromPeptideIdx++)
+		{
+		if((BufIdx + 2000) > sizeof(szLineBuff))
+			{
+			CUtility::SafeWrite(m_hOutFeatures, szLineBuff, BufIdx);
+			BufIdx = 0;
+			}
+		BufIdx += sprintf(&szLineBuff[BufIdx], ",%u", pFeature->FromAminoAcidChanges[FromPeptideIdx]);
+		for(ToPeptideIdx = 0; ToPeptideIdx <= 20; ToPeptideIdx++)
+			BufIdx += sprintf(&szLineBuff[BufIdx],",%u",pFeature->ToAminoAcidChanges[FromPeptideIdx][ToPeptideIdx]);
+		}
+	BufIdx += sprintf(&szLineBuff[BufIdx], "\n");
+	CUtility::SafeWrite(m_hOutFeatures, szLineBuff, BufIdx);
+	BufIdx = 0;
 	}
-CUtility::SafeWrite(m_hOutFeatures, szLineBuff, BufIdx);
+
 return(BufIdx);
 }
 
@@ -2201,9 +2287,7 @@ switch(Mode) {
 			close(m_hOutpgSNPs);
 			m_hOutpgSNPs = -1;
 		}
-
-
-		break;
+	break;
 	}
 
 

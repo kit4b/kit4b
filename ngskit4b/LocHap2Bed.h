@@ -1,7 +1,7 @@
 #pragma once
 
 const int cLHMaxSetMembers = 1000;	// a max of this many members in a set
-const int cCSVLHMaxFields = 100;	// max of this number of fields in a csv snp/di/tri file
+const int cCSVLHMaxFields = 1000;	// max of this number of fields in a csv snp/di/tri file
 const int cLHAllocLineBuffSize = 0x0ffffff;	// allocate line buffer for output which can hold this many chars
 const double cDfltLocalSeqErrRate = 0.02;	// default localised sequence error rate
 const int cMaxREIncludeFiles = cLHMaxSetMembers;	// upto this many regular expressions for files which can be processed

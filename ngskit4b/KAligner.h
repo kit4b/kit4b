@@ -656,6 +656,7 @@ class CKAligner
 	char *m_pszOutBAIFile;			// write BAM indexes to this file
 	char *m_pszSNPRsltsFile;		// write SNPs to this file
 	char *m_pszSNPCentroidFile;		// write SNP centroids to this file
+	bool m_bXCSVFrameShifts;		// true if generating extended SNP csv file containing codon frame shifts
 
 	char *m_pszSfxFile;				// target as suffix array
 	char *m_pszStatsFile;			// aligner induced substitutions stats file or paired end length distributions

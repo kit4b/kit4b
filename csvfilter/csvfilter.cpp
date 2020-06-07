@@ -34,7 +34,7 @@ const int cMaxExcludeChroms = 20;		// max number of exclude chromosomes regular 
 
 const int cMaxOutputFields = 20;		// max number of field output specifiers
 
-const int cMaxNumFields = 200;			// assume that there will never be more than 200 fields in CSV file
+const int cMaxNumFields = 1000;			// assume that there will never be more than 1000 fields in CSV file
 
 const int cElLociAllocChunk = 5000000;	// grow core loci array by this many elements
 const int cElChrAllocChunk = 100000000;	// grow chr buffer by this size

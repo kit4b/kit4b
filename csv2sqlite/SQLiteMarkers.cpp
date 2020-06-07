@@ -965,7 +965,7 @@ if(pCSV == NULL)
 	}
 if(CSVtype == 1)
 	{
-	pCSV->SetMaxFields((cMaxExprCultivars * 8) + 4); // snpmarkers can handle up to cMaxExprCultivars cultivars
+	pCSV->SetMaxFields((cMaxExprCultivars * 9) + 4); // snpmarkers can handle up to cMaxExprCultivars cultivars
 	pCSV->SetMaxLineLen((50 * cMaxExprCultivars * 8) + 4); // snpmarkers header can be very long!
 	}
 if((Rslt=pCSV->Open(pszInFile))!=eBSFSuccess)

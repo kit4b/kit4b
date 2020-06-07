@@ -261,7 +261,7 @@ struct arg_file *lociconstraintsfile = arg_file0("5","lociconstraints","<file>",
 struct arg_file *contamsfile = arg_file0("H","contaminants","<file>", "Optional contaminant sequences multifasta file");
 
 
-struct arg_file *snpfile = arg_file0("S","snpfile","<file>",	"Output SNPs (CSV or VCF if file name extension is '.vcf') to this file (default is to output as CSV to file name with '.snp' appended)");
+struct arg_file *snpfile = arg_file0("S","snpfile","<file>",	"Output SNPs (CSV or CSVX or VCF if file name extension is '.vcf') to this file (default is to output as CSV to file name with '.snp' appended)");
 struct arg_file *centroidfile = arg_file0("7","snpcentroid","<file>", "Output SNP centroid distributions (CSV format) to this file (default is for no centroid processing)");
 struct arg_int *markerlen = arg_int0("K","markerlen","<int>", "output marker sequences of this length with centralised SNP, output to SNP file name with '.marker' apended (default no markers, range 25..500)");
 struct arg_dbl *markerpolythres = arg_dbl0("G","markerpolythres","<dbl>", "maximum allowed marker sequence base polymorphism independent of centroid SNP (default 0.333, range 0.0 to 0.5)");
@@ -990,7 +990,7 @@ if (!argerrors)
 		MarkerPolyThres = markerpolythres->count ? markerpolythres->dval[0] : cDfltMinMarkerSNPProp;
 		if(MarkerPolyThres < 0.0 || MarkerPolyThres > 0.50)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Max marker sequence base poymorphism specified with '-G%1.3f' must be in range 0.0 to 0.5",MarkerPolyThres);
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Max marker sequence base polymorphism specified with '-G%1.3f' must be in range 0.0 to 0.5",MarkerPolyThres);
 			exit(1);
 			}
 		}
