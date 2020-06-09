@@ -20,8 +20,7 @@ Release 0.5.2 - initial release of the alignment benchmarking framework - subjec
 Release 0.5.3 - now clean compiles, no warnings, with gcc 9.2 on Ubuntu 18.04
 Release 0.5.5 - fix for 'ngskit4b snpmarkers -m1' bug (incomplete rows in generated SNP marker file) has been applied
 Release 0.5.8 - benchmarking now matured with all functionality implemented
-Release 0.5.9 - minimap2 SAM file headers may be missing '@VN' version and
-		sort order line. Fix applied to bypass check for SAM header version line.
+Release 0.5.9 - minimap2 SAM file headers may be missing '@VN' version and sort order line. Fix applied to bypass check for SAM header version line.
 Release 0.6.1 - 'ngskit4b benchmark' now has the option to directly generate a CSV file containing benchmarking results
 Release 0.6.5 - Refactored CBlitz to be an accessible library component in 'libkit4b'
 Release 0.7.0 - 'blitz' throughput performance improvements, 'benchmark' improved scoring of unaligned bases
@@ -42,5 +41,6 @@ Release 0.9.8 - Snpmarkers carries through background substitution rates from ka
 Release 0.9.10- snps2pgsnps can now also generate summary SNP distributions
 Release 0.9.12- kalign generates extended SNP CSV formated files containing codon frameshifted distributions; snps2pgsnps can now utilise extended SNP CSVs and a GTF feature file for summary output of synonymous/non-synonymous/wobble codon distributions
 Release 1.0.0 - Extended codon and SNP site peptide mixture summary reporting by snps2pgsnps
+Release 1.0.1 - snps2pgsnps can now generate extended codon and SNP site peptide mixture summary reporting for individual readsets as well as the summary over all readsets 
    
 

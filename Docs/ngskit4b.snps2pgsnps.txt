@@ -6,9 +6,9 @@ are in SetA and another list of names in SetB. Then union, intersect, subtractio
 complement union, complement intersect Set operations will be processed.
 
 
-Version 1.0.0
+Version 1.0.1
 ===========================
-Released June 7th 2020
+Released June 9th 2020
 
 
 This subprocess can be used to take the SNP CSV formated files generated
@@ -69,6 +69,8 @@ Processing mode:
 -o, --outpgsnps=<file>
 	By default, output in UCSC pgSNP format to this file
 	If file extension is '.vcf' then output format will be in VCF 4.1
+	If file extension is '.csv' in processing mode 0 - kalign SNP calls -
+	then individual readset SNP transcriptomic features will be generated into this file
 
 -V, --setop=<int>
 	SetA/B operator -

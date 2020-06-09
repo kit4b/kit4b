@@ -38,7 +38,8 @@ typedef enum TAG_eModepgSSNP {
 
 typedef enum TAG_eRMFsnp {			// report format
 	eRMFpgSNP = 0,					// report in pgSNP format
-	eRMFvcf							// report in VCF 4.1 format
+	eRMFvcf,						// report in VCF 4.1 format
+	eRMFcsv							// reporting in CSV format
 } eRMFsnp;
 
 typedef enum TAG_etSSetOp {
@@ -77,7 +78,11 @@ typedef struct TAG_sSBaseCnts {
 
 typedef struct TAG_sSNPSSite {
 	bool bSNPPlaceholder;			// true if this site is a place holder only and not to be output as a pgSNP or VCF SNP site
+	bool bInFeature;				// set true if this SNP site is within a CDS feature
+	uint32_t FeatureIdx;			// feature index
 	uint32_t SNPId;					// globally unique identifier, includes SNP loci placeholders as well as reported SNPs
+	char szSeqReadSet[cMaxDatasetSpeciesChrom + 1];	// identifies sequenced readset
+	uint32_t ReadsetSiteId;			// site identifier readset unique
 	char szChrom[cMaxDatasetSpeciesChrom + 1]; // SNP is on this chromosome
 	uint32_t SNPLoci;				// SNP loci
 	etSeqBase RefBase;				// reference base
@@ -88,12 +93,25 @@ typedef struct TAG_sSNPSSite {
 	uint32_t DiracCnts[5];			// instance counts of dirac alleles at this loci
 } tsSNPSSite;
 
+typedef struct TAG_sSiteFeatCnts	// these feature counts are specific to a current readset site loci
+	{
+	uint32_t IsDirac;			// true if major allele is dirac 
+	uint32_t TotSynonymous;		// inframe synonymous codons
+	uint32_t TotNonSynonymous;	// inframe non-synonymous codons
+	uint32_t TotWobble;			// inframe wobble or slow codons
+	uint32_t NumPosBiasedCodons;	// all synonymous codons which were biased towards human highest frequency codons
+	uint32_t NumNegBiasedCodons;	// all synonymous codons which were biased towards human lowest frequency codons
+	uint32_t RefSynGroup;			// reference sequence amino acid inframe at site loci
+	uint32_t ToAminoAcidChanges[21]; // counts of amino acid changes from reference (21 allows for changes into stop codons which have been observed)
+	} tsSiteFeatCnts;
+
 typedef struct TAG_sSummaryFeatCnts
 	{
 	char szChrom[cMaxDatasetSpeciesChrom + 1];  // feature is on this chromosome
 	char szFeatName[cMaxDatasetSpeciesChrom+1];	// feature identifier		
 	uint32_t FeatStart;			// feature starts at this genomic loci inclusive
 	uint32_t FeatEnd;			// feature ends at this genomic loci inclusive
+
 	uint32_t TotSNPs;			// total number of SNPs located in this feature
 	uint32_t DiracCnts[5];		// instance counts of dirac alleles located in this feature
 	uint32_t TotSynonymous;		// total synonymous codons
@@ -109,7 +127,11 @@ typedef struct TAG_sSummaryFeatCnts
 	uint32_t NumNegBiasedCodons;	// sum total of all synonymous codons which were biased towards human lowest frequency codons
 	uint32_t FromAminoAcidChanges[21]; // number of times the ref amino acid was changed
 	uint32_t ToAminoAcidChanges[21][21]; // recording counts of amino acid changes from reference (21 allows for changes in stop codons which have been observed)
+
+	tsSiteFeatCnts SiteFeatCnts;	// feature counts at each readset SNP loci
 	} tsSummaryFeatCnts;
+
+
 #pragma pack()
 
 class CSNPs2pgSNPs
@@ -122,6 +144,7 @@ class CSNPs2pgSNPs
 
 	char m_szGFFFile[_MAX_PATH];				// general feature format file - identifies start/end loci of features in assembly, i.e. transcripts etc.
 	char m_szInSNPsFile[_MAX_PATH];				// processing this input kalign SNP calls or snpmarker CSV file
+	char m_ReadsetIdentifier[_MAX_PATH];		// readset identifier - currently just input SNP filename sans directory and only used when processing kalign generated SNP CSV formated files
 	char m_szOutpgSNPsFile[_MAX_PATH];			// write SNPs to this file
 	char m_szOutSiteDistFile[_MAX_PATH];		// SNP site distributions written to this file	
 	char m_szOutFeatures[_MAX_PATH];			// SNP feature distributions written to this file

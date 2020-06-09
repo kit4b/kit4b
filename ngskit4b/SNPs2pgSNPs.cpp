@@ -59,11 +59,11 @@ static tsAminoAcid gAminoAcids[] = {
 	{0,'A',"Ala"},
 	{1,'C',"Cys"},
 	{2,'D',"Asp"},
-	{3,'E',"Gle"},
+	{3,'E',"Glu"},
 	{4,'F',"Phe"},
 	{5,'G',"Gly"},
 	{6,'H',"His"},
-	{7,'I',"Lle"},
+	{7,'I',"Ile"},
 	{8,'K',"Lys"},
 	{9,'L',"Leu"},
 	{10,'M',"Met"},
@@ -1016,6 +1016,7 @@ CSNPs2pgSNPs::ProcessSnpmarkersSNPs(void)
 			continue;
 		}
 		memset(pSNPSite, 0, sizeof(*pSNPSite));
+		strcpy(pSNPSite->szSeqReadSet, m_ReadsetIdentifier);
 		char* pszTxt;
 		m_pCSV->GetText(1, &pszTxt);			// get ":TargSeq"
 		strncpy(pSNPSite->szChrom, pszTxt, sizeof(pSNPSite->szChrom));
@@ -1422,6 +1423,7 @@ while ((Rslt = m_pCSV->NextLine()) > 0)				// onto next line containing fields
 	char* pszTxt;
 
 	memset(pSNPSite, 0, sizeof(SNPSite));
+	strcpy(SNPSite.szSeqReadSet, m_ReadsetIdentifier);
 	pBaseCnts = &pSNPSite->BaseCnts[0];
 	for (BaseCntsIdx = 0; BaseCntsIdx < 5; BaseCntsIdx++, pBaseCnts++)
 		pBaseCnts->Base = (etSeqBase)BaseCntsIdx;
@@ -1438,7 +1440,7 @@ while ((Rslt = m_pCSV->NextLine()) > 0)				// onto next line containing fields
 	m_pCSV->GetUint(11, &pSNPSite->TotBaseCnts);		// get "Bases"
 	if(pSNPSite->TotBaseCnts < m_MinCoverage)
 		continue;
-
+	m_pCSV->GetUint(1, &pSNPSite->ReadsetSiteId);
 	m_pCSV->GetText(4, &pszTxt);			// get "Chrom"
 	strncpy(pSNPSite->szChrom, pszTxt, sizeof(pSNPSite->szChrom));
 	pSNPSite->szChrom[sizeof(pSNPSite->szChrom) - 1] = '\0';
@@ -1526,6 +1528,9 @@ while ((Rslt = m_pCSV->NextLine()) > 0)				// onto next line containing fields
 	int RefCodonIdx;
 	int AlignCodonIdx;
 	int AlignCodons[64];
+
+	pSNPSite->bInFeature = false;
+	pSNPSite->FeatureIdx = 0;
 	if(m_NumFeatures > 0)
 		{
 				// locate the feature in which this SNP is located
@@ -1534,14 +1539,22 @@ while ((Rslt = m_pCSV->NextLine()) > 0)				// onto next line containing fields
 			if(stricmp(pSNPSite->szChrom, pFeature->szChrom) && stricmp(pSNPSite->szChrom, "NC_045512.2"))
 				continue;
 			if(pSNPSite->SNPLoci >= pFeature->FeatStart && pSNPSite->SNPLoci <= pFeature->FeatEnd)
+				{
+				memset(&pFeature->SiteFeatCnts,0,sizeof(pFeature->SiteFeatCnts));
 				break;
+				}
 			}
 		if(FeatureIdx < m_NumFeatures)
 			{
+			pSNPSite->bInFeature = true;
+			pSNPSite->FeatureIdx = FeatureIdx;
 			pFeature->TotSNPs += 1;
 			for(FieldIdx = 0; FieldIdx <= 4; FieldIdx++)
+				{
 				pFeature->DiracCnts[FieldIdx] += pSNPSite->DiracCnts[FieldIdx];
-		
+				if(pSNPSite->DiracCnts[FieldIdx])
+					pFeature->SiteFeatCnts.IsDirac = true;
+				}
 			if(NumFields == cAlignNumSSNPXfields)	// if SNP file is an extended SNP file then can utilise the additional codon frame shift fields present in the extension
 				{
 				// which frame shift to use?
@@ -1591,7 +1604,7 @@ while ((Rslt = m_pCSV->NextLine()) > 0)				// onto next line containing fields
 				bool bIsSynonymous = false;
 				bool bIsNonSynonymous = false;
 				bool bIsWobble = false;
-
+				pFeature->SiteFeatCnts.RefSynGroup = gXlateAminoAcids[RefCodonIdx].SynGroup;
 				for(AlignCodonIdx = 0; AlignCodonIdx < 64; AlignCodonIdx++)
 					{
 					// what count threshold should be used before treating as noise and thus counts to be ignored???
@@ -1605,25 +1618,39 @@ while ((Rslt = m_pCSV->NextLine()) > 0)				// onto next line containing fields
 					// accepting as codon change
 					pFeature->FromAminoAcidChanges[gXlateAminoAcids[RefCodonIdx].SynGroup] += 1;
 					pFeature->ToAminoAcidChanges[gXlateAminoAcids[RefCodonIdx].SynGroup][gXlateAminoAcids[AlignCodonIdx].SynGroup] += 1;
+					pFeature->SiteFeatCnts.ToAminoAcidChanges[gXlateAminoAcids[AlignCodonIdx].SynGroup] += AlignCodons[AlignCodonIdx];
 
 					PolypeptideCnts[gXlateAminoAcids[AlignCodonIdx].SynGroup] += AlignCodons[AlignCodonIdx];
 					if(gXlateAminoAcids[AlignCodonIdx].SynGroup == gXlateAminoAcids[RefCodonIdx].SynGroup)
 						{
 						bIsSynonymous = true;
 						pFeature->NumSiteSynonCodons++;
+						pFeature->SiteFeatCnts.TotSynonymous += AlignCodons[AlignCodonIdx];
 						// attempt to see if can pickup on codon bias adaptation towards humans more abundant tRNAs
 						if(gXlateAminoAcids[AlignCodonIdx].HumanFreqPerK > gXlateAminoAcids[RefCodonIdx].HumanFreqPerK)
+							{
 							pFeature->NumPosBiasedCodons++;
+							pFeature->SiteFeatCnts.NumPosBiasedCodons += AlignCodons[AlignCodonIdx];
+							}
 						else
 							if(gXlateAminoAcids[AlignCodonIdx].HumanFreqPerK < gXlateAminoAcids[RefCodonIdx].HumanFreqPerK)
+								{
 								pFeature->NumNegBiasedCodons++;
+								pFeature->SiteFeatCnts.NumNegBiasedCodons += AlignCodons[AlignCodonIdx];
+								}
 						}
 					else
 						{
 						if(gXlateAminoAcids[AlignCodonIdx].bWobble)
+							{
 							bIsWobble = true;
+							pFeature->SiteFeatCnts.TotWobble += AlignCodons[AlignCodonIdx];
+							}
 						else
+							{
 							bIsNonSynonymous = true;
+							pFeature->SiteFeatCnts.TotNonSynonymous += AlignCodons[AlignCodonIdx];
+							}
 						}
 					}
 
@@ -1702,6 +1729,18 @@ if(bHeader)
 			m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n");
 			break;
 
+		case eRMFcsv:						// report in CSV format
+			m_LineBuffOffs = sprintf(m_pszLineBuff, "\"Readset\",\"Site ID\",\"Site Chrom\",\"Site Loci\",\"SNP ID\",\"Ref Base\"");
+			m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], ",\"Alleles\",\"Depth\"");
+
+			m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], ",\"Feature Chrom\",\"Feature Name\",\"Feature Start Loci\",\"Feature End Loci\"");
+			m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], ",\"Synonymous\",\"NonSynonymous\",\"Wobble\"");
+			m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], ",\"NumPosFreqBiasedCodons\",\"NumNegFreqBiasedCodons\"");
+			m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], ",\"IsDirac\",\"Ref Peptide\"");
+			for(int ToPeptideIdx = 0; ToPeptideIdx <= 20; ToPeptideIdx++)
+				m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], ",\"To:%s\"", gAminoAcids[ToPeptideIdx].szPeptide);
+			m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "\n");
+			break;						
 		}
 	CUtility::SafeWrite(m_hOutpgSNPs, m_pszLineBuff, m_LineBuffOffs);
 	m_LineBuffOffs = 0;
@@ -1842,6 +1881,65 @@ else
 					}
 				}
 			m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs],";DP=%d\n", Depth);
+			break;
+
+		case eRMFcsv:						// report in CSV format
+			NumAlleles = 0;
+			SumQScores = 0;
+			Depth = 0;
+			m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "\"%s\",%u,\"%s\",%u,%d,%c,", pSNPSite->szSeqReadSet,pSNPSite->ReadsetSiteId, pSNPSite->szChrom, pSNPSite->SNPLoci, pSNPSite->SNPId, CSeqTrans::MapBase2Ascii(pSNPSite->RefBase));
+			for(int Idx = 0; Idx < 4; Idx++)
+				{
+				Depth += pSNPSite->BaseCnts[Idx].Cnts;
+				if(Idx == pSNPSite->RefBase)
+					continue;
+				if(pSNPSite->BaseCnts[Idx].Cnts > 0)
+					{
+					if(m_pszLineBuff[m_LineBuffOffs - 1] != ',')
+						m_pszLineBuff[m_LineBuffOffs++] = '|';
+					switch(Idx)
+						{
+							case 0: Base = 'A'; break;
+							case 1: Base = 'C'; break;
+							case 2: Base = 'G'; break;
+							case 3: Base = 'T'; break;
+							case 4: Base = 'N'; break;
+						}
+					NumAlleles++;
+					m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "%c:%d:%f", Base, pSNPSite->BaseCnts[Idx].Cnts, pSNPSite->BaseCnts[Idx].QScore);
+					}
+				}
+			m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], ",%d", Depth);
+			if(m_pFeatures != NULL && m_NumFeatures)
+				{
+				tsSummaryFeatCnts *pFeature;
+				if(pSNPSite->bInFeature)
+					{
+					pFeature = &m_pFeatures[pSNPSite->FeatureIdx];
+					m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], ",\"%s\",\"%s\",%u,%u", pFeature->szChrom, pFeature->szFeatName, pFeature->FeatStart, pFeature->FeatEnd);
+					m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], ",%u,%u,%u", pFeature->SiteFeatCnts.TotSynonymous, pFeature->SiteFeatCnts.TotNonSynonymous, pFeature->SiteFeatCnts.TotWobble);
+					m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], ",%u,%u", pFeature->SiteFeatCnts.NumPosBiasedCodons, pFeature->SiteFeatCnts.NumNegBiasedCodons);
+					m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], ",%u", pFeature->SiteFeatCnts.IsDirac ? 1 : 0);
+					m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs],",\"%s\"", gAminoAcids[pFeature->SiteFeatCnts.RefSynGroup].szPeptide);
+					for(int ToPeptideIdx = 0; ToPeptideIdx <= 20; ToPeptideIdx++)
+						m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], ",%u", pFeature->SiteFeatCnts.ToAminoAcidChanges[ToPeptideIdx]);
+					}
+				else
+					{
+					m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], ",\"-\",\"-\",0,0");
+					m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], ",0,0,0,0,0,0");
+					m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "0,\"-\"");
+					for(int ToPeptideIdx = 0; ToPeptideIdx <= 20; ToPeptideIdx++)
+						m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], ",0");
+					}
+				}
+
+			m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "\n");
+			if((m_LineBuffOffs + 500) >= m_AllocdLineBuff)
+				{
+				CUtility::SafeWrite(m_hOutpgSNPs, m_pszLineBuff, m_LineBuffOffs);
+				m_LineBuffOffs = 0;
+				}
 			break;
 		}
 	}
@@ -2064,11 +2162,15 @@ memset(m_pIndividualSNPsDist, 0, sizeof(uint32_t) * (cMaxIndividualSNPS + 1));
 
 // check file extension, if '.vcf' then generate output formated for vcf, if '.csv' then report format for csv, instead of the default pgSNP format
 m_ReportFormat = eRMFsnp::eRMFpgSNP;
-if((Len=(int)strlen(pszOutFile)) >= 5 && !stricmp(&pszOutFile[Len-4],".vcf"))
-	m_ReportFormat = eRMFsnp::eRMFvcf;
-
-
-
+if((Len=(int)strlen(pszOutFile)) >= 5)
+	{
+	if(!stricmp(&pszOutFile[Len-4],".vcf"))
+		m_ReportFormat = eRMFsnp::eRMFvcf;
+	else
+		if(!stricmp(&pszOutFile[Len - 4], ".csv"))
+			m_ReportFormat = eRMFsnp::eRMFcsv;
+	}
+	
 #ifdef _WIN32
 if ((m_hOutpgSNPs = open(pszOutFile, (_O_RDWR | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC), (_S_IREAD | _S_IWRITE))) == -1)
 #else
@@ -2140,6 +2242,15 @@ switch(Mode) {
 				Reset();
 				return(Rslt);
 				}
+
+			// readset name is simply the input SNP file sans path and file name extension if '.snp.csv' or just '.csv' - very simplistic but SNP CSVs do not contain sequencing readset names!
+			CUtility::splitpath(pszCurSNPFile,NULL, m_ReadsetIdentifier);
+			if((Len = (int)strlen(m_ReadsetIdentifier)) >= 10 && !stricmp(&m_ReadsetIdentifier[Len - 9], ".snps.csv"))
+				m_ReadsetIdentifier[Len - 9] = '\0';
+			else
+				if((Len = (int)strlen(m_ReadsetIdentifier)) >= 5 && !stricmp(&m_ReadsetIdentifier[Len - 4], ".csv"))
+					m_ReadsetIdentifier[Len - 3] = '\0';
+
 			Rslt = ProcessKalignSNPs();
 			if(m_pCSV != NULL)
 				m_pCSV->Close();
@@ -2183,6 +2294,11 @@ switch(Mode) {
 			Reset();
 			return(Rslt);
 			}
+			// readset name is simply the input SNP file sans path and file name extension if it is '.csv' - very simplistic but snpmarkers CSVs do not contain sequencing readset names!
+		CUtility::splitpath(pszSNPFile, NULL, m_ReadsetIdentifier);
+		if((Len = (int)strlen(m_ReadsetIdentifier)) >= 5 && !stricmp(&m_ReadsetIdentifier[Len - 4], ".csv"))
+			m_ReadsetIdentifier[Len-5] = '\0';
+		
 		if((m_pszSiteDistBuff = new char[cAllocLineBuffSize]) == NULL)
 			{
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Unable to allocate memory for site distribution line buffering -- %s", strerror(errno));
