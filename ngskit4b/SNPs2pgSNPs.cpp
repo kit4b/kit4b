@@ -262,6 +262,7 @@ SNPs2pgSNPs(int argc, char** argv)
 	/* special case: '--help' takes precedence over error reporting */
 	if (help->count > 0)
 	{
+		printf("\nCAUTION: This processing module is specifically targeting analysis of virus (e.g. SARS-CoV-2) sized assembly SNP calls");
 		printf("\n%s %s %s, Version %s\nOptions ---\n", gszProcName, gpszSubProcess->pszName, gpszSubProcess->pszFullDescr, kit4bversion);
 		arg_print_syntax(stdout, argtable, "\n");
 		arg_print_glossary(stdout, argtable, "  %-25s %s\n");
@@ -315,6 +316,7 @@ SNPs2pgSNPs(int argc, char** argv)
 		}
 
 		gDiagnostics.DiagOut(eDLInfo, gszProcName, "Subprocess %s Version %s starting", gpszSubProcess->pszName, kit4bversion);
+		gDiagnostics.DiagOut(eDLInfo, gszProcName, "CAUTION: This processing module is specifically targeting analysis of virus (e.g. SARS-CoV-2) sized assemblies SNP calls");
 		gExperimentID = 0;
 		gProcessID = 0;
 		gProcessingID = 0;
@@ -716,16 +718,18 @@ CSNPs2pgSNPs::CSNPs2pgSNPs(void)
 {
 m_pSNPSites = NULL;
 m_pCSV = NULL;
-m_pszLineBuff = NULL;
+m_pszOutBuff = NULL;
 m_pszSiteDistBuff = NULL;
 m_pGapCntDist = NULL;
 m_pSharedSNPsDist = NULL;
 m_pIndividualSNPsDist = NULL;
 m_pGFFFile = NULL;
 m_pFeatures = NULL;
-m_hOutpgSNPs = -1;
+m_pIsolateFeatSNPs = NULL;
+m_pMatrix = NULL;
+m_pSimilaritiesMatrix = NULL;
+m_hOutFile = -1;
 m_hOutSiteDist = -1; 
-m_hOutFeatures = -1;
 Reset();
 }
 
@@ -736,16 +740,27 @@ if(m_pGFFFile != NULL)
 	delete m_pGFFFile;
 if(m_pCSV != NULL)
 	delete m_pCSV;
-if(m_hOutpgSNPs!=-1)
-	close(m_hOutpgSNPs);
-if(m_hOutFeatures!=-1)
-	close(m_hOutFeatures);
-if (m_pszLineBuff != NULL)
-	delete []m_pszLineBuff;
+if(m_hOutFile !=-1)
+	close(m_hOutFile);
+if (m_pszOutBuff != NULL)
+	delete []m_pszOutBuff;
 if(m_pszSiteDistBuff != NULL)
 	delete []m_pszSiteDistBuff;
+if(m_pMatrix != NULL)
+	delete []m_pMatrix;
+if(m_pSimilaritiesMatrix == NULL)
+	delete []m_pSimilaritiesMatrix;
 if(m_pSNPSites != NULL)
 	delete m_pSNPSites;
+if(m_pIsolateFeatSNPs != NULL)
+	{
+#ifdef _WIN32
+	free(m_pIsolateFeatSNPs);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
+#else
+	if(m_pIsolateFeatSNPs != MAP_FAILED)
+		munmap(m_pIsolateFeatSNPs, m_AllocdIsolateFeatSNPsMem);
+#endif
+	}
 if(m_pGapCntDist != NULL)
 	delete []m_pGapCntDist;
 if(m_pSharedSNPsDist != NULL)
@@ -771,33 +786,24 @@ if(m_pFeatures != NULL)
 	m_pFeatures = NULL;
 	}
 
+
+
 if(m_pCSV != NULL)
 	{
 	delete m_pCSV;
 	m_pCSV = NULL;
 	}
-if (m_hOutpgSNPs != -1)
+if (m_hOutFile != -1)
 	{
-	if (m_LineBuffOffs && m_pszLineBuff != NULL)
-		CUtility::SafeWrite(m_hOutpgSNPs, m_pszLineBuff, m_LineBuffOffs);
+	if (m_OutBuffOffs && m_pszOutBuff != NULL)
+		CUtility::SafeWrite(m_hOutFile, m_pszOutBuff, m_OutBuffOffs);
 #ifdef _WIN32
-	_commit(m_hOutpgSNPs);
+	_commit(m_hOutFile);
 #else
-	fsync(m_hOutpgSNPs);
+	fsync(m_hOutFile);
 #endif
-	close(m_hOutpgSNPs);
-	m_hOutpgSNPs = -1;
-	}
-
-if(m_hOutFeatures != -1)
-	{
-#ifdef _WIN32
-	_commit(m_hOutFeatures);
-#else
-	fsync(m_hOutFeatures);
-#endif
-	close(m_hOutFeatures);
-	m_hOutFeatures = -1;
+	close(m_hOutFile);
+	m_hOutFile = -1;
 	}
 
 if(m_hOutSiteDist != -1)
@@ -815,10 +821,10 @@ if(m_hOutSiteDist != -1)
 
 
 
-if(m_pszLineBuff != NULL)
+if(m_pszOutBuff != NULL)
 	{
-	delete []m_pszLineBuff;
-	m_pszLineBuff = NULL;
+	delete []m_pszOutBuff;
+	m_pszOutBuff = NULL;
 	}
 
 if(m_pszSiteDistBuff != NULL)
@@ -849,11 +855,52 @@ if(m_pIndividualSNPsDist != NULL)
 	m_pIndividualSNPsDist = NULL;
 	}
 
+if(m_pIsolateFeatSNPs != NULL)
+	{
+#ifdef _WIN32
+	free(m_pIsolateFeatSNPs);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
+#else
+	if(m_pIsolateFeatSNPs != MAP_FAILED)
+		munmap(m_pIsolateFeatSNPs, m_AllocdIsolateFeatSNPsMem);
+#endif
+	m_pIsolateFeatSNPs = NULL;
+	}
+
+if(m_pMatrix != NULL)
+	{
+	delete[]m_pMatrix;
+	m_pMatrix = NULL;
+	}
+
+if(m_pSimilaritiesMatrix != NULL)
+	{
+	delete []m_pSimilaritiesMatrix;
+	m_pSimilaritiesMatrix = NULL;
+	}
+
+m_SortOrder = 0;
+m_MatrixCols = 0;
+m_MatrixRows = 0;
+m_SimilaritiesMatrixCols = 0;
+m_SimilaritiesMatrixRows = 0;
+
+m_NumUniqueSiteLoci = 0;
+m_NumCultivars = 0;
+
+m_NumChromNames = 0;
+m_szChromNames[0] = '\0';
+m_szChromIdx[0] = 0;
+m_NxtszChromIdx = 0;
+
+m_NumReadsetNames = 0;
+m_szReadsetNames[0] = '\0';
+m_szReadsetIdx[0] = 0;
+m_NxtszReadsetIdx = 0;
+
 m_szGFFFile[0] = '\0';
-m_AllocdLineBuff = 0;
-m_LineBuffOffs = 0;
+m_AllocdOutBuff = 0;
+m_OutBuffOffs = 0;
 m_szInSNPsFile[0] = '\0';
-m_szOutpgSNPsFile[0] = '\0';
 m_szOutSiteDistFile[0] = '\0';
 
 m_AllocdSNPSites = 0;
@@ -864,6 +911,10 @@ m_MaxSNPgap = 0;
 m_MaxSharedSNPs = 0;
 m_SiteDistOffs = 0;
 m_AllocdSiteDistBuff = 0;
+
+m_IsolateFeatSNPs = 0;
+m_AllocdIsolateFeatSNPs = 0;
+m_AllocdIsolateFeatSNPsMem = 0;
 
 m_NumFeatures = 0;
 m_AllocFeatures = 0;
@@ -877,7 +928,7 @@ CSNPs2pgSNPs::ProcessSnpmarkersSNPs(void)
 {
 	int Rslt;
 	int NumFields;
-	int CultivarIdx;
+	uint32_t CultivarIdx;
 	tsSCultivar* pCultivar;
 	uint32_t PrevSNPloci;
 	uint32_t EstNumSNPs;
@@ -885,8 +936,7 @@ CSNPs2pgSNPs::ProcessSnpmarkersSNPs(void)
 	uint32_t RowNumber;
 	bool bMarkerFormat;
 	int ExpNumFields;
-	CStats Stats;
-	int NumSpeciesWithCnts;
+	uint32_t NumSpeciesWithCnts;
 	tsSNPSSite SNPSite;
 	tsSNPSSite* pSNPSite;
 
@@ -1017,10 +1067,23 @@ CSNPs2pgSNPs::ProcessSnpmarkersSNPs(void)
 		}
 		memset(pSNPSite, 0, sizeof(*pSNPSite));
 		strcpy(pSNPSite->szSeqReadSet, m_ReadsetIdentifier);
+		if((Rslt = pSNPSite->ReadsetID = AddReadset(pSNPSite->szSeqReadSet)) < 1)
+			{
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Failed generating a unique readset name identifier '%s'", pSNPSite->szSeqReadSet);
+			Reset();
+			return(Rslt);
+			}
+
 		char* pszTxt;
 		m_pCSV->GetText(1, &pszTxt);			// get ":TargSeq"
 		strncpy(pSNPSite->szChrom, pszTxt, sizeof(pSNPSite->szChrom));
 		pSNPSite->szChrom[sizeof(pSNPSite->szChrom) - 1] = '\0';
+		if((Rslt = pSNPSite->ChromID = AddChrom(pSNPSite->szChrom)) < 1)
+			{
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Failed generating a unique chromosome name identifier '%s'", pSNPSite->szChrom);
+			Reset();
+			return(Rslt);
+			}
 		m_pCSV->GetInt(2, (int*)&pSNPSite->SNPLoci);			// get "Loci"
 		m_pCSV->GetText(3, &pszTxt);			// get "TargBase"
 		switch(*pszTxt) {
@@ -1044,7 +1107,7 @@ CSNPs2pgSNPs::ProcessSnpmarkersSNPs(void)
 				Reset();
 				return(eBSFerrFieldCnt);
 		}
-		m_pCSV->GetInt(4, &NumSpeciesWithCnts);			// get "NumSpeciesWithCnts"
+		m_pCSV->GetInt(4, (int *)&NumSpeciesWithCnts);			// get "NumSpeciesWithCnts"
 		if(NumSpeciesWithCnts < 1 || NumSpeciesWithCnts > m_NumCultivars)
 		{
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Expected NumSpeciesWithCnts (%d) to be between 1 and %d in CSV file '%s' near line %d", NumSpeciesWithCnts, m_NumCultivars, m_szInSNPsFile, RowNumber);
@@ -1173,7 +1236,7 @@ CSNPs2pgSNPs::ProcessSnpmarkersSNPs(void)
 			if(m_MinAlleleProp > 0.0 && (pCultivar->TotBaseCnts == 0 || (pCultivar->TotMismatches / (double)pCultivar->TotBaseCnts) < m_MinAlleleProp))
 				continue;
 
-			PValue = 1.0 - Stats.Binomial(pCultivar->TotBaseCnts, pCultivar->TotMismatches, pCultivar->Score);
+			PValue = 1.0 - m_Stats.Binomial(pCultivar->TotBaseCnts, pCultivar->TotMismatches, pCultivar->Score);
 			if(PValue > m_PValueThres)
 				continue;
 
@@ -1193,7 +1256,7 @@ CSNPs2pgSNPs::ProcessSnpmarkersSNPs(void)
 					continue;
 
 				pSNPSite->BaseCnts[Idx].Cnts += 1;
-				PValue = min(0.5, 1.0 - Stats.Binomial(pCultivar->TotBaseCnts, pCultivar->BaseCnts[Idx], pCultivar->Score));
+				PValue = min(0.5, 1.0 - m_Stats.Binomial(pCultivar->TotBaseCnts, pCultivar->BaseCnts[Idx], pCultivar->Score));
 				pSNPSite->BaseCnts[Idx].QScore += PValue;
 				}
 			if(bIsDirac)
@@ -1286,19 +1349,8 @@ CSNPs2pgSNPs::ProcessSnpmarkersSNPs(void)
 		Report(false, pSNPSite);
 	}
 
-if (m_LineBuffOffs)
-	{
-	CUtility::SafeWrite(m_hOutpgSNPs, m_pszLineBuff, m_LineBuffOffs);
-	m_LineBuffOffs = 0;
-	}
-
-#ifdef _WIN32
-	_commit(m_hOutpgSNPs);
-#else
-	fsync(m_hOutpgSNPs);
-#endif
-	close(m_hOutpgSNPs);
-	m_hOutpgSNPs = -1;
+if((Rslt = WriteOutFile(true)) < eBSFSuccess)
+	return(Rslt);
 
 
 if(m_SiteDistOffs)
@@ -1354,13 +1406,10 @@ bool bHaveSNP;
 tsSNPSSite SNPSite;
 tsSNPSSite *pSNPSite;
 
-CStats Stats;
-
 EstNumSNPs = m_pCSV->EstNumRows();
 NumSNPsParsed = 0;
 RowNumber = 0;
 ExpNumFields = 0;
-m_NumCultivars = 0;
 bMarkerFormat = false;
 while ((Rslt = m_pCSV->NextLine()) > 0)				// onto next line containing fields
 	{
@@ -1382,7 +1431,6 @@ while ((Rslt = m_pCSV->NextLine()) > 0)				// onto next line containing fields
 			Reset();
 			return(eBSFerrFieldCnt);
 			}
-		m_NumCultivars = 1;
 		bMarkerFormat = false;
 		ExpNumFields = NumFields;
 		}
@@ -1417,7 +1465,7 @@ while ((Rslt = m_pCSV->NextLine()) > 0)				// onto next line containing fields
 			*pDst = '\0';
 			}
 		memset(&m_Cultivars[0], 0, sizeof(m_Cultivars[0]));
-		strcpy(m_Cultivars[0].szName, (char*)"Unknown");
+		strcpy(m_Cultivars[0].szName, m_TargAssemblyName);
 		}
 
 	char* pszTxt;
@@ -1440,10 +1488,18 @@ while ((Rslt = m_pCSV->NextLine()) > 0)				// onto next line containing fields
 	m_pCSV->GetUint(11, &pSNPSite->TotBaseCnts);		// get "Bases"
 	if(pSNPSite->TotBaseCnts < m_MinCoverage)
 		continue;
+	pSNPSite->ReadsetID = m_ReadsetID;
 	m_pCSV->GetUint(1, &pSNPSite->ReadsetSiteId);
 	m_pCSV->GetText(4, &pszTxt);			// get "Chrom"
 	strncpy(pSNPSite->szChrom, pszTxt, sizeof(pSNPSite->szChrom));
 	pSNPSite->szChrom[sizeof(pSNPSite->szChrom) - 1] = '\0';
+	if((Rslt = pSNPSite->ChromID = AddChrom(pSNPSite->szChrom)) < 1)
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Failed generating a unique chromosome name identifier '%s'", pSNPSite->szChrom);
+		Reset();
+		return(Rslt);
+		}
+
 	m_pCSV->GetUint(5, &pSNPSite->SNPLoci);			// get "StartLoci"
 
 	m_pCSV->GetUint(12, &pSNPSite->TotMismatches);		// get "Mismatches"
@@ -1485,13 +1541,14 @@ while ((Rslt = m_pCSV->NextLine()) > 0)				// onto next line containing fields
 	if(m_MinAlleleProp > 0.0 && (pSNPSite->TotBaseCnts == 0 || (pSNPSite->TotMismatches / (double)pSNPSite->TotBaseCnts) < m_MinAlleleProp))
 		continue;
 
-	PValue = 1.0 - Stats.Binomial(pSNPSite->TotBaseCnts, pSNPSite->TotMismatches, pSNPSite->LocalSeqErrRate);
+	PValue = 1.0 - m_Stats.Binomial(pSNPSite->TotBaseCnts, pSNPSite->TotMismatches, pSNPSite->LocalSeqErrRate);
 	if(PValue > m_PValueThres)
 		continue;
 
 	bHaveSNP = false;
 	for (int Idx = 0; Idx < 4; Idx++)
 		{
+		pSNPSite->OrigBaseCnts[Idx] = pSNPSite->BaseCnts[Idx].Cnts;
 		if(m_MinAlleleProp > 0.0 && (pSNPSite->BaseCnts[Idx].Cnts == 0 || (((double)pSNPSite->BaseCnts[Idx].Cnts * 4) / (double)pSNPSite->TotBaseCnts) < m_MinAlleleProp))
 			{
 			pSNPSite->BaseCnts[Idx].Cnts = 0;
@@ -1499,7 +1556,7 @@ while ((Rslt = m_pCSV->NextLine()) > 0)				// onto next line containing fields
 			continue;
 			}
 
-		PValue = 1.0 - Stats.Binomial(pSNPSite->TotBaseCnts, pSNPSite->BaseCnts[Idx].Cnts, pSNPSite->LocalSeqErrRate);
+		PValue = 1.0 - m_Stats.Binomial(pSNPSite->TotBaseCnts, pSNPSite->BaseCnts[Idx].Cnts, pSNPSite->LocalSeqErrRate);
 		if(PValue > m_PValueThres)
 			{
 			pSNPSite->BaseCnts[Idx].Cnts = 0;
@@ -1516,6 +1573,7 @@ while ((Rslt = m_pCSV->NextLine()) > 0)				// onto next line containing fields
 		}
 	if(!bHaveSNP)
 		continue;
+	NumSNPsParsed++;
 
 	tsSummaryFeatCnts* pFeature = m_pFeatures;
 	eSeqBase Base;
@@ -1611,7 +1669,7 @@ while ((Rslt = m_pCSV->NextLine()) > 0)				// onto next line containing fields
 					// here I'm requiring at least 2 codon instances covering site with a PValue <= 2*m_PValueThres which is slightly better than guessing
 					if(AlignCodons[AlignCodonIdx] < 2)
 						continue;
-					PValue = 1.0 - Stats.Binomial(SumCodonCnts, AlignCodons[AlignCodonIdx], pSNPSite->LocalSeqErrRate);
+					PValue = 1.0 - m_Stats.Binomial(SumCodonCnts, AlignCodons[AlignCodonIdx], pSNPSite->LocalSeqErrRate);
 					if(PValue > (m_PValueThres * 2))
 						continue;
 
@@ -1678,19 +1736,135 @@ while ((Rslt = m_pCSV->NextLine()) > 0)				// onto next line containing fields
 		Report(true, pSNPSite);
 	m_bRptHdr = false;
 	Report(false, pSNPSite);
-	}
-if (m_LineBuffOffs)
-	{
-	CUtility::SafeWrite(m_hOutpgSNPs, m_pszLineBuff, m_LineBuffOffs);
-	m_LineBuffOffs = 0;
-	}
+
+	if(m_ReportFormat == eRMFcsv)
+		{
+		tsIsolateFeatSNPs* pIsolateFeatSNPs;
+		if(m_pIsolateFeatSNPs == NULL)
+			{
+			size_t memreq = (size_t)(sizeof(tsIsolateFeatSNPs) * cAllocNumIsolateFeatSNPs);
+
 #ifdef _WIN32
-_commit(m_hOutpgSNPs);
+			m_pIsolateFeatSNPs = (tsIsolateFeatSNPs*)malloc(memreq);	// initial and perhaps the only allocation
+			if(m_pIsolateFeatSNPs == NULL)
+				{
+				gDiagnostics.DiagOut(eDLFatal, gszProcName, "IsolateFeatSNPs: Initial memory allocation of %lld bytes - %s", (INT64)memreq, strerror(errno));
+				Reset();
+				return(eBSFerrMem);
+				}
 #else
-fsync(m_hOutpgSNPs);
+			// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
+			m_pIsolateFeatSNPs = (tsIsolateFeatSNPs *)mmap(NULL, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+			if(m_pIsolateFeatSNPs == MAP_FAILED)
+				{
+				gDiagnostics.DiagOut(eDLFatal, gszProcName, "IsolateFeatSNPs: Memory allocation of %lld bytes through mmap()  failed - %s", (INT64)memreq, strerror(errno));
+				m_pIsolateFeatSNPs = NULL;
+				Reset();
+				return(eBSFerrMem);
+				}
 #endif
-return(0);
+			m_AllocdIsolateFeatSNPsMem = memreq;
+			m_IsolateFeatSNPs = 0;
+			m_AllocdIsolateFeatSNPs = cAllocNumIsolateFeatSNPs;
+			}
+		else
+			{
+			if((m_IsolateFeatSNPs + 100) > m_AllocdIsolateFeatSNPs)
+				{
+				size_t memreq = m_AllocdIsolateFeatSNPsMem + (cAllocNumIsolateFeatSNPs * sizeof(tsIsolateFeatSNPs));
+				
+#ifdef _WIN32
+				pIsolateFeatSNPs = (tsIsolateFeatSNPs*)realloc(m_pIsolateFeatSNPs, memreq);
+#else
+				pIsolateFeatSNPs = (tsIsolateFeatSNPs*)mremap(m_pIsolateFeatSNPs, m_AllocdIsolateFeatSNPsMem, memreq, MREMAP_MAYMOVE);
+				if(pIsolateFeatSNPs == MAP_FAILED)
+					pIsolateFeatSNPs = NULL;
+#endif
+				if(pIsolateFeatSNPs == NULL)
+					{
+					gDiagnostics.DiagOut(eDLFatal, gszProcName, "IsolateFeatSNPs: Memory re-allocation to %lld bytes - %s", memreq, strerror(errno));
+					return(eBSFerrMem);
+					}
+				m_pIsolateFeatSNPs = pIsolateFeatSNPs;
+				m_AllocdIsolateFeatSNPs += cAllocNumIsolateFeatSNPs;
+				m_AllocdIsolateFeatSNPsMem = memreq;
+				}
+			}
+		pIsolateFeatSNPs = &m_pIsolateFeatSNPs[m_IsolateFeatSNPs++];
+		memset(pIsolateFeatSNPs,0,sizeof(tsIsolateFeatSNPs));
+		if(m_NumFeatures > 0 && pFeature != NULL)
+			memcpy(&pIsolateFeatSNPs->SiteFeatCnts,pFeature,sizeof(tsSummaryFeatCnts));
+		memcpy(&pIsolateFeatSNPs->SNPSSite, pSNPSite,sizeof(tsSNPSSite));
+		}
+	}
+return(NumSNPsParsed);
 }
+
+int		// returned chrom identifier, < 1 if unable to accept this chromosome name
+CSNPs2pgSNPs::AddChrom(char* pszChrom) // associate unique identifier with this chromosome name
+{
+int ChromNameIdx;
+int ChromNameLen;
+
+// iterate over all known chroms in case this chrom to add is a duplicate
+for(ChromNameIdx = 0; ChromNameIdx < m_NumChromNames; ChromNameIdx++)
+	if(!stricmp(pszChrom, &m_szChromNames[m_szChromIdx[ChromNameIdx]]))
+		return(ChromNameIdx + 1);
+
+// chrom is not a duplicate
+ChromNameLen = (int)strlen(pszChrom);
+if((m_NxtszChromIdx + ChromNameLen + 1) > (int)sizeof(m_szChromNames))
+	return(eBSFerrMaxEntries);
+if(m_NumChromNames == cMaxChromNames)
+	return(eBSFerrMaxEntries);
+
+m_szChromIdx[m_NumChromNames] = m_NxtszChromIdx;
+strcpy(&m_szChromNames[m_NxtszChromIdx], pszChrom);
+m_NxtszChromIdx += ChromNameLen + 1;
+return(++m_NumChromNames);
+}
+
+char* 
+CSNPs2pgSNPs::LocateChrom(int ChromID)
+{
+if(ChromID < 1 || ChromID > m_NumChromNames)
+	return(NULL);
+return(&m_szChromNames[m_szChromIdx[ChromID-1]]);
+}
+
+int		// returned readset identifier, < 1 if unable to accept this readset name
+CSNPs2pgSNPs::AddReadset(char* pszReadset) // associate unique identifier with this readset name
+{
+	int ReadsetIdx;
+	int ReadsetNameLen;
+
+	// iterate over all known readset in case this readset to add is a duplicate
+	for(ReadsetIdx = 0; ReadsetIdx < m_NumReadsetNames; ReadsetIdx++)
+		if(!stricmp(pszReadset, &m_szReadsetNames[m_szReadsetIdx[ReadsetIdx]]))
+			return(ReadsetIdx + 1);
+
+	// readset is not a duplicate
+	ReadsetNameLen = (int)strlen(pszReadset);
+	if((m_NxtszReadsetIdx + ReadsetNameLen + 1) > sizeof(m_szReadsetNames))
+		return(eBSFerrMaxEntries);
+	if(m_NumReadsetNames == cMaxReadsetNames)
+		return(eBSFerrMaxEntries);
+
+	m_szReadsetIdx[m_NumReadsetNames] = m_NxtszReadsetIdx;
+	strcpy(&m_szReadsetNames[m_NxtszReadsetIdx], pszReadset);
+	m_NxtszReadsetIdx += ReadsetNameLen + 1;
+	return(++m_NumReadsetNames);
+}
+
+char* // returned ptr to readset name 
+CSNPs2pgSNPs::LocateReadset(int ReadsetID) // readset name identifier
+{
+	if(ReadsetID < 1 || ReadsetID > m_NumReadsetNames)
+		return(NULL);
+	return(&m_szReadsetNames[m_szReadsetIdx[ReadsetID - 1]]);
+}
+
+
 
 // following function is experimental, enabling reporting in three different file formats
 // pgSNP, VCF4.1, or CSV
@@ -1698,6 +1872,7 @@ int
 CSNPs2pgSNPs::Report(bool bHeader,		// if true then header line(s) to be generated, otherwise SNPs or alleles
 					 tsSNPSSite* pSNPSite)
 {
+int Rslt;
 char Base;
 double SumQScores;
 int NumAlleles;
@@ -1719,31 +1894,31 @@ if(bHeader)
 				strcpy(szChrom, "NC_045512v2");
 			else
 				strcpy(szChrom, pSNPSite->szChrom);
-			m_LineBuffOffs = sprintf(m_pszLineBuff, "track type=pgSnp visibility=3 db=%s name=\"%s\" description=\"%s\"\n", m_SpecAssemblyName, m_szTrackName, m_szDescription);
-			m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "browser position %s:%d-%d", szChrom, StartLoci, EndLoci);
+			m_OutBuffOffs = sprintf(m_pszOutBuff, "track type=pgSnp visibility=3 db=%s name=\"%s\" description=\"%s\"\n", m_SpecAssemblyName, m_szTrackName, m_szDescription);
+			m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], "browser position %s:%d-%d", szChrom, StartLoci, EndLoci);
 			break;
 
 		case eRMFvcf:						// report in VCF 4.1 format
-			m_LineBuffOffs = sprintf(m_pszLineBuff, "##fileformat=VCFv4.1\n##source=ngskit4b%s\n##reference=%s\n##INFO=<ID=AF,Number=A,Type=Float,Description=\"Allele Frequency\">\n##FORMAT=<ID=DP,Number=1,Type=Integer,Description=\"Read Depth\">\n",
+			m_OutBuffOffs = sprintf(m_pszOutBuff, "##fileformat=VCFv4.1\n##source=ngskit4b%s\n##reference=%s\n##INFO=<ID=AF,Number=A,Type=Float,Description=\"Allele Frequency\">\n##FORMAT=<ID=DP,Number=1,Type=Integer,Description=\"Read Depth\">\n",
 										kit4bversion, m_szInSNPsFile);
-			m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n");
+			m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n");
 			break;
 
 		case eRMFcsv:						// report in CSV format
-			m_LineBuffOffs = sprintf(m_pszLineBuff, "\"Readset\",\"Site ID\",\"Site Chrom\",\"Site Loci\",\"SNP ID\",\"Ref Base\"");
-			m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], ",\"Alleles\",\"Depth\"");
+			m_OutBuffOffs = sprintf(m_pszOutBuff, "\"Readset\",\"Site ID\",\"Site Chrom\",\"Site Loci\",\"SNP ID\",\"Ref Base\",\"CntA\",\"CntC\",\"CntG\",\"CntT\",\"CntN\"");
+			m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], ",\"Alleles\",\"Depth\"");
 
-			m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], ",\"Feature Chrom\",\"Feature Name\",\"Feature Start Loci\",\"Feature End Loci\"");
-			m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], ",\"Synonymous\",\"NonSynonymous\",\"Wobble\"");
-			m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], ",\"NumPosFreqBiasedCodons\",\"NumNegFreqBiasedCodons\"");
-			m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], ",\"IsDirac\",\"Ref Peptide\"");
+			m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], ",\"Feature Chrom\",\"Feature Name\",\"Feature Start Loci\",\"Feature End Loci\"");
+			m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], ",\"Synonymous\",\"NonSynonymous\",\"Wobble\"");
+			m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], ",\"NumPosFreqBiasedCodons\",\"NumNegFreqBiasedCodons\"");
+			m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], ",\"IsDirac\",\"Ref Peptide\"");
 			for(int ToPeptideIdx = 0; ToPeptideIdx <= 20; ToPeptideIdx++)
-				m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], ",\"To:%s\"", gAminoAcids[ToPeptideIdx].szPeptide);
-			m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "\n");
+				m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], ",\"To:%s\"", gAminoAcids[ToPeptideIdx].szPeptide);
+			m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], "\n");
 			break;						
 		}
-	CUtility::SafeWrite(m_hOutpgSNPs, m_pszLineBuff, m_LineBuffOffs);
-	m_LineBuffOffs = 0;
+	if((Rslt = WriteOutFile(true)) < eBSFSuccess)
+		return(Rslt);
 	}
 else
 	{
@@ -1778,11 +1953,8 @@ else
 		m_SiteDistOffs += sprintf(&m_pszSiteDistBuff[m_SiteDistOffs],"%u,%u,%u,%u,%u\n",pSNPSite->DiracCnts[0], pSNPSite->DiracCnts[1], pSNPSite->DiracCnts[2], pSNPSite->DiracCnts[3], pSNPSite->DiracCnts[4]);
 		}
 
-	if ((m_LineBuffOffs + 500) >= m_AllocdLineBuff)
-		{
-		CUtility::SafeWrite(m_hOutpgSNPs, m_pszLineBuff, m_LineBuffOffs);
-		m_LineBuffOffs = 0;
-		}
+	if((Rslt = WriteOutFile()) < eBSFSuccess)
+		return(Rslt);
 	switch (m_ReportFormat) {
 		case eRMFpgSNP:						// report in pgSNP format
 			// a special case: UCSC references the reference SARS-CoV-2 as being NC_O45512v2,not NC_O45512.2
@@ -1792,14 +1964,14 @@ else
 				strcpy(szChrom, "NC_045512v2");
 			else
 				strcpy(szChrom, pSNPSite->szChrom);
-			m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "\n%s\t%d\t%d\t", szChrom, pSNPSite->SNPLoci, pSNPSite->SNPLoci + 1);
+			m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], "\n%s\t%d\t%d\t", szChrom, pSNPSite->SNPLoci, pSNPSite->SNPLoci + 1);
 			NumAlleles = 0;
 			for (int Idx = 0; Idx < 4; Idx++)
 				{
 				if (pSNPSite->BaseCnts[Idx].Cnts > 0)
 					{
-					if (m_pszLineBuff[m_LineBuffOffs - 1] != '\t')
-						m_pszLineBuff[m_LineBuffOffs++] = '/';
+					if (m_pszOutBuff[m_OutBuffOffs - 1] != '\t')
+						m_pszOutBuff[m_OutBuffOffs++] = '/';
 					switch (Idx) {
 						case 0: Base = 'A'; break;
 						case 1: Base = 'C'; break;
@@ -1808,33 +1980,33 @@ else
 						case 4: Base = 'N'; break;
 						}
 					NumAlleles++;
-					m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "%c", Base);
+					m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], "%c", Base);
 					}
 				}
-			m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "\t%d\t", NumAlleles);
+			m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], "\t%d\t", NumAlleles);
 			for (int Idx = 0; Idx < 4; Idx++)
 				{
 				if (pSNPSite->BaseCnts[Idx].Cnts > 0)
 					{
-					if (m_pszLineBuff[m_LineBuffOffs - 1] != '\t')
-						m_pszLineBuff[m_LineBuffOffs++] = ',';
-					m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "%d", pSNPSite->BaseCnts[Idx].Cnts);
+					if (m_pszOutBuff[m_OutBuffOffs - 1] != '\t')
+						m_pszOutBuff[m_OutBuffOffs++] = ',';
+					m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], "%d", pSNPSite->BaseCnts[Idx].Cnts);
 					}
 				}
-			m_pszLineBuff[m_LineBuffOffs++] = '\t';
+			m_pszOutBuff[m_OutBuffOffs++] = '\t';
 
 			// following is gross misuse of scores! But I want to let the viewer know the percentages of all isolates/cultivars/whatever at the SNP loci sharing at least one allelic variant
 			// so first the proportion ( * 10)  of all sites is reported
 			PercentScore = max(1, (int)(0.5 + ((double)(pSNPSite->TotMismatches * 100.0) / pSNPSite->TotBaseCnts)));
-			m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "\t%d", PercentScore);
+			m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], "\t%d", PercentScore);
 			// next the population size
 			if(NumAlleles >= 2)
-				m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], ",%d", pSNPSite->TotBaseCnts);
+				m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], ",%d", pSNPSite->TotBaseCnts);
 			// next the number of samples which have at least one allelic variation
 			if(NumAlleles >= 3)
-				m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], ",%d", pSNPSite->TotMismatches);
+				m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], ",%d", pSNPSite->TotMismatches);
 			if(NumAlleles == 4)
-				m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], ",0");
+				m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], ",0");
 			break;
 
 		case eRMFvcf:						// report in VCF 4.1 format
@@ -1845,7 +2017,8 @@ else
 				strcpy(szChrom, "NC_045512v2");
 			else
 				strcpy(szChrom, pSNPSite->szChrom);
-			m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "%s\t%u\tSNP%d\t%c\t", szChrom, pSNPSite->SNPLoci + 1, pSNPSite->SNPId, CSeqTrans::MapBase2Ascii(pSNPSite->RefBase));
+			m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], "%s\t%u\tSNP%d\t%c\t", szChrom, pSNPSite->SNPLoci + 1, pSNPSite->SNPId, CSeqTrans::MapBase2Ascii(pSNPSite->RefBase));
+			
 			for (int Idx = 0; Idx < 4; Idx++)
 				{
 				Depth += pSNPSite->BaseCnts[Idx].Cnts;
@@ -1853,8 +2026,8 @@ else
 					continue;
 				if (pSNPSite->BaseCnts[Idx].Cnts > 0)
 					{
-					if (m_pszLineBuff[m_LineBuffOffs - 1] != '\t')
-						m_pszLineBuff[m_LineBuffOffs++] = ',';
+					if (m_pszOutBuff[m_OutBuffOffs - 1] != '\t')
+						m_pszOutBuff[m_OutBuffOffs++] = ',';
 					switch (Idx) {
 						case 0: Base = 'A'; break;
 						case 1: Base = 'C'; break;
@@ -1863,31 +2036,36 @@ else
 						case 4: Base = 'N'; break;
 						}
 					NumAlleles++;
-					m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "%c", Base);
+					m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], "%c", Base);
 					SumQScores += min(99.0, ((m_PValueThres - pSNPSite->BaseCnts[Idx].QScore) * (100 / m_PValueThres)));
 					}
 				}
 			SumQScores /= NumAlleles;
-			m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "\t%d\tPASS\tAF=", (int)SumQScores);
+			m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], "\t%d\tPASS\tAF=", (int)SumQScores);
 			for (int Idx = 0; Idx < 4; Idx++)
 				{
 				if (Idx == pSNPSite->RefBase)
 					continue;
 				if (pSNPSite->BaseCnts[Idx].Cnts > 0)
 					{
-					if (m_pszLineBuff[m_LineBuffOffs - 1] != '=')
-						m_pszLineBuff[m_LineBuffOffs++] = ',';
-					m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "%.4f", pSNPSite->BaseCnts[Idx].Cnts/(double)Depth);
+					if (m_pszOutBuff[m_OutBuffOffs - 1] != '=')
+						m_pszOutBuff[m_OutBuffOffs++] = ',';
+					m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], "%.4f", pSNPSite->BaseCnts[Idx].Cnts/(double)Depth);
 					}
 				}
-			m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs],";DP=%d\n", Depth);
+			m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs],";DP=%d\n", Depth);
 			break;
 
 		case eRMFcsv:						// report in CSV format
 			NumAlleles = 0;
 			SumQScores = 0;
 			Depth = 0;
-			m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "\"%s\",%u,\"%s\",%u,%d,%c,", pSNPSite->szSeqReadSet,pSNPSite->ReadsetSiteId, pSNPSite->szChrom, pSNPSite->SNPLoci, pSNPSite->SNPId, CSeqTrans::MapBase2Ascii(pSNPSite->RefBase));
+			m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], "\"%s\",%u,\"%s\",%u,%d,%c", pSNPSite->szSeqReadSet,pSNPSite->ReadsetSiteId, pSNPSite->szChrom, pSNPSite->SNPLoci, pSNPSite->SNPId, CSeqTrans::MapBase2Ascii(pSNPSite->RefBase));
+			
+			for(int Idx = 0; Idx <= 4; Idx++)
+				m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], ",%u", pSNPSite->OrigBaseCnts[Idx]);
+			m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], ",");
+
 			for(int Idx = 0; Idx < 4; Idx++)
 				{
 				Depth += pSNPSite->BaseCnts[Idx].Cnts;
@@ -1895,8 +2073,8 @@ else
 					continue;
 				if(pSNPSite->BaseCnts[Idx].Cnts > 0)
 					{
-					if(m_pszLineBuff[m_LineBuffOffs - 1] != ',')
-						m_pszLineBuff[m_LineBuffOffs++] = '|';
+					if(m_pszOutBuff[m_OutBuffOffs - 1] != ',')
+						m_pszOutBuff[m_OutBuffOffs++] = '|';
 					switch(Idx)
 						{
 							case 0: Base = 'A'; break;
@@ -1906,40 +2084,37 @@ else
 							case 4: Base = 'N'; break;
 						}
 					NumAlleles++;
-					m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "%c:%d:%f", Base, pSNPSite->BaseCnts[Idx].Cnts, pSNPSite->BaseCnts[Idx].QScore);
+					m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], "%c:%d:%f", Base, pSNPSite->BaseCnts[Idx].Cnts, pSNPSite->BaseCnts[Idx].QScore);
 					}
 				}
-			m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], ",%d", Depth);
+			m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], ",%d", Depth);
 			if(m_pFeatures != NULL && m_NumFeatures)
 				{
 				tsSummaryFeatCnts *pFeature;
 				if(pSNPSite->bInFeature)
 					{
 					pFeature = &m_pFeatures[pSNPSite->FeatureIdx];
-					m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], ",\"%s\",\"%s\",%u,%u", pFeature->szChrom, pFeature->szFeatName, pFeature->FeatStart, pFeature->FeatEnd);
-					m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], ",%u,%u,%u", pFeature->SiteFeatCnts.TotSynonymous, pFeature->SiteFeatCnts.TotNonSynonymous, pFeature->SiteFeatCnts.TotWobble);
-					m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], ",%u,%u", pFeature->SiteFeatCnts.NumPosBiasedCodons, pFeature->SiteFeatCnts.NumNegBiasedCodons);
-					m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], ",%u", pFeature->SiteFeatCnts.IsDirac ? 1 : 0);
-					m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs],",\"%s\"", gAminoAcids[pFeature->SiteFeatCnts.RefSynGroup].szPeptide);
+					m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], ",\"%s\",\"%s\",%u,%u", pFeature->szChrom, pFeature->szFeatName, pFeature->FeatStart, pFeature->FeatEnd);
+					m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], ",%u,%u,%u", pFeature->SiteFeatCnts.TotSynonymous, pFeature->SiteFeatCnts.TotNonSynonymous, pFeature->SiteFeatCnts.TotWobble);
+					m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], ",%u,%u", pFeature->SiteFeatCnts.NumPosBiasedCodons, pFeature->SiteFeatCnts.NumNegBiasedCodons);
+					m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], ",%u", pFeature->SiteFeatCnts.IsDirac ? 1 : 0);
+					m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs],",\"%s\"", gAminoAcids[pFeature->SiteFeatCnts.RefSynGroup].szPeptide);
 					for(int ToPeptideIdx = 0; ToPeptideIdx <= 20; ToPeptideIdx++)
-						m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], ",%u", pFeature->SiteFeatCnts.ToAminoAcidChanges[ToPeptideIdx]);
+						m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], ",%u", pFeature->SiteFeatCnts.ToAminoAcidChanges[ToPeptideIdx]);
 					}
 				else
 					{
-					m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], ",\"-\",\"-\",0,0");
-					m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], ",0,0,0,0,0,0");
-					m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "0,\"-\"");
+					m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], ",\"-\",\"-\",0,0");
+					m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], ",0,0,0,0,0,0");
+					m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], "0,\"-\"");
 					for(int ToPeptideIdx = 0; ToPeptideIdx <= 20; ToPeptideIdx++)
-						m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], ",0");
+						m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], ",0");
 					}
 				}
 
-			m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "\n");
-			if((m_LineBuffOffs + 500) >= m_AllocdLineBuff)
-				{
-				CUtility::SafeWrite(m_hOutpgSNPs, m_pszLineBuff, m_LineBuffOffs);
-				m_LineBuffOffs = 0;
-				}
+			m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], "\n");
+			if((Rslt = WriteOutFile()) < eBSFSuccess)
+				return(Rslt);
 			break;
 		}
 	}
@@ -1951,70 +2126,127 @@ CSNPs2pgSNPs::ReportFeatSNPcnts(bool bHeader,	// header required
 						int NumFeatures,		// number of features
 						tsSummaryFeatCnts* pFeatures)	// array of feature SNP counts and codons
 {
+int Rslt;
 int FeatIdx;
-int BufIdx;
 int FromPeptideIdx;
 int ToPeptideIdx;
-char szLineBuff[4000];
 
-if(m_hOutFeatures == -1 || NumFeatures == 0 || pFeatures == NULL)
-	return(0);
-BufIdx = 0;
+if(NumFeatures == 0 || pFeatures == NULL)	// may be no features to be reported on!
+	return(eBSFSuccess);
+
+m_OutBuffOffs = 0;
 if(bHeader)
 	{
-	BufIdx = sprintf(szLineBuff, "\"Chrom\",\"Feature\",\"Start Loci\",\"End Loci\"");
-	BufIdx += sprintf(&szLineBuff[BufIdx], ",\"SNPS\",\"Synonymous\",\"NonSynonymous\",\"Wobble\",\"Excl.Synonymous\",\"Excl.NonSynonymous\",\"Excl.Wobble\"");
-	BufIdx += sprintf(&szLineBuff[BufIdx], ",\"SiteSynonymous\",\"NumPosFreqBiasedCodons\",\"NumNegFreqBiasedCodons\"");
-	BufIdx += sprintf(&szLineBuff[BufIdx], ",\"DiracA\",\"DiracC\",\"DiracG\",\"DiracT\"");
+	m_OutBuffOffs = sprintf(m_pszOutBuff, "\"Chrom\",\"Feature\",\"Start Loci\",\"End Loci\"");
+	m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], ",\"SNPS\",\"Synonymous\",\"NonSynonymous\",\"Wobble\",\"Excl.Synonymous\",\"Excl.NonSynonymous\",\"Excl.Wobble\"");
+	m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], ",\"SiteSynonymous\",\"NumPosFreqBiasedCodons\",\"NumNegFreqBiasedCodons\"");
+	m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], ",\"DiracA\",\"DiracC\",\"DiracG\",\"DiracT\"");
 	for(FromPeptideIdx = 0; FromPeptideIdx <= 20; FromPeptideIdx++)
 		{
-		BufIdx += sprintf(&szLineBuff[BufIdx],",\"From:%s\"", gAminoAcids[FromPeptideIdx].szPeptide);
+		m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs],",\"From:%s\"", gAminoAcids[FromPeptideIdx].szPeptide);
 		for(ToPeptideIdx = 0; ToPeptideIdx <= 20; ToPeptideIdx++)
-			BufIdx += sprintf(&szLineBuff[BufIdx], ",\"To:%s\"", gAminoAcids[ToPeptideIdx].szPeptide);
-		if((BufIdx + 2000) > sizeof(szLineBuff))
-			{
-			CUtility::SafeWrite(m_hOutFeatures, szLineBuff, BufIdx);
-			BufIdx = 0;
-			}
+			m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], ",\"To:%s\"", gAminoAcids[ToPeptideIdx].szPeptide);
+		if((Rslt = WriteOutFile())<eBSFSuccess)
+			return(Rslt);
 		}
-	BufIdx += sprintf(&szLineBuff[BufIdx], "\n");
+	m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], "\n");
 	}
 
 tsSummaryFeatCnts* pFeature = pFeatures;
 
 for(FeatIdx = 0; FeatIdx < NumFeatures; FeatIdx++, pFeature++)
 	{
-	if((BufIdx + 2000) > sizeof(szLineBuff))
-		{
-		CUtility::SafeWrite(m_hOutFeatures, szLineBuff, BufIdx);
-		BufIdx = 0;
-		}
-	BufIdx += sprintf(&szLineBuff[BufIdx],"\"%s\",\"%s\",%u,%u",pFeature->szChrom, pFeature->szFeatName, pFeature->FeatStart, pFeature->FeatEnd);
-	BufIdx += sprintf(&szLineBuff[BufIdx],",%u,%u,%u,%u", pFeature->TotSNPs,pFeature->TotSynonymous,pFeature->TotNonSynonymous,pFeature->TotWobble);
-	BufIdx += sprintf(&szLineBuff[BufIdx], ",%u,%u,%u", pFeature->TotExclSynonymous, pFeature->TotExclNonSynonymous, pFeature->TotExclWobble);
-	BufIdx += sprintf(&szLineBuff[BufIdx], ",%u,%u,%u", pFeature->NumSiteSynonCodons,pFeature->NumPosBiasedCodons, pFeature->NumNegBiasedCodons);
-	BufIdx += sprintf(&szLineBuff[BufIdx], ",%u,%u,%u,%u", pFeature->DiracCnts[0], pFeature->DiracCnts[1], pFeature->DiracCnts[2], pFeature->DiracCnts[3]);
+	if((Rslt = WriteOutFile()) < eBSFSuccess)
+		return(Rslt);
+	m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs],"\"%s\",\"%s\",%u,%u",pFeature->szChrom, pFeature->szFeatName, pFeature->FeatStart, pFeature->FeatEnd);
+	m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs],",%u,%u,%u,%u", pFeature->TotSNPs,pFeature->TotSynonymous,pFeature->TotNonSynonymous,pFeature->TotWobble);
+	m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], ",%u,%u,%u", pFeature->TotExclSynonymous, pFeature->TotExclNonSynonymous, pFeature->TotExclWobble);
+	m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], ",%u,%u,%u", pFeature->NumSiteSynonCodons,pFeature->NumPosBiasedCodons, pFeature->NumNegBiasedCodons);
+	m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], ",%u,%u,%u,%u", pFeature->DiracCnts[0], pFeature->DiracCnts[1], pFeature->DiracCnts[2], pFeature->DiracCnts[3]);
 	for(FromPeptideIdx = 0; FromPeptideIdx <= 20; FromPeptideIdx++)
 		{
-		if((BufIdx + 2000) > sizeof(szLineBuff))
-			{
-			CUtility::SafeWrite(m_hOutFeatures, szLineBuff, BufIdx);
-			BufIdx = 0;
-			}
-		BufIdx += sprintf(&szLineBuff[BufIdx], ",%u", pFeature->FromAminoAcidChanges[FromPeptideIdx]);
+		if((Rslt = WriteOutFile()) < eBSFSuccess)
+			return(Rslt);
+		m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], ",%u", pFeature->FromAminoAcidChanges[FromPeptideIdx]);
 		for(ToPeptideIdx = 0; ToPeptideIdx <= 20; ToPeptideIdx++)
-			BufIdx += sprintf(&szLineBuff[BufIdx],",%u",pFeature->ToAminoAcidChanges[FromPeptideIdx][ToPeptideIdx]);
+			m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs],",%u",pFeature->ToAminoAcidChanges[FromPeptideIdx][ToPeptideIdx]);
 		}
-	BufIdx += sprintf(&szLineBuff[BufIdx], "\n");
-	CUtility::SafeWrite(m_hOutFeatures, szLineBuff, BufIdx);
-	BufIdx = 0;
+	m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], "\n");
+	if((Rslt = WriteOutFile(true)) < eBSFSuccess)
+		return(Rslt);
 	}
 
-return(BufIdx);
+return(eBSFSuccess);
 }
 
 
+int
+CSNPs2pgSNPs::WriteOutFile(bool bForce)	// true if write is forced
+{
+if(m_hOutFile == -1)
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "WriteOutFile: no opened file");
+	Reset();
+	return(eBSFerrClosed);
+	}
+if(bForce || ((m_OutBuffOffs + 32000) >= m_AllocdOutBuff))
+	{
+	if(m_OutBuffOffs)
+		{
+		if(CUtility::SafeWrite(m_hOutFile, m_pszOutBuff, m_OutBuffOffs) == false)
+			{
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "WriteOutFile: write to '%s' failed", m_szOutFile);
+			close(m_hOutFile);
+			m_hOutFile = -1;
+			Reset();
+			return(eBSFerrFileAccess);
+			}
+		m_OutBuffOffs = 0;
+		}
+	}
+return(eBSFSuccess);
+}
 
+int
+CSNPs2pgSNPs::CreateOutFile(char *pszExtn)
+{
+// close any previously opened output file
+CloseOutFile();
+
+// add extension to szOutFilePrefix to form szOutFile
+strcpy(m_szOutFile,m_szOutFilePrefix);
+strcat(m_szOutFile, pszExtn);
+#ifdef _WIN32
+if((m_hOutFile = open(m_szOutFile, (_O_RDWR | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC), (_S_IREAD | _S_IWRITE))) == -1)
+#else
+if((m_hOutFile = open(m_szOutFile, O_RDWR | O_CREAT | O_TRUNC, S_IREAD | S_IWRITE)) == -1)
+#endif
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Unable to create/truncate output file - '%s' - %s", m_szOutFile, strerror(errno));
+	Reset();
+	return(eBSFerrOpnFile);
+	}
+return(eBSFSuccess);
+}
+
+void
+CSNPs2pgSNPs::CloseOutFile(void)			// closes output file if currently opened
+{
+if(m_hOutFile != -1)
+	{
+	if(m_OutBuffOffs && m_pszOutBuff != NULL)
+		CUtility::SafeWrite(m_hOutFile, m_pszOutBuff, m_OutBuffOffs);
+
+#ifdef _WIN32
+	_commit(m_hOutFile);
+#else
+	fsync(m_hOutFile);
+#endif
+	close(m_hOutFile);
+	m_hOutFile = -1;
+	}
+m_OutBuffOffs = 0;
+}
 
 int 
 CSNPs2pgSNPs::Process(eModepgSSNP Mode,				// processing mode
@@ -2039,7 +2271,6 @@ int Rslt;
 int Len;
 Reset();
 strcpy(m_szInSNPsFile, pszSNPFile);
-strcpy(m_szOutpgSNPsFile, pszOutFile);
 strcpy(m_SpecAssemblyName, pszAssemblyName);
 strcpy(m_szDescription,pszExperimentDescr);
 strcpy(m_szTrackName, pszTrackName);
@@ -2126,12 +2357,12 @@ if(m_szGFFFile[0] != '\0')
 	}
 
 
-if ((m_pszLineBuff = new char[cAllocLineBuffSize]) == NULL)
+if ((m_pszOutBuff = new char[cAllocLineBuffSize]) == NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Unable to allocate memory for output line buffering -- %s", strerror(errno));
 	return(eBSFerrMem);
 	}
-m_AllocdLineBuff = cAllocLineBuffSize;
+m_AllocdOutBuff = cAllocLineBuffSize;
 
 if((m_pGapCntDist = new uint32_t[cMaxGapBetweenSNPS+1]) == NULL)
 {
@@ -2161,25 +2392,45 @@ memset(m_pIndividualSNPsDist, 0, sizeof(uint32_t) * (cMaxIndividualSNPS + 1));
 
 
 // check file extension, if '.vcf' then generate output formated for vcf, if '.csv' then report format for csv, instead of the default pgSNP format
-m_ReportFormat = eRMFsnp::eRMFpgSNP;
-if((Len=(int)strlen(pszOutFile)) >= 5)
+strcpy(m_szOutFilePrefix, pszOutFile);
+m_ReportFormat = eRMFsnp::eRMFpgSNP;	// default output format
+Len = (int)strlen(pszOutFile);
+if(Len >= 8)
+	{
+	if(!stricmp(&pszOutFile[Len - 6], ".pgSNP"))
+		m_szOutFilePrefix[Len - 6] = '\0';
+	}
+if(Len >= 5)
 	{
 	if(!stricmp(&pszOutFile[Len-4],".vcf"))
+		{
 		m_ReportFormat = eRMFsnp::eRMFvcf;
+		m_szOutFilePrefix[Len-4] = '\0';
+		}
 	else
 		if(!stricmp(&pszOutFile[Len - 4], ".csv"))
+			{
 			m_ReportFormat = eRMFsnp::eRMFcsv;
+			m_szOutFilePrefix[Len - 4] = '\0';
+			}
 	}
-	
-#ifdef _WIN32
-if ((m_hOutpgSNPs = open(pszOutFile, (_O_RDWR | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC), (_S_IREAD | _S_IWRITE))) == -1)
-#else
-if ((m_hOutpgSNPs = open(pszOutFile, O_RDWR | O_CREAT | O_TRUNC, S_IREAD | S_IWRITE)) == -1)
-#endif
+
+// create/open the primary output file ready for writing
+switch(m_ReportFormat) {
+	case eRMFcsv:
+		Rslt = CreateOutFile((char *)".csv");
+		break;
+	case eRMFvcf:
+		Rslt = CreateOutFile((char *)".vcf");
+		break;
+	default:
+		Rslt = CreateOutFile((char *)".pgSNP");
+		break;
+	}
+if(Rslt < eBSFSuccess)
 	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Unable to create/truncate output file - '%s' - %s", pszOutFile, strerror(errno));
 	Reset();
-	return(eBSFerrOpnFile);
+	return(Rslt);
 	}
 
 if ((m_pCSV = new CCSVFile) == NULL)
@@ -2193,22 +2444,9 @@ if(Mode == eMpgSSNPmarkers)
 else
 	m_pCSV->SetMaxFields(cAlignNumSSNPXfields);
 
-if(Mode == eMpgSSNPKalign)
-	{
-	strcpy(m_szOutFeatures, pszOutFile);
-	strcat(m_szOutFeatures,".feats.csv");
-#ifdef _WIN32
-	if((m_hOutFeatures = open(m_szOutFeatures, (_O_RDWR | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC), (_S_IREAD | _S_IWRITE))) == -1)
-#else
-	if((m_hOutFeatures = open(m_szOutFeatures, O_RDWR | O_CREAT | O_TRUNC, S_IREAD | S_IWRITE)) == -1)
-#endif
-		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Unable to create/truncate output file - '%s' - %s", m_szOutFeatures, strerror(errno));
-		Reset();
-		return(eBSFerrOpnFile);
-		}
-	}
 
+Rslt = eBSFSuccess;
+m_ReadsetID = 0;
 m_bRptHdr = true;
 char *pszCurSNPFile;
 CSimpleGlob glob(SG_GLOB_FULLSORT);
@@ -2238,7 +2476,7 @@ switch(Mode) {
 			strcpy(m_szInSNPsFile, pszCurSNPFile);
 			if((Rslt = m_pCSV->Open(pszCurSNPFile)) != eBSFSuccess)
 				{
-				gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to open file: %s", pszCurSNPFile);
+				gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to open file: '%s'", pszCurSNPFile);
 				Reset();
 				return(Rslt);
 				}
@@ -2250,40 +2488,54 @@ switch(Mode) {
 			else
 				if((Len = (int)strlen(m_ReadsetIdentifier)) >= 5 && !stricmp(&m_ReadsetIdentifier[Len - 4], ".csv"))
 					m_ReadsetIdentifier[Len - 3] = '\0';
-
+			if((Rslt = m_ReadsetID = AddReadset(m_ReadsetIdentifier)) < eBSFSuccess)
+				{
+				gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to add readset name: '%s'", m_ReadsetIdentifier);
+				Reset();
+				return(Rslt);
+				}
 			Rslt = ProcessKalignSNPs();
 			if(m_pCSV != NULL)
 				m_pCSV->Close();
-			if(Rslt != eBSFSuccess)
+			if(Rslt < eBSFSuccess)
 				{
 				gDiagnostics.DiagOut(eDLFatal, gszProcName, "Failed processing SNP file '%s'\n", pszCurSNPFile);
 				Reset();
 				return(Rslt);
 				}
+			if(Rslt == 0)			// 0 only if file was parsed successfully but contained no SNPs
+				{
+				gDiagnostics.DiagOut(eDLWarn, gszProcName, "Processed SNP file '%s' contained no accepted SNPs", pszCurSNPFile);
+				m_NumReadsetNames -= 1;
+				}
 			}
-		if(m_hOutpgSNPs != -1)
+		CloseOutFile();					// primary output file
+		if(m_NumReadsetNames == 0)
 			{
-			if(m_LineBuffOffs && m_pszLineBuff != NULL)
-				CUtility::SafeWrite(m_hOutpgSNPs, m_pszLineBuff, m_LineBuffOffs);
-		#ifdef _WIN32
-			_commit(m_hOutpgSNPs);
-		#else
-			fsync(m_hOutpgSNPs);
-		#endif
-			close(m_hOutpgSNPs);
-			m_hOutpgSNPs = -1;
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "No SNP file contained any accepted SNPs");
+			Reset();
+			return(eBSFerrLocField);
 			}
-		if(m_NumFeatures && m_hOutFeatures != -1)
+		m_NumCultivars = m_NumReadsetNames;
+		// load and report loci isolate matrix
+		LoadLociIsolateMatrix();
+
+		ReportLociIsolateMatrix((char *)".ReadsetLociMatrix.csv");
+
+		ReportSimilaritiesMatrix((char *)".ReadsetSimilaritiesMatrix.csv");
+
+		// now identifying the shared SNP site loci distributions ..
+		IdentifySharedSiteLociDist((char *)".SharedReadsetLociDist.csv");
+
+		if(m_NumFeatures)
+			{
+			if((Rslt = CreateOutFile((char *)".Feats.csv")) < eBSFSuccess)
+				{
+				Reset();
+				return(Rslt);
+				}
 			ReportFeatSNPcnts(true,m_NumFeatures,m_pFeatures);
-		if(m_hOutFeatures != -1)
-			{
-	#ifdef _WIN32
-			_commit(m_hOutFeatures);
-	#else
-			fsync(m_hOutFeatures);
-	#endif
-			close(m_hOutFeatures);
-			m_hOutFeatures = -1;
+			CloseOutFile();
 			}
 		break;
 
@@ -2330,83 +2582,472 @@ switch(Mode) {
 
 		if(Rslt >= eBSFSuccess)
 			{
-			strcpy(m_szOutpgSNPsFile, pszOutFile);
-			strcat(m_szOutpgSNPsFile, ".gapdist.csv");
-#ifdef _WIN32
-			if((m_hOutpgSNPs = open(m_szOutpgSNPsFile, (_O_RDWR | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC), (_S_IREAD | _S_IWRITE))) == -1)
-#else
-			if((m_hOutpgSNPs = open(m_szOutpgSNPsFile, O_RDWR | O_CREAT | O_TRUNC, S_IREAD | S_IWRITE)) == -1)
-#endif
+			if((Rslt=CreateOutFile((char *)".GapDist.csv"))< eBSFSuccess)
 				{
-				gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Unable to create/truncate output file - '%s' - %s", m_szOutpgSNPsFile, strerror(errno));
 				Reset();
-				return(eBSFerrOpnFile);
+				return(Rslt);
 				}
-			m_LineBuffOffs = sprintf(m_pszLineBuff, "\"Len\",\"Instances\"\n");
+
+			m_OutBuffOffs = sprintf(m_pszOutBuff, "\"Len\",\"Instances\"\n");
 			for(uint32_t Idx = 0; Idx <= m_MaxSNPgap; Idx++)
-				m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "%d,%d\n", Idx + 1, m_pGapCntDist[Idx]);
+				m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], "%d,%d\n", Idx + 1, m_pGapCntDist[Idx]);
 
-			CUtility::SafeWrite(m_hOutpgSNPs, m_pszLineBuff, m_LineBuffOffs);
-#ifdef _WIN32
-			_commit(m_hOutpgSNPs);
-#else
-			fsync(m_hOutpgSNPs);
-#endif
-			close(m_hOutpgSNPs);
-			m_hOutpgSNPs = -1;
+			CloseOutFile();
 
-			strcpy(m_szOutpgSNPsFile, pszOutFile);
-			strcat(m_szOutpgSNPsFile, ".sharedsnpdist.csv");
-#ifdef _WIN32
-			if((m_hOutpgSNPs = open(m_szOutpgSNPsFile, (_O_RDWR | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC), (_S_IREAD | _S_IWRITE))) == -1)
-#else
-			if((m_hOutpgSNPs = open(m_szOutpgSNPsFile, O_RDWR | O_CREAT | O_TRUNC, S_IREAD | S_IWRITE)) == -1)
-#endif
+
+			if((Rslt = CreateOutFile((char *)".SharedReadsetLociDist.csv")) < eBSFSuccess)
 				{
-				gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Unable to create/truncate output file - '%s' - %s", m_szOutpgSNPsFile, strerror(errno));
 				Reset();
-				return(eBSFerrOpnFile);
+				return(Rslt);
 				}
-			m_LineBuffOffs = sprintf(m_pszLineBuff, "\"Shared\",\"Instances\"\n");
+
+			m_OutBuffOffs = sprintf(m_pszOutBuff, "\"Shared\",\"Instances\"\n");
 			for(uint32_t Idx = 0; Idx <= m_MaxSharedSNPs; Idx++)
-				m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "%d,%d\n", Idx + 1, m_pSharedSNPsDist[Idx]);
-			CUtility::SafeWrite(m_hOutpgSNPs, m_pszLineBuff, m_LineBuffOffs);
-#ifdef _WIN32
-			_commit(m_hOutpgSNPs);
-#else
-			fsync(m_hOutpgSNPs);
-#endif
-			close(m_hOutpgSNPs);
-			m_hOutpgSNPs = -1;
+				m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], "%d,%d\n", Idx + 1, m_pSharedSNPsDist[Idx]);
+			CloseOutFile();
 
-			strcpy(m_szOutpgSNPsFile, pszOutFile);
-			strcat(m_szOutpgSNPsFile, ".individualsnpdist.csv");
-#ifdef _WIN32
-			if((m_hOutpgSNPs = open(m_szOutpgSNPsFile, (_O_RDWR | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC), (_S_IREAD | _S_IWRITE))) == -1)
-#else
-			if((m_hOutpgSNPs = open(m_szOutpgSNPsFile, O_RDWR | O_CREAT | O_TRUNC, S_IREAD | S_IWRITE)) == -1)
-#endif
+			if((Rslt = CreateOutFile((char *)".IndividualSnpDist.csv")) < eBSFSuccess)
 				{
-				gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Unable to create/truncate output file - '%s' - %s", m_szOutpgSNPsFile, strerror(errno));
 				Reset();
-				return(eBSFerrOpnFile);
+				return(Rslt);
 				}
-			m_LineBuffOffs = sprintf(m_pszLineBuff, "\"SNPs\",\"Instances\"\n");
+
+			m_OutBuffOffs = sprintf(m_pszOutBuff, "\"SNPs\",\"Instances\"\n");
 			for(uint32_t Idx = 0; Idx <= m_MaxIndividualSNPs; Idx++)
-				m_LineBuffOffs += sprintf(&m_pszLineBuff[m_LineBuffOffs], "%d,%d\n", Idx, m_pIndividualSNPsDist[Idx]);
-			CUtility::SafeWrite(m_hOutpgSNPs, m_pszLineBuff, m_LineBuffOffs);
-#ifdef _WIN32
-			_commit(m_hOutpgSNPs);
-#else
-			fsync(m_hOutpgSNPs);
-#endif
-			close(m_hOutpgSNPs);
-			m_hOutpgSNPs = -1;
+				m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], "%d,%d\n", Idx, m_pIndividualSNPsDist[Idx]);
+			CloseOutFile();
 		}
 	break;
 	}
 
-
 Reset();
 return(Rslt);
 }
+
+uint32_t					// returned number of unique sites
+CSNPs2pgSNPs::GenNumUniqueSiteLoci(void)
+{
+uint32_t NumUniqueSiteLoci;
+uint32_t CurSNPLoci;
+uint32_t CurSNPChromID;
+uint32_t FeatSNPIdx;
+tsIsolateFeatSNPs* pFeatSNP;
+
+// sort chrom.loci.readset ascending
+if(m_SortOrder != 1)	// 0: unsorted, 1: SortSNPChromLociReadset, 2: SortSNPReadsetChromLoci
+	{
+	qsort(m_pIsolateFeatSNPs, m_IsolateFeatSNPs, sizeof(tsIsolateFeatSNPs), SortSNPChromLociReadset);
+	m_SortOrder = 1;
+	}
+
+// determine number of unique site loci in target genome
+NumUniqueSiteLoci = 0;
+CurSNPLoci = (uint32_t)-1;
+CurSNPChromID = (uint32_t)-1;
+pFeatSNP = m_pIsolateFeatSNPs;
+for(FeatSNPIdx = 0; FeatSNPIdx < m_IsolateFeatSNPs; FeatSNPIdx++, pFeatSNP++)
+	{
+	if(pFeatSNP->SNPSSite.ChromID == CurSNPChromID && pFeatSNP->SNPSSite.SNPLoci == CurSNPLoci)
+		continue;
+	CurSNPLoci = pFeatSNP->SNPSSite.SNPLoci;
+	CurSNPChromID = pFeatSNP->SNPSSite.ChromID;
+	NumUniqueSiteLoci++;
+	}
+return(NumUniqueSiteLoci);
+}
+
+int
+CSNPs2pgSNPs::LoadLociIsolateMatrix(void)				// generate a matrix (rows - isolates, columns - loci) with cells absence/presence of sites at that loci in that isolate
+{
+tsIsolateFeatSNPs* pFeatSNP;
+uint32_t * pCurMatrixCell;
+uint32_t *pCurLoci;
+uint32_t FeatSNPIdx;
+uint32_t ReadsetIdx;
+uint32_t CurReadsetID;
+uint32_t CurSNPLoci;
+uint32_t LociIdx;
+
+if(m_pMatrix != NULL)
+	{
+	delete []m_pMatrix;
+	m_pMatrix = NULL;
+	}
+if(m_NumUniqueSiteLoci == 0)
+	m_NumUniqueSiteLoci = GenNumUniqueSiteLoci();
+
+m_pMatrix = new uint32_t[(size_t)(m_NumCultivars + 1) * (m_NumUniqueSiteLoci+1)];
+memset(m_pMatrix,0, (size_t)(m_NumCultivars + 1) * (m_NumUniqueSiteLoci + 1) * sizeof(uint32_t));
+m_MatrixRows = m_NumCultivars + 1;
+m_MatrixCols = m_NumUniqueSiteLoci + 1;
+// sort chrom.loci.readset ascending so can fill in unique loci as first row
+if(m_SortOrder != 1)	// 0: unsorted, 1: SortSNPChromLociReadset, 2: SortSNPReadsetChromLoci
+	{
+	qsort(m_pIsolateFeatSNPs, m_IsolateFeatSNPs, sizeof(tsIsolateFeatSNPs), SortSNPChromLociReadset);
+	m_SortOrder = 1;
+	}
+
+pFeatSNP = m_pIsolateFeatSNPs;
+CurSNPLoci = (uint32_t)-1;
+LociIdx = 1;
+for(FeatSNPIdx = 0; FeatSNPIdx < m_IsolateFeatSNPs; FeatSNPIdx++, pFeatSNP++)
+	{
+	if(CurSNPLoci != pFeatSNP->SNPSSite.SNPLoci)
+		{
+		m_pMatrix[LociIdx++] = pFeatSNP->SNPSSite.SNPLoci;
+		CurSNPLoci = pFeatSNP->SNPSSite.SNPLoci;
+		}
+	}
+
+// sort readset.chrom.loci ascending so can process by readset 
+if(m_SortOrder != 2)	// 0: unsorted, 1: SortSNPChromLociReadset, 2: SortSNPReadsetChromLoci
+	{
+	qsort(m_pIsolateFeatSNPs, m_IsolateFeatSNPs, sizeof(tsIsolateFeatSNPs), SortSNPReadsetChromLoci);
+	m_SortOrder = 2;
+	}
+pFeatSNP = m_pIsolateFeatSNPs;
+ReadsetIdx = 0;
+CurReadsetID = (uint32_t)-1;
+for(FeatSNPIdx = 0; FeatSNPIdx < m_IsolateFeatSNPs; FeatSNPIdx++, pFeatSNP++)
+	{
+	if(CurReadsetID != pFeatSNP->SNPSSite.ReadsetID)
+		{
+		ReadsetIdx += m_NumUniqueSiteLoci + 1;
+		CurReadsetID = pFeatSNP->SNPSSite.ReadsetID;
+		m_pMatrix[ReadsetIdx] = CurReadsetID;
+		pCurLoci = &m_pMatrix[1];
+		pCurMatrixCell = &m_pMatrix[ReadsetIdx + 1];
+		}
+
+	while(pFeatSNP->SNPSSite.SNPLoci != *pCurLoci)
+		{
+		pCurMatrixCell++;
+		pCurLoci++;
+		}
+	*pCurMatrixCell = 1;
+	}
+return(eBSFSuccess);
+}
+
+
+int
+CSNPs2pgSNPs::ReportLociIsolateMatrix(char *pszFileExtn)	// report loci vs isolate matrix using this file extension, will generate loci isolate matrix if not already generated
+{
+int Rslt;
+uint32_t LociIdx;
+uint32_t ReadsetIdx;
+
+if(m_pMatrix == NULL || m_NumUniqueSiteLoci == 0)
+	if((Rslt=LoadLociIsolateMatrix())<eBSFSuccess)
+		{
+		Reset();
+		return(Rslt);
+		}
+if((Rslt = CreateOutFile(pszFileExtn)) < eBSFSuccess)
+	{
+	Reset();
+	return(Rslt);
+	}
+
+// first the heading, heading fields are simply each of the unique loci at which a SNP was present
+uint32_t* pCurMatrixCell;
+pCurMatrixCell = &m_pMatrix[1];
+for(LociIdx = 1; LociIdx <= m_NumUniqueSiteLoci; LociIdx++, pCurMatrixCell++)
+	m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs],",\"Loci:%u\"", *pCurMatrixCell);
+m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], "\n");
+// now each row
+for(ReadsetIdx = 1; ReadsetIdx <= m_NumCultivars; ReadsetIdx++)
+	{
+	m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], "\"%s\"", LocateReadset(*pCurMatrixCell++)); // this the readset name
+	for(LociIdx = 0; LociIdx < m_NumUniqueSiteLoci; LociIdx++, pCurMatrixCell++)		 // these are the matrix cells which currently contain just SNP site absence/presence flags
+		m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], ",%u", *pCurMatrixCell);
+	m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], "\n");
+	if((Rslt = WriteOutFile()) < eBSFSuccess)
+		return(Rslt);
+	}
+CloseOutFile();
+return(eBSFSuccess);
+}
+
+int	
+CSNPs2pgSNPs::IdentifySharedSiteLociDist(char *pszFileExtn)		// determine the SNP site loci sharing distributions and associate a PValue
+{
+int Rslt;
+uint32_t FromReadsetID;
+uint32_t ToReadsetID;
+uint32_t FromFeatSNPIdx;
+
+uint32_t CurSNPLoci;
+uint32_t CurSNPChromID;
+uint32_t NumSharedLoci;
+double PValue;
+double ExpRate;
+tsIsolateFeatSNPs *pFromFeatSNP;
+tsIsolateFeatSNPs* pToFeatSNP;
+pFromFeatSNP = m_pIsolateFeatSNPs;
+tsIsolateFeatSNPs *pLastFeatSNPloci = &m_pIsolateFeatSNPs[m_IsolateFeatSNPs - 1];
+FromReadsetID = 0;
+ToReadsetID = 0;
+
+if((Rslt = CreateOutFile(pszFileExtn)) < eBSFSuccess)
+	{
+	Reset();
+	return(Rslt);
+	}
+m_OutBuffOffs = sprintf(m_pszOutBuff,"\"SNP Loci\",\"PValue\",\"Instances\",\"Dirac Instances\",\"Readsets\"\n");
+// determine PValues for observing numbers of shared loci between isolates
+// this requires an estimate of the expected mutation rate
+// to derive this I am firstly taking the sum of all observed mutations over all isolates and the sum of all sites over all isolates
+// at which at least one of the isolates had a mutation at that site. In later processing, I iterate each of the sites showing at least one mutation
+// and then subtract that site contribution to the overall sums count. The amended counts (sum of all mutations divided by sum of all sites) are used
+// as the expected (background frequency) and the binomial distribution is used to calculate the PValue for each mutated loci along the gRNA.
+//
+// determine number of unique site loci in target genome
+if(!m_NumUniqueSiteLoci)
+	m_NumUniqueSiteLoci = GenNumUniqueSiteLoci();
+
+if(m_SortOrder != 1)	// 0: unsorted, 1: SortSNPChromLociReadset, 2: SortSNPReadsetChromLoci
+	{
+	qsort(m_pIsolateFeatSNPs, m_IsolateFeatSNPs, sizeof(tsIsolateFeatSNPs), SortSNPChromLociReadset);
+	m_SortOrder = 1;
+	}
+
+int32_t SumSites = m_NumCultivars * m_NumUniqueSiteLoci;
+int32_t SumMutations = m_IsolateFeatSNPs;
+int32_t AcceptedPValues;
+int32_t NumSharedDiracLoci;
+AcceptedPValues = 0;
+NumSharedLoci = 0;
+NumSharedDiracLoci = 0;
+pFromFeatSNP = m_pIsolateFeatSNPs;
+CurSNPLoci = pFromFeatSNP->SNPSSite.SNPLoci;
+CurSNPChromID = pFromFeatSNP->SNPSSite.ChromID;
+for(FromFeatSNPIdx = 0; FromFeatSNPIdx <= m_IsolateFeatSNPs; FromFeatSNPIdx++, pFromFeatSNP++)
+	{
+	if(FromFeatSNPIdx < m_IsolateFeatSNPs && pFromFeatSNP->SNPSSite.ChromID == CurSNPChromID && pFromFeatSNP->SNPSSite.SNPLoci == CurSNPLoci)
+		{
+		NumSharedLoci += 1;
+		if(pFromFeatSNP->SNPSSite.DiracCnts[0] || pFromFeatSNP->SNPSSite.DiracCnts[1] || pFromFeatSNP->SNPSSite.DiracCnts[2] || pFromFeatSNP->SNPSSite.DiracCnts[3])
+			NumSharedDiracLoci += 1;
+		if(NumSharedLoci == 1)
+			pToFeatSNP = pFromFeatSNP;
+		continue;
+		}
+	ExpRate = ((double)SumMutations - NumSharedLoci) / ((double)SumSites - m_NumCultivars);
+	PValue = 1.0 - m_Stats.Binomial(m_NumCultivars,NumSharedLoci, ExpRate);
+
+	m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs],"%u,%.6f,%u,%u,%u\n",CurSNPLoci,PValue,NumSharedLoci,NumSharedDiracLoci,m_NumCultivars);
+	if((Rslt = WriteOutFile()) < eBSFSuccess)
+		return(Rslt);
+	do
+		{
+		pToFeatSNP->SharedIn = NumSharedLoci;
+		}
+	while(++pToFeatSNP != pFromFeatSNP);
+	CurSNPLoci = pFromFeatSNP->SNPSSite.SNPLoci;
+	CurSNPChromID = pFromFeatSNP->SNPSSite.ChromID;
+	if(pFromFeatSNP->SNPSSite.DiracCnts[0] || pFromFeatSNP->SNPSSite.DiracCnts[1] || pFromFeatSNP->SNPSSite.DiracCnts[2] || pFromFeatSNP->SNPSSite.DiracCnts[3])
+		NumSharedDiracLoci = 1;
+	else
+		NumSharedDiracLoci = 0;
+	NumSharedLoci = 1;
+	pToFeatSNP = pFromFeatSNP;
+	}
+CloseOutFile();
+return(eBSFSuccess);
+}
+
+
+int
+CSNPs2pgSNPs::LoadSimilaritiesMatrix(void)				// generate a matrix (readsets x readsets) with cells containing scores
+{
+int Rslt;
+double RowPValue;
+double ColPValue;
+double Score;
+
+uint32_t* pRowMatrixCell;
+uint32_t* pColMatrixCell;
+
+uint32_t RowReadsetIdx;
+
+uint32_t ColReadsetIdx;
+
+
+uint32_t LociIdx;
+
+if(m_pMatrix == NULL || m_NumUniqueSiteLoci == 0)
+	if((Rslt = LoadLociIsolateMatrix()) < eBSFSuccess){
+		Reset();
+		return(Rslt);
+		}
+
+if(m_pSimilaritiesMatrix != NULL)
+	{
+	delete[]m_pSimilaritiesMatrix;
+	m_pSimilaritiesMatrix = NULL;
+	}
+
+m_SimilaritiesMatrixCols = m_NumCultivars;
+m_SimilaritiesMatrixRows = m_NumCultivars;
+m_pSimilaritiesMatrix = new double[(size_t)m_SimilaritiesMatrixCols * m_SimilaritiesMatrixRows];
+memset(m_pSimilaritiesMatrix, 0, (size_t)m_SimilaritiesMatrixCols * m_SimilaritiesMatrixRows * sizeof(double));
+
+// for each readset sum number of SNPs in that readset - assuming random distribution then can determine the probability of observing SNP at any loci
+int SumReadsetSNPs;
+int RowSumReadsetSNPs;
+int ColSumReadsetSNPs;
+for(RowReadsetIdx = 1; RowReadsetIdx <= m_SimilaritiesMatrixRows; RowReadsetIdx++)
+	{
+	pRowMatrixCell = &m_pMatrix[RowReadsetIdx * m_MatrixCols];
+	if(RowReadsetIdx != *pRowMatrixCell++)
+		{
+		gDiagnostics.DiagOut(eDLInfo, gszProcName, "Inconsistency between Similarities and Isolates matrix ReadsetIDs");
+		Reset();
+		return(-1);
+		}
+	SumReadsetSNPs = 0;
+	for(LociIdx = 1; LociIdx < m_MatrixCols; LociIdx++)
+		SumReadsetSNPs += *pRowMatrixCell++;
+	for(ColReadsetIdx = 1; ColReadsetIdx <= m_SimilaritiesMatrixCols; ColReadsetIdx++) 
+		{
+		RowSumReadsetSNPs = SumReadsetSNPs;
+		RowPValue = (double)RowSumReadsetSNPs/(m_MatrixCols-1);
+		pColMatrixCell = &m_pMatrix[ColReadsetIdx * m_MatrixCols];
+		
+		if(ColReadsetIdx != *pColMatrixCell++)
+			{
+			gDiagnostics.DiagOut(eDLInfo, gszProcName, "Inconsistency between Similarities and Isolates matrix ReadsetIDs");
+			Reset();
+			return(-1);
+			}
+		ColSumReadsetSNPs = 0;
+		for(LociIdx = 1; LociIdx < m_MatrixCols; LociIdx++)
+			ColSumReadsetSNPs += *pColMatrixCell++;
+		ColPValue = (double)ColSumReadsetSNPs / (m_MatrixCols-1);
+
+		// iterate base x base and score
+		Score = 1.0;
+		pRowMatrixCell = &m_pMatrix[(RowReadsetIdx * m_MatrixCols) + 1];
+		pColMatrixCell = &m_pMatrix[(ColReadsetIdx * m_MatrixCols) + 1];
+		for(LociIdx = 1; LociIdx < m_MatrixCols; LociIdx++, pRowMatrixCell++, pColMatrixCell++)
+			{
+			if(*pRowMatrixCell == 0 && *pColMatrixCell == 0) // both match the reference
+				continue;
+			if(*pRowMatrixCell == 0 && *pColMatrixCell != 0) // column has a SNP
+				{
+				Score *= 1.0 - ColPValue;
+				ColPValue = (double)(--ColSumReadsetSNPs) / (m_MatrixCols - 1);
+				continue;
+				}
+
+			if(*pRowMatrixCell != 0 && *pColMatrixCell == 0) // row has a SNP
+				{
+				Score *= 1.0 - RowPValue;
+				RowPValue = (double)(--RowSumReadsetSNPs) / (m_MatrixCols);
+				continue;
+				}
+
+			if(*pRowMatrixCell != 0 && *pColMatrixCell != 0) // both row and column have SNP
+				{
+				ColPValue = (double)(--ColSumReadsetSNPs) / (m_MatrixCols);
+				RowPValue = (double)(--RowSumReadsetSNPs) / (m_MatrixCols);
+				continue;
+				}
+			}
+		m_pSimilaritiesMatrix[((RowReadsetIdx - 1) * m_SimilaritiesMatrixCols) + (ColReadsetIdx - 1)] = Score;
+		}
+	}
+return(eBSFSuccess);
+}
+
+int
+CSNPs2pgSNPs::ReportSimilaritiesMatrix(char* pszFileExtn)	// report readset vs readset  similarities matrix using this file extension, will generate readset vs readset matrix if not already generated
+{
+int Rslt;
+uint32_t ColReadsetIdx;
+uint32_t RowReadsetIdx;
+double* pCurMatrixCell;
+
+if(m_pSimilaritiesMatrix == NULL)
+	if((Rslt = LoadSimilaritiesMatrix()) < eBSFSuccess)
+		{
+		Reset();
+		return(Rslt);
+		}
+if((Rslt = CreateOutFile(pszFileExtn)) < eBSFSuccess)
+	{
+	Reset();
+	return(Rslt);
+	}
+
+// first the heading, heading fields are simply each of the unique loci at which a SNP was present
+for(ColReadsetIdx = 1; ColReadsetIdx <= m_NumCultivars; ColReadsetIdx++)
+	m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], ",\"%s\"", LocateReadset(ColReadsetIdx));
+m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], "\n");
+// now each row
+pCurMatrixCell = m_pSimilaritiesMatrix;
+for(RowReadsetIdx = 1; RowReadsetIdx <= m_NumCultivars; RowReadsetIdx++)
+	{
+	m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], "\"%s\"", LocateReadset(RowReadsetIdx)); // this the readset name
+	for(ColReadsetIdx = 0; ColReadsetIdx < m_NumCultivars; ColReadsetIdx++, pCurMatrixCell++)		 // these are the matrix cells containing scores
+		m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], ",%.9f", *pCurMatrixCell);
+	m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], "\n");
+	if((Rslt = WriteOutFile()) < eBSFSuccess)
+		return(Rslt);
+	}
+CloseOutFile();
+return(eBSFSuccess);
+
+}
+
+// SortSNPChromLoci
+// Sort tsIsolateFeatSNPs SNP loci by ascending chrom, loci, readset
+int
+CSNPs2pgSNPs::SortSNPChromLociReadset(const void* arg1, const void* arg2)
+	{
+	tsIsolateFeatSNPs* pEl1 = (tsIsolateFeatSNPs*)arg1;
+	tsIsolateFeatSNPs* pEl2 = (tsIsolateFeatSNPs*)arg2;
+
+	if(pEl1->SNPSSite.ChromID < pEl2->SNPSSite.ChromID)
+		return(-1);
+	if(pEl1->SNPSSite.ChromID > pEl2->SNPSSite.ChromID)
+		return(1);
+
+	if(pEl1->SNPSSite.SNPLoci < pEl2->SNPSSite.SNPLoci)
+		return(-1);
+	if(pEl1->SNPSSite.SNPLoci > pEl2->SNPSSite.SNPLoci)
+		return(1);
+
+	if(pEl1->SNPSSite.ReadsetID < pEl2->SNPSSite.ReadsetID)
+		return(-1);
+	if(pEl1->SNPSSite.ReadsetID > pEl2->SNPSSite.ReadsetID)
+		return(1);
+
+	return(0);
+	}
+
+// SortSNPLoci
+// Sort tsIsolateFeatSNPs SNP loci by ascending readset, chrom, loci
+int
+CSNPs2pgSNPs::SortSNPReadsetChromLoci(const void* arg1, const void* arg2)
+	{
+	tsIsolateFeatSNPs* pEl1 = (tsIsolateFeatSNPs*)arg1;
+	tsIsolateFeatSNPs* pEl2 = (tsIsolateFeatSNPs*)arg2;
+
+	if(pEl1->SNPSSite.ReadsetID < pEl2->SNPSSite.ReadsetID)
+		return(-1);
+	if(pEl1->SNPSSite.ReadsetID > pEl2->SNPSSite.ReadsetID)
+		return(1);
+
+	if(pEl1->SNPSSite.ChromID < pEl2->SNPSSite.ChromID)
+		return(-1);
+	if(pEl1->SNPSSite.ChromID > pEl2->SNPSSite.ChromID)
+		return(1);
+
+	if(pEl1->SNPSSite.SNPLoci < pEl2->SNPSSite.SNPLoci)
+		return(-1);
+	if(pEl1->SNPSSite.SNPLoci > pEl2->SNPSSite.SNPLoci)
+		return(1);
+	return(0);
+	}
