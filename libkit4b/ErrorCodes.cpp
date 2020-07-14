@@ -73,12 +73,13 @@ CErrorCodes::AddErrMsg(const char *pszSource,	// used to identify message source
 {
 va_list Args;
 int LineLen;
+int Millisecs;
 char szDiag[cBSFMaxErrMsgLen+1];
 char szSource[cBSFMaxErrMsgSrc+1];
 #ifdef _WIN32
 struct _timeb timebuffer;
 #else
-struct timeb timebuffer;
+struct timespec ts;
 #endif
 char *timeline;
 char *pszErrMsg;
@@ -97,10 +98,14 @@ strncpy(szSource,pszSource,cBSFMaxErrMsgSrc);
 szSource[cBSFMaxErrMsgSrc] = '\0';
 #ifdef _WIN32
 _ftime(&timebuffer);
-#else
-ftime(&timebuffer);
-#endif
+Millisecs = (int)timebuffer.millitm;
 timeline = ctime(&timebuffer.time);
+#else
+clock_gettime(CLOCK_REALTIME,&ts);
+Millisecs = (int)(ts.tv_nsec/1000);
+timeline = ctime(&ts.tv_sec);
+#endif
+
 va_start(Args, pszFormat );
 #ifdef _WIN32
 _vsnprintf(szDiag,cBSFMaxErrMsgLen,pszFormat,Args);
@@ -109,7 +114,7 @@ vsnprintf(szDiag,cBSFMaxErrMsgLen,pszFormat,Args);
 #endif
 
 szDiag[cBSFMaxErrMsgLen] = '\0';
-LineLen = sprintf(pszErrMsg,"[%.15s.%03d %.4s] %s: %s\n",&timeline[4],(int)timebuffer.millitm, &timeline[20],szSource,szDiag);
+LineLen = sprintf(pszErrMsg,"[%.15s.%03d %.4s] %s: %s\n",&timeline[4],Millisecs, &timeline[20],szSource,szDiag);
 return(m_NumMsgs);
 }
 				

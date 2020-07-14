@@ -83,6 +83,7 @@ typedef struct TAG_sSBaseCnts {
 
 typedef struct TAG_sSNPSSite {
 	bool bSNPPlaceholder;			// true if this site is a place holder only and not to be output as a pgSNP or VCF SNP site
+	uint8_t ClassifySite;			// site classified as - 0: unclassified, 1: SNP is minor allele, 1: SNP is major allele, 2: SNP is divac 
 	bool bInFeature;				// set true if this SNP site is within a CDS feature
 	uint32_t FeatureIdx;			// feature index
 	uint32_t SNPId;					// globally unique identifier, includes SNP loci placeholders as well as reported SNPs
@@ -141,8 +142,7 @@ typedef struct TAG_sSummaryFeatCnts
 
 typedef struct TAG_sIsolateFeatSNPs // one isolate contains many instances, one per SNP called in that isolate
 	{
-	uint32_t SharedIn;			// number of loci in other isolates which share SNP loci with this isolate SNP
-	uint32_t SharedOut;			// this SNP loci is shared with other isolates having same SNP loci
+	uint32_t Shared;			// number of isolates sharing this SNP loci
 	tsSNPSSite SNPSSite;		// Isolate SNP loci
 	tsSiteFeatCnts SiteFeatCnts; // feature specific counts at that site
 	} tsIsolateFeatSNPs;

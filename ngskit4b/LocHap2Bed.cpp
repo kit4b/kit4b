@@ -44,12 +44,12 @@ int Process (eModeLocHap Mode,				// processing mode
 			 double MinAlleleProp,			// putative allele must be at least this proportion of total site read coverage
 			 double PValueThres,			// only accept SNP alleles which have a PValue <= this threshold
 			 char* pszTrackName,			// track name
-			 char* pszAssemblyName,		// UCSC assembly name - for SARS-CoV-2 it is "wuhCor1"
+			 char* pszAssemblyName,			// UCSC assembly name - for SARS-CoV-2 it is "wuhCor1"
 			 char* pszExperimentDescr,		// describes experiment
 			 int NumInWhitelist,			// number of white listed file names
 			 char** ppszWhitelisted,		// names of white listed files
 			 int NumInBlackList,			// number of black listed files
-			 char** ppsBlacklisted,		// names of black listed files
+			 char** ppsBlacklisted,			// names of black listed files
 			 int NumSNPFiles,				// number of input SNP files
 			 char** ppszSNPFiles,			// input SNP files
 			 char* pszOutFile);				// output SNPs to this UCSC Personal Genome SNP format file
@@ -185,7 +185,7 @@ LocHap2Bed (int argc, char **argv)
 		szExperimentDescr[0] = '\0';
 
 		PMode = pmode->count ? (eModeLocHap)pmode->ival[0] : eMLHdefault;
-		if (PMode < eMLHdefault || PMode > eMLHPlaceHolder)
+		if (PMode < eMLHdefault || PMode >= eMLHPlaceHolder)
 		{
 			gDiagnostics.DiagOut (eDLFatal, gszProcName, "Error: Processing mode '-m%d' specified outside of range %d..%d\n", PMode, eMLHdefault, eMLHPlaceHolder-1);
 			exit (1);
@@ -431,20 +431,19 @@ int Process (eModeLocHap Mode,				// processing mode
 			 char** ppszSNPFiles,			// input SNP files
 			 char* pszOutFile)				// output SNPs to this UCSC Personal Genome SNP format file
 {
-	int Rslt;
-	CLocHap2Bed *pCLocHap2Bed;
-	if ((pCLocHap2Bed = new CLocHap2Bed) == NULL)
+int Rslt;
+CLocHap2Bed *pCLocHap2Bed;
+if ((pCLocHap2Bed = new CLocHap2Bed) == NULL)
 	{
-		gDiagnostics.DiagOut (eDLFatal, gszProcName, "Unable to instantiate instance of CLocHap2Bed");
-		return(eBSFerrInternal);
+	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Unable to instantiate instance of CLocHap2Bed");
+	return(eBSFerrInternal);
 	}
-	Rslt = eBSFSuccess;
 
-	Rslt = pCLocHap2Bed->Process (Mode, MinCoverage, MinAlleleProp, PValueThres, pszTrackName, pszAssemblyName, pszExperimentDescr, 
+Rslt = pCLocHap2Bed->Process (Mode, MinCoverage, MinAlleleProp, PValueThres, pszTrackName, pszAssemblyName, pszExperimentDescr, 
 								  NumInWhitelist, ppszWhitelisted, NumInBlackList, ppsBlacklisted, NumSNPFiles, ppszSNPFiles, pszOutFile);
-	if (pCLocHap2Bed != NULL)
-		delete pCLocHap2Bed;
-	return(Rslt);
+if (pCLocHap2Bed != NULL)
+	delete pCLocHap2Bed;
+return(Rslt);
 }
 
 CLocHap2Bed::CLocHap2Bed (void)

@@ -245,7 +245,7 @@ SNPs2pgSNPs(int argc, char** argv)
 
 	struct arg_dbl* locerrrate = arg_dbl0("l", "locerrrate", "<dbl>", "default local sequencing error rate in a 100bp window centered around the putative SNP site (default 0.02, range 0.001 .. 0.25)");
 	struct arg_dbl* pvaluethres = arg_dbl0("p", "pvalue", "<dbl>", "SNP PValue threshold (default 0.10, range 0.005..0.25)");
-	struct arg_dbl* minalleleprop = arg_dbl0("P", "minalleleprop", "<dbl>", "SNP minimum allele proportion of loci site coverage (default 0.025, range 0.01..0.25)");
+	struct arg_dbl* minalleleprop = arg_dbl0("P", "minalleleprop", "<dbl>", "SNP minimum allele proportion of loci site coverage (default 0.025, range 0.01..0.95)");
 	struct arg_int* mincoverage = arg_int0("c", "mincoverage", "<int>", "SNP minimum loci site coverage (default 20, range 1..10000)");
 
 	struct arg_end* end = arg_end(200);
@@ -379,8 +379,8 @@ SNPs2pgSNPs(int argc, char** argv)
 		if(MinAlleleProp <= 0.01)
 			MinAlleleProp = 0.01;
 		else
-			if(MinAlleleProp > 0.25)
-				MinAlleleProp = 0.25;
+			if(MinAlleleProp > 0.99)
+				MinAlleleProp = 0.95;
 
 		MinCoverage = mincoverage->count ? mincoverage->ival[0] : 20;
 		if(MinCoverage <= 1)
@@ -1173,6 +1173,7 @@ CSNPs2pgSNPs::ProcessSnpmarkersSNPs(void)
 		NumInSetASnps = 0;
 		NumInSetBSnps = 0;
 		memset(pSNPSite->BaseCnts, 0, sizeof(pSNPSite->BaseCnts));
+		pSNPSite->ClassifySite = 0x00;
 		pCultivar = m_Cultivars;
 		for(CultivarIdx = 0; CultivarIdx < m_NumCultivars; CultivarIdx++, pCultivar++)
 		{
@@ -1270,7 +1271,7 @@ CSNPs2pgSNPs::ProcessSnpmarkersSNPs(void)
 				NumInSetBSnps++;
 			pSNPSite->TotMismatches += 1;
 			pCultivar->NumSitesAccepted += 1;
-		}
+			}
 
 		if(bHaveSNP)
 			{
@@ -1312,8 +1313,21 @@ CSNPs2pgSNPs::ProcessSnpmarkersSNPs(void)
 				}
 			}
 
-		if(bHaveSNP)
+		if(bHaveSNP)	// if still accepted as being a called SNP
 			{
+			// classify site loci
+			for(int Idx = 0; Idx < 4; Idx++)
+				{
+				if(Idx == pSNPSite->RefBase)
+					continue;
+				if((pCultivar->BaseCnts[Idx] / (double)pCultivar->TotBaseCnts) >= m_DiracThres)
+					pSNPSite->ClassifySite = 0x03;
+				else
+					if(pSNPSite->ClassifySite == 0 && (pCultivar->BaseCnts[Idx] / (double)pCultivar->TotBaseCnts) >= (m_DiracThres/2))
+						pSNPSite->ClassifySite = 0x02;
+				}
+			if(pSNPSite->ClassifySite == 0x00)	// if not previously classified then can only be a minor allele
+				pSNPSite->ClassifySite = 0x01;	
 			if(PrevSNPloci != 0xffffffff)
 				{
 				uint32_t CurGap;
@@ -1338,7 +1352,10 @@ CSNPs2pgSNPs::ProcessSnpmarkersSNPs(void)
 			pSNPSite->bSNPPlaceholder = false;
 			}
 		else
+			{
 			pSNPSite->bSNPPlaceholder = true;
+			pSNPSite->ClassifySite = 0;
+			}
 
 		pSNPSite->SNPId = ++m_SNPID;		// all SNPs have an identifier even if only a placeholder
 		if(m_bRptHdr && m_NumSNPs)
@@ -1546,6 +1563,7 @@ while ((Rslt = m_pCSV->NextLine()) > 0)				// onto next line containing fields
 		continue;
 
 	bHaveSNP = false;
+	pSNPSite->ClassifySite = 0;
 	for (int Idx = 0; Idx < 4; Idx++)
 		{
 		pSNPSite->OrigBaseCnts[Idx] = pSNPSite->BaseCnts[Idx].Cnts;
@@ -1564,15 +1582,32 @@ while ((Rslt = m_pCSV->NextLine()) > 0)				// onto next line containing fields
 			}
 		else
 			{
-			if((pSNPSite->BaseCnts[Idx].Cnts / (double)pSNPSite->TotBaseCnts) >= m_DiracThres)
-				pSNPSite->DiracCnts[Idx] = 1;
+			if(Idx != pSNPSite->RefBase)   // only non-ref alleles can be characterised
+				{
+				if((pSNPSite->BaseCnts[Idx].Cnts / (double)pSNPSite->TotBaseCnts) >= m_DiracThres)
+					{
+					pSNPSite->DiracCnts[Idx] = 1;
+					pSNPSite->ClassifySite = 0x03;
+					}
+				else
+					if(pSNPSite->ClassifySite < 0x02)
+						{
+						if((pSNPSite->BaseCnts[Idx].Cnts / (double)pSNPSite->TotBaseCnts) >= (m_DiracThres/2))
+							pSNPSite->ClassifySite = 0x02;
+						else
+							pSNPSite->ClassifySite = 0x01;
+						}
+				}
 			pSNPSite->BaseCnts[Idx].QScore = PValue; 
 			if(Idx != pSNPSite->RefBase)
 				bHaveSNP = true;
 			}
 		}
 	if(!bHaveSNP)
+		{
+		pSNPSite->ClassifySite = 0x00;
 		continue;
+		}
 	NumSNPsParsed++;
 
 	tsSummaryFeatCnts* pFeature = m_pFeatures;
@@ -1607,11 +1642,11 @@ while ((Rslt = m_pCSV->NextLine()) > 0)				// onto next line containing fields
 			pSNPSite->bInFeature = true;
 			pSNPSite->FeatureIdx = FeatureIdx;
 			pFeature->TotSNPs += 1;
-			for(FieldIdx = 0; FieldIdx <= 4; FieldIdx++)
+			if((pSNPSite->ClassifySite & 0x03) == 3)
 				{
-				pFeature->DiracCnts[FieldIdx] += pSNPSite->DiracCnts[FieldIdx];
-				if(pSNPSite->DiracCnts[FieldIdx])
-					pFeature->SiteFeatCnts.IsDirac = true;
+				pFeature->SiteFeatCnts.IsDirac = true;
+				for(FieldIdx = 0; FieldIdx <= 4; FieldIdx++)
+					pFeature->DiracCnts[FieldIdx] += pSNPSite->DiracCnts[FieldIdx];
 				}
 			if(NumFields == cAlignNumSSNPXfields)	// if SNP file is an extended SNP file then can utilise the additional codon frame shift fields present in the extension
 				{
@@ -1658,6 +1693,7 @@ while ((Rslt = m_pCSV->NextLine()) > 0)				// onto next line containing fields
 					m_pCSV->GetInt(FieldIdx++, &AlignCodons[AlignCodonIdx]);
 					SumCodonCnts += AlignCodons[AlignCodonIdx];
 					}
+
 
 				bool bIsSynonymous = false;
 				bool bIsNonSynonymous = false;
@@ -2724,7 +2760,7 @@ for(FeatSNPIdx = 0; FeatSNPIdx < m_IsolateFeatSNPs; FeatSNPIdx++, pFeatSNP++)
 		pCurMatrixCell++;
 		pCurLoci++;
 		}
-	*pCurMatrixCell = 1;
+	*pCurMatrixCell = (uint32_t)pFeatSNP->SNPSSite.ClassifySite;
 	}
 return(eBSFSuccess);
 }
@@ -2759,8 +2795,8 @@ m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], "\n");
 for(ReadsetIdx = 1; ReadsetIdx <= m_NumCultivars; ReadsetIdx++)
 	{
 	m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], "\"%s\"", LocateReadset(*pCurMatrixCell++)); // this the readset name
-	for(LociIdx = 0; LociIdx < m_NumUniqueSiteLoci; LociIdx++, pCurMatrixCell++)		 // these are the matrix cells which currently contain just SNP site absence/presence flags
-		m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], ",%u", *pCurMatrixCell);
+	for(LociIdx = 0; LociIdx < m_NumUniqueSiteLoci; LociIdx++, pCurMatrixCell++)		 // these are the matrix cells which contain SNP site classifications
+		m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], ",%u", *pCurMatrixCell & 0x03);
 	m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], "\n");
 	if((Rslt = WriteOutFile()) < eBSFSuccess)
 		return(Rslt);
@@ -2841,7 +2877,7 @@ for(FromFeatSNPIdx = 0; FromFeatSNPIdx <= m_IsolateFeatSNPs; FromFeatSNPIdx++, p
 		return(Rslt);
 	do
 		{
-		pToFeatSNP->SharedIn = NumSharedLoci;
+		pToFeatSNP->Shared = NumSharedLoci;
 		}
 	while(++pToFeatSNP != pFromFeatSNP);
 	CurSNPLoci = pFromFeatSNP->SNPSSite.SNPLoci;

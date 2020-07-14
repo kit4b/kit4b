@@ -87,6 +87,7 @@ extern int fasta2bed(int argc,char *argv[]);
 extern int BenchmarkAligners(int argc, char* argv[]);
 extern int SNPs2pgSNPs(int argc, char* argv[]);
 extern int LocHap2Bed(int argc, char *argv[]);
+extern int genbioseq(int argc, char *argv[]);
 
 
 // inplace text cleaning; any leading/trailing or internal quote characters are removed; excessive whitespace is reduced to single
@@ -158,7 +159,8 @@ tsSubProcess SubProcesses[] = {
 	{"gengoassoc","gengoassoc","Generate biogoassoc pre-indexed GO associations",gengoassoc},
 	{"gengoterms","gengoterms","Generate biogoterms pre-indexed GO terms",gengoterms},
 	{"hammings","Hamming Distances","Generate hamming distances for K-mer over sequences",hammings},
-	{"fasta2bed","Fasta to BED","Generate BED file from fasta containing sequence names and lengths",fasta2bed}
+	{"fasta2bed","Fasta to BED","Generate BED file from fasta containing sequence names and lengths",fasta2bed},
+	{"genbioseq","Fasta to bioseq","Generate bioseq format file from fasta",genbioseq}
 };
 const int cNumSubProcesses = (sizeof(SubProcesses) / sizeof(tsSubProcess));
 

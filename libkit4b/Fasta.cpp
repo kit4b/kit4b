@@ -705,13 +705,15 @@ for(BuffIdx = 0; BuffIdx < BuffCnt; BuffIdx++,pChr++)
 				}
 			else
 				switch(tolower(*pChr)) {
-				case 'a': case 'c': case 'g': case 't':	case 'u': case 'n': 
+				case 'a': case 'c': case 'g': case 't':	case 'u': case 'n':
+						if(NumAmbiguousBases)
+							NumAmbiguousBases--;
 						bIsfasta = true;
 						continue;
 
 					case '-': case 'k': case 'm':	case 'r': case 'y':	case 's': case 'w':	case 'b': case 'v':	case 'h': case 'd':	case 'x': case '.':
 						NumSeqChrs += 1;
-						if(NumSeqChrs > 20 && NumAmbiguousBases++ > (NumSeqChrs / 2))	// this limit is purely arbitrary
+						if(NumSeqChrs > 50 && NumAmbiguousBases++ > (NumSeqChrs / 2))	// this limit is purely arbitrary
 							{
 							AddErrMsg("CFasta::CheckIsFasta","Too many ambiguous bases in assumed fasta sequence near line %d#%d - '%s' - non-sequence chr '%c'",CurLineNum,ChrPsn, m_szFile,*pChr);
 							break;

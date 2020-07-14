@@ -167,10 +167,11 @@ int LineLen;
 char szDiag[cMaxDiagLen];
 char szLine[cMaxDiagLen+1000];			// need to allow for timestamp and message source
 char szTimestamp[200];
+int Millisecs;
 #ifdef _WIN32
 struct _timeb timebuffer;
 #else
-struct timeb timebuffer;
+struct timespec ts;
 #endif
 char *timeline;
 
@@ -181,10 +182,14 @@ if((DiagLevel <= eDLNone && DiagLevel > eDLDebug) ||
 	return(true);
 #ifdef _WIN32
 _ftime(&timebuffer);
-#else
-ftime(&timebuffer);
-#endif
+Millisecs = (int)timebuffer.millitm;
 timeline = ctime(&timebuffer.time);
+
+#else
+clock_gettime(CLOCK_REALTIME,&ts);
+Millisecs = (int)(ts.tv_nsec/1000);
+timeline = ctime(&ts.tv_sec);
+#endif
 
 va_start(Args, pszFormat );
 #ifdef _WIN32
@@ -194,7 +199,7 @@ vsnprintf(szDiag,cMaxDiagLen,pszFormat,Args);
 #endif
 szDiag[cMaxDiagLen-1] = '\0';
 
-LineLen = sprintf(szTimestamp,"\n[%.15s.%03d %.4s]",&timeline[4],(int)timebuffer.millitm, &timeline[20]);
+LineLen = sprintf(szTimestamp,"\n[%.15s.%03d %.4s]",&timeline[4],Millisecs, &timeline[20]);
 if(pszSource != NULL)
 	sprintf(&szTimestamp[LineLen],"(%s) ",pszSource);
 else
