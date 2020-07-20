@@ -66,7 +66,6 @@ AC_OUTPUT(Makefile
     loci2dist/Makefile
     Loci2Phylip/Makefile
     locmarkers/Makefile
-    PEscaffold/Makefile
     predconfnucs/Makefile
     prednucleosomes/Makefile
     proccentroids/Makefile

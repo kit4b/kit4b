@@ -70,7 +70,13 @@ const int cMaxBlitzQuerySeqIdentLen = 80;		// allow for fasta sequence identifie
 const int cMaxBlitzDescrLen = 128;				// allow for fasta descriptors (incl identifiers) of up to this length
 const int cSAMBlitztruncSeqLen = 16000;			// SAM format is really designed for short read sequences, down stream apps may have problems handling alignments with long query sequences so slough sequences longer than this length if SAM output
 const int cAllocBlitzQuerySeqLen = 0x0200000;	// initially allocate to hold a query sequence of up to this length (2Mbp), will be realloc'd if needed for longer query sequences
+const int cMinBlitzQuerySeqLen = 100;			// sequences need to be at least this length
 const int cMaxBlitzQuerySeqLen = (cAllocBlitzQuerySeqLen * 8);    // can handle query sequences of up to this maximal length (16Mbp), longer sequences will be truncated to this length and the user warned
+
+const int cDfltMinBlitzQuerySeqLen = 100;		// default: filter out sequences less than this length
+const int cDfltMaxBlitzQuerySeqLen = 100000;    // default: filter out sequences longer than this length
+
+
 const int cMaxBlitzReadAheadQuerySeqs = 50000;	// read ahead and enqueue up to at most this many query sequences
 
 const int cNumBlitzAllocdAlignNodes = 200000;  // allow each query sequence to have up to this many aligned subsequences
@@ -158,6 +164,8 @@ typedef struct TAG_sThreadQuerySeqsPars {
 class CBlitz
 {
 	etBLZPMode m_ProcMode;			// processing mode
+	int m_FiltMinLen;				// filter out input sequences less than this length
+	int m_FiltMaxLen;				// filter out input sequences more than this length
 	int m_SampleNthRawRead;			// sample every Nth raw read (or read pair) for processing (1..10000)
 	etBLZSensitivity m_Sensitivity;  // alignment sensitivity 0 - standard, 1 - high, 2 - very high, 3 - low sensitivity
 	eALStrand m_AlignStrand;		// align on to watson, crick or both strands of target
@@ -268,6 +276,8 @@ public:
 			char *pszExprName,				// experiment name
 			char *pszExprDescr,				// experiment description
 			char *pszParams,				// string containing blitz parameters
+			int FiltMinLen,					// filter out input sequences less than this length
+			int FiltMaxLen,					// filter out input sequences more than this length
 			bool KMerDist,				// true if K_mer counts distributions to be reported
 			etBLZSensitivity Sensitivity,	// sensitivity 0 - standard, 1 - high, 2 - very high, 3 - low sensitivity
 			eALStrand AlignStrand,			// align on to watson, crick or both strands of target

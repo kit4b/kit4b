@@ -344,6 +344,8 @@ CBlitz::Process(char* pszProcessName,	// name of process requesting blitz alignm
 		char *pszExprName,				// experiment name
 		char *pszExprDescr,				// experiment description
 		char *pszParams,				// string containing blitz parameters
+		int FiltMinLen,					// filter out input sequences less than this length
+		int FiltMaxLen,					// filter out input sequences more than this length
 		bool KMerDist,					// true if K_mer counts distributions to be reported
 		etBLZSensitivity Sensitivity,	// sensitivity 0 - standard, 1 - high, 2 - very high, 3 - low sensitivity
 		eALStrand AlignStrand,			// align on to watson, crick or both strands of target
@@ -386,7 +388,9 @@ m_pszInputFile = pszInputFile;
 m_pszInputFilePE2 = pszInputFilePE2;
 m_pszSfxFile = pszSfxFile;		
 m_pszOutFile = pszOutFile;		
-m_NumThreads = NumThreads;	
+m_NumThreads = NumThreads;
+m_FiltMinLen = FiltMinLen;
+m_FiltMaxLen = FiltMaxLen;
 
 if((m_pszLineBuff = new char [cAlignBlitzRprtBufferSize]) == NULL)
 	{
@@ -619,50 +623,55 @@ if((Rslt=InitLoadQuerySeqs()) < eBSFSuccess)
 char szNonAlignedFilePE1[_MAX_PATH];
 char szNonAlignedFilePE2[_MAX_PATH];
 
-sprintf(szNonAlignedFilePE1,"%s.PE1.Unaligned.fasta", pszOutFile);
+if(RsltsFormat == eBLZRsltsSAM)
+	{
+	sprintf(szNonAlignedFilePE1,"%s.PE1.Unaligned.fasta", pszOutFile);
 #ifdef _WIN32
-m_hOutNonAlignedFilePE1 = open(szNonAlignedFilePE1, (O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC), (_S_IREAD | _S_IWRITE));
+	m_hOutNonAlignedFilePE1 = open(szNonAlignedFilePE1, (O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC), (_S_IREAD | _S_IWRITE));
 #else
-if ((m_hOutNonAlignedFilePE1 = open(szNonAlignedFilePE1, O_WRONLY | O_CREAT, S_IREAD | S_IWRITE)) != -1)
-if (ftruncate(m_hOutNonAlignedFilePE1, 0) != 0)
-{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to truncate %s - %s", szNonAlignedFilePE1, strerror(errno));
-	Reset(false);
-	return(eBSFerrCreateFile);
-}
+	if ((m_hOutNonAlignedFilePE1 = open(szNonAlignedFilePE1, O_WRONLY | O_CREAT, S_IREAD | S_IWRITE)) != -1)
+		if (ftruncate(m_hOutNonAlignedFilePE1, 0) != 0)
+			{
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to truncate %s - %s", szNonAlignedFilePE1, strerror(errno));
+			Reset(false);
+			return(eBSFerrCreateFile);
+			}
 #endif
-if (m_hOutNonAlignedFilePE1 < 0)
-	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: unable to create/truncate output file '%s'", szNonAlignedFilePE1);
-	Reset(false);
-	return(eBSFerrCreateFile);
-	}
-
-if(pszInputFilePE2 != NULL && pszInputFilePE2[0] != '\0')
-	{
-	sprintf(szNonAlignedFilePE2, "%s.PE2.Unaligned.fasta", pszOutFile);
-#ifdef _WIN32
-	m_hOutNonAlignedFilePE2 = open(szNonAlignedFilePE2, (O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC), (_S_IREAD | _S_IWRITE));
-#else
-	if ((m_hOutNonAlignedFilePE2 = open(szNonAlignedFilePE2, O_WRONLY | O_CREAT, S_IREAD | S_IWRITE)) != -1)
-		if (ftruncate(m_hOutNonAlignedFilePE2, 0) != 0)
+	if (m_hOutNonAlignedFilePE1 < 0)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to truncate %s - %s", szNonAlignedFilePE2, strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: unable to create/truncate output file '%s'", szNonAlignedFilePE1);
 		Reset(false);
 		return(eBSFerrCreateFile);
 		}
-#endif
-	if (m_hOutNonAlignedFilePE2 < 0)
+	
+	if(pszInputFilePE2 != NULL && pszInputFilePE2[0] != '\0')
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: unable to create/truncate output file '%s'", szNonAlignedFilePE2);
-		Reset(false);
-		return(eBSFerrCreateFile);
+		sprintf(szNonAlignedFilePE2, "%s.PE2.Unaligned.fasta", pszOutFile);
+#ifdef _WIN32
+		m_hOutNonAlignedFilePE2 = open(szNonAlignedFilePE2, (O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC), (_S_IREAD | _S_IWRITE));
+#else
+		if ((m_hOutNonAlignedFilePE2 = open(szNonAlignedFilePE2, O_WRONLY | O_CREAT, S_IREAD | S_IWRITE)) != -1)
+			if (ftruncate(m_hOutNonAlignedFilePE2, 0) != 0)
+			{
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to truncate %s - %s", szNonAlignedFilePE2, strerror(errno));
+			Reset(false);
+			return(eBSFerrCreateFile);
+			}
+#endif
+		if (m_hOutNonAlignedFilePE2 < 0)
+			{
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: unable to create/truncate output file '%s'", szNonAlignedFilePE2);
+			Reset(false);
+			return(eBSFerrCreateFile);
+			}
 		}
 	}
 else
 	{
-	szNonAlignedFilePE2[0] = '\0';
+	m_hOutNonAlignedFilePE1 = -1;
 	m_hOutNonAlignedFilePE2 = -1;
+	szNonAlignedFilePE1[0] = '\0';
+	szNonAlignedFilePE2[0] = '\0';
 	}
 
 if(RsltsFormat != eBLZRsltsSQLite)
@@ -718,15 +727,16 @@ if((m_hOutFile = open(pszOutFile,O_WRONLY | O_CREAT,S_IREAD | S_IWRITE))!=-1)
 				m_pSfxArray->GetIdentName(CurEntryID, sizeof(szSeqIdent) - 1, szSeqIdent);
 				SeqLen = m_pSfxArray->GetSeqLen(CurEntryID);
 				m_szLineBuffIdx += sprintf(&m_pszLineBuff[m_szLineBuffIdx], "@SQ\tAS:%s\tSN:%s\tLN:%u\n", m_szTargSpecies,szSeqIdent, SeqLen);
+
 				if (m_szLineBuffIdx > (cAlignBlitzRprtBufferSize * 9) / 10)
 					{
 					CUtility::SafeWrite(m_hOutFile, m_pszLineBuff, m_szLineBuffIdx);
 					m_szLineBuffIdx = 0;
 					}
 				}
+			m_szLineBuffIdx += sprintf(&m_pszLineBuff[m_szLineBuffIdx],"@PG\tID:kit4b_blitz\tVN:%s\n", kit4bversion);
 			break;
 		}
-	m_szLineBuffIdx += sprintf(&m_pszLineBuff[m_szLineBuffIdx],"@PG\tID:kit4b_blitz\tVN:%s\n", kit4bversion);
 	if(m_szLineBuffIdx)
 		CUtility::SafeWrite(m_hOutFile,m_pszLineBuff,m_szLineBuffIdx);
 	m_szLineBuffIdx = 0;
@@ -2152,8 +2162,16 @@ CBlitz::ConsolidateNodes(bool bSense,				// if true then query sequence is align
 {
 bool bCurBaseMatch;
 bool bNxtBaseMatch;
-int DeltaQuery;
-int DeltaTarg;
+int64_t DeltaQuery;
+int64_t DeltaTarg;
+
+uint32_t CurTargSeqLoci;
+uint32_t CurQueryStartOfs;
+uint32_t CurAlignLen;
+uint32_t NxtAlignLen;
+uint32_t NxtQueryStartOfs;
+uint32_t NxtTargSeqLoci;
+
 uint32_t CurTargLoci;
 uint32_t NxtTargLoci;
 etSeqBase* pCurSeq;
@@ -2167,33 +2185,48 @@ uint32_t NumConsolidatedNodes;
 pCurNode = ppFirst2Rpts[SortedPathIdx];			// starting from first node in path
 if(pCurNode->HiScorePathNextIdx == 0)
 	return(1);
+
 if (bSense)
 	CSeqTrans::ReverseComplement(QueryLen, (etSeqBase*)pQuerySeq);
 NumConsolidatedNodes = 1;				
 while(pCurNode->HiScorePathNextIdx != 0)
 	{
+	CurAlignLen = pCurNode->AlignLen;
+	CurQueryStartOfs = pCurNode->QueryStartOfs;
+	CurTargSeqLoci = pCurNode->TargSeqLoci;
 	pNxtNode = &pAlignNodes[pCurNode->HiScorePathNextIdx - 1];
-	DeltaQuery = pNxtNode->QueryStartOfs - (pCurNode->QueryStartOfs + pCurNode->AlignLen - 1);	// normally if at an InDel edge then difference should be 1 base
-	DeltaTarg = pNxtNode->TargSeqLoci - (pCurNode->TargSeqLoci + pCurNode->AlignLen - 1);		// normally if just +1 then next node is a direct extension
-	if (DeltaQuery < 0 || DeltaQuery > 1)
+	NxtAlignLen = pNxtNode->AlignLen;
+	NxtQueryStartOfs  = pNxtNode->QueryStartOfs;
+	NxtTargSeqLoci =  pNxtNode->TargSeqLoci;
+
+	DeltaQuery = (int64_t)(uint64_t)NxtQueryStartOfs - (int64_t)(uint64_t)(CurQueryStartOfs + CurAlignLen - 1);	// normally if at an InDel edge then difference should be 1 base
+	DeltaTarg = (int64_t)(uint64_t)NxtTargSeqLoci - (int64_t)(uint64_t)(CurTargSeqLoci + CurAlignLen - 1);		// normally if just +1 then next node is a direct extension
+
+	int64_t Delta;
+	if(abs(DeltaQuery) <= abs(DeltaTarg))
+		Delta = DeltaQuery;
+	else
+		Delta = DeltaTarg;
+
+	if (Delta < 0 || Delta > 1)
 		{
-		if (DeltaQuery > 1)			// mind {close} the gap ...
+		if (Delta > 1)			// mind {close} the gap ...
 			{
-			pCurSeq = &pQuerySeq[pCurNode->QueryStartOfs + pCurNode->AlignLen];
-			pNxtSeq = &pQuerySeq[pNxtNode->QueryStartOfs - 1];
-			CurTargLoci = pCurNode->TargSeqLoci + pCurNode->AlignLen;
-			NxtTargLoci = pNxtNode->TargSeqLoci - 1;
-			while (DeltaQuery-- > 1)
+			pCurSeq = &pQuerySeq[CurQueryStartOfs + CurAlignLen];
+			pNxtSeq = &pQuerySeq[NxtQueryStartOfs - 1];
+			CurTargLoci = CurTargSeqLoci + CurAlignLen;
+			NxtTargLoci = NxtTargSeqLoci - 1;
+			while (Delta-- > 1)
 				{
 				CurTargBase = m_pSfxArray->GetBase(pCurNode->TargSeqID, CurTargLoci);
 				NxtTargBase = m_pSfxArray->GetBase(pNxtNode->TargSeqID, NxtTargLoci);
 				bCurBaseMatch = *pCurSeq == CurTargBase;
 				bNxtBaseMatch = *pNxtSeq == NxtTargBase;
 				if(!(bCurBaseMatch || bNxtBaseMatch) || (bCurBaseMatch && bNxtBaseMatch)) // semi-random tie breaker!
-					bCurBaseMatch = (DeltaQuery & 0x01) ? true : false;
+					bCurBaseMatch = (Delta & 0x01) ? true : false;
 				if(bCurBaseMatch)
 					{
-					pCurNode->AlignLen++;
+					CurAlignLen++;
 					if(*pCurSeq != CurTargBase)
 						pCurNode->NumMismatches++;
 					CurTargLoci++;
@@ -2201,11 +2234,11 @@ while(pCurNode->HiScorePathNextIdx != 0)
 					}
 				else
 					{
-					pNxtNode->AlignLen++;
+					NxtAlignLen++;
 					if (*pNxtSeq != NxtTargBase)
 						pNxtNode->NumMismatches++;
-					pNxtNode->QueryStartOfs--;
-					pNxtNode->TargSeqLoci--;
+					NxtQueryStartOfs--;
+					NxtTargSeqLoci--;
 					NxtTargLoci--;
 					pNxtSeq--;
 					}
@@ -2213,21 +2246,21 @@ while(pCurNode->HiScorePathNextIdx != 0)
 			}
 		else
 			{
-			pCurSeq = &pQuerySeq[pCurNode->QueryStartOfs + pCurNode->AlignLen - 1];
-			pNxtSeq = &pQuerySeq[pNxtNode->QueryStartOfs];
-			CurTargLoci = pCurNode->TargSeqLoci + pCurNode->AlignLen - 1;
-			NxtTargLoci = pNxtNode->TargSeqLoci;
-			while (DeltaQuery++ < 1)
+			pCurSeq = &pQuerySeq[CurQueryStartOfs + CurAlignLen - 1];
+			pNxtSeq = &pQuerySeq[NxtQueryStartOfs];
+			CurTargLoci = CurTargSeqLoci + CurAlignLen - 1;
+			NxtTargLoci = NxtTargSeqLoci;
+			while (Delta++ < 1)
 				{
 				CurTargBase = m_pSfxArray->GetBase(pCurNode->TargSeqID, CurTargLoci);
 				NxtTargBase = m_pSfxArray->GetBase(pNxtNode->TargSeqID, NxtTargLoci);
 				bCurBaseMatch = *pCurSeq == CurTargBase;
 				bNxtBaseMatch = *pNxtSeq == NxtTargBase;
 				if (!(bCurBaseMatch || bNxtBaseMatch) || (bCurBaseMatch && bNxtBaseMatch)) // semi-random tie breaker!
-					bNxtBaseMatch = (DeltaQuery & 0x01) ? true : false;
+					bNxtBaseMatch = (Delta & 0x01) ? true : false;
 				if (bNxtBaseMatch)
 					{
-					pCurNode->AlignLen--;
+					CurAlignLen--;
 					if (*pCurSeq != CurTargBase)
 						pCurNode->NumMismatches--;
 					CurTargLoci--;
@@ -2235,9 +2268,9 @@ while(pCurNode->HiScorePathNextIdx != 0)
 					}
 				else									
 					{
-					pNxtNode->AlignLen--;
-					pNxtNode->QueryStartOfs++;
-					pNxtNode->TargSeqLoci++;
+					NxtAlignLen--;
+					NxtQueryStartOfs++;
+					NxtTargSeqLoci++;
 					if (*pNxtSeq != NxtTargBase)
 						pNxtNode->NumMismatches--;
 					NxtTargLoci++;
@@ -2246,6 +2279,14 @@ while(pCurNode->HiScorePathNextIdx != 0)
 				}
 			}
 		}
+
+	pCurNode->AlignLen = CurAlignLen;
+	pCurNode->QueryStartOfs = CurQueryStartOfs;
+	pCurNode->TargSeqLoci = CurTargSeqLoci;
+	pNxtNode->AlignLen = NxtAlignLen;
+	pNxtNode->QueryStartOfs = NxtQueryStartOfs;
+	pNxtNode->TargSeqLoci = NxtTargSeqLoci;
+
 	if (pCurNode->AlignLen == 0)
 		{
 		pCurNode->HiScorePathNextIdx = pNxtNode->HiScorePathNextIdx;
@@ -2259,8 +2300,8 @@ while(pCurNode->HiScorePathNextIdx != 0)
 			pCurNode->HiScorePathNextIdx = pNxtNode->HiScorePathNextIdx;
 			continue;
 			}
-	DeltaQuery = pNxtNode->QueryStartOfs - (pCurNode->QueryStartOfs + pCurNode->AlignLen - 1);	// normally if at an InDel edge then difference should be 1 base
-	DeltaTarg = pNxtNode->TargSeqLoci - (pCurNode->TargSeqLoci + pCurNode->AlignLen - 1);		// normally if just +1 then next node is a direct extension
+	DeltaQuery = (int64_t)(uint64_t)pNxtNode->QueryStartOfs - (int64_t)(uint64_t)(pCurNode->QueryStartOfs + pCurNode->AlignLen - 1);	// normally if at an InDel edge then difference should be 1 base
+	DeltaTarg = (int64_t)(uint64_t)pNxtNode->TargSeqLoci - (int64_t)(uint64_t)(pCurNode->TargSeqLoci + pCurNode->AlignLen - 1);		// normally if just +1 then next node is a direct extension
 	if(DeltaQuery == 1 && DeltaTarg == 1) // can merge if coincident
 		{
 		pCurNode->HiScorePathNextIdx = pNxtNode->HiScorePathNextIdx;
@@ -2651,8 +2692,8 @@ uint32_t	qNumInsert;			// Number of inserts in query
 uint32_t qBaseInsert;			// Number of bases inserted in query
 uint32_t tNumInsert;			// Number of inserts in target
 uint32_t tBaseInsert;			// Number of bases inserted in target
-int TargGap;
-int QueryGap;
+int64_t TargGap;
+int64_t QueryGap;
 uint32_t TotalAlignLen;
 bool bStrand;
 int PathHiScore;
@@ -2680,22 +2721,22 @@ tBaseInsert = 0;
 tsQueryAlignNodes *pTT = pCurNode;
 uint32_t QueryPathEndOfsTT = QueryPathEndOfs;
 uint32_t TargPathEndOfsTT = TargPathEndOfs;
-int DeltaGap;
+uint32_t DeltaGap;
 while ((CurPathNodeIdx = pTT->HiScorePathNextIdx) != 0)
 	{
 	pTT = &pAlignNodes[CurPathNodeIdx - 1];
-	QueryGap = pTT->QueryStartOfs - QueryPathEndOfsTT - 1;
-	TargGap = pTT->TargSeqLoci - TargPathEndOfsTT - 1;
+	QueryGap = (int64_t)(uint64_t)pTT->QueryStartOfs - (int64_t)(uint64_t)QueryPathEndOfsTT - 1;
+	TargGap = (int64_t)(uint64_t)pTT->TargSeqLoci - (int64_t)(uint64_t)TargPathEndOfsTT - 1;
 	if (QueryGap < 0 || TargGap < 0)
 		{
 		if (QueryGap >= 0)	// if query gap is >= 0 then targ gap must be < 0
-			DeltaGap = abs(TargGap);
+			DeltaGap = (uint32_t)abs(TargGap);
 		else
 			{
 			if (TargGap >= 0)	// if targ gap >= 0 then query gap must be < 0
-				DeltaGap = abs(QueryGap);
+				DeltaGap = (uint32_t)abs(QueryGap);
 			else    // else both query and targ gap must have been < 0
-				DeltaGap = abs(min(QueryGap, TargGap));
+				DeltaGap = (uint32_t)abs(min(QueryGap, TargGap));
 			}
 		pTT->QueryStartOfs += DeltaGap;
 		pTT->TargSeqLoci += DeltaGap;
@@ -2709,8 +2750,8 @@ while ((CurPathNodeIdx = pTT->HiScorePathNextIdx) != 0)
 while ((CurPathNodeIdx = pCurNode->HiScorePathNextIdx) != 0)
 	{
 	pCurNode = &pAlignNodes[CurPathNodeIdx - 1];
-	QueryGap = pCurNode->QueryStartOfs - QueryPathEndOfs - 1;
-	TargGap = pCurNode->TargSeqLoci - TargPathEndOfs - 1;
+	QueryGap = (int64_t)(uint64_t)pCurNode->QueryStartOfs - (int64_t)(uint64_t)QueryPathEndOfs - 1;
+	TargGap = (int64_t)(uint64_t)pCurNode->TargSeqLoci - (int64_t)(uint64_t)TargPathEndOfs - 1;
 	TotalMMs += pCurNode->NumMismatches;
 	TotalAlignLen += pCurNode->AlignLen;
 	QueryPathEndOfs = pCurNode->QueryStartOfs + pCurNode->AlignLen - 1;
@@ -2718,12 +2759,12 @@ while ((CurPathNodeIdx = pCurNode->HiScorePathNextIdx) != 0)
 	if (QueryGap > 0)
 		{
 		qNumInsert += 1;
-		qBaseInsert += QueryGap;
+		qBaseInsert += (int32_t)QueryGap;
 		}
 	if (TargGap > 0)
 		{
 		tNumInsert += 1;
-		tBaseInsert += TargGap;
+		tBaseInsert += (int32_t)TargGap;
 		}
 	NumPathNodes += 1;
 	}
@@ -2739,6 +2780,7 @@ if (ptNumInsert != NULL)
 	*ptNumInsert = tNumInsert;
 if (ptBaseInsert != NULL)
 	*ptBaseInsert = tBaseInsert;
+
 return(NumPathNodes);
 }
 
@@ -2778,9 +2820,12 @@ for(SortedPathIdx=0; SortedPathIdx < min((int)NumHeadNodes,MaxPathsToReport); So
 	{
 	pHeadNode = ppFirst2Rpts[SortedPathIdx];
 	bStrand = pHeadNode->FlgStrand ? true : false;
+
 	ConsolidateNodes(pHeadNode->FlgStrand,QueryLen, pQuerySeq, SortedPathIdx, pAlignNodes, ppFirst2Rpts);
+	
 	if((NumPathNodes = CharacterisePath(QueryLen,pQuerySeq,SortedPathIdx, pAlignNodes, ppFirst2Rpts, &QueryPathEndOfs, &TargPathEndOfs, &qNumInsert, &qBaseInsert, &tNumInsert, &tBaseInsert)) == 0)
 		continue;
+	
 	PathsReported += 1;
 	
 	TargPathStartOfs = pHeadNode->TargSeqLoci;
@@ -3272,24 +3317,24 @@ while ((Rslt = (teBSFrsltCodes)(PE1ReadLen = PE1Fasta.ReadSequence(PE1ReadBuff, 
 			}
 
 		// ensure sequence lengths are within acceptable range
-		if (PE1ReadLen > cSAMBlitztruncSeqLen)
+		if (PE1ReadLen > min(m_FiltMaxLen,cSAMBlitztruncSeqLen))
 			{
 			PE1NumOverlength += 1;
 			continue;
 			}
-		if (PE1ReadLen < m_CoreLen)
+		if (PE1ReadLen < max(m_FiltMinLen,m_CoreLen))
 			{
 			PE1NumUnderlength += 1;
 			continue;
 			}
 		if(bIsPairReads)
 			{
-			if (PE2ReadLen > cSAMBlitztruncSeqLen)
+			if (PE2ReadLen > min(m_FiltMaxLen,cSAMBlitztruncSeqLen))
 				{
 				PE2NumOverlength += 1;
 				continue;
 				}
-			if (PE2ReadLen < m_CoreLen)
+			if (PE2ReadLen < max(m_FiltMinLen,m_CoreLen))
 				{
 				PE2NumUnderlength += 1;
 				continue;
@@ -3380,7 +3425,6 @@ m_bAllQuerySeqsLoaded = true;
 m_LoadQuerySeqsRslt = eBSFSuccess;
 ReleaseLock(true);
 return(eBSFSuccess);
-return(eBSFSuccess);
 }
 
 
@@ -3456,8 +3500,11 @@ while((Rslt = SeqLen = Fasta.ReadSequence(&pSeqBuff[BuffOfs],(int)min(AvailBuffS
 		SeqID++;
 		if(bEntryCreated)				// add any previous entry
 			{
-			if((Rslt=EnqueueQuerySeq(szName,(int)BuffOfs,pSeqBuff)) <= eBSFSuccess)
-				break;
+			if (BuffOfs > min(m_FiltMaxLen, m_MaxQuerySeqLen))
+				BuffOfs = min(m_FiltMaxLen, m_MaxQuerySeqLen);
+			if(BuffOfs >= max(m_FiltMinLen,m_CoreLen))
+				if((Rslt=EnqueueQuerySeq(szName,(int)BuffOfs,pSeqBuff)) <= eBSFSuccess)
+					break;
 			}
 		Descrlen = Fasta.ReadDescriptor(szDescription, cMaxBlitzDescrLen);
 		// An assumption - will one day bite real hard - is that the
@@ -3499,10 +3546,9 @@ while((Rslt = SeqLen = Fasta.ReadSequence(&pSeqBuff[BuffOfs],(int)min(AvailBuffS
 		*pMskBase &= ~cRptMskFlg;
 
 	BuffOfs += SeqLen;
-	if (BuffOfs > m_MaxQuerySeqLen)
+	if (BuffOfs > min(m_FiltMaxLen, m_MaxQuerySeqLen))
 		{
-		gDiagnostics.DiagOut(eDLWarn,gszProcName,"ProcLoadQuerySeqsFile:- Truncating over length query sequence '%s' to %d",szName, m_MaxQuerySeqLen);
-		BuffOfs = m_MaxQuerySeqLen;
+		BuffOfs = min(m_FiltMaxLen, m_MaxQuerySeqLen);
 		AvailBuffSize = AllocdBuffSize - m_MaxQuerySeqLen;
 		bTruncSeq = true;
 		continue;
@@ -3532,7 +3578,12 @@ if(Rslt < eBSFSuccess && Rslt != eBSErrSession)
 	}
 
 if(Rslt >= eBSFSuccess && bEntryCreated && BuffOfs > 0)			// last entry
-	Rslt=EnqueueQuerySeq(szName,(int)BuffOfs,pSeqBuff);
+	{
+	if (BuffOfs > min(m_FiltMaxLen, m_MaxQuerySeqLen))
+		BuffOfs = min(m_FiltMaxLen, m_MaxQuerySeqLen);
+	if(BuffOfs >= max(m_FiltMinLen,m_CoreLen))
+		Rslt=EnqueueQuerySeq(szName,(int)BuffOfs,pSeqBuff);
+	}
 if(Rslt > eBSFSuccess)
 	Rslt = eBSFSuccess;
 if(pSeqBuff != NULL)

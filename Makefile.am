@@ -51,7 +51,6 @@ SUBDIRS = libkit4b \
     Loci2Phylip \
     locmarkers \
     pacbiokit4b \
-    PEscaffold \
     predconfnucs \
     prednucleosomes \
     proccentroids \

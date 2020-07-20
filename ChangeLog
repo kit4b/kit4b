@@ -43,5 +43,7 @@ Release 0.9.12- kalign generates extended SNP CSV formated files containing codo
 Release 1.0.0 - Extended codon and SNP site peptide mixture summary reporting by snps2pgsnps
 Release 1.0.1 - snps2pgsnps can now generate extended codon and SNP site peptide mixture summary reporting for individual readsets as well as the summary over all readsets 
 Release 1.1.0 - snps2pgsnps now generates additional extended summaries including readset scored similarities     
-Release 1.1.3 - GCC source updated to now using clock_gettime() as former ftime() deemed deprecated by recent releases of GCC     
+Release 1.1.3 - GCC source updated to now using clock_gettime() as former ftime() deemed deprecated by recent releases of GCC
+Release 1.2.0 - Initial pangenome support release utilising assembly sequence name prefixes and filtering of SAM alignments for aligments to prefixed sequences
+     
 

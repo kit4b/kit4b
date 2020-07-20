@@ -28,7 +28,7 @@ L - Illumina 1.8+ Phred+33,  raw reads typically (0, 41)
 */
 
 const unsigned long cDfltStageBuffSize = 0x03ffffff;  // 64M buffer as default
-const unsigned long cMaxStageBuffSize = 0x07ffffff;	 // 128M buffer as maximum
+const unsigned long cMaxStageBuffSize = 0x03fffffff;	 // 1GB buffer as maximum
 const unsigned long cMinStageBuffSize = 0x0fffff;	 // 1M buffer as minimum
 
 const int cNumFastaBlocks = 1;						 // when readahead disk buffering implemented then set to be 2 or more

@@ -41,10 +41,12 @@ Original 'BioKanga' copyright notice has been retained and immediately follows t
 
 int
 Process(etBLZPMode PMode,				// processing mode
-		int SampleNthRawRead,		// sample every Nth raw read (or read pair) for processing (1..10000)
+		int SampleNthRawRead,			// sample every Nth raw read (or read pair) for processing (1..10000)
 		char *pszExprName,				// experiment name
 		char *pszExprDescr,				// experiment description
 		char *pszParams,				// string containing blitz parameters
+		int FiltMinLen,					// filter out input sequences less than this length
+		int FiltMaxLen,					// filter out input sequences more than this length
 		bool KMerDist,					// true if K-mer counts distributions to be reported
 		etBLZSensitivity Sensitivity,	// sensitivity 0 - standard, 1 - high, 2 - very high, 3 - low sensitivity
 		eALStrand AlignStrand,			// align on to watson, crick or both strands of target
@@ -103,6 +105,9 @@ int CoreDelta;				// offset cores by this many bp
 int MaxOccKMerDepth;		// maximum depth to explore over-occurring core K-mers
 int MaxInsertLen;			// SAM output, accept observed insert sizes of at most this (default = 100000)
 
+int FiltMinLen;				// filter out input sequences less than this length
+int FiltMaxLen;				// filter out input sequences more than this length
+
 int  MinPathScore;			// only report alignment paths on any target sequence if the path score is >= this minimum score
 int QueryLenAlignedPct;		// only report alignment paths if the percentage of total aligned bases to the query sequence length is at least this percentage (1..100)
 int  MaxPathsToReport;		// report at most this many alignment paths for any query
@@ -152,6 +157,8 @@ struct arg_int *querylendpct = arg_int0("a","querylendpct","<int>",		"minimum re
 
 struct arg_int *maxpathstoreport = arg_int0("P","maxpathstoreport","<int>",	"report at most this many highest scored alignment paths for each query (default is 1)");
 
+struct arg_int *filtminlen = arg_int0("l","minlen","<int>",	"filter out input sequences less than this length (default is 100, range 100..16Mbp)");
+struct arg_int *filtmaxlen = arg_int0("L","maxlen","<int>",	"filter out input sequences less than this length (default is 100000, range 100..16Mbp)");
 
 struct arg_int *threads = arg_int0("T","threads","<int>",			"number of processing threads 0..128 (defaults to 0 which sets threads to number of CPU cores)");
 
@@ -164,7 +171,7 @@ struct arg_end *end = arg_end(200);
 void *argtable[] = {help,version,FileLogLevel,LogFile,
 					kmerdist,
 					summrslts,experimentname,experimentdescr,
-					pmode,samplenthrawread,sensitivity,alignstrand,mismatchscore,exactmatchscore,gapopenscore,coredelta,corelen,maxinsertlen,maxocckmerdepth,minpathscore,querylendpct,maxpathstoreport,format,
+					pmode,samplenthrawread,filtminlen,filtmaxlen,sensitivity,alignstrand,mismatchscore,exactmatchscore,gapopenscore,coredelta,corelen,maxinsertlen,maxocckmerdepth,minpathscore,querylendpct,maxpathstoreport,format,
 					inputfile,inputfilepe2,sfxfile,outfile,threads,
 					end};
 
@@ -332,6 +339,8 @@ if (!argerrors)
 	CoreDelta = 0;
 	MinPathScore = 0;
 	MaxInsertLen = 0;
+	FiltMinLen = cDfltMinBlitzQuerySeqLen;
+	FiltMaxLen = cDfltMaxBlitzQuerySeqLen;
 
 	AlignStrand = (eALStrand)(alignstrand->count ? alignstrand->ival[0] : eALSboth);
 	if(AlignStrand < eALSboth || AlignStrand >= eALSnone)
@@ -345,6 +354,20 @@ if (!argerrors)
 	if(FMode < eBLZRsltsPSL || FMode >= eBLZRsltsplaceholder)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Output format mode '-M%d' specified outside of range %d..%d\n",FMode,eBLZRsltsPSL,(int)eBLZRsltsplaceholder-1);
+		exit(1);
+		}
+
+	FiltMinLen = filtminlen->count ?  filtminlen->ival[0] : FiltMinLen;
+	if(FiltMinLen < cMinBlitzQuerySeqLen || FiltMinLen > cMaxBlitzQuerySeqLen)
+		{
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: minimum filter length '-l%d' specified outside of range %d..%d\n",FiltMinLen,cMinBlitzQuerySeqLen,cMaxBlitzQuerySeqLen);
+		exit(1);
+		}
+
+	FiltMaxLen = filtmaxlen->count ?  filtmaxlen->ival[0] : FiltMaxLen;
+	if(FiltMaxLen < FiltMinLen || FiltMaxLen > cMaxBlitzQuerySeqLen)
+		{
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: maximum filter length '-L%d' specified outside of range %d..%d\n",FiltMaxLen,FiltMinLen,cMaxBlitzQuerySeqLen);
 		exit(1);
 		}
 
@@ -490,6 +513,8 @@ if (!argerrors)
 			break;
 		}
 
+	gDiagnostics.DiagOutMsgOnly(eDLInfo,"Filtering out sequences with length less than : %dbp",FiltMinLen);
+	gDiagnostics.DiagOutMsgOnly(eDLInfo,"Filtering out sequences with length more than : %dbp",FiltMaxLen);
 	gDiagnostics.DiagOutMsgOnly(eDLInfo,"Mismatch score penalty : %d",MismatchScore);
 	gDiagnostics.DiagOutMsgOnly(eDLInfo,"Exact match score : %d",ExactMatchScore);
 	gDiagnostics.DiagOutMsgOnly(eDLInfo,"Gap open score penalty : %d",GapOpenScore);
@@ -567,6 +592,8 @@ if (!argerrors)
 		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,(int)sizeof(MismatchScore),"mismatchscore",&MismatchScore);
 		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,(int)sizeof(ExactMatchScore),"exactmatchscore",&ExactMatchScore);
 		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,(int)sizeof(GapOpenScore),"gapopenscore",&GapOpenScore);
+		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,(int)sizeof(FiltMinLen),"minlen",&FiltMinLen);
+		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,(int)sizeof(FiltMaxLen),"maxlen",&FiltMaxLen);
 
 		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,(int)sizeof(FMode),"format",&FMode);
 		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,(int)sizeof(AlignStrand),"alignstrand",&AlignStrand);
@@ -598,7 +625,7 @@ if (!argerrors)
 	SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
 #endif
 	gStopWatch.Start();
-	Rslt = Process((etBLZPMode)PMode, SampleNthRawRead,szExperimentName,szExperimentDescr,szBlitzParams, KMerDist,(etBLZSensitivity)Sensitivity,(eALStrand)AlignStrand,MismatchScore,ExactMatchScore,GapOpenScore,CoreLen, CoreDelta, MaxInsertLen,
+	Rslt = Process((etBLZPMode)PMode, SampleNthRawRead,szExperimentName,szExperimentDescr,szBlitzParams, FiltMinLen,FiltMaxLen,KMerDist,(etBLZSensitivity)Sensitivity,(eALStrand)AlignStrand,MismatchScore,ExactMatchScore,GapOpenScore,CoreLen, CoreDelta, MaxInsertLen,
 							MaxOccKMerDepth, MinPathScore,QueryLenAlignedPct,MaxPathsToReport,(etBLZRsltsFomat)FMode,szInputFile,szInputFilePE2,szTargFile,szRsltsFile,NumThreads);
 	Rslt = Rslt >=0 ? 0 : 1;
 	if(gExperimentID > 0)
@@ -628,6 +655,8 @@ Process(etBLZPMode PMode,				// processing mode
 	char* pszExprName,				// experiment name
 	char* pszExprDescr,				// experiment description
 	char* pszParams,				// string containing blitz parameters
+	int FiltMinLen,					// filter out input sequences less than this length
+	int FiltMaxLen,					// filter out input sequences more than this length
 	bool KMerDist,				// true if K_mer counts distributions to be reported
 	etBLZSensitivity Sensitivity,	// sensitivity 0 - standard, 1 - high, 2 - very high, 3 - low sensitivity
 	eALStrand AlignStrand,			// align on to watson, crick or both strands of target
@@ -656,7 +685,7 @@ Process(etBLZPMode PMode,				// processing mode
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Fatal: Unable to instantiate CAligner");
 		return(eBSFerrObj);
 	}
-	Rslt = pBlitzer->Process((char *)gpszSubProcess->pszName,PMode, SampleNthRawRead, pszExprName, pszExprDescr, pszParams, KMerDist, Sensitivity, AlignStrand, MismatchScore, ExactMatchScore, GapOpenScore, CoreLen, CoreDelta, MaxInsertLen, MaxOccKMerDepth,
+	Rslt = pBlitzer->Process((char *)gpszSubProcess->pszName,PMode, SampleNthRawRead, pszExprName, pszExprDescr, pszParams, FiltMinLen, FiltMaxLen, KMerDist, Sensitivity, AlignStrand, MismatchScore, ExactMatchScore, GapOpenScore, CoreLen, CoreDelta, MaxInsertLen, MaxOccKMerDepth,
 		MinPathScore, QueryLenAlignedPct, MaxPathsToReport, RsltsFormat, pszInputFile, pszInputFilePE2, pszSfxFile, pszOutFile, NumThreads);
 	delete pBlitzer;
 	return(Rslt);

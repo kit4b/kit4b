@@ -88,6 +88,9 @@ extern int BenchmarkAligners(int argc, char* argv[]);
 extern int SNPs2pgSNPs(int argc, char* argv[]);
 extern int LocHap2Bed(int argc, char *argv[]);
 extern int genbioseq(int argc, char *argv[]);
+extern int pangenome(int argc, char *argv[]);
+extern int sarscov2ml(int argc, char *argv[]);
+
 
 
 // inplace text cleaning; any leading/trailing or internal quote characters are removed; excessive whitespace is reduced to single
@@ -160,7 +163,10 @@ tsSubProcess SubProcesses[] = {
 	{"gengoterms","gengoterms","Generate biogoterms pre-indexed GO terms",gengoterms},
 	{"hammings","Hamming Distances","Generate hamming distances for K-mer over sequences",hammings},
 	{"fasta2bed","Fasta to BED","Generate BED file from fasta containing sequence names and lengths",fasta2bed},
-	{"genbioseq","Fasta to bioseq","Generate bioseq format file from fasta",genbioseq}
+	{"genbioseq","Fasta to bioseq","Generate bioseq format file from fasta",genbioseq},
+	{"pangenome","pangenome prefix","Process pangenome fasta or SAM for prefixes",pangenome},
+	{"sarscov2ml","ML SARS-CoV-2","SARS-CoV-2 ML feature classification",sarscov2ml}
+
 };
 const int cNumSubProcesses = (sizeof(SubProcesses) / sizeof(tsSubProcess));
 

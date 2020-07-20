@@ -190,9 +190,11 @@
     <ClInclude Include="Markers.h" />
     <ClInclude Include="MarkerSeq.h" />
     <ClInclude Include="MergeReadPairs.h" />
+    <ClInclude Include="pangenome.h" />
     <ClInclude Include="PEScaffold.h" />
     <ClInclude Include="ReadStats.h" />
     <ClInclude Include="RemapLoci.h" />
+    <ClInclude Include="sarscov2ml.h" />
     <ClInclude Include="Scaffolder.h" />
     <ClInclude Include="SNPs2pgSNPs.h" />
     <ClInclude Include="SQLiteDE.h" />
@@ -211,6 +213,7 @@
     <ClCompile Include="fasta2bed.cpp" />
     <ClCompile Include="ngskit4b.cpp" />
     <ClCompile Include="kit4bax.cpp" />
+    <ClCompile Include="pangenome.cpp" />
     <ClCompile Include="rnade.cpp" />
     <ClCompile Include="kit4bdna.cpp" />
     <ClCompile Include="genbiobed.cpp" />
@@ -248,6 +251,7 @@
     <ClCompile Include="psl2sqlite.cpp" />
     <ClCompile Include="ReadStats.cpp" />
     <ClCompile Include="RemapLoci.cpp" />
+    <ClCompile Include="sarscov2ml.cpp" />
     <ClCompile Include="Scaffolder.cpp" />
     <ClCompile Include="SimReads.cpp" />
     <ClCompile Include="SNPs2pgSNPs.cpp" />
