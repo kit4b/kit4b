@@ -51,7 +51,7 @@ pangenome(int argc, char **argv)
 	struct arg_file *LogFile = arg_file0 ("F", "log", "<file>", "diagnostics log file");
 
 	struct arg_int *pmode = arg_int0 ("m", "mode", "<int>", "processing mode: 0 prefix fasta descriptor, 1 filtering SAM for target prefixes");
-	struct arg_str *prefix = arg_str1("p","prefix","<str>", "prefix to apply");
+	struct arg_str *prefix = arg_str1("p","prefix","<str>", "prefix to apply (alphanumeric only, length limited to a max of 10 chars)");
 	struct arg_file *infile = arg_file1("i", "in", "<file>", "input file");
 	struct arg_file *outfile = arg_file1 ("o", "out", "<file>", "output file");
 	struct arg_end *end = arg_end (200);
@@ -153,9 +153,9 @@ pangenome(int argc, char **argv)
 			gDiagnostics.DiagOut (eDLFatal, gszProcName, "No prefix specified");
 			exit (1);
 			}
-		if(strlen(szPrefix) > 6)
+		if(strlen(szPrefix) > cMaxLenPrefix)
 			{
-			gDiagnostics.DiagOut (eDLFatal, gszProcName, "Prefix \"%s\" must <= 6 in length",szPrefix);
+			gDiagnostics.DiagOut (eDLFatal, gszProcName, "Prefix \"%s\" length must <= %d chars",szPrefix,cMaxLenPrefix);
 			exit (1);
 			}
 		// prefix must be alpha-numeric only
@@ -320,6 +320,19 @@ while((NumRead = (int)read(m_hInFile, m_pInBuffer, (int)m_AllocInBuff)) > 0)
 		{
 		if((InChr = *pInChr++) == '\0')
 			break;
+		switch(InChr) {
+			case '\0': case '\t': case '\n': case '\r':	// whitespace or line endings are accepted
+				break;
+			default:
+				if(InChr >= 0x20 && InChr <= 0x7f)
+					break;
+			gDiagnostics.DiagOut (eDLFatal, gszProcName, "Expected Fasta '%s' to only contain ascii chars",pszInFile);
+			close(m_hInFile);
+			close(m_hOutFile);
+			delete []m_pInBuffer;
+			delete []m_pOutBuffer;
+			return(eBSFerrFastqChr);
+			}
 		*pOutChr++ = InChr;
 		m_OutBuffIdx++;
 		if(InChr == '\n')
@@ -378,6 +391,7 @@ bool bNL;
 int m_hInFile;			// input file handle
 int m_hOutFile;			// output file handle
 int NumRead;
+uint32_t NumPrefixed;
 int PrefixLen;
 uint32_t Idx;
 uint8_t InChr;
@@ -456,6 +470,7 @@ uint32_t RecordStartIdx;
 uint8_t *pChr;
 uint32_t SAMreclen = 0;
 RecordStartIdx = 0;
+NumPrefixed = 0;
 while((NumRead = (int)read(m_hInFile, m_pInBuffer, (int)m_AllocInBuff)) > 0)
 	{
 	m_InBuffIdx = NumRead;
@@ -463,9 +478,32 @@ while((NumRead = (int)read(m_hInFile, m_pInBuffer, (int)m_AllocInBuff)) > 0)
 	for(Idx = 0; Idx < m_InBuffIdx; Idx++)
 		{
 		InChr = *pInChr++;
+		switch(InChr) {
+			case '\0': case '\t': case '\n': case '\r':	// whitespace or line endings are accepted
+				break;
+			default:
+				if(InChr >= 0x20 && InChr <= 0x7f)
+					break;
+			gDiagnostics.DiagOut (eDLFatal, gszProcName, "Expected SAM '%s' to only contain ascii chars",pszInFile);
+			close(m_hInFile);
+			close(m_hOutFile);
+			delete []m_pInBuffer;
+			delete []m_pOutBuffer;
+			return(eBSFerrFastqChr);
+			}
+
 		*pOutChr++ = InChr;
 		m_OutBuffIdx++;
 		SAMreclen++;
+		if(SAMreclen > 20000)
+			{
+			gDiagnostics.DiagOut (eDLFatal, gszProcName, "Expected SAM '%s' to contain individual records of less than 20K chars in length",pszInFile);
+			close(m_hInFile);
+			close(m_hOutFile);
+			delete []m_pInBuffer;
+			delete []m_pOutBuffer;
+			return(eBSFerrFastqChr);
+			}
 		if(InChr == '\0' || InChr == '\n')	// have a complete SAM record?
 			{
 			pChr = &m_pOutBuffer[RecordStartIdx];
@@ -518,6 +556,8 @@ while((NumRead = (int)read(m_hInFile, m_pInBuffer, (int)m_AllocInBuff)) > 0)
 					continue;
 					}
 
+				// have an alignment target prefixed by szPrefix
+				NumPrefixed++;
 				// strip prefix off
 				do {
 					*pChr++ = (InChr = pChr[PrefixLen]);
@@ -561,6 +601,8 @@ fsync(m_hOutFile);
 close(m_hOutFile);
 delete []m_pInBuffer;
 delete []m_pOutBuffer;
+szPrefix[PrefixLen-1] = '\0';
+gDiagnostics.DiagOut (eDLInfo, gszProcName, "Filtered %u alignments with target prefixed by '%s' into '%s'",NumPrefixed,szPrefix,pszOutFile);
 return(eBSFSuccess);
 }
 
@@ -570,7 +612,60 @@ int Process(eModePG PMode,			// processing mode
 			char* pszInFile,		// input fasta or SAM file
 			char* pszOutFile)		// output to this file
 {
+int m_hInFile;
+int NumRead;
+uint8_t Chr;
 int Rslt = eBSFerrParams;
+uint8_t *m_pInBuffer;
+
+if((m_pInBuffer = new uint8_t[cAllocAsciiChkSize]) == NULL)
+	{
+	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Unable to allocate memory for input file ascii only check");
+	return(eBSFerrMem);
+	}
+
+// input file currently expected to be ascii only, binary format (BAM, gz'd etc., currently can't be processed)
+// read in up to 4M bytes and if any not ascii then report to user
+#ifdef _WIN32
+m_hInFile = open(pszInFile, O_READSEQ );		// file access is normally sequential..
+#else
+m_hInFile = open64(pszInFile, O_READSEQ );		// file access is normally sequential..
+#endif
+if(m_hInFile == -1)							// check if file open succeeded
+	{
+	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Unable to open input file '%s' : %s",pszInFile,strerror(errno));
+	delete []m_pInBuffer;
+	return(eBSFerrOpnFile);
+	}
+
+if((NumRead = (int)read(m_hInFile, m_pInBuffer, (int)cAllocAsciiChkSize)) <= 1000)	// expecting input file to be sized at least 1000
+	{
+	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Expected '%s to contain at least 1000 chars, read() returned %d",pszInFile,NumRead);
+	close(m_hInFile);
+	delete []m_pInBuffer;
+	return(eBSFerrOpnFile);
+	}
+close(m_hInFile);
+while(--NumRead)
+	{
+	switch(Chr = m_pInBuffer[NumRead]) {
+		case '\0':		// can accept as long as not within 1st 1000 chars, some processes place a NULL char at end of ascii file
+			if(NumRead < 1000)
+				break;
+			continue;
+		case ' ': case '\t': case '\n': case '\r':	// whitespace or line endings are accepted
+			continue;
+		default:
+			if(Chr >= 0x20 && Chr <= 0x7f)
+				continue;
+			break;
+		}
+
+	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Expected '%s' to contain only ascii chars (BAM or gz'd input files not currently supported)",pszInFile);
+	delete []m_pInBuffer;
+	return(eBSFerrOpnFile);
+	}
+delete []m_pInBuffer;
 
 switch(PMode){
 	case eMPGDefault:				// prefixing fasta descriptors

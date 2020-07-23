@@ -3,6 +3,8 @@
 const int cMaxMatrixCols = 30000;		// allowing for matrix containing at most this many loci columns - SARS-CoV-2 has just under 30Kbp
 const int cMaxMatrixRows = 50000;		// allowing for matrix to contain this many readsets or isolates
 const int cMaxClassifications = 100;	// allowing for this many classifications
+const int cMaxR_nCr = 50;				// allowing for at most this many r elements as a combination to be drawn from n total elements
+const int cMaxN_nCr = 1000;				// allowing for at most this many n total elements from which r elements can be drawn from as a combination
 
 typedef enum TAG_eModeSC2 {
 	eMSC2default = 0,		// no modes, currently just a default!
@@ -10,6 +12,12 @@ typedef enum TAG_eModeSC2 {
 } eModeSC2;
 
 #pragma pack(1)
+typedef struct TAG_sScoredCol
+	{
+	double Prob;				// PValue of feature significance
+	uint32_t ColIdx;			// matrix (feature) column index 
+	} tsScoredCol;
+
 typedef struct TAG_sTrainClassify {
 	uint32_t ReadsetID;			// readset classification
 	uint32_t ClassificationID;	// associated classification
@@ -50,6 +58,21 @@ class CSarsCov2ML
 	uint32_t m_NumCols;								// matrix has this number of columns including row name identifiers in 1st column
 	uint32_t m_NumRows;								// matrix has this number of rows including column name identifiers in 1st row
 	uint32_t *m_pMatrix;							// allocated to hold matrix [m_NumRows][m_NumCols]
+
+	uint32_t m_nCombination;						// from n total elements
+	uint32_t m_rCombination;						// will be drawing combinations of r elements
+	uint32_t m_nCrCombinations[cMaxR_nCr];			// indexes for each potential nCr combination instance
+
+	tsScoredCol m_TopLinkages[cMaxN_nCr];			// columns containing features which potentially have linkages
+	uint32_t m_ColClassifiedThresCnts[cMaxClassifications];	// classification thresholds
+	uint32_t m_ColClassifiedBelowCnts[cMaxClassifications];
+
+	bool Init_nCr(int n,							// initialise for n total elements
+					int r);							// from which will be drawing combinations of r elements
+
+	bool											// false if all combinations iterated, true if next combination generated
+			Iter_nCr(void);							// iterator for drawing next combination of r elements from n total
+
 
 	int LoadMatrixDimensions(char* pszMatrixFile,	// matrix file to dimension
 					uint32_t *pCols,				// number of columns - includes extra column holding row name identifiers

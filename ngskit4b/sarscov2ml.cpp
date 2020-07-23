@@ -304,6 +304,8 @@ m_TotClassified = 0;
 m_NumClassificationNames = 0;
 m_NxtszClassificationIdx = 0;
 m_szClassificationNames[0] = '\0';
+m_nCombination = 0;
+m_rCombination = 0;
 }
 
 
@@ -663,93 +665,58 @@ if(ClassificationID < 1 || ClassificationID > m_NumClassificationNames)
 return(&m_szClassificationNames[m_Classifications[ClassificationID - 1].szClassificationIdx]);
 }
 
-uint64_t m_CurCombination = 0;
-uint32_t m_rCurCombination[64];		// array of masks for each potential nCr combination instance
 
-#ifdef _EXAMPLE__
-Given non-negative integers   m   and   n,   generate all size   m   combinations   of the integers from   0   (zero)   to   n-1   in sorted order   (each combination is sorted and the entire table is sorted).
-Example
-3   comb   5     is:
 
-0 1 2
-0 1 3
-0 1 4
-0 2 3
-0 2 4
-0 3 4
-1 2 3
-1 2 4
-1 3 4
-2 3 4
-
-// in C++
-#include <algorithm>
-#include <iostream>
-#include <string>
- 
-void comb(int N, int K)
+bool
+CSarsCov2ML::Init_nCr(int n,			// initialise for n total elements
+		 int r)			// from which will be drawing combinations of r elements
 {
-    std::string bitmask(K, 1); // K leading 1's
-    bitmask.resize(N, 0); // N-K trailing 0's
- 
-    // print integers and permute bitmask
-    do {
-        for (int i = 0; i < N; ++i) // [0..N-1] integers
-        {
-            if (bitmask[i]) std::cout << " " << i;
-        }
-        std::cout << std::endl;
-    } while (std::prev_permutation(bitmask.begin(), bitmask.end()));
-}
- 
-int main()
-{
-    comb(5, 3);
-}
-
-
-// in C
-void comb(int m,    // combination size (subset size) 
-			int n,  // subset drawn from this size (total number of elements) 
-			unsigned char *c) // used as array buffering
-{
-	int i;
-	for (i = 0; i < n; i++) c[i] = n - i;
- 
-	while (1) {
-		for (i = n; i--;)
-			printf("%d%c", c[i], i ? ' ': '\n');
- 
-		/* this check is not strictly necessary, but if m is not close to n,
-		   it makes the whole thing quite a bit faster */
-		i = 0;
-		if (c[i]++ < m) continue;
- 
-		for (; c[i] >= m - i;) if (++i >= n) return;
-		for (c[i]++; i; i--) c[i-1] = c[i] + 1;
-	}
-}
- 
-int main()
-{
-	unsigned char buf[100];
-	comb(5, 3, buf);
-	return 0;
-}
-#endif
-
-typedef struct TAG_sScoredCol
+int Idx;
+if(r <= 1 || r > cMaxR_nCr || n < r || n > cMaxN_nCr)
 	{
-	double Prob;
-	uint32_t ColIdx;
-	} tsScoredCol;
+	m_nCombination = 0;
+	m_rCombination = 0;
+	return(false);
+	}
+
+m_nCombination = n;
+m_rCombination = r;
+for(Idx = r-1; Idx >= 0; Idx--)
+	m_nCrCombinations[Idx]=Idx;
+return(true);
+}
+
+
+bool	// false if all combinations iterated, true if next combination generated
+CSarsCov2ML::Iter_nCr(void)				// iterator for drawing next combination of r elements from n total
+{
+uint32_t Idx;
+if(m_nCombination == 0 || m_rCombination == 0)
+	return(false);
+
+if(m_nCrCombinations[0] > m_nCombination - m_rCombination)
+	return(false);	// exhausted all combinations
+
+for(Idx = m_rCombination-1; Idx >= 0; Idx--)
+	{
+	if(++m_nCrCombinations[Idx] < m_nCombination)
+		break;
+	m_nCrCombinations[Idx] = m_nCrCombinations[Idx-1]+2;
+	}
+return(true);
+}
+
+
+
 
 int
 CSarsCov2ML::RunKernel(uint32_t NumLinkedFeatures,	// require this many features to be linked
 				  uint32_t MinPropRows,				// require at least this many rows to show same linkage
-				  uint32_t FeatType)			// linkage is between these minimum feature types
+				  uint32_t FeatType)				// linkage is between these minimum feature types
 {
-tsScoredCol TopLinkages[1000];
+
+if(NumLinkedFeatures < 1 || NumLinkedFeatures > cMaxR_nCr)
+	return(0);
 
 uint32_t ClassIdx;
 uint32_t RowIdx;
@@ -758,18 +725,16 @@ uint32_t *pCell;
 uint32_t ClassifiedAs;
 uint32_t NumRowsClassified;
 uint32_t TotColCnts;
-uint32_t ColClassifiedThresCnts[cMaxClassifications];
-uint32_t ColClassifiedBelowCnts[cMaxClassifications];
 CStats Stats;
 // iterate over feature loci and discover which loci are proportionally over/under represented relative to classification
 ClassIdx = 0;
-memset(TopLinkages,0,sizeof(TopLinkages));
+memset(m_TopLinkages,0,sizeof(m_TopLinkages));
 for(ColIdx = 1; ColIdx < m_NumCols; ColIdx++)
 	{
 	TotColCnts = 0;
 	NumRowsClassified = 0;
-	memset(ColClassifiedThresCnts,0,sizeof(ColClassifiedThresCnts));
-	memset(ColClassifiedBelowCnts,0,sizeof(ColClassifiedBelowCnts));
+	memset(m_ColClassifiedThresCnts,0,sizeof(m_ColClassifiedThresCnts));
+	memset(m_ColClassifiedBelowCnts,0,sizeof(m_ColClassifiedBelowCnts));
 	for(RowIdx = 1; RowIdx < m_NumRows; RowIdx++)
 		{
 		pCell = &m_pMatrix[RowIdx*m_NumCols];
@@ -780,52 +745,42 @@ for(ColIdx = 1; ColIdx < m_NumCols; ColIdx++)
 		pCell += ColIdx;
 		if(*pCell >= FeatType)
 			{
-			ColClassifiedThresCnts[ClassifiedAs-1] += *pCell;
+			m_ColClassifiedThresCnts[ClassifiedAs-1] += *pCell;
 			TotColCnts += 1;
 			}
 		else
-			ColClassifiedBelowCnts[ClassifiedAs-1] += 1;
+			m_ColClassifiedBelowCnts[ClassifiedAs-1] += 1;
 		}
 	if(NumRowsClassified < 100)		// currently just an arbitrary threshold - 
 		continue;
 	if(TotColCnts < NumRowsClassified/50)	// currently just an arbitrary threshold - 
 		continue;
-	double Prob = Stats.FishersExactTest(ColClassifiedThresCnts[0],ColClassifiedBelowCnts[0],ColClassifiedThresCnts[1],ColClassifiedBelowCnts[1]);
+	double Prob = Stats.FishersExactTest(m_ColClassifiedThresCnts[0],m_ColClassifiedBelowCnts[0],m_ColClassifiedThresCnts[1],m_ColClassifiedBelowCnts[1]);
 	if(Prob <= 0.05)
 		{
-		TopLinkages[ClassIdx].Prob = Prob;
-		TopLinkages[ClassIdx].ColIdx = ColIdx;
+		m_TopLinkages[ClassIdx].Prob = Prob;
+		m_TopLinkages[ClassIdx].ColIdx = ColIdx;
 		ClassIdx+=1;
+		if(ClassIdx > cMaxN_nCr)
+			break;
 		}
 	}
 
+if(ClassIdx < NumLinkedFeatures)
+	return(0);
+
+if(ClassIdx > cMaxN_nCr)	// can't handle more!
+	ClassIdx = cMaxN_nCr;
+
 // just playing :-)
-uint64_t BitMap;
-uint64_t MaxPerms;
-uint32_t BitCntr;
 uint32_t NumFeatsLinked;
 uint32_t NumRowsLinked;
-uint64_t BitMapMsk;
-uint32_t LinkagesIdx;
 uint32_t *pLinkedCell;
 
-if(ClassIdx > 62)	// can't handle more!
-	ClassIdx = 62;
-BitMap = 0;
-MaxPerms = (uint64_t)0x01 << ClassIdx;
-while(++BitMap < MaxPerms)
+
+Init_nCr(ClassIdx,NumLinkedFeatures);
+do
 	{
-	// must be at least 5 bits set
-	BitCntr = 0;
-	BitMapMsk = 0x01;
-	while(BitMapMsk < MaxPerms)
-		{
-		if(BitMapMsk & BitMap)
-			BitCntr++;
-		BitMapMsk <<= 1;
-		}
-	if(BitCntr != NumLinkedFeatures)
-		continue;
 	// work to do here!
 	NumRowsLinked = 0;
 	for(RowIdx = 1; RowIdx < m_NumRows; RowIdx++)
@@ -833,45 +788,34 @@ while(++BitMap < MaxPerms)
 		pCell = &m_pMatrix[RowIdx*m_NumCols];
 		if(m_ReadsetClassification[*pCell-1].ReadsetID == 0)	// 0 if unclassified
 			continue;
-		BitMapMsk = 0x01;
-		LinkagesIdx = 0;
+
 		NumFeatsLinked = 0;
-		while(BitMapMsk < MaxPerms)
+		for(uint32_t IdxR = 0; IdxR < m_rCombination; IdxR++)
 			{
-			if(BitMapMsk & BitMap)
-				{
-				pLinkedCell = pCell + TopLinkages[LinkagesIdx].ColIdx;
-				if(*pLinkedCell >= FeatType)
-					NumFeatsLinked++;
-				}
-			BitMapMsk <<= 1;
-			LinkagesIdx++;
+			pLinkedCell = pCell + m_TopLinkages[m_nCrCombinations[IdxR]].ColIdx;
+			if(*pLinkedCell >= FeatType)
+				NumFeatsLinked++;
 			}
 		if(NumFeatsLinked < NumLinkedFeatures)
 			continue;
 		NumRowsLinked++;
 		}
+
 	if(NumRowsLinked >= MinPropRows)		
 		{
 		int BuffIdx;
 		char szBuff[1000];
 		BuffIdx = sprintf(szBuff,"Have %d rows (thres %u) with %u features linked by this minimum feature type %d -->",NumRowsLinked,MinPropRows,NumLinkedFeatures, FeatType);
-		BitMapMsk = 0x01;
-		LinkagesIdx = 0;
 		NumFeatsLinked = 0;
-		while(BitMapMsk < MaxPerms)
+		for(uint32_t IdxR = 0; IdxR < m_rCombination; IdxR++)
 			{
-			if(BitMapMsk & BitMap)
-				{
-				BuffIdx += sprintf(&szBuff[BuffIdx]," %s", LocateFeature(TopLinkages[LinkagesIdx].ColIdx));
-				NumFeatsLinked++;
-				}
-			BitMapMsk <<= 1;
-			LinkagesIdx++;
+			BuffIdx += sprintf(&szBuff[BuffIdx]," %s", LocateFeature(m_TopLinkages[m_nCrCombinations[IdxR]].ColIdx));
+			NumFeatsLinked++;
 			}
 		gDiagnostics.DiagOut(eDLInfo, gszProcName,szBuff);
 		}
 	}
+while(Iter_nCr());
 
 uint32_t *pLinkedCells[10];
 uint32_t CurLinkagesIdx;
@@ -889,18 +833,18 @@ for(CurLinkagesIdx = 0; CurLinkagesIdx < ClassIdx-1; CurLinkagesIdx++)
 			pCell = &m_pMatrix[RowIdx*m_NumCols];
 			if(m_ReadsetClassification[*pCell-1].ReadsetID == 0)	// 0 if unclassified
 				continue;
-			pLinkedCells[0] = pCell + TopLinkages[CurLinkagesIdx].ColIdx;
+			pLinkedCells[0] = pCell + m_TopLinkages[CurLinkagesIdx].ColIdx;
 			if(*pLinkedCells[0] < FeatType)
 				continue;
-			pLinkedCells[1] = pCell + TopLinkages[NxtLinkagesIdx].ColIdx;
+			pLinkedCells[1] = pCell + m_TopLinkages[NxtLinkagesIdx].ColIdx;
 			if(*pLinkedCells[1] < FeatType)
 				continue;
 			NumLinked+=1;
 			}
 		if(NumLinked > 10)
 			{
-			char *pszFeat1 = LocateFeature(TopLinkages[CurLinkagesIdx].ColIdx);
-			char *pszFeat2 = LocateFeature(TopLinkages[NxtLinkagesIdx].ColIdx);
+			char *pszFeat1 = LocateFeature(m_TopLinkages[CurLinkagesIdx].ColIdx);
+			char *pszFeat2 = LocateFeature(m_TopLinkages[NxtLinkagesIdx].ColIdx);
 //			gDiagnostics.DiagOut(eDLInfo, gszProcName, "%s and %s linked %d times with which %d",pszFeat1,pszFeat2,NumLinked,FeatType);
 			CheckMe++;
 			}
