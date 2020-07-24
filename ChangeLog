@@ -46,3 +46,4 @@ Release 1.1.0 - snps2pgsnps now generates additional extended summaries includin
 Release 1.1.3 - GCC source updated to now using clock_gettime() as former ftime() deemed deprecated by recent releases of GCC
 Release 1.2.0 - Initial pangenome support release utilising assembly sequence name prefixes and filtering of SAM alignments for aligments to prefixed sequences
 Release 1.2.2 - Improved pangenome input file type checking - input chars must be ascii only
+Release 1.2.3 - Defaults for 'assemb' modified for low coverage pangenomic assembly targeting

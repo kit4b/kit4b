@@ -99,22 +99,22 @@ const int cMaxMultiSeqFlags = 4000;			// limit local copy of sequence flags to a
 
 const int cKDNAMaxInFileSpecs = 100;		// currently allowing up to this many input files each for PE1 (or single ended) and PE2, 150 total max plus potentially one seed contig file
 										// could be increased but a major limitation to extending max input files is that packed sequence headers are constructed with a 8bit source file identifer limit 
-const int cMinSEOvlp  = 20;				// user can specify down to this minimal SE overlap required to merge SEs
+const int cMinSEOvlp  = 10;				// user can specify down to this minimal SE overlap required to merge SEs
 const int cMaxSEOvlp  = 300;			// user can specify up to this maximum minimal SE overlap required to merge SEs
-const int cDfltInitSEOvlp = 150;		// default initial minimal SE overlap required to merge SEs
-const int cDfltFinSEOvlp  = 25;			// default final minimal SE overlap required to merge SEs
+const int cDfltInitSEOvlp = 100;		// default initial minimal SE overlap required to merge SEs
+const int cDfltFinSEOvlp  = 10;			// default final minimal SE overlap required to merge SEs
 
-const int cMinPEOvlp = 35;				// user can specify down to this minimal sum of end overlaps required to merge PEs
+const int cMinPEOvlp = 15;				// user can specify down to this minimal sum of end overlaps required to merge PEs
 const int cMaxPEOvlp = 200;				// user can specify up to this maximum sum of end overlaps required to merge PEs
 const int cDfltInitPEOvlp = 150;		// initial minimal PE sum of end overlaps required to merge PEs
-const int cDfltFinPEOvlp  = 35;			// default final minimal PE sum of end overlaps required to merge PEs
-const int cMinPE1PE2ToSEOvlp  = 16;		// user can specify down to this minimal overlap of PE1 onto PE2 required to merge as SE
+const int cDfltFinPEOvlp  = 20;			// default final minimal PE sum of end overlaps required to merge PEs
+const int cMinPE1PE2ToSEOvlp  = 10;		// user can specify down to this minimal overlap of PE1 onto PE2 required to merge as SE
 const int cMaxPE1PE2ToSEOvlp  = 100;	// user can specify up to this maximum overlap of PE1 onto PE2 required to merge as SE
-const int cDfltMinPE1PE2ToSEOvlp  = 20;	// minimal overlap of PE1 onto PE2 required to merge as SE
+const int cDfltMinPE1PE2ToSEOvlp  = 10;	// minimal overlap of PE1 onto PE2 required to merge as SE
 
 // if PEs are unable to overlap then this could be because of allelic issues
 const int cMinPESeqLen2SE = 125;			// individual ends must be of at least this length and
-const int cMinPETotSeqLen2SE = 600;			// if any individual or sum PE1 + PE2 lengths sum to >= cMinPETotSeqLen2SE then reclassify as being two separate SE sequences in final assembly phases
+const int cMinPETotSeqLen2SE = 500;			// if any individual or sum PE1 + PE2 lengths sum to >= cMinPETotSeqLen2SE then reclassify as being two separate SE sequences in final assembly phases
 
 const int cMaxOvrlapSeqWrds = (1024 * 1024);		// process at most this many overlapping tSeqWrd4s
 const int cMaxCmpOverlapBases = (cMaxOvrlapSeqWrds*15);	// handle sequences of this maximal unpacked length when comparing for overlaps

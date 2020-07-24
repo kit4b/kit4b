@@ -144,17 +144,17 @@ struct arg_lit  *noautoovlp = arg_lit0("l", "noautoovlp",		"if not specified the
 struct arg_int *trimends = arg_int0("t","trimends","<int>",     "when loading reads or high confidence seed contigs then trim 5' and 3' ends by this many bases (default 0, range 1..50)");
 struct arg_int *minseqlen = arg_int0("X","minseqlen","<int>",   "only accept reads or high confidence seed contigs, after any trimming, of at least this length (default 70, range 50..500)");
 
-struct arg_int *trimpe2se = arg_int0("x","trimpe2se","<int>",	"trim PEs both 5' and 3' ends by this many bases when treating as SE (default 10, range 0..50)");
+struct arg_int *trimpe2se = arg_int0("x","trimpe2se","<int>",	"trim PEs both 5' and 3' ends by this many bases when treating as SE (default 5, range 0..50)");
 
 struct arg_lit  *sensestrandonly = arg_lit0("E","senseonly",    "process sequences as strand specific");
 struct arg_lit  *singleended    = arg_lit0("e","singleend",     "process all paired ends as if single ended");
 
 struct arg_int *subs100bp = arg_int0("s","maxsubs100bp","<int>",  "allow max induced substitutions per 100bp overlapping sequence fragments (defaults to 1, range 0..5)");
-struct arg_int *end12subs = arg_int0("S","maxendsubs","<int>",    "allow max induced substitutions in overlap 12bp ends (defaults to 0, range 0..6)");
+struct arg_int *end12subs = arg_int0("S","maxendsubs","<int>",    "allow max induced substitutions in overlap 12bp ends (defaults to 1, range 0..6)");
 
 struct arg_int *initseovlp = arg_int0("j","initseovlp","<int>",   "initial minimal SE overlap required to merge SEs (defaults to 150, range 20..500)");
 struct arg_int *finseovlp = arg_int0("J","finseovlp","<int>",     "final minimal SE overlap required to merge SEs (defaults to 25, range 20..initseovlp)");
-struct arg_int *initpeovlp = arg_int0("k","initpeovlp","<int>",  "initial minimal PE total sum of end overlaps required to merge PEs (defaults to 150, range 35..200)");
+struct arg_int *initpeovlp = arg_int0("k","initpeovlp","<int>",  "initial minimal PE total sum of end overlaps required to merge PEs (defaults to 100, range 35..200)");
 struct arg_int *finpeovlp = arg_int0("K","finpeovlp","<int>",    "final minimal PE total sum of end overlaps required to merge PEs (defaults to 35, range 35..initpeovlp)");
 struct arg_int *minpe2seovlp = arg_int0("g","minpe2seovlp","<int>", "minimal overlap of PE1 onto PE2 required to merge as SE (defaults to 20, range 16..100)");
 struct arg_int *reducethressteps = arg_int0("r","reducethressteps","<int>", "reduce overlap thresholds over this many steps (defaults: 3 quick, 5 standard, 8 stringent assemble, range 2..10)");
@@ -405,7 +405,7 @@ if (!argerrors)
 
 	TrimEnds = 0;
 	MinSeqLen = 70;
-	TrimPE2SE = 10;
+	TrimPE2SE = 2;
 	InitPEOvlp = cDfltInitPEOvlp;
 	FinPEOvlp = cDfltFinPEOvlp;
 	MinPE2SEOvlp = cDfltMinPE1PE2ToSEOvlp;
@@ -448,21 +448,21 @@ if (!argerrors)
 				return(1);
 				}
 
-			MinSeqLen = (80 * (PE1EstMeanSeqLen + PE2EstMeanSeqLen)) / 200;  // use 80% of mean sequence lengths as the default minimum
+			MinSeqLen = (70 * (PE1EstMeanSeqLen + PE2EstMeanSeqLen)) / 200;  // use 70% of mean sequence lengths as the default minimum
 			if(MinSeqLen < 50)
 				MinSeqLen = 50;
 			else
 				if(MinSeqLen > 500)
 					MinSeqLen = 500;
 
-			TrimPE2SE = min(MinSeqLen / 20, 50);							// trimming by 5% of sequence length9
+			TrimPE2SE = min(MinSeqLen / 50, 50);							// trimming by 2% of sequence length
 
-			InitPEOvlp = max(cMinPEOvlp,(80 * (PE1EstMeanSeqLen + PE2EstMeanSeqLen)) / 100);       // requiring initially 80% overlap summed over both ends
+			InitPEOvlp = max(cMinPEOvlp,(50 * (PE1EstMeanSeqLen + PE2EstMeanSeqLen)) / 200);       // requiring initially 50% overlap summed over both ends
 			if(InitPEOvlp > cMaxPEOvlp)
 				InitPEOvlp = cMaxPEOvlp;
 
 
-			FinPEOvlp = max(cMinPEOvlp, (30 * (PE1EstMeanSeqLen + PE2EstMeanSeqLen)) / 100);		// requiring finally 30% overlap summed over both ends
+			FinPEOvlp = max(cMinPEOvlp, (15 * (PE1EstMeanSeqLen + PE2EstMeanSeqLen)) / 200);		// requiring finally 15% overlap summed over both ends
 			if (FinPEOvlp > InitPEOvlp)
 				FinPEOvlp = InitPEOvlp;
 		
@@ -593,7 +593,7 @@ if (!argerrors)
 		return(1);
 		}
 
-	End12Subs = end12subs->count ? end12subs->ival[0] : 0;
+	End12Subs = end12subs->count ? end12subs->ival[0] : 1;
 	if(End12Subs < 0 || End12Subs > 6)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Max induced substitutions in overlap 12bp ends '-E%d' must be in range 0..6",End12Subs);
