@@ -151,7 +151,7 @@ repassemb(int argc, char **argv)
 
 		strcpy (szSNPsFile, snpsfile->filename[0]);
 		CUtility::TrimQuotedWhitespcExtd (szSNPsFile);
-		if (szInFile[0] == '\0')
+		if (szSNPsFile[0] == '\0')
 			{
 			gDiagnostics.DiagOut (eDLFatal, gszProcName, "No input file containing kalign generated SNP calls specified");
 			exit (1);

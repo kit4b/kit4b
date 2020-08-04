@@ -48,3 +48,5 @@ Release 1.2.0 - Initial pangenome support release utilising assembly sequence na
 Release 1.2.2 - Improved pangenome input file type checking - input chars must be ascii only
 Release 1.2.3 - Defaults for 'assemb' modified for low coverage pangenomic assembly targeting
 Release 1.2.6 - New module 'repassemb' added to 'ngskit4b' - retargets assemblies by replacing SNP sites in fasta assemblies with major alleles discovered by 'kalign' SNP calls
+Release 1.2.7 - 'repassemb' SNP file parameter initialisation bug fix
+
