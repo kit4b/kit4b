@@ -47,3 +47,4 @@ Release 1.1.3 - GCC source updated to now using clock_gettime() as former ftime(
 Release 1.2.0 - Initial pangenome support release utilising assembly sequence name prefixes and filtering of SAM alignments for aligments to prefixed sequences
 Release 1.2.2 - Improved pangenome input file type checking - input chars must be ascii only
 Release 1.2.3 - Defaults for 'assemb' modified for low coverage pangenomic assembly targeting
+Release 1.2.6 - New module 'repassemb' added to 'ngskit4b' - retargets assemblies by replacing SNP sites in fasta assemblies with major alleles discovered by 'kalign' SNP calls

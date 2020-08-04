@@ -105,20 +105,20 @@ if (xx < aa+1) /* Use power-series expansion */
 	return(sum*exp(-xx + aa*log(xx) - lngam(aa)));
 	}
 else /* Use continued-fraction expansion */
-    { 
+	{ 
 	int n;  double gold=0.0, fac=1.0;
-    double a0=1.0, a1=xx, b0=0.0, b1=1.0;
-    for (n=1; ; n++)
+	double a0=1.0, a1=xx, b0=0.0, b1=1.0;
+	for (n=1; ; n++)
 		{ 
 		double anf=n*fac, ana=n-aa;
-        a0=(a1+a0*ana)*fac;   b0=(b1+b0*ana)*fac;
-        a1=xx*a0+anf*a1;      b1=xx*b0+anf*b1;
-        if (fabs(a1) > 1e-11)
+		a0=(a1+a0*ana)*fac;   b0=(b1+b0*ana)*fac;
+		a1=xx*a0+anf*a1;      b1=xx*b0+anf*b1;
+		if (fabs(a1) > 1e-11)
 			{
 			double g=b1*(fac=1.0/a1);
-            if (fabs(g-gold) < DTOL)
-              return  1.0 - g*exp(-xx + aa*log(xx) - lngam(aa));
-            gold=g; 
+			if (fabs(g-gold) < DTOL)
+			  return  1.0 - g*exp(-xx + aa*log(xx) - lngam(aa));
+			gold=g; 
 			}
 		}
 	}
@@ -426,7 +426,7 @@ for(SeqIdx = 1; SeqIdx < SeqLen; SeqIdx++, pSeq++)
 		CurRunLen = 1;
 		continue;
 		}
-    CurRunLen += 1;
+	CurRunLen += 1;
 	}
 
 // MaxRunLen, NumRuns, NumN0s and NumN1s are now known
@@ -697,9 +697,9 @@ static double InBeta(double a, double b, double x);
  */
 {
    if (x < n)
-     return (1.0 - InBeta(x + 1, n - x, p));
+	 return (1.0 - InBeta(x + 1, n - x, p));
    else
-     return (1.0);
+	 return (1.0);
 }
 
    long idfBinomial(long n, double p, double u)
@@ -711,13 +711,13 @@ static double InBeta(double a, double b, double x);
    long x = (long) (n * p);             /* start searching at the mean */
 
    if (cdfBinomial(n, p, x) <= u)
-     while (cdfBinomial(n, p, x) <= u)
-       x++;
+	 while (cdfBinomial(n, p, x) <= u)
+	   x++;
    else if (cdfBinomial(n, p, 0) <= u)
-     while (cdfBinomial(n, p, x - 1) > u)
-       x--;
+	 while (cdfBinomial(n, p, x - 1) > u)
+	   x--;
    else
-     x = 0;
+	 x = 0;
    return (x);
 }
 
@@ -779,13 +779,13 @@ static double InBeta(double a, double b, double x);
    long x = (long) (n * p / (1.0 - p));    /* start searching at the mean */
 
    if (cdfPascal(n, p, x) <= u)
-     while (cdfPascal(n, p, x) <= u)
-       x++;
+	 while (cdfPascal(n, p, x) <= u)
+	   x++;
    else if (cdfPascal(n, p, 0) <= u)
-     while (cdfPascal(n, p, x - 1) > u)
-       x--;
+	 while (cdfPascal(n, p, x - 1) > u)
+	   x--;
    else
-     x = 0;
+	 x = 0;
    return (x);
 }
 
@@ -819,13 +819,13 @@ static double InBeta(double a, double b, double x);
    long x = (long) m;                    /* start searching at the mean */
 
    if (cdfPoisson(m, x) <= u)
-     while (cdfPoisson(m, x) <= u)
-       x++;
+	 while (cdfPoisson(m, x) <= u)
+	   x++;
    else if (cdfPoisson(m, 0) <= u)
-     while (cdfPoisson(m, x - 1) > u)
-       x--;
+	 while (cdfPoisson(m, x - 1) > u)
+	   x--;
    else
-     x = 0;
+	 x = 0;
    return (x);
 }
 
@@ -913,10 +913,10 @@ static double InBeta(double a, double b, double x);
    double t, x = n * b;                   /* initialize to the mean, then */
 
    do {                                   /* use Newton-Raphson iteration */
-     t = x;
-     x = t + (u - cdfErlang(n, b, t)) / pdfErlang(n, b, t);
-     if (x <= 0.0)
-       x = 0.5 * t;
+	 t = x;
+	 x = t + (u - cdfErlang(n, b, t)) / pdfErlang(n, b, t);
+	 if (x <= 0.0)
+	   x = 0.5 * t;
    } while (fabs(x - t) >= TINY);
    return (x);
 }
@@ -940,9 +940,9 @@ static double InBeta(double a, double b, double x);
 
    t = InGamma(0.5, 0.5 * x * x);
    if (x < 0.0)
-     return (0.5 * (1.0 - t));
+	 return (0.5 * (1.0 - t));
    else
-     return (0.5 * (1.0 + t));
+	 return (0.5 * (1.0 + t));
 }
 
    static double idfStandard(double u)
@@ -954,8 +954,8 @@ static double InBeta(double a, double b, double x);
    double t, x = 0.0;                    /* initialize to the mean, then  */
 
    do {                                  /* use Newton-Raphson iteration  */
-     t = x;
-     x = t + (u - cdfStandard(t)) / pdfStandard(t);
+	 t = x;
+	 x = t + (u - cdfStandard(t)) / pdfStandard(t);
    } while (fabs(x - t) >= TINY);
    return (x);
 }
@@ -1055,10 +1055,10 @@ static double InBeta(double a, double b, double x);
    double t, x = n;                         /* initialize to the mean, then */
 
    do {                                     /* use Newton-Raphson iteration */
-     t = x;
-     x = t + (u - cdfChisquare(n, t)) / pdfChisquare(n, t);
-     if (x <= 0.0)
-       x = 0.5 * t;
+	 t = x;
+	 x = t + (u - cdfChisquare(n, t)) / pdfChisquare(n, t);
+	 if (x <= 0.0)
+	   x = 0.5 * t;
    } while (fabs(x - t) >= TINY);
    return (x);
 }
@@ -1087,9 +1087,9 @@ static double InBeta(double a, double b, double x);
    t = (x * x) / (n + x * x);
    s = InBeta(0.5, n / 2.0, t);
    if (x >= 0.0)
-     return (0.5 * (1.0 + s));
+	 return (0.5 * (1.0 + s));
    else
-     return (0.5 * (1.0 - s));
+	 return (0.5 * (1.0 - s));
 }
 
    double idfStudent(long n, double u)
@@ -1101,8 +1101,8 @@ static double InBeta(double a, double b, double x);
    double t, x = 0.0;                       /* initialize to the mean, then */
 
    do {                                     /* use Newton-Raphson iteration */
-     t = x;
-     x = t + (u - cdfStudent(n, t)) / pdfStudent(n, t);
+	 t = x;
+	 x = t + (u - cdfStudent(n, t)) / pdfStudent(n, t);
    } while (fabs(x - t) >= TINY);
    return (x);
 }
@@ -1136,7 +1136,7 @@ static double InBeta(double a, double b, double x);
    s[5] =  -0.000005363820 / (a + 5.0);
    sum  =   1.000000000178;
    for (i = 0; i < 6; i++) 
-     sum += s[i];
+	 sum += s[i];
    temp = (a - 0.5) * log(a + 4.5) - (a + 4.5) + log(SQRT2PI * sum);
    return (temp);
 }
@@ -1179,9 +1179,9 @@ static double InBeta(double a, double b, double x);
  */
 {
    if (m > 0)
-     return (-LogBeta(m, n - m + 1) - log((double)m));
+	 return (-LogBeta(m, n - m + 1) - log((double)m));
    else
-     return (0.0);
+	 return (0.0);
 }
 
    static double InGamma(double a, double x)
@@ -1201,49 +1201,49 @@ static double InBeta(double a, double b, double x);
    long   n;
 
    if (x > 0.0)
-     factor = exp(-x + a * log(x) - LogGamma(a));
+	 factor = exp(-x + a * log(x) - LogGamma(a));
    else
-     factor = 0.0;
+	 factor = 0.0;
    if (x < a + 1.0) {                 /* evaluate as an infinite series - */
-     t    = a;                        /* A & S equation 6.5.29            */
-     term = 1.0 / a;
-     sum  = term;
-     while (term >= TINY * sum) {     /* sum until 'term' is small */
-       t++;
-       term *= x / t;
-       sum  += term;
-     } 
-     return (factor * sum);
+	 t    = a;                        /* A & S equation 6.5.29            */
+	 term = 1.0 / a;
+	 sum  = term;
+	 while (term >= TINY * sum) {     /* sum until 'term' is small */
+	   t++;
+	   term *= x / t;
+	   sum  += term;
+	 } 
+	 return (factor * sum);
    }
    else {                             /* evaluate as a continued fraction - */
-     p[0]  = 0.0;                     /* A & S eqn 6.5.31 with the extended */
-     q[0]  = 1.0;                     /* pattern 2-a, 2, 3-a, 3, 4-a, 4,... */
-     p[1]  = 1.0;                     /* - see also A & S sec 3.10, eqn (3) */
-     q[1]  = x;
-     f     = p[1] / q[1];
-     n     = 0;
-     do {                             /* recursively generate the continued */
-       g  = f;                        /* fraction 'f' until two consecutive */
-       n++;                           /* values are small                   */
-       if ((n % 2) > 0) {
-         c[0] = ((double) (n + 1) / 2) - a;
-         c[1] = 1.0;
-       }
-       else {
-         c[0] = (double) n / 2;
-         c[1] = x;
-       }
-       p[2] = c[1] * p[1] + c[0] * p[0];
-       q[2] = c[1] * q[1] + c[0] * q[0];
-       if (q[2] != 0.0) {             /* rescale to avoid overflow */
-         p[0] = p[1] / q[2];
-         q[0] = q[1] / q[2];
-         p[1] = p[2] / q[2];
-         q[1] = 1.0;
-         f    = p[1];
-       }
-     } while ((fabs(f - g) >= TINY) || (q[1] != 1.0));
-     return (1.0 - factor * f);
+	 p[0]  = 0.0;                     /* A & S eqn 6.5.31 with the extended */
+	 q[0]  = 1.0;                     /* pattern 2-a, 2, 3-a, 3, 4-a, 4,... */
+	 p[1]  = 1.0;                     /* - see also A & S sec 3.10, eqn (3) */
+	 q[1]  = x;
+	 f     = p[1] / q[1];
+	 n     = 0;
+	 do {                             /* recursively generate the continued */
+	   g  = f;                        /* fraction 'f' until two consecutive */
+	   n++;                           /* values are small                   */
+	   if ((n % 2) > 0) {
+		 c[0] = ((double) (n + 1) / 2) - a;
+		 c[1] = 1.0;
+	   }
+	   else {
+		 c[0] = (double) n / 2;
+		 c[1] = x;
+	   }
+	   p[2] = c[1] * p[1] + c[0] * p[0];
+	   q[2] = c[1] * q[1] + c[0] * q[0];
+	   if (q[2] != 0.0) {             /* rescale to avoid overflow */
+		 p[0] = p[1] / q[2];
+		 q[0] = q[1] / q[2];
+		 p[1] = p[2] / q[2];
+		 q[1] = 1.0;
+		 f    = p[1];
+	   }
+	 } while ((fabs(f - g) >= TINY) || (q[1] != 1.0));
+	 return (1.0 - factor * f);
    }
 }
 
@@ -1264,18 +1264,18 @@ static double InBeta(double a, double b, double x);
    long   n;
 
    if (x > (a + 1.0) / (a + b + 1.0)) { /* to accelerate convergence   */
-     swap = 1;                          /* complement x and swap a & b */
-     x    = 1.0 - x;
-     t    = a;
-     a    = b;
-     b    = t;
+	 swap = 1;                          /* complement x and swap a & b */
+	 x    = 1.0 - x;
+	 t    = a;
+	 a    = b;
+	 b    = t;
    }
    else                                 /* do nothing */
-     swap = 0;
+	 swap = 0;
    if (x > 0)
-     factor = exp(a * log(x) + b * log(1.0 - x) - LogBeta(a,b)) / a;
+	 factor = exp(a * log(x) + b * log(1.0 - x) - LogBeta(a,b)) / a;
    else
-     factor = 0.0;
+	 factor = 0.0;
    p[0] = 0.0;
    q[0] = 1.0;
    p[1] = 1.0;
@@ -1283,29 +1283,29 @@ static double InBeta(double a, double b, double x);
    f    = p[1] / q[1];
    n    = 0;
    do {                               /* recursively generate the continued */
-     g = f;                           /* fraction 'f' until two consecutive */
-     n++;                             /* values are small                   */
-     if ((n % 2) > 0) {
-       t = (double) (n - 1) / 2;
-       c = -(a + t) * (a + b + t) * x / ((a + n - 1.0) * (a + n));
-     }
-     else {
-       t = (double) n / 2;
-       c = t * (b - t) * x / ((a + n - 1.0) * (a + n));
-     }
-     p[2] = p[1] + c * p[0];
-     q[2] = q[1] + c * q[0];
-     if (q[2] != 0.0) {                 /* rescale to avoid overflow */
-       p[0] = p[1] / q[2];
-       q[0] = q[1] / q[2];
-       p[1] = p[2] / q[2];
-       q[1] = 1.0;
-       f    = p[1];
-     }
+	 g = f;                           /* fraction 'f' until two consecutive */
+	 n++;                             /* values are small                   */
+	 if ((n % 2) > 0) {
+	   t = (double) (n - 1) / 2;
+	   c = -(a + t) * (a + b + t) * x / ((a + n - 1.0) * (a + n));
+	 }
+	 else {
+	   t = (double) n / 2;
+	   c = t * (b - t) * x / ((a + n - 1.0) * (a + n));
+	 }
+	 p[2] = p[1] + c * p[0];
+	 q[2] = q[1] + c * q[0];
+	 if (q[2] != 0.0) {                 /* rescale to avoid overflow */
+	   p[0] = p[1] / q[2];
+	   q[0] = q[1] / q[2];
+	   p[1] = p[2] / q[2];
+	   q[1] = 1.0;
+	   f    = p[1];
+	 }
    } while ((fabs(f - g) >= TINY) || (q[1] != 1.0));
    if (swap) 
-     return (1.0 - factor * f);
+	 return (1.0 - factor * f);
    else
-     return (factor * f);
+	 return (factor * f);
 }
 

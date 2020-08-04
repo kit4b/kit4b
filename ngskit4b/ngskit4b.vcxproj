@@ -175,6 +175,9 @@
     <ClInclude Include="ArtefactReduce.h" />
     <ClInclude Include="AssembGraph.h" />
     <ClInclude Include="Benchmarker.h" />
+    <ClInclude Include="repassemb.h" />
+    <ClInclude Include="pangenome.h" />
+    <ClInclude Include="sarscov2ml.h" />
     <ClInclude Include="LocHap2Bed.h" />
     <ClInclude Include="ngskit4b.h" />
     <ClInclude Include="kit4bdna.h" />
@@ -190,11 +193,9 @@
     <ClInclude Include="Markers.h" />
     <ClInclude Include="MarkerSeq.h" />
     <ClInclude Include="MergeReadPairs.h" />
-    <ClInclude Include="pangenome.h" />
     <ClInclude Include="PEScaffold.h" />
     <ClInclude Include="ReadStats.h" />
     <ClInclude Include="RemapLoci.h" />
-    <ClInclude Include="sarscov2ml.h" />
     <ClInclude Include="Scaffolder.h" />
     <ClInclude Include="SNPs2pgSNPs.h" />
     <ClInclude Include="SQLiteDE.h" />
@@ -209,11 +210,13 @@
     <ClCompile Include="AssembGraph.cpp" />
     <ClCompile Include="Assemble.cpp" />
     <ClCompile Include="Benchmarker.cpp" />
+    <ClCompile Include="pangenome.cpp" />
+    <ClCompile Include="repassemb.cpp" />
+    <ClCompile Include="sarscov2ml.cpp" />
     <ClCompile Include="LocHap2Bed.cpp" />
     <ClCompile Include="fasta2bed.cpp" />
     <ClCompile Include="ngskit4b.cpp" />
     <ClCompile Include="kit4bax.cpp" />
-    <ClCompile Include="pangenome.cpp" />
     <ClCompile Include="rnade.cpp" />
     <ClCompile Include="kit4bdna.cpp" />
     <ClCompile Include="genbiobed.cpp" />
@@ -251,7 +254,6 @@
     <ClCompile Include="psl2sqlite.cpp" />
     <ClCompile Include="ReadStats.cpp" />
     <ClCompile Include="RemapLoci.cpp" />
-    <ClCompile Include="sarscov2ml.cpp" />
     <ClCompile Include="Scaffolder.cpp" />
     <ClCompile Include="SimReads.cpp" />
     <ClCompile Include="SNPs2pgSNPs.cpp" />

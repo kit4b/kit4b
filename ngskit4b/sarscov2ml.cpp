@@ -690,18 +690,25 @@ return(true);
 bool	// false if all combinations iterated, true if next combination generated
 CSarsCov2ML::Iter_nCr(void)				// iterator for drawing next combination of r elements from n total
 {
-uint32_t Idx;
+int Idx;
 if(m_nCombination == 0 || m_rCombination == 0)
 	return(false);
 
-if(m_nCrCombinations[0] > m_nCombination - m_rCombination)
+if(m_nCrCombinations[0] >= m_nCombination - m_rCombination)
 	return(false);	// exhausted all combinations
 
 for(Idx = m_rCombination-1; Idx >= 0; Idx--)
 	{
-	if(++m_nCrCombinations[Idx] < m_nCombination)
+	if(m_nCrCombinations[Idx] < m_nCombination - m_rCombination + Idx)
+		{
+		m_nCrCombinations[Idx] += 1;
 		break;
-	m_nCrCombinations[Idx] = m_nCrCombinations[Idx-1]+2;
+		}
+	}
+while(Idx != m_rCombination-1)
+	{
+	m_nCrCombinations[Idx+1] = m_nCrCombinations[Idx] + 1;
+	Idx++;
 	}
 return(true);
 }
@@ -729,42 +736,83 @@ CStats Stats;
 // iterate over feature loci and discover which loci are proportionally over/under represented relative to classification
 ClassIdx = 0;
 memset(m_TopLinkages,0,sizeof(m_TopLinkages));
-for(ColIdx = 1; ColIdx < m_NumCols; ColIdx++)
+
+if(0)
 	{
-	TotColCnts = 0;
-	NumRowsClassified = 0;
-	memset(m_ColClassifiedThresCnts,0,sizeof(m_ColClassifiedThresCnts));
-	memset(m_ColClassifiedBelowCnts,0,sizeof(m_ColClassifiedBelowCnts));
-	for(RowIdx = 1; RowIdx < m_NumRows; RowIdx++)
+	for(ColIdx = 1; ColIdx < m_NumCols; ColIdx++)
 		{
-		pCell = &m_pMatrix[RowIdx*m_NumCols];
-		if(m_ReadsetClassification[*pCell-1].ReadsetID == 0)	// 0 if unclassified
-			continue;
-		NumRowsClassified += 1;
-		ClassifiedAs = m_ReadsetClassification[*pCell-1].ClassificationID;
-		pCell += ColIdx;
-		if(*pCell >= FeatType)
+		TotColCnts = 0;
+		NumRowsClassified = 0;
+		memset(m_ColClassifiedThresCnts,0,sizeof(m_ColClassifiedThresCnts));
+		memset(m_ColClassifiedBelowCnts,0,sizeof(m_ColClassifiedBelowCnts));
+		for(RowIdx = 1; RowIdx < m_NumRows; RowIdx++)
 			{
-			m_ColClassifiedThresCnts[ClassifiedAs-1] += *pCell;
-			TotColCnts += 1;
+			pCell = &m_pMatrix[RowIdx*m_NumCols];
+			if(m_ReadsetClassification[*pCell-1].ReadsetID == 0)	// 0 if unclassified
+				continue;
+			NumRowsClassified += 1;
+			ClassifiedAs = m_ReadsetClassification[*pCell-1].ClassificationID;
+			pCell += ColIdx;
+			if(*pCell >= FeatType)
+				{
+				m_ColClassifiedThresCnts[ClassifiedAs-1] += *pCell;
+				TotColCnts += 1;
+				}
+			else
+				m_ColClassifiedBelowCnts[ClassifiedAs-1] += 1;
 			}
-		else
-			m_ColClassifiedBelowCnts[ClassifiedAs-1] += 1;
-		}
-	if(NumRowsClassified < 100)		// currently just an arbitrary threshold - 
-		continue;
-	if(TotColCnts < NumRowsClassified/50)	// currently just an arbitrary threshold - 
-		continue;
-	double Prob = Stats.FishersExactTest(m_ColClassifiedThresCnts[0],m_ColClassifiedBelowCnts[0],m_ColClassifiedThresCnts[1],m_ColClassifiedBelowCnts[1]);
-	if(Prob <= 0.05)
-		{
-		m_TopLinkages[ClassIdx].Prob = Prob;
-		m_TopLinkages[ClassIdx].ColIdx = ColIdx;
-		ClassIdx+=1;
-		if(ClassIdx > cMaxN_nCr)
-			break;
+		if(NumRowsClassified < 50)		// currently just an arbitrary threshold - 
+			continue;
+		if(TotColCnts < NumRowsClassified/100)	// currently just an arbitrary threshold - 
+			continue;
+		double Prob = Stats.FishersExactTest(m_ColClassifiedThresCnts[0],m_ColClassifiedBelowCnts[0],m_ColClassifiedThresCnts[1],m_ColClassifiedBelowCnts[1]);
+		if(Prob <= 0.01)
+			{
+			m_TopLinkages[ClassIdx].Prob = Prob;
+			m_TopLinkages[ClassIdx].ColIdx = ColIdx;
+			ClassIdx+=1;
+			if(ClassIdx > cMaxN_nCr)
+				break;
+			}
 		}
 	}
+else   // else looking for linkages which are not classified
+	{
+	for(ColIdx = 1; ColIdx < m_NumCols; ColIdx++)
+		{
+		TotColCnts = 0;
+		NumRowsClassified = 0;
+		memset(m_ColClassifiedThresCnts,0,sizeof(m_ColClassifiedThresCnts));
+		memset(m_ColClassifiedBelowCnts,0,sizeof(m_ColClassifiedBelowCnts));
+		for(RowIdx = 1; RowIdx < m_NumRows; RowIdx++)		// counting rows with that feature
+			{
+			pCell = &m_pMatrix[RowIdx*m_NumCols];
+			NumRowsClassified += 1;
+			pCell += ColIdx;
+			if(*pCell >= FeatType)
+				{
+				m_ColClassifiedThresCnts[0] += *pCell;
+				TotColCnts += 1;
+				}
+			else
+				m_ColClassifiedBelowCnts[0] += 1;
+			}
+		if(NumRowsClassified < 50)		// currently just an arbitrary threshold - 
+			continue;
+		if(TotColCnts < 50)	// currently just an arbitrary threshold 
+			continue;
+		double Prob = 1.0 - Stats.Binomial(NumRowsClassified,m_ColClassifiedThresCnts[0],0.01);
+		if(Prob <= 0.05)
+			{
+			m_TopLinkages[ClassIdx].Prob = Prob;
+			m_TopLinkages[ClassIdx].ColIdx = ColIdx;
+			ClassIdx+=1;
+			if(ClassIdx > cMaxN_nCr)
+				break;
+			}
+		}
+	}
+
 
 if(ClassIdx < NumLinkedFeatures)
 	return(0);
@@ -804,7 +852,7 @@ do
 	if(NumRowsLinked >= MinPropRows)		
 		{
 		int BuffIdx;
-		char szBuff[1000];
+		char szBuff[10000];
 		BuffIdx = sprintf(szBuff,"Have %d rows (thres %u) with %u features linked by this minimum feature type %d -->",NumRowsLinked,MinPropRows,NumLinkedFeatures, FeatType);
 		NumFeatsLinked = 0;
 		for(uint32_t IdxR = 0; IdxR < m_rCombination; IdxR++)
@@ -868,13 +916,14 @@ if((Rslt=LoadMatrix(pszMatrixFile))!=eBSFSuccess)
 if(pszIsolateClassFile != NULL && pszIsolateClassFile[0] != '\0')
 	if((Rslt=LoadClassifications(pszIsolateClassFile))!=eBSFSuccess)
 		return(Rslt);
-int K2 = RunKernel(2,50,2);
-int K3 = RunKernel(3,40,2);
-int K4 = RunKernel(5,20,2);
-int K5 = RunKernel(6,15,2);
-int K6 = RunKernel(6,10,2);
-int K7 = RunKernel(7,5,2);
-int K8 = RunKernel(8,5,2);
+int K2 = RunKernel(2,30,3);
+int K3 = RunKernel(3,20,3);
+int K4 = RunKernel(4,20,3);
+int K5 = RunKernel(5,10,3);
+int K6 = RunKernel(6,5,3);
+int K7 = RunKernel(7,3,3);
+int K8 = RunKernel(8,3,3);
+int K9 = RunKernel(9,2,3);
 Reset();
 return(0);
 }

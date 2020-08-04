@@ -185,7 +185,7 @@ struct arg_int *threads = arg_int0("T","threads","<int>",		"number of processing
 struct arg_end *end = arg_end(200);
 
 void *argtable[] = {help,version,FileLogLevel,LogFile,
-	                pmode,noautoovlp,trimends,minseqlen,trimpe2se,allowse2pe,sensestrandonly,singleended,maxpasses,reducethressteps,passthres,subs100bp,end12subs,
+					pmode,noautoovlp,trimends,minseqlen,trimpe2se,allowse2pe,sensestrandonly,singleended,maxpasses,reducethressteps,passthres,subs100bp,end12subs,
 					initseovlp,finseovlp,initpeovlp,finpeovlp,minpe2seovlp,pe2sesteps,
 					orientatepe,inpe1file,inpe2file,seedcontigsfile,inartreducfile,outfile,
 					summrslts,experimentname,experimentdescr,
@@ -200,23 +200,23 @@ if(argerrors >= 0)
 
 /* special case: '--help' takes precedence over error reporting */
 if (help->count > 0)
-        {
+		{
 		printf("\n%s %s %s, Version %s\nOptions ---\n", gszProcName,gpszSubProcess->pszName,gpszSubProcess->pszFullDescr,kit4bversion);
-        arg_print_syntax(stdout,argtable,"\n");
-        arg_print_glossary(stdout,argtable,"  %-25s %s\n");
+		arg_print_syntax(stdout,argtable,"\n");
+		arg_print_glossary(stdout,argtable,"  %-25s %s\n");
 		printf("\nNote: Parameters can be entered into a parameter file, one parameter per line.");
 		printf("\n      To invoke this parameter file then precede its name with '@'");
 		printf("\n      e.g. %s %s @myparams.txt\n",gszProcName,gpszSubProcess->pszName);
 		printf("\nPlease report any issues regarding usage of %s at https://github.com/kit4b/issues\n\n",gszProcName);
 		return(1);
-        }
+		}
 
-    /* special case: '--version' takes precedence error reporting */
+	/* special case: '--version' takes precedence error reporting */
 if (version->count > 0)
-        {
+		{
 		printf("\n%s %s Version %s\n",gszProcName,gpszSubProcess->pszName,kit4bversion);
 		return(1);
-        }
+		}
 
 if (!argerrors)
 	{
@@ -440,7 +440,7 @@ if (!argerrors)
 				{
 				gDiagnostics.DiagOut(eDLFatal, gszProcName, "Error: Unable to estimate sequence sizes for PE1 file: '%s'", szPE1File);
 				return(1);
-                }
+				}
 
 			if((PE2EstNumSeqs = Fasta.FastaEstSizes(szPE1File, NULL, NULL, NULL, &PE2EstMaxSeqLen, &PE2EstMeanSeqLen)) == 0)
 				{

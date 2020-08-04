@@ -34,7 +34,7 @@ const int cMaxTrimSeqLen = 1000;        // user can specify that reads are to be
 
 const int cMinOverlapbp = (cMinAceptSeqLen+1)/2;			// any putative overlap must be at least this many bp before being further explored 
 const int cMinOverlappc = 50;			// user can specify down to this required overlap as a percentage of read length
-const int cDfltOverlappc = 70;			// default overlap as a percentage of read length
+const int cDfltOverlappc = 60;			// default overlap as a percentage of read length
 const int cMaxOverlappc = 95;			// user can specify at most this required overlap as a percentage of read length
 
 

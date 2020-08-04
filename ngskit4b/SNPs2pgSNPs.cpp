@@ -276,7 +276,7 @@ SNPs2pgSNPs(int argc, char** argv)
 	/* special case: '--version' takes precedence error reporting */
 	if (version->count > 0)
 	{
- 		printf("\n%s %s Version %s\n", gszProcName, gpszSubProcess->pszName, kit4bversion);
+		printf("\n%s %s Version %s\n", gszProcName, gpszSubProcess->pszName, kit4bversion);
 		return(1);
 	}
 
@@ -705,7 +705,6 @@ if ((pSNPs2pgSNPs = new CSNPs2pgSNPs) == NULL)
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to instantiate instance of CSNPs2pgSNPs");
 	return(eBSFerrInternal);
 	}
-Rslt = eBSFSuccess;
 
 Rslt = pSNPs2pgSNPs->Process(Mode, bAllowInferenced, LocalSeqErrRate,MinCoverage, MinAlleleProp,PValueThres, pszTrackName, pszAssemblyName,pszExperimentDescr, SetOp, NumInSetA, ppszSetA,NumInSetB, ppszSetB, pszGFFFile, pszSNPFile, pszOutFile);
 if(pSNPs2pgSNPs != NULL)
@@ -1773,65 +1772,62 @@ while ((Rslt = m_pCSV->NextLine()) > 0)				// onto next line containing fields
 	m_bRptHdr = false;
 	Report(false, pSNPSite);
 
-	if(m_ReportFormat == eRMFcsv)
+	tsIsolateFeatSNPs* pIsolateFeatSNPs;
+	if(m_pIsolateFeatSNPs == NULL)
 		{
-		tsIsolateFeatSNPs* pIsolateFeatSNPs;
-		if(m_pIsolateFeatSNPs == NULL)
-			{
-			size_t memreq = (size_t)(sizeof(tsIsolateFeatSNPs) * cAllocNumIsolateFeatSNPs);
+		size_t memreq = (size_t)(sizeof(tsIsolateFeatSNPs) * cAllocNumIsolateFeatSNPs);
 
 #ifdef _WIN32
-			m_pIsolateFeatSNPs = (tsIsolateFeatSNPs*)malloc(memreq);	// initial and perhaps the only allocation
-			if(m_pIsolateFeatSNPs == NULL)
-				{
-				gDiagnostics.DiagOut(eDLFatal, gszProcName, "IsolateFeatSNPs: Initial memory allocation of %lld bytes - %s", (INT64)memreq, strerror(errno));
-				Reset();
-				return(eBSFerrMem);
-				}
-#else
-			// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-			m_pIsolateFeatSNPs = (tsIsolateFeatSNPs *)mmap(NULL, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-			if(m_pIsolateFeatSNPs == MAP_FAILED)
-				{
-				gDiagnostics.DiagOut(eDLFatal, gszProcName, "IsolateFeatSNPs: Memory allocation of %lld bytes through mmap()  failed - %s", (INT64)memreq, strerror(errno));
-				m_pIsolateFeatSNPs = NULL;
-				Reset();
-				return(eBSFerrMem);
-				}
-#endif
-			m_AllocdIsolateFeatSNPsMem = memreq;
-			m_IsolateFeatSNPs = 0;
-			m_AllocdIsolateFeatSNPs = cAllocNumIsolateFeatSNPs;
-			}
-		else
+		m_pIsolateFeatSNPs = (tsIsolateFeatSNPs*)malloc(memreq);	// initial and perhaps the only allocation
+		if(m_pIsolateFeatSNPs == NULL)
 			{
-			if((m_IsolateFeatSNPs + 100) > m_AllocdIsolateFeatSNPs)
-				{
-				size_t memreq = m_AllocdIsolateFeatSNPsMem + (cAllocNumIsolateFeatSNPs * sizeof(tsIsolateFeatSNPs));
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "IsolateFeatSNPs: Initial memory allocation of %lld bytes - %s", (INT64)memreq, strerror(errno));
+			Reset();
+			return(eBSFerrMem);
+			}
+#else
+		// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
+		m_pIsolateFeatSNPs = (tsIsolateFeatSNPs *)mmap(NULL, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+		if(m_pIsolateFeatSNPs == MAP_FAILED)
+			{
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "IsolateFeatSNPs: Memory allocation of %lld bytes through mmap()  failed - %s", (INT64)memreq, strerror(errno));
+			m_pIsolateFeatSNPs = NULL;
+			Reset();
+			return(eBSFerrMem);
+			}
+#endif
+		m_AllocdIsolateFeatSNPsMem = memreq;
+		m_IsolateFeatSNPs = 0;
+		m_AllocdIsolateFeatSNPs = cAllocNumIsolateFeatSNPs;
+		}
+	else
+		{
+		if((m_IsolateFeatSNPs + 100) > m_AllocdIsolateFeatSNPs)
+			{
+			size_t memreq = m_AllocdIsolateFeatSNPsMem + (cAllocNumIsolateFeatSNPs * sizeof(tsIsolateFeatSNPs));
 				
 #ifdef _WIN32
-				pIsolateFeatSNPs = (tsIsolateFeatSNPs*)realloc(m_pIsolateFeatSNPs, memreq);
+			pIsolateFeatSNPs = (tsIsolateFeatSNPs*)realloc(m_pIsolateFeatSNPs, memreq);
 #else
-				pIsolateFeatSNPs = (tsIsolateFeatSNPs*)mremap(m_pIsolateFeatSNPs, m_AllocdIsolateFeatSNPsMem, memreq, MREMAP_MAYMOVE);
-				if(pIsolateFeatSNPs == MAP_FAILED)
-					pIsolateFeatSNPs = NULL;
+			pIsolateFeatSNPs = (tsIsolateFeatSNPs*)mremap(m_pIsolateFeatSNPs, m_AllocdIsolateFeatSNPsMem, memreq, MREMAP_MAYMOVE);
+			if(pIsolateFeatSNPs == MAP_FAILED)
+				pIsolateFeatSNPs = NULL;
 #endif
-				if(pIsolateFeatSNPs == NULL)
-					{
-					gDiagnostics.DiagOut(eDLFatal, gszProcName, "IsolateFeatSNPs: Memory re-allocation to %lld bytes - %s", memreq, strerror(errno));
-					return(eBSFerrMem);
-					}
-				m_pIsolateFeatSNPs = pIsolateFeatSNPs;
-				m_AllocdIsolateFeatSNPs += cAllocNumIsolateFeatSNPs;
-				m_AllocdIsolateFeatSNPsMem = memreq;
+			if(pIsolateFeatSNPs == NULL)
+				{
+				gDiagnostics.DiagOut(eDLFatal, gszProcName, "IsolateFeatSNPs: Memory re-allocation to %lld bytes - %s", memreq, strerror(errno));
+				return(eBSFerrMem);
 				}
+			m_pIsolateFeatSNPs = pIsolateFeatSNPs;
+			m_AllocdIsolateFeatSNPs += cAllocNumIsolateFeatSNPs;
+			m_AllocdIsolateFeatSNPsMem = memreq;
 			}
-		pIsolateFeatSNPs = &m_pIsolateFeatSNPs[m_IsolateFeatSNPs++];
-		memset(pIsolateFeatSNPs,0,sizeof(tsIsolateFeatSNPs));
-		if(m_NumFeatures > 0 && pFeature != NULL)
-			memcpy(&pIsolateFeatSNPs->SiteFeatCnts,pFeature,sizeof(tsSummaryFeatCnts));
-		memcpy(&pIsolateFeatSNPs->SNPSSite, pSNPSite,sizeof(tsSNPSSite));
 		}
+	pIsolateFeatSNPs = &m_pIsolateFeatSNPs[m_IsolateFeatSNPs++];
+	memset(pIsolateFeatSNPs,0,sizeof(tsIsolateFeatSNPs));
+	if(m_NumFeatures > 0 && pFeature != NULL)
+		memcpy(&pIsolateFeatSNPs->SiteFeatCnts,pFeature,sizeof(tsSummaryFeatCnts));
+	memcpy(&pIsolateFeatSNPs->SNPSSite, pSNPSite,sizeof(tsSNPSSite));
 	}
 return(NumSNPsParsed);
 }
@@ -2668,6 +2664,9 @@ uint32_t CurSNPLoci;
 uint32_t CurSNPChromID;
 uint32_t FeatSNPIdx;
 tsIsolateFeatSNPs* pFeatSNP;
+
+if(m_IsolateFeatSNPs < 2)
+	return(m_IsolateFeatSNPs);
 
 // sort chrom.loci.readset ascending
 if(m_SortOrder != 1)	// 0: unsorted, 1: SortSNPChromLociReadset, 2: SortSNPReadsetChromLoci

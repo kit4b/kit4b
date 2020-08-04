@@ -43,7 +43,7 @@ Original 'BioKanga' copyright notice has been retained and immediately follows t
 
 int
 ProcessArtefactReduce(etARPMode PMode,	// processing mode; currently eAR2Fasta,  eAR2Packed or eARPacked2fasta
-	    char *pszCheckpointFile,		// if file of this name exists and is a checkpoint then resume processing from this checkpoint, otherwise create a checkpoint file 
+		char *pszCheckpointFile,		// if file of this name exists and is a checkpoint then resume processing from this checkpoint, otherwise create a checkpoint file 
 		etSfxSparsity SfxSparsity,		// suffix sparsity
 		int IterativePasses,			// iterative passes of overlap processing
 		int MinPhredScore,				// only accept reads for filtering if their mean Phred score is at least this threshold
@@ -56,9 +56,9 @@ ProcessArtefactReduce(etARPMode PMode,	// processing mode; currently eAR2Fasta, 
 		int TrimSeqLen,					// trim sequences to be no longer than this length (default is 0 for no length trimming, MinSeqLen...1000)
 		int MinOverlap,					// minimum required overlap (in % of read length) or <= 0 if no overlap processing
 		int MinFlankLen,				// non-overlapping flank must be at least this length (defaults to 1, else range 1bp to 25bp, only applies if overlap processing)
-		int SampleNth,					// process every Nth reads
+		int SampleNthRawRead,			// sample every Nth raw read, or read pair, for processing (1..10000)
 		int Zreads,						// maximum number of reads to accept for processing from any file
-		bool bDedupeIndependent,		// if paired end preprocessing then treat as if single ended when deuping
+		bool bDedupeIndependent,		// if paired end preprocessing then treat as if single ended when deduping
 		int NumThreads,					// number of worker threads to use
 		bool bAffinity,					// thread to core affinity
 		int NumPE1InputFiles,			// number of PE1 input files
@@ -92,6 +92,7 @@ int NumThreads;				// number of threads (0 defaults to number of CPUs)
 bool bAffinity;				// thread to core affinity
 
 int PMode;					// processing mode
+int SampleNthRawRead;		// sample every Nth raw read (or read pair) for processing (1..10000)
 int MinPhredScore;			// only accept reads for filtering if their mean Phred score is at least this threshold
 int SfxSparsity;			// suffix sparsity
 bool bStrand;				// if true then strand specific filtering
@@ -103,7 +104,6 @@ int MinSeqLen;              // filter out input sequences (after any trimming) w
 int TrimSeqLen;				// trim sequences to be no longer than this length (default is 0 for no length trimming, MinSeqLen...1000)
 int MinOverlap;				// minimum required overlap (in %) ( if <= 0 then no overlap processing required)
 int MinFlankLen;			// non-overlapping flank must be at least this length (defults to 1, range 1bp to 25bp, only applies if overlap processing)
-int SampleNth;				// process every Nth reads
 int Zreads;					// maximum number of reads to accept for processing from any file 
 int IterativePasses;		// iterative passes repeating overlap processing (default 1, range 1..10)
 
@@ -135,6 +135,8 @@ struct arg_int *pmode = arg_int0("m","mode","<int>",		    "processing mode: 0 - 
 struct arg_int *minphredscore = arg_int0("p", "minphred", "<int>", "only accept reads for filtering if their mean Phred scores are at least this threshold (default 0 for no Phred filtering, range 15..40)");
 struct arg_int *iterativepasses = arg_int0("P", "iterativepasses", "<int>", "iterative passes repeating overlap processing (default 1, range 1..5)");
 
+struct arg_int  *samplenthrawread = arg_int0("#","samplenthrawread","<int>", "sample every Nth raw read or read pair for processing (default 1, range 1..10000)");
+
 struct arg_file *inpe1files = arg_filen("i","inpe1","<file>",1,cKDNAMaxInFileSpecs,"Load single ended, or 5' if paired end, reads from fasta or fastq file(s); if single ended then wildcards allowed");
 struct arg_file *inpe2files = arg_filen("I","inpe2","<file>",0,cKDNAMaxInFileSpecs,"Load 3' if paired end reads from fasta or fastq file(s)");
 struct arg_file *outfile = arg_file0("o","out","<file>",		"Output multifasta ('-m0') or packed sequences ('-m1') to this file");
@@ -146,7 +148,7 @@ struct arg_int *maxns = arg_int0("n","indeterminates","<int>",  "filter out inpu
 struct arg_int *trim5 = arg_int0("x","trim5","<int>",			"trim this number of 5' bases from each input sequence (default is 0, range 0..50)");
 struct arg_int *trim3 = arg_int0("X","trim3","<int>",			"trim this number of 3' bases from each input sequence (default is 0, range 0..50)");
 struct arg_int *trimseqlen = arg_int0("L","trimseqlen","<int>",	"trim sequences to be no longer than this length (default is 0 for no length trimming, MinSeqLen to 1000)");
-struct arg_int *minoverlap = arg_int0("y","minoverlap","<int>",	"accept as overlapping if overlaps are at least this percentage of read length (defaults to 70%% of read length, range 50 to 95%%p, if 0 then no overlap processing)");
+struct arg_int *minoverlap = arg_int0("y","minoverlap","<int>",	"accept as overlapping if overlaps are at least this percentage of read length (defaults to 60%% of read length, range 50 to 95%%p, if 0 then no overlap processing)");
 struct arg_int *minflanklen = arg_int0("Y","minflanklen","<int>","non-overlapping flank must be at least this length (default 1, range 1bp to 25bp, only applies if overlap processing)");
 
 struct arg_int *minseqlen= arg_int0("l","minlen","<int>",       "filter out input sequences (after any trimming) which are less than this length (default is 80bp, range 50..500)");
@@ -163,7 +165,7 @@ struct arg_str *experimentdescr = arg_str0("W","experimentdescr","<str>",	"exper
 struct arg_end *end = arg_end(200);
 
 void *argtable[] = {help,version,FileLogLevel,LogFile,
-	                pmode,minphredscore,strand,maxns,iterativepasses,trim5,trim3,contaminantfile,minseqlen,trimseqlen,minoverlap,minflanklen,nodedupe,dedupepe,inpe1files,inpe2files,outfile,dupdistfile,
+					pmode,samplenthrawread,minphredscore,strand,maxns,iterativepasses,trim5,trim3,contaminantfile,minseqlen,trimseqlen,minoverlap,minflanklen,nodedupe,dedupepe,inpe1files,inpe2files,outfile,dupdistfile,
 					summrslts,experimentname,experimentdescr,
 					threads,
 					end};
@@ -176,23 +178,23 @@ if(argerrors >= 0)
 
 /* special case: '--help' takes precedence over error reporting */
 if (help->count > 0)
-        {
+		{
 		printf("\n%s %s %s, Version %s\nOptions ---\n", gszProcName,gpszSubProcess->pszName,gpszSubProcess->pszFullDescr,kit4bversion);
-        arg_print_syntax(stdout,argtable,"\n");
-        arg_print_glossary(stdout,argtable,"  %-25s %s\n");
+		arg_print_syntax(stdout,argtable,"\n");
+		arg_print_glossary(stdout,argtable,"  %-25s %s\n");
 		printf("\nNote: Parameters can be entered into a parameter file, one parameter per line.");
 		printf("\n      To invoke this parameter file then precede its name with '@'");
 		printf("\n      e.g. %s %s @myparams.txt\n",gszProcName,gpszSubProcess->pszName);
 		printf("\nPlease report any issues regarding usage of %s at https://github.com/kit4b/issues\n\n",gszProcName);
 		return(1);
-        }
+		}
 
-    /* special case: '--version' takes precedence error reporting */
+	/* special case: '--version' takes precedence error reporting */
 if (version->count > 0)
-        {
+		{
 		printf("\n%s %s Version %s\n",gszProcName,gpszSubProcess->pszName,kit4bversion);
 		return(1);
-        }
+		}
 
 if (!argerrors)
 	{
@@ -307,6 +309,13 @@ if (!argerrors)
 		return(1);
 		}
 
+	SampleNthRawRead = samplenthrawread->count ? samplenthrawread->ival[0] : 1;
+	if(SampleNthRawRead < 1)
+		SampleNthRawRead = 1;
+	else
+		if(SampleNthRawRead > 10000)
+			SampleNthRawRead = 10000;
+
 	szCheckpointFile[0] = '\0';
 	SfxSparsity = (etSfxSparsity)cDfltSuffixSparsity;
 	bStrand = false;
@@ -320,7 +329,6 @@ if (!argerrors)
 	Trim5 = 0;
 	Trim3 = 0;
 	MaxNs = 0;
-	SampleNth = 1;
 	Zreads = 0;
 	MinSeqLen = cDfltAceptSeqLen;
 	TrimSeqLen = 0;
@@ -346,7 +354,7 @@ if (!argerrors)
 			exit(1);
 			}
 
- 		bStrand = strand->count ? true : false;
+		bStrand = strand->count ? true : false;
 
 		if (contaminantfile->count)
 			{
@@ -436,7 +444,6 @@ if (!argerrors)
 				return(1);
 				}
 
-			SampleNth = 1;
 			Zreads = 0;
 
 			MinSeqLen = minseqlen->count ? minseqlen->ival[0] : cDfltAceptSeqLen;
@@ -612,8 +619,8 @@ if (!argerrors)
 
 		if(NumPE1InputFiles > 0)
 			{
-			if(SampleNth > 1)
-				gDiagnostics.DiagOutMsgOnly(eDLInfo,"Process every : %d reads",SampleNth);
+			if(SampleNthRawRead > 1)
+				gDiagnostics.DiagOutMsgOnly(eDLInfo,"Sampling every : %d reads",SampleNthRawRead);
 
 			if(Zreads > 0)
 				gDiagnostics.DiagOutMsgOnly(eDLInfo,"Processing up to: %d reads per file",Zreads);
@@ -726,7 +733,7 @@ if (!argerrors)
 	SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
 #endif
 	gStopWatch.Start();
-	Rslt = ProcessArtefactReduce((etARPMode)PMode,szCheckpointFile,(etSfxSparsity)SfxSparsity,IterativePasses,MinPhredScore,bNoDedupe,bStrand,MaxNs,Trim5,Trim3, MinSeqLen,TrimSeqLen,MinOverlap,MinFlankLen,SampleNth,Zreads,bDedupeIndependent,NumThreads,bAffinity,
+	Rslt = ProcessArtefactReduce((etARPMode)PMode,szCheckpointFile,(etSfxSparsity)SfxSparsity,IterativePasses,MinPhredScore,bNoDedupe,bStrand,MaxNs,Trim5,Trim3, MinSeqLen,TrimSeqLen,MinOverlap,MinFlankLen,SampleNthRawRead,Zreads,bDedupeIndependent,NumThreads,bAffinity,
 							NumPE1InputFiles,pszInPE1files,NumPE2InputFiles,pszInPE2files,szContaminantFile, szOutFile, szDupDistFile);
 	Rslt = Rslt >=0 ? 0 : 1;
 	if(gExperimentID > 0)
@@ -750,7 +757,7 @@ return 0;
 
 int
 ProcessArtefactReduce(etARPMode PMode,	// processing mode, currently eAR2Fasta,  eAR2Packed
-	    char *pszCheckpointFile,		// if file of this name exists and is a checkpoint then resume processing from this checkpoint, otherwise create a checkpoint file 
+		char *pszCheckpointFile,		// if file of this name exists and is a checkpoint then resume processing from this checkpoint, otherwise create a checkpoint file 
 		etSfxSparsity SfxSparsity,		// suffix sparsity
 		int IterativePasses,			// iterative passes of overlap processing
 		int MinPhredScore,				// only accept reads for filtering if their mean Phred score is at least this threshold
@@ -763,7 +770,7 @@ ProcessArtefactReduce(etARPMode PMode,	// processing mode, currently eAR2Fasta, 
 		int TrimSeqLen,					// trim sequences to be no longer than this length (default is 0 for no length trimming, MinSeqLen...10000)
 		int MinOverlap,					// minimum required overlap (in % of read length) or <= 0 if no overlap processing
 		int MinFlankLen,				// non-overlapping flank must be at least this length (defults 1, else range 1bp to 25bp, only applies if overlap processing)
-		int SampleNth,					// process every Nth reads
+		int SampleNthRawRead,			// sample every Nth raw read, or read pair, for processing (1..10000)
 		int Zreads,						// maximum number of reads to accept for processing from any file
 		bool bDedupeIndependent,		// if paired end preprocessing then treat as if single ended when deuping
 		int NumThreads,					// number of worker threads to use
@@ -786,7 +793,7 @@ if((pArtefactReduce = new CArtefactReduce) == NULL)
 	}
 
 Rslt = pArtefactReduce->Process(PMode,pszCheckpointFile,SfxSparsity,IterativePasses,MinPhredScore,bNoDedupe,bStrand,MaxNs,Trim5,Trim3,MinSeqLen,TrimSeqLen,MinOverlap,MinFlankLen,
-								SampleNth,Zreads,bDedupeIndependent,NumThreads,	bAffinity, NumPE1InputFiles,pszInPE1files,NumPE2InputFiles,pszInPE2files,pszContaminantFile,pszOutFile,pszDupDistFile);
+								SampleNthRawRead,Zreads,bDedupeIndependent,NumThreads,	bAffinity, NumPE1InputFiles,pszInPE1files,NumPE2InputFiles,pszInPE2files,pszContaminantFile,pszOutFile,pszDupDistFile);
 
 delete pArtefactReduce;
 return(Rslt);
@@ -897,7 +904,7 @@ CArtefactReduce::Process(etARPMode PMode,	// processing mode, currently eAR2Fast
 		int TrimSeqLen,					// trim sequences to be no longer than this length (default is 0 for no length trimming, MinSeqLen...10000)
 		int MinOverlap,					// minimum required overlap (in % of read length) or <= 0 if no overlap processing
 		int MinFlankLen,				// non-overlapping flank must be at least this length (defults to 1, else range 1bp to 25bp, only applies if overlap processing)
-		int SampleNth,					// process every Nth reads
+		int SampleNthRawRead,					// process every Nth reads
 		int Zreads,						// maximum number of reads to accept for processing from any file
 		bool bDedupeIndependent,		// if paired end preprocessing then treat as if single ended when deuping
 		int NumThreads,					// number of worker threads to use
@@ -1004,7 +1011,7 @@ if(Rslt < eBSFSuccess)
 
 	CSimpleGlob glob(SG_GLOB_FULLSORT);
 
-	// estimate mean read lengths plus total number of reads in each file so can more efficently allocate memory as a single block...
+	// estimate mean read lengths plus total number of reads in each file so can more efficiently allocate memory as a single block...
 	for(Idx = 0; Idx < NumPE1InputFiles; Idx++)
 		{
 		glob.Init();
@@ -1061,7 +1068,7 @@ if(Rslt < eBSFSuccess)
 			}
 		}
 
-	CumulativeMemory = EstMemReq(Trim5,Trim3,TrimSeqLen,SampleNth,Zreads);
+	CumulativeMemory = EstMemReq(Trim5,Trim3,TrimSeqLen,SampleNthRawRead,Zreads);
 	CumulativeSequences = GetEstSeqsToProc();
 	if(CumulativeSequences < cMinSeqs2Assemb)
 		{
@@ -1081,7 +1088,7 @@ if(Rslt < eBSFSuccess)
 		}
 
 	// allocate to hold est cumulative memory upfront - may as well know now rather than later if there is insufficent memory...
-	if((Rslt = AllocSeqs2AssembMem((CumulativeMemory * 110)/100))!= eBSFSuccess)	// add 10% , reduces chances of having to later realloc...
+	if((Rslt = AllocSeqs2AssembMem((CumulativeMemory * 120)/100))!= eBSFSuccess)	// add 20% , reduces chances of having to later realloc...
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to continue");
 		Reset(false);
@@ -1113,7 +1120,7 @@ if(Rslt < eBSFSuccess)
 				pszInFile = glob.File(FileID);
 				NumInputFilesProcessed += 1;
 				gDiagnostics.DiagOut(eDLInfo,gszProcName,"Process: Parsing and filtering single ended reads from input read file '%s'",pszInFile);
-				if((Rslt = LoadReads(MaxNs,MinPhredScore,Trim5,Trim3,MinSeqLen,TrimSeqLen,SampleNth,Zreads,pszInFile,NULL)) < eBSFSuccess)
+				if((Rslt = LoadReads(MaxNs,MinPhredScore,Trim5,Trim3,MinSeqLen,TrimSeqLen,SampleNthRawRead,Zreads,pszInFile,NULL)) < eBSFSuccess)
 					{
 					gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Load failed for input sequences file '%s'",pszInFile);
 					Reset(false);
@@ -1141,7 +1148,7 @@ if(Rslt < eBSFSuccess)
 			{
 			NumInputFilesProcessed += 2;
 			gDiagnostics.DiagOut(eDLInfo,gszProcName,"Process: Parsing and filtering paired end reads from input reads files '%s' and '%s'",pszInPE1files[Idx], pszInPE2files[Idx]);
-			if((Rslt = LoadReads(MaxNs,MinPhredScore,Trim5,Trim3,MinSeqLen,TrimSeqLen,SampleNth,Zreads,pszInPE1files[Idx],pszInPE2files[Idx])) < eBSFSuccess)
+			if((Rslt = LoadReads(MaxNs,MinPhredScore,Trim5,Trim3,MinSeqLen,TrimSeqLen,SampleNthRawRead,Zreads,pszInPE1files[Idx],pszInPE2files[Idx])) < eBSFSuccess)
 				{
 				gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Load failed for paired end sequences files '%s' and '%s'",pszInPE1files[Idx], pszInPE2files[Idx]);
 				Reset(false);
@@ -2391,13 +2398,13 @@ while(GetSeqProcRange(&StartingSeqID,&EndingSeqID,cMaxMultiSeqFlags) > 0)
 			continue;
 
 		MinFlankLen = pPars->MinFlankLen;
-		if(MinFlankLen < 1)
-			MinFlankLen = 1;
+		if(MinFlankLen < 0)
+			MinFlankLen = 0;
 		else
 			if(MinFlankLen > 25)
 				MinFlankLen = 25;
 
-		if((ProbeMinOverlap + MinFlankLen) > (int)ProbeLen)			// no point in processing this sequence further if too short to overlap any other sequence with at least 1 base overhang
+		if((ProbeMinOverlap + MinFlankLen) > (int)ProbeLen)			// no point in processing this sequence further if too short to overlap any other sequence
 			continue;
 
 		MinSeedOverlap = ProbeMinOverlap;							// have to have an initial minimum seed overlap which can be then extended ... 

@@ -169,7 +169,7 @@ pangenome(int argc, char **argv)
 				gDiagnostics.DiagOut (eDLFatal, gszProcName, "Prefix \"%s\" may only contain alpha-numeric chars",szPrefix);
 				exit (1);
 				}	
-			pChr[-1] = tolower(Chr);
+			pChr[-1] = Chr;
 			}
 
 

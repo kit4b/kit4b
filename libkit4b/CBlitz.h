@@ -112,7 +112,7 @@ typedef enum TAG_eBLZRsltsFomat {
 
 
 typedef struct TAG_sQuerySeq {
-    int SeqID;						// monotonically increasing unique sequence identifier
+	int SeqID;						// monotonically increasing unique sequence identifier
 	char szQueryIdent[cMaxBlitzQuerySeqIdentLen+1];	// fasta identifier
 	int QuerySeqLen;				// query sequence length
 	uint8_t *pQuerySeq;				// allocated to hold sequence 
@@ -245,8 +245,8 @@ class CBlitz
 	int CreateMutexes(void);
 	void DeleteMutexes(void);
 	void AcquireSerialise(void);
-    void ReleaseSerialise(void);
-    void AcquireSerialiseMH(void);
+	void ReleaseSerialise(void);
+	void AcquireSerialiseMH(void);
 	void ReleaseSerialiseMH(void);
 	void AcquireLock(bool bExclusive);
 	void ReleaseLock(bool bExclusive);
@@ -539,7 +539,7 @@ public:
 	uint32_t									// returned best score for paths starting at pAlignNodes[ExploreNodeIdx]
 		HighScoreSW(uint32_t QueryLen,			// query length
 			uint32_t TargSeqLen,				// targeted sequence length
- 			bool bStrand,						// scoring for series on this strand - false if sense, true if antisense
+			bool bStrand,						// scoring for series on this strand - false if sense, true if antisense
 			uint32_t ExploreNodeIdx,			// node to be explored for maximally scored path
 			uint32_t NumNodes,					// total number of alignment nodes 
 			tsQueryAlignNodes *pAlignNodes);	// alignment nodes

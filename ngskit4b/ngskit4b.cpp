@@ -89,6 +89,7 @@ extern int SNPs2pgSNPs(int argc, char* argv[]);
 extern int LocHap2Bed(int argc, char *argv[]);
 extern int genbioseq(int argc, char *argv[]);
 extern int pangenome(int argc, char *argv[]);
+extern int repassemb(int argc, char *argv[]);
 extern int sarscov2ml(int argc, char *argv[]);
 
 
@@ -165,6 +166,7 @@ tsSubProcess SubProcesses[] = {
 	{"fasta2bed","Fasta to BED","Generate BED file from fasta containing sequence names and lengths",fasta2bed},
 	{"genbioseq","Fasta to bioseq","Generate bioseq format file from fasta",genbioseq},
 	{"pangenome","pangenome prefix","Process pangenome fasta or SAM for prefixes",pangenome},
+	{"repassemb","repurpose assembly","Repurpose fasta assembly sequences with SNP loci bases replaced by SNP call major allele bases",repassemb},
 	{"sarscov2ml","ML SARS-CoV-2","SARS-CoV-2 ML feature classification",sarscov2ml}
 
 };
