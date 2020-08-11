@@ -181,7 +181,7 @@ typedef struct TAG_sReadAlignLoci {
 	UINT16 MatchLen;			// original match length
 	UINT8 Mismatches;			// original number of mismatches
 	UINT16 TrimLeft;			// left flank trimming removes this many bases
-    UINT16 TrimRight;			// right flank trimming removes this many bases
+	UINT16 TrimRight;			// right flank trimming removes this many bases
 	UINT8 TrimMismatches;		// after trimming there are this many mismatches
 } tsReadAlignLoci;
 
@@ -281,7 +281,7 @@ typedef enum TAG_eQFiltType {
 	} etQFiltType;
 
 typedef enum TAG_eReadsSortMode {
-	    eRSMunsorted = 0,		// reads are initially unsorted
+		eRSMunsorted = 0,		// reads are initially unsorted
 		eRSMReadID,				// index by ascending ReadID
 		eRSMPairReadID,			// index by ascending PairReadID
 		eRSMPEHitMatch,			// index by ascending hit count, chrom, PairReadID
@@ -308,7 +308,7 @@ typedef struct TAG_sChromSNPs {
 	UINT32 ChromID;		// uniquely identifies this chromosome
 	UINT32 ChromLen;	// this chromosome length
 	tsAdjacentSNPs AdjacentSNPs[2]; // allowing for both DiSNPs and TriSNPs
- 	tsReadHit *pFirstReadHit; // 1st read on chromosome which was accepted for SNP processing
+	tsReadHit *pFirstReadHit; // 1st read on chromosome which was accepted for SNP processing
 	tsReadHit *pLastReadHit; // last read on chromosome which was accepted for SNP processing
 	UINT32 AllocChromLen; // cnts can be for a chromosome of at most this length
 	INT64 TotMatch;	// total number of aligned read bases which exactly matched corresponding chrom sequence bases
@@ -371,10 +371,10 @@ typedef struct TAG_sThreadMatchPars {
 	int CurBlockID;					// current suffix block identifier
 	int ChromID;					// hit chrom identifier
 	int MinChimericLen;				// if checking for chimerics then minimim percentage of read length required, set to 0 if not checking for chimerics
-    int NumAllowedSubs;				// number of allowed substitutions per 100bp of read length
+	int NumAllowedSubs;				// number of allowed substitutions per 100bp of read length
 	int MaxNumSlides;				// limit on number of times core window can be moved or slide to right over read per 100bp of read length
 	int	MinCoreLen;					// minimum core length allowed
-    etQFiltType FiltQuality;		// filtering type
+	etQFiltType FiltQuality;		// filtering type
 	bool bQAbove;					// if true then filter out those below or equal to FiltThres
 	int FiltThres;					// filter threshold
 	eALStrand AlignStrand;			// align on to watson, crick or both strands of target
@@ -845,7 +845,7 @@ class CKAligner
 
 	int								// -1: base not meeting constraints, 0: chromID has no constraints, 1: ChromID constrained but base accepted
 		AcceptBaseConstraint(UINT32 ChromID,	  // base aligned to this chrom/sequence
-                                  UINT32 Loci,		  // aligned to this loci
+								  UINT32 Loci,		  // aligned to this loci
 								  etSeqBase Base);	  // base in read
 	int						// number of alignments violating a loci base constraint
 		IdentifyConstraintViolations(bool bPEread); // true if processing for PE's, false if processing for SE
@@ -863,11 +863,11 @@ class CKAligner
 			 int PairMaxLen,			// only accept paired reads with a combined sequence length of no more than this
 			 bool bPairStrand,			// accept paired ends if on same strand		
 			 UINT8 PE1Strand,			// PE1 aligned on to this strand
-		     UINT32 PE1StartLoci,		// PE read starts at this loci
-		     UINT32 PE1EndLoci,			// PE1 read ends at this loci
-             UINT8 PE2Strand,			// PE2 aligned on to this strand
-		     UINT32 PE2StartLoci,		// PE2 read starts at this loci
-		     UINT32 PE2EndLoci);		// PE2 read ends at this loci
+			 UINT32 PE1StartLoci,		// PE read starts at this loci
+			 UINT32 PE1EndLoci,			// PE1 read ends at this loci
+			 UINT8 PE2Strand,			// PE2 aligned on to this strand
+			 UINT32 PE2StartLoci,		// PE2 read starts at this loci
+			 UINT32 PE2EndLoci);		// PE2 read ends at this loci
 
 	int ProcessPairedEnds(etPEproc PEproc, // paired reads alignment processing mode
 				  int MinEditDist, // accepted alignments must be at least this Hamming away from other putative alignments
@@ -968,8 +968,8 @@ class CKAligner
 	int CreateMutexes(void);
 	void DeleteMutexes(void);
 	void AcquireSerialise(void);
-    void ReleaseSerialise(void);
-    void AcquireSerialiseMH(void);
+	void ReleaseSerialise(void);
+	void AcquireSerialiseMH(void);
 	void ReleaseSerialiseMH(void);
 	void AcquireLock(bool bExclusive);
 	void ReleaseLock(bool bExclusive);

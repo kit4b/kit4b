@@ -2508,7 +2508,7 @@ return(eBSFSuccess);
 
 int								// -1: base not meeting constraints, 0: chromID has no constraints, 1: ChromID constrained but base accepted
 CKAligner::AcceptBaseConstraint(UINT32 ChromID,			// base aligned to this chrom/sequence
-                                  UINT32 Loci,			// aligned to this loci
+								  UINT32 Loci,			// aligned to this loci
 								  etSeqBase Base)		// base in read
 {
 int Idx;
@@ -2833,16 +2833,16 @@ CKAligner::PEInsertSize(int PairMinLen,	// only accept paired reads with a combi
 			 int PairMaxLen,			// only accept paired reads with a combined sequence length of no more than this
 			 bool bPairStrand,			// accept paired ends if on same strand		
 			 UINT8 PE1Strand,			// PE1 aligned on to this strand
-		     UINT32 PE1StartLoci,		// PE read starts at this loci
-		     UINT32 PE1EndLoci,			// PE1 read ends at this loci
-             UINT8 PE2Strand,			// PE2 aligned on to this strand
-		     UINT32 PE2StartLoci,		// PE2 read starts at this loci
-		     UINT32 PE2EndLoci)			// PE2 read ends at this loci
+			 UINT32 PE1StartLoci,		// PE read starts at this loci
+			 UINT32 PE1EndLoci,			// PE1 read ends at this loci
+			 UINT8 PE2Strand,			// PE2 aligned on to this strand
+			 UINT32 PE2StartLoci,		// PE2 read starts at this loci
+			 UINT32 PE2EndLoci)			// PE2 read ends at this loci
 {
 int SeqFragLen;
 
 if((bPairStrand && PE1Strand != PE2Strand) ||				
-    (!bPairStrand && PE1Strand == PE2Strand))
+	(!bPairStrand && PE1Strand == PE2Strand))
 		return(-1);
 
 // if processing for circulars then 
@@ -6181,7 +6181,7 @@ if(pReadHit->NAR == eNARAccepted)
 	}
 else   // treating as being unaligned
 	{
-    QNameLen = 1 + (int)strlen(pszQName);
+	QNameLen = 1 + (int)strlen(pszQName);
 	pBAMalign->NumReadNameBytes = QNameLen;
 	strcpy(pBAMalign->read_name,pszQName);
 	pBAMalign->NumCigarBytes = 4;
@@ -6619,7 +6619,7 @@ while((pReadHit = IterSortedReads(pReadHit))!=NULL)
 					bPrevJunctSeg = true;
 					}
 
-			    int AjAlignStartLoci;
+				int AjAlignStartLoci;
 				int AjAlignEndLoci;
 
 				if(!bSkipBEDformat)
@@ -7951,7 +7951,7 @@ while((pReadHit = IterSortedReads(pReadHit))!=NULL)
 					}
 				}
 
-    		PrevTargEntry = pSeg->ChromID;
+			PrevTargEntry = pSeg->ChromID;
 			ChromLen = m_pSfxArray->GetSeqLen(PrevTargEntry);
 			if(m_pChromSNPs == NULL || (m_pChromSNPs != NULL && (ChromLen + 16) > m_pChromSNPs->AllocChromLen))
 				{
@@ -8316,7 +8316,7 @@ while((pReadHit = IterSortedReads(pReadHit))!=NULL)
 		pSeg = &pReadHit->HitLoci.Hit.Seg[0];
 		if(pSeg->ChromID != (UINT32)PrevTargEntry)
 			{
-    		PrevTargEntry = pSeg->ChromID;
+			PrevTargEntry = pSeg->ChromID;
 			PrevLoci = -1;
 			CurChromLen = m_pSfxArray->GetSeqLen(pSeg->ChromID);
 			}
@@ -8354,7 +8354,7 @@ while((pReadHit = IterSortedReads(pReadHit))!=NULL)
 			pSitePrefs = m_OctSitePrefs[0];
 		pAssembSeq = &AssembSeq[0];
 
-        // generate site index
+		// generate site index
 		SiteIdx = 0;
 		for(SeqIdx = 0; SeqIdx < 8; SeqIdx++)
 			{
@@ -9681,8 +9681,10 @@ int Rslt;
 int PE1HitRslt;
 int PE2HitRslt;
 int ReadsHitIdx;
-int MultiAligned;
-int MultiAlignedAccepted;
+int ChkPE1Ofs;
+int ChkPE2Ofs;
+bool bMultiAligned;
+bool bMultiAlignedAccepted;
 
 int MaxML = max(m_MaxMLmatches,m_MaxMLPEmatches);
 
@@ -9695,6 +9697,8 @@ int PE2ReadMHOfs;
 
 tsReadHit *pPE1ReadMH;					// current multihit PE1 read being processed
 tsReadHit* pPE2ReadMH;					// current multihit PE2 read being processed
+tsReadHitLoci PE1ProvHitLoci;				// provisional PE1 hit loci if multiloci hits
+tsReadHitLoci PE2ProvHitLoci;				// provisional PE2 hit loci if multiloci hits
 
 
 if((pReadsHitBlock = (tsReadsHitBlock *)calloc(1,sizeof(tsReadsHitBlock)))==NULL)
@@ -9712,9 +9716,6 @@ pPE2ReadHit = NULL;
 
 pReadsHitBlock->NumReads = 0;
 Rslt = 0;
-MultiAligned = 0;
-MultiAlignedAccepted = 0;
-
 pPars->MaxIter = m_pSfxArray->GetMaxIter();
 pPars->bForceNewAlignment = true;
 
@@ -9755,12 +9756,9 @@ while(ThreadedIterReads(pReadsHitBlock))
 			if(pPE1ReadHit->LowHitInstances == 1 && pPE2ReadHit->LowHitInstances == 1)
 				continue;
 
-			MultiAligned += 1; 
-
-			int ChkPE1Ofs;
-			int ChkPE2Ofs;
-			bool bSkipMA = false;
-			for(ChkPE1Ofs = 0; bSkipMA != true && ChkPE1Ofs < pPE1ReadHit->LowHitInstances; ChkPE1Ofs++)
+			bMultiAligned = false;
+			bMultiAlignedAccepted = false;
+			for(ChkPE1Ofs = 0; !(bMultiAligned && !bMultiAlignedAccepted) &&  ChkPE1Ofs < pPE1ReadHit->LowHitInstances; ChkPE1Ofs++)
 				{
 				if (pPE1ReadHit->LowHitInstances == 1)
 					pPE1ReadMH = pPE1ReadHit;
@@ -9769,7 +9767,6 @@ while(ThreadedIterReads(pReadsHitBlock))
 				pPE1ReadMH->NumHits = 1;
 				for (ChkPE2Ofs = 0; ChkPE2Ofs < pPE2ReadHit->LowHitInstances; ChkPE2Ofs++)
 					{
-					
 					if (pPE2ReadHit->LowHitInstances == 1)
 						pPE2ReadMH = pPE2ReadHit;
 					else
@@ -9779,17 +9776,30 @@ while(ThreadedIterReads(pReadsHitBlock))
 					int SeqFragLen = AcceptProvPE(m_PairMinLen, m_PairMaxLen, m_bPairStrand, pPE1ReadMH, pPE2ReadMH);
 					if(SeqFragLen > 0)
 						{
-						MultiAlignedAccepted += 1; 
-						pPE1ReadHit->HitLoci = pPE1ReadMH->HitLoci;
-						pPE1ReadHit->NAR = eNARAccepted;
-						pPE1ReadHit->NumHits = 1;
-						pPE2ReadHit->HitLoci = pPE2ReadMH->HitLoci;
-						pPE2ReadHit->NAR = eNARAccepted;
-						pPE2ReadHit->NumHits = 1;
-						bSkipMA = true;
-						break;
+						if(!bMultiAligned)
+							{
+							PE1ProvHitLoci = pPE1ReadMH->HitLoci;
+							PE2ProvHitLoci = pPE2ReadMH->HitLoci;
+							bMultiAligned = true;
+							bMultiAlignedAccepted = true;
+							}
+						else
+							{
+							bMultiAlignedAccepted = false;
+							break;
+							}
 						}
 					}
+				}
+
+			if(bMultiAlignedAccepted)
+				{
+				pPE1ReadHit->HitLoci = PE1ProvHitLoci;
+				pPE1ReadHit->NAR = eNARAccepted;
+				pPE1ReadHit->NumHits = 1;
+				pPE2ReadHit->HitLoci = PE2ProvHitLoci;
+				pPE2ReadHit->NAR = eNARAccepted;
+				pPE2ReadHit->NumHits = 1;
 				}
 			}
 		}
@@ -9941,7 +9951,7 @@ while(1) {
 	AcquireSerialise();
 	AcquireLock(false);
 	if(m_bAllReadsLoaded || ((m_NumReadsLoaded - m_NumReadsProc) >= (UINT32)min(AdjReadsPerBlock,(UINT32)pRetBlock->MaxReads)) || m_ThreadCoredApproxRslt < 0)
-    	break;
+		break;
 
 	ReleaseLock(false);
 	ReleaseSerialise();
@@ -9973,7 +9983,7 @@ else
 	{
 	MaxReads2Proc = min((UINT32)pRetBlock->MaxReads,10 + (NumReadsLeft / (UINT32)m_NumThreads));
 	// assume PE processing so ensure MaxReads2Proc is a multiple of 2
- 	MaxReads2Proc &= ~0x01;
+	MaxReads2Proc &= ~0x01;
 	}
 MaxReads2Proc = min(MaxReads2Proc,NumReadsLeft);
 if(!m_NumReadsProc)
@@ -11336,7 +11346,7 @@ if(m_pReadHits == NULL)
 	if(m_pReadHits == MAP_FAILED)
 		{
 		ReleaseLock(true);
-	    ReleaseSerialise();
+		ReleaseSerialise();
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Concatenated sequences memory of %lld bytes through mmap()  failed - %s",(INT64)m_AllocdReadHitsMem,strerror(errno));
 		PE1Fasta.Close();
 		m_pReadHits = NULL;
