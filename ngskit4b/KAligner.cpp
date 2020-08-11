@@ -9756,6 +9756,10 @@ while(ThreadedIterReads(pReadsHitBlock))
 			if(pPE1ReadHit->LowHitInstances == 1 && pPE2ReadHit->LowHitInstances == 1)
 				continue;
 
+				
+			if(pPE1ReadHit->LowHitInstances >= m_MaxMLPEmatches || pPE2ReadHit->LowHitInstances >= m_MaxMLPEmatches)
+				continue;
+
 			bMultiAligned = false;
 			bMultiAlignedAccepted = false;
 			for(ChkPE1Ofs = 0; !(bMultiAligned && !bMultiAlignedAccepted) &&  ChkPE1Ofs < pPE1ReadHit->LowHitInstances; ChkPE1Ofs++)

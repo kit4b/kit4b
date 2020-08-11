@@ -3662,7 +3662,14 @@ CBenchmark::InitObsErrProfile(char* pszInProfFile)	// read from this observed al
 		m_UsedObsErrProfMem += (size_t)pCurCIGAR->Size;
 		m_NumObsErrProfs += 1;
 		}
-	gDiagnostics.DiagOut(eDLInfo, gszProcName, "InitObsErrProfile: Loaded %d observed error profiles", m_NumObsErrProfs);
+	if(m_NumObsErrProfs >= 100)
+		gDiagnostics.DiagOut(eDLInfo, gszProcName, "InitObsErrProfile: Loaded %d observed error profiles", m_NumObsErrProfs);
+	else
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "InitObsErrProfile: Loaded %d observed error profiles, require at least 100 when simulating reads with errors", m_NumObsErrProfs);
+		Reset();
+		return(eBSFerrRowCnt);
+		}
 	delete m_pObsCIGARProfFile;
 	m_pObsCIGARProfFile = NULL;
 	return(eBSFSuccess);
