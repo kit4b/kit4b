@@ -107,23 +107,23 @@ if(argerrors >= 0)
 
 /* special case: '--help' takes precedence over error reporting */
 if (help->count > 0)
-        {
+		{
 		printf("\n%s %s %s, Version %s\nOptions ---\n", gszProcName,gpszSubProcess->pszName,gpszSubProcess->pszFullDescr,kit4bversion);
-        arg_print_syntax(stdout,argtable,"\n");
-        arg_print_glossary(stdout,argtable,"  %-25s %s\n");
+		arg_print_syntax(stdout,argtable,"\n");
+		arg_print_glossary(stdout,argtable,"  %-25s %s\n");
 		printf("\nNote: Parameters can be entered into a parameter file, one parameter per line.");
 		printf("\n      To invoke this parameter file then precede its name with '@'");
 		printf("\n      e.g. %s %s @myparams.txt\n",gszProcName,gpszSubProcess->pszName);
 		printf("\nPlease report any issues regarding usage of %s at https://github.com/kit4b/issues\n\n",gszProcName);
 		return(1);
-        }
+		}
 
-    /* special case: '--version' takes precedence error reporting */
+	/* special case: '--version' takes precedence error reporting */
 if (version->count > 0)
-        {
+		{
 		printf("\n%s %s Version %s\n",gszProcName,gpszSubProcess->pszName,kit4bversion);
 		return(1);
-        }
+		}
 
 if (!argerrors)
 	{
@@ -304,7 +304,7 @@ if (!argerrors)
 	}
 else
 	{
-    printf("\n%s %s %s, Version %s\n", gszProcName,gpszSubProcess->pszName,gpszSubProcess->pszFullDescr,kit4bversion);
+	printf("\n%s %s %s, Version %s\n", gszProcName,gpszSubProcess->pszName,gpszSubProcess->pszFullDescr,kit4bversion);
 	arg_print_errors(stdout,end,gszProcName);
 	arg_print_syntax(stdout,argtable,"\nUse '-h' to view option and parameter usage\n");
 	exit(1);
@@ -574,7 +574,6 @@ int NumAcceptedEls;
 int NumUnmappedEls;
 int NumMappedChroms;
 int LineLen;
-char szLine[cMaxReadLen  * 3];				// buffer input lines
 bool bFirstAlignment;
 tsBAMalign ProvBAMalignment;
 tsBAMalign AcceptedBAMalignment;
@@ -665,7 +664,7 @@ Rslt = eBSFSuccess;
 NumMappedChroms = 0;
 time_t Then = time(NULL);
 time_t Now;
-while(Rslt >= eBSFSuccess && (LineLen = m_pInBAMfile->GetNxtSAMline(szLine)) > 0)
+while(Rslt >= eBSFSuccess && (LineLen = m_pInBAMfile->GetNxtSAMline(m_szLine)) > 0)
 	{
 	NumParsedElLines += 1;
 	if(!(NumParsedElLines % 100000) || NumParsedElLines == 1)
@@ -681,8 +680,8 @@ while(Rslt >= eBSFSuccess && (LineLen = m_pInBAMfile->GetNxtSAMline(szLine)) > 0
 			}
 		}
 
-	szLine[sizeof(szLine)-1] = '\0';
-	pTxt = TrimWhitespace(szLine);
+	m_szLine[sizeof(m_szLine)-1] = '\0';
+	pTxt = TrimWhitespace(m_szLine);
 	if(*pTxt=='\0')			// simply slough lines which are just whitespace
 		continue;
 
@@ -726,7 +725,7 @@ while(Rslt >= eBSFSuccess && (LineLen = m_pInBAMfile->GetNxtSAMline(szLine)) > 0
 	if(ProvBAMalignment.refID == -1 || (ProvBAMalignment.flag_nc >> 16) & 0x04 || ProvBAMalignment.cigar[0] == '*')	// set if unmapped or Cigar is unknown
 		{
 		NumUnmappedEls += 1;
-	    continue;
+		continue;
 		}
 
 	if(NumAcceptedEls > 0)

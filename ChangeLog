@@ -51,4 +51,5 @@ Release 1.2.6 - New module 'repassemb' added to 'ngskit4b' - retargets assemblie
 Release 1.2.7 - 'repassemb' SNP file parameter initialisation bug fix
 Release 1.2.8 - 'kalign' PE insert size multiple alignments bug fix
 Release 1.2.9 - 'benchmark' explicit check for error profile csv containing less than 100 alignment records
+Release 1.2.10- 'pangenome' has new functionality for generating windowed (10Kbp) coverage UCSC WIG format as output
 

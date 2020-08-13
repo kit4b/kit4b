@@ -25,7 +25,7 @@ const int cMaxBAMAuxTags = 20;				// max number of BAM aux tags handled
 const int cMaxBAMLineLen = (cMaxDescrIDLen + cMaxGeneNameLen + 2000 + (cMaxBAMSeqLen * 2));	// max SAM line length expected with full length query and quality sequences plus a few tags		
 
 const size_t cMaxSAIRefSeqLen = 0x20000000; // SAI indexes have an inherient limit of 512Mbp for chunk to bin associations - UGH!!!!
-                                         // so SAI generation and if alignment end loci are >= 512Mbp need to alert user and quit processing  
+										 // so SAI generation and if alignment end loci are >= 512Mbp need to alert user and quit processing  
 
 const size_t cMaxCSIRefSeqLen = 0x7fffffff; // CSI indexes have no inherient limits but impose one (2Gbp) to prevent excessive memory allocations
 
@@ -80,7 +80,7 @@ typedef struct TAG_sBAMauxData {
 		UINT8 val_type;			// Value type: if SAM then one of AifZHB, if BAM then can be one of AcCsSiIfZHB
 		int NumVals;			// number of values in value[]
 		UINT8 array_type;       // type of values in value[] - with SAM or BAM then one of cCsSiIf
- 		UINT8 value[cMaxBAMAuxValLen*sizeof(UINT32)];	// allow tag values to be at most this long 
+		UINT8 value[cMaxBAMAuxValLen*sizeof(UINT32)];	// allow tag values to be at most this long 
 } tsBAMauxData;
 
 typedef struct TAG_tBAMalign {
@@ -275,7 +275,7 @@ public:
 	int											// negative if errors parsing otherwise 0 for success
 		ParseSAM2BAMalign(char *pszSAMline,		// parsing this SAM format line
 					tsBAMalign *pBAMalign,     // into this tsBAMalign structure
-			        CBEDfile *pBEDremapper = NULL,  // with optional remapping of alignment loci from features (contigs) in this BED file
+					CBEDfile *pBEDremapper = NULL,  // with optional remapping of alignment loci from features (contigs) in this BED file
 					bool bNoRefNameChk = false);	// if true then do not validate ref seq name as having been present in SAM/BAM header
 
 	int						// number of bases returned

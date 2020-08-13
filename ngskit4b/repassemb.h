@@ -43,6 +43,8 @@ class CRepAssemb
 	char m_szTargAssemblyName[cMaxDatasetSpeciesChrom + 1]; // alignments were against this targeted assembly
 	char m_szCurChrom[cMaxDatasetSpeciesChrom+1];	  // processing SNP on this chromosome
 	uint32_t m_CurChromID;						// current chromosome identifier
+
+	int m_LAChromNameID;						// last accessed chromosome identifier from call to AddChrom()
 	int m_NumChromNames;						// number of chromosome names currently in m_szChromNames
 	int m_NxtszChromIdx;						// current concatenated (names separated by '\0') of all chromosome names in m_szChromNames
 	int m_NumChromSites;						// number of chromosomes with at least one accepted SNP site

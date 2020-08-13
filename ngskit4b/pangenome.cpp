@@ -50,7 +50,7 @@ pangenome(int argc, char **argv)
 	struct arg_int *FileLogLevel = arg_int0 ("f", "FileLogLevel", "<int>", "Level of diagnostics written to screen and logfile 0=fatal,1=errors,2=info,3=diagnostics,4=debug");
 	struct arg_file *LogFile = arg_file0 ("F", "log", "<file>", "diagnostics log file");
 
-	struct arg_int *pmode = arg_int0 ("m", "mode", "<int>", "processing mode: 0 prefix fasta descriptor, 1 filtering SAM for target prefixes");
+	struct arg_int *pmode = arg_int0 ("m", "mode", "<int>", "processing mode: 0 prefix fasta descriptor, 1 filtering SAM for target prefixes, 2 generate Wiggle");
 	struct arg_str *prefix = arg_str1("p","prefix","<str>", "prefix to apply (alphanumeric only, length limited to a max of 10 chars)");
 	struct arg_file *infile = arg_file1("i", "in", "<file>", "input file");
 	struct arg_file *outfile = arg_file1 ("o", "out", "<file>", "output file");
@@ -127,10 +127,10 @@ pangenome(int argc, char **argv)
 
 		PMode = pmode->count ? (eModePG)pmode->ival[0] : eMPGDefault;
 		if (PMode < eMPGDefault || PMode >= eMPGPlaceHolder)
-		{
+			{
 			gDiagnostics.DiagOut (eDLFatal, gszProcName, "Error: Processing mode '-m%d' specified outside of range %d..%d\n", PMode, eMPGDefault, eMPGPlaceHolder-1);
 			exit (1);
-		}
+			}
 
 
 		// show user current resource limits
@@ -146,8 +146,13 @@ pangenome(int argc, char **argv)
 		NumberOfProcessors = sysconf (_SC_NPROCESSORS_CONF);
 #endif
 
-		strcpy (szPrefix, prefix->sval[0]);
-		CUtility::TrimQuotedWhitespcExtd (szPrefix);
+		szPrefix[0] = '\0';
+
+		if(prefix->count)
+			{
+			strcpy (szPrefix, prefix->sval[0]);
+			CUtility::TrimQuotedWhitespcExtd (szPrefix);
+			}
 		if (szPrefix[0] == '\0')
 			{
 			gDiagnostics.DiagOut (eDLFatal, gszProcName, "No prefix specified");
@@ -171,7 +176,6 @@ pangenome(int argc, char **argv)
 				}	
 			pChr[-1] = Chr;
 			}
-
 
 		strcpy (szInFile, infile->filename[0]);
 		CUtility::TrimQuotedWhitespcExtd (szInFile);
@@ -201,12 +205,16 @@ pangenome(int argc, char **argv)
 			case eMPGFilterPrefix:
 				pszDescr = "Filter SAM alignments to targets with specified prefix";
 				break;
+			case eMPGWiggle:
+				pszDescr = "Generate UCSC Wiggle format file";
+				break;
 		}
 
 
 
 		gDiagnostics.DiagOutMsgOnly (eDLInfo, "Pangenome processing : '%s'", pszDescr);
-		gDiagnostics.DiagOutMsgOnly (eDLInfo, "Prefix : '%s'", szPrefix);
+		if(szPrefix[0] != '\0')
+			gDiagnostics.DiagOutMsgOnly (eDLInfo, "Prefix : '%s'", szPrefix);
 		gDiagnostics.DiagOutMsgOnly (eDLInfo, "Input file : '%s'", szInFile);
 		gDiagnostics.DiagOutMsgOnly (eDLInfo, "Output file : '%s'", szOutFile);
 
@@ -237,27 +245,114 @@ pangenome(int argc, char **argv)
 }
 
 
+CPangenome::CPangenome()
+{
+m_pInBuffer = NULL;
+m_pOutBuffer = NULL;
+m_pSAMfile=NULL;
+m_pBAMalignment =NULL;
+m_pSAMloci = NULL;
+m_hInFile = -1;			// input file handle
+m_hOutFile = -1;			// output file handle
+Reset();
+}
+
+CPangenome::~CPangenome()
+{
+if(m_hInFile != -1)
+	close(m_hInFile);
+if(m_hOutFile != -1)
+	close(m_hOutFile);
+if(m_pInBuffer != NULL)
+	delete []m_pInBuffer;
+if(m_pOutBuffer != NULL)
+	delete []m_pOutBuffer;
+if(m_pSAMfile!=NULL)
+	delete m_pSAMfile;
+
+if(m_pBAMalignment !=NULL)
+	delete m_pBAMalignment;
+
+if (m_pSAMloci != NULL)
+	{
+#ifdef _WIN32
+	free(m_pSAMloci);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
+#else
+	if (m_pSAMloci != MAP_FAILED)
+		munmap(m_pSAMloci, m_AllocdSAMlociMem);
+#endif
+	}
+}
+
+void
+CPangenome::Reset(void)	// resets class instance state back to that immediately following instantiation
+{
+if(m_hInFile != -1)
+	{
+	close(m_hInFile);
+	m_hInFile = -1;
+	}
+if(m_hOutFile != -1)
+	{
+	close(m_hOutFile);
+	m_hOutFile = -1;
+	}
+
+if(m_pInBuffer != NULL)
+	{
+	delete []m_pInBuffer;
+	m_pInBuffer = NULL;
+	}
+
+if(m_pOutBuffer != NULL)
+	{
+	delete []m_pOutBuffer;
+	m_pOutBuffer = NULL;
+	}
+
+if (m_pSAMloci != NULL)
+	{
+#ifdef _WIN32
+	free(m_pSAMloci);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
+#else
+	if (m_pSAMloci != MAP_FAILED)
+		munmap(m_pSAMloci, m_AllocdSAMlociMem);
+#endif
+	m_pSAMloci = NULL;
+	}
+
+m_InBuffIdx = 0;
+m_AllocInBuff = 0;
+
+m_OutBuffIdx = 0;	
+m_AllocOutBuff = 0;
+
+m_CurNumSAMloci = 0;
+m_AllocdSAMloci = 0;
+m_AllocdSAMlociMem = 0;
+
+m_LASeqNameID = 0;
+m_NumSeqNames = 0;
+m_NxtszSeqNameIdx = 0;
+m_szSeqNames[0] = '\0';
+m_szSeqNameIdx[0] = 0;
+}
+
 int
-PrefixFasta(char* pszPrefix,		// descriptor prefix
+CPangenome::PrefixFasta(char* pszPrefix,		// descriptor prefix
 			char* pszInFile,		// input fasta or SAM file
 			char* pszOutFile)		// output to this file
 {
 bool bNL;
-int m_hInFile;			// input file handle
-int m_hOutFile;			// output file handle
+
 int NumRead;
 int PrefixLen;
 uint32_t Idx;
 uint8_t InChr;
 uint8_t *pInChr;
 uint8_t *pOutChr;
-uint32_t m_InBuffIdx;	// currently buffering this many input bytes
-size_t m_AllocInBuff;	// m_pInBuffer allocated to hold this many input bytes
-uint8_t *m_pInBuffer;	// allocated for buffering input
 
-uint32_t m_OutBuffIdx;	// currently buffering this many output bytes
-size_t m_AllocOutBuff;	// m_pOutBuffer allocated to hold this many input bytes
-uint8_t *m_pOutBuffer;	// allocated for buffering output
+Reset();
 
 #ifdef _WIN32
 m_hInFile = open(pszInFile, O_READSEQ );		// file access is normally sequential..
@@ -267,6 +362,7 @@ m_hInFile = open64(pszInFile, O_READSEQ );		// file access is normally sequentia
 if(m_hInFile == -1)							// check if file open succeeded
 	{
 	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Unable to open input file '%s' : %s",pszInFile,strerror(errno));
+	Reset();
 	return(eBSFerrOpnFile);
 	}
 
@@ -277,22 +373,21 @@ if((m_hOutFile = open64(pszOutFile,O_WRONLY | O_CREAT,S_IREAD | S_IWRITE)) != -1
 	if(ftruncate(m_hOutFile,0)!=0)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate %s - %s",pszOutFile,strerror(errno));
-		close(m_hInFile);
+		Reset();
 		return(eBSFerrCreateFile);
 		}
 #endif
 if(m_hOutFile < 0)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate %s - %s",pszOutFile,strerror(errno));
-	close(m_hInFile);
+	Reset();
 	return(eBSFerrCreateFile);
 	}
 
 if((m_pInBuffer = new uint8_t[cAllocPGBuffInSize]) == NULL)
 	{
 	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Unable to allocate memory for input file buffering");
-	close(m_hInFile);
-	close(m_hOutFile);
+	Reset();
 	return(eBSFerrMem);
 	}
 m_AllocInBuff = cAllocPGBuffInSize;
@@ -301,8 +396,7 @@ if((m_pOutBuffer = new uint8_t[cAllocPGBuffOutSize]) == NULL)
 	{
 	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Unable to allocate memory for output file buffering");
 	delete []m_pInBuffer;
-	close(m_hInFile);
-	close(m_hOutFile);
+	Reset();
 	return(eBSFerrMem);
 	}
 m_AllocOutBuff = cAllocPGBuffOutSize;
@@ -327,10 +421,7 @@ while((NumRead = (int)read(m_hInFile, m_pInBuffer, (int)m_AllocInBuff)) > 0)
 				if(InChr >= 0x20 && InChr <= 0x7f)
 					break;
 			gDiagnostics.DiagOut (eDLFatal, gszProcName, "Expected Fasta '%s' to only contain ascii chars",pszInFile);
-			close(m_hInFile);
-			close(m_hOutFile);
-			delete []m_pInBuffer;
-			delete []m_pOutBuffer;
+			Reset();
 			return(eBSFerrFastqChr);
 			}
 		*pOutChr++ = InChr;
@@ -367,29 +458,23 @@ while((NumRead = (int)read(m_hInFile, m_pInBuffer, (int)m_AllocInBuff)) > 0)
 if(m_OutBuffIdx)
 	CUtility::SafeWrite(m_hOutFile, m_pOutBuffer, m_OutBuffIdx);	
 
-// close input file
-close(m_hInFile);
-// commit and close output file
+// commit output file
 #ifdef _WIN32
 _commit(m_hOutFile);
 #else
 fsync(m_hOutFile);
 #endif
-close(m_hOutFile);
-delete []m_pInBuffer;
-delete []m_pOutBuffer;
+Reset();
 return(eBSFSuccess);
 }
 
 
 int
-FilterSAM(char* pszPrefix,			// target prefix used for filtering from
+CPangenome::FilterSAM(char* pszPrefix,			// target prefix used for filtering from
 			char* pszInFile,		// input SAM file with matching alignments
 			char* pszOutFile)		// output to this SAM file
 {
 bool bNL;
-int m_hInFile;			// input file handle
-int m_hOutFile;			// output file handle
 int NumRead;
 uint32_t NumPrefixed;
 int PrefixLen;
@@ -397,18 +482,14 @@ uint32_t Idx;
 uint8_t InChr;
 uint8_t *pInChr;
 uint8_t *pOutChr;
-uint32_t m_InBuffIdx;	// currently buffering this many input bytes
-size_t m_AllocInBuff;	// m_pInBuffer allocated to hold this many input bytes
-uint8_t *m_pInBuffer;	// allocated for buffering input
-
-uint32_t m_OutBuffIdx;	// currently buffering this many output bytes
-size_t m_AllocOutBuff;	// m_pOutBuffer allocated to hold this many input bytes
-uint8_t *m_pOutBuffer;	// allocated for buffering output
 
 char szAssembRef[120];
 char szSeqRef[120];
 uint32_t SeqRefLen;
 char szPrefix[10];
+
+Reset();
+
 strcpy(szPrefix,pszPrefix);
 PrefixLen = (int)strlen(szPrefix);
 szPrefix[PrefixLen++] = '|';
@@ -422,6 +503,7 @@ m_hInFile = open64(pszInFile, O_READSEQ );		// file access is normally sequentia
 if(m_hInFile == -1)							// check if file open succeeded
 	{
 	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Unable to open input file '%s' : %s",pszInFile,strerror(errno));
+	Reset();
 	return(eBSFerrOpnFile);
 	}
 
@@ -432,22 +514,21 @@ if((m_hOutFile = open64(pszOutFile,O_WRONLY | O_CREAT,S_IREAD | S_IWRITE)) != -1
 	if(ftruncate(m_hOutFile,0)!=0)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate %s - %s",pszOutFile,strerror(errno));
-		close(m_hInFile);
+		Reset();
 		return(eBSFerrCreateFile);
 		}
 #endif
 if(m_hOutFile < 0)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate %s - %s",pszOutFile,strerror(errno));
-	close(m_hInFile);
+	Reset();
 	return(eBSFerrCreateFile);
 	}
 
 if((m_pInBuffer = new uint8_t[cAllocPGBuffInSize]) == NULL)
 	{
 	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Unable to allocate memory for input file buffering");
-	close(m_hInFile);
-	close(m_hOutFile);
+	Reset();
 	return(eBSFerrMem);
 	}
 m_AllocInBuff = cAllocPGBuffInSize;
@@ -455,9 +536,7 @@ m_AllocInBuff = cAllocPGBuffInSize;
 if((m_pOutBuffer = new uint8_t[cAllocPGBuffOutSize]) == NULL)
 	{
 	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Unable to allocate memory for output file buffering");
-	delete []m_pInBuffer;
-	close(m_hInFile);
-	close(m_hOutFile);
+	Reset();
 	return(eBSFerrMem);
 	}
 m_AllocOutBuff = cAllocPGBuffOutSize;
@@ -484,11 +563,8 @@ while((NumRead = (int)read(m_hInFile, m_pInBuffer, (int)m_AllocInBuff)) > 0)
 			default:
 				if(InChr >= 0x20 && InChr <= 0x7f)
 					break;
-			gDiagnostics.DiagOut (eDLFatal, gszProcName, "Expected SAM '%s' to only contain ascii chars",pszInFile);
-			close(m_hInFile);
-			close(m_hOutFile);
-			delete []m_pInBuffer;
-			delete []m_pOutBuffer;
+			gDiagnostics.DiagOut (eDLFatal, gszProcName, "Expected SAM '%s' to only contain ASCII chars",pszInFile);
+			Reset();
 			return(eBSFerrFastqChr);
 			}
 
@@ -498,10 +574,7 @@ while((NumRead = (int)read(m_hInFile, m_pInBuffer, (int)m_AllocInBuff)) > 0)
 		if(SAMreclen > 20000)
 			{
 			gDiagnostics.DiagOut (eDLFatal, gszProcName, "Expected SAM '%s' to contain individual records of less than 20K chars in length",pszInFile);
-			close(m_hInFile);
-			close(m_hOutFile);
-			delete []m_pInBuffer;
-			delete []m_pOutBuffer;
+			Reset();
 			return(eBSFerrFastqChr);
 			}
 		if(InChr == '\0' || InChr == '\n')	// have a complete SAM record?
@@ -511,57 +584,54 @@ while((NumRead = (int)read(m_hInFile, m_pInBuffer, (int)m_AllocInBuff)) > 0)
 				{
 				if(pChr[1] == 'S' && pChr[2] == 'Q')	// only retaining sequence names with specified prefix
 					{
-					if(sscanf((char *)&pChr[3],"\tAS:%s\tSN:%s\tLN:%u",szAssembRef,szSeqRef,&SeqRefLen)==3)
-						{
-						if(strnicmp(szSeqRef, szPrefix, PrefixLen))
-							{
-							SAMreclen = 0;
-							m_OutBuffIdx = RecordStartIdx;
-							pOutChr = &m_pOutBuffer[RecordStartIdx];
-							continue;
-							}
-						// sequence name has specified prefix, strip prefix off and accept this header record
-						sprintf((char *)&pChr[3],"\tAS:%s\tSN:%s\t:LN:%u\n",szAssembRef,&szSeqRef[PrefixLen],SeqRefLen);
-						m_OutBuffIdx -= (PrefixLen-1);
-						}
+if(sscanf((char*)&pChr[3], "\tAS:%s\tSN:%s\tLN:%u", szAssembRef, szSeqRef, &SeqRefLen) == 3){
+	if(strnicmp(szSeqRef, szPrefix, PrefixLen)){
+		SAMreclen = 0;
+		m_OutBuffIdx = RecordStartIdx;
+		pOutChr = &m_pOutBuffer[RecordStartIdx];
+		continue;
+	}
+// sequence name has specified prefix, strip prefix off and accept this header record
+	sprintf((char*)&pChr[3], "\tAS:%s\tSN:%s\t:LN:%u\n", szAssembRef, &szSeqRef[PrefixLen], SeqRefLen);
+	m_OutBuffIdx -= (PrefixLen - 1);
+}
 					}
-				SAMreclen = 0;
-				RecordStartIdx = m_OutBuffIdx;
-				pOutChr = &m_pOutBuffer[RecordStartIdx];
+					SAMreclen = 0;
+					RecordStartIdx = m_OutBuffIdx;
+					pOutChr = &m_pOutBuffer[RecordStartIdx];
 				}
 			else    // not a header record so assume it's an alignment
 				{
 				if(SAMreclen <= 20)			// could be a near empty record in which case slough this record
-					{
+				{
 					SAMreclen = 0;
 					m_OutBuffIdx = RecordStartIdx;
 					pOutChr = &m_pOutBuffer[RecordStartIdx];
 					continue;
-					}
+				}
 
-				// skip over 1st 2 tabs until target sequence name
+			// skip over 1st 2 tabs until target sequence name
 				pChr = &m_pOutBuffer[RecordStartIdx];
 				int NumTabs = 0;
-				do {
+				do{
 					if(*pChr++ == '\t')
 						NumTabs++;
-					}
+				}
 				while(--SAMreclen && NumTabs < 2);
 
-				if(NumTabs != 2 || strnicmp((char *)pChr, szPrefix, PrefixLen))
-					{
+				if(NumTabs != 2 || strnicmp((char*)pChr, szPrefix, PrefixLen)){
 					SAMreclen = 0;
 					m_OutBuffIdx = RecordStartIdx;
 					pOutChr = &m_pOutBuffer[RecordStartIdx];
 					continue;
-					}
+				}
 
-				// have an alignment target prefixed by szPrefix
+			// have an alignment target prefixed by szPrefix
 				NumPrefixed++;
 				// strip prefix off
-				do {
+				do{
 					*pChr++ = (InChr = pChr[PrefixLen]);
-					}
+				}
 				while(!(InChr == '\0' || InChr == '\n'));
 				m_OutBuffIdx -= PrefixLen;
 				RecordStartIdx = m_OutBuffIdx;
@@ -569,41 +639,36 @@ while((NumRead = (int)read(m_hInFile, m_pInBuffer, (int)m_AllocInBuff)) > 0)
 				SAMreclen = 0;
 				}
 			}
-		
-		if(m_OutBuffIdx == RecordStartIdx && m_OutBuffIdx >= (m_AllocOutBuff - 100000))	// assumes max length SAM record of 100K chars
+
+			if(m_OutBuffIdx == RecordStartIdx && m_OutBuffIdx >= (m_AllocOutBuff - 100000))	// assumes max length SAM record of 100K chars
 			{
-			CUtility::SafeWrite(m_hOutFile, m_pOutBuffer, m_OutBuffIdx);	
-			m_OutBuffIdx = 0;
-			RecordStartIdx = 0;
-			pOutChr = m_pOutBuffer;
-			SAMreclen = 0;
+				CUtility::SafeWrite(m_hOutFile, m_pOutBuffer, m_OutBuffIdx);
+				m_OutBuffIdx = 0;
+				RecordStartIdx = 0;
+				pOutChr = m_pOutBuffer;
+				SAMreclen = 0;
 			}
 		}
-	if(InChr == '\0')
-		{
-		*pOutChr++ = '\0';
-		RecordStartIdx++;
-		break;
+		if(InChr == '\0'){
+			*pOutChr++ = '\0';
+			RecordStartIdx++;
+			break;
 		}
 	}
 
-if(RecordStartIdx)
-	CUtility::SafeWrite(m_hOutFile, m_pOutBuffer, RecordStartIdx);	
+	if(RecordStartIdx)
+		CUtility::SafeWrite(m_hOutFile, m_pOutBuffer, RecordStartIdx);
 
-// close input file
-close(m_hInFile);
-// commit and close output file
+	// commit output file
 #ifdef _WIN32
-_commit(m_hOutFile);
+	_commit(m_hOutFile);
 #else
-fsync(m_hOutFile);
+	fsync(m_hOutFile);
 #endif
-close(m_hOutFile);
-delete []m_pInBuffer;
-delete []m_pOutBuffer;
-szPrefix[PrefixLen-1] = '\0';
-gDiagnostics.DiagOut (eDLInfo, gszProcName, "Filtered %u alignments with target prefixed by '%s' into '%s'",NumPrefixed,szPrefix,pszOutFile);
-return(eBSFSuccess);
+	Reset();
+	szPrefix[PrefixLen - 1] = '\0';
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Filtered %u alignments with target prefixed by '%s' into '%s'", NumPrefixed, szPrefix, pszOutFile);
+	return(eBSFSuccess);
 }
 
 
@@ -612,60 +677,84 @@ int Process(eModePG PMode,			// processing mode
 			char* pszInFile,		// input fasta or SAM file
 			char* pszOutFile)		// output to this file
 {
-int m_hInFile;
+int Rslt;
+CPangenome* pPangenome;
+
+if((pPangenome = new CPangenome) == NULL)
+	{
+	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Unable to instantiate instance of CPangenome");
+	return(eBSFerrObj);
+	}
+Rslt = pPangenome->Process(PMode,pszPrefix,pszInFile,pszOutFile);
+delete pPangenome;
+return(Rslt);
+}
+
+int 
+CPangenome::Process(eModePG PMode,			// processing mode
+			char* pszPrefix,		// descriptor prefix
+			char* pszInFile,		// input fasta or SAM file
+			char* pszOutFile)		// output to this file
+{
 int NumRead;
 uint8_t Chr;
 int Rslt = eBSFerrParams;
 uint8_t *m_pInBuffer;
 
-if((m_pInBuffer = new uint8_t[cAllocAsciiChkSize]) == NULL)
+if(PMode != eMPGWiggle)		// wiggles input can be BAM (binary) so can't just check for ascii format input
 	{
-	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Unable to allocate memory for input file ascii only check");
-	return(eBSFerrMem);
-	}
+	if((m_pInBuffer = new uint8_t[cAllocAsciiChkSize]) == NULL)
+		{
+		gDiagnostics.DiagOut (eDLFatal, gszProcName, "Unable to allocate memory for input file ASCII only check");
+		return(eBSFerrMem);
+		}
+	m_AllocInBuff = cAllocAsciiChkSize;
 
-// input file currently expected to be ascii only, binary format (BAM, gz'd etc., currently can't be processed)
-// read in up to 4M bytes and if any not ascii then report to user
-#ifdef _WIN32
-m_hInFile = open(pszInFile, O_READSEQ );		// file access is normally sequential..
-#else
-m_hInFile = open64(pszInFile, O_READSEQ );		// file access is normally sequential..
-#endif
-if(m_hInFile == -1)							// check if file open succeeded
-	{
-	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Unable to open input file '%s' : %s",pszInFile,strerror(errno));
-	delete []m_pInBuffer;
-	return(eBSFerrOpnFile);
-	}
-
-if((NumRead = (int)read(m_hInFile, m_pInBuffer, (int)cAllocAsciiChkSize)) <= 1000)	// expecting input file to be sized at least 1000
-	{
-	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Expected '%s to contain at least 1000 chars, read() returned %d",pszInFile,NumRead);
-	close(m_hInFile);
-	delete []m_pInBuffer;
-	return(eBSFerrOpnFile);
-	}
-close(m_hInFile);
-while(--NumRead)
-	{
-	switch(Chr = m_pInBuffer[NumRead]) {
-		case '\0':		// can accept as long as not within 1st 1000 chars, some processes place a NULL char at end of ascii file
-			if(NumRead < 1000)
-				break;
-			continue;
-		case ' ': case '\t': case '\n': case '\r':	// whitespace or line endings are accepted
-			continue;
-		default:
-			if(Chr >= 0x20 && Chr <= 0x7f)
-				continue;
-			break;
+	// input file currently expected to be ascii only, binary format (BAM, gz'd etc., currently can't be processed)
+	// read in up to 4M bytes and if any not ascii then report to user
+	#ifdef _WIN32
+	m_hInFile = open(pszInFile, O_READSEQ );		// file access is normally sequential..
+	#else
+	m_hInFile = open64(pszInFile, O_READSEQ );		// file access is normally sequential..
+	#endif
+	if(m_hInFile == -1)							// check if file open succeeded
+		{
+		gDiagnostics.DiagOut (eDLFatal, gszProcName, "Unable to open input file '%s' : %s",pszInFile,strerror(errno));
+		Reset();
+		return(eBSFerrOpnFile);
 		}
 
-	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Expected '%s' to contain only ascii chars (BAM or gz'd input files not currently supported)",pszInFile);
+	if((NumRead = (int)read(m_hInFile, m_pInBuffer, (int)cAllocAsciiChkSize)) <= 1000)	// expecting input file to be sized at least 1000
+		{
+		gDiagnostics.DiagOut (eDLFatal, gszProcName, "Expected '%s to contain at least 1000 chars, read() returned %d",pszInFile,NumRead);
+		Reset();
+		return(eBSFerrOpnFile);
+		}
+	close(m_hInFile);
+	m_hInFile = -1;
+	while(--NumRead)
+		{
+		switch(Chr = m_pInBuffer[NumRead]) {
+			case '\0':		// can accept as long as not within 1st 1000 chars, some processes place a NULL char at end of ascii file
+				if(NumRead < 1000)
+					break;
+				continue;
+			case ' ': case '\t': case '\n': case '\r':	// whitespace or line endings are accepted
+				continue;
+			default:
+				if(Chr >= 0x20 && Chr <= 0x7f)
+					continue;
+				break;
+			}
+
+		gDiagnostics.DiagOut (eDLFatal, gszProcName, "Expected '%s' to contain only ascii chars (BAM or gz'd input files not currently supported)",pszInFile);
+		Reset();
+		return(eBSFerrOpnFile);
+		}
 	delete []m_pInBuffer;
-	return(eBSFerrOpnFile);
+	m_pInBuffer = NULL;
+	m_AllocInBuff = 0;
 	}
-delete []m_pInBuffer;
 
 switch(PMode){
 	case eMPGDefault:				// prefixing fasta descriptors
@@ -678,8 +767,344 @@ switch(PMode){
 		Rslt = FilterSAM(pszPrefix,		// target prefix used for filtering from
 						pszInFile,		// input SAM file with matching alignments
 						pszOutFile);	// output to this SAM file
-	}
+		break;
 
+	case eMPGWiggle:			// generate UCSC Wiggle format file
+		Rslt = GenWindowedWiggle(pszPrefix,		// target prefix used for filtering from
+			cDfltWiggleWindowSize,	// Wiggle score is number of alignments over this sized window
+			pszInFile,		// alignments are in this SAM/BAM file 
+			pszOutFile);		// write out Wiggle to this file
+		break;
+	}
 
 return(Rslt);
 }
+
+
+// generate UCSC Wiggle file from SAM/BAM alignment input file
+// wiggle file contains smoothed alignment density along each alignment targeted sequence
+int	
+CPangenome::GenWindowedWiggle(char *pszName,	// wiggle track name
+			uint32_t WindowSize,	// Wiggle score is number of alignments over this sized window
+			char* pszInFile,		// alignments are in this SAM/BAM file 
+			char* pszOutFile)		// write out Wiggle to this file
+{
+teBSFrsltCodes Rslt;
+
+int LineLen;
+char *pszTxt;
+
+int TargID;
+tsSAMloci *pSAMloci;
+
+// open SAM for reading
+if(pszInFile == NULL || *pszInFile == '\0')
+	return(eBSFerrParams);
+
+if((m_pSAMfile = new CSAMfile) == NULL)
+	{
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenWindowedWiggle: Unable to instantiate class CSAMfile");
+	return(eBSFerrInternal);
+	}
+
+if((m_pBAMalignment = new tsBAMalign) == NULL)
+	{
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenWindowedWiggle: Unable to instantiate tsBAMalign");
+	Reset();
+	return(eBSFerrInternal);
+	}
+
+if((m_pInBuffer = new uint8_t[cMaxReadLen * 3]) == NULL)
+	{
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenWindowedWiggle: Unable to allocate buffers");
+	Reset();
+	return(eBSFerrMem);
+	}
+m_AllocInBuff = cMaxReadLen * 3;
+
+if((m_pOutBuffer = new uint8_t[cAllocPGBuffOutSize]) == NULL)
+	{
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenWindowedWiggle: Unable to allocate buffers");
+	Reset();
+	return(eBSFerrMem);
+	}
+m_AllocOutBuff = cAllocPGBuffOutSize;
+
+#ifdef _WIN32
+m_hOutFile = open(pszOutFile,( O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC),(_S_IREAD | _S_IWRITE));
+#else
+if((m_hOutFile = open64(pszOutFile,O_WRONLY | O_CREAT,S_IREAD | S_IWRITE)) != -1)
+	if(ftruncate(m_hOutFile,0)!=0)
+		{
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate %s - %s",pszOutFile,strerror(errno));
+		Reset();
+		return(eBSFerrCreateFile);
+		}
+#endif
+if(m_hOutFile < 0)
+	{
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate %s - %s",pszOutFile,strerror(errno));
+	Reset();
+	return(eBSFerrCreateFile);
+	}
+
+m_OutBuffIdx = sprintf((char *)m_pOutBuffer,"name=\"Coverage %s\" type=wiggle_0\n",pszName);
+
+m_AllocdSAMlociMem = (size_t)cAllocNumSAMloci * sizeof(tsSAMloci);
+#ifdef _WIN32
+m_pSAMloci = (tsSAMloci*)malloc(m_AllocdSAMlociMem);
+if (m_pSAMloci == NULL)
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenWindowedWiggle: Memory allocation of %lld bytes failed", (INT64)m_AllocdSAMlociMem);
+	m_AllocdSAMlociMem = 0;
+	Reset();
+	return(eBSFerrMem);
+	}
+#else
+// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
+m_pSAMloci = (tsSAMloci*)mmap(NULL, m_AllocdSAMlociMem, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+if (m_pSAMloci == MAP_FAILED)
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenWindowedWiggle: Memory allocation of %lld bytes through mmap()  failed", (INT64)m_AllocdSAMlociMem, strerror(errno));
+	m_pSAMloci = NULL;
+	m_AllocdSAMlociMem = 0;
+	Reset();
+	return(eBSFerrMem);
+	}
+#endif
+m_AllocdSAMloci = cAllocNumSAMloci;
+
+if((Rslt = (teBSFrsltCodes)m_pSAMfile->Open(pszInFile)) != eBSFSuccess)
+	{
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenWindowedWiggle: Unable to open SAM/BAM format file %s",pszInFile);
+	Reset();
+	return((teBSFrsltCodes)Rslt);
+	}
+
+uint32_t NumMissingFeatures = 0;
+size_t NumAlignmentsProc = 0;
+size_t NumAcceptedAlignments = 0;
+uint32_t NumUnmapped = 0;
+
+time_t Then = time(NULL);
+time_t Now;
+while(Rslt >= eBSFSuccess && (LineLen = m_pSAMfile->GetNxtSAMline((char *)m_pInBuffer)) > 0)
+	{
+	m_pInBuffer[LineLen] = '\0';
+	pszTxt = CUtility::TrimWhitespc((char *)m_pInBuffer);
+	if (*pszTxt == '\0')			// simply slough lines which are just whitespace
+		continue;
+	if (*pszTxt == '@')				// only interested in lines with putative alignments
+		continue;
+
+	NumAlignmentsProc += 1;
+	if (!(NumAlignmentsProc % 100000) || NumAlignmentsProc == 1)
+		{
+		Now = time(NULL);
+		if ((Now - Then) >= 60)
+			{
+			gDiagnostics.DiagOut(eDLInfo, gszProcName, "Accepted %lld SAM/BAM alignments", NumAcceptedAlignments);
+			Then += 60;
+			}
+		}
+
+	// primary interest is in the reference chrom name, startloci, length
+	if ((Rslt = (teBSFrsltCodes)m_pSAMfile->ParseSAM2BAMalign(pszTxt, m_pBAMalignment, NULL,true)) < eBSFSuccess)
+		{
+		if (Rslt == eBSFerrFeature)	// not too worried if aligned to feature is missing as some SAMs are missing header features
+			{
+			NumMissingFeatures++;
+			Rslt = eBSFSuccess;
+			continue;
+			}
+		break;
+		}
+
+	// check if read has been mapped, if not then slough ...
+	if (m_pBAMalignment->refID == -1 || (m_pBAMalignment->flag_nc >> 16) & 0x04)
+		{
+		NumUnmapped++;
+		continue;
+		}
+
+	// can now access the alignment loci info
+	// hard or soft clipping is currently of no interest as using a large sliding window and counting loci in that window
+	if(m_CurNumSAMloci > m_AllocdSAMloci) // needing to realloc?
+		{
+		size_t memreq = m_AllocdSAMlociMem + ((size_t)cAllocNumSAMloci * sizeof(tsSAMloci));
+		uint8_t* pTmp;
+#ifdef _WIN32
+		pTmp = (uint8_t*)realloc(pSAMloci, memreq);
+#else
+		pTmp = (uint8_t*)mremap(pSAMloci, m_AllocdSAMlociMem, memreq, MREMAP_MAYMOVE);
+		if (pTmp == MAP_FAILED)
+			pTmp = NULL;
+#endif
+		if (pTmp == NULL)
+			{
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenWindowedWiggle: Memory re-allocation to %lld bytes - %s", (INT64)(memreq), strerror(errno));
+			Reset();
+			return(eBSFerrMem);
+			}
+		m_pSAMloci = (tsSAMloci *)pTmp;
+		m_AllocdSAMlociMem = memreq;
+		m_AllocdSAMloci += (size_t)cAllocNumSAMloci;
+		}
+	pSAMloci = &m_pSAMloci[m_CurNumSAMloci++];
+	TargID = AddTargSeqName(m_pBAMalignment->szRefSeqName);
+	pSAMloci->TargID = TargID;
+	pSAMloci->TargLoci = m_pBAMalignment->pos;
+	pSAMloci->Cnt = 1;
+	NumAcceptedAlignments++;
+	}
+
+// sort SAMloci by TargID.TargLoci ascending
+if(m_CurNumSAMloci > 1)
+	qsort(m_pSAMloci, m_CurNumSAMloci, sizeof(tsSAMloci), SortSAMTargLoci);
+
+uint32_t WindowCnts;
+uint32_t NumUniqueLoci;
+size_t LociIdx;
+tsSAMloci *pUniqueSamLoci;
+tsSAMloci *pWinStartSAMloci;
+
+// could be multiple alignments to same loci so reduce such that each loci is unique with a count of alignments to that loci
+pSAMloci = m_pSAMloci;
+pUniqueSamLoci = pSAMloci++;
+NumUniqueLoci = 1;
+for(LociIdx = 1; LociIdx < m_CurNumSAMloci; LociIdx++, pSAMloci++)
+	{
+	if(pSAMloci->TargID == pUniqueSamLoci->TargID && pSAMloci->TargLoci == pUniqueSamLoci->TargLoci)
+		pUniqueSamLoci->Cnt++;
+	else
+		{
+		pUniqueSamLoci++;
+		*pUniqueSamLoci = *pSAMloci;
+		NumUniqueLoci++;
+		}
+	}
+m_CurNumSAMloci = NumUniqueLoci;
+
+// iterate over all loci and accumulate counts within a sliding window
+
+
+WindowCnts = 0;
+pSAMloci = m_pSAMloci;
+pWinStartSAMloci = pSAMloci;
+for(LociIdx = 0; LociIdx < m_CurNumSAMloci; LociIdx++,pSAMloci++)
+	{
+	if(pSAMloci->TargID == pWinStartSAMloci->TargID && (pSAMloci->TargLoci - pWinStartSAMloci->TargLoci) <= WindowSize)
+		WindowCnts += pSAMloci->Cnt;
+	else
+		{
+		// output Wiggle which will be for pWinStartSAMloci up to pUniqueSamLoci having WindowCnts
+		GenSmoothedCoverage(pWinStartSAMloci,pUniqueSamLoci,WindowCnts);
+		WindowCnts = 0;
+		pWinStartSAMloci = pSAMloci;
+		}
+	pUniqueSamLoci = pSAMloci;		// recording last loci known to be within WindowSize 
+	}
+
+if(WindowCnts)
+	{
+	// output Wiggle which will be for pWinStartSAMloci up to pUniqueSamLoci having WindowCnts
+	GenSmoothedCoverage(pWinStartSAMloci,pUniqueSamLoci,WindowCnts);
+	}
+
+if(m_OutBuffIdx)
+	{
+	CUtility::SafeWrite(m_hOutFile,m_pOutBuffer,m_OutBuffIdx);
+	m_OutBuffIdx = 0;
+	}
+	// commit output file
+#ifdef _WIN32
+_commit(m_hOutFile);
+#else
+fsync(m_hOutFile);
+#endif
+Reset();
+return(eBSFSuccess);
+}
+
+int
+CPangenome::GenSmoothedCoverage(tsSAMloci *pStartSAMloci,	// coverage starts from this loci inclusive
+				tsSAMloci *pEndSAMloci,						// coverage ends at this loci inclusive
+				uint32_t WindowCnts)						// total number of coverage counts
+{
+uint32_t WinLen;
+uint32_t Score;
+WinLen = 1 + pEndSAMloci->TargLoci - pStartSAMloci->TargLoci; // inclusive!
+Score = WindowCnts;
+if((m_OutBuffIdx + 1000) > m_AllocOutBuff)
+	{
+	CUtility::SafeWrite(m_hOutFile,m_pOutBuffer,m_OutBuffIdx);
+	m_OutBuffIdx = 0;
+	}
+m_OutBuffIdx += sprintf((char *)&m_pOutBuffer[m_OutBuffIdx],"variableStep chrom=%s span=%d\n%d %d\n",LocateTargSeqName(pStartSAMloci->TargID),WinLen,pStartSAMloci->TargLoci,Score);
+
+return((int)WinLen);
+}
+
+int		// returned sequence name identifier, < 1 if unable to accept this chromosome name
+CPangenome::AddTargSeqName(char* pszSeqName) // associate unique identifier with this sequence name
+{
+int SeqNameIdx;
+int SeqNameLen;
+char *pszLAname;
+
+// with any luck the sequence name will be same as the last accessed
+if((pszLAname = LocateTargSeqName(m_LASeqNameID)) != NULL)
+	if(!stricmp(pszSeqName,pszLAname))
+		return(m_LASeqNameID);
+
+
+// iterate over all known sequence names in case this name to add is a duplicate
+for(SeqNameIdx = 0; SeqNameIdx < m_NumSeqNames; SeqNameIdx++)
+	if(!stricmp(pszSeqName, &m_szSeqNames[m_szSeqNameIdx[SeqNameIdx]]))
+		{
+		m_LASeqNameID = SeqNameIdx + 1;
+		return(m_LASeqNameID);
+		}
+
+// sequence name is not a duplicate
+SeqNameLen = (int)strlen(pszSeqName);
+if((m_NxtszSeqNameIdx + SeqNameLen + 1) > (int)sizeof(m_szSeqNames))
+	return(eBSFerrMaxEntries);
+if(m_NumSeqNames == cMaxSeqNames)
+	return(eBSFerrMaxEntries);
+
+m_szSeqNameIdx[m_NumSeqNames] = m_NxtszSeqNameIdx;
+strcpy(&m_szSeqNames[m_NxtszSeqNameIdx], pszSeqName);
+m_NxtszSeqNameIdx += SeqNameLen + 1;
+m_LASeqNameID = ++m_NumSeqNames;
+return(m_NumSeqNames);
+}
+
+char*							// returned sequence name
+CPangenome::LocateTargSeqName(int SeqNameID)	// identifier returned by call to AddTargSeqName
+{
+if(SeqNameID < 1 || SeqNameID > m_NumSeqNames)
+	return(NULL);
+return(&m_szSeqNames[m_szSeqNameIdx[SeqNameID-1]]);
+}
+
+// SortSAMTargLoci
+// Sort m_pSAMloci by ascending Targ.Loci
+int
+CPangenome::SortSAMTargLoci(const void* arg1, const void* arg2)
+{
+tsSAMloci* pEl1 = (tsSAMloci*)arg1;
+tsSAMloci* pEl2 = (tsSAMloci*)arg2;
+
+if(pEl1->TargID < pEl2->TargID)
+	return(-1);
+if(pEl1->TargID > pEl2->TargID)
+	return(1);
+
+if(pEl1->TargLoci < pEl2->TargLoci)
+	return(-1);
+if(pEl1->TargLoci > pEl2->TargLoci)
+	return(1);
+return(0);
+}
+

@@ -326,6 +326,7 @@ m_SeqBuffIdx = 0;
 m_AllocSeqBuffMem = 0;
 
 m_szTargAssemblyName[0] = '\0';
+m_LAChromNameID = 0;
 m_NumChromNames = 0;
 m_NxtszChromIdx=0;
 m_szChromNames[0] = '\0';
@@ -795,11 +796,20 @@ CRepAssemb::AddChrom(char* pszChrom) // associate unique identifier with this ch
 {
 int ChromNameIdx;
 int ChromNameLen;
+char *pszLAname;
+
+// with any luck the sequence name will be same as the last accessed
+if((pszLAname = LocateChrom(m_LAChromNameID)) != NULL)
+	if(!stricmp(pszChrom,pszLAname))
+		return(m_LAChromNameID);
 
 // iterate over all known chroms in case this chrom to add is a duplicate
 for(ChromNameIdx = 0; ChromNameIdx < m_NumChromNames; ChromNameIdx++)
 	if(!stricmp(pszChrom, &m_szChromNames[m_szChromIdx[ChromNameIdx]]))
-		return(ChromNameIdx + 1);
+		{
+		m_LAChromNameID = ChromNameIdx + 1;
+		return(m_LAChromNameID);
+		}
 
 // chrom is not a duplicate
 ChromNameLen = (int)strlen(pszChrom);
@@ -811,7 +821,8 @@ if(m_NumChromNames == cMaxSNPChromNames)
 m_szChromIdx[m_NumChromNames] = m_NxtszChromIdx;
 strcpy(&m_szChromNames[m_NxtszChromIdx], pszChrom);
 m_NxtszChromIdx += ChromNameLen + 1;
-return(++m_NumChromNames);
+m_LAChromNameID = m_NumChromNames + 1;
+return(m_LAChromNameID);
 }
 
 char* 
@@ -904,7 +915,7 @@ while(SeqLen-- && NumSNPBases != pChromSites->NumSNPSites)
 return(NumSNPBases);
 }
 
-// SortChromIDLoci
+// SortSNPChromIDLoci
 // Sort m_pSNPSites by ascending ChromID.Loci
 int
 CRepAssemb::SortSNPChromLoci(const void* arg1, const void* arg2)

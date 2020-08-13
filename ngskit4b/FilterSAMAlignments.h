@@ -31,6 +31,8 @@ class CFilterSAMAlignments
 	CSAMfile *m_pInBAMfile;				// SAM/BAM input file
 	CSAMfile *m_pOutBAMfile;			// SAM/BAM output file
 
+	char m_szLine[cMaxReadLen  * 3];	// used to buffer input lines
+
 	int m_NumIncludeChroms;			// number of chromosomes explicitly defined to be included
 	char **m_ppszIncludeChroms;		// ptr to array of reg expressions defining chroms to include
 	int m_NumExcludeChroms;			// number of chromosomes explicitly defined to be excluded

@@ -286,8 +286,8 @@ if(!bCreate)
 	m_hFile = open64(pszBioBed, O_READSEQ ); // file access is normally sequential..
 else
 	{
-     if((m_hFile = open64(pszBioBed,O_RDWR | O_CREAT,S_IREAD | S_IWRITE))!=-1)
-          if(ftruncate(m_hFile,0)!=0)
+	 if((m_hFile = open64(pszBioBed,O_RDWR | O_CREAT,S_IREAD | S_IWRITE))!=-1)
+		  if(ftruncate(m_hFile,0)!=0)
 			{
 			AddErrMsg("CBEDfile::Open","Unable to truncate %s - %s",pszBioBed,strerror(errno));
 			Rslt = bCreate ? eBSFerrCreateFile : eBSFerrOpnFile;
@@ -826,7 +826,7 @@ while(fgets(m_szLineBuff,sizeof(m_szLineBuff)-1,pBEDStream)!= NULL)
 			bCSV = true;
 		}
 	if(bCSV)	// failed on tabs as field separator, now expecting ',' as field separator
-	    Cnt = sscanf(pTxt," %140s , %d , %d , %140s , %d , %c , %n",
+		Cnt = sscanf(pTxt," %140s , %d , %d , %140s , %d , %c , %n",
 			szChrom,&chromStart,&chromEnd,szName,&Score,&Strand,&SupInfoStart);
 	if(Cnt < 3)		// must be rubbish or perhaps a header on this line
 		{
@@ -985,7 +985,7 @@ while(fgets(szLineBuff,sizeof(szLineBuff),pBEDStream)!= NULL)
 		if(Chr == '\"')
 			pChr[-1] = ' ';
 		}
-    Cnt = sscanf(pTxt," %d , %50[^ ,] , %50[^ ,] , %d , %d , %d , %d, %50[^ ,] , %d , %50[^ ,] , %d , %c ,",
+	Cnt = sscanf(pTxt," %d , %50[^ ,] , %50[^ ,] , %d , %d , %d , %d, %50[^ ,] , %d , %50[^ ,] , %d , %c ,",
 			&FeatNum,szRefSpecies,szRelSpecies,&TotLen,&LeftFlankLen,&CoreLen,&RightFlankLen,szRefChrom,&RefChromOfs,szRelChrom,&RelChromOfs,&Strand);
 	if(Cnt != 12)	// slough lines which do not contain expected format
 		continue;
@@ -1057,7 +1057,7 @@ while(fgets(szLineBuff,sizeof(szLineBuff),pBEDStream)!= NULL)
 			pChr[-1] = ' ';
 		}
 	// first try the extended format in which there is an additional field containing the end offset
-    if(!bFormatKnown || bFormatExtd)
+	if(!bFormatKnown || bFormatExtd)
 		{
 		Cnt = sscanf(pTxt," %d , %50[^ ,] , %50[^ ,] ,  %50[^ ,] , %d , %d , %d",
 			&FeatNum,szGroup,szRefSpecies,szRefChrom,&RefChromOfs,&RefChromEndOfs,&CoreLen);
@@ -1446,7 +1446,7 @@ if(m_pChromNames == NULL ||
 			}
 		m_AllocChromNamesSize = ReallocTo;
 		m_FileHdr.ChromNamesSize = 0;
-	    memset(m_pChromNames,0,sizeof(tsBEDchromname));
+		memset(m_pChromNames,0,sizeof(tsBEDchromname));
 		}
 	else
 		{
@@ -1513,7 +1513,7 @@ switch(m_FileHdr.FeatType) {
 		GeneStructure.thickStart = thickStart - Start;
 		GeneStructure.thickEnd   = thickEnd - Start;
 		GeneStructure.Size = offsetof(tsGeneStructure,ExonStartEnds) + (blockCount * sizeof(int) * 2);
-        SuppInfoLen = GeneStructure.Size;
+		SuppInfoLen = GeneStructure.Size;
 		break;
 	default:
 		break;
@@ -2012,30 +2012,30 @@ if(Rslt == eBSFSuccess)
 #pragma warning(push)
 #pragma warning(disable: 4311)
 if(Rslt == eBSFSuccess)
-        {
-        pOfs = (int *)m_ppFeatureNames;
-        pOfs += m_FileHdr.NumFeatures-1;
-        for(Idx = m_FileHdr.NumFeatures-1;Idx >= 0; Idx--,pOfs--)
+		{
+		pOfs = (int *)m_ppFeatureNames;
+		pOfs += m_FileHdr.NumFeatures-1;
+		for(Idx = m_FileHdr.NumFeatures-1;Idx >= 0; Idx--,pOfs--)
 			{
 			if(m_bIsBigEndian)
 				*pOfs = SwapUI32Endians(*pOfs);
-            m_ppFeatureNames[Idx] = (tsBEDfeature *)((char *)m_pFeatures + *pOfs);
+			m_ppFeatureNames[Idx] = (tsBEDfeature *)((char *)m_pFeatures + *pOfs);
 			}
-        }
+		}
 
 if(Rslt == eBSFSuccess)
-        Rslt = ReadDisk(m_FileHdr.FeatureChromStartsOfs,m_FileHdr.NumFeatures * sizeof(int),m_ppFeatureChromStarts);
+		Rslt = ReadDisk(m_FileHdr.FeatureChromStartsOfs,m_FileHdr.NumFeatures * sizeof(int),m_ppFeatureChromStarts);
 
 if(Rslt == eBSFSuccess)
-        {
-        pOfs = (int *)m_ppFeatureChromStarts;
-        pOfs += m_FileHdr.NumFeatures-1;
-        for(Idx = m_FileHdr.NumFeatures-1;Idx >= 0; Idx--, pOfs--)
+		{
+		pOfs = (int *)m_ppFeatureChromStarts;
+		pOfs += m_FileHdr.NumFeatures-1;
+		for(Idx = m_FileHdr.NumFeatures-1;Idx >= 0; Idx--, pOfs--)
 			{
 			if(m_bIsBigEndian)
 				*pOfs = SwapUI32Endians(*pOfs);
-            m_ppFeatureChromStarts[Idx] = (tsBEDfeature *)((char *)m_pFeatures + *pOfs);
-	        }
+			m_ppFeatureChromStarts[Idx] = (tsBEDfeature *)((char *)m_pFeatures + *pOfs);
+			}
 		}
 #pragma warning(pop)
 if(bCloseFile)
@@ -2128,7 +2128,7 @@ return(eBSFerrFeature);
 int 
 CBEDfile::LocateFeatureBefore(int ChromID,	// feature is on this chromosome
 					 int ChromOfs,			// feature ends on or immediately before this offset
- 					 int FiltInFlags,		// filter out any features which do not have at least one of the specified filter flags set
+					 int FiltInFlags,		// filter out any features which do not have at least one of the specified filter flags set
 					 int FiltOutFlags)		// filter out any features which have at least one of the specified filter flags set
 {
 tsBEDchromname *pChrom;
@@ -2176,8 +2176,8 @@ return(pFeature->NameInst);
 
 int 
 CBEDfile::GetFirstFeatureID(int ChromID,			// first feature is on this chromosome
-    				 int FiltInFlags,	// filter out any features which do not have at least one of the specified filter flags set
-			 		int FiltOutFlags)  // filter out any features which have at least one of the specified filter flags set
+					 int FiltInFlags,	// filter out any features which do not have at least one of the specified filter flags set
+					int FiltOutFlags)  // filter out any features which have at least one of the specified filter flags set
 {
 tsBEDchromname *pChrom;
 int Idx;
@@ -2212,8 +2212,8 @@ return(FirstFeatID);
 
 int 
 CBEDfile::GetLastFeatureID(int ChromID,				// last feature is on this chromosome
-    				 int FiltInFlags,				// filter out any features which do not have at least one of the specified filter flags set
-			 		int FiltOutFlags)				// filter out any features which have at least one of the specified filter flags set
+					 int FiltInFlags,				// filter out any features which do not have at least one of the specified filter flags set
+					int FiltOutFlags)				// filter out any features which have at least one of the specified filter flags set
 {
 tsBEDchromname *pChrom;
 tsBEDfeature *pProbe;
@@ -2249,7 +2249,7 @@ return(LastFeatID);
 int 
 CBEDfile::LocateFeatureAfter(int ChromID,	// locate feature is on this chromosome
 					 int ChromOfs,			// feature starts on or immediately after this offset
- 					 int FiltInFlags,		// filter out any features which do not have at least one of the specified filter flags set
+					 int FiltInFlags,		// filter out any features which do not have at least one of the specified filter flags set
 					 int FiltOutFlags)	// filter out any features which have at least one of the specified filter flags set
 {
 if(!m_bFeaturesAvail || !m_FileHdr.NumFeatures)
@@ -2456,7 +2456,7 @@ CBEDfile::GetFeature(int FeatureID,			// feature to return detail for
 					 char *pszChrom,		// where to return chromosome
 					 int *pStart,			// where to return feature start on chromosome (0..n) 
 					 int *pEnd,				// where to return feature end on chromosome
- 					 int *pScore,			// where to return score
+					 int *pScore,			// where to return score
 					 char *pStrand,			// where to return strand
 					 int MaxSuppInfoLen,	// how much memory has been allocated to pSuppInfo (must be sufficent to contain supp info else pSuppInfo treated as if NULL)
 					 void *pSuppInfo)		// where to return any supplementary information
@@ -2506,7 +2506,7 @@ return(m_ppFeatureChromStarts[FeatureID-1]->ChromID);
 // Maps feature or transcript relative ofs to chrom loci, assumes always that the RelOfs is on the '+' strand and returns '+' strand loci 
 int										  
 CBEDfile::MapTransOfs2Loci(int FeatureID,	 // identifies which feature/transcript
-		            int RelOfs,				 // relative offset from start of feature
+					int RelOfs,				 // relative offset from start of feature
 					char *pStrand,			 // feature is on this strand
 					tChromID *pChromID,		 // returned: feature is on this chrom
 					int *pLoci)			     // returned: feature relative offset is at this chrom loci
@@ -2715,8 +2715,8 @@ int										 // returned feature identifier
 CBEDfile::LocateFeatureIDonChrom(int ChromID, // feature is on which chromosome
 							 int OverLapsOfs, // a point on the chromosome on which returned feature is to overlap by at least one base
 							 int Ith,		  // Ith instance to overlap (1..n)
- 							 int FiltInFlags, // filter out any features which do not have at least one of the specified filter flags set
-  							 int FiltOutFlags) // filter out any features which have at least one of the specified filter flags set
+							 int FiltInFlags, // filter out any features which do not have at least one of the specified filter flags set
+							 int FiltOutFlags) // filter out any features which have at least one of the specified filter flags set
 {
 int StartIdx;
 int EndIdx;
@@ -2783,8 +2783,8 @@ CBEDfile::LocateFeatureIDinRangeOnChrom(int ChromID, // feature is on which chro
 							 int StartOfs,       // feature must end on or after Start
 							 int EndOfs,		  // and start on or before End 
 							 int Ith,		  // Ith instance to return (1..n)
- 							 int FiltInFlags, // filter out any features which do not have at least one of the specified filter flags set
-  							 int FiltOutFlags) // filter out any features which have at least one of the specified filter flags set
+							 int FiltInFlags, // filter out any features which do not have at least one of the specified filter flags set
+							 int FiltOutFlags) // filter out any features which have at least one of the specified filter flags set
 {
 int StartIdx;
 int EndIdx;
@@ -3620,7 +3620,7 @@ if(StartOfs <= pProbe->Start)
 else
 	RelStartOfs = StartOfs - pProbe->Start;
 if(EndOfs > pProbe->End)
-    RelEndOfs = pProbe->End - pProbe->Start;
+	RelEndOfs = pProbe->End - pProbe->Start;
 else
 	RelEndOfs = EndOfs - pProbe->Start;
 
@@ -3753,7 +3753,7 @@ if(StartOfs <= pProbe->Start)
 else
 	RelStartOfs = StartOfs - pProbe->Start;
 if(EndOfs > pProbe->End)
-    RelEndOfs = pProbe->End - pProbe->Start;
+	RelEndOfs = pProbe->End - pProbe->Start;
 else
 	RelEndOfs = EndOfs - pProbe->Start;
 

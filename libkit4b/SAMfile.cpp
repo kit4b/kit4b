@@ -899,7 +899,7 @@ if(pszSAMline == NULL || pszSAMline[0] == '\0')
 
 // expecting to parse as "%s\t%d\t%s\t%d\t%d\t%s\t%s\t%d\t%d\t", szDescriptor, Flags, m_szSAMTargChromName, StartLoci+1,MAPQ,szCigar,pszRNext,PNext,TLen);
 NumEls = sscanf(pszSAMline,"%s\t%d\t%s\t%d\t%d\t%s\t%s\t%d\t%d\t%n",
-         szDescriptor, &Flags, szChrom, &StartLoci,&MAPQ,szCigar,szRNext,&PNext,&TLen,&LineRemainIdx);
+		 szDescriptor, &Flags, szChrom, &StartLoci,&MAPQ,szCigar,szRNext,&PNext,&TLen,&LineRemainIdx);
 if(NumEls != 9)
 	return(eBSFerrParse);
 
