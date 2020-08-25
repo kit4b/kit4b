@@ -361,6 +361,7 @@ if (!argerrors)
 		{
 		strncpy(szLogFile,LogFile->filename[0],_MAX_PATH);
 		szLogFile[_MAX_PATH-1] = '\0';
+		CUtility::TrimQuotedWhitespcExtd(szLogFile);
 		}
 	else
 		{
@@ -614,6 +615,7 @@ if (!argerrors)
 			}
 		strncpy(szStatsFile,statsfile->filename[0],_MAX_PATH);
 		szStatsFile[_MAX_PATH-1] = '\0';
+		CUtility::TrimQuotedWhitespcExtd(szStatsFile);
 		}
 	else
 		{
@@ -886,7 +888,9 @@ if (!argerrors)
 		}
 
 	strcpy(szTargFile,sfxfile->filename[0]);
+	CUtility::TrimQuotedWhitespcExtd(szTargFile);
 	strcpy(szRsltsFile,outfile->filename[0]);
+	CUtility::TrimQuotedWhitespcExtd(szRsltsFile);
 
 	SAMFormat = etSAMFformat;
 	if(FMode >= eFMsam)
@@ -915,12 +919,33 @@ if (!argerrors)
 	QValue = 0.0;
 	szSNPFile[0] = '\0';
 	szSNPCentroidFile[0] = '\0';
+
 	MinSNPreads = minsnpreads->count ? minsnpreads->ival[0] : 0;
 	if(MinSNPreads != 0 && (MinSNPreads < cMinSNPreads || MinSNPreads > cMaxSNPreads))
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Minimum read coverage at any loci '-p%d' must be in range %d..%d\n",MinSNPreads,cMinSNPreads,cMaxSNPreads);
 		exit(1);
 		}
+
+	if(snpfile->count)
+		{
+		strncpy(szSNPFile,snpfile->filename[0],_MAX_PATH);
+		szSNPFile[_MAX_PATH-1] = '\0';
+		CUtility::TrimQuotedWhitespcExtd(szSNPFile);
+		if(MinSNPreads == 0)
+			MinSNPreads = cDfltSNPreads;
+		}
+	else
+		{
+		if(MinSNPreads)
+			{
+			strcpy(szSNPFile,szRsltsFile);
+			strcat(szSNPFile,".snp");
+			}
+		}
+	
+
+
 	if(MinSNPreads > 0)
 		{
 		QValue = qvalue->count ? qvalue->dval[0] : 0.0;
@@ -960,16 +985,7 @@ if (!argerrors)
 		exit(1);
 		}
 
-	if(snpfile->count)
-		{
-		strncpy(szSNPFile,snpfile->filename[0],_MAX_PATH);
-		szSNPFile[_MAX_PATH-1] = '\0';
-		}
-	else
-		{
-		strcpy(szSNPFile,szRsltsFile);
-		strcat(szSNPFile,".snp");
-		}
+
 
 	MarkerLen = markerlen->count ? markerlen->ival[0] : 0;
 	if(MarkerLen != 0 && MarkerLen < cMinMarkerLen || MarkerLen > cMaxMarkerLen)
@@ -980,6 +996,7 @@ if (!argerrors)
 	if(MarkerLen)
 		{
 		strcpy(szMarkerFile,szSNPFile);
+		CUtility::TrimQuotedWhitespcExtd(szMarkerFile);
 		strcat(szMarkerFile,".markers");
 		}
 	else
@@ -1001,6 +1018,7 @@ if (!argerrors)
 		{
 		strncpy(szSNPCentroidFile,centroidfile->filename[0],_MAX_PATH);
 		szSNPCentroidFile[_MAX_PATH-1] = '\0';
+		CUtility::TrimQuotedWhitespcExtd(szSNPCentroidFile);
 		}
 	else
 		szSNPCentroidFile[0] = '\0';
@@ -1029,7 +1047,7 @@ if (!argerrors)
 		LenChromList = (int)strlen(IncludeChroms->sval[Idx]);
 		pszIncludeChroms[Idx] = new char [LenChromList+1];
 		strcpy(pszIncludeChroms[Idx],IncludeChroms->sval[Idx]);
-		CUtility::TrimQuotes(pszIncludeChroms[Idx]);
+		CUtility::TrimQuotedWhitespcExtd(pszIncludeChroms[Idx]);
 		}
 
 	NumExcludeChroms = ExcludeChroms->count;
@@ -1038,13 +1056,14 @@ if (!argerrors)
 		LenChromList = (int)strlen(ExcludeChroms->sval[Idx]);
 		pszExcludeChroms[Idx] = new char [LenChromList+1];
 		strcpy(pszExcludeChroms[Idx],ExcludeChroms->sval[Idx]);
-		CUtility::TrimQuotes(pszExcludeChroms[Idx]);
+		CUtility::TrimQuotedWhitespcExtd(pszExcludeChroms[Idx]);
 		}
 
 	if(lociconstraintsfile->count)
 		{
 		strncpy(szLociConstraintsFile,lociconstraintsfile->filename[0],_MAX_PATH);
 		szLociConstraintsFile[_MAX_PATH-1] = '\0';
+		CUtility::TrimQuotedWhitespcExtd(szLociConstraintsFile);
 		}
 	else
 		szLociConstraintsFile[0] = '\0';
@@ -1053,7 +1072,7 @@ if (!argerrors)
 		{
 		strncpy(szContamFile,contamsfile->filename[0],_MAX_PATH);
 		szContamFile[_MAX_PATH-1] = '\0';
-		CUtility::TrimQuotes(szContamFile);
+		CUtility::TrimQuotedWhitespcExtd(szContamFile);
 		}
 	else
 		szContamFile[0] = '\0';
@@ -1067,7 +1086,7 @@ if (!argerrors)
 			}
 		strncpy(szStatsFile,statsfile->filename[0],_MAX_PATH);
 		szStatsFile[_MAX_PATH-1] = '\0';
-		CUtility::TrimQuotes(szStatsFile);
+		CUtility::TrimQuotedWhitespcExtd(szStatsFile);
 		}
 	else
 		szStatsFile[0] = '\0';
@@ -1083,7 +1102,7 @@ if (!argerrors)
 		{
 		strncpy(szSitePrefsFile,siteprefsfile->filename[0],_MAX_PATH);
 		szSitePrefsFile[_MAX_PATH-1] = '\0';
-		CUtility::TrimQuotes(szSitePrefsFile);
+		CUtility::TrimQuotedWhitespcExtd(szSitePrefsFile);
 		}
 	else
 		szSitePrefsFile[0] = '\0';
@@ -1094,7 +1113,7 @@ if (!argerrors)
 			{
 			strncpy(szNoneAlignFile,nonealignfile->filename[0],_MAX_PATH);
 			szNoneAlignFile[_MAX_PATH-1] = '\0';
-			CUtility::TrimQuotes(szNoneAlignFile);
+			CUtility::TrimQuotedWhitespcExtd(szNoneAlignFile);
 			}
 		else
 			szNoneAlignFile[0] = '\0';
@@ -1103,7 +1122,7 @@ if (!argerrors)
 			{
 			strncpy(szMultiAlignFile,multialignfile->filename[0],_MAX_PATH);
 			szMultiAlignFile[_MAX_PATH-1] = '\0';
-			CUtility::TrimQuotes(szMultiAlignFile);
+			CUtility::TrimQuotedWhitespcExtd(szMultiAlignFile);
 			}
 		else
 			szMultiAlignFile[0] = '\0';
@@ -1118,7 +1137,7 @@ if (!argerrors)
 		{
 		strncpy(szPriorityRegionFile,priorityregionfile->filename[0],_MAX_PATH);
 		szPriorityRegionFile[_MAX_PATH-1] = '\0';
-		CUtility::TrimQuotes(szPriorityRegionFile);
+		CUtility::TrimQuotedWhitespcExtd(szPriorityRegionFile);
 		bFiltPriorityRegions = nofiltpriority->count ? false : true;
 		}
 	else

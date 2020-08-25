@@ -52,4 +52,5 @@ Release 1.2.7 - 'repassemb' SNP file parameter initialisation bug fix
 Release 1.2.8 - 'kalign' PE insert size multiple alignments bug fix
 Release 1.2.9 - 'benchmark' explicit check for error profile csv containing less than 100 alignment records
 Release 1.2.10- 'pangenome' has new functionality for generating windowed (10Kbp) coverage UCSC WIG format as output
+Release 1.2.12- Increased 'repassemb' capacity for handling sequence names to 5 million, 'kalign' will now default SNP call coverage to 20 if not specified and SNP output requested  
 

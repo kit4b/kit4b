@@ -818,10 +818,10 @@ if((m_NxtszChromIdx + ChromNameLen + 1) > (int)sizeof(m_szChromNames))
 if(m_NumChromNames == cMaxSNPChromNames)
 	return(eBSFerrMaxEntries);
 
-m_szChromIdx[m_NumChromNames] = m_NxtszChromIdx;
+m_szChromIdx[m_NumChromNames++] = m_NxtszChromIdx;
 strcpy(&m_szChromNames[m_NxtszChromIdx], pszChrom);
 m_NxtszChromIdx += ChromNameLen + 1;
-m_LAChromNameID = m_NumChromNames + 1;
+m_LAChromNameID = m_NumChromNames;
 return(m_LAChromNameID);
 }
 

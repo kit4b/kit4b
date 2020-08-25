@@ -452,7 +452,7 @@ return(szResourceLimits);
 // Note: see GetNumFilteredSubseqs() for filtered processed equivalent
 int
 CUtility::GetNumSubseqs(int AlignLen,		// alignment length incl InDels
-		   			   int NumSeqs2Align,	// number of sequences
+					   int NumSeqs2Align,	// number of sequences
 						etSeqBase *pSeqs[1]) // pts to array of ptrs to the sequences to process
 {
 int SeqIdx;
@@ -506,7 +506,7 @@ CUtility::GetFilteredSubSeq(int AlignLen, // remaining alignment length incl InD
 		  int *pLastIdx,		// returned index into pRef[]/pRel[] of last base in returned subsequence
 		  etSeqBase *pRef,		// reference sequence
 		  etSeqBase *pRel,		// relative sequence
-  		  int ReqMinLen,		// subsequence must be of at least this length
+		  int ReqMinLen,		// subsequence must be of at least this length
 		  int ReqMinIdent,		// and have at least this overall identity (0..100%)
 		  bool bStartEndIdent)  // and start/end on base that is identical
 {
@@ -609,7 +609,7 @@ int
 CUtility::GetNumFilteredSubseqs(int AlignLen,	// alignment length incl InDels
 		   etSeqBase *pRef,		// reference sequence
 		   etSeqBase *pRel,		// relative sequence
-   		  int ReqMinLen,		// subsequence must be of at least this length
+		  int ReqMinLen,		// subsequence must be of at least this length
 		  int ReqMinIdent,		// and have at least this overall identity (0..100%)
 		  bool bStartEndIdent)  // and start/end on base that is identical
 {
@@ -1027,11 +1027,11 @@ while(((pszSrc = va_arg( argptr, char *)) != NULL) && pszSrc[0] != '\0')
 va_end( argptr );              /* Reset variable arguments.      */
 return(0);	// target exists and is no older than any independent source file
 }
-    
+	
 // splits the path at the last '\' (windows) or '/' (linux), returning the prefix as the directory and the suffix as the filename
 void 
 CUtility::splitpath(char *pszFullPath, char *pszDir,
-                 char *pFname)
+				 char *pFname)
 {
 int PathLen = (int)strlen(pszFullPath);
 char *p, *end;
@@ -1040,7 +1040,7 @@ if(pszDir)
 if(pFname)
 	*pFname = 0;
 
-     /* look for end of directory part */
+	 /* look for end of directory part */
 end = NULL;
 for (p = pszFullPath; *p; p++) 
 	if (*p == '/' || *p == '\\') 
@@ -1048,12 +1048,12 @@ for (p = pszFullPath; *p; p++)
 
 if(end)  /* got a directory */
 	{
-    if (pszDir)
+	if (pszDir)
 		{
-         memmove( pszDir, pszFullPath, (end - pszFullPath) * sizeof(char));
-        pszDir[end - pszFullPath] = 0;
+		 memmove( pszDir, pszFullPath, (end - pszFullPath) * sizeof(char));
+		pszDir[end - pszFullPath] = 0;
 		}
-    pszFullPath = end;
+	pszFullPath = end;
 	}
 if(pFname != NULL && *pszFullPath)
 	{
@@ -1108,14 +1108,14 @@ void
 CUtility::SleepMillisecs(UINT32 milliseconds) // cross-platform sleep function
 {
 #ifdef WIN32
-    Sleep(milliseconds);
+	Sleep(milliseconds);
 #elif _POSIX_C_SOURCE >= 199309L
-    struct timespec ts;
-    ts.tv_sec = milliseconds / 1000;
-    ts.tv_nsec = (milliseconds % 1000) * 1000000;
-    nanosleep(&ts, NULL);
+	struct timespec ts;
+	ts.tv_sec = milliseconds / 1000;
+	ts.tv_nsec = (milliseconds % 1000) * 1000000;
+	nanosleep(&ts, NULL);
 #else
-    usleep(milliseconds * 1000);
+	usleep(milliseconds * 1000);
 #endif
 }
 

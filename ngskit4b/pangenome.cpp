@@ -19,6 +19,7 @@
 
 int Process(eModePG PMode,			// processing mode
 			char* pszPrefix,		// descriptor prefix
+			int BinSizeKbp,	// Wiggle score is number of alignments over these sized bins
 			char* pszInFile,		// input fasta or SAM file
 			char* pszOutFile);		// output to this file
 
@@ -41,6 +42,7 @@ pangenome(int argc, char **argv)
 	int NumberOfProcessors;		// number of installed CPUs
 
 	 eModePG PMode;					// processing mode
+	 int BinSizeKbp;	// Wiggle score is number of alignments over these sized bins
 	 char szInFile[_MAX_PATH];		// input fasta or SAM file
 	 char szPrefix[_MAX_PATH];		// use this prefix
 	 char szOutFile[_MAX_PATH];		 // output file
@@ -50,14 +52,16 @@ pangenome(int argc, char **argv)
 	struct arg_int *FileLogLevel = arg_int0 ("f", "FileLogLevel", "<int>", "Level of diagnostics written to screen and logfile 0=fatal,1=errors,2=info,3=diagnostics,4=debug");
 	struct arg_file *LogFile = arg_file0 ("F", "log", "<file>", "diagnostics log file");
 
-	struct arg_int *pmode = arg_int0 ("m", "mode", "<int>", "processing mode: 0 prefix fasta descriptor, 1 filtering SAM for target prefixes, 2 generate Wiggle");
+	struct arg_int *pmode = arg_int0 ("m", "mode", "<int>", "processing mode: 0 prefix fasta descriptor, 1 filtering SAM for target prefixes, 2 generate Wiggle all alignments in bin, 3 generate Wiggle unique loci in bin");
+	struct arg_int *binsizekbp = arg_int0 ("b", "binsizekbp", "<int>", "if generating Wiggle then maximum Kbp bin size (default 10, range 1..1000");
+
 	struct arg_str *prefix = arg_str1("p","prefix","<str>", "prefix to apply (alphanumeric only, length limited to a max of 10 chars)");
 	struct arg_file *infile = arg_file1("i", "in", "<file>", "input file");
 	struct arg_file *outfile = arg_file1 ("o", "out", "<file>", "output file");
 	struct arg_end *end = arg_end (200);
 
 	void *argtable[] = { help,version,FileLogLevel,LogFile,
-						pmode,prefix,infile,outfile,end };
+						pmode,prefix,binsizekbp,infile,outfile,end };
 
 	char **pAllArgs;
 	int argerrors;
@@ -132,6 +136,18 @@ pangenome(int argc, char **argv)
 			exit (1);
 			}
 
+		if(PMode >= eMPGWiggleUniqueLoci)
+			{
+			BinSizeKbp = binsizekbp->count ? binsizekbp->ival[0] : cDfltWiggleBinSize;
+			if(BinSizeKbp < cMinWiggleBinSize || BinSizeKbp > cMaxWiggleBinSize)
+				{
+				gDiagnostics.DiagOut (eDLFatal, gszProcName, "Error: Windowed maximum bin size specified as '-b%d'Kbp , outside of range %d..%d\n", BinSizeKbp, cMinWiggleBinSize,cMaxWiggleBinSize);
+				exit (1);
+				}
+			}
+		else
+			BinSizeKbp = 0;
+
 
 		// show user current resource limits
 #ifndef _WIN32
@@ -205,14 +221,21 @@ pangenome(int argc, char **argv)
 			case eMPGFilterPrefix:
 				pszDescr = "Filter SAM alignments to targets with specified prefix";
 				break;
-			case eMPGWiggle:
-				pszDescr = "Generate UCSC Wiggle format file";
+
+			case eMPGWiggleUniqueLoci:
+				pszDescr = "Generate UCSC Wiggle format file using unique loci counts";
+				break;
+
+			case eMPGWiggleAll:
+				pszDescr = "Generate UCSC Wiggle format file using all alignment counts";
 				break;
 		}
 
 
 
 		gDiagnostics.DiagOutMsgOnly (eDLInfo, "Pangenome processing : '%s'", pszDescr);
+		if(BinSizeKbp > 0)
+			gDiagnostics.DiagOutMsgOnly (eDLInfo, "Counts accumulated into maximal sized bins of : %dKbp'", BinSizeKbp);	
 		if(szPrefix[0] != '\0')
 			gDiagnostics.DiagOutMsgOnly (eDLInfo, "Prefix : '%s'", szPrefix);
 		gDiagnostics.DiagOutMsgOnly (eDLInfo, "Input file : '%s'", szInFile);
@@ -226,6 +249,7 @@ pangenome(int argc, char **argv)
 		Rslt = 0;
 		Rslt = Process (PMode,			// processing mode
 						szPrefix,		// descriptor prefix
+						BinSizeKbp,		// bin size in Kbp
 						szInFile,		// input fasta or SAM file
 						szOutFile);		// output to this file
 		Rslt = Rslt >= 0 ? 0 : 1;
@@ -674,6 +698,7 @@ if(sscanf((char*)&pChr[3], "\tAS:%s\tSN:%s\tLN:%u", szAssembRef, szSeqRef, &SeqR
 
 int Process(eModePG PMode,			// processing mode
 			char* pszPrefix,		// descriptor prefix
+			int BinSizeKbp,			// bin size in Kbp
 			char* pszInFile,		// input fasta or SAM file
 			char* pszOutFile)		// output to this file
 {
@@ -685,7 +710,7 @@ if((pPangenome = new CPangenome) == NULL)
 	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Unable to instantiate instance of CPangenome");
 	return(eBSFerrObj);
 	}
-Rslt = pPangenome->Process(PMode,pszPrefix,pszInFile,pszOutFile);
+Rslt = pPangenome->Process(PMode,pszPrefix,BinSizeKbp,pszInFile,pszOutFile);
 delete pPangenome;
 return(Rslt);
 }
@@ -693,6 +718,7 @@ return(Rslt);
 int 
 CPangenome::Process(eModePG PMode,			// processing mode
 			char* pszPrefix,		// descriptor prefix
+			int BinSizeKbp,			// bin size in Kbp
 			char* pszInFile,		// input fasta or SAM file
 			char* pszOutFile)		// output to this file
 {
@@ -701,7 +727,7 @@ uint8_t Chr;
 int Rslt = eBSFerrParams;
 uint8_t *m_pInBuffer;
 
-if(PMode != eMPGWiggle)		// wiggles input can be BAM (binary) so can't just check for ascii format input
+if(PMode < eMPGWiggleUniqueLoci)		// wiggles input can be BAM (binary) so can't just check for ascii format input
 	{
 	if((m_pInBuffer = new uint8_t[cAllocAsciiChkSize]) == NULL)
 		{
@@ -769,11 +795,13 @@ switch(PMode){
 						pszOutFile);	// output to this SAM file
 		break;
 
-	case eMPGWiggle:			// generate UCSC Wiggle format file
-		Rslt = GenWindowedWiggle(pszPrefix,		// target prefix used for filtering from
-			cDfltWiggleWindowSize,	// Wiggle score is number of alignments over this sized window
-			pszInFile,		// alignments are in this SAM/BAM file 
-			pszOutFile);		// write out Wiggle to this file
+	case eMPGWiggleAll:			// generate UCSC Wiggle format file using all alignments in bins
+	case eMPGWiggleUniqueLoci:			// generate UCSC Wiggle format file using only unique alignments in bins
+		Rslt = GenBinnedWiggle(PMode,			// processing mode
+			pszPrefix,		// target prefix used for filtering from
+			BinSizeKbp,					// Wiggle score is number of alignments over this sized bin
+			pszInFile,					// alignments are in this SAM/BAM file 
+			pszOutFile);				// write out Wiggle to this file
 		break;
 	}
 
@@ -784,8 +812,9 @@ return(Rslt);
 // generate UCSC Wiggle file from SAM/BAM alignment input file
 // wiggle file contains smoothed alignment density along each alignment targeted sequence
 int	
-CPangenome::GenWindowedWiggle(char *pszName,	// wiggle track name
-			uint32_t WindowSize,	// Wiggle score is number of alignments over this sized window
+CPangenome::GenBinnedWiggle(eModePG PMode,			// processing mode
+			char *pszName,	// wiggle track name
+			uint32_t BinSizeKbp,	// Wiggle score is number of alignments over this sized bins
 			char* pszInFile,		// alignments are in this SAM/BAM file 
 			char* pszOutFile)		// write out Wiggle to this file
 {
@@ -793,7 +822,7 @@ teBSFrsltCodes Rslt;
 
 int LineLen;
 char *pszTxt;
-
+int WindowSize = BinSizeKbp * 1000;
 int TargID;
 tsSAMloci *pSAMloci;
 
@@ -803,20 +832,20 @@ if(pszInFile == NULL || *pszInFile == '\0')
 
 if((m_pSAMfile = new CSAMfile) == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenWindowedWiggle: Unable to instantiate class CSAMfile");
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenBinnedWiggle: Unable to instantiate class CSAMfile");
 	return(eBSFerrInternal);
 	}
 
 if((m_pBAMalignment = new tsBAMalign) == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenWindowedWiggle: Unable to instantiate tsBAMalign");
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenBinnedWiggle: Unable to instantiate tsBAMalign");
 	Reset();
 	return(eBSFerrInternal);
 	}
 
 if((m_pInBuffer = new uint8_t[cMaxReadLen * 3]) == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenWindowedWiggle: Unable to allocate buffers");
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenBinnedWiggle: Unable to allocate buffers");
 	Reset();
 	return(eBSFerrMem);
 	}
@@ -824,7 +853,7 @@ m_AllocInBuff = cMaxReadLen * 3;
 
 if((m_pOutBuffer = new uint8_t[cAllocPGBuffOutSize]) == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenWindowedWiggle: Unable to allocate buffers");
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenBinnedWiggle: Unable to allocate buffers");
 	Reset();
 	return(eBSFerrMem);
 	}
@@ -855,7 +884,7 @@ m_AllocdSAMlociMem = (size_t)cAllocNumSAMloci * sizeof(tsSAMloci);
 m_pSAMloci = (tsSAMloci*)malloc(m_AllocdSAMlociMem);
 if (m_pSAMloci == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenWindowedWiggle: Memory allocation of %lld bytes failed", (INT64)m_AllocdSAMlociMem);
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenBinnedWiggle: Memory allocation of %lld bytes failed", (INT64)m_AllocdSAMlociMem);
 	m_AllocdSAMlociMem = 0;
 	Reset();
 	return(eBSFerrMem);
@@ -865,7 +894,7 @@ if (m_pSAMloci == NULL)
 m_pSAMloci = (tsSAMloci*)mmap(NULL, m_AllocdSAMlociMem, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 if (m_pSAMloci == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenWindowedWiggle: Memory allocation of %lld bytes through mmap()  failed", (INT64)m_AllocdSAMlociMem, strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenBinnedWiggle: Memory allocation of %lld bytes through mmap()  failed", (INT64)m_AllocdSAMlociMem, strerror(errno));
 	m_pSAMloci = NULL;
 	m_AllocdSAMlociMem = 0;
 	Reset();
@@ -876,7 +905,7 @@ m_AllocdSAMloci = cAllocNumSAMloci;
 
 if((Rslt = (teBSFrsltCodes)m_pSAMfile->Open(pszInFile)) != eBSFSuccess)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenWindowedWiggle: Unable to open SAM/BAM format file %s",pszInFile);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenBinnedWiggle: Unable to open SAM/BAM format file %s",pszInFile);
 	Reset();
 	return((teBSFrsltCodes)Rslt);
 	}
@@ -928,21 +957,21 @@ while(Rslt >= eBSFSuccess && (LineLen = m_pSAMfile->GetNxtSAMline((char *)m_pInB
 		}
 
 	// can now access the alignment loci info
-	// hard or soft clipping is currently of no interest as using a large sliding window and counting loci in that window
+	// hard or soft clipping is currently of no interest as using a large sliding bin and counting loci in that bin
 	if(m_CurNumSAMloci > m_AllocdSAMloci) // needing to realloc?
 		{
 		size_t memreq = m_AllocdSAMlociMem + ((size_t)cAllocNumSAMloci * sizeof(tsSAMloci));
 		uint8_t* pTmp;
 #ifdef _WIN32
-		pTmp = (uint8_t*)realloc(pSAMloci, memreq);
+		pTmp = (uint8_t*)realloc(m_pSAMloci, memreq);
 #else
-		pTmp = (uint8_t*)mremap(pSAMloci, m_AllocdSAMlociMem, memreq, MREMAP_MAYMOVE);
+		pTmp = (uint8_t*)mremap(m_pSAMloci, m_AllocdSAMlociMem, memreq, MREMAP_MAYMOVE);
 		if (pTmp == MAP_FAILED)
 			pTmp = NULL;
 #endif
 		if (pTmp == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenWindowedWiggle: Memory re-allocation to %lld bytes - %s", (INT64)(memreq), strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenBinnedWiggle: Memory re-allocation to %lld bytes - %s", (INT64)(memreq), strerror(errno));
 			Reset();
 			return(eBSFerrMem);
 			}
@@ -958,6 +987,16 @@ while(Rslt >= eBSFSuccess && (LineLen = m_pSAMfile->GetNxtSAMline((char *)m_pInB
 	NumAcceptedAlignments++;
 	}
 
+if(NumAcceptedAlignments == 0)		// ugh, no alignments!
+	{
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenBinnedWiggle: No alignments accepted for processing!");
+	Reset();
+	return(eBSFSuccess);			// not an error!
+	}
+else
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenBinnedWiggle: Accepted %lld total alignments for binning",NumAcceptedAlignments);
+
+
 // sort SAMloci by TargID.TargLoci ascending
 if(m_CurNumSAMloci > 1)
 	qsort(m_pSAMloci, m_CurNumSAMloci, sizeof(tsSAMloci), SortSAMTargLoci);
@@ -968,48 +1007,59 @@ size_t LociIdx;
 tsSAMloci *pUniqueSamLoci;
 tsSAMloci *pWinStartSAMloci;
 
-// could be multiple alignments to same loci so reduce such that each loci is unique with a count of alignments to that loci
+// could be multiple alignments to same loci so reduce such that each loci is unique with a count of alignments to that loci unless unique loci in which case only 1 count attributed
 pSAMloci = m_pSAMloci;
 pUniqueSamLoci = pSAMloci++;
+pUniqueSamLoci->Cnt = 1;
 NumUniqueLoci = 1;
 for(LociIdx = 1; LociIdx < m_CurNumSAMloci; LociIdx++, pSAMloci++)
 	{
 	if(pSAMloci->TargID == pUniqueSamLoci->TargID && pSAMloci->TargLoci == pUniqueSamLoci->TargLoci)
-		pUniqueSamLoci->Cnt++;
-	else
+		{
+		if(PMode == eMPGWiggleAll) // if all to be counted then counting multiple alignments to this loci
+			pUniqueSamLoci->Cnt++; 
+		}
+	else // onto another loci
 		{
 		pUniqueSamLoci++;
 		*pUniqueSamLoci = *pSAMloci;
+		pUniqueSamLoci->Cnt = 1;
 		NumUniqueLoci++;
 		}
 	}
 m_CurNumSAMloci = NumUniqueLoci;
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenBinnedWiggle: Alignments were to %lld unique loci",m_CurNumSAMloci);
 
-// iterate over all loci and accumulate counts within a sliding window
-
-
+// iterate over all loci and accumulate counts within each bin sized to be WindowSize bp
+uint32_t BinStart;
+uint32_t BinEnd;
 WindowCnts = 0;
+BinStart = (m_pSAMloci->TargLoci / (uint32_t)WindowSize) * (uint32_t)WindowSize;
+BinEnd = BinStart + (uint32_t)WindowSize - 1; 
 pSAMloci = m_pSAMloci;
 pWinStartSAMloci = pSAMloci;
 for(LociIdx = 0; LociIdx < m_CurNumSAMloci; LociIdx++,pSAMloci++)
 	{
-	if(pSAMloci->TargID == pWinStartSAMloci->TargID && (pSAMloci->TargLoci - pWinStartSAMloci->TargLoci) <= WindowSize)
+	if(pSAMloci->TargID == pWinStartSAMloci->TargID && pSAMloci->TargLoci <= BinEnd)
 		WindowCnts += pSAMloci->Cnt;
-	else
+	else // outside of an existing bin into which counts were being accumulated
 		{
-		// output Wiggle which will be for pWinStartSAMloci up to pUniqueSamLoci having WindowCnts
-		GenSmoothedCoverage(pWinStartSAMloci,pUniqueSamLoci,WindowCnts);
+		if(pSAMloci->TargID != pWinStartSAMloci->TargID)	// special case if new loci on a different chromosome to prev as last bin needs to be truncated to last known loci on previous chromosome
+			BinEnd = pUniqueSamLoci->TargLoci;
+		GenSmoothedCoverage(pWinStartSAMloci->TargID,BinStart,BinEnd,WindowCnts);
 		WindowCnts = 0;
+
+		BinStart = (pSAMloci->TargLoci / (uint32_t)WindowSize) * (uint32_t)WindowSize;
+		BinEnd = BinStart + (uint32_t)WindowSize - 1; 
+
 		pWinStartSAMloci = pSAMloci;
 		}
+
 	pUniqueSamLoci = pSAMloci;		// recording last loci known to be within WindowSize 
 	}
 
 if(WindowCnts)
-	{
-	// output Wiggle which will be for pWinStartSAMloci up to pUniqueSamLoci having WindowCnts
-	GenSmoothedCoverage(pWinStartSAMloci,pUniqueSamLoci,WindowCnts);
-	}
+	GenSmoothedCoverage(pWinStartSAMloci->TargID,BinStart,pUniqueSamLoci->TargLoci,WindowCnts);
 
 if(m_OutBuffIdx)
 	{
@@ -1026,23 +1076,22 @@ Reset();
 return(eBSFSuccess);
 }
 
-int
-CPangenome::GenSmoothedCoverage(tsSAMloci *pStartSAMloci,	// coverage starts from this loci inclusive
-				tsSAMloci *pEndSAMloci,						// coverage ends at this loci inclusive
-				uint32_t WindowCnts)						// total number of coverage counts
+int		// bin score assigned
+CPangenome::GenSmoothedCoverage(int TargID,	// coverage is on this targeted chrom/seq
+				uint32_t BinStart,		// coverage starts at this loci inclusive
+				uint32_t BinEnd,		// coverage ends at this loci inclusive
+				uint32_t BinCnts)		// total number of coverage counts
 {
-uint32_t WinLen;
-uint32_t Score;
-WinLen = 1 + pEndSAMloci->TargLoci - pStartSAMloci->TargLoci; // inclusive!
-Score = WindowCnts;
+uint32_t BinLen;
+BinLen = 1 + BinEnd - BinStart; // inclusive!
 if((m_OutBuffIdx + 1000) > m_AllocOutBuff)
 	{
 	CUtility::SafeWrite(m_hOutFile,m_pOutBuffer,m_OutBuffIdx);
 	m_OutBuffIdx = 0;
 	}
-m_OutBuffIdx += sprintf((char *)&m_pOutBuffer[m_OutBuffIdx],"variableStep chrom=%s span=%d\n%d %d\n",LocateTargSeqName(pStartSAMloci->TargID),WinLen,pStartSAMloci->TargLoci,Score);
+m_OutBuffIdx += sprintf((char *)&m_pOutBuffer[m_OutBuffIdx],"variableStep chrom=%s span=%d\n%d %d\n",LocateTargSeqName(TargID),BinLen,BinStart + 1,BinCnts); // Wiggle uses 1-start coordinate system
 
-return((int)WinLen);
+return((int)BinCnts);
 }
 
 int		// returned sequence name identifier, < 1 if unable to accept this chromosome name
@@ -1073,10 +1122,10 @@ if((m_NxtszSeqNameIdx + SeqNameLen + 1) > (int)sizeof(m_szSeqNames))
 if(m_NumSeqNames == cMaxSeqNames)
 	return(eBSFerrMaxEntries);
 
-m_szSeqNameIdx[m_NumSeqNames] = m_NxtszSeqNameIdx;
+m_szSeqNameIdx[m_NumSeqNames++] = m_NxtszSeqNameIdx;
 strcpy(&m_szSeqNames[m_NxtszSeqNameIdx], pszSeqName);
 m_NxtszSeqNameIdx += SeqNameLen + 1;
-m_LASeqNameID = ++m_NumSeqNames;
+m_LASeqNameID = m_NumSeqNames;
 return(m_NumSeqNames);
 }
 
