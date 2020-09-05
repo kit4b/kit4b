@@ -30,7 +30,7 @@ public:
 	static etClassifyFileType ClassifyFileType(char *pszFileName);	// attempt to classify file as being either CSV, BED or SAM
 
 	static void splitpath(char *pszFullPath, char *pszDir,
-                 char *pFname);
+				 char *pFname);
 
 	// utility function for appended a filename suffix onto a base file name starting from the last occurrence of a marker char in the base file name
 	static int				// returned length of suffixed file name
@@ -44,6 +44,7 @@ public:
 	static char *TrimWhitespcExtd(char *pszText);
 	static char *TrimQuotedWhitespcExtd(char *pszText);
 	static char *ReduceWhitespace(char *pszText);
+	static char *CleanText(char* pText); // inplace cleans potentially troublesome chars from text by replacing these chars with a single space char
 
 	static UINT16			// generated 16bit hash over the lowercased chromosome name; hashes as 0 if pszName == null or is empty
 		GenHash16(char *pszName);	// name will be lowercased whilst hashing
@@ -83,7 +84,7 @@ public:
 		  int *pLastIdx,		// returned index into pRef[]/pRel[] of last base in returned subsequence
 		  etSeqBase *pRef,		// reference sequence
 		  etSeqBase *pRel,		// relative sequence
-  		  int ReqMinLen=1,		// subsequence must be of at least this length
+		  int ReqMinLen=1,		// subsequence must be of at least this length
 		  int ReqMinIdent=0,		// and have at least this overall identity (0..100%)
 		  bool bStartEndIdent=false);  // and start/end on base that is identical
 
@@ -91,7 +92,7 @@ public:
 		   GetNumFilteredSubseqs(int AlignLen,		// alignment length incl InDels
 		   etSeqBase *pRef,		// reference sequence
 		   etSeqBase *pRel,		// relative sequence
-   		   int ReqMinLen=1,		// subsequence must be of at least this length
+		   int ReqMinLen=1,		// subsequence must be of at least this length
 		   int ReqMinIdent=0,		// and have at least this overall identity (0..100%)
 		   bool bStartEndIdent=false);  // and start/end on base that is identical
 

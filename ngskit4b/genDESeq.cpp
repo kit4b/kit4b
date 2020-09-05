@@ -77,14 +77,14 @@ typedef struct TAG_sFeatRPKM {
 #pragma pack()
 
 teBSFrsltCodes Process(etDEPMode PMode,		// processing mode
-	        bool bFeatLen,					// if true then also output the feature length
+			bool bFeatLen,					// if true then also output the feature length
 			int MinFeatLen,					// feature has to be at least this length
 			int MaxFeatLen,					// but no longer than this length
 			int MinCtrlCnts,				// sum of control counts for a feature must be at least this
 			int MinExprCnts,				// sum of experiment counts for a feature must be at least this
 			int MinCtrlExprCnts,			// sum of control and experiment counts for a feature must be at least this
 
-   		double NormCntsScale,				// counts normalisation scale factor
+		double NormCntsScale,				// counts normalisation scale factor
 		char *pszControlTitle,				// control title
 		char *pszExprTitle,					// experiment title
 		int	NumInputControlFiles,			// number of input control file specs
@@ -197,23 +197,23 @@ if(argerrors >= 0)
 
 /* special case: '--help' takes precedence over error reporting */
 if (help->count > 0)
-        {
+		{
 		printf("\n%s %s %s, Version %s\nOptions ---\n", gszProcName,gpszSubProcess->pszName,gpszSubProcess->pszFullDescr,kit4bversion);
-        arg_print_syntax(stdout,argtable,"\n");
-        arg_print_glossary(stdout,argtable,"  %-25s %s\n");
+		arg_print_syntax(stdout,argtable,"\n");
+		arg_print_glossary(stdout,argtable,"  %-25s %s\n");
 		printf("\nNote: Parameters can be entered into a parameter file, one parameter per line.");
 		printf("\n      To invoke this parameter file then precede its name with '@'");
 		printf("\n      e.g. %s %s @myparams.txt\n",gszProcName,gpszSubProcess->pszName);
 		printf("\nPlease report any issues regarding usage of %s at https://github.com/kit4b/issues\n\n",gszProcName);
 		return(1);
-        }
+		}
 
-    /* special case: '--version' takes precedence error reporting */
+	/* special case: '--version' takes precedence error reporting */
 if (version->count > 0)
-        {
+		{
 		printf("\n%s %s Version %s\n",gszProcName,gpszSubProcess->pszName,kit4bversion);
 		return(1);
-        }
+		}
 
 if (!argerrors)
 	{
@@ -530,7 +530,7 @@ if (!argerrors)
 	gStopWatch.Start();
 	Rslt = Process((etDEPMode)PMode,						// processing mode
 					bFeatLen,					// true if feature length also to be reported
-				    MinFeatLen,					// feature has to be at least this length
+					MinFeatLen,					// feature has to be at least this length
 					MaxFeatLen,					// but no longer than this length
 					MinCtrlCnts,				// sum of control counts for a feature must be at least this
 					MinExprCnts,				// sum of experiment counts for a feature must be at least this
@@ -556,7 +556,7 @@ if (!argerrors)
 	}
 else
 	{
-    printf("\n%s %s %s, Version %s\n", gszProcName,gpszSubProcess->pszName,gpszSubProcess->pszFullDescr,kit4bversion);
+	printf("\n%s %s %s, Version %s\n", gszProcName,gpszSubProcess->pszName,gpszSubProcess->pszFullDescr,kit4bversion);
 	arg_print_errors(stdout,end,gszProcName);
 	arg_print_syntax(stdout,argtable,"\nUse '-h' to view option and parameter usage\n");
 	exit(1);
@@ -632,7 +632,7 @@ GDEReset();
 
 teBSFrsltCodes
 Process(etDEPMode PMode,						// processing mode
-        bool bFeatLen,					// if true then also output the feature length
+		bool bFeatLen,					// if true then also output the feature length
 		int MinFeatLen,					// feature has to be at least this length
 		int MaxFeatLen,					// but no longer than this length
 		int MinCtrlCnts,				// sum of control counts for a feature must be at least this

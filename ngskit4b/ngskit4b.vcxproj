@@ -175,6 +175,7 @@
     <ClInclude Include="ArtefactReduce.h" />
     <ClInclude Include="AssembGraph.h" />
     <ClInclude Include="Benchmarker.h" />
+    <ClInclude Include="seghaplotypes.h" />
     <ClInclude Include="repassemb.h" />
     <ClInclude Include="pangenome.h" />
     <ClInclude Include="sarscov2ml.h" />
@@ -210,6 +211,7 @@
     <ClCompile Include="AssembGraph.cpp" />
     <ClCompile Include="Assemble.cpp" />
     <ClCompile Include="Benchmarker.cpp" />
+    <ClCompile Include="seghaplotypes.cpp" />
     <ClCompile Include="pangenome.cpp" />
     <ClCompile Include="repassemb.cpp" />
     <ClCompile Include="sarscov2ml.cpp" />

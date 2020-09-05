@@ -798,6 +798,25 @@ return(pszText);
 }
 
 
+// cleantext
+// inplace cleans potentially troublesome chars from text by replacing these chars with a single space char
+char *
+CUtility::CleanText(char* pText)
+{
+char Chr;
+char *pTxt;
+if((pTxt = pText) == NULL)
+	return(NULL);
+
+while((Chr = *pTxt++) != '\0')
+	{
+	if(Chr < 0x20 || Chr == '%' || Chr == '\'' || Chr == '"')
+		pTxt[-1] = ' ';
+	}
+return(pText);
+}
+
+
 const int cMaxNumOptions = 16000;		// allow at most this many options in option file, increased from 1024 because snpmarkers needs to handle up to 4000 different isolates 
 const int cMaxOptionLen  = 1024;		// any single option can be of this length
 const int cMaxOptionLineLen = 8196;		// allow for option lines to be upto this length, one line can contain multiple options

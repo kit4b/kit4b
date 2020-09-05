@@ -608,31 +608,33 @@ while((NumRead = (int)read(m_hInFile, m_pInBuffer, (int)m_AllocInBuff)) > 0)
 				{
 				if(pChr[1] == 'S' && pChr[2] == 'Q')	// only retaining sequence names with specified prefix
 					{
-if(sscanf((char*)&pChr[3], "\tAS:%s\tSN:%s\tLN:%u", szAssembRef, szSeqRef, &SeqRefLen) == 3){
-	if(strnicmp(szSeqRef, szPrefix, PrefixLen)){
-		SAMreclen = 0;
-		m_OutBuffIdx = RecordStartIdx;
-		pOutChr = &m_pOutBuffer[RecordStartIdx];
-		continue;
-	}
-// sequence name has specified prefix, strip prefix off and accept this header record
-	sprintf((char*)&pChr[3], "\tAS:%s\tSN:%s\t:LN:%u\n", szAssembRef, &szSeqRef[PrefixLen], SeqRefLen);
-	m_OutBuffIdx -= (PrefixLen - 1);
-}
+					if(sscanf((char*)&pChr[3], "\tAS:%s\tSN:%s\tLN:%u", szAssembRef, szSeqRef, &SeqRefLen) == 3)
+						{
+						if(strnicmp(szSeqRef, szPrefix, PrefixLen))
+							{
+							SAMreclen = 0;
+							m_OutBuffIdx = RecordStartIdx;
+							pOutChr = &m_pOutBuffer[RecordStartIdx];
+							continue;
+							}
+					// sequence name has specified prefix, strip prefix off and accept this header record
+						sprintf((char*)&pChr[3], "\tAS:%s\tSN:%s\t:LN:%u\n", szAssembRef, &szSeqRef[PrefixLen], SeqRefLen);
+						m_OutBuffIdx -= (PrefixLen - 1);
+						}
 					}
-					SAMreclen = 0;
-					RecordStartIdx = m_OutBuffIdx;
-					pOutChr = &m_pOutBuffer[RecordStartIdx];
+				SAMreclen = 0;
+				RecordStartIdx = m_OutBuffIdx;
+				pOutChr = &m_pOutBuffer[RecordStartIdx];
 				}
 			else    // not a header record so assume it's an alignment
 				{
 				if(SAMreclen <= 20)			// could be a near empty record in which case slough this record
-				{
+					{
 					SAMreclen = 0;
 					m_OutBuffIdx = RecordStartIdx;
 					pOutChr = &m_pOutBuffer[RecordStartIdx];
 					continue;
-				}
+					}
 
 			// skip over 1st 2 tabs until target sequence name
 				pChr = &m_pOutBuffer[RecordStartIdx];
@@ -1046,7 +1048,7 @@ for(LociIdx = 0; LociIdx < m_CurNumSAMloci; LociIdx++,pSAMloci++)
 		{
 		if(pSAMloci->TargID != pWinStartSAMloci->TargID)	// special case if new loci on a different chromosome to prev as last bin needs to be truncated to last known loci on previous chromosome
 			BinEnd = pUniqueSamLoci->TargLoci;
-		GenSmoothedCoverage(pWinStartSAMloci->TargID,BinStart,BinEnd,WindowCnts);
+		GenBinnedCoverage(pWinStartSAMloci->TargID,BinStart,BinEnd,WindowCnts);
 		WindowCnts = 0;
 
 		BinStart = (pSAMloci->TargLoci / (uint32_t)WindowSize) * (uint32_t)WindowSize;
@@ -1059,7 +1061,7 @@ for(LociIdx = 0; LociIdx < m_CurNumSAMloci; LociIdx++,pSAMloci++)
 	}
 
 if(WindowCnts)
-	GenSmoothedCoverage(pWinStartSAMloci->TargID,BinStart,pUniqueSamLoci->TargLoci,WindowCnts);
+	GenBinnedCoverage(pWinStartSAMloci->TargID,BinStart,pUniqueSamLoci->TargLoci,WindowCnts);
 
 if(m_OutBuffIdx)
 	{
@@ -1077,7 +1079,7 @@ return(eBSFSuccess);
 }
 
 int		// bin score assigned
-CPangenome::GenSmoothedCoverage(int TargID,	// coverage is on this targeted chrom/seq
+CPangenome::GenBinnedCoverage(int TargID,	// coverage is on this targeted chrom/seq
 				uint32_t BinStart,		// coverage starts at this loci inclusive
 				uint32_t BinEnd,		// coverage ends at this loci inclusive
 				uint32_t BinCnts)		// total number of coverage counts

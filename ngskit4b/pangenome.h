@@ -76,7 +76,7 @@ class CPangenome
 			char* pszOutFile);		// write out Wiggle to this file
 
 	int		// bin score assigned 
-		GenSmoothedCoverage(int TargID,	// coverage is on this targeted chrom/seq
+		GenBinnedCoverage(int TargID,	// coverage is on this targeted chrom/seq
 				uint32_t BinStart,		// coverage starts at this loci inclusive
 				uint32_t BinEnd,		// coverage ends at this loci inclusive
 				uint32_t BinCnts);		// total number of coverage counts

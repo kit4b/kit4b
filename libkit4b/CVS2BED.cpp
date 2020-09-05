@@ -54,9 +54,9 @@ CCSV2BED::process(char *pszCSV,			// csv file containing structual values
 				  unsigned int EntryOfsFld,	// which field in the csv file contains the entry offset base to left of step
 				  unsigned int StartOfs,	// starting offset (base to left of last step)
 				  unsigned int EndOfs,		// ending offset (base to left of last step)
-  				  int Remap,				// remap offsets by Remap delta
+				  int Remap,				// remap offsets by Remap delta
 				  unsigned int ValFld,		// which field contains the value of interest
-  				  bool bAppend,			// true to append on to existing file otherwise (false) truncate existing file
+				  bool bAppend,			// true to append on to existing file otherwise (false) truncate existing file
 				  bool bWIG)			// true if to output as WIG file, default is as BED
 {
 FILE *pCSVStream;
