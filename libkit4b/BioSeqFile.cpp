@@ -232,7 +232,7 @@ m_bHdrDirty = true;
 // Option to create or truncate pszSeqFile
 teBSFrsltCodes 
 CBioSeqFile::Open(char *pszSeqFile,	// specifies file to open or create
-    			unsigned int Type,	// biosequence file type 
+				unsigned int Type,	// biosequence file type 
 			   bool bCreate)		// create file or truncate if it already exists
 {
 teBSFrsltCodes Rslt;
@@ -1858,7 +1858,7 @@ CBioSeqFile::QuickAlignRight(unsigned int AllowedMismatches,	// total allowed mi
 		   unsigned int MaxInDelExtension,	// max length of any InDel extension 
 		   unsigned int ProbeLen,			// remaining probe length
 		   unsigned char *pProbe,
-   		   unsigned int TargLen,			// remaining target length
+		   unsigned int TargLen,			// remaining target length
 		   unsigned char *pTarg)
 {
 unsigned int Score = 0;
@@ -1976,7 +1976,7 @@ CBioSeqFile::QuickAlignLeft(unsigned int AllowedMismatches,	// total allowed mis
 		   unsigned int MaxInDelExtension,	// max length of any InDel extension 
 		   unsigned int ProbeLen,			// remaining probe length
 		   unsigned char *pProbe,
-   		   unsigned int TargLen,			// remaining target length
+		   unsigned int TargLen,			// remaining target length
 		   unsigned char *pTarg)
 {
 unsigned int Score = 0;

@@ -142,23 +142,23 @@ if(argerrors >= 0)
 
 /* special case: '--help' takes precedence over error reporting */
 if (help->count > 0)
-        {
+		{
 		printf("\n%s %s %s, Version %s\nOptions ---\n", gszProcName,gpszSubProcess->pszName,gpszSubProcess->pszFullDescr,kit4bversion);
-        arg_print_syntax(stdout,argtable,"\n");
-        arg_print_glossary(stdout,argtable,"  %-25s %s\n");
+		arg_print_syntax(stdout,argtable,"\n");
+		arg_print_glossary(stdout,argtable,"  %-25s %s\n");
 		printf("\nNote: Parameters can be entered into a parameter file, one parameter per line.");
 		printf("\n      To invoke this parameter file then precede its name with '@'");
 		printf("\n      e.g. %s %s @myparams.txt\n",gszProcName,gpszSubProcess->pszName);
 		printf("\nPlease report any issues regarding usage of %s at https://github.com/kit4b/issues\n\n",gszProcName);
 		return(1);
-        }
+		}
 
-    /* special case: '--version' takes precedence error reporting */
+	/* special case: '--version' takes precedence error reporting */
 if (version->count > 0)
-        {
+		{
 		printf("\n%s %s Version %s\n",gszProcName,gpszSubProcess->pszName,kit4bversion);
 		return(1);
-        }
+		}
 
 if (!argerrors)
 	{
@@ -445,7 +445,7 @@ if (!argerrors)
 	}
 else
 	{
-    printf("\n%s %s %s, Version %s\n", gszProcName,gpszSubProcess->pszName,gpszSubProcess->pszFullDescr,kit4bversion);
+	printf("\n%s %s %s, Version %s\n", gszProcName,gpszSubProcess->pszName,gpszSubProcess->pszFullDescr,kit4bversion);
 	arg_print_errors(stdout,end,gszProcName);
 	arg_print_syntax(stdout,argtable,"\nUse '-h' to view option and parameter usage\n");
 	exit(1);
@@ -762,7 +762,7 @@ CreateBioseqSuffixFile(int Mode,
 						int MinSeqLen,			// only accept for indexing sequences which are at least this length
 						int SimGenomeSize,		// if 1..1000 then simulating indexing of a genome of this size in Gbp.
 					   int MaxThreads,			// max threads
-   					   bool bSOLiD,				// true if to process for colorspace (SOLiD)
+					   bool bSOLiD,				// true if to process for colorspace (SOLiD)
 						int NumInputFiles,			// number of input file specs
 						char *pszInputFiles[],		// names of input files (wildcards allowed)
 						char *pszDestSfxFile,	// output suffix array to this file
@@ -793,7 +793,7 @@ else
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to glob '%s",pszInputFiles[Idx]);
 			Reset();
 			return(eBSFerrOpnFile);
-    		}
+			}
 
 
 	SumFileSizes = 0;

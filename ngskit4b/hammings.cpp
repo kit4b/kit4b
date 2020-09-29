@@ -31,6 +31,7 @@ Please contact Dr Stuart Stephen < stuartjs@g3web.com > if you have any question
 #endif
 
 #include "ngskit4b.h"
+#include "seghaplotypes.h"
 
 const int cMinSeqLen = 10;				// minimum sequence length for Hamming distances
 const int cDfltSeqLen = 100;			// default sequence length for Hamming distances
@@ -125,6 +126,7 @@ typedef enum TAG_eSensitivity {
 
 int
 Process(etPMode PMode,			// processing mode
+		char *pszFounderPrefix,		// filtering on this founder prefix (restricted mode only)
 		bool bWatsonOnly,		// true if watson strand only processing
 		etSensitivity Sensitivity, // restricted hamming processing sensitivity
 		etResFormat ResFormat,	// restricted Hamming output file format
@@ -198,10 +200,11 @@ bool bWatsonOnly;			// true if watson only strand processing - Crick is rather s
 int IntraInterBoth;	    // 0: hammings over both intra (same sequence as probe K-mer drawn from) and inter (different sequences to that from which probe K-mer drawn), 1: Intra only, 2: Inter only
 int CoreLen;				// core length to use when processing restricted maximal Hammings
 int RHamm;					// restricted hamming upper limit
-etResFormat ResFormat;				// resdtricted Hamming file output format
+etResFormat ResFormat;				// restricted Hamming file output format
 char szInFile[_MAX_PATH];	// input genome assembly file
 char szInSeqFile[_MAX_PATH];	// optional input kmer sequences file
-char szOutFile[_MAX_PATH];	// generated Hamming distances file
+char szOutFile[_MAX_PATH];		// generated Hamming distances file
+char szFounderPrefix[_MAX_PATH];		// filtering on this founder prefix (restricted mode only)
 
 
 // command line args
@@ -221,6 +224,7 @@ struct arg_int  *intrainterboth = arg_int0("z","intrainterboth","<int>", "0: ham
 
 
 struct arg_int *rhamm = arg_int0("r","rhamm","<int>",			"restricted hamming upper limit (1..10, default 3) only applies in mode 0");
+struct arg_str *prefix = arg_str0("p","prefix","<str>",			"filtering prefix used in restricted mode (alphanumeric only, length limited to a max of 10 chars)");
 
 struct arg_int *numnodes = arg_int0("n","numnodes","<int>",	    "total number of nodes (2..10000) if processing over multiple nodes");
 struct arg_int *node = arg_int0("N","node","<int>",	            "node instance (1..N) if processing over multiple nodes");
@@ -238,7 +242,7 @@ struct arg_int *threads = arg_int0("T","threads","<int>",		"number of processing
 struct arg_end *end = arg_end(20);
 
 void *argtable[] = {help,version,FileLogLevel,LogFile,
-					pmode,sensitivity,rhamm,resformat,crick,intrainterboth,numnodes,node,sweepstart,sweepend,seqlen,sample,infile,inseqfile,outfile,threads,
+					pmode,prefix,sensitivity,rhamm,resformat,crick,intrainterboth,numnodes,node,sweepstart,sweepend,seqlen,sample,infile,inseqfile,outfile,threads,
 					end};
 
 char **pAllArgs;
@@ -249,23 +253,23 @@ if(argerrors >= 0)
 
 /* special case: '--help' takes precedence over error reporting */
 if (help->count > 0)
-        {
+		{
 		printf("\n%s %s %s, Version %s\nOptions ---\n", gszProcName, gpszSubProcess->pszName, gpszSubProcess->pszFullDescr, kit4bversion);
-        arg_print_syntax(stdout,argtable,"\n");
-        arg_print_glossary(stdout,argtable,"  %-25s %s\n");
+		arg_print_syntax(stdout,argtable,"\n");
+		arg_print_glossary(stdout,argtable,"  %-25s %s\n");
 		printf("\nNote: Parameters can be entered into a parameter file, one parameter per line.");
 		printf("\n      To invoke this parameter file then precede its name with '@'");
 		printf("\n      e.g. %s @myparams.txt\n",gszProcName);
 		printf("\nPlease report any issues regarding usage of %s to https://github.com/kit4b/kit4b/issues\n\n",gszProcName);
 		exit(1);
-        }
+		}
 
-    /* special case: '--version' takes precedence error reporting */
+	/* special case: '--version' takes precedence error reporting */
 if (version->count > 0)
-        {
+		{
 		printf("\n%s Version %s\n",gszProcName,kit4bversion);
 		exit(1);
-        }
+		}
 
 if (!argerrors)
 	{
@@ -339,8 +343,36 @@ if (!argerrors)
 	else
 		SeqLen = 0;
 
+	szFounderPrefix[0] = '\0';
 	if(PMode == ePMrestrict)
 		{
+		if(prefix->count)
+			{
+			strcpy (szFounderPrefix, prefix->sval[0]);
+			CUtility::TrimQuotedWhitespcExtd (szFounderPrefix);
+			}
+		if(szFounderPrefix[0] != '\0' && strlen(szFounderPrefix) > cMaxSHLenPrefix)
+			{
+			gDiagnostics.DiagOut (eDLFatal, gszProcName, "Prefix \"%s\" length must <= %d chars",szFounderPrefix,cMaxSHLenPrefix);
+			exit (1);
+			}
+
+		if(szFounderPrefix[0] != '\0')
+			{
+			// prefix must be alpha-numeric only
+			char Chr;
+			char *pChr;
+			pChr = szFounderPrefix;
+			while(Chr = *pChr++)
+				{
+				if(!isalnum(Chr))
+					{
+					gDiagnostics.DiagOut (eDLFatal, gszProcName, "Prefix \"%s\" may only contain alpha-numeric chars",szFounderPrefix);
+					exit (1);
+					}	
+				}
+			}
+
 		Sensitivity = (etSensitivity)(sensitivity->count ? sensitivity->ival[0] : eSensDefault);
 		if(Sensitivity < eSensDefault || Sensitivity >= eSensPlaceholder)
 			{
@@ -619,16 +651,19 @@ if (!argerrors)
 			gDiagnostics.DiagOutMsgOnly(eDLInfo,"Restrict to at most Hamming: %d",RHamm);
 			if(szInSeqFile[0] != '\0')
 				gDiagnostics.DiagOutMsgOnly(eDLInfo,"Restricted hamming processing source k-mer sequence file: '%s'",szInSeqFile);
-			gDiagnostics.DiagOutMsgOnly(eDLInfo,"number of threads : %d",NumThreads);
+			if(szFounderPrefix[0])
+				gDiagnostics.DiagOutMsgOnly(eDLInfo,"Hammings for this founder: '%s'",szFounderPrefix);
+
 			break;
 		}
 
+	gDiagnostics.DiagOutMsgOnly(eDLInfo,"number of threads : %d",NumThreads);
 
 #ifdef _WIN32
 	SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
 #endif
 	gStopWatch.Start();
-	Rslt = Process(PMode,bWatsonOnly,Sensitivity,ResFormat,RHamm,(UINT32)SweepStart,(UINT32)SweepEnd,SeqLen,SampleN,IntraInterBoth,NumThreads,szInFile,szInSeqFile,szOutFile);
+	Rslt = Process(PMode,szFounderPrefix,bWatsonOnly,Sensitivity,ResFormat,RHamm,(UINT32)SweepStart,(UINT32)SweepEnd,SeqLen,SampleN,IntraInterBoth,NumThreads,szInFile,szInSeqFile,szOutFile);
 	gStopWatch.Stop();
 	Rslt = Rslt >=0 ? 0 : 1;
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Exit code: %d Total processing time: %s",Rslt,gStopWatch.Read());
@@ -636,7 +671,7 @@ if (!argerrors)
 	}
 else
 	{
-	printf("\n%s theK-mer Hamming distance generator, Version %s\n",gszProcName,kit4bversion);
+	printf("\n%s K-mer Hamming distance generator, Version %s\n",gszProcName,kit4bversion);
 	arg_print_errors(stdout,end,gszProcName);
 	arg_print_syntax(stdout,argtable,"\nUse '-h' to view option and parameter usage\n");
 	exit(1);
@@ -913,7 +948,7 @@ tsHHamHdr HamHdr;
 
 if(m_pPregenHamHdr != NULL)
 	{
-	free(m_pPregenHamHdr);
+	delete []m_pPregenHamHdr;
 	m_pPregenHamHdr = NULL;
 	}
 
@@ -994,7 +1029,7 @@ if((Rslt=LoadPregenHammings(pszHamFile))!=eBSFSuccess)
 m_hOutFile = open(pszOutFile,O_CREATETRUNC );
 #else
 if((m_hOutFile = open(pszOutFile,O_RDWR | O_CREAT,S_IREAD | S_IWRITE))!=-1)
-    if(ftruncate(m_hOutFile,0)!=0)
+	if(ftruncate(m_hOutFile,0)!=0)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to truncate %s - %s",pszOutFile,strerror(errno));
 			Reset(false);
@@ -1167,7 +1202,7 @@ gDiagnostics.DiagOut(eDLInfo,gszProcName,"Creating%sfile '%s' to hold merged Ham
 hOutFile = open(szTmpFile,O_CREATETRUNC );
 #else
 if((hOutFile = open(szTmpFile,O_RDWR | O_CREAT,S_IREAD | S_IWRITE))!=-1)
-    if(ftruncate(hOutFile,0)!=0)
+	if(ftruncate(hOutFile,0)!=0)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to truncate %s - %s",szTmpFile,strerror(errno));
 			delete pMergeInto;
@@ -1450,7 +1485,7 @@ if((Rslt=LoadCSVHammings(pszInFile)) < eBSFSuccess)
 m_hOutFile = open(pszOutFile,O_CREATETRUNC );
 #else
 if((m_hOutFile = open(pszOutFile,O_RDWR | O_CREAT,S_IREAD | S_IWRITE))!=-1)
-    if(ftruncate(m_hOutFile,0)!=0)
+	if(ftruncate(m_hOutFile,0)!=0)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to truncate %s - %s",pszOutFile,strerror(errno));
 			Reset(false);
@@ -1674,7 +1709,8 @@ pthread_exit(NULL);
 
 // ReportRestrictedHammingsCSV
 int
-ReportRestrictedHammingsCSV(int KMerLen,						// Hamming for this length k-mer sequences
+ReportRestrictedHammingsCSV(char *pszFounderPrefix, // reporting hammings for this founder
+					int KMerLen,						// Hamming for this length k-mer sequences
 					bool bProcSepKMers,							// true if processing probe k-mers from sequences not within target suffix array
 					char *pszHammingFile)						// report into this output file
 {
@@ -1691,6 +1727,19 @@ int CurHammingLen;
 int CurHamming;
 int CurHammingLoci;
 UINT32 RHammingsOfs;
+int PrefixLen;
+char szPrefix[cMaxSHLenPrefix + 3];		// allowing for 2 terminating chars plus '\0'
+
+if(pszFounderPrefix != NULL && pszFounderPrefix[0] != '\0')
+	{
+	strcpy(szPrefix,pszFounderPrefix);
+	PrefixLen = (int)strlen(szPrefix);
+	szPrefix[PrefixLen++] = cTagSHTerm1;
+	szPrefix[PrefixLen++] = cTagSHTerm2;
+	szPrefix[PrefixLen] = '\0';
+	}
+else
+	PrefixLen = 0;
 
 	// output results
 #ifdef _WIN32
@@ -1718,7 +1767,6 @@ if((pszBuffer = new char [cRptBuffAllocsize])==NULL)
 	Reset(false);
 	return(eBSFerrMem);
 	}
-
 
 
 BuffOfs = sprintf(pszBuffer,"\"Chrom\",\"StartLoci\",\"Len\",\"Hamming\"\n"); // header line
@@ -1754,6 +1802,12 @@ for(ChromID = 0; ChromID < NumEntries; ChromID++)
 	if(ChromLen < KMerLen)
 		continue;
 
+	if(PrefixLen)
+		{
+		if(strnicmp(szChromName, szPrefix, PrefixLen))
+			continue;
+		}
+
 	CurHammingLen = 0;
 	CurHamming = *pRHammings;
 	CurHammingLoci = 0;
@@ -1764,7 +1818,7 @@ for(ChromID = 0; ChromID < NumEntries; ChromID++)
 			CurHammingLen += 1;
 			continue;
 			}
-		BuffOfs += sprintf(&pszBuffer[BuffOfs],"\"%s\",%d,%d,%d\n",szChromName,CurHammingLoci,CurHammingLen,CurHamming);
+		BuffOfs += sprintf(&pszBuffer[BuffOfs],"\"%s\",%d,%d,%d\n",&szChromName[PrefixLen],CurHammingLoci,CurHammingLen,CurHamming);
 		CurHammingLen = 1;
 		CurHamming = *pRHammings;
 		CurHammingLoci = CurLoci;
@@ -1775,7 +1829,7 @@ for(ChromID = 0; ChromID < NumEntries; ChromID++)
 			BuffOfs = 0;
 			}
 		}
-	BuffOfs += sprintf(&pszBuffer[BuffOfs],"\"%s\",%d,%d,%d\n",szChromName,CurHammingLoci,CurHammingLen,CurHamming);
+	BuffOfs += sprintf(&pszBuffer[BuffOfs],"\"%s\",%d,%d,%d\n",&szChromName[PrefixLen],CurHammingLoci,CurHammingLen,CurHamming);
 	}
 
 if(BuffOfs)
@@ -1797,7 +1851,8 @@ return(eBSFSuccess);
 
 // ReportRestrictedHammingsBed
 int
-ReportRestrictedHammingsBed(etSensitivity Sensitivity, // restricted hamming processing sensitivity
+ReportRestrictedHammingsBed(char *pszFounderPrefix, // reporting hammings for this founder
+					etSensitivity Sensitivity, // restricted hamming processing sensitivity
 					int RHamm,							// restricted hammings limit
 					int KMerLen,						// Hamming for this length k-mer sequences
 					bool bWatsonOnly,					// true if watson strand only processing
@@ -1817,6 +1872,20 @@ int CurHammingLen;
 int CurHamming;
 int CurHammingLoci;
 UINT32 RHammingsOfs;
+
+int PrefixLen;
+char szPrefix[cMaxSHLenPrefix + 3];		// allowing for 2 terminating chars plus '\0'
+
+if(pszFounderPrefix != NULL && pszFounderPrefix[0] != '\0')
+	{
+	strcpy(szPrefix,pszFounderPrefix);
+	PrefixLen = (int)strlen(szPrefix);
+	szPrefix[PrefixLen++] = cTagSHTerm1;
+	szPrefix[PrefixLen++] = cTagSHTerm2;
+	szPrefix[PrefixLen] = '\0';
+	}
+else
+	PrefixLen = 0;
 
 	// output results
 #ifdef _WIN32
@@ -1870,7 +1939,11 @@ for(ChromID = 0; ChromID < NumEntries; ChromID++)
 	RHammingsOfs += ChromLen;
 	if(ChromLen < KMerLen)
 		continue;
-
+	if(PrefixLen)
+		{
+		if(strnicmp(szChromName, szPrefix, PrefixLen))
+			continue;
+		}
 	CurHammingLen = 1;
 	CurHamming = *pRHammings;
 	CurHammingLoci = 0;
@@ -1881,7 +1954,7 @@ for(ChromID = 0; ChromID < NumEntries; ChromID++)
 			CurHammingLen += 1;
 			continue;
 			}
-		BuffOfs += sprintf(&szBuffer[BuffOfs],"%s\t%d\t%d\t%d\n",szChromName,CurHammingLoci,CurHammingLoci+CurHammingLen-1,CurHamming);
+		BuffOfs += sprintf(&szBuffer[BuffOfs],"%s\t%d\t%d\t%d\n",&szChromName[PrefixLen],CurHammingLoci,CurHammingLoci+CurHammingLen-1,CurHamming);
 		CurHammingLen = 1;
 		CurHamming = *pRHammings;
 		CurHammingLoci = CurLoci;
@@ -1892,7 +1965,7 @@ for(ChromID = 0; ChromID < NumEntries; ChromID++)
 			BuffOfs = 0;
 			}
 		}
-	BuffOfs += sprintf(&szBuffer[BuffOfs],"%s\t%d\t%d\t%d\n",szChromName,CurHammingLoci,CurHammingLoci+CurHammingLen-1,CurHamming);
+	BuffOfs += sprintf(&szBuffer[BuffOfs],"%s\t%d\t%d\t%d\n",&szChromName[PrefixLen],CurHammingLoci,CurHammingLoci+CurHammingLen-1,CurHamming);
 	}
 
 if(BuffOfs)
@@ -1912,7 +1985,8 @@ return(eBSFSuccess);
 
 // ReportRestrictedHammingsWiggle
 int
-ReportRestrictedHammingsWiggle(etSensitivity Sensitivity, // restricted hamming processing sensitivity
+ReportRestrictedHammingsWiggle(char *pszFounderPrefix, // reporting hammings for this founder
+					etSensitivity Sensitivity, // restricted hamming processing sensitivity
 					int RHamm,							// restricted hammings limit
 					int KMerLen,						// Hamming for this length k-mer sequences
 					bool bWatsonOnly,					// true if watson strand only processing
@@ -1929,6 +2003,19 @@ int NumEntries;
 int ChromLen;
 char szChromName[100];
 UINT32 RHammingsOfs;
+int PrefixLen;
+char szPrefix[cMaxSHLenPrefix + 3];		// allowing for 2 terminating chars plus '\0'
+
+if(pszFounderPrefix != NULL && pszFounderPrefix[0] != '\0')
+	{
+	strcpy(szPrefix,pszFounderPrefix);
+	PrefixLen = (int)strlen(szPrefix);
+	szPrefix[PrefixLen++] = cTagSHTerm1;
+	szPrefix[PrefixLen++] = cTagSHTerm2;
+	szPrefix[PrefixLen] = '\0';
+	}
+else
+	PrefixLen = 0;
 
 	// output results
 #ifdef _WIN32
@@ -1984,16 +2071,35 @@ for(ChromID = 0; ChromID < NumEntries; ChromID++)
 	RHammingsOfs += ChromLen;
 	if(ChromLen < KMerLen)
 		continue;
-	BuffOfs += sprintf(&szBuffer[BuffOfs],"fixedStep chrom=%s start=%d step=1 span=1\n",szChromName,1);
+
+	if(PrefixLen)
+		{
+		if(strnicmp(szChromName, szPrefix, PrefixLen))
+			continue;
+		}
+
+	uint32_t SpanLen = 0;
+	uint32_t SpanStart = 0;
+	uint8_t CurHammings = *pRHammings;
+
 	for(CurLoci = 0; CurLoci <= (UINT32)(ChromLen - KMerLen); CurLoci++,pRHammings++)
 		{
-		BuffOfs += sprintf(&szBuffer[BuffOfs],"%d\n",*pRHammings);
+		if(*pRHammings != CurHammings) // will always match on 1st iteration over loci for current chrom
+			{
+			BuffOfs += sprintf((char *)&szBuffer[BuffOfs],"variableStep chrom=%s span=%d\n%d %d\n",&szChromName[PrefixLen],SpanLen,SpanStart+1,CurHammings); // Wiggle uses 1-start coordinate system
+			CurHammings = *pRHammings;
+			SpanLen = 0;
+			SpanStart = CurLoci + 1;
+			}
+		SpanLen++;
 		if((BuffOfs + 500) > sizeof(szBuffer))
 			{
 			CUtility::SafeWrite(m_hOutFile,szBuffer,BuffOfs);
 			BuffOfs = 0;
 			}
 		}
+	if(SpanStart != CurLoci)
+		BuffOfs += sprintf((char *)&szBuffer[BuffOfs],"variableStep chrom=%s span=%d\n%d %d\n",&szChromName[PrefixLen],SpanLen,SpanStart+1,CurHammings); 
 	}
 
 if(BuffOfs)
@@ -2013,7 +2119,8 @@ return(eBSFSuccess);
 
 
 int
-GenRestrictedHammings(etSensitivity Sensitivity, // restricted hamming processing sensitivity
+GenRestrictedHammings(char *pszFounderPrefix,	// filtering on this founder prefix (restricted mode only)
+		etSensitivity Sensitivity, // restricted hamming processing sensitivity
 		etResFormat ResFormat,				// restricted Hamming output file format
 		bool bWatsonOnly,					// true if watson strand only processing
 		int RHamm,							// if > 0 then restricted hammings limit
@@ -2406,17 +2513,20 @@ if(pszHammingFile != NULL && pszHammingFile[0] != '\0')
 
 	switch(ResFormat) {
 		case cRHFcsv:				// CSV with Hamming loci ranges (chrom, startloci, length, Hamming)
-			Rslt = ReportRestrictedHammingsCSV(KMerLen,			// Hamming for this length k-mer sequences
+			Rslt = ReportRestrictedHammingsCSV(pszFounderPrefix, // reporting hammings for this founder
+						KMerLen,			// Hamming for this length k-mer sequences
 						bProcSepKMers,							// true if processing probe k-mers from sequences not within target suffix array
 						pszHammingFile);						// report into this output file
 			break;
 
 		case cRHFBed:
-			Rslt = ReportRestrictedHammingsBed(Sensitivity,RHamm,KMerLen,bWatsonOnly,bProcSepKMers,pszHammingFile);
+			Rslt = ReportRestrictedHammingsBed(pszFounderPrefix, // reporting hammings for this founder
+								Sensitivity,RHamm,KMerLen,bWatsonOnly,bProcSepKMers,pszHammingFile);
 			break;
 
 		case cRHFWiggle:
-			Rslt = ReportRestrictedHammingsWiggle(Sensitivity,RHamm,KMerLen,bWatsonOnly,bProcSepKMers,pszHammingFile);
+			Rslt = ReportRestrictedHammingsWiggle(pszFounderPrefix, // reporting hammings for this founder
+								Sensitivity,RHamm,KMerLen,bWatsonOnly,bProcSepKMers,pszHammingFile);
 			break;
 
 		}
@@ -2487,6 +2597,7 @@ return(0);
 
 int
 Process(etPMode PMode,			// processing mode
+		char *pszFounderPrefix,	// filtering on this founder prefix (restricted mode only)
 		bool bWatsonOnly,		// true if watson strand only processing
 		etSensitivity Sensitivity, // restricted hamming processing sensitivity
 		etResFormat ResFormat,	// restricted Hamming output file format
@@ -2529,7 +2640,7 @@ m_Sensitivity = Sensitivity;
 m_SampleN = SampleN;
 
 if(PMode == ePMrestrict)
-	return(GenRestrictedHammings(Sensitivity,ResFormat,bWatsonOnly,RHamm,SeqLen,SampleN,IntraInterBoth,NumThreads,pszGenomeFile,pszInSeqFile,pszHammingFile));
+	return(GenRestrictedHammings(pszFounderPrefix,Sensitivity,ResFormat,bWatsonOnly,RHamm,SeqLen,SampleN,IntraInterBoth,NumThreads,pszGenomeFile,pszInSeqFile,pszHammingFile));
 
 if(PMode == ePMmerge)
 	return(MergeHammings(pszGenomeFile,pszHammingFile));
@@ -2574,7 +2685,7 @@ if(PMode == ePMdist)
 	if(SSeqStart > 10)				   // safty margin to ensure node hammings do overlap
 		SSeqStart -= 10;
 	else
-	    SSeqStart = 1;
+		SSeqStart = 1;
 	}
 else	// single node processing
 	{

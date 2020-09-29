@@ -97,7 +97,7 @@ public:
 	virtual ~CBioSeqFile(void);
 	teBSFrsltCodes Reset(bool bFlush = true);		// reset state back to that immediately following instantiation before file opened/created
 	virtual teBSFrsltCodes Open(char *pszSeqFile,	// specifies file to open or create
-    			UINT32 Type = eSeqBaseType,	// biosequence file type 
+				UINT32 Type = eSeqBaseType,	// biosequence file type 
 				bool bCreate = false);				// create file if it doesn't already exist, truncate if it does
 
 	teBSFrsltCodes SetDescription(char *pszDescription);
@@ -170,7 +170,7 @@ public:
 		   UINT32 MaxInDelExtension,	// max length of any InDel extension 
 		   UINT32 ProbeLen,			// remaining probe length
 		   unsigned char *pProbe,
-   		   UINT32 TargLen,			// remaining target length
+		   UINT32 TargLen,			// remaining target length
 		   unsigned char *pTarg);
 
 	static UINT32						// number of aligned bases
@@ -181,7 +181,7 @@ public:
 		   UINT32 MaxInDelExtension,	// max length of any InDel extension 
 		   UINT32 ProbeLen,			// remaining probe length
 		   unsigned char *pProbe,
-   		   UINT32 TargLen,			// remaining target length
+		   UINT32 TargLen,			// remaining target length
 		   unsigned char *pTarg);
 
 	static char * MakeXMLsafe(char *pszStr);

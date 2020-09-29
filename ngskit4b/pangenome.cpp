@@ -14,12 +14,13 @@
 #endif
 
 #include "./ngskit4b.h"
+#include "seghaplotypes.h"
 #include "pangenome.h"
 
 
 int Process(eModePG PMode,			// processing mode
 			char* pszPrefix,		// descriptor prefix
-			int BinSizeKbp,	// Wiggle score is number of alignments over these sized bins
+			int BinSizeKbp,			// Wiggle score is number of alignments over these sized bins
 			char* pszInFile,		// input fasta or SAM file
 			char* pszOutFile);		// output to this file
 
@@ -189,8 +190,7 @@ pangenome(int argc, char **argv)
 				{
 				gDiagnostics.DiagOut (eDLFatal, gszProcName, "Prefix \"%s\" may only contain alpha-numeric chars",szPrefix);
 				exit (1);
-				}	
-			pChr[-1] = Chr;
+				}
 			}
 
 		strcpy (szInFile, infile->filename[0]);
@@ -208,9 +208,6 @@ pangenome(int argc, char **argv)
 			gDiagnostics.DiagOut (eDLFatal, gszProcName, "No output file specified");
 			exit (1);
 			}
-
-
-
 
 		gDiagnostics.DiagOut (eDLInfo, gszProcName, "Processing parameters:");
 		const char *pszDescr;
@@ -458,7 +455,8 @@ while((NumRead = (int)read(m_hInFile, m_pInBuffer, (int)m_AllocInBuff)) > 0)
 				{
 				strcpy((char *)pOutChr,pszPrefix);
 				pOutChr += PrefixLen;
-				*pOutChr++ = '|';
+				*pOutChr++ = cTagSHTerm1;
+				*pOutChr++ = cTagSHTerm2;
 				m_OutBuffIdx += PrefixLen+1;
 				}
 			bNL = false;
@@ -510,13 +508,14 @@ uint8_t *pOutChr;
 char szAssembRef[120];
 char szSeqRef[120];
 uint32_t SeqRefLen;
-char szPrefix[10];
+char szPrefix[cMaxSHLenPrefix + 3];		// allowing for 2 terminating chars plus '\0'
 
 Reset();
 
 strcpy(szPrefix,pszPrefix);
 PrefixLen = (int)strlen(szPrefix);
-szPrefix[PrefixLen++] = '|';
+szPrefix[PrefixLen++] = cTagSHTerm1;
+szPrefix[PrefixLen++] = cTagSHTerm2;
 szPrefix[PrefixLen] = '\0';
 
 #ifdef _WIN32
@@ -692,7 +691,7 @@ while((NumRead = (int)read(m_hInFile, m_pInBuffer, (int)m_AllocInBuff)) > 0)
 	fsync(m_hOutFile);
 #endif
 	Reset();
-	szPrefix[PrefixLen - 1] = '\0';
+	szPrefix[PrefixLen - 2] = '\0';
 	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Filtered %u alignments with target prefixed by '%s' into '%s'", NumPrefixed, szPrefix, pszOutFile);
 	return(eBSFSuccess);
 }

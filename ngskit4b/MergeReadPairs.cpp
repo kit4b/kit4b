@@ -1018,14 +1018,14 @@ int												// returns number of sequences merged and written to output files
 CMergeReadPairs::MergeOverlaps(etPMode PMode,	// processing mode 
 			  etOFormat OFormat,				// output file format
 			  int MinOverlap,					// reads must overlap by at least this many bases
-              int MaxOverlapPropSubs,			// and overlap can have at most this proportion of substitutions, if > 0 then floor of 1 sub allowed
+			  int MaxOverlapPropSubs,			// and overlap can have at most this proportion of substitutions, if > 0 then floor of 1 sub allowed
 			  int NumInPE5Files,				// number of input single ended or 5' end if paired end reads file
 			  char **pszInPE5Files,				// input single ended or 5' end if paired end reads files
 			  int NumInPE3Files,				// number of input input 3' end if paired end reads files
 			  char **pszInPE3Files,				// input 3' end if paired end reads files
 			  char *pszMergeOutFile,			// write merged overlaping reads to this file
-  			  int StartNum,						// use this initial starting sequence identifier
-  			  bool bAppendOut)				// if true then append if output files exist, otherwise trunctate existing output files
+			  int StartNum,						// use this initial starting sequence identifier
+			  bool bAppendOut)				// if true then append if output files exist, otherwise trunctate existing output files
 
 {
 int Rslt;
@@ -1035,7 +1035,7 @@ if(MinOverlap < 1 ||					// must be at least a 1 base overlap required!
    MaxOverlapPropSubs < 0 ||			// must be reasonable number of allowed substitutions in overlap
    NumInPE5Files < 1 || NumInPE3Files < 0 ||
    NumInPE5Files != NumInPE3Files)
-   	{
+	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"MergeOverlaps: inconsistency in function parameters");
 	return(eBSFerrParams);
 	}
@@ -1414,7 +1414,7 @@ while((Rslt = (teBSFrsltCodes)(PE5SeqLen = m_PE5Fasta.ReadSequence(PE5Seq,ccMaxF
 		}
 
 	  int PEPlateCell;
-  	if(m_PMode >= ePMAmplicon && m_bAmpliconNoMerge)
+	if(m_PMode >= ePMAmplicon && m_bAmpliconNoMerge)
 		{
 		if ((PEPlateCell = MapPEBarcodesToWell(min(PE5SeqLen,PE3SeqLen), PE5Seq, PE3Seq)) < 1)
 			NumPENoBarcode += 1;

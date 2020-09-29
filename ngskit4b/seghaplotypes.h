@@ -1,7 +1,10 @@
 #pragma once
 
+const int cMaxSHLenPrefix = 10;							// founder or Tag name prefixes must be no longer than this number of chars
+const char cTagSHTerm1 = '|';							// tags are terminated by 2 chrs, this is the first. Preceding tag name must be alpha-numeric only and a max of cMaxSHLenPrefix in length
+const char cTagSHTerm2 = '#';							// and this is the second
+
 const int cMaxSHFounders = 5;							// allowing for at most this many founders (quad-parental + 1)
-const int cMaxSHLenPrefix = 10;							// founder prefixes must be no longer than this number of chars
 const int cAllocSHBuffInSize = 0x3fffffff;				// allocating buffering for input file
 const int cAllocSHBuffOutSize = cAllocSHBuffInSize;		// allocating buffering for output files
 const int cAllocSHNumSAMloci = 0x0ffffff;				// allocate/realloc for this many SAMloci
@@ -138,6 +141,11 @@ class CSegHaplotypes
 
 	uint32_t		// returned founder name identifier, 0 if unable to accept this founder name
 		LocateFounder(char* pszFounder); // associate unique identifier with this founder name
+
+	
+	int			// returned len of parsed founder name, 0 if unable to parse out a founder (add 2 to len to obtain start of non-prefixed original string 
+		ParseFounder(char* pszIn);			// input null terminated string assumed to contain founder name within first cMaxSHLenPrefix chars
+
 
 	// SortSAMTargLoci
 // Sort m_pSAMloci by ascending Targ.Loci

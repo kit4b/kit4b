@@ -237,14 +237,14 @@ typedef struct TAG_sATRegion {
 
 // returned multiple hit loci, note that can have 2 segments if microInDel of read spans splice junction
 typedef struct TAG_sSegLoci {
-	    UINT16 ReadOfs;				// Original match started at this read sequence offset
+		UINT16 ReadOfs;				// Original match started at this read sequence offset
 		UINT8 Strand;				// matched on this strand
 		UINT32 ChromID;				// suffix entry (chromosome) matched on
 		UINT64 MatchLoci;			// original match loci
 		UINT16 MatchLen;			// original match length
 		UINT8 Mismatches;			// original number of mismatches
 		UINT16 TrimLeft;			// left flank trimming removes this many bases
-        UINT16 TrimRight;			// right flank trimming removes this many bases
+		UINT16 TrimRight;			// right flank trimming removes this many bases
 		UINT8 TrimMismatches;		// after trimming there are this many mismatches
 }	tsSegLoci;
 
@@ -254,7 +254,7 @@ typedef struct TAG_tsHitLoci {
 	 UINT8 FlgInDel:1;				// set if microInDel alignment with 2 segments
 	 UINT8 FlgInsert:1;				// set if alignment with insertion into read relative to reference, false if deletion from read
 	 UINT8 FlgSplice:1;				// set if splice junction with 2 segments
- 	 UINT8 FlgNonOrphan:1;			// set if determined that at least two splice or InDels sharing intersegment start/ends
+	 UINT8 FlgNonOrphan:1;			// set if determined that at least two splice or InDels sharing intersegment start/ends
 	 UINT16 Score;					// alignment match score
 	 tsSegLoci Seg[2];				// both used if InDel or splice junction	
  } tsHitLoci;
@@ -397,7 +397,7 @@ static	void *ThreadedPrereadBlocks(void * pThreadPars);
 	UINT64 m_AllocSfxBlockMem;					// memory allocation size for loaded suffix blocks
 	UINT64 m_AllocEntriesBlockMem;				// memory allocation size for loaded entry block
 	UINT64 m_AllocBisulfiteMem;					// memory allocation size for loaded bisulfite
-    UINT8 *m_pBisulfateBases;					// used whilst constructing sfx array if bisulfite processing
+	UINT8 *m_pBisulfateBases;					// used whilst constructing sfx array if bisulfite processing
 	UINT64 m_EstSfxEls;							// estimate of how mant sfx array elements may be required when creating sfx array 
 
 	teBSFrsltCodes ChunkedWrite(INT64 WrtOfs,UINT8 *pData,INT64 WrtLen); // handles WrtLen > INT_MAX
@@ -470,34 +470,34 @@ static	void *ThreadedPrereadBlocks(void * pThreadPars);
 		ExploreInDelMatchRight(UINT32 ExtdProcFlags,	// flags indicating if lower levels need to do any form of extended processing with this specific read...
 			UINT32 ReadID,				// identifies this read
 			char CurStrand,				// aligning on this strand	
-		    int microInDelLen,		   	// microInDel can be upto (inclusive) this length
+			int microInDelLen,		   	// microInDel can be upto (inclusive) this length
 			int MaxTotMM,				// can be at most this many mismatches in total
- 		    int ProbeLen,				// length of probe excluding any eBaseEOS
-		    etSeqBase *pProbe,			// pts to 5' start of probe sequence
-		    tsSfxEntry *pEntry,			// target at TargIdx is in this sfx entry
-		    INT64 TargIdx,				// pTarg corresponds to this suffix index
-		    etSeqBase *pTarg,			// pts to 5' start of target sequence
-		    tsHitLoci *pHit);			// where to return hit loci	
+			int ProbeLen,				// length of probe excluding any eBaseEOS
+			etSeqBase *pProbe,			// pts to 5' start of probe sequence
+			tsSfxEntry *pEntry,			// target at TargIdx is in this sfx entry
+			INT64 TargIdx,				// pTarg corresponds to this suffix index
+			etSeqBase *pTarg,			// pts to 5' start of target sequence
+			tsHitLoci *pHit);			// where to return hit loci	
 
 		int									// -1 if errors, 0 if no match, 1 if mismatches only, 2 InDel and insertion into probe, 2 InDel and deletion from probe
 		ExploreInDelMatchLeft(UINT32 ExtdProcFlags,			// flags indicating if lower levels need to do any form of extended processing with this specific read...
 			UINT32 ReadID,				// identifies this read
 			char CurStrand,				// aligning on this strand	
-		    int microInDelLen,		   	// microInDel can be upto (inclusive) this length
+			int microInDelLen,		   	// microInDel can be upto (inclusive) this length
 			int MaxTotMM,				// can be at most this many mismatches in total
- 		    int ProbeLen,				// length of probe excluding any eBaseEOS
-		    etSeqBase *pProbe,			// pts to 5' start of probe sequence
+			int ProbeLen,				// length of probe excluding any eBaseEOS
+			etSeqBase *pProbe,			// pts to 5' start of probe sequence
 			tsSfxEntry *pEntry,		    // target at TargIdx is in this sfx entry
-		    INT64 TargIdx,				// pTarg corresponds to this suffix index
-		    etSeqBase *pTarg,			// pts to 5' start of target sequence
-		    tsHitLoci *pHit);			// where to return hit loci	
+			INT64 TargIdx,				// pTarg corresponds to this suffix index
+			etSeqBase *pTarg,			// pts to 5' start of target sequence
+			tsHitLoci *pHit);			// where to return hit loci	
 
 		int									// -1 if errors, 0 if no match, 1 if mismatches only, 2 InDel and insertion into probe, 3 InDel and deletion from probe
 		ExploreSpliceRight(char CurStrand,					// aligning on this strand
 			int MaxSpliceJunctLen,		// junction has to be no longer than this length
 			int MaxTotMM,			// can be at most this many mismatches in total
 			int CoreLen,			// core length used
- 		   int ProbeLen,			// length of probe excluding any eBaseEOS
+		   int ProbeLen,			// length of probe excluding any eBaseEOS
 		   etSeqBase *pProbe,		// pts to 5' start of probe sequence
 		   INT64 TargOfs,			// pTarg corresponds to this suffix offset
 		   INT64 TargLen,			// max length of target to be explored 
@@ -509,7 +509,7 @@ static	void *ThreadedPrereadBlocks(void * pThreadPars);
 			int MaxSpliceJunctLen,		// junction has to be no longer than this length
 			int MaxTotMM,			// can be at most this many mismatches in total
 			int CoreLen,			// core length used
- 		   int ProbeLen,			// length of probe excluding any eBaseEOS
+		   int ProbeLen,			// length of probe excluding any eBaseEOS
 		   etSeqBase *pProbe,		// pts to 5' start of probe sequence
 		   INT64 TargOfs,			// pTarg corresponds to this suffix offset
 		   INT64 TargLen,			// max length of target to be explored 
@@ -528,7 +528,7 @@ public:
 	int Open(char *pszSeqFile,				// specifies file to open or create
 			   bool bCreate = false,		// create file if it doesn't already exist, truncate if it does
 			   bool bBisulfite = false,		// if true then bisulfite processing
-               bool bColorspace = false);	// if true then colorspace (SOLiD) processing
+			   bool bColorspace = false);	// if true then colorspace (SOLiD) processing
 
 	// Memory resident suffix array
 	// User creates the suffix array in memory and can immediately access for alignments etc without needing to write to file
@@ -550,7 +550,7 @@ public:
 			
 	int Close(bool bFlush = true);			// closes opened file
 
-    // obtain a copy of the header for external diagnostics
+	// obtain a copy of the header for external diagnostics
 	tsSfxHeaderV3 *GetSfxHeader(tsSfxHeaderV3 *pCopyTo);
 
 	int SetMaxIter(int MaxIter);			// set maximum iterations on identically matching subsequences
@@ -604,11 +604,11 @@ public:
 						INT64 StartSfxIdx,				// starting suffix index
 							INT64 EndSfxIdx,			// finish processing at this suffix index, inclusive - if 0 then process all remaining
 							int PrefixKMerLen,			// report on K-Mers having this prefix sequence length
-						    int SuffixKMerLen,			// and allow for the K-mers containing suffixes of this length (can be 0) 
+							int SuffixKMerLen,			// and allow for the K-mers containing suffixes of this length (can be 0) 
 							int MinCultivars,			// only report if K-Mers present in at least this many different cultivars (0 if must be present in all cultivars)
 							int MaxHomozygotic,			// only report prefixes if K-Mer suffixes are homozygotic between a maximum of this many cultivars, if 1 then no other cultivars
 							void *pThis,				// callers class instance
-						    int Callback(void *pThis,tsKMerCultsCnts *pCultsCnts)); // callback on K-Mers
+							int Callback(void *pThis,tsKMerCultsCnts *pCultsCnts)); // callback on K-Mers
 
 			int											// < 0 if errors, 0 if no matches or change, 1 if mumber of matches accepted, 2 MMDelta criteria not met, 3 too many match instances  
 				AlignReads(UINT32 ExtdProcFlags,		// flags indicating if lower levels need to do any form of extended processing with this specific read...
@@ -621,9 +621,9 @@ public:
 						 int MinCoreLen,				// do not reduce core below this length
 						 int MMDelta,					// minimum (1..n) mismatch difference between the best and next best core alignment
 						 eALStrand Align2Strand,		// align to this strand
-  						 int microInDelLen,				// microInDel length maximum
+						 int microInDelLen,				// microInDel length maximum
 						 int MaxSpliceJunctLen,			// junction has to be no longer than this length 
-  						 int *pLowHitInstances,			// In/Out number of match instances for lowest number of mismatches thus far for this read
+						 int *pLowHitInstances,			// In/Out number of match instances for lowest number of mismatches thus far for this read
 						 int *pLowMMCnt,				// In/Out lowest number of mismatches thus far for this read
 						 int *pNxtLowMMCnt,				// In/Out next to lowest number of mismatches thus far for this read
 						 etSeqBase *pProbeSeq,			// probe
@@ -656,23 +656,23 @@ public:
 
 
 			INT64	BSIterateExacts(etSeqBase *pProbeSeq,	// bisulfite probe
- 						 UINT32 ProbeLen,			// probe length
+						 UINT32 ProbeLen,			// probe length
 						 INT64 PrevHitIdx,			// 0 if starting new sequence, otherwise set to return value of previous successful iteration return
- 						 UINT32 *pTargEntryID,		// if match then where to return suffix entry (chromosome) matched on
+						 UINT32 *pTargEntryID,		// if match then where to return suffix entry (chromosome) matched on
 						 UINT32 *pHitLoci);			// if match then where to return loci
 
 			 INT64 IterateExacts(etSeqBase *pProbeSeq,// probe
- 						 UINT32 ProbeLen,			// probe length
+						 UINT32 ProbeLen,			// probe length
 						 INT64 PrevHitIdx,			// 0 if starting new sequence, otherwise set to return value of previous successful iteration return
- 						 UINT32 *pTargEntryID,		// if match then where to return suffix entry (chromosome) matched on
+						 UINT32 *pTargEntryID,		// if match then where to return suffix entry (chromosome) matched on
 						 UINT32 *pHitLoci,			// if match then where to return loci
 						 UINT32 *pTargSeqLen = NULL, // optionally update with the matched target sequence length				
 						 etSeqBase **ppTargSeq = NULL);	 // optionally update with ptr to start of the target sequence, exact match will have started at &ppTargSeq[*pHitLoci]  
 
 			 INT64 IterateExacts(etSeqBase *pProbeSeq,// probe
- 						 UINT32 ProbeLen,			// probe length
+						 UINT32 ProbeLen,			// probe length
 						 INT64 PrevHitIdx,			// 0 if starting new sequence, otherwise set to return value of previous successful iteration return
- 						 UINT32 *pTargEntryID,		// if match then where to return suffix entry (chromosome) matched on
+						 UINT32 *pTargEntryID,		// if match then where to return suffix entry (chromosome) matched on
 						 UINT32 *pHitLoci,			// if match then where to return loci
 						 UINT32 MaxExtdLen,			// attempt to extend exact match of ProbeLen out to MaxExtdLen and report extended match length in *pHitExtdLen
 						int *pHitExtdLen);			// was able to extend core out to this length
@@ -701,13 +701,13 @@ public:
 
 			INT64						// returned hit idex (1..n) or 0 if no hits
 				IteratePacBio(etSeqBase *pProbeSeq,				// probe sequence
- 										UINT32 ProbeLen,		// probe sequence length
- 									 UINT32 SeedCoreLen,		// using this seed core length
+										UINT32 ProbeLen,		// probe sequence length
+									 UINT32 SeedCoreLen,		// using this seed core length
 									 UINT32 SloughEntryID,		// if > 0 then hits to this entry (normally would be the probe sequence entry identifier) are to be sloughed
 									 UINT32 MinTargLen,			// accepted hit target sequences must be at least this length
 									 UINT32 MaxTargLen,			// if > 0 then accepted hit target sequences must be no longer than this length
 									 INT64 PrevHitIdx,			// 0 if starting new sequence, otherwise set to return value of previous successful iteration return
- 									 UINT32 *pTargEntryID,		// if match then where to return suffix entry (chromosome) matched on
+									 UINT32 *pTargEntryID,		// if match then where to return suffix entry (chromosome) matched on
 									 UINT32 *pHitLoci,			// if match then where to return loci
 									  int NumPreQuals = 0,			// number of pre-qualified sequences in pQualTargs
 									tsQualTarg *pQualTargs = NULL,	// holds prequalified target sequence identifiers
@@ -718,9 +718,9 @@ public:
 									int SeqLen,				// quick score over this many remaining bases in pProbe and pTarg following the exactly matching SeedCoreLen
 									etSeqBase *pProbe,		// probe sequence scoring onto
 									etSeqBase *pTarg,		// this target sequence
-								    int MatchScore = 3,     // exact match score  ((in any Pacbio sequence then expecting ~85% of all base calls to be correct), note that between any 2 sequences then the relative error rate doubles!
+									int MatchScore = 3,     // exact match score  ((in any Pacbio sequence then expecting ~85% of all base calls to be correct), note that between any 2 sequences then the relative error rate doubles!
 									int InDelPenalty = 2,  // insertions and deletions much more likely than substitutions (in any Pacbio sequence then expecting ~14% of all error events to be insertions)
-							        int SubstitutePenalty = 7); // base call subs are relatively rare (in any Pacbio sequence then expecting ~1% of all error events to be substitutions)
+									int SubstitutePenalty = 7); // base call subs are relatively rare (in any Pacbio sequence then expecting ~1% of all error events to be substitutions)
 
 			int												// much quicker, but far less accurate, than the QuickScoreOverlap SW banded function (above) as scoring only based on the number of 4-mers matching within a 16bp window along the two overlaping sequences
 				QuickScoreOverlap(int SeqLen,				// both probe and target are of this minimum length (must be at least 16bp, will be clamped to be no more than 100bp)
@@ -730,26 +730,26 @@ public:
 
 			 int									// < 0 if errors, 0 if no matches to any other chroms other than ProbeChromID allowing up to MaxTotMM, 1 if matches to any other chrom
 				MatchesOtherChroms( int ProbeChromID,	// probe is from this chrom
-				    int MaxTotMM,		// allow for at most this number of missmatches
-				    int ProbeLen,		// probe sequence is this length
+					int MaxTotMM,		// allow for at most this number of missmatches
+					int ProbeLen,		// probe sequence is this length
 					etSeqBase *pProbe);	// check for matches from this probe sequence
 
 			 int									// < 0 if errors, 0 if no matches to any other chroms not in pProbeChromIDs[] allowing up to MaxTotMM, 1 if matches to any other chrom
 				MatchesOtherChroms(int NumProbeIDs, // number of chroms in pProbeChromIDs
 					int *pProbeChromIDs,	// probe is from one of these chroms
-				    int MaxTotMM,		// allow for at most this number of missmatches
-				    int ProbeLen,		// probe sequence is this length
+					int MaxTotMM,		// allow for at most this number of missmatches
+					int ProbeLen,		// probe sequence is this length
 					etSeqBase *pProbe);	// check for matches from this probe sequence
 
 
 			 int						// < 0 if errors, 0 if no matches, 1 if a unique match, 2 if multiple matches
 				LocateApproxUniques(int AccumReadHits,	// how many reads have already been matched, must be 0 or 1 
-   						etSeqBase *pProbeSeq,			// probe
- 						 etSeqBase *pPatternSeq,		// contains pattern to match with, etBaseN represents wildcard bases to match against any in the target
+						etSeqBase *pProbeSeq,			// probe
+						 etSeqBase *pPatternSeq,		// contains pattern to match with, etBaseN represents wildcard bases to match against any in the target
 														// will be updated on return with etBaseN's changed to actual subsitution bases
 						 UINT32 ProbeLen,				// probe, and also pattern, length
 						 int ExpMismatches,				// expected pattern wildcard matches
- 						 UINT32 *pTargEntryID,			// if match then where to return suffix entry (chromosome) matched on
+						 UINT32 *pTargEntryID,			// if match then where to return suffix entry (chromosome) matched on
 						 UINT32 *pHitLoci,				// if unique match then where to return loci
 						int CurMaxIter);				// max allowed iterations per subsegmented sequence when matching that subsegment
 
@@ -762,7 +762,7 @@ public:
 						 int CoreDelta,					// core window offset increment (1..n)
 						 int MaxNumCoreSlides,			// max number of times to slide core on each strand
 						 int MMDelta,					// minimum (1..n) mismatch difference between the best and next best core alignment
- 					 	 eALStrand Align2Strand,		// align to this strand
+						 eALStrand Align2Strand,		// align to this strand
 						 int *pLowHitInstances,			// In/Out number of match instances for lowest number of mismatches thus far for this read
 						 int *pLowMMCnt,				// In/Out lowest number of mismatches thus far for this read
 						 int *pNxtLowMMCnt,				// In/Out next to lowest number of mismatches thus far for this read
@@ -777,7 +777,7 @@ public:
 
 		int						// < 0 if errors, 0 if no matches or change, 1 if mumber of matches accepted, 2 MMDelta criteria not met, 3 too many match instances
 			LocateQuerySeqs(UINT32 QuerySeqID,			// identifies this query sequence
-  						 etSeqBase *pProbeSeq,			// probe
+						 etSeqBase *pProbeSeq,			// probe
 						 UINT32 ProbeLen,				// probe length
 						 UINT32 CoreLen,				// core window length
 						 UINT32 CoreDelta,				// core window offset increment (1..n)
@@ -796,7 +796,7 @@ public:
 						 int CoreDelta,					// core window offset increment (1..n)
 						 int MaxNumCoreSlides,			// max number of times to slide core on each strand
 						 eALStrand Align2Strand,		// align to this strand
- 						 etSeqBase *pProbeSeq,			// probe
+						 etSeqBase *pProbeSeq,			// probe
 						 int ProbeLen,					// probe length
 						 int MaxHits,					// return at most this number of best hits
 						 int *pHitInstances,			// returned number of match instances in pHits
@@ -824,7 +824,7 @@ public:
 						 int CoreDelta,					// core window offset increment (1..n)
 						 int MaxNumCoreSlides,			// max number of times to slide core on each strand
 						 int MaxMatches,				// if more than 0 and encountering more matches than this limit then return match count 0
- 					 	 int NumEntries,				// number of entries in pEntryMatch
+						 int NumEntries,				// number of entries in pEntryMatch
 						 UINT32 *pEntryMatches,			// return number of matches to each entry in this array
 						 UINT32 ProbeEntry,				// probe was from this entry
 						 UINT32 ProbeOfs,				// starting at this offset
@@ -841,14 +841,14 @@ public:
 						 int MaxTotMM,					// max number of mismatches allowed
 						 int CoreLen,					// core window length 
 						 eALStrand Align2Strand,		// align to this strand
-  						 int *pLowHitInstances,			// In/Out number of match instances for lowest number of mismatches thus far for this read
+						 int *pLowHitInstances,			// In/Out number of match instances for lowest number of mismatches thus far for this read
 						 int *pLowMMCnt,				// In/Out lowest number of mismatches thus far for this read
 						 int *pNxtLowMMCnt,				// In/Out next to lowest number of mismatches thus far for this read
 						 etSeqBase *pProbeSeq,			// probe
 						 int ProbeLen,					// probe length
 						 int MaxHits,					// (IN) process for at most this number of hits
 						 tsHitLoci *pHits,				// where to return any hit
- 						 int *pScore,					// where to return InDel score
+						 int *pScore,					// where to return InDel score
 						 int CurMaxIter,				// max allowed iterations per subsegmented sequence when matching that subsegment
 						 int NumAllocdIdentNodes,		// memory has been allocated by caller for holding upto this many tsIdentNodes
 						 tsIdentNode *pAllocsIdentNodes); // memory allocated by caller for holding tsIdentNodes
@@ -860,14 +860,14 @@ public:
 						 int MaxTotMM,					// max number of mismatches allowed
 						 int CoreLen,					// core window length 
 						 eALStrand Align2Strand,		// align to this strand
-  						 int *pLowHitInstances,			// In/Out number of match instances for lowest number of mismatches thus far for this read
+						 int *pLowHitInstances,			// In/Out number of match instances for lowest number of mismatches thus far for this read
 						 int *pLowMMCnt,				// In/Out lowest number of mismatches thus far for this read
 						 int *pNxtLowMMCnt,				// In/Out next to lowest number of mismatches thus far for this read
 						 etSeqBase *pProbeSeq,			// probe
 						 int ProbeLen,					// probe length
 						 int MaxHits,					// (IN) process for at most this number of hits
 						 tsHitLoci *pHits,				// where to return any hit
- 						 int *pScore,					// where to return score
+						 int *pScore,					// where to return score
 						 int CurMaxIter,				// max allowed iterations per subsegmented sequence when matching that subsegment
 						 int NumAllocdIdentNodes,		// memory has been allocated by caller for holding upto this many tsIdentNodes
 						 tsIdentNode *pAllocsIdentNodes); // memory allocated by caller for holding tsIdentNodes
@@ -896,7 +896,7 @@ public:
 
 		int						// < 0 if errors, otherwise minimum hamming of probe to target
 		LocateSfxHammings(int RHamm,					// restricted hammings limit
-                         bool bSAHammings,				// if true then hammings on both sense and antisense required
+						 bool bSAHammings,				// if true then hammings on both sense and antisense required
 						 int KMerLen,					// hammings for k-mers of this length
 						 int SampleNth,					// sample every Nth k-mer
 						 int SrcSeqLen,					// generate hammings over sequence of this length
@@ -904,14 +904,14 @@ public:
 						 UINT32 MaxCoreDepth,			// explore cores to at most this depth
 						 UINT32 EntryID,  				// KMer sequences are to be from this suffix entry
 						 UINT32 EntryLoci,				// and starting at this loci
-				 		int IntraInterBoth,	    // 0: hammings over both intra (same sequence as probe K-mer drawn from) and inter (different sequences to that from which probe K-mer drawn), 1: Intra only, 2: Inter only
+						int IntraInterBoth,	    // 0: hammings over both intra (same sequence as probe K-mer drawn from) and inter (different sequences to that from which probe K-mer drawn), 1: Intra only, 2: Inter only
 						 UINT8 *pHammings,				// returned hammings
 						 int NumAllocdIdentNodes,		// memory has been allocated by caller for holding upto this many tsIdentNodes
 						 tsIdentNode *pAllocsIdentNodes); // memory allocated by caller for holding tsIdentNodes
 
 		int						// < 0 if errors, otherwise minimum hamming of probe to target
 		LocateHammings(int RHamm,					// restricted hammings limit
-                         bool bSAHammings,				// if true then hammings on both sense and antisense required
+						 bool bSAHammings,				// if true then hammings on both sense and antisense required
 						 int KMerLen,					// hammings for k-mers of this length
 						 int SampleNth,					// sample every Nth k-mer
 						 int SrcSeqLen,					// sequence containing k-mers is of this length
@@ -931,12 +931,12 @@ public:
 						 UINT32 MinCoreDepth,			// initially explore cores to at least this depth and only continue exploring if depth would be no more than MaxCoreDepth
 						 UINT32 MaxCoreDepth,			// explore cores to at most this depth
 						 bool bSAHammings,				// if true then hammings relative to either/both sense and antisense required
- 						 etSeqBase *pProbeSeq,			// probe sequence
+						 etSeqBase *pProbeSeq,			// probe sequence
 						 UINT32 ProbeLen,				// probe length
- 						 UINT32 ProbeEntry,  			// probe was from this suffix entry (0 if probe not from same assembly)
+						 UINT32 ProbeEntry,  			// probe was from this suffix entry (0 if probe not from same assembly)
 						 UINT32 ProbeLoci,				// and starting at this loci
 						 int IntraInterBoth,	    // 0: hammings over both intra (same sequence as probe K-mer drawn from) and inter (different sequences to that from which probe K-mer drawn), 1: Intra only, 2: Inter only
- 						 int NumAllocdIdentNodes,		// memory has been allocated by caller for holding upto this many tsIdentNodes
+						 int NumAllocdIdentNodes,		// memory has been allocated by caller for holding upto this many tsIdentNodes
 						 tsIdentNode *pAllocsIdentNodes); // memory allocated by caller for holding tsIdentNodes
 
 		//
@@ -944,10 +944,10 @@ public:
 		LocateHammingX(int RHamm,					// restricted hammings limit
 						 UINT32 MinCoreDepth,		// initially explore cores to at least this depth and only continue exploring if depth would be no more than MaxCoreDepth
 						 UINT32 MaxCoreDepth,		// explore cores to at most this depth
-                         bool bSAHammings,				// if true then hammings on both sense and antisense required
+						 bool bSAHammings,				// if true then hammings on both sense and antisense required
 						 etSeqBase *pProbeSeq,			// probe sequence
 						 UINT32 ProbeLen,				// probe length
- 						 UINT32 ProbeEntry,  			// probe was from this suffix entry (0 if probe not from same assembly)
+						 UINT32 ProbeEntry,  			// probe was from this suffix entry (0 if probe not from same assembly)
 						 UINT32 ProbeLoci,				// and starting at this loci
 						 int NumAllocdIdentNodes,		// memory has been allocated by caller for holding upto this many tsIdentNodes
 						 tsIdentNode *pAllocsIdentNodes); // memory allocated by caller for holding tsIdentNodes
@@ -964,7 +964,7 @@ public:
 					UINT16 ResetFlags = 0);				// reset these flags
 
 	int GetIdentName(UINT32 EntryID,int MaxLen,char *pszSeqIdent); // get sequence name for specified entry identifier
-    int GetIdent(char *pszSeqIdent);					// returns identifier for specified sequence name
+	int GetIdent(char *pszSeqIdent);					// returns identifier for specified sequence name
 	UINT32 GetSeqLen(UINT32 EntryID);						// get length of sequence for requested entry identifier
 	UINT64 GetTotSeqsLen(void);							// returns total length of all sequences in currently loaded entries block
 	UINT32 GetMinSeqLen(void);							// returns minimum length of any sequence in currently loaded entries block
@@ -977,7 +977,7 @@ public:
 	int									// NOTE: returns original flags (EntryID flags in bits 3..0) immediately prior to the set set/reset
 		SetBaseFlags(UINT32 EntryID,		// identifies sequence containing loci flags to be set
 				UINT32 Loci,			// offset within sequence of flags to set
-	            int SetFlgs=0,			// set flags in bits 0..3
+				int SetFlgs=0,			// set flags in bits 0..3
 				int ResetFlgs=0);		// reset flags in bits 0..3
 
 	int									// NOTE: returns original flags (EntryID1 flags in bits 3..0 and EntryID2 in bits 7..4) immediately prior to the set set/reset
@@ -985,7 +985,7 @@ public:
 				UINT32 Loci1,			// offset within sequence of flags to set
 				int EntryID2,			// identifies 2nd sequence containing loci flags to be set
 				UINT32 Loci2,			// offset within sequence of flags to set
-	            int SetFlgs=0,			// set flags in bits 0..3
+				int SetFlgs=0,			// set flags in bits 0..3
 				int ResetFlgs=0);			// reset flags in bits 0..3
 
 	int GetBase(int EntryID,			// identifies sequence containing base to be returned

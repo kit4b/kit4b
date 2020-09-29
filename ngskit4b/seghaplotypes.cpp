@@ -405,6 +405,23 @@ Rslt = GenBinnedSegments(PMode,			// processing mode
 return(Rslt);
 }
 
+int			// returned len of parsed founder name, 0 if unable to parse out a founder (add 2 to len to obtain start of non-prefixed original string 
+CSegHaplotypes::ParseFounder(char* pszIn)			// input null terminated string assumed to contain founder name within first cMaxSHLenPrefix chars
+{
+int TagLen;
+char Chr;
+TagLen = 0;
+while((Chr = *pszIn++) && Chr != cTagSHTerm1)
+	{
+	if(!isalnum(Chr))					// tags can only contain alpha-numeric
+		return(0);
+	if(++TagLen > cMaxSHLenPrefix)
+		return(0);
+	}
+if(Chr == cTagSHTerm1 && *pszIn == cTagSHTerm2 && TagLen >= 1)
+	return(TagLen);
+return(0);
+}
 
 // generate segmented haplotypes file from SAM/BAM alignment input file
 int	
@@ -519,10 +536,9 @@ uint32_t NumUniqueLoci;
 size_t LociIdx;
 tsSHSAMloci *pUniqueSamLoci;
 tsTargSeq *pTargSeq;
-char Chr;
 char *pszRefSeqName;
 int FounderNameLen;
-char szFounder[cMaxSHLenPrefix+2];
+char szFounder[cMaxSHLenPrefix+3];
 int FounderID;
 int NumBinsRequired;
 
@@ -548,27 +564,26 @@ while(Rslt >= eBSFSuccess && (LineLen = m_pSAMfile->GetNxtSAMline((char *)m_pInB
 		if(3 != sscanf(&pszTxt[3]," AS:%s SN:%s LN:%d",szGenome,szContig,&ContigLen))
 			continue;
 		
-			// parse out the founder name tag - if present - must be at most cMaxSHLenPrefix chars long with separator of '|' between it and actual target sequence name!
-		FounderNameLen = 0;
-		pszRefSeqName = szContig;
-		while((Chr = *pszRefSeqName++) && Chr != '|' && FounderNameLen < cMaxSHLenPrefix)
+			// parse out the founder name tag - if present - must be at most cMaxSHLenPrefix chars long with separator cTagSHTerm1 and cTagSHTerm1 (currently "|#") between it and actual target sequence name!
+		
+		FounderNameLen = ParseFounder(szContig);
+		if(FounderNameLen > 0)
 			{
-			szFounder[FounderNameLen++] = Chr;
-			}
-		if(Chr != '|')
-			{
-			pszRefSeqName = szContig;
-			FounderID = AddFounder((char *)"N/A");
-			}
-		else
-			{
+			strncpy(szFounder,szContig,FounderNameLen);
 			szFounder[FounderNameLen] = '\0';
+			pszRefSeqName = &szContig[FounderNameLen + 2];
 			if((FounderID = AddFounder(szFounder))==0) // treating founder errors as if chrom name errors
 				{
 				Reset();
 				return(eBSFerrChrom);
 				}
 			}
+		else
+			{
+			pszRefSeqName = szContig;
+			FounderID = AddFounder((char *)"N/A");
+			}
+
 		if((TargID = AddTargSeqName(pszRefSeqName, ContigLen)) == 0) // treating founder errors as if chrom name errors
 			{
 			Reset();
@@ -612,20 +627,17 @@ while(Rslt >= eBSFSuccess && (LineLen = m_pSAMfile->GetNxtSAMline((char *)m_pInB
 
 	// parse out the founder name tag - if present!
 	// if not present then treat as if founder "N/A"
-	FounderNameLen = 0;
 	pszRefSeqName = m_pBAMalignment->szRefSeqName;
-	while((Chr = *pszRefSeqName++) && Chr != '|')
-		szFounder[FounderNameLen++] = Chr; 
-	if(Chr != '|')
+	FounderNameLen = ParseFounder(pszRefSeqName);
+	if(FounderNameLen > 0)
 		{
-		pszRefSeqName = m_pBAMalignment->szRefSeqName;
-		FounderID = LocateFounder((char *)"N/A");
+		strncpy(szFounder,pszRefSeqName,FounderNameLen);
+		szFounder[FounderNameLen] = '\0';
+		pszRefSeqName += (size_t)FounderNameLen + 2;
+		FounderID = LocateFounder(szFounder); 
 		}
 	else
-		{
-		szFounder[FounderNameLen] = '\0';
-		FounderID = LocateFounder(szFounder);
-		}
+		FounderID = LocateFounder((char *)"N/A");
 
 	if(FounderID == 0 || (pTargSeq = LocateTargSeq(pszRefSeqName)) == NULL) // if founder or target unknown then simply slough
 		{
