@@ -40,7 +40,10 @@ Original 'BioKanga' copyright notice has been retained and immediately follows t
 #include "sarscov2ml.h"
 
 int Process (eModeSC2 Mode,					// processing mode
-	 char *pszMatrixFile,				// input matrix file
+	uint32_t NumLinkedFeatures,				// require this many features to be linked
+	uint32_t MinLinkedRows,					// require at least this many rows to show same linkage
+	uint32_t FeatClassValue,				// linkage is between these minimum feature class values
+	 char *pszMatrixFile,					// input matrix file
 	 char *pszIsolateClassFile,				// input isolate classification file
 	 char *pszOutFile);						// output feature classifications file
 
@@ -63,7 +66,10 @@ sarscov2ml(int argc, char **argv)
 	int NumberOfProcessors;		// number of installed CPUs
 
 	 eModeSC2 PMode;					// processing mode
-	 char szMatrixFile[_MAX_PATH]; // input matrix file
+	 uint32_t NumLinkedFeatures;		// require this many features to be linked
+	uint32_t MinLinkedRows;				// require at least this many rows to show same linkage
+	uint32_t FeatClassValue;			// linkage is between these minimum feature class values
+	 char szMatrixFile[_MAX_PATH];		// input matrix file
 	 char szIsolateClassFile[_MAX_PATH]; // input isolate classification file
 	 char szOutFile[_MAX_PATH];			 // output feature associations file
 
@@ -72,14 +78,19 @@ sarscov2ml(int argc, char **argv)
 	struct arg_int *FileLogLevel = arg_int0 ("f", "FileLogLevel", "<int>", "Level of diagnostics written to screen and logfile 0=fatal,1=errors,2=info,3=diagnostics,4=debug");
 	struct arg_file *LogFile = arg_file0 ("F", "log", "<file>", "diagnostics log file");
 
-	struct arg_int *pmode = arg_int0 ("m", "mode", "<int>", "processing mode: 0 default and currently only processing mode externally exposed");
+	struct arg_int *pmode = arg_int0 ("m", "mode", "<int>", "processing mode: 0 discover feature linkages");
+
+	struct arg_int *numlinkedfeatures = arg_int0 ("l", "NumLinkedFeatures", "<int>", "require this many features to be linked (default 5, range 1..50)");
+	struct arg_int *minlinkedrows = arg_int0 ("r", "MinLinkedRows", "<int>", "require at least this many rows to show same linkage (default 50, range 2..100000)");
+	struct arg_int *featclassvalue = arg_int0 ("c", "FeatClassValue", "<int>", "linkage is between these minimum feature class values (default 3, range 0..1000)");
+
 	struct arg_file *matrixfile = arg_file1("i", "in", "<file>", "Load matrix from this file");
-	struct arg_file *isolateclassfile = arg_file0("I","isolateclass", "<file>", "Load isolate classification from this file");
+	struct arg_file *isolateclassfile = arg_file0("I","isolateclass", "<file>", "Load isolate feature classifications from this file");
 	struct arg_file *outfile = arg_file1 ("o", "out", "<file>", "output file");
 	struct arg_end *end = arg_end (200);
 
 	void *argtable[] = { help,version,FileLogLevel,LogFile,
-						pmode,matrixfile,isolateclassfile,outfile,end };
+						pmode,numlinkedfeatures,minlinkedrows,featclassvalue,matrixfile,isolateclassfile,outfile,end };
 
 	char **pAllArgs;
 	int argerrors;
@@ -154,6 +165,26 @@ sarscov2ml(int argc, char **argv)
 			exit (1);
 		}
 
+		NumLinkedFeatures = numlinkedfeatures->count ? numlinkedfeatures->ival[0] : 5;
+		if (NumLinkedFeatures < 1 || NumLinkedFeatures > cMaxR_nCr)
+			{
+			gDiagnostics.DiagOut (eDLFatal, gszProcName, "Error: Number of linked features '-l%d' specified outside of range %d..%d\n", NumLinkedFeatures, 1, cMaxR_nCr);
+			exit (1);
+			}
+
+		MinLinkedRows = minlinkedrows->count ? minlinkedrows->ival[0] : 50;
+		if (MinLinkedRows < 2 || MinLinkedRows > 100000)
+		{
+			gDiagnostics.DiagOut (eDLFatal, gszProcName, "Error: Number of rows with same property or linkage '-r%d' specified outside of range %d..%d\n", MinLinkedRows, 2, 100000);
+			exit (1);
+		}
+
+		FeatClassValue = featclassvalue->count ? featclassvalue->ival[0] : 3;
+		if (FeatClassValue < 0 || FeatClassValue > 1000)
+		{
+			gDiagnostics.DiagOut (eDLFatal, gszProcName, "Error: Minimum feature class value '-c%d' specified outside of range %d..%d\n", FeatClassValue, 0, 1000);
+			exit (1);
+		}
 
 		// show user current resource limits
 #ifndef _WIN32
@@ -192,10 +223,10 @@ sarscov2ml(int argc, char **argv)
 		strcpy (szOutFile, outfile->filename[0]);
 		CUtility::TrimQuotedWhitespcExtd (szOutFile);
 		if (szOutFile[0] == '\0')
-		{
+			{
 			gDiagnostics.DiagOut (eDLFatal, gszProcName, "No output file specified");
 			exit (1);
-		}
+			}
 
 
 
@@ -204,11 +235,15 @@ sarscov2ml(int argc, char **argv)
 		const char *pszDescr;
 		switch (PMode) {
 			case eMSC2default:
-				pszDescr = "Training";
+				pszDescr = "locate linkages between features";
 				break;
-		}
 
+			}
 
+		gDiagnostics.DiagOutMsgOnly (eDLInfo, "Processing is to : '%s'", pszDescr);
+		gDiagnostics.DiagOutMsgOnly (eDLInfo, "Linkage between this number of features : %d", NumLinkedFeatures);
+		gDiagnostics.DiagOutMsgOnly (eDLInfo, "Minimum number samples with same linkage : %d", MinLinkedRows);
+		gDiagnostics.DiagOutMsgOnly (eDLInfo, "Minimum feature class value : %d", FeatClassValue);
 
 		gDiagnostics.DiagOutMsgOnly (eDLInfo, "Processing matrix : '%s'", pszDescr);
 		
@@ -226,6 +261,9 @@ sarscov2ml(int argc, char **argv)
 		gStopWatch.Start ();
 		Rslt = 0;
 		Rslt = Process (PMode,					// processing mode
+						NumLinkedFeatures,		// require this many features to be linked
+						MinLinkedRows,				// require at least this many rows to show same linkage
+						FeatClassValue,			// linkage is between these minimum feature types
 						szMatrixFile,		// input matrix file
 						szIsolateClassFile,		// input association file
 						szOutFile);				// output feature associations file
@@ -245,10 +283,13 @@ sarscov2ml(int argc, char **argv)
 	return 0;
 }
 
-int Process(eModeSC2 Mode,					// processing mode
+int Process(eModeSC2 Mode,						// processing mode
+			uint32_t NumLinkedFeatures,			// require this many features to be linked
+			uint32_t MinPropRows,				// require at least this many rows to show same linkage
+			uint32_t FeatClassValue,			// linkage is between these minimum feature class values
 			char* pszMatrixFile,				// input matrix file
-			char* pszIsolateClassFile,				// input isolate classification file
-			char* pszOutFile)						// output feature classifications file
+			char* pszIsolateClassFile,			// input isolate classification file
+			char* pszOutFile)					// output feature classifications file
 {
 int Rslt;
 CSarsCov2ML *pCSarsCov2ML;
@@ -257,7 +298,7 @@ if ((pCSarsCov2ML = new CSarsCov2ML) == NULL)
 	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Unable to instantiate instance of CSarsCov2ML");
 	return(eBSFerrInternal);
 	}
-Rslt = pCSarsCov2ML->Process(Mode,pszMatrixFile,pszIsolateClassFile,pszOutFile);
+Rslt = pCSarsCov2ML->Process(Mode,NumLinkedFeatures,MinPropRows,FeatClassValue,pszMatrixFile,pszIsolateClassFile,pszOutFile);
 
 if (pCSarsCov2ML != NULL)
 	delete pCSarsCov2ML;
@@ -269,6 +310,8 @@ return(Rslt);
 CSarsCov2ML::CSarsCov2ML(void)
 {
 m_pMatrix = NULL;
+m_hOutFile = -1;
+m_pOutBuffer = NULL;
 Reset();
 }
 
@@ -276,11 +319,39 @@ CSarsCov2ML::~CSarsCov2ML(void)
 {
 if(m_pMatrix != NULL)
 	delete []m_pMatrix;
+if(m_pOutBuffer != NULL)
+	delete []m_pOutBuffer;
+if(m_hOutFile != -1)
+	close(m_hOutFile);
 }
 
 void
 CSarsCov2ML::Reset(void) // reset state back to that immediately following class instantiation
 {
+if(m_hOutFile != -1)
+	{
+	if(m_pOutBuffer != NULL && m_OutBuffIdx)
+		{
+		CUtility::SafeWrite(m_hOutFile,m_pOutBuffer,m_OutBuffIdx);
+		m_OutBuffIdx = 0;
+		}
+	// commit output file
+#ifdef _WIN32
+	_commit(m_hOutFile);
+#else
+	fsync(m_hOutFile);
+#endif
+	close(m_hOutFile);
+	m_hOutFile = -1;
+	}
+if(m_pOutBuffer != NULL)
+	{
+	delete []m_pOutBuffer;
+	m_pOutBuffer = NULL;
+	}
+m_OutBuffIdx = 0;
+m_AllocOutBuff = 0;
+
 if(m_pMatrix != NULL)
 	{
 	delete []m_pMatrix;
@@ -672,7 +743,7 @@ CSarsCov2ML::Init_nCr(int n,			// initialise for n total elements
 		 int r)			// from which will be drawing combinations of r elements
 {
 int Idx;
-if(r <= 1 || r > cMaxR_nCr || n < r || n > cMaxN_nCr)
+if(r < 1 || r > cMaxR_nCr || n < r || n > cMaxN_nCr)
 	{
 	m_nCombination = 0;
 	m_rCombination = 0;
@@ -717,9 +788,10 @@ return(true);
 
 
 int
-CSarsCov2ML::RunKernel(uint32_t NumLinkedFeatures,	// require this many features to be linked
-				  uint32_t MinPropRows,				// require at least this many rows to show same linkage
-				  uint32_t FeatType)				// linkage is between these minimum feature types
+CSarsCov2ML::RunKernel(eModeSC2 Mode,					// processing mode
+					uint32_t NumLinkedFeatures,			// require this many features to be linked
+					uint32_t MinLinkedRows,				// require at least this many rows to show same linkage
+					uint32_t FeatClassValue)			// linkage is between these minimum feature class values
 {
 
 if(NumLinkedFeatures < 1 || NumLinkedFeatures > cMaxR_nCr)
@@ -729,7 +801,6 @@ uint32_t ClassIdx;
 uint32_t RowIdx;
 uint32_t ColIdx;
 uint32_t *pCell;
-uint32_t ClassifiedAs;
 uint32_t NumRowsClassified;
 uint32_t TotColCnts;
 CStats Stats;
@@ -737,82 +808,40 @@ CStats Stats;
 ClassIdx = 0;
 memset(m_TopLinkages,0,sizeof(m_TopLinkages));
 
-if(0)
+for(ColIdx = 1; ColIdx < m_NumCols; ColIdx++)
 	{
-	for(ColIdx = 1; ColIdx < m_NumCols; ColIdx++)
+	TotColCnts = 0;
+	NumRowsClassified = 0;
+	memset(m_ColClassifiedThresCnts,0,sizeof(m_ColClassifiedThresCnts));
+	memset(m_ColClassifiedBelowCnts,0,sizeof(m_ColClassifiedBelowCnts));
+	for(RowIdx = 1; RowIdx < m_NumRows; RowIdx++)		// counting rows with that feature
 		{
-		TotColCnts = 0;
-		NumRowsClassified = 0;
-		memset(m_ColClassifiedThresCnts,0,sizeof(m_ColClassifiedThresCnts));
-		memset(m_ColClassifiedBelowCnts,0,sizeof(m_ColClassifiedBelowCnts));
-		for(RowIdx = 1; RowIdx < m_NumRows; RowIdx++)
+		pCell = &m_pMatrix[RowIdx*m_NumCols];
+		NumRowsClassified += 1;
+		pCell += ColIdx;
+		if(*pCell >= FeatClassValue)
 			{
-			pCell = &m_pMatrix[RowIdx*m_NumCols];
-			if(m_ReadsetClassification[*pCell-1].ReadsetID == 0)	// 0 if unclassified
-				continue;
-			NumRowsClassified += 1;
-			ClassifiedAs = m_ReadsetClassification[*pCell-1].ClassificationID;
-			pCell += ColIdx;
-			if(*pCell >= FeatType)
-				{
-				m_ColClassifiedThresCnts[ClassifiedAs-1] += *pCell;
-				TotColCnts += 1;
-				}
-			else
-				m_ColClassifiedBelowCnts[ClassifiedAs-1] += 1;
+			m_ColClassifiedThresCnts[0] += 1;
+			TotColCnts += 1;
 			}
-		if(NumRowsClassified < 50)		// currently just an arbitrary threshold - 
-			continue;
-		if(TotColCnts < NumRowsClassified/100)	// currently just an arbitrary threshold - 
-			continue;
-		double Prob = Stats.FishersExactTest(m_ColClassifiedThresCnts[0],m_ColClassifiedBelowCnts[0],m_ColClassifiedThresCnts[1],m_ColClassifiedBelowCnts[1]);
-		if(Prob <= 0.01)
-			{
-			m_TopLinkages[ClassIdx].Prob = Prob;
-			m_TopLinkages[ClassIdx].ColIdx = ColIdx;
-			ClassIdx+=1;
-			if(ClassIdx > cMaxN_nCr)
-				break;
-			}
+		else
+			m_ColClassifiedBelowCnts[0] += 1;
 		}
-	}
-else   // else looking for linkages which are not classified
-	{
-	for(ColIdx = 1; ColIdx < m_NumCols; ColIdx++)
-		{
-		TotColCnts = 0;
-		NumRowsClassified = 0;
-		memset(m_ColClassifiedThresCnts,0,sizeof(m_ColClassifiedThresCnts));
-		memset(m_ColClassifiedBelowCnts,0,sizeof(m_ColClassifiedBelowCnts));
-		for(RowIdx = 1; RowIdx < m_NumRows; RowIdx++)		// counting rows with that feature
-			{
-			pCell = &m_pMatrix[RowIdx*m_NumCols];
-			NumRowsClassified += 1;
-			pCell += ColIdx;
-			if(*pCell >= FeatType)
-				{
-				m_ColClassifiedThresCnts[0] += *pCell;
-				TotColCnts += 1;
-				}
-			else
-				m_ColClassifiedBelowCnts[0] += 1;
-			}
-		if(NumRowsClassified < 50)		// currently just an arbitrary threshold - 
-			continue;
-		if(TotColCnts < 50)	// currently just an arbitrary threshold 
-			continue;
-		double Prob = 1.0 - Stats.Binomial(NumRowsClassified,m_ColClassifiedThresCnts[0],0.01);
-		if(Prob <= 0.05)
-			{
-			m_TopLinkages[ClassIdx].Prob = Prob;
-			m_TopLinkages[ClassIdx].ColIdx = ColIdx;
-			ClassIdx+=1;
-			if(ClassIdx > cMaxN_nCr)
-				break;
-			}
-		}
-	}
+	if(NumRowsClassified < m_MinRowsClassified)
+		continue;
+	if(m_ColClassifiedThresCnts[0] == 0)
+		continue;
 
+	double Prob = 1.0 - Stats.Binomial(NumRowsClassified,m_ColClassifiedThresCnts[0],0.01);
+	if(Prob <= 0.05)
+		{
+		m_TopLinkages[ClassIdx].Prob = Prob;
+		m_TopLinkages[ClassIdx].ColIdx = ColIdx;
+		ClassIdx+=1;
+		if(ClassIdx > cMaxN_nCr)
+			break;
+		}
+	}
 
 if(ClassIdx < NumLinkedFeatures)
 	return(0);
@@ -820,110 +849,140 @@ if(ClassIdx < NumLinkedFeatures)
 if(ClassIdx > cMaxN_nCr)	// can't handle more!
 	ClassIdx = cMaxN_nCr;
 
-// just playing :-)
 uint32_t NumFeatsLinked;
 uint32_t NumRowsLinked;
 uint32_t *pLinkedCell;
 
-
+uint32_t ClassifiedAsCnts[cMaxClassifications];
 Init_nCr(ClassIdx,NumLinkedFeatures);
 do
 	{
 	// work to do here!
+	if(m_NumClassificationNames)
+		memset(ClassifiedAsCnts,0,sizeof(ClassifiedAsCnts));
 	NumRowsLinked = 0;
 	for(RowIdx = 1; RowIdx < m_NumRows; RowIdx++)
 		{
 		pCell = &m_pMatrix[RowIdx*m_NumCols];
-		if(m_ReadsetClassification[*pCell-1].ReadsetID == 0)	// 0 if unclassified
+		if(m_ReadsetClassification[*pCell-1].ReadsetID == 0)	// 0 if unlinked
 			continue;
 
 		NumFeatsLinked = 0;
 		for(uint32_t IdxR = 0; IdxR < m_rCombination; IdxR++)
 			{
 			pLinkedCell = pCell + m_TopLinkages[m_nCrCombinations[IdxR]].ColIdx;
-			if(*pLinkedCell >= FeatType)
+			if(*pLinkedCell >= FeatClassValue)
 				NumFeatsLinked++;
 			}
 		if(NumFeatsLinked < NumLinkedFeatures)
 			continue;
+		if(m_NumClassificationNames)
+			ClassifiedAsCnts[m_ReadsetClassification[*pCell-1].ClassificationID-1]++;
 		NumRowsLinked++;
 		}
 
-	if(NumRowsLinked >= MinPropRows)		
+	if(NumRowsLinked >= MinLinkedRows)		
 		{
-		int BuffIdx;
-		char szBuff[10000];
-		BuffIdx = sprintf(szBuff,"Have %d rows (thres %u) with %u features linked by this minimum feature type %d -->",NumRowsLinked,MinPropRows,NumLinkedFeatures, FeatType);
+		m_OutBuffIdx += sprintf(&m_pOutBuffer[m_OutBuffIdx],"%u,%u,%u,%u,%d",m_NumRows,NumRowsLinked,MinLinkedRows,NumLinkedFeatures, FeatClassValue);
 		NumFeatsLinked = 0;
 		for(uint32_t IdxR = 0; IdxR < m_rCombination; IdxR++)
 			{
-			BuffIdx += sprintf(&szBuff[BuffIdx]," %s", LocateFeature(m_TopLinkages[m_nCrCombinations[IdxR]].ColIdx));
+			m_OutBuffIdx += sprintf(&m_pOutBuffer[m_OutBuffIdx],",\"%s\"", LocateFeature(m_TopLinkages[m_nCrCombinations[IdxR]].ColIdx));
 			NumFeatsLinked++;
 			}
-		gDiagnostics.DiagOut(eDLInfo, gszProcName,szBuff);
+		if(m_NumClassificationNames)
+			{
+			for(uint32_t IdxR = 0; IdxR < m_NumClassificationNames; IdxR++)
+				{
+				m_OutBuffIdx += sprintf(&m_pOutBuffer[m_OutBuffIdx],",%u", ClassifiedAsCnts[IdxR]);
+				NumFeatsLinked++;
+				}
+			}
+		m_OutBuffIdx += sprintf(&m_pOutBuffer[m_OutBuffIdx],"\n");
+		if(m_OutBuffIdx + 1000 > m_AllocOutBuff)
+			{
+			CUtility::SafeWrite(m_hOutFile,m_pOutBuffer,m_OutBuffIdx);
+			m_OutBuffIdx = 0;
+			}
 		}
 	}
 while(Iter_nCr());
 
-uint32_t *pLinkedCells[10];
-uint32_t CurLinkagesIdx;
-uint32_t NxtLinkagesIdx;
-uint32_t NumLinked;
-uint32_t CheckMe;
-CheckMe = 0;
-for(CurLinkagesIdx = 0; CurLinkagesIdx < ClassIdx-1; CurLinkagesIdx++)
-	{
-	for(NxtLinkagesIdx = CurLinkagesIdx+1; NxtLinkagesIdx < ClassIdx; NxtLinkagesIdx++)
-		{
-		NumLinked = 0;
-		for(RowIdx = 1; RowIdx < m_NumRows; RowIdx++)
-			{
-			pCell = &m_pMatrix[RowIdx*m_NumCols];
-			if(m_ReadsetClassification[*pCell-1].ReadsetID == 0)	// 0 if unclassified
-				continue;
-			pLinkedCells[0] = pCell + m_TopLinkages[CurLinkagesIdx].ColIdx;
-			if(*pLinkedCells[0] < FeatType)
-				continue;
-			pLinkedCells[1] = pCell + m_TopLinkages[NxtLinkagesIdx].ColIdx;
-			if(*pLinkedCells[1] < FeatType)
-				continue;
-			NumLinked+=1;
-			}
-		if(NumLinked > 10)
-			{
-			char *pszFeat1 = LocateFeature(m_TopLinkages[CurLinkagesIdx].ColIdx);
-			char *pszFeat2 = LocateFeature(m_TopLinkages[NxtLinkagesIdx].ColIdx);
-//			gDiagnostics.DiagOut(eDLInfo, gszProcName, "%s and %s linked %d times with which %d",pszFeat1,pszFeat2,NumLinked,FeatType);
-			CheckMe++;
-			}
-		}
-	}
+
 return(ClassIdx);
 }
 
 int 
-CSarsCov2ML::Process(eModeSC2 Mode,					// processing mode
-				   char* pszMatrixFile,			// input matrix file
-				   char* pszIsolateClassFile,			// input isolate classification file
-				   char* pszOutFile)					// output feature classifications file
+CSarsCov2ML::Process(eModeSC2 Mode,						// processing mode
+					uint32_t NumLinkedFeatures,			// require this many features to be linked
+					uint32_t MinLinkedRows,				// require at least this many rows to show same linkage
+					uint32_t FeatClassValue,			// linkage is between these minimum feature class values
+					char* pszMatrixFile,				// input matrix file
+					char* pszIsolateClassFile,			// input isolate classification file
+					char* pszOutFile)					// output feature classifications file
 {
 int Rslt;
+m_PMode = Mode;
+strcpy(m_szMatrixFile,pszMatrixFile);
+strcpy(m_szIsolateClassFile,pszIsolateClassFile);
+strcpy(m_szOutFile,pszOutFile);
+m_MinRowsClassified = MinLinkedRows;
+
+#ifdef _WIN32
+m_hOutFile = open(pszOutFile,( O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC),(_S_IREAD | _S_IWRITE));
+#else
+if((m_hOutFile = open64(pszOutFile,O_WRONLY | O_CREAT,S_IREAD | S_IWRITE)) != -1)
+	if(ftruncate(m_hOutFile,0)!=0)
+		{
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate %s - %s",pszOutFile,strerror(errno));
+		Reset();
+		return(eBSFerrCreateFile);
+		}
+#endif
+if(m_hOutFile < 0)
+	{
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate %s - %s",pszOutFile,strerror(errno));
+	Reset();
+	return(eBSFerrCreateFile);
+	}
+
+m_pOutBuffer = new char [cMaxAllocOutBuff];
+m_AllocOutBuff = cMaxAllocOutBuff;
+
+m_OutBuffIdx = sprintf(m_pOutBuffer,"\"TotSamples\",\"LinkedSamples\",\"MinSamples\",\"FeatLinks\",\"MinFeatValue\"");
+for(uint32_t LinkIdx = 0; LinkIdx < NumLinkedFeatures; LinkIdx++)
+	m_OutBuffIdx += sprintf(&m_pOutBuffer[m_OutBuffIdx],",\"L%u\"",LinkIdx);
+
+
 // load the input matrix containing row isolates and column loci
 if((Rslt=LoadMatrix(pszMatrixFile))!=eBSFSuccess)
 	return(Rslt);
 
 // if present then parse in the classification file
 if(pszIsolateClassFile != NULL && pszIsolateClassFile[0] != '\0')
+	{
 	if((Rslt=LoadClassifications(pszIsolateClassFile))!=eBSFSuccess)
 		return(Rslt);
-int K2 = RunKernel(2,30,3);
-int K3 = RunKernel(3,20,3);
-int K4 = RunKernel(4,20,3);
-int K5 = RunKernel(5,10,3);
-int K6 = RunKernel(6,5,3);
-int K7 = RunKernel(7,3,3);
-int K8 = RunKernel(8,3,3);
-int K9 = RunKernel(9,2,3);
+	for(uint32_t Idx = 0; Idx < m_NumClassificationNames; Idx++)
+		m_OutBuffIdx += sprintf(&m_pOutBuffer[m_OutBuffIdx],",\"%s\"", LocateClassification(Idx+1));
+	}
+m_OutBuffIdx += sprintf(&m_pOutBuffer[m_OutBuffIdx],"\n");
+
+int K = RunKernel(Mode,NumLinkedFeatures,MinLinkedRows,FeatClassValue);
+
+if(m_OutBuffIdx)
+	{
+	CUtility::SafeWrite(m_hOutFile,m_pOutBuffer,m_OutBuffIdx);
+	m_OutBuffIdx = 0;
+	}
+	// commit output file
+#ifdef _WIN32
+_commit(m_hOutFile);
+#else
+fsync(m_hOutFile);
+#endif
+close(m_hOutFile);
+m_hOutFile = -1;
 Reset();
 return(0);
 }

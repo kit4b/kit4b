@@ -6,9 +6,13 @@ const int cMaxClassifications = 100;	// allowing for this many classifications
 const int cMaxR_nCr = 50;				// allowing for at most this many r elements as a combination to be drawn from n total elements
 const int cMaxN_nCr = 1000;				// allowing for at most this many n total elements from which r elements can be drawn from as a combination
 
+const uint32_t DfltMinRowsClassified = 50;	// default minimum number of rows (samples) containing feature
+
+const int cMaxAllocOutBuff = 0x0ffffff;	// output buffering for this many chars
+
 typedef enum TAG_eModeSC2 {
-	eMSC2default = 0,		// no modes, currently just a default!
-	eMSC2PlaceHolder			// used to mark end of processing modes
+	eMSC2default = 0,		// default processing is to locate linkages between features
+	eMSC2PlaceHolder		// used to mark end of processing modes
 } eModeSC2;
 
 #pragma pack(1)
@@ -33,6 +37,16 @@ typedef struct TAG_sClassifications {
 
 class CSarsCov2ML
 {
+
+	eModeSC2 m_PMode;							// processing mode
+	char m_szMatrixFile[_MAX_PATH];				// input matrix file
+	char m_szIsolateClassFile[_MAX_PATH];		// input isolate classification file
+	char m_szOutFile[_MAX_PATH];				// output linked features
+	int m_hOutFile;								// opened output file handle
+
+	int m_OutBuffIdx;							// currently output buffering this many chars
+	int m_AllocOutBuff;							// output buffer can hold a max of this many chars
+	char *m_pOutBuffer;							// allocated for output buffering
 
 
 	uint32_t m_NumFeatureNames;						// number of chromosome names currently in m_szChromNames
@@ -66,6 +80,8 @@ class CSarsCov2ML
 	tsScoredCol m_TopLinkages[cMaxN_nCr];			// columns containing features which potentially have linkages
 	uint32_t m_ColClassifiedThresCnts[cMaxClassifications];	// classification thresholds
 	uint32_t m_ColClassifiedBelowCnts[cMaxClassifications];
+
+	uint32_t m_MinRowsClassified;					// at least this number of rows (samples) must have been characterised
 
 	bool Init_nCr(int n,							// initialise for n total elements
 					int r);							// from which will be drawing combinations of r elements
@@ -108,14 +124,18 @@ public:
 	void Reset(void);							// reset state back to that immediately following class instantiation
 
 
-	int Process(eModeSC2 Mode,					// processing mode
-			char* pszMatrixFile,				// input matrix file
-			char* pszIsolateClassFile,			// input isolate classification file
-			char* pszOutFile);					// output feature classifications file
+	int Process(eModeSC2 Mode,						// processing mode
+					uint32_t NumLinkedFeatures,			// require this many features to be linked
+					uint32_t MinPropRows,				// require at least this many rows to show same linkage
+					uint32_t FeatClassValue,			// linkage is between these minimum feature class values
+					char* pszMatrixFile,			// input matrix file
+					char* pszIsolateClassFile,		// input isolate classification file
+					char* pszOutFile);				// output feature classifications file
 
-	int	RunKernel(uint32_t NumLinkedFeatures,	// require this many features to be linked
-				  uint32_t MinPropRows,			// require at least this many rows to show same linkage
-				  uint32_t FeatType);			// linkage is between these minimum feature types
+	int	RunKernel(eModeSC2 Mode,						// processing mode
+					uint32_t NumLinkedFeatures,			// require this many features to be linked
+					uint32_t MinPropRows,				// require at least this many rows to show same linkage
+					uint32_t FeatClassValue);			// linkage is between these minimum feature class values
 
 };
 

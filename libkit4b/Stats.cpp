@@ -379,7 +379,7 @@ return(PValue);
 // Wald–Wolfowitz runs test
 // Given a sequence containing 0's or 1's determines the number of runs
 // and returns the probability of these being random
-int
+double
 NumbRuns(int SeqLen,	// length of sequence to process for runs
 		UINT8 *pSeq)	// sequence containing one or more runs of 0 and 1, any other values will be skipped
 {
@@ -443,15 +443,15 @@ double PrLessEqlR;
 int z;
 double sum = 0.0;
 
-if(!(R&0x01))	// is even? then
+if(!(NumRuns&0x01))	// is even? then
 	{		
-	for(z = 2; z <= R; z++)
+	for(z = 2; z <= NumRuns; z++)
 		sum += Stats.Calc_nCk(NumN0s-1,z/2-1)* Stats.Calc_nCk(NumN1s-1,z/2-1);
 	PrLessEqlR = (2/Stats.Calc_nCk(NumN0s+NumN1s,NumN0s)) * sum;
 	}
-else		// else R is odd
+else		// else NumRuns is odd
 	{
-	for(z = 2; z <= R; z++)
+	for(z = 2; z <= NumRuns; z++)
 		sum += (Stats.Calc_nCk(NumN0s-1,z/2-1)* Stats.Calc_nCk(NumN1s-1,z/2-1))  + Stats.Calc_nCk(NumN0s-1,k-2)* Stats.Calc_nCk(NumN1s-1,k-2));
 	PrLessEqlR = (1/Stats.Calc_nCk(NumN0s+NumN1s,NumN0s)) * sum;
 	}
@@ -539,9 +539,12 @@ double q2pow = pow(1 - p, (INT32)(n - k));
 return (nCk * p2pow * q2pow);
 }
 
-// The cumulative distribution is the sum of all the probabilities K = 0 up to K = k
+// The cumulative distribution is the sum of all the success probabilities K = 0 up to K = k in n trials
+// Note: one tailed
 double
-CStats::Binomial(int n, int k, double p)
+CStats::Binomial(int n, // number of trials 
+				int k,	// number of observed successes 
+				double p) // expected probability of a success in a trial
 {
 if(k > n)
 	return(0.0);

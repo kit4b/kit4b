@@ -103,6 +103,13 @@ public:
 	double Rand(void);				// returns random value 0.0 <= Rand < 1.0
 
 	double Calc_nCk(UINT32 n, UINT32 k); // Calculates nCk = n! / (n-k)!k!
+
 	double ProbKeqlk(UINT32 n, UINT32 k, double p); //  Calculates Pr(K = k) = nCk * p^k * q^(n-k)
-	double Binomial(int n, int k, double p);    // The cumulative distribution is the sum of all the probabilities K = 0 up to K = k
+
+	// The cumulative distribution is the sum of all the success probabilities K = 0 up to K = k in n trials
+	// Note: left tailed
+	double Binomial(int n, // number of trials 
+				int k,	// number of observed successes 
+				double p); // expected probability of a success in a trial
+
 };

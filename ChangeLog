@@ -55,5 +55,7 @@ Release 1.2.10- 'pangenome' has new functionality for generating windowed (10Kbp
 Release 1.2.12- Increased 'repassemb' capacity for handling sequence names to 5 million, 'kalign' will now default SNP call coverage to 20 if not specified and SNP output requested
 Release 1.3.0 - New processing module 'seghaplotypes' which takes SAM/BAM alignments to a pangenome and reports in BED format haplotype segmentations
 Release 1.3.2 - 'hammings' now has functionality to generate founder specific hammings from a pan-genomic suffix array
+Release 1.3.3 - 'sarscov2ml' mutation linkage reporting now implemented
+
   
 

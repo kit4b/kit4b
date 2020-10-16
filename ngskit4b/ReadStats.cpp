@@ -606,7 +606,7 @@ if (!argerrors)
 							  bStrand,					// true if read strand specific distributions
 							  Trim5,					// trim this number of bases from 5' end of reads when loading the reads
 							  Trim3,					// trim this number of bases from 3' end of reads when loading the reads
-			  				  MaxKMerLen,				// processing is for upto this KMer length inclusive
+							  MaxKMerLen,				// processing is for upto this KMer length inclusive
 							  KMerCCC,					// concordance correlation coefficient measure KMer length
 							  MaxContamSubRate,			// max allowed contamimant substitution rate (bases per 25bp of contaminant overlap, 1st 15bp of overlap no subs allowed)
 							  MinContamLen,				// accept contaminant overlaps if overlap at least this many bases 
@@ -1163,7 +1163,7 @@ return(Rslt);
 
 int
 CReadStats::ProcessReadsetDist(etRSDMode PMode,		// processing mode; eRSDindependent or eRSDpooled
-				    int ProcessingID,				// processing instance identifier, used if processing eRSDindependent to identify output file instances 
+					int ProcessingID,				// processing instance identifier, used if processing eRSDindependent to identify output file instances 
 					bool bStrand,					// true if read strand specific distributions
 					int Trim5,						// trim this number of bases from 5' end of reads when loading the reads
 					int Trim3,						// trim this number of bases from 3' end of reads when loading the reads
@@ -2040,7 +2040,7 @@ m_hKMerDistRptFile = -1;
 if(pPlots != NULL)
 	{
 	char szSeries[20];
-    char szPearsonTitle[80];
+	char szPearsonTitle[80];
 	sprintf(szPearsonTitle,"Pearson K-mer (1..%d) Concordance Distribution",m_KMerCCC);
 	pPlots->Init(2,m_KMerCCC,m_MaxReadLen,szPearsonTitle,(char *)"Read Base Offset",(char *)"Pearson");
 	pPlots->SetWorldCoords(0.0,(PLFLT)m_MaxReadLen,-1.0,1.0);
