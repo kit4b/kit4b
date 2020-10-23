@@ -84,6 +84,7 @@ m_bIsFastQ = false;
 m_FastqSeqIdx = 0; 
 m_FastqSeqLen = 0;
 m_CurFastQParseLine = 0;
+m_NumMissingSequences = 0;
 }
 
 UINT64
@@ -1318,6 +1319,22 @@ while(ParseState < 6) {
 					continue;
 
 				switch(Chr) {
+					case '+':			// a very special case! very rarely the sequence may have been completely filtered out so need to check for this and if no sequence then pretend there was a single indeterminate base
+										// if we were to be strict and simply treat as an error then this could upset downstream processing whereby PE reads were being processed and a mate read was being expected
+										// a warning is written to log
+						if(m_FastqSeqLen == 0)
+							{
+							m_szFastqSeq[m_FastqSeqLen++] = 'N';
+							m_szFastqSeq[m_FastqSeqLen] = '\0';
+							m_pCurFastaBlock->BuffIdx--;			// push back so '+' will be reparsed as if true duplicate sequence identifier
+							if(m_NumMissingSequences++ == 0)
+								gDiagnostics.DiagOut(eDLWarn,gszProcName,"ParseFastQblockQ: At least one instance of missing sequence in file '%s' - first is near line %d, simulating sequence of length 1", m_szFile,m_CurFastQParseLine+1);
+							ParseState = 3;		
+							continue;
+							}
+						AddErrMsg("CFasta::ParseFastQblockQ","sequence char (0x%2x %c) error whilst reading fastq file - '%s' - near line %d at chr position %d", (int)Chr,Chr, m_szFile,m_CurFastQParseLine+1,m_FastqSeqLen);
+						return(eBSFerrFastqSeq);
+
 					case 'a': case 'A': case 'c': case 'C': case 'g': case 'G': case 't': case 'T': case 'n': case 'N':
 						if(bIsFastQSOLiD)		// if already determined that SOLiD is being parsed then not expecting acgtn's
 							{
@@ -1414,7 +1431,12 @@ while(ParseState < 6) {
 				if(Chr == '\n' || Chr == '\r')	// end of quality scores?
 					{
 					if(m_FastqSeqQLen == 0)
-						continue;
+						{
+						if(m_FastqSeqLen > 1)
+							continue;
+						m_szFastqSeqQ[m_FastqSeqQLen++] = 'a';
+						}
+
 					m_szFastqSeqQ[m_FastqSeqQLen] = '\0';
 					ParseState = 6;					// block processed
 					}
@@ -1442,10 +1464,20 @@ if (m_pCurFastaBlock->BuffCnt < 0)
 if(ParseState == 0)
 	return(eBSFSuccess);
 
-if(ParseState == 5 && m_FastqSeqQLen > 0)	// need to allow for last block having quality scores not being terminated by a CR/LF as last block could be EOF terminated
+if(ParseState == 5)
 	{
-	m_szFastqSeqQ[m_FastqSeqQLen] = '\0';
-	ParseState = 6;					// treat as if block was processed
+	if(m_FastqSeqQLen > 0)	// need to allow for last block having quality scores not being terminated by a CR/LF as last block could be EOF terminated
+		{
+		m_szFastqSeqQ[m_FastqSeqQLen] = '\0';
+		ParseState = 6;					// treat as if block was processed
+		}
+	else
+		if(m_FastqSeqLen == 1 && m_FastqSeqQLen == 0)	// could have been a filtered out sequence which is still present as a fastq sequence block
+			{
+			m_szFastqSeqQ[m_FastqSeqQLen++] = 'a';
+			m_szFastqSeqQ[m_FastqSeqQLen] = '\0';
+			ParseState = 6;					// treat as if block was processed
+			}
 	}
 
 // check all elements were present and not empty

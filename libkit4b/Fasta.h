@@ -74,6 +74,7 @@ class CFasta : public CErrorCodes
 	int m_FastqSeqIdx;
 	int	m_FastqSeqQLen;
 	int m_CurFastQParseLine;	// current FastQ line being processed
+	int m_NumMissingSequences;	// total number of fastq records which were empty with no sequence present
 
 	INT64 m_FileDescrOfs;		// file offset from where last descriptor was parsed
 	INT64 m_FileReadDescrOfs;   // offset of last descriptor returned by ReadDescriptor()
