@@ -10,7 +10,6 @@ SUBDIRS = libkit4b \
     csv2bed \
     csv2fasta \
     csv2feat \
-    csv2sqlite \
     csv2stats \
     csvfilter \
     csvmerge \

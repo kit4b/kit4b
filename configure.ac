@@ -25,7 +25,6 @@ AC_OUTPUT(Makefile
     csv2bed/Makefile
     csv2fasta/Makefile
     csv2feat/Makefile
-    csv2sqlite/Makefile
     csv2stats/Makefile
     csvfilter/Makefile
     csvmerge/Makefile

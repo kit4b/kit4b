@@ -1558,7 +1558,7 @@ return(0);
 uint32_t											// returned best score for paths starting at pAlignNodes[ExploreNodeIdx]
 CBlitz::HighScoreSW(uint32_t QueryLen,			// query length
 			uint32_t TargSeqLen,					// targeted sequence length
- 			bool bStrand,						// scoring for series on this strand - false if sense, true if antisense
+			bool bStrand,						// scoring for series on this strand - false if sense, true if antisense
 			uint32_t ExploreNodeIdx,				// node to be explored for maximally scored path
 			uint32_t NumNodes,					// total number of alignment nodes 
 			tsQueryAlignNodes *pAlignNodes)	// alignment nodes

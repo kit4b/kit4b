@@ -913,7 +913,7 @@ return(MarkerSnpID);
 int
 CSQLiteMarkers::ProcessCSV2SQLite(int PMode,	// currently just the one mode...default is to parse from CSV and create/populate SQLite database
 				  bool bSafe,					// if true then use indexing on all tables whilst inserting... much slower but perhaps safer if multiple threads ...
-			      int CSVtype,					// input CSV file has this format (0: markers, 1: SNPs)
+				  int CSVtype,					// input CSV file has this format (0: markers, 1: SNPs)
 				  char *pszExprName,			// name by which this experiment is identified
 				  char *pszExprDescr,			// describes experiment
 				  char *pTargAssemb,			// assembly against which aligments for SNP discovery
@@ -1001,7 +1001,7 @@ if(pCSV == NULL)
 
 if(CSVtype == 0)		// marker CSV files can contain a large number of fields
 	{
-    if(((NumSpecies * 9) + 4) > cCSVDfltFields)
+	if(((NumSpecies * 9) + 4) > cCSVDfltFields)
 		pCSV->SetMaxFields((NumSpecies * 9) + 4);
 	}
 else
@@ -1202,7 +1202,7 @@ while((Rslt=pCSV->NextLine()) > 0)			// onto next line containing fields
 			pCSV->GetInt(5,&Loci);		// loci on sequence at which marker has been determined
 			pCSV->GetInt(11,&TotCovCnt);
 			pCSV->GetInt(12,&TotMMCnt);
-			pCSV->GetText(13,&pszLociBase); // cannonical target sequence base at the marker loci
+			pCSV->GetText(13,&pszLociBase); // canonical target sequence base at the marker loci
 			switch(*pszLociBase) {
 				case 'a': case 'A':
 					LociBase = 'A';

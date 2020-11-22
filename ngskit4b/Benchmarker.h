@@ -72,13 +72,12 @@ typedef struct TAG_sBMGroundTruth {
 	uint32_t StartLoci;					// simulated read started at this loci on ChromName
 	uint8_t FlgStrand : 1;				// strand - 0 if watson, 1 if crick
 	uint8_t FlgPE2 : 1;					// 0 if SE or PE1 of a PE, 1 if PE2
-	uint8_t FlgAligned : 1;				// set if alignment read with same name and matching SE or PE was discovered
+	uint8_t FlgAligned : 1;				// set if alignment read with same name and matching SE or PE was discovered - picks up multialignments to same ground truth
 	uint8_t FlgStrandErr : 1;			// aligned to incorrect strand
 	uint8_t FlgRefChromErr : 1;			// aligned to incorrect ref chrom
 	uint8_t FlgPE2Err : 1;				// aligned pair end is incorrect - alignment PE2 does not match ground truth PE2
-	uint16_t ReadLen;					// ground truth is for a simulated read of this length
-	uint16_t PotentialBasesAligning;	// potentially this ground truth read has this many bases aligning to the target
-	uint16_t MaxActualBasesAligned;		// max bases aligned of any alignment 'of this ground truth read
+	uint32_t ReadLen;					// ground truth is for a simulated read of this length
+	uint32_t PotentialBasesAligning;	// potentially this ground truth read has this many bases aligning to the target
 	uint8_t NameChromCIGAR[1];			// read name concatenated chromosome name concatenated with CIGAR
 } tsBMGroundTruth;
 
@@ -86,7 +85,6 @@ typedef struct TAG_sBMGroundTruth {
 #pragma pack()
 
 class CBenchmark {
-	int64_t m_TotGroundTruthBases;			// total number of all ground truth bases which could have been aligned
 	bool m_bPrimaryOnly;			// if true then only score primary read alignments otherwise score all including secondary
 	bool m_bPEReads;				// if true then PE pair only processing otherwise treating all reads as if SE reads
 	int m_UnalignedBasePts;			// points to apply for each unaligned base
@@ -98,7 +96,7 @@ class CBenchmark {
 	int64_t m_NumBasesLociCorrect;			// total number of bases aligned correctly to ground truth loci
 	int64_t m_NumBasesLociIncorrect;		// total number of bases aligned incorrectly to ground truth loci
 	int64_t m_NumBasesLociUnclaimed;		// total number of ground truth bases which were not aligned
-	int64_t m_NumSilentTrimBaseMatches;		// total number of bases accepted as aligned even though in reads which have been silently trimmed - neighter soft or hard trimmed
+	int64_t m_NumSilentTrimBaseMatches;		// total number of bases accepted as aligned even though in reads which have been silently trimmed - neither soft or hard trimmed
 
 	uint32_t m_ReadOverlapHistogram[101];	// histogram of read alignments by percentile proportion of read bases in reads overlapping with ground truth read bases
 
@@ -148,7 +146,8 @@ class CBenchmark {
 	uint32_t m_UnscoredReads;		// number of aligned simulation reads which were unable to be scored - unaligned, missing CIGAR etc
 	uint32_t m_ScoredReads;			// number of aligned simulation which were scored
 
-	uint32_t m_NumGroundTruths;		// loaded this many ground truths loaded from simulated reads
+	uint32_t m_NumGroundTruthReads;		// loaded this many ground truths loaded from simulated reads
+	INT64 m_TotGroundTruthReadBases;	// total number of sequence bases in loaded ground truth reads
 	size_t m_UsedGroundTruthsMem;	// loaded ground truths are using this sized memory
 	size_t m_AllocdGroundTruthsMem;	// allocated this size memory to hold observed error profiles
 	uint8_t *m_pGroundTruths;		// allocated to hold ground truths loaded from simulated reads
@@ -161,7 +160,8 @@ class CBenchmark {
 
 	int		// returned number of potential base matches in CIGAR
 		PotentialMatchBases(int ReadLen,			// read sequence length
-						char *pszCIGAR);		// '\0' terminated CIGAR with alignment profile
+						char *pszCIGAR,				// '\0' terminated CIGAR with alignment profile
+						bool bTreatSoftHardAsMatches=false);  // if true then treat soft and hard clipped as if matches (used when scoring aligned reads)
 
 	int    // returns number of claimed base matches which were ground truth bases
 		ActualMatchBases(tsBAMalign* pAlignment,			// claimed alignment
@@ -183,7 +183,8 @@ class CBenchmark {
 		DecodeCIGAR(int NumPackedOps,			// number of packed CIGAR ops in
 					uint32_t *pPackedOPs,		// ptr to packed CIGAR ops
 					int MaxCIGARChrs,			// pszCIGAR allocated to hold at most this many chars including terminating '\0'
-					char *pszCIGAR);			// decode into this buffer
+					char *pszCIGAR,			// decode into this buffer
+					bool bTreatSoftHardAsMatches=false);  // if true then treat soft and hard clipped as if matches (used when generating simulated reads)
 
 	int									// returns index of next ClaimOpIdx, 0 if no more claim Ops, -1 if errors 
 		GetClaimOps(tsBAMalign* pAlignment,	// claim CIGAR in this alignment
@@ -199,15 +200,17 @@ class CBenchmark {
 
 	int		// for given CIGARs returns total number of bases that these CIGARs consume on aligned to reference sequence
 		RefSeqConsumedLen(int NumPackedOps,	  // there are this many packed CIGAR ops in pPackedOps
-			uint32_t* pPackedOps); // packed CIGAR ops into this array
+			uint32_t* pPackedOps, // packed CIGAR ops into this array
+			bool bTreatSoftHardAsMatches=false);	// if true then treat soft and hard clipped as if matches (used when generating simulated reads)
 
 	int				// returns number of alignment inplace coalesced CIGAR ops
 		CoalesceCIGARs(tsBAMalign *pBAM);	// in: alignment to coalesce out: updated alignment with coalesced CIGAR ops
 
 	int	InitObsErrProfile(char* pszInProfFile);	// read from this observed alignment error profiles file (as generated from actual SAM aligments)
 
-	int	LoadGroundTruths(char* pszSESimReads,	// load ground truths for SE or PE1 if PE simulated reads
-			char* pszPE2SimReads);	// load ground truths for PE2 if PE simulated reads
+	int	LoadGroundTruths(char* pszSESimReads,		// load ground truths for SE or PE1 if PE simulated reads
+			char* pszPE2SimReads,					// load ground truths for PE2 if PE simulated reads
+			bool bTreatSoftHardAsMatches=false);	// if true then treat soft and hard clipped as if matches
 
 	tsBMGroundTruth*		// returned ground truth which matches
 		LocateGroundTruth(tsBAMalign* pSAMalign,	// this alignment by name
@@ -225,7 +228,7 @@ class CBenchmark {
 			int ChromID,				// simulated read is on this chromosome 
 			int StartLoci,				// starting at this loci (0 based)
 			etSeqBase* pSeq);			// sequence
-	
+
 	static int SortReadPairs(const void* arg1, const void* arg2);
 	static int SortGroundTruths(const void* arg1, const void* arg2);
 
@@ -258,8 +261,9 @@ public:
 
 
 	int
-		Score(bool bPrimaryOnly,		// score only primary alignments otherwise score including secondary
-			bool bPEReads,				// true if PE pair processing otherwise score all alignments as SE
+		Score(bool bScorePrimaryOnly,		// score only primary alignments otherwise score including secondary
+			bool bScoreMatedPE,			// if true then both mates of a PE must have been aligned for alignment to be scored
+			bool bPEReads,				// true if PE pair processing
 			int UnalignedBasePts,		// points to apply for each unaligned base
 			int AlignedBasePts,			// points to apply for each base aligned to it's ground truth loci
 			int SilentTrimAlignBasePts, // points to apply for each base aligned in a silently trimmed read within ground truth loci range

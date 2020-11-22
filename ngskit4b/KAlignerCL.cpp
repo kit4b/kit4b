@@ -1362,7 +1362,7 @@ if (!argerrors)
 	if(MinChimericLen != 0)
 		{
 		gDiagnostics.DiagOutMsgOnly(eDLInfo,"Check for chimeric sequences in reads of at least this percentage length: %d",abs(MinChimericLen));
-		gDiagnostics.DiagOutMsgOnly(eDLInfo,"Report on individual read sequence chirmeric trimming: %s",bChimericRpt ? "Yes" : "no");
+		gDiagnostics.DiagOutMsgOnly(eDLInfo,"Report on individual read sequence chimeric trimming: %s",bChimericRpt ? "Yes" : "no");
 		}
 
 	gDiagnostics.DiagOutMsgOnly(eDLInfo,"Maximum RNA-seq splice junction separation distance: %d",SpliceJunctLen);

@@ -85,7 +85,7 @@ return(pszRawText);
 int
 ProcessCSV2SQLite(int PMode,					// currently just the one mode...default is to parse from CSV and create/populate SQLite database
 				  bool bSafe,					// if true then use indexing on all tables whilst inserting... much slower but perhaps safer if multiple threads ...
-			      int CSVtype,					// input CSV file has this format (0: markers, 1: SNPs)
+				  int CSVtype,					// input CSV file has this format (0: markers, 1: SNPs)
 				  char *pszExprName,			// name by which this experiment is identified
 				  char *pszExprDescr,			// describes experiment
 				  char *pTargAssemb,			// assembly against which aligments for SNP discovery
@@ -97,7 +97,7 @@ ProcessCSV2SQLite(int PMode,					// currently just the one mode...default is to 
 int
 ProcessDECSV2SQLite(int PMode,	// currently just the one mode...default is to parse from CSV and create/populate SQLite database
 				  bool bSafe,					// if true then use indexing on all tables whilst inserting... much slower but perhaps safer if multiple threads ...
-			      char *pszExprName,			// name by which this experiment is identified
+				  char *pszExprName,			// name by which this experiment is identified
 				  char *pszExprDescr,			// describes experiment
 				  char *pszCtrlConditions,		// control conditions
 				  char *pszExprConditions,		// experiment conditions
@@ -152,7 +152,7 @@ struct arg_file *outfile = arg_file1("o","out","<file>",		"Output SNPs to this S
 struct arg_end *end = arg_end(200);
 
 void *argtable[] = {help,version,FileLogLevel,LogFile,
-	                mode,name,descr,assemb,snpspecies,infile,outfile,
+					mode,name,descr,assemb,snpspecies,infile,outfile,
 					end};
 
 char **pAllArgs;
@@ -163,23 +163,23 @@ if(argerrors >= 0)
 
 /* special case: '--help' takes precedence over error reporting */
 if (help->count > 0)
-        {
+		{
 		printf("\n%s %s %s, Version %s\nOptions ---\n", gszProcName,gpszSubProcess->pszName,gpszSubProcess->pszFullDescr,kit4bversion);
-        arg_print_syntax(stdout,argtable,"\n");
-        arg_print_glossary(stdout,argtable,"  %-25s %s\n");
+		arg_print_syntax(stdout,argtable,"\n");
+		arg_print_glossary(stdout,argtable,"  %-25s %s\n");
 		printf("\nNote: Parameters can be entered into a parameter file, one parameter per line.");
 		printf("\n      To invoke this parameter file then precede its name with '@'");
 		printf("\n      e.g. %s %s @myparams.txt\n",gszProcName,gpszSubProcess->pszName);
 		printf("\nPlease report any issues regarding usage of %s at https://github.com/kit4b/issues\n\n",gszProcName);
 		return(1);
-        }
+		}
 
-    /* special case: '--version' takes precedence error reporting */
+	/* special case: '--version' takes precedence error reporting */
 if (version->count > 0)
-        {
+		{
 		printf("\n%s %s Version %s\n",gszProcName,gpszSubProcess->pszName,kit4bversion);
 		return(1);
-        }
+		}
 
 if (!argerrors)
 	{
@@ -312,7 +312,7 @@ if (!argerrors)
 	}
 else
 	{
-    printf("\n%s %s %s, Version %s\n", gszProcName,gpszSubProcess->pszName,gpszSubProcess->pszFullDescr,kit4bversion);
+	printf("\n%s %s %s, Version %s\n", gszProcName,gpszSubProcess->pszName,gpszSubProcess->pszFullDescr,kit4bversion);
 	arg_print_errors(stdout,end,gszProcName);
 	arg_print_syntax(stdout,argtable,"\nUse '-h' to view option and parameter usage\n");
 	return(1);
@@ -357,7 +357,7 @@ struct arg_lit  *version = arg_lit0("v","version,ver",			"Print version informat
 struct arg_int *FileLogLevel=arg_int0("f", "FileLogLevel",		"<int>","Level of diagnostics written to screen and logfile 0=fatal,1=errors,2=info,3=diagnostics,4=debug");
 struct arg_file *LogFile = arg_file0("F","log","<file>",		"Diagnostics log file");
 
-struct arg_int *mode = arg_int0("m","mode","<int>",				"Processing mode: 0 parse 'kit4b align' process generated SNPs into SQLite database  (default 0)");
+struct arg_int *mode = arg_int0("m","mode","<int>",				"Processing mode: 0 parse 'kit4b kalign' process generated SNPs into SQLite database  (default 0)");
 struct arg_str *name = arg_str1("n","name","<str>",				"Name by which experiment is identified");
 struct arg_str *descr = arg_str0("N","descr","<str>",			"Description of experimental conditions");
 struct arg_str *assemb = arg_str1("a","assemb","<str>",			"Cultivar/species used as target assembly when aligning reads");
@@ -368,7 +368,7 @@ struct arg_file *outfile = arg_file1("o","out","<file>",		"Output SNPs to this S
 struct arg_end *end = arg_end(200);
 
 void *argtable[] = {help,version,FileLogLevel,LogFile,
-	                mode,name,descr,assemb,snpspecies,infile,outfile,
+					mode,name,descr,assemb,snpspecies,infile,outfile,
 					end};
 
 char **pAllArgs;
@@ -379,23 +379,23 @@ if(argerrors >= 0)
 
 /* special case: '--help' takes precedence over error reporting */
 if (help->count > 0)
-        {
+		{
 		printf("\n%s SNPs to SQLite database, Version %s\nOptions ---\n", gszProcName,kit4bversion);
-        arg_print_syntax(stdout,argtable,"\n");
-        arg_print_glossary(stdout,argtable,"  %-25s %s\n");
+		arg_print_syntax(stdout,argtable,"\n");
+		arg_print_glossary(stdout,argtable,"  %-25s %s\n");
 		printf("\nNote: Parameters can be entered into a parameter file, one parameter per line.");
 		printf("\n      To invoke this parameter file then precede its name with '@'");
 		printf("\n      e.g. %s @myparams.txt\n",gszProcName);
 		printf("\nPlease report any issues regarding usage of %s at https://github.com/kit4b/issues\n\n",gszProcName);
 		return(1);
-        }
+		}
 
-    /* special case: '--version' takes precedence error reporting */
+	/* special case: '--version' takes precedence error reporting */
 if (version->count > 0)
-        {
+		{
 		printf("\n%s Version %s\n",gszProcName,kit4bversion);
 		return(1);
-        }
+		}
 
 
 if (!argerrors)
@@ -590,7 +590,7 @@ struct arg_file *outfile = arg_file1("o","out","<file>",		"Output transcripts to
 struct arg_end *end = arg_end(200);
 
 void *argtable[] = {help,version,FileLogLevel,LogFile,
-	                mode,name,descr,control,exper,infile,outfile,
+					mode,name,descr,control,exper,infile,outfile,
 					end};
 
 char **pAllArgs;
@@ -601,23 +601,23 @@ if(argerrors >= 0)
 
 /* special case: '--help' takes precedence over error reporting */
 if (help->count > 0)
-        {
+		{
 		printf("\n%s DE to SQLite database, Version %s\nOptions ---\n", gszProcName,kit4bversion);
-        arg_print_syntax(stdout,argtable,"\n");
-        arg_print_glossary(stdout,argtable,"  %-25s %s\n");
+		arg_print_syntax(stdout,argtable,"\n");
+		arg_print_glossary(stdout,argtable,"  %-25s %s\n");
 		printf("\nNote: Parameters can be entered into a parameter file, one parameter per line.");
 		printf("\n      To invoke this parameter file then precede its name with '@'");
 		printf("\n      e.g. %s @myparams.txt\n",gszProcName);
 		printf("\nPlease report any issues regarding usage of %s at https://github.com/kit4b/issues\n\n",gszProcName);
 		return(1);
-        }
+		}
 
-    /* special case: '--version' takes precedence error reporting */
+	/* special case: '--version' takes precedence error reporting */
 if (version->count > 0)
-        {
+		{
 		printf("\n%s Version %s\n",gszProcName,kit4bversion);
 		return(1);
-        }
+		}
 
 
 if (!argerrors)
@@ -745,7 +745,7 @@ return 0;
 int
 ProcessCSV2SQLite(int PMode,					// currently just the one mode...default is to parse from CSV and create/populate SQLite database
 				  bool bSafe,					// if true then use indexing on all tables whilst inserting... much slower but perhaps safer if multiple threads ...
-			      int CSVtype,					// input CSV file has this format (0: markers, 1: SNPs)
+				  int CSVtype,					// input CSV file has this format (0: markers, 1: SNPs)
 				  char *pszExprName,			// name by which this experiment is identified
 				  char *pszExprDescr,			// describes experiment
 				  char *pTargAssemb,			// assembly against which aligments for SNP discovery
@@ -774,7 +774,7 @@ return(Rslt);
 int
 ProcessDECSV2SQLite(int PMode,	// currently just the one mode...default is to parse from CSV and create/populate SQLite database
 				  bool bSafe,					// if true then use indexing on all tables whilst inserting... much slower but perhaps safer if multiple threads ...
-			      char *pszExprName,			// name by which this experiment is identified
+				  char *pszExprName,			// name by which this experiment is identified
 				  char *pszExprDescr,			// describes experiment
 				  char *pszCtrlConditions,		// control conditions
 				  char *pszExprConditions,		// experiment conditions
