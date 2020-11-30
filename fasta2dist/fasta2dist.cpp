@@ -947,14 +947,14 @@ do {
 			BinIdx+1,pProcCtx->pszCurChrom,pProcCtx->CurTargID,pProbe->szDescr,pProbe->ProbID,*pSlot);
 		if(Len > (sizeof(szLineBuff) * 9) / 10)
 			{
-			CUtility::SafeWrite(pProcCtx->hRsltsFile,szLineBuff,Len);
+			CUtility::RetryWrites(pProcCtx->hRsltsFile,szLineBuff,Len);
 			Len = 0;
 			}		
 		}
 	}
 while((pProbe=pProbe->pNext)!=NULL);
 if(Len)
-	CUtility::SafeWrite(pProcCtx->hRsltsFile,szLineBuff,Len);
+	CUtility::RetryWrites(pProcCtx->hRsltsFile,szLineBuff,Len);
 #ifdef _WIN32
 	_commit(pProcCtx->hRsltsFile);
 #else
@@ -985,13 +985,13 @@ do {
 			pProcCtx->pszCurChrom,pProcCtx->CurTargID,pProbe->szDescr,pProbe->ProbID,pProbe->CurChromCOV,pProbe->CurChromStdDev,pProbe->CurChromMean,pProbe->CurChromHits);
 	if(Len > (sizeof(szLineBuff) * 9) / 10)
 		{
-		CUtility::SafeWrite(pProcCtx->hRsltsFile,szLineBuff,Len);
+		CUtility::RetryWrites(pProcCtx->hRsltsFile,szLineBuff,Len);
 		Len = 0;
 		}		
 	}
 while((pProbe=pProbe->pNext)!=NULL);
 if(Len)
-	CUtility::SafeWrite(pProcCtx->hRsltsFile,szLineBuff,Len);
+	CUtility::RetryWrites(pProcCtx->hRsltsFile,szLineBuff,Len);
 #ifdef _WIN32
 	_commit(pProcCtx->hRsltsFile);
 #else

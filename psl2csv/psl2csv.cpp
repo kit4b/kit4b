@@ -647,7 +647,7 @@ if(bFirst)
 	{
 	bFirst=false;
 	BuffIdx=sprintf(szLineBuff,"\"QName\",\"QLen\",\"QAlignLen\",\"QStart\",\"QEnd\",\"TName\",\"TStrand\",\"TLen\",\"TAlignLen\",\"TStart\",\"TEnd\",\"Matches\",\"Mismatches\",\"MatchNonRepeats\",\"MatchRepeats\",\"NBases\",\"QNumInDels\",\"QInDelsBases\",\"TNumInDels\",\"TInDelsBases\",\"BlockCnt\",\"BlockLens\",\"QBlockStarts\",\"TBlockStarts\"\n");
-	CUtility::SafeWrite(pParams->hOutFile,szLineBuff,BuffIdx);
+	CUtility::RetryWrites(pParams->hOutFile,szLineBuff,BuffIdx);
 	}
 
 BuffIdx = sprintf(szLineBuff,"\"%s\",%d,%d,%d,%d,\"%s\",\"%s\",%d,%d,%d,%d,",
@@ -659,27 +659,27 @@ BuffIdx += sprintf(&szLineBuff[BuffIdx],"%d,%d,%d,%d,%d,%d,%d,%d,%d,%d",
 						pPSL->misMatches,pPSL->Matches,pPSL->repMatches,pPSL->nCount,pPSL->qNumInsert,
 						pPSL->qBaseInsert,pPSL->tNumInsert,pPSL->tBaseInsert,pPSL->blockCount);
 
-CUtility::SafeWrite(pParams->hOutFile,szLineBuff,BuffIdx);
+CUtility::RetryWrites(pParams->hOutFile,szLineBuff,BuffIdx);
 BuffIdx=sprintf(szLineBuff,",\"");
 for(BlockIdx = 0; BlockIdx < pPSL->blockCount; BlockIdx++)
 	BuffIdx += sprintf(&szLineBuff[BuffIdx],"%d,",pPSL->blockSizes[BlockIdx]);
 BuffIdx -= 1;		// removes last ','
 BuffIdx += sprintf(&szLineBuff[BuffIdx],"\"");
-CUtility::SafeWrite(pParams->hOutFile,szLineBuff,BuffIdx);
+CUtility::RetryWrites(pParams->hOutFile,szLineBuff,BuffIdx);
 
 BuffIdx=sprintf(szLineBuff,",\"");
 for(BlockIdx = 0; BlockIdx < pPSL->blockCount; BlockIdx++)
 	BuffIdx += sprintf(&szLineBuff[BuffIdx],"%d,",pPSL->qStarts[BlockIdx]);
 BuffIdx -= 1;		// removes last ','
 BuffIdx += sprintf(&szLineBuff[BuffIdx],"\"");
-CUtility::SafeWrite(pParams->hOutFile,szLineBuff,BuffIdx);
+CUtility::RetryWrites(pParams->hOutFile,szLineBuff,BuffIdx);
 
 BuffIdx=sprintf(szLineBuff,",\"");
 for(BlockIdx = 0; BlockIdx < pPSL->blockCount; BlockIdx++)
 	BuffIdx += sprintf(&szLineBuff[BuffIdx],"%d,",pPSL->tStarts[BlockIdx]);
 BuffIdx -= 1;		// removes last ','
 BuffIdx += sprintf(&szLineBuff[BuffIdx],"\"\n");
-CUtility::SafeWrite(pParams->hOutFile,szLineBuff,BuffIdx);
+CUtility::RetryWrites(pParams->hOutFile,szLineBuff,BuffIdx);
 return(0);
 }
 

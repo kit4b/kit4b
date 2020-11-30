@@ -669,7 +669,7 @@ while((Rslt=pCSV->NextLine()) > 0)	// onto next line containing fields
 	// have seq in requested genomic region
 	LineLen = sprintf(szLineBuff,"%d,\"%s\",\"%s\",\"%s\",%d,%d,%d,\"%s\",%d\n",
 		CoreID,"randcore",szSpecies,szCurChrom,BEDStart,BEDEnd,SeqLen,"RandomSelection",BEDRegion);
-	CUtility::SafeWrite(hRsltsFile,szLineBuff,LineLen);
+	CUtility::RetryWrites(hRsltsFile,szLineBuff,LineLen);
 	}
 
 if(hRsltsFile != -1)

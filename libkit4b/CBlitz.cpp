@@ -114,7 +114,7 @@ if(m_hOutFile != -1)
 		AcquireSerialise();
 		if (m_szLineBuffIdx)
 			{
-			CUtility::SafeWrite(m_hOutFile, m_pszLineBuff, m_szLineBuffIdx);
+			CUtility::RetryWrites(m_hOutFile, m_pszLineBuff, m_szLineBuffIdx);
 			m_szLineBuffIdx = 0;
 			}
 		ReleaseSerialise();
@@ -730,7 +730,7 @@ if((m_hOutFile = open(pszOutFile,O_WRONLY | O_CREAT,S_IREAD | S_IWRITE))!=-1)
 
 				if (m_szLineBuffIdx > (cAlignBlitzRprtBufferSize * 9) / 10)
 					{
-					CUtility::SafeWrite(m_hOutFile, m_pszLineBuff, m_szLineBuffIdx);
+					CUtility::RetryWrites(m_hOutFile, m_pszLineBuff, m_szLineBuffIdx);
 					m_szLineBuffIdx = 0;
 					}
 				}
@@ -738,7 +738,7 @@ if((m_hOutFile = open(pszOutFile,O_WRONLY | O_CREAT,S_IREAD | S_IWRITE))!=-1)
 			break;
 		}
 	if(m_szLineBuffIdx)
-		CUtility::SafeWrite(m_hOutFile,m_pszLineBuff,m_szLineBuffIdx);
+		CUtility::RetryWrites(m_hOutFile,m_pszLineBuff,m_szLineBuffIdx);
 	m_szLineBuffIdx = 0;
 	}
 
@@ -783,7 +783,7 @@ if(m_LoadQuerySeqsRslt < 0)
 if(m_hOutFile != -1)
 	{
 	if(m_szLineBuffIdx > 0)
-		CUtility::SafeWrite(m_hOutFile,m_pszLineBuff,m_szLineBuffIdx);
+		CUtility::RetryWrites(m_hOutFile,m_pszLineBuff,m_szLineBuffIdx);
 	m_szLineBuffIdx = 0;
 #ifdef _WIN32
 	_commit(m_hOutFile);
@@ -1010,7 +1010,7 @@ if (m_hOutFile)
 	{
 	if(m_szLineBuffIdx)
 		{
-		CUtility::SafeWrite(m_hOutFile, m_pszLineBuff, m_szLineBuffIdx);
+		CUtility::RetryWrites(m_hOutFile, m_pszLineBuff, m_szLineBuffIdx);
 		m_szLineBuffIdx = 0;
 		}
 #ifdef _WIN32
@@ -1116,10 +1116,10 @@ if(pszDescPE2 != NULL && pszDescPE2[0] != '\0' && LenSeqPE2 > 0)
 if(m_hOutNonAlignedFilePE1 != -1 && szFastaBuffPE1[0] != '\0' && FastaBuffIdxPE1 > 0)
 	{
 	AcquireSerialise();
-	CUtility::SafeWrite(m_hOutNonAlignedFilePE1, szFastaBuffPE1, FastaBuffIdxPE1);
+	CUtility::RetryWrites(m_hOutNonAlignedFilePE1, szFastaBuffPE1, FastaBuffIdxPE1);
 
 	if (m_hOutNonAlignedFilePE2 != -1 && szFastaBuffPE2[0] != '\0' && FastaBuffIdxPE2 > 0)
-		CUtility::SafeWrite(m_hOutNonAlignedFilePE2, szFastaBuffPE2, FastaBuffIdxPE2);
+		CUtility::RetryWrites(m_hOutNonAlignedFilePE2, szFastaBuffPE2, FastaBuffIdxPE2);
 	ReleaseSerialise();
 	}
 return(0);
@@ -1948,7 +1948,7 @@ tsQueryAlignNodes *pCurNode;
 AcquireSerialise();
 if(m_szLineBuffIdx > (cAlignBlitzRprtBufferSize * 9) / 10)
 	{
-	CUtility::SafeWrite(m_hOutFile,m_pszLineBuff,m_szLineBuffIdx);
+	CUtility::RetryWrites(m_hOutFile,m_pszLineBuff,m_szLineBuffIdx);
 	m_szLineBuffIdx = 0;
 	}
 
@@ -1996,7 +1996,7 @@ while(pCurNode != NULL);
 m_szLineBuffIdx += sprintf(&m_pszLineBuff[m_szLineBuffIdx],"\n");	
 if(m_szLineBuffIdx > (cAlignBlitzRprtBufferSize * 9) / 10)
 	{
-	CUtility::SafeWrite(m_hOutFile,m_pszLineBuff,m_szLineBuffIdx);
+	CUtility::RetryWrites(m_hOutFile,m_pszLineBuff,m_szLineBuffIdx);
 	m_szLineBuffIdx = 0;
 	}
 m_ReportedPaths += 1;				
@@ -2038,7 +2038,7 @@ pCurSeq = NULL;
 AcquireSerialise();
 if(m_szLineBuffIdx > (cAlignBlitzRprtBufferSize * 9) / 10)
 	{
-	CUtility::SafeWrite(m_hOutFile,m_pszLineBuff,m_szLineBuffIdx);
+	CUtility::RetryWrites(m_hOutFile,m_pszLineBuff,m_szLineBuffIdx);
 	m_szLineBuffIdx = 0;
 	}
 
@@ -2100,7 +2100,7 @@ pCurNode = ppFirst2Rpts[SortedPathIdx];
 do {
 	if((m_szLineBuffIdx + pCurNode->AlignLen) > (cAlignBlitzRprtBufferSize * 9) / 10)
 		{
-		CUtility::SafeWrite(m_hOutFile,m_pszLineBuff,m_szLineBuffIdx);
+		CUtility::RetryWrites(m_hOutFile,m_pszLineBuff,m_szLineBuffIdx);
 		m_szLineBuffIdx = 0;
 		}
 	if(Strand == '-')
@@ -2125,7 +2125,7 @@ pCurNode = ppFirst2Rpts[SortedPathIdx];
 do {
 	if((m_szLineBuffIdx + pCurNode->AlignLen) > (cAlignBlitzRprtBufferSize * 9) / 10)
 		{
-		CUtility::SafeWrite(m_hOutFile,m_pszLineBuff,m_szLineBuffIdx);
+		CUtility::RetryWrites(m_hOutFile,m_pszLineBuff,m_szLineBuffIdx);
 		m_szLineBuffIdx = 0;
 		}
 	m_pSfxArray->GetSeq(TargSeqID,pCurNode->TargSeqLoci,pCurSeq,pCurNode->AlignLen);
@@ -2140,7 +2140,7 @@ while(pCurNode != NULL);
 m_szLineBuffIdx += sprintf(&m_pszLineBuff[m_szLineBuffIdx],"\n");	
 if(m_szLineBuffIdx > (cAlignBlitzRprtBufferSize * 9) / 10)
 	{
-	CUtility::SafeWrite(m_hOutFile,m_pszLineBuff,m_szLineBuffIdx);
+	CUtility::RetryWrites(m_hOutFile,m_pszLineBuff,m_szLineBuffIdx);
 	m_szLineBuffIdx = 0;
 	}
 m_ReportedPaths += 1;				
@@ -2387,7 +2387,7 @@ CBlitz::ReportAsSAM(uint32_t Flags,	// use as the reported SAM flags
 	AcquireSerialise();
 	if (m_szLineBuffIdx >= (cAlignBlitzRprtBufferSize - (2 * BuffIdx)))
 	{
-		CUtility::SafeWrite(m_hOutFile, m_pszLineBuff, m_szLineBuffIdx);
+		CUtility::RetryWrites(m_hOutFile, m_pszLineBuff, m_szLineBuffIdx);
 		m_szLineBuffIdx = 0;
 	}
 	memcpy(&m_pszLineBuff[m_szLineBuffIdx], szLineBuff, BuffIdx);
@@ -2446,7 +2446,7 @@ if((pCurSeq = new uint8_t [10 + MaxBlockSize])==NULL)	// inplace translation to 
 AcquireSerialise();
 if(m_szLineBuffIdx > (cAlignBlitzRprtBufferSize * 9) / 10)
 	{
-	CUtility::SafeWrite(m_hOutFile,m_pszLineBuff,m_szLineBuffIdx);
+	CUtility::RetryWrites(m_hOutFile,m_pszLineBuff,m_szLineBuffIdx);
 	m_szLineBuffIdx = 0;
 	}
 
@@ -2454,7 +2454,7 @@ pCurNode = ppFirst2Rpts[SortedPathIdx];
 do {
 	if((m_szLineBuffIdx + pCurNode->AlignLen) > (cAlignBlitzRprtBufferSize * 9) / 10)
 		{
-		CUtility::SafeWrite(m_hOutFile,m_pszLineBuff,m_szLineBuffIdx);
+		CUtility::RetryWrites(m_hOutFile,m_pszLineBuff,m_szLineBuffIdx);
 		m_szLineBuffIdx = 0;
 		}	
 	m_szLineBuffIdx += sprintf(&m_pszLineBuff[m_szLineBuffIdx],"\na\tscore=%d",pCurNode->HiScore);
@@ -2513,7 +2513,7 @@ for (DistIdx = 0; DistIdx <= MaxKMerCnts; DistIdx++, pOccsDist++)
 
 if (m_szLineBuffIdx > (cAlignBlitzRprtBufferSize * 9) / 10)
 	{
-	CUtility::SafeWrite(m_hOutFile, m_pszLineBuff, m_szLineBuffIdx);
+	CUtility::RetryWrites(m_hOutFile, m_pszLineBuff, m_szLineBuffIdx);
 	m_szLineBuffIdx = 0;
 	}
 CummulativeQKmers = 0;
@@ -2532,13 +2532,13 @@ for(DistIdx = 0; DistIdx <= MaxKMerCnts; DistIdx++, pKmerOccsDist++)
 							DistIdx, *pKmerOccsDist, DistIdx == 0 ? *pKmerOccsDist : DistIdx * *pKmerOccsDist, CummulativeQKmers, CummulativeTKmers, PropCummulativeQKmers, PropCummulativeTKmers);
 	if (m_szLineBuffIdx > (cAlignBlitzRprtBufferSize * 9) / 10)
 		{
-		CUtility::SafeWrite(m_hOutFile, m_pszLineBuff, m_szLineBuffIdx);
+		CUtility::RetryWrites(m_hOutFile, m_pszLineBuff, m_szLineBuffIdx);
 		m_szLineBuffIdx = 0;
 		}
 	}
 if (m_szLineBuffIdx > 0)
 	{
-	CUtility::SafeWrite(m_hOutFile, m_pszLineBuff, m_szLineBuffIdx);
+	CUtility::RetryWrites(m_hOutFile, m_pszLineBuff, m_szLineBuffIdx);
 	m_szLineBuffIdx = 0;
 	}
 return(0);
@@ -2565,7 +2565,7 @@ if(AlignScore > 1000)
 AcquireSerialise();
 if(m_szLineBuffIdx > (cAlignBlitzRprtBufferSize * 9) / 10)
 	{
-	CUtility::SafeWrite(m_hOutFile,m_pszLineBuff,m_szLineBuffIdx);
+	CUtility::RetryWrites(m_hOutFile,m_pszLineBuff,m_szLineBuffIdx);
 	m_szLineBuffIdx = 0;
 	}
 
@@ -2596,7 +2596,7 @@ while(pCurNode != NULL);
 m_szLineBuffIdx += sprintf(&m_pszLineBuff[m_szLineBuffIdx],"\n");
 if(m_szLineBuffIdx > (cAlignBlitzRprtBufferSize * 9) / 10)
 	{
-	CUtility::SafeWrite(m_hOutFile,m_pszLineBuff,m_szLineBuffIdx);
+	CUtility::RetryWrites(m_hOutFile,m_pszLineBuff,m_szLineBuffIdx);
 	m_szLineBuffIdx = 0;
 	}
 m_ReportedPaths += 1;

@@ -1859,7 +1859,7 @@ else        // SAM output
 	{
 	m_CurBAMLen += sprintf((char *)&m_pBAM[m_CurBAMLen],"\n@PG\tID:%s\tVN:%s\n",gszProcName,m_szVer);
 	if(m_SAMFileType == eSFTSAM)
-		CUtility::SafeWrite(m_hOutSAMfile,m_pBAM,m_CurBAMLen);
+		CUtility::RetryWrites(m_hOutSAMfile,m_pBAM,m_CurBAMLen);
 	else
 		CUtility::SafeWrite_gz(m_gzOutSAMfile,m_pBAM,m_CurBAMLen);
 	}
@@ -1908,7 +1908,7 @@ if((m_hOutBAIfile == -1 && m_SAMFileType == eSFTBAM_BAI) || (m_pgzOutCSIfile == 
 
 if(m_SAMFileType == eSFTBAM_BAI)
 	{
-	if(!CUtility::SafeWrite(m_hOutBAIfile,m_pBAI,m_CurBAILen))
+	if(!CUtility::RetryWrites(m_hOutBAIfile,m_pBAI,m_CurBAILen))
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"UpdateSAIIndex: write to '%s' failed",m_szBAIfileName);
 		Reset();
@@ -2208,7 +2208,7 @@ if(m_SAMFileType == eSFTSAM || m_SAMFileType == eSFTSAMgz)
 	if(m_CurBAMLen + (cMaxFastQSeqLen * 2) > m_AllocBAMSize)
 		{
 		if(m_SAMFileType == eSFTSAM)
-			CUtility::SafeWrite(m_hOutSAMfile,m_pBAM,m_CurBAMLen);
+			CUtility::RetryWrites(m_hOutSAMfile,m_pBAM,m_CurBAMLen);
 		else
 			CUtility::SafeWrite_gz(m_gzOutSAMfile,m_pBAM,m_CurBAMLen);
 		m_CurBAMLen = 0;
@@ -2661,7 +2661,7 @@ if(m_SAMFileType == eSFTSAM || m_SAMFileType == eSFTSAMgz)
 		if(m_hOutSAMfile != -1)
 			{
 			if(m_CurBAMLen)
-				CUtility::SafeWrite(m_hOutSAMfile,m_pBAM,m_CurBAMLen);
+				CUtility::RetryWrites(m_hOutSAMfile,m_pBAM,m_CurBAMLen);
 #ifdef _WIN32
 			_commit(m_hOutSAMfile);
 #else

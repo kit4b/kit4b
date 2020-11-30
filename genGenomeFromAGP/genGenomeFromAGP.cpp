@@ -247,7 +247,7 @@ Reset(void)
 if(m_hAssembFile != -1)
 	{
 	if(m_BuffOfs > 0)
-		CUtility::SafeWrite(m_hAssembFile,m_OutputBuff,m_BuffOfs);
+		CUtility::RetryWrites(m_hAssembFile,m_OutputBuff,m_BuffOfs);
 	close(m_hAssembFile);
 	m_hAssembFile = -1;
 	}
@@ -297,7 +297,7 @@ while(Ncnt--)
 	{
 	if((m_BuffOfs + 100) > cOutBuffSize)
 		{
-		CUtility::SafeWrite(m_hAssembFile,m_OutputBuff,m_BuffOfs);
+		CUtility::RetryWrites(m_hAssembFile,m_OutputBuff,m_BuffOfs);
 		m_BuffOfs = 0;
 		}
 	if(m_ColPsn >= 80)
@@ -319,7 +319,7 @@ if(pszChrom == NULL || pszChrom[0] == '\0' || m_hAssembFile == -1)
 	return(false);
 if((m_BuffOfs + 1000) > cOutBuffSize)
 	{
-	CUtility::SafeWrite(m_hAssembFile,m_OutputBuff,m_BuffOfs);
+	CUtility::RetryWrites(m_hAssembFile,m_OutputBuff,m_BuffOfs);
 	m_BuffOfs = 0;
 	}
 if(m_ColPsn != 0)
@@ -340,7 +340,7 @@ if(SeqLen < 1 || pSeq == NULL || m_hAssembFile == -1)
 	return(false);
 if((m_BuffOfs + 1000) > cOutBuffSize)
 	{
-	CUtility::SafeWrite(m_hAssembFile,m_OutputBuff,m_BuffOfs);
+	CUtility::RetryWrites(m_hAssembFile,m_OutputBuff,m_BuffOfs);
 	m_BuffOfs = 0;
 	}
 
@@ -348,7 +348,7 @@ while(SeqLen--)
 	{
 	if((m_BuffOfs + 100) > cOutBuffSize)
 		{
-		CUtility::SafeWrite(m_hAssembFile,m_OutputBuff,m_BuffOfs);
+		CUtility::RetryWrites(m_hAssembFile,m_OutputBuff,m_BuffOfs);
 		m_BuffOfs = 0;
 		}
 	if(m_ColPsn >= 80)
@@ -463,7 +463,7 @@ while((pAGPentry = m_pAGPs->Next(pAGPentry))!=NULL)
 	}
 if(m_hAssembFile != -1 && m_BuffOfs)
 	{
-	CUtility::SafeWrite(m_hAssembFile,m_OutputBuff,m_BuffOfs);
+	CUtility::RetryWrites(m_hAssembFile,m_OutputBuff,m_BuffOfs);
 	m_BuffOfs = 0;
 	}
 close(m_hAssembFile);
@@ -586,13 +586,13 @@ for(Idx = 0; Idx < m_NumChromSupers; Idx++,pChromSuper++)
 	m_BuffOfs += sprintf(&m_OutputBuff[m_BuffOfs],"%s,%s,%d,%d\n",pChromSuper->szSupercontig,pChromSuper->szChrom,pChromSuper->Start,pChromSuper->End);
 	if((m_BuffOfs + 500) > cOutBuffSize)
 		{
-		CUtility::SafeWrite(m_hAssembFile,m_OutputBuff,m_BuffOfs);
+		CUtility::RetryWrites(m_hAssembFile,m_OutputBuff,m_BuffOfs);
 		m_BuffOfs = 0;
 		}
 	}
 if(m_hAssembFile != -1 && m_BuffOfs)
 	{
-	CUtility::SafeWrite(m_hAssembFile,m_OutputBuff,m_BuffOfs);
+	CUtility::RetryWrites(m_hAssembFile,m_OutputBuff,m_BuffOfs);
 	m_BuffOfs = 0;
 	}
 close(m_hAssembFile);

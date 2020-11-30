@@ -952,7 +952,7 @@ else
 	}
 
 LineOfs += sprintf(&szLineBuff[LineOfs],"\n");
-CUtility::SafeWrite(hRsltsFile,szLineBuff,LineOfs);
+CUtility::RetryWrites(hRsltsFile,szLineBuff,LineOfs);
 LineOfs = 0;
 
 // write stats
@@ -992,7 +992,7 @@ for(OligoIdx = 0; OligoIdx < m_CurNumOligos; OligoIdx++,pOligo++)
 			}
 		}
 	LineOfs += sprintf(&szLineBuff[LineOfs],"\n");
-	CUtility::SafeWrite(hRsltsFile,szLineBuff,LineOfs);
+	CUtility::RetryWrites(hRsltsFile,szLineBuff,LineOfs);
 	LineOfs = 0;
 	}
 

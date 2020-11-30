@@ -1477,7 +1477,7 @@ if(pszStatsFile != NULL && pszStatsFile[0] != '\0')
 		}
 
 	LineLen = sprintf(szLineBuff,"\"RefID\",\"Filtered\",\"OverLen\",\"UnderLen\",\"ExcludeLoci\",\"IncludeLoci\",\"Overlaps\",\"Chrom\",\"OutRefID\",\"InRefID\",\"Species\"\n");
-	CUtility::SafeWrite(ProcParams.hStatsFile,szLineBuff,LineLen);	
+	CUtility::RetryWrites(ProcParams.hStatsFile,szLineBuff,LineLen);	
 	}
 
 Rslt = FilterCSV(&ProcParams);
@@ -2134,7 +2134,7 @@ if(pParams->hOutFile != -1)
 		if(pParams->hOutFile != -1)
 			{
 			pszLine = &pParams->pElChrBuff[pEl->LineOfs];
-			CUtility::SafeWrite(pParams->hOutFile,pszLine,pEl->LineLen);
+			CUtility::RetryWrites(pParams->hOutFile,pszLine,pEl->LineLen);
 			}
 		}
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Write accepted elements to output file completed");
@@ -2171,7 +2171,7 @@ for(Idx = 0; Idx < pParams->NumElLocs; Idx++,pEl++)
 			pEl->Filter.fExcludeLoci,pEl->Filter.fIncludeLoci,
 			(pEl->Filter.fOverlap && pParams->bOverlaps || !pEl->Filter.fOverlap && pParams->bNoOverlaps) ? 1 : 0,
 				pEl->Filter.fChrom,pEl->Filter.fOutRefID,pEl->Filter.fInRefID,pEl->Filter.fSpecies,pEl->Filter.fSelectN,pEl->Filter.fIncludeRegion,pEl->Filter.fExcludeRegion);
-		CUtility::SafeWrite(pParams->hStatsFile,szLineBuff,BuffLen);
+		CUtility::RetryWrites(pParams->hStatsFile,szLineBuff,BuffLen);
 		}
 
 	if(!pEl->Filter.bFiltOut)

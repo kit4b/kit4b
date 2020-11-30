@@ -1757,13 +1757,13 @@ for (Idx = 0; Idx < 1999; Idx++)
 	BuffIdx += sprintf(&szRptBuff[BuffIdx],"\"%d\",%u\n",Idx+1,DupDists[Idx]);
 	if(BuffIdx + 100 > sizeof(szRptBuff))
 		{
-		CUtility::SafeWrite(m_hDuplicatesDistRptFile,szRptBuff,BuffIdx);
+		CUtility::RetryWrites(m_hDuplicatesDistRptFile,szRptBuff,BuffIdx);
 		BuffIdx = 0;
 		}
 	}
 BuffIdx += sprintf(&szRptBuff[BuffIdx],"\"%d+\",%u\n",Idx+1,DupDists[Idx]);
 if(BuffIdx)
-	CUtility::SafeWrite(m_hDuplicatesDistRptFile,szRptBuff,BuffIdx);
+	CUtility::RetryWrites(m_hDuplicatesDistRptFile,szRptBuff,BuffIdx);
 #ifdef _WIN32
 _commit(m_hDuplicatesDistRptFile);
 #else
@@ -1806,13 +1806,13 @@ for (Idx = 1; Idx <= m_MaxReadLen; Idx++)
 	BuffIdx += sprintf(&szRptBuff[BuffIdx],"\"%d\",%u\n",Idx,m_ReadLenDist[Idx]);
 	if(BuffIdx + 100 > sizeof(szRptBuff))
 		{
-		CUtility::SafeWrite(m_hReadLenDistRptFile,szRptBuff,BuffIdx);
+		CUtility::RetryWrites(m_hReadLenDistRptFile,szRptBuff,BuffIdx);
 		BuffIdx = 0;
 		}
 	}
 BuffIdx += sprintf(&szRptBuff[BuffIdx],"\"%d+\",%u\n",Idx,m_ReadLenDist[Idx]);
 if(BuffIdx)
-	CUtility::SafeWrite(m_hReadLenDistRptFile,szRptBuff,BuffIdx);
+	CUtility::RetryWrites(m_hReadLenDistRptFile,szRptBuff,BuffIdx);
 #ifdef _WIN32
 _commit(m_hReadLenDistRptFile);
 #else
@@ -1861,13 +1861,13 @@ for (Idx = 1; Idx <= m_MaxReadLen; Idx++)
 	BuffIdx += sprintf(&szRptBuff[BuffIdx],",\"Base:%d\"",Idx);
 	if(BuffIdx + 100 > sizeof(szRptBuff))
 		{
-		CUtility::SafeWrite(m_hQScoreDistRptFile,szRptBuff,BuffIdx);
+		CUtility::RetryWrites(m_hQScoreDistRptFile,szRptBuff,BuffIdx);
 		BuffIdx = 0;
 		}
 	}
 if(BuffIdx > 0)
 	{
-	CUtility::SafeWrite(m_hQScoreDistRptFile,szRptBuff,BuffIdx);
+	CUtility::RetryWrites(m_hQScoreDistRptFile,szRptBuff,BuffIdx);
 	BuffIdx = 0;
 	}
 for (int Idy = 0; Idy < 42; Idy++)
@@ -1878,13 +1878,13 @@ for (int Idy = 0; Idy < 42; Idy++)
 		BuffIdx += sprintf(&szRptBuff[BuffIdx],",%d",m_pScores[Idy + (Idx * 42)]);
 		if(BuffIdx + 100 > sizeof(szRptBuff))
 			{
-			CUtility::SafeWrite(m_hQScoreDistRptFile,szRptBuff,BuffIdx);
+			CUtility::RetryWrites(m_hQScoreDistRptFile,szRptBuff,BuffIdx);
 			BuffIdx = 0;
 			}
 		}
 	}
 if(BuffIdx)
-	CUtility::SafeWrite(m_hQScoreDistRptFile,szRptBuff,BuffIdx);
+	CUtility::RetryWrites(m_hQScoreDistRptFile,szRptBuff,BuffIdx);
 #ifdef _WIN32
 _commit(m_hQScoreDistRptFile);
 #else
@@ -1924,12 +1924,12 @@ if(pPlots != NULL)
 
 // report error free read probabilities distributions for downstream analytics
 BuffIdx = sprintf(szRptBuff,"\"ProbabilityBin\",\"Count\"");
-CUtility::SafeWrite(m_hErrFreeReadDistRptFile,szRptBuff,BuffIdx);
+CUtility::RetryWrites(m_hErrFreeReadDistRptFile,szRptBuff,BuffIdx);
 BuffIdx = 0;
 for (int Idx = 0; Idx < 100; Idx++)
 	BuffIdx += sprintf(&szRptBuff[BuffIdx],"\n%1.2f,%lld",(double)Idx*0.01,m_ProbNoReadErrDist[Idx]);
 if(BuffIdx)
-	CUtility::SafeWrite(m_hErrFreeReadDistRptFile,szRptBuff,BuffIdx);
+	CUtility::RetryWrites(m_hErrFreeReadDistRptFile,szRptBuff,BuffIdx);
 #ifdef _WIN32
 _commit(m_hErrFreeReadDistRptFile);
 #else
@@ -2016,7 +2016,7 @@ for(KMerLen = 1; KMerLen <= m_MaxKMerLen; KMerLen++)
 				BuffIdx += sprintf(&szRptBuff[BuffIdx],",%u",*pExprKMerCnts);
 			if(BuffIdx + 100 > sizeof(szRptBuff))
 				{
-				CUtility::SafeWrite(m_hKMerDistRptFile,szRptBuff,BuffIdx);
+				CUtility::RetryWrites(m_hKMerDistRptFile,szRptBuff,BuffIdx);
 				BuffIdx = 0;
 				}
 			}
@@ -2026,7 +2026,7 @@ for(KMerLen = 1; KMerLen <= m_MaxKMerLen; KMerLen++)
 	NumEls <<= 2;
 	}
 if(BuffIdx)
-	CUtility::SafeWrite(m_hKMerDistRptFile,szRptBuff,BuffIdx);
+	CUtility::RetryWrites(m_hKMerDistRptFile,szRptBuff,BuffIdx);
 #ifdef _WIN32
 _commit(m_hKMerDistRptFile);
 #else
@@ -2062,7 +2062,7 @@ for(Idx = 0; Idx < m_MaxReadLen; Idx++)
 	BuffIdx += sprintf(&szRptBuff[BuffIdx],",\"Base:%d\"",Idx);
 	if(BuffIdx + 100 > sizeof(szRptBuff))
 		{
-		CUtility::SafeWrite(m_hPearsonDistRptFile,szRptBuff,BuffIdx);
+		CUtility::RetryWrites(m_hPearsonDistRptFile,szRptBuff,BuffIdx);
 		BuffIdx = 0;
 		}
 	}
@@ -2089,13 +2089,13 @@ for(int Idk = 1; Idk <= m_KMerCCC; Idk++)
 		BuffIdx += sprintf(&szRptBuff[BuffIdx],",%f",Pearson);
 		if(BuffIdx + 100 > sizeof(szRptBuff))
 			{
-			CUtility::SafeWrite(m_hPearsonDistRptFile,szRptBuff,BuffIdx);
+			CUtility::RetryWrites(m_hPearsonDistRptFile,szRptBuff,BuffIdx);
 			BuffIdx = 0;
 			}
 		}
 	}
 if(BuffIdx)
-	CUtility::SafeWrite(m_hPearsonDistRptFile,szRptBuff,BuffIdx);
+	CUtility::RetryWrites(m_hPearsonDistRptFile,szRptBuff,BuffIdx);
 #ifdef _WIN32
 _commit(m_hPearsonDistRptFile);
 #else
@@ -2135,7 +2135,7 @@ if(m_hContamRptFile != -1)		// reporting on contaminants?
 		for(DistIdx = 1; DistIdx <= MaxContamLen; DistIdx++)
 			BuffIdx += sprintf(&szRptBuff[BuffIdx],",\"Overlap:%d\"",DistIdx);
 		BuffIdx += sprintf(&szRptBuff[BuffIdx],"\n");
-		CUtility::SafeWrite(m_hContamRptFile,szRptBuff,BuffIdx);
+		CUtility::RetryWrites(m_hContamRptFile,szRptBuff,BuffIdx);
 		BuffIdx = 0;
 
 		for(ContamID = 1; ContamID <= NumContaminants; ContamID++)
@@ -2163,7 +2163,7 @@ if(m_hContamRptFile != -1)		// reporting on contaminants?
 			for(; DistIdx < MaxContamLen; DistIdx++)
 				BuffIdx += sprintf(&szRptBuff[BuffIdx],",0");
 			BuffIdx += sprintf(&szRptBuff[BuffIdx],"\n");
-			CUtility::SafeWrite(m_hContamRptFile,szRptBuff,BuffIdx);
+			CUtility::RetryWrites(m_hContamRptFile,szRptBuff,BuffIdx);
 			BuffIdx = 0;
 			}
 		}
@@ -2172,7 +2172,7 @@ if(m_hContamRptFile != -1)		// reporting on contaminants?
 		{
 		MaxContamLen = m_pContaminates->MaxContaminantLen(eCCVectContam);
 		BuffIdx = sprintf(szRptBuff,"\"Name\",\"Type\",\"Length\",\"Checked\",\"TotContained\"\n");
-		CUtility::SafeWrite(m_hContamRptFile,szRptBuff,BuffIdx);
+		CUtility::RetryWrites(m_hContamRptFile,szRptBuff,BuffIdx);
 		BuffIdx = 0;
 		for(ContamID = 1; ContamID <= NumContaminants; ContamID++)
 			{
@@ -2187,7 +2187,7 @@ if(m_hContamRptFile != -1)		// reporting on contaminants?
 			ContamHits = m_pContaminates->ContaminantDist(ContamID,cMaxContaminantLen,Dist);
 
 			BuffIdx = sprintf(szRptBuff,"\"%s\",\"%s\",%d,%u,%d\n",pszContamName,m_pContaminates->ContaminateType2Txt(ContamType),ContamLen,NumChecks,ContamHits);
-			CUtility::SafeWrite(m_hContamRptFile,szRptBuff,BuffIdx);
+			CUtility::RetryWrites(m_hContamRptFile,szRptBuff,BuffIdx);
 			BuffIdx = 0;
 			}
 		}

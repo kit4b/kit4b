@@ -180,7 +180,7 @@ CSeqTrans::MapSeq2UCAscii(pMarkerSeq,TruncMarkerLen,szMarkerSeq);
 AcquireLock(true);
 if((m_MarkerBuffOfs + (2 * cMaxExtKMerLen)) > m_AllocMarkerBuffSize)
 	{
-	CUtility::SafeWrite(m_hOutFile,m_pMarkerBuff,m_MarkerBuffOfs);
+	CUtility::RetryWrites(m_hOutFile,m_pMarkerBuff,m_MarkerBuffOfs);
 	m_MarkerBuffOfs = 0;
 	}
 m_MarkerID += 1;
@@ -214,7 +214,7 @@ CSeqTrans::MapSeq2UCAscii(pReadSeq,TruncMarkerLen,szMarkerSeq);
 AcquireLock(true);
 if((m_MarkerBuffOfs + (2 * cMaxExtKMerLen)) > m_AllocMarkerBuffSize)
 	{
-	CUtility::SafeWrite(m_hOutReadsFile,m_pMarkerBuff,m_MarkerBuffOfs);
+	CUtility::RetryWrites(m_hOutReadsFile,m_pMarkerBuff,m_MarkerBuffOfs);
 	m_MarkerBuffOfs = 0;
 	}
 m_MarkerID += 1;
@@ -778,7 +778,7 @@ gDiagnostics.DiagOut(eDLInfo,gszProcName,"Completed - K-Mers processed: %lld, Cu
 if(m_hOutFile != -1)
 	{
 	if(m_MarkerBuffOfs)
-		CUtility::SafeWrite(m_hOutFile,m_pMarkerBuff,m_MarkerBuffOfs);
+		CUtility::RetryWrites(m_hOutFile,m_pMarkerBuff,m_MarkerBuffOfs);
 #ifdef _WIN32
 	_commit(m_hOutFile);
 #else
@@ -851,7 +851,7 @@ if(m_bKMerReads)
 	if(m_hOutReadsFile != -1)
 		{
 		if(m_MarkerBuffOfs)
-			CUtility::SafeWrite(m_hOutReadsFile,m_pMarkerBuff,m_MarkerBuffOfs);
+			CUtility::RetryWrites(m_hOutReadsFile,m_pMarkerBuff,m_MarkerBuffOfs);
 #ifdef _WIN32
 		_commit(m_hOutReadsFile);
 #else

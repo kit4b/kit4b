@@ -332,7 +332,7 @@ if(m_hOutFile != -1)
 	{
 	if(m_pOutBuffer != NULL && m_OutBuffIdx)
 		{
-		CUtility::SafeWrite(m_hOutFile,m_pOutBuffer,m_OutBuffIdx);
+		CUtility::RetryWrites(m_hOutFile,m_pOutBuffer,m_OutBuffIdx);
 		m_OutBuffIdx = 0;
 		}
 	// commit output file
@@ -605,8 +605,6 @@ while((Rslt = pCSV->NextLine()) > 0)	// onto next line
 for(ClassificationID = 0; ClassificationID < m_NumClassificationNames; ClassificationID++)
 	m_Classifications[ClassificationID].Proportion = m_Classifications[ClassificationID].NumReadsets / (double)m_TotClassified;
 delete pCSV;
-
-
 return(eBSFSuccess);
 }
 
@@ -832,7 +830,7 @@ for(ColIdx = 1; ColIdx < m_NumCols; ColIdx++)
 	if(m_ColClassifiedThresCnts[0] == 0)
 		continue;
 
-	double Prob = 1.0 - Stats.Binomial(NumRowsClassified,m_ColClassifiedThresCnts[0],0.01);
+	double Prob = 1.0 - Stats.Binomial(NumRowsClassified,m_ColClassifiedThresCnts[0],0.005);
 	if(Prob <= 0.05)
 		{
 		m_TopLinkages[ClassIdx].Prob = Prob;
@@ -901,7 +899,7 @@ do
 		m_OutBuffIdx += sprintf(&m_pOutBuffer[m_OutBuffIdx],"\n");
 		if(m_OutBuffIdx + 1000 > m_AllocOutBuff)
 			{
-			CUtility::SafeWrite(m_hOutFile,m_pOutBuffer,m_OutBuffIdx);
+			CUtility::RetryWrites(m_hOutFile,m_pOutBuffer,m_OutBuffIdx);
 			m_OutBuffIdx = 0;
 			}
 		}
@@ -966,13 +964,26 @@ if(pszIsolateClassFile != NULL && pszIsolateClassFile[0] != '\0')
 	for(uint32_t Idx = 0; Idx < m_NumClassificationNames; Idx++)
 		m_OutBuffIdx += sprintf(&m_pOutBuffer[m_OutBuffIdx],",\"%s\"", LocateClassification(Idx+1));
 	}
+else   // no classification file so default to a single unclassified class
+	{
+	uint32_t ClassificationID = AddClassification("Defaulted");
+	m_Classifications[0].NumReadsets = m_NumReadsetNames;
+	for(uint32_t ReadSetID = 0; ReadSetID < m_NumReadsetNames; ReadSetID++)
+		{
+		m_ReadsetClassification[ReadSetID].ReadsetID = ReadSetID+1;
+		m_ReadsetClassification[ReadSetID].ClassificationID = ClassificationID;
+		}
+	m_Classifications[0].Proportion = 1.0;
+
+	m_OutBuffIdx += sprintf(&m_pOutBuffer[m_OutBuffIdx],",\"Defaulted\"");
+	}
 m_OutBuffIdx += sprintf(&m_pOutBuffer[m_OutBuffIdx],"\n");
 
 int K = RunKernel(Mode,NumLinkedFeatures,MinLinkedRows,FeatClassValue);
 
 if(m_OutBuffIdx)
 	{
-	CUtility::SafeWrite(m_hOutFile,m_pOutBuffer,m_OutBuffIdx);
+	CUtility::RetryWrites(m_hOutFile,m_pOutBuffer,m_OutBuffIdx);
 	m_OutBuffIdx = 0;
 	}
 	// commit output file

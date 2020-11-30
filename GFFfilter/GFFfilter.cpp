@@ -400,7 +400,7 @@ while((Rslt = pGFF->NextRecordOfType(GeneType)) > 0)
 		}
 	if((BuffIdx + cGFFMaxLineLen) >= sizeof(szBuff))
 		{
-		CUtility::SafeWrite(hOutFile,szBuff,BuffIdx);
+		CUtility::RetryWrites(hOutFile,szBuff,BuffIdx);
 		BuffIdx = 0;
 		}
 	}
@@ -412,7 +412,7 @@ if(Rslt != eBSFSuccess)
 	}
 else
 	if(BuffIdx)
-		CUtility::SafeWrite(hOutFile,szBuff,BuffIdx);
+		CUtility::RetryWrites(hOutFile,szBuff,BuffIdx);
 pGFF->Close();
 delete pGFF;
 if(hOutFile != -1)

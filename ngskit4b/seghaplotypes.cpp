@@ -778,7 +778,7 @@ genBED(pszTrackName,pszTrackDescr);
 
 if(m_OutBuffIdx)
 	{
-	CUtility::SafeWrite(m_hOutFile,m_pOutBuffer,m_OutBuffIdx);
+	CUtility::RetryWrites(m_hOutFile,m_pOutBuffer,m_OutBuffIdx);
 	m_OutBuffIdx = 0;
 	}
 	// commit output file
@@ -956,7 +956,7 @@ tsSHBin *pBin;
 
 if((m_OutBuffIdx + 1000) > m_AllocOutBuff)
 	{
-	CUtility::SafeWrite(m_hOutFile,m_pOutBuffer,m_OutBuffIdx);
+	CUtility::RetryWrites(m_hOutFile,m_pOutBuffer,m_OutBuffIdx);
 	m_OutBuffIdx = 0;
 	}
 
@@ -998,7 +998,7 @@ for(FounderIdx = 0; FounderIdx < m_NumFounders; FounderIdx++)
 			m_OutBuffIdx += sprintf((char *)&m_pOutBuffer[m_OutBuffIdx],"%s\t%u\t%u\t%s\t%d\n",LocateTargSeqName(pTargSeq->TargSeqID),StartLoci,EndLoci,LocateFounder(FounderIdx+1),Score);
 			if((m_OutBuffIdx + 1000) > m_AllocOutBuff)
 				{
-				CUtility::SafeWrite(m_hOutFile,m_pOutBuffer,m_OutBuffIdx);
+				CUtility::RetryWrites(m_hOutFile,m_pOutBuffer,m_OutBuffIdx);
 				m_OutBuffIdx = 0;
 				}
 			}
@@ -1006,7 +1006,7 @@ for(FounderIdx = 0; FounderIdx < m_NumFounders; FounderIdx++)
 	}
 if(m_OutBuffIdx)
 	{
-	CUtility::SafeWrite(m_hOutFile,m_pOutBuffer,m_OutBuffIdx);
+	CUtility::RetryWrites(m_hOutFile,m_pOutBuffer,m_OutBuffIdx);
 	m_OutBuffIdx = 0;
 	}
 
@@ -1023,7 +1023,7 @@ uint32_t BinLen;
 BinLen = 1 + BinEnd - BinStart; // inclusive!
 if((m_OutBuffIdx + 1000) > m_AllocOutBuff)
 	{
-	CUtility::SafeWrite(m_hOutFile,m_pOutBuffer,m_OutBuffIdx);
+	CUtility::RetryWrites(m_hOutFile,m_pOutBuffer,m_OutBuffIdx);
 	m_OutBuffIdx = 0;
 	}
 m_OutBuffIdx += sprintf((char *)&m_pOutBuffer[m_OutBuffIdx],"variableStep chrom=%s span=%d\n%d %d\n",LocateTargSeqName(TargID),BinLen,BinStart + 1,BinCnts); // Wiggle uses 1-start coordinate system

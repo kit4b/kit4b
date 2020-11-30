@@ -464,7 +464,7 @@ while((NumRead = (int)read(m_hInFile, m_pInBuffer, (int)m_AllocInBuff)) > 0)
 		
 		if(m_OutBuffIdx >= (m_AllocOutBuff - PrefixLen - 2))
 			{
-			CUtility::SafeWrite(m_hOutFile, m_pOutBuffer, m_OutBuffIdx);	
+			CUtility::RetryWrites(m_hOutFile, m_pOutBuffer, m_OutBuffIdx);	
 			m_OutBuffIdx = 0;
 			pOutChr = m_pOutBuffer;
 			}
@@ -478,7 +478,7 @@ while((NumRead = (int)read(m_hInFile, m_pInBuffer, (int)m_AllocInBuff)) > 0)
 	}
 
 if(m_OutBuffIdx)
-	CUtility::SafeWrite(m_hOutFile, m_pOutBuffer, m_OutBuffIdx);	
+	CUtility::RetryWrites(m_hOutFile, m_pOutBuffer, m_OutBuffIdx);	
 
 // commit output file
 #ifdef _WIN32
@@ -667,7 +667,7 @@ while((NumRead = (int)read(m_hInFile, m_pInBuffer, (int)m_AllocInBuff)) > 0)
 
 			if(m_OutBuffIdx == RecordStartIdx && m_OutBuffIdx >= (m_AllocOutBuff - 100000))	// assumes max length SAM record of 100K chars
 			{
-				CUtility::SafeWrite(m_hOutFile, m_pOutBuffer, m_OutBuffIdx);
+				CUtility::RetryWrites(m_hOutFile, m_pOutBuffer, m_OutBuffIdx);
 				m_OutBuffIdx = 0;
 				RecordStartIdx = 0;
 				pOutChr = m_pOutBuffer;
@@ -682,7 +682,7 @@ while((NumRead = (int)read(m_hInFile, m_pInBuffer, (int)m_AllocInBuff)) > 0)
 	}
 
 	if(RecordStartIdx)
-		CUtility::SafeWrite(m_hOutFile, m_pOutBuffer, RecordStartIdx);
+		CUtility::RetryWrites(m_hOutFile, m_pOutBuffer, RecordStartIdx);
 
 	// commit output file
 #ifdef _WIN32
@@ -1064,7 +1064,7 @@ if(WindowCnts)
 
 if(m_OutBuffIdx)
 	{
-	CUtility::SafeWrite(m_hOutFile,m_pOutBuffer,m_OutBuffIdx);
+	CUtility::RetryWrites(m_hOutFile,m_pOutBuffer,m_OutBuffIdx);
 	m_OutBuffIdx = 0;
 	}
 	// commit output file
@@ -1087,7 +1087,7 @@ uint32_t BinLen;
 BinLen = 1 + BinEnd - BinStart; // inclusive!
 if((m_OutBuffIdx + 1000) > m_AllocOutBuff)
 	{
-	CUtility::SafeWrite(m_hOutFile,m_pOutBuffer,m_OutBuffIdx);
+	CUtility::RetryWrites(m_hOutFile,m_pOutBuffer,m_OutBuffIdx);
 	m_OutBuffIdx = 0;
 	}
 m_OutBuffIdx += sprintf((char *)&m_pOutBuffer[m_OutBuffIdx],"variableStep chrom=%s span=%d\n%d %d\n",LocateTargSeqName(TargID),BinLen,BinStart + 1,BinCnts); // Wiggle uses 1-start coordinate system

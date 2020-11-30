@@ -999,7 +999,7 @@ delete pThreadPutOvlps;
 if(m_hOutFile != -1)
 	{
 	if(m_OutBuffIdx > 0)
-		CUtility::SafeWrite(m_hOutFile,m_pszOutBuff,m_OutBuffIdx);
+		CUtility::RetryWrites(m_hOutFile,m_pszOutBuff,m_OutBuffIdx);
 
 #ifdef _WIN32
 	_commit(m_hOutFile);
@@ -1239,7 +1239,7 @@ if(m_hOutFile == -1)
 
 if(m_OutBuffIdx > (m_AllocOutBuffSize - (SeqLen * 2)))
 	{
-	if(!CUtility::SafeWrite(m_hOutFile,m_pszOutBuff,m_OutBuffIdx))
+	if(!CUtility::RetryWrites(m_hOutFile,m_pszOutBuff,m_OutBuffIdx))
 		{
 		ReleaseSerialise();
 		return(eBSFerrFileAccess);

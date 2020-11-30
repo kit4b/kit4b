@@ -546,7 +546,7 @@ CMapLoci2Feat::MapLoci2Features(char *pszRsltsFile)
 
 		if (m_hRsltFile != -1 && ((BuffIdx + 1000) > sizeof(szLineBuff)))
 		{
-			CUtility::SafeWrite(m_hRsltFile, szLineBuff, BuffIdx);
+			CUtility::RetryWrites(m_hRsltFile, szLineBuff, BuffIdx);
 			BuffIdx = 0;
 		}
 	}
@@ -558,7 +558,7 @@ CMapLoci2Feat::MapLoci2Features(char *pszRsltsFile)
 	if (m_hRsltFile != -1)
 	{
 		if (BuffIdx > 0)
-			CUtility::SafeWrite(m_hRsltFile, szLineBuff, BuffIdx);
+			CUtility::RetryWrites(m_hRsltFile, szLineBuff, BuffIdx);
 #ifdef _WIN32
 		_commit(m_hRsltFile);
 #else
@@ -901,7 +901,7 @@ CMapLoci2Feat::MapFeatures2Loci(char *pszFeatRsltsFile)
 			// buffer on the final iteration and also doing a fsync immediately before closing the handle
 			if (FeatID == TotNumFeatures || ((BuffIdx + 1000) > sizeof(szLineBuff)))
 			{
-				if (!CUtility::SafeWrite(m_hFeatRsltFile, szLineBuff, BuffIdx))
+				if (!CUtility::RetryWrites(m_hFeatRsltFile, szLineBuff, BuffIdx))
 				{
 					gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to write %s", pszFeatRsltsFile);
 					MLFReset();
@@ -911,7 +911,7 @@ CMapLoci2Feat::MapFeatures2Loci(char *pszFeatRsltsFile)
 			}
 		}
 		if (BuffIdx)
-			CUtility::SafeWrite(m_hFeatRsltFile, szLineBuff, BuffIdx);
+			CUtility::RetryWrites(m_hFeatRsltFile, szLineBuff, BuffIdx);
 #ifdef _WIN32
 		_commit(m_hFeatRsltFile);
 #else
@@ -1123,12 +1123,12 @@ CMapLoci2Feat::MLFProcess(etMLFPMode PMode,				// processing mode
 							 m_pChromRegionCnts[ChromID].intron3exon, m_pChromRegionCnts[ChromID].exon3intron, m_pChromRegionCnts[ChromID].Intergenic);
 			if ((BufIdx + 1000) > sizeof(szOutBuff))
 			{
-				CUtility::SafeWrite(hOutFile, szOutBuff, BufIdx);
+				CUtility::RetryWrites(hOutFile, szOutBuff, BufIdx);
 				BufIdx = 0;
 			}
 		}
 		if (BufIdx)
-			CUtility::SafeWrite(hOutFile, szOutBuff, BufIdx);
+			CUtility::RetryWrites(hOutFile, szOutBuff, BufIdx);
 #ifdef _WIN32
 		_commit(hOutFile);
 #else

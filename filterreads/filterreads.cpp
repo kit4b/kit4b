@@ -995,7 +995,7 @@ while((pCurAlignHit = IterSortedReads(pCurAlignHit))!=NULL)
 		BufIdxOut += sprintf(&szLineBufOut[BufIdxOut],"%s\n",&m_pRawLines[pCurAlignHit->RawLineOfs]);
 		if((BufIdxOut+500) > sizeof(szLineBufOut))
 			{
-			CUtility::SafeWrite(hFiltOutFile,szLineBufOut,BufIdxOut);
+			CUtility::RetryWrites(hFiltOutFile,szLineBufOut,BufIdxOut);
 			BufIdxOut = 0;
 			}
 		}
@@ -1007,7 +1007,7 @@ while((pCurAlignHit = IterSortedReads(pCurAlignHit))!=NULL)
 		BufIdxIn += sprintf(&szLineBufIn[BufIdxIn],"%s\n",&m_pRawLines[pCurAlignHit->RawLineOfs]);
 		if((BufIdxIn+500) > sizeof(szLineBufIn))
 			{
-			CUtility::SafeWrite(hFiltInFile,szLineBufIn,BufIdxIn);
+			CUtility::RetryWrites(hFiltInFile,szLineBufIn,BufIdxIn);
 			BufIdxIn = 0;
 			}
 		}
@@ -1016,14 +1016,14 @@ while((pCurAlignHit = IterSortedReads(pCurAlignHit))!=NULL)
 if(hFiltInFile != -1)
 	{
 	if(BufIdxIn > 0)
-		CUtility::SafeWrite(hFiltInFile,szLineBufIn,BufIdxIn);
+		CUtility::RetryWrites(hFiltInFile,szLineBufIn,BufIdxIn);
 	close(hFiltInFile);
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Writing %d filtered in, retained, reads or regions to '%s' completed",NumFilteredIn,pszFiltInFile);
 	}
 if(hFiltOutFile != -1)
 	{
 	if(BufIdxOut > 0)
-		CUtility::SafeWrite(hFiltOutFile,szLineBufOut,BufIdxOut);
+		CUtility::RetryWrites(hFiltOutFile,szLineBufOut,BufIdxOut);
 	close(hFiltOutFile);
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Writing %d filtered out reads or regions to file '%s' completed",NumFilteredOut,pszFiltOutFile);
 	}

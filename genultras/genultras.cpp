@@ -1726,7 +1726,7 @@ if(pProcParams->hRsltsFile != -1)
 		pszChrom,ChromStartOffset,ChromEndOffset,ChromEndOffset-ChromStartOffset+1,
 		pProcParams->pszSpeciesList,FeatureBits & (cAnyFeatBits | cOverlaysSpliceSites));
 	Len += sprintf(&szLineBuff[Len],"\n");
-	CUtility::SafeWrite(pProcParams->hRsltsFile,szLineBuff,Len);
+	CUtility::RetryWrites(pProcParams->hRsltsFile,szLineBuff,Len);
 	}
 return(true);
 }

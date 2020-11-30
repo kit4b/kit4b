@@ -1459,14 +1459,14 @@ if(m_hErrCorFile != -1)
 			LineBuffIdx += sprintf(&szLineBuff[LineBuffIdx],"\n");
 			if(LineBuffIdx + 100 > sizeof(szLineBuff))
 				{
-				CUtility::SafeWrite(m_hErrCorFile,szLineBuff,LineBuffIdx);
+				CUtility::RetryWrites(m_hErrCorFile,szLineBuff,LineBuffIdx);
 				LineBuffIdx = 0;
 				}
 			}
 
 		}
 	if(LineBuffIdx)
-		CUtility::SafeWrite(m_hErrCorFile,szLineBuff,LineBuffIdx);	
+		CUtility::RetryWrites(m_hErrCorFile,szLineBuff,LineBuffIdx);	
 
 	if(m_hErrCorFile != -1)
 		{

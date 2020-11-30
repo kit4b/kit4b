@@ -508,7 +508,7 @@ if ((TotalRefImputed + 100) > m_AllocAlignLoci)	// play safe when increasing all
 	{
 	size_t memreq;
 	memreq = (TotalRefImputed+100) * sizeof(tsAlignLoci);
-	gDiagnostics.DiagOut(eDLInfo, gszProcName, "PreAllocImputedSNPs: memory re-allocation to %lld from %lld bytes for estimated %lld imputed SNPs", (INT64)memreq, (INT64)m_AllocMemAlignLoci, (INT64)TotalRefImputed);
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Memory re-allocation to %lld from %lld bytes for estimated %lld SNPs", (INT64)memreq, (INT64)m_AllocMemAlignLoci, (INT64)TotalRefImputed);
 
 #ifdef _WIN32
 	pCurLoci = (tsAlignLoci*)realloc(m_pAllocAlignLoci, memreq);
@@ -824,6 +824,7 @@ m_NumSSNPLoci = m_UsedAlignLoci;
 return(NumElsParsed - NumFilteredOut);
 }
 
+// 
 // AddImputedAlignments
 // Add alignments for species where no snp was called but other species do have snp called
 // The call could be because there were none or insufficient reads covering the loci, or there was coverage but no snp!
@@ -1158,6 +1159,135 @@ return(TotOverlapping);
 }
 
 
+
+// 
+// AddSimulatedAlignments
+// Add simulated alignments for when no actual alignments were available, just SNP calls
+INT64 
+CMarkers::AddSimulatedAlignments(int MinBases,			// using this as the simulated number of reads covering the SNP loci
+					  char *pszRefSpecies,				// this is the reference species 
+					char *pszProbeSpecies)				// this species reads were aligned to the reference species from which SNPs were called 
+{
+INT64 Rslt64;
+UINT16 RefSpeciesID;
+UINT16 ProbeSpeciesID;
+UINT16 ImputFlags;
+INT64 TotSimulated = 0;
+
+if((ProbeSpeciesID = NameToSpeciesID(pszProbeSpecies)) < 1)
+	{
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to locate identifier for probe species '%s'",pszProbeSpecies);
+	return(eBSFerrInternal);
+	}
+if((RefSpeciesID = NameToSpeciesID(pszRefSpecies)) < 1)
+	{
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to locate identifier for reference species species '%s'",pszRefSpecies);
+	return(eBSFerrInternal);
+	}
+
+ImputFlags = cFlgImputCnts;
+
+INT64 AlignIdx;
+INT64 UsedAlignLoci;
+tsAlignLoci *pAlign;
+
+UINT32 ProbeCntA;		// number instances probe base A aligned to TargRefBase 
+UINT32 ProbeCntC;		// number instances probe base C aligned to TargRefBase
+UINT32 ProbeCntG;		// number instances probe base G aligned to TargRefBase
+UINT32 ProbeCntT;		// number instances probe base T aligned to TargRefBase
+UINT32 ProbeCntN;		// number instances probe base U aligned to TargRefBase
+UINT32 SimAlignLoci;	
+UINT32 SimTargSeqID;
+UINT8 SimRefBase;
+bool bSNPCalled = false;
+AlignIdx = 0;
+UsedAlignLoci = m_NumSSNPLoci;
+pAlign = &m_pAllocAlignLoci[AlignIdx];
+SimAlignLoci = pAlign->TargLoci;
+SimTargSeqID = pAlign->TargSeqID;
+SimRefBase = pAlign->TargRefBase;
+for(AlignIdx = 0; AlignIdx < UsedAlignLoci; AlignIdx++)
+	{
+	pAlign = &m_pAllocAlignLoci[AlignIdx];			// m_pAllocAlignLoci could be realloc'd so best to take the address each iteration....
+	if(pAlign->TargLoci == SimAlignLoci && SimTargSeqID == pAlign->TargSeqID)			// simulate alignment just once for each SNP loci on a target sequence
+		{
+		if(pAlign->ProbeSpeciesID == ProbeSpeciesID)	// already actually called a SNP for probe species?
+			{
+			bSNPCalled = true;
+			continue;
+			}
+		if(AlignIdx != UsedAlignLoci-1)
+			continue;
+		}
+
+	// target loci changed
+	if(bSNPCalled)			// already called a SNP at previous alignment loci so don't need to simulate
+		{
+		SimAlignLoci = pAlign->TargLoci;
+		SimTargSeqID = pAlign->TargSeqID;
+		SimRefBase = pAlign->TargRefBase;
+		AlignIdx--;
+		bSNPCalled = false;
+		continue;
+		}
+
+	// didn't call a SNP at SimAlignLoci so need to simulate
+	ProbeCntA = 0;				// number instances probe base A aligned to TargRefBase 
+	ProbeCntC = 0;				// number instances probe base C aligned to TargRefBase
+	ProbeCntG = 0;				// number instances probe base G aligned to TargRefBase
+	ProbeCntT = 0;				// number instances probe base T aligned to TargRefBase
+	ProbeCntN = 0;				// number instances probe base U aligned to TargRefBase
+	switch(SimRefBase) {
+		case eBaseA:
+			ProbeCntA = MinBases;
+			break;
+		case eBaseC:
+			ProbeCntC = MinBases;
+			break;
+		case eBaseG:
+			ProbeCntG = MinBases;
+			break;
+		case eBaseT:
+			ProbeCntT = MinBases;
+			break;
+		case eBaseN:
+			ProbeCntN = MinBases;
+			break;
+			}
+
+			// add number overlapping to a new loci record with refbase count set to NumOverlapping
+	Rslt64 = AddLoci(RefSpeciesID,	// reads were aligned to this cultivar or species
+			SimTargSeqID,			// alignments to this sequence - could be a chrom/contig/transcript - from pszSpecies
+			SimAlignLoci,			// loci within target sequence at which SNPs observed
+			SimRefBase,				// loci has this reference base
+			ProbeSpeciesID,			// reads were aligned from this cultivar or species
+			ProbeCntA,				// number instances probe base A aligned to TargRefBase 
+			ProbeCntC,				// number instances probe base C aligned to TargRefBase
+			ProbeCntG,				// number instances probe base G aligned to TargRefBase
+			ProbeCntT,				// number instances probe base T aligned to TargRefBase
+			ProbeCntN,				// number instances probe base U aligned to TargRefBase
+			m_LSER,					// defaulting local sequencing error rate
+			ImputFlags);			// user flag to indicate these are imputed counts, not from the SNP file
+	if(Rslt64 < 1)
+		{
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddSimulatedAlignments: AddLoci returned error %d",(int)Rslt64);
+		return(Rslt64);			
+		}
+	TotSimulated++;
+	if(AlignIdx == UsedAlignLoci-1)
+		continue;
+	pAlign = &m_pAllocAlignLoci[AlignIdx];			// m_pAllocAlignLoci could be realloc'd so best to take the address each iteration....
+	SimAlignLoci = pAlign->TargLoci;
+	SimTargSeqID = pAlign->TargSeqID;
+	SimRefBase = pAlign->TargRefBase;
+	AlignIdx--;
+	bSNPCalled = false;
+	}
+
+gDiagnostics.DiagOut(eDLInfo,gszProcName,"Added %d simulated reference loci",TotSimulated);
+return(TotSimulated);
+}
+
 int
 CMarkers::IdentSpeciesSpec(int AltMaxCnt,				// max count allowed for base being processed in any other species, 0 if no limit
 						int MinCnt,						// min count required for base being processed in species
@@ -1290,7 +1420,7 @@ SortTargSeqLociSpecies();
 m_hOutFile = open(pszReportFile,O_CREATETRUNC );
 #else
 if((m_hOutFile = open(pszReportFile,O_RDWR | O_CREAT,S_IREAD | S_IWRITE))!=-1)
-    if(ftruncate(m_hOutFile,0)!=0)
+	if(ftruncate(m_hOutFile,0)!=0)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to truncate %s - %s",pszReportFile,strerror(errno));
 			Reset();
@@ -1321,13 +1451,13 @@ for(Idx = 0; Idx < NumCultivars; Idx++)
 				pszRelGenomes[Idx],pszRelGenomes[Idx],pszRelGenomes[Idx],pszRelGenomes[Idx],pszRelGenomes[Idx],pszRelGenomes[Idx],pszRelGenomes[Idx],pszRelGenomes[Idx],pszRelGenomes[Idx]);
 	if((BuffIdx + (cRptBuffSize/4)) > cRptBuffSize)
 		{
-		CUtility::SafeWrite(m_hOutFile, pszBuff, BuffIdx);
+		CUtility::RetryWrites(m_hOutFile, pszBuff, BuffIdx);
 		BuffIdx = 0;
 		}
 	}
 if(BuffIdx > 0)
 	{
-	CUtility::SafeWrite(m_hOutFile,pszBuff,BuffIdx);
+	CUtility::RetryWrites(m_hOutFile,pszBuff,BuffIdx);
 	BuffIdx = 0;
 	}
 
@@ -1348,7 +1478,7 @@ for(LociIdx = 0; LociIdx < m_UsedAlignLoci; LociIdx += NumCultivars)
 		Now = time(NULL);
 		if ((Now - Then) >= 60)
 			{
-			gDiagnostics.DiagOut(eDLInfo, gszProcName, "Reporting: Processed %lld from %lld putative SNP loci accepting %lld", NumLociProc, PutSNPLoci, NumReported);
+			gDiagnostics.DiagOut(eDLInfo, gszProcName, "Reporting: Processed %lld putative SNP loci accepting %lld", NumLociProc, NumReported);
 			Then += 60;
 			}
 		}
@@ -1439,7 +1569,7 @@ for(LociIdx = 0; LociIdx < m_UsedAlignLoci; LociIdx += NumCultivars)
 						pTmpAlign->LSER, pTmpAlign->TotBases, pTmpAlign->ProbeBaseCnts[0], pTmpAlign->ProbeBaseCnts[1], pTmpAlign->ProbeBaseCnts[2], pTmpAlign->ProbeBaseCnts[3], pTmpAlign->ProbeBaseCnts[4]);
 		if((BuffIdx + (cRptBuffSize / 8)) > cRptBuffSize)
 			{
-			CUtility::SafeWrite(m_hOutFile,pszBuff,BuffIdx);
+			CUtility::RetryWrites(m_hOutFile,pszBuff,BuffIdx);
 			BuffIdx = 0;
 			}
 		}
@@ -1447,7 +1577,7 @@ for(LociIdx = 0; LociIdx < m_UsedAlignLoci; LociIdx += NumCultivars)
 	}
 if(BuffIdx && pszBuff != NULL)
 	{
-	CUtility::SafeWrite(m_hOutFile,pszBuff,BuffIdx);
+	CUtility::RetryWrites(m_hOutFile,pszBuff,BuffIdx);
 	BuffIdx = 0;
 	}
 #ifdef _WIN32
@@ -1457,7 +1587,7 @@ fsync(m_hOutFile);
 #endif
 close(m_hOutFile);
 m_hOutFile = -1;
-gDiagnostics.DiagOut(eDLInfo, gszProcName, "Reported: Processed %lld from %lld putative SNP loci accepting %lld", NumLociProc, PutSNPLoci, NumReported);
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "Reported: Processed %lld from putative SNP loci accepting %lld", NumLociProc, NumReported);
 if(pszBuff != NULL)
 	delete []pszBuff;
 

@@ -1130,7 +1130,7 @@ for(Idx = 0; Idx < m_NumScaffolds; Idx++,pPEScaffold++)
 			// write out any prev scaffold info here
 			if(BuffIdx > (sizeof(szBuff)-500))
 				{
-				CUtility::SafeWrite(m_hOutFile,szBuff,BuffIdx);
+				CUtility::RetryWrites(m_hOutFile,szBuff,BuffIdx);
 				BuffIdx = 0;
 				}
 			if(PrevPE1ContigID > 0 && PrevPE2ContigID > 0)
@@ -1260,7 +1260,7 @@ if(BuffIdx > 0 || NumPEAligned > 0 || NumSEAligned > 0)
 			BuffIdx += sprintf(&szBuff[BuffIdx],"\"%s\",\"%s\",%d,%d,%d,\"N\",\"N\",\"N\",0,0,%d,%d\n","N/A",pszPE2Contig,NumSEAligned,0,0,ClusterID,ClusterSize);
 		}
 
-	CUtility::SafeWrite(m_hOutFile,szBuff,BuffIdx);
+	CUtility::RetryWrites(m_hOutFile,szBuff,BuffIdx);
 	}
 
 close(m_hOutFile);

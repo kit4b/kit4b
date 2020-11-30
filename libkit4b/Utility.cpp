@@ -311,7 +311,7 @@ if(pOutFile == NULL || pBuff == NULL || Max2Write == 0)
 	return(false);
 if(bgzOut)
 	return(SafeWrite_gz(*(gzFile *)pOutFile,pBuff,Max2Write));
-return(SafeWrite(*(int *)pOutFile,pBuff,Max2Write));
+return(RetryWrites(*(int *)pOutFile,pBuff,Max2Write));
 }
 
 bool	// true if requested number of bytes have been compressed to pgzFile
@@ -341,9 +341,10 @@ return(Max2Write == 0 ? true : false);
 
 
 bool				// true if requested number of bytes was written to hOutFile 
-CUtility::SafeWrite(int hOutFile,void *pBuff,size_t Max2Write)
+CUtility::RetryWrites(int hOutFile,void *pBuff,size_t Max2Write,
+					  int MaxSecs)		// retry writes for at most this number of secs until complete Max2Write bytes written 
 {
-UINT32 Secs2Write;
+int Secs2Write;
 int Written;
 int BuffLen;
 UINT8 *pByte = (UINT8 *)pBuff;
@@ -354,9 +355,9 @@ while(Written >= 0 && Max2Write > 0)
 	BuffLen = (int)min(Max2Write,(size_t)0x03fffffff);			// limit writes to max of 1GB at a time
 	while(BuffLen) {
 		Written = write(hOutFile, pByte, BuffLen);
-		if(Written == -1 && errno != EINTR)
+		if(Written == -1 && !(errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK))
 			{
-			printf("SafeWrite: failed - %s",strerror(errno));
+			printf("RetryWrites: failed - %s",strerror(errno));
 			return(false);
 			}
 		if(Written > 0)		
@@ -369,9 +370,9 @@ while(Written >= 0 && Max2Write > 0)
 		if(Written <= 0 && Max2Write)
 			{
 			Secs2Write += 1;
-			if(Secs2Write > 60)
+			if(Secs2Write > MaxSecs)
 				{
-				printf("SafeWrite: timed out");
+				printf("RetryWrites: failed - timed out");
 				return(false);
 				}
 #ifdef _WIN32
@@ -699,7 +700,7 @@ char Chr;
 int Len = 0;
 while((Chr = *pszTxt++))	
 	{
-	if((!Len || *pszTxt == '\0') && (Chr == '"' || Chr == '\''))
+	if(Chr == '"' || Chr == '\'')
 		continue;
 	*pDst++ = Chr;
 	Len++;
@@ -744,6 +745,7 @@ char *
 CUtility::TrimWhitespcExtd(char *pszText)
 {
 char *pszTrimed;
+char *pszMov;
 if(pszText == NULL || pszText[0] == '\0')
 	return(pszText);
 if((pszTrimed = TrimWhitespc(pszText)) == NULL)
@@ -751,7 +753,8 @@ if((pszTrimed = TrimWhitespc(pszText)) == NULL)
 	pszText[0] = '\0';
 	return(pszText);
 	}
-strcpy(pszText,pszTrimed);
+pszMov = pszText; 
+while (*pszMov++ = *pszTrimed++);
 return(pszText);
 }
 
@@ -817,7 +820,7 @@ return(pText);
 }
 
 
-const int cMaxNumOptions = 16000;		// allow at most this many options in option file, increased from 1024 because snpmarkers needs to handle up to 4000 different isolates 
+const int cMaxNumOptions = 32000;		// allow at most this many options in option file, increased from original 1024 because snpmarkers needs to handle up to 20000 different isolates 
 const int cMaxOptionLen  = 1024;		// any single option can be of this length
 const int cMaxOptionLineLen = 8196;		// allow for option lines to be upto this length, one line can contain multiple options
 const int cMaxTotOptionsLen = (cMaxNumOptions * 101);	// allow for options to total at most this many chars - assumes options average 100 chars incl '\0' separators

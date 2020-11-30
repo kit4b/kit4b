@@ -430,7 +430,7 @@ while((Rslt = SeqLen = InFasta.ReadSequence(pSeqBuff,cMaxFastaLen-1,true,false))
 		szDescription[0] = '>';
 		Descrlen = 1 + InFasta.ReadDescriptor(&szDescription[1],cBSFDescriptionSize-2);
 		szDescription[Descrlen++] = '\n';
-		CUtility::SafeWrite(hOutFile,szDescription,Descrlen);
+		CUtility::RetryWrites(hOutFile,szDescription,Descrlen);
 		ChrIdx = 0;
 		bFirstEntry = false;
 		continue;
@@ -452,7 +452,7 @@ while((Rslt = SeqLen = InFasta.ReadSequence(pSeqBuff,cMaxFastaLen-1,true,false))
 	while(BaseIdx < SeqLen);
 	if(pszSeqBuff[ChrIdx-1]!='\n')
 		pszSeqBuff[ChrIdx++] ='\n';	
-	CUtility::SafeWrite(hOutFile,pszSeqBuff,ChrIdx);
+	CUtility::RetryWrites(hOutFile,pszSeqBuff,ChrIdx);
 	ChrIdx = 0;
 	}
 

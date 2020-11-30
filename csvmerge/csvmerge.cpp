@@ -480,7 +480,7 @@ if(Rslt >= 0 && ProcParams.hRsltsLociFile != -1 && ProcParams.JoinDistance > 0 &
 
 if(Rslt >= 0 && ProcParams.hRsltsLociFile != -1 && ProcParams.RsltLineBuffOfs)
 	{
-	CUtility::SafeWrite(ProcParams.hRsltsLociFile,ProcParams.szRsltLineBuff,ProcParams.RsltLineBuffOfs);
+	CUtility::RetryWrites(ProcParams.hRsltsLociFile,ProcParams.szRsltLineBuff,ProcParams.RsltLineBuffOfs);
 	ProcParams.RsltLineBuffOfs = 0;
 	}
 
@@ -571,7 +571,7 @@ pParams->RsltLineBuffOfs += sprintf(&pParams->szRsltLineBuff[pParams->RsltLineBu
 				(pParams->NumRsltLines+=1),pParams->pszElType,pParams->pszRefSpecies,pszChrom,StartLoci,EndLoci,EndLoci - StartLoci + 1,pParams->pszRelSpecies);
 if(pParams->RsltLineBuffOfs > ((sizeof(pParams->szRsltLineBuff) * 4) / 5))
 	{
-	CUtility::SafeWrite(pParams->hRsltsLociFile,pParams->szRsltLineBuff,pParams->RsltLineBuffOfs);
+	CUtility::RetryWrites(pParams->hRsltsLociFile,pParams->szRsltLineBuff,pParams->RsltLineBuffOfs);
 	_commit(pParams->hRsltsLociFile);
 	pParams->RsltLineBuffOfs = 0;
 	}

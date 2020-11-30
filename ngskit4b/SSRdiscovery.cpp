@@ -798,7 +798,7 @@ if(bFirst)
 	}
 if(m_IdxRptSSRs > (cMaxAllocRptSSRs - 2000))
 	{
-	CUtility::SafeWrite(m_hOutFile,m_pszRptSSRsBuff,m_IdxRptSSRs);
+	CUtility::RetryWrites(m_hOutFile,m_pszRptSSRsBuff,m_IdxRptSSRs);
 	m_IdxRptSSRs = 0;
 	}
 
@@ -1104,13 +1104,13 @@ if(m_hOutKMerFreqFile != -1 && m_KMerFreqLen != 0)
 		BuffIdx += sprintf(&szBuff[BuffIdx],"\n");
 		if((BuffIdx + 1000) > (int)sizeof(szBuff))
 			{
-			CUtility::SafeWrite(m_hOutKMerFreqFile,szBuff,BuffIdx);
+			CUtility::RetryWrites(m_hOutKMerFreqFile,szBuff,BuffIdx);
 			BuffIdx = 0;
 			}
 		pFreqDist = (tsKMerDist *)((UINT8 *)pFreqDist + m_SizeOfKMerDist);
 		}
 	if(BuffIdx > 0)
-		CUtility::SafeWrite(m_hOutKMerFreqFile,szBuff,BuffIdx);
+		CUtility::RetryWrites(m_hOutKMerFreqFile,szBuff,BuffIdx);
 #ifdef _WIN32
 	_commit(m_hOutKMerFreqFile);
 #else
@@ -1221,7 +1221,7 @@ if(pszKMerFreqFile != NULL && pszKMerFreqFile[0] != '\0' &&
 	for(Idx = cMinTandemRpts; Idx <= m_MaxTandemRpts; Idx++)
 		BuffIdx += sprintf(&szBuff[BuffIdx],",\"Rpts:%d\"",Idx);
 	BuffIdx += sprintf(&szBuff[BuffIdx],"\n");
-	CUtility::SafeWrite(m_hOutKMerFreqFile,szBuff,BuffIdx);
+	CUtility::RetryWrites(m_hOutKMerFreqFile,szBuff,BuffIdx);
 	}
 else
 	{
@@ -1294,7 +1294,7 @@ if(m_hOutFile != -1)
 	{
 	if(m_IdxRptSSRs)
 		{
-		CUtility::SafeWrite(m_hOutFile,m_pszRptSSRsBuff,m_IdxRptSSRs);
+		CUtility::RetryWrites(m_hOutFile,m_pszRptSSRsBuff,m_IdxRptSSRs);
 		m_IdxRptSSRs = 0;
 		}
 #ifdef _WIN32

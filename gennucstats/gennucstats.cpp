@@ -679,7 +679,7 @@ for(Idx = 1; Idx < cNumDistBins; Idx++)
 		}
 	}
 BuffOfs += sprintf(&szBuff[BuffOfs],"\n\n");
-CUtility::SafeWrite(m_hOutFile,szBuff,BuffOfs);
+CUtility::RetryWrites(m_hOutFile,szBuff,BuffOfs);
 BuffOfs = 0;
 return(0);
 }	

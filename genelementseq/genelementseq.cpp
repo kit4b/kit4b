@@ -776,7 +776,7 @@ while((Rslt=pCSV->NextLine()) > 0)	// onto next line containing fields
 				}
 			break;
 		}
-	CUtility::SafeWrite(hRsltFile,pszLineBuff,BuffLen);
+	CUtility::RetryWrites(hRsltFile,pszLineBuff,BuffLen);
 	BuffLen = 0;
 	NumEls++;
 	}

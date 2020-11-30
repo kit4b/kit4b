@@ -60,7 +60,8 @@ public:
 					bool bgzOut=false);		// true if pOutFile pts to a gzFile, false if pOutFile is file handle
 
 	static bool				// true if requested number of bytes was written to hOutFile 
-		SafeWrite(int hOutFile,void *pBuff,size_t Max2Write);
+		RetryWrites(int hOutFile,void *pBuff,size_t Max2Write,
+					int MaxSecs = 90); // retry writes for at most this number of secs until complete Max2Write bytes written
 
 	static bool	// true if requested number of bytes have been compressed to pgzFile
 		SafeWrite_gz(gzFile pgzFile,void *pBuff,size_t Max2Write);

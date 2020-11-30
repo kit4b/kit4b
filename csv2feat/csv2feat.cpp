@@ -358,7 +358,7 @@ while((Rslt=pCSV->NextLine()) > 0)	// onto next line containing fields
 		SrcID,pszElType,pszRefSpecies,pszChrom,StartLoci,EndLoci,Len);
 	if(BuffLen > sizeof(szLineBuff)/2)
 		{
-		CUtility::SafeWrite(hRsltFile,szLineBuff,BuffLen);
+		CUtility::RetryWrites(hRsltFile,szLineBuff,BuffLen);
 		BuffLen = 0;
 		}
 	for(int FieldIdx = 8; FieldIdx <= NumFields; FieldIdx++)
@@ -370,7 +370,7 @@ while((Rslt=pCSV->NextLine()) > 0)	// onto next line containing fields
 			BuffLen += sprintf(&szLineBuff[BuffLen],",%s",pszFieldVal);
 		if(BuffLen > sizeof(szLineBuff)/2)
 			{
-			CUtility::SafeWrite(hRsltFile,szLineBuff,BuffLen);
+			CUtility::RetryWrites(hRsltFile,szLineBuff,BuffLen);
 			BuffLen = 0;
 			}
 		}
@@ -378,7 +378,7 @@ while((Rslt=pCSV->NextLine()) > 0)	// onto next line containing fields
 	
 	if(BuffLen > sizeof(szLineBuff)/2)
 		{
-		CUtility::SafeWrite(hRsltFile,szLineBuff,BuffLen);
+		CUtility::RetryWrites(hRsltFile,szLineBuff,BuffLen);
 		BuffLen = 0;
 		}
 	NumAccepted += 1;
@@ -391,7 +391,7 @@ if(Rslt >= eBSFSuccess)
 	}
 
 if(BuffLen)
-	CUtility::SafeWrite(hRsltFile,szLineBuff,BuffLen);
+	CUtility::RetryWrites(hRsltFile,szLineBuff,BuffLen);
 
 close(hRsltFile);
 delete pCSV;

@@ -1268,7 +1268,7 @@ if(pszOutSNPs != NULL && pszOutSNPs[0] != '\0')
 		return(eBSFerrCreateFile);
 		}
 	BuffOfs = sprintf(szLineBuff,"track type=bed name=\"SimSNPs\" description=\"Simulated SNPS\"\n");
-	CUtility::SafeWrite(hFile,szLineBuff,BuffOfs);
+	CUtility::RetryWrites(hFile,szLineBuff,BuffOfs);
 	}
 else
 	hFile = -1;
@@ -1312,7 +1312,7 @@ for(ChromID = 0; ChromID < m_NumChromSeqs; ChromID++,pChromSeq++)
 
 			if(BuffOfs + 200 > sizeof(szLineBuff))
 				{
-				CUtility::SafeWrite(hFile,szLineBuff,BuffOfs);
+				CUtility::RetryWrites(hFile,szLineBuff,BuffOfs);
 				BuffOfs = 0;
 				}
 			}
@@ -1322,7 +1322,7 @@ for(ChromID = 0; ChromID < m_NumChromSeqs; ChromID++,pChromSeq++)
 
 if(hFile != -1 && BuffOfs > 0)
 	{
-	CUtility::SafeWrite(hFile,szLineBuff,BuffOfs);
+	CUtility::RetryWrites(hFile,szLineBuff,BuffOfs);
 	}
 if(hFile != -1)
 	close(hFile);

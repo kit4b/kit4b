@@ -1207,7 +1207,7 @@ for(RepeatIdx = 0; RepeatIdx < NumRepeats; RepeatIdx++)
 	{
 	if(m_CurQRsltsOfs + 100 > m_AllocRsltsBuff)
 		{
-		CUtility::SafeWrite(m_hCSVQRslts,m_pszQRsltsBuff,m_CurQRsltsOfs);
+		CUtility::RetryWrites(m_hCSVQRslts,m_pszQRsltsBuff,m_CurQRsltsOfs);
 		m_CurQRsltsOfs = 0;
 		}
 	m_CurQRsltsOfs += sprintf(&m_pszQRsltsBuff[m_CurQRsltsOfs],",%d",NumQueryHits);
@@ -1218,7 +1218,7 @@ for(RepeatIdx = 0; RepeatIdx < NumRepeats; RepeatIdx++)
 	{
 	if(m_CurTRsltsOfs + 100 > m_AllocRsltsBuff)
 		{
-		CUtility::SafeWrite(m_hCSVTRslts,m_pszTRsltsBuff,m_CurTRsltsOfs);
+		CUtility::RetryWrites(m_hCSVTRslts,m_pszTRsltsBuff,m_CurTRsltsOfs);
 		m_CurTRsltsOfs = 0;
 		}
 	m_CurTRsltsOfs += sprintf(&m_pszTRsltsBuff[m_CurTRsltsOfs],",%d",NumTargHits);
@@ -1294,7 +1294,7 @@ for(CurIdx = 0; CurIdx < pSeqs->NumSeqs; CurIdx++)
 		SeqLen -= min(SeqLen,70);
 		if((CurSeqBuffIdx + 1000) > cMaxTargSeqLen)
 			{
-			CUtility::SafeWrite(hFile,pSeqBuff,CurSeqBuffIdx);
+			CUtility::RetryWrites(hFile,pSeqBuff,CurSeqBuffIdx);
 			CurSeqBuffIdx = 0;
 			}
 		}
@@ -1302,7 +1302,7 @@ for(CurIdx = 0; CurIdx < pSeqs->NumSeqs; CurIdx++)
 
 if(hFile != -1 && CurSeqBuffIdx > 0)
 	{
-	CUtility::SafeWrite(hFile,pSeqBuff,CurSeqBuffIdx);
+	CUtility::RetryWrites(hFile,pSeqBuff,CurSeqBuffIdx);
 	CurSeqBuffIdx = 0;
 	}
 if(hFile != -1)
@@ -1438,14 +1438,14 @@ for(CurIterQueries = 1; CurIterQueries <= NumBootstraps; CurIterQueries++)
 	m_CurQRsltsOfs += sprintf(&m_pszQRsltsBuff[m_CurQRsltsOfs],",\"BS:%d\"",CurIterQueries);
 	if(m_CurQRsltsOfs + 100 > m_AllocRsltsBuff)
 		{
-		CUtility::SafeWrite(m_hCSVQRslts,m_pszQRsltsBuff,m_CurQRsltsOfs);
+		CUtility::RetryWrites(m_hCSVQRslts,m_pszQRsltsBuff,m_CurQRsltsOfs);
 		m_CurQRsltsOfs = 0;
 		}
 	}
 
 if(m_CurQRsltsOfs > 0)
 	{
-	CUtility::SafeWrite(m_hCSVQRslts,m_pszQRsltsBuff,m_CurQRsltsOfs);
+	CUtility::RetryWrites(m_hCSVQRslts,m_pszQRsltsBuff,m_CurQRsltsOfs);
 	m_CurQRsltsOfs = 0;
 	}
 
@@ -1455,14 +1455,14 @@ for(CurIterQueries = 1; CurIterQueries <= NumBootstraps; CurIterQueries++)
 	m_CurTRsltsOfs += sprintf(&m_pszTRsltsBuff[m_CurTRsltsOfs],",\"BS:%d\"",CurIterQueries);
 	if(m_CurTRsltsOfs + 100 > m_AllocRsltsBuff)
 		{
-		CUtility::SafeWrite(m_hCSVTRslts,m_pszTRsltsBuff,m_CurTRsltsOfs);
+		CUtility::RetryWrites(m_hCSVTRslts,m_pszTRsltsBuff,m_CurTRsltsOfs);
 		m_CurTRsltsOfs = 0;
 		}
 	}
 
 if(m_CurTRsltsOfs > 0)
 	{
-	CUtility::SafeWrite(m_hCSVTRslts,m_pszTRsltsBuff,m_CurTRsltsOfs);
+	CUtility::RetryWrites(m_hCSVTRslts,m_pszTRsltsBuff,m_CurTRsltsOfs);
 	m_CurTRsltsOfs = 0;
 	}
 
@@ -1564,7 +1564,7 @@ _ASSERTE( _CrtCheckMemory());
 
 if(m_hCSVQRslts != -1 && m_CurQRsltsOfs > 0)
 	{
-	CUtility::SafeWrite(m_hCSVQRslts,m_pszQRsltsBuff,m_CurQRsltsOfs);
+	CUtility::RetryWrites(m_hCSVQRslts,m_pszQRsltsBuff,m_CurQRsltsOfs);
 	m_CurQRsltsOfs = 0;
 	}
 if(m_hCSVQRslts != -1)
@@ -1579,7 +1579,7 @@ if(m_hCSVQRslts != -1)
 	}
 if(m_hCSVTRslts != -1 && m_CurTRsltsOfs > 0)
 	{
-	CUtility::SafeWrite(m_hCSVTRslts,m_pszTRsltsBuff,m_CurTRsltsOfs);
+	CUtility::RetryWrites(m_hCSVTRslts,m_pszTRsltsBuff,m_CurTRsltsOfs);
 	m_CurTRsltsOfs = 0;
 	}
 if(m_hCSVTRslts != -1)

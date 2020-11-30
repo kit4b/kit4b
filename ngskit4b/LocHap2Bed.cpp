@@ -477,7 +477,7 @@ if (m_pCSV != NULL)
 if (m_hOutFile != -1)
 	{
 	if (m_LineBuffOffs && m_pszLineBuff != NULL)
-		CUtility::SafeWrite (m_hOutFile, m_pszLineBuff, m_LineBuffOffs);
+		CUtility::RetryWrites (m_hOutFile, m_pszLineBuff, m_LineBuffOffs);
 #ifdef _WIN32
 	_commit (m_hOutFile);
 #else
@@ -525,7 +525,7 @@ m_LocalSeqErrRate = cDfltLocalSeqErrRate;
 
 // generate BED header
 m_LineBuffOffs = sprintf(m_pszLineBuff,"track name=\"%s\" description=\"%s\" useScore=1\n", m_szTrackName, m_szDescription);
-CUtility::SafeWrite(m_hOutFile, m_pszLineBuff, m_LineBuffOffs);
+CUtility::RetryWrites(m_hOutFile, m_pszLineBuff, m_LineBuffOffs);
 m_LineBuffOffs = 0;
 
 // iterate over all called SNP files and process each one
@@ -739,7 +739,7 @@ for(FileIdx = 0; FileIdx < m_NumSNPFiles; FileIdx++)
 								 RGB[0], RGB[1], RGB[2], LocHapLen,0);
 		if((m_LineBuffOffs + 1000) > m_AllocdLineBuff)
 			{
-			CUtility::SafeWrite(m_hOutFile, m_pszLineBuff, m_LineBuffOffs);
+			CUtility::RetryWrites(m_hOutFile, m_pszLineBuff, m_LineBuffOffs);
 			m_LineBuffOffs = 0;
 			}
 		}
@@ -747,7 +747,7 @@ for(FileIdx = 0; FileIdx < m_NumSNPFiles; FileIdx++)
 	}
 if(m_LineBuffOffs)
 	{
-	CUtility::SafeWrite(m_hOutFile, m_pszLineBuff, m_LineBuffOffs);
+	CUtility::RetryWrites(m_hOutFile, m_pszLineBuff, m_LineBuffOffs);
 	m_LineBuffOffs = 0;
 	}
 

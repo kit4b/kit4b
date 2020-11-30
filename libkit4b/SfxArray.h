@@ -183,7 +183,7 @@ const UINT64 cMaxAllowConcatSeqLen = 1000000000000; // max supported concatenati
 const UINT32 cReallocBlockEls = cMaxAllowSeqLen/10;  // minimum realloc for sfxblock elements
 const UINT64 cThres8ByteSfxEls = 4000000000;  // if concatenated sequence length >= this threshold then use 5bytes per suffix element instead of 4 when creating suffix index
 const UINT32 cMaxMemSfxSeqAlloc = 0x03fffffff;  // when constructing in memory suffix array then defaulting max length sequence to this length, will be realloc'd to larger if required
-const int cMaxCultivars = 4000;	// can handle at most this many different cultivars
+const int cMaxCultivars = 14000;	// can handle at most this many different cultivars
 const int cMinCultivarPreSufLen = 5;	// prefix or suffix length must be at least this many bases
 const int cMaxCultivarPreSufLen = 200;  // prefix or suffix length must be no longer than this many bases
 const int cTotCultivarKMerLen   = 300;	// prefix + suffix length combined no longer than this many bases

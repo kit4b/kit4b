@@ -157,7 +157,7 @@ WrtLen = sizeof(tsBSFRdsHdr);
 m_FileHdr.RdsOfs = WrtLen;
 
 if(_lseeki64(m_hOutFile,0,SEEK_SET) ||
-		!CUtility::SafeWrite(m_hOutFile,&m_FileHdr,WrtLen))
+		!CUtility::RetryWrites(m_hOutFile,&m_FileHdr,WrtLen))
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to write file header to disk file '%s'  - error %s",pszRdsFile,strerror(errno));
 	Reset();
@@ -386,7 +386,7 @@ while((RdLen = read(m_hInFile,&m_pRdsBuff[BuffLen],cRRRdsBuffAlloc - BuffLen)) >
 
 		if((WrtOfs + (cRRWrtBuffSize/8)) > cRRWrtBuffSize)
 			{
-			if(!CUtility::SafeWrite(m_hOutFile,m_pWrtBuff,WrtOfs))
+			if(!CUtility::RetryWrites(m_hOutFile,m_pWrtBuff,WrtOfs))
 				{
 				gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenDump: Write to %s - %s",pszOutfile,strerror(errno));
 				Reset();
@@ -419,7 +419,7 @@ while((RdLen = read(m_hInFile,&m_pRdsBuff[BuffLen],cRRRdsBuffAlloc - BuffLen)) >
 			}
 		if((WrtOfs + cRRWrtBuffSize/8) > cRRWrtBuffSize)
 			{
-			if(!CUtility::SafeWrite(m_hOutFile,m_pWrtBuff,WrtOfs))
+			if(!CUtility::RetryWrites(m_hOutFile,m_pWrtBuff,WrtOfs))
 				{
 				gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenDump: Write to %s - %s",pszOutfile,strerror(errno));
 				Reset();
@@ -439,7 +439,7 @@ while((RdLen = read(m_hInFile,&m_pRdsBuff[BuffLen],cRRRdsBuffAlloc - BuffLen)) >
 	}
 if(WrtOfs)
 	{
-	if(!CUtility::SafeWrite(m_hOutFile,m_pWrtBuff,WrtOfs))
+	if(!CUtility::RetryWrites(m_hOutFile,m_pWrtBuff,WrtOfs))
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenDump: Write to %s - %s",pszOutfile,strerror(errno));
 		Reset();
@@ -727,7 +727,7 @@ for(SeqIdx = 1; SeqIdx <= MaxLengthRead; SeqIdx++)
 	WrtOfs += sprintf(&szWrtBuff[WrtOfs],",%d",SeqIdx);
 	if(WrtOfs + 100 >= sizeof(szWrtBuff))
 		{
-		if(!CUtility::SafeWrite(m_hOutFile,szWrtBuff,WrtOfs))
+		if(!CUtility::RetryWrites(m_hOutFile,szWrtBuff,WrtOfs))
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenStats: Write to %s - %s",pszOutfile,strerror(errno));
 			Reset();
@@ -741,7 +741,7 @@ for(ReadIdx = 0; ReadIdx < 5; ReadIdx++)
 	WrtOfs += sprintf(&szWrtBuff[WrtOfs],"\n%c",CSeqTrans::MapBase2Ascii(ReadIdx));
 	if(WrtOfs + 100 >= sizeof(szWrtBuff))
 		{
-		if(!CUtility::SafeWrite(m_hOutFile,szWrtBuff,WrtOfs))
+		if(!CUtility::RetryWrites(m_hOutFile,szWrtBuff,WrtOfs))
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenStats: Write to %s - %s",pszOutfile,strerror(errno));
 			Reset();
@@ -754,7 +754,7 @@ for(ReadIdx = 0; ReadIdx < 5; ReadIdx++)
 		WrtOfs += sprintf(&szWrtBuff[WrtOfs],",%d",DistBaseCnts[ReadIdx][SeqIdx]);
 		if(WrtOfs + 100 >= sizeof(szWrtBuff))
 			{
-			if(!CUtility::SafeWrite(m_hOutFile,szWrtBuff,WrtOfs))
+			if(!CUtility::RetryWrites(m_hOutFile,szWrtBuff,WrtOfs))
 				{
 				gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenStats: Write to %s - %s",pszOutfile,strerror(errno));
 				Reset();
@@ -765,7 +765,7 @@ for(ReadIdx = 0; ReadIdx < 5; ReadIdx++)
 		}
 	}
 WrtOfs += sprintf(&szWrtBuff[WrtOfs],"\n\n");
-if(!CUtility::SafeWrite(m_hOutFile,szWrtBuff,WrtOfs))
+if(!CUtility::RetryWrites(m_hOutFile,szWrtBuff,WrtOfs))
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenStats: Write to %s - %s",pszOutfile,strerror(errno));
 	Reset();
@@ -779,7 +779,7 @@ for(SeqIdx = 1; SeqIdx <= MaxLengthRead; SeqIdx++)
 	WrtOfs += sprintf(&szWrtBuff[WrtOfs],",%d",SeqIdx);
 	if(WrtOfs + 100 >= sizeof(szWrtBuff))
 		{
-		if(!CUtility::SafeWrite(m_hOutFile,szWrtBuff,WrtOfs))
+		if(!CUtility::RetryWrites(m_hOutFile,szWrtBuff,WrtOfs))
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenStats: Write to %s - %s",pszOutfile,strerror(errno));
 			Reset();
@@ -793,7 +793,7 @@ for(ReadIdx = 0; ReadIdx < 4; ReadIdx++)
 	WrtOfs += sprintf(&szWrtBuff[WrtOfs],"\n%c",CSeqTrans::MapBase2Ascii(ReadIdx));
 	if(WrtOfs + 100 >= sizeof(szWrtBuff))
 		{
-		if(!CUtility::SafeWrite(m_hOutFile,szWrtBuff,WrtOfs))
+		if(!CUtility::RetryWrites(m_hOutFile,szWrtBuff,WrtOfs))
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenStats: Write to %s - %s",pszOutfile,strerror(errno));
 			Reset();
@@ -812,7 +812,7 @@ for(ReadIdx = 0; ReadIdx < 4; ReadIdx++)
 			WrtOfs += sprintf(&szWrtBuff[WrtOfs],"0.0000");
 		if(WrtOfs + 100 >= sizeof(szWrtBuff))
 			{
-			if(!CUtility::SafeWrite(m_hOutFile,szWrtBuff,WrtOfs))
+			if(!CUtility::RetryWrites(m_hOutFile,szWrtBuff,WrtOfs))
 				{
 				gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenStats: Write to %s - %s",pszOutfile,strerror(errno));
 				Reset();
@@ -823,7 +823,7 @@ for(ReadIdx = 0; ReadIdx < 4; ReadIdx++)
 		}
 	}
 WrtOfs += sprintf(&szWrtBuff[WrtOfs],"\n\n");
-if(!CUtility::SafeWrite(m_hOutFile,szWrtBuff,WrtOfs))
+if(!CUtility::RetryWrites(m_hOutFile,szWrtBuff,WrtOfs))
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenStats: Write to %s - %s",pszOutfile,strerror(errno));
 	Reset();
@@ -838,7 +838,7 @@ for(SeqIdx = 1; SeqIdx <= MaxLengthRead-1; SeqIdx++)
 	WrtOfs += sprintf(&szWrtBuff[WrtOfs],",%d",SeqIdx);
 	if(WrtOfs + 100 >= sizeof(szWrtBuff))
 		{
-		if(!CUtility::SafeWrite(m_hOutFile,szWrtBuff,WrtOfs))
+		if(!CUtility::RetryWrites(m_hOutFile,szWrtBuff,WrtOfs))
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenStats: Write to %s - %s",pszOutfile,strerror(errno));
 			Reset();
@@ -859,7 +859,7 @@ for(Base1Idx = 0; Base1Idx < 25; Base1Idx++)
 		WrtOfs += sprintf(&szWrtBuff[WrtOfs],",%d",m_pDimerCnts[CntIdx + SeqIdx]);
 		if(WrtOfs + 100 >= sizeof(szWrtBuff))
 			{
-			if(!CUtility::SafeWrite(m_hOutFile,szWrtBuff,WrtOfs))
+			if(!CUtility::RetryWrites(m_hOutFile,szWrtBuff,WrtOfs))
 				{
 				gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenStats: Write to %s - %s",pszOutfile,strerror(errno));
 				Reset();
@@ -870,7 +870,7 @@ for(Base1Idx = 0; Base1Idx < 25; Base1Idx++)
 		}
 	}
 WrtOfs += sprintf(&szWrtBuff[WrtOfs],"\n\n");
-if(!CUtility::SafeWrite(m_hOutFile,szWrtBuff,WrtOfs))
+if(!CUtility::RetryWrites(m_hOutFile,szWrtBuff,WrtOfs))
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenStats: Write to %s - %s",pszOutfile,strerror(errno));
 	Reset();
@@ -885,7 +885,7 @@ for(SeqIdx = 1; SeqIdx <= MaxLengthRead-2; SeqIdx++)
 	WrtOfs += sprintf(&szWrtBuff[WrtOfs],",%d",SeqIdx);
 	if(WrtOfs + 100 >= sizeof(szWrtBuff))
 		{
-		if(!CUtility::SafeWrite(m_hOutFile,szWrtBuff,WrtOfs))
+		if(!CUtility::RetryWrites(m_hOutFile,szWrtBuff,WrtOfs))
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenStats: Write to %s - %s",pszOutfile,strerror(errno));
 			Reset();
@@ -904,7 +904,7 @@ for(Base1Idx = 0; Base1Idx < (5*5*5); Base1Idx++)
 	CntIdx = Base1Idx * cMaxFastQSeqLen;
 	if(WrtOfs + 100 >= sizeof(szWrtBuff))
 		{
-		if(!CUtility::SafeWrite(m_hOutFile,szWrtBuff,WrtOfs))
+		if(!CUtility::RetryWrites(m_hOutFile,szWrtBuff,WrtOfs))
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenStats: Write to %s - %s",pszOutfile,strerror(errno));
 			Reset();
@@ -917,7 +917,7 @@ for(Base1Idx = 0; Base1Idx < (5*5*5); Base1Idx++)
 		WrtOfs += sprintf(&szWrtBuff[WrtOfs],",%d",m_pTrimerCnts[CntIdx+SeqIdx]);
 		if(WrtOfs + 100 >= sizeof(szWrtBuff))
 			{
-			if(!CUtility::SafeWrite(m_hOutFile,szWrtBuff,WrtOfs))
+			if(!CUtility::RetryWrites(m_hOutFile,szWrtBuff,WrtOfs))
 				{
 				gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenStats: Write to %s - %s",pszOutfile,strerror(errno));
 				Reset();
@@ -928,7 +928,7 @@ for(Base1Idx = 0; Base1Idx < (5*5*5); Base1Idx++)
 		}
 	}
 WrtOfs += sprintf(&szWrtBuff[WrtOfs],"\n\n");
-if(!CUtility::SafeWrite(m_hOutFile,szWrtBuff,WrtOfs))
+if(!CUtility::RetryWrites(m_hOutFile,szWrtBuff,WrtOfs))
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenStats: Write to %s - %s",pszOutfile,strerror(errno));
 	Reset();
@@ -943,7 +943,7 @@ for(SeqIdx = 1; SeqIdx <= MaxLengthRead-3; SeqIdx++)
 	WrtOfs += sprintf(&szWrtBuff[WrtOfs],",%d",SeqIdx);
 	if(WrtOfs + 100 >= sizeof(szWrtBuff))
 		{
-		if(!CUtility::SafeWrite(m_hOutFile,szWrtBuff,WrtOfs))
+		if(!CUtility::RetryWrites(m_hOutFile,szWrtBuff,WrtOfs))
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenStats: Write to %s - %s",pszOutfile,strerror(errno));
 			Reset();
@@ -964,7 +964,7 @@ for(Base1Idx = 0; Base1Idx < (5*5*5*5); Base1Idx++)
 
 	if(WrtOfs + 100 >= sizeof(szWrtBuff))
 		{
-		if(!CUtility::SafeWrite(m_hOutFile,szWrtBuff,WrtOfs))
+		if(!CUtility::RetryWrites(m_hOutFile,szWrtBuff,WrtOfs))
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenStats: Write to %s - %s",pszOutfile,strerror(errno));
 			Reset();
@@ -977,7 +977,7 @@ for(Base1Idx = 0; Base1Idx < (5*5*5*5); Base1Idx++)
 		WrtOfs += sprintf(&szWrtBuff[WrtOfs],",%d",m_pTetramerCnts[CntIdx+SeqIdx]);
 		if(WrtOfs + 100 >= sizeof(szWrtBuff))
 			{
-			if(!CUtility::SafeWrite(m_hOutFile,szWrtBuff,WrtOfs))
+			if(!CUtility::RetryWrites(m_hOutFile,szWrtBuff,WrtOfs))
 				{
 				gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenStats: Write to %s - %s",pszOutfile,strerror(errno));
 				Reset();
@@ -988,7 +988,7 @@ for(Base1Idx = 0; Base1Idx < (5*5*5*5); Base1Idx++)
 		}
 	}
 WrtOfs += sprintf(&szWrtBuff[WrtOfs],"\n\n");
-if(!CUtility::SafeWrite(m_hOutFile,szWrtBuff,WrtOfs))
+if(!CUtility::RetryWrites(m_hOutFile,szWrtBuff,WrtOfs))
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenStats: Write to %s - %s",pszOutfile,strerror(errno));
 	Reset();
@@ -1009,7 +1009,7 @@ for(ReadIdx = 0; ReadIdx <= 0x01f; ReadIdx++)
 	WrtOfs += sprintf(&szWrtBuff[WrtOfs],"\n%2.2d",Phred);
 	if(WrtOfs + 16 >= sizeof(szWrtBuff))
 		{
-		if(!CUtility::SafeWrite(m_hOutFile,szWrtBuff,WrtOfs))
+		if(!CUtility::RetryWrites(m_hOutFile,szWrtBuff,WrtOfs))
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenStats: Write to %s - %s",pszOutfile,strerror(errno));
 			Reset();
@@ -1023,7 +1023,7 @@ for(ReadIdx = 0; ReadIdx <= 0x01f; ReadIdx++)
 		WrtOfs += sprintf(&szWrtBuff[WrtOfs],",%d",m_pDistQualScores[Offs]);
 		if(WrtOfs + 16 >= sizeof(szWrtBuff))
 			{
-			if(!CUtility::SafeWrite(m_hOutFile,szWrtBuff,WrtOfs))
+			if(!CUtility::RetryWrites(m_hOutFile,szWrtBuff,WrtOfs))
 				{
 				gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenStats: Write to %s - %s",pszOutfile,strerror(errno));
 				Reset();
@@ -1037,7 +1037,7 @@ for(ReadIdx = 0; ReadIdx <= 0x01f; ReadIdx++)
 
 if(WrtOfs)
 	{
-	if(!CUtility::SafeWrite(m_hOutFile,szWrtBuff,WrtOfs))
+	if(!CUtility::RetryWrites(m_hOutFile,szWrtBuff,WrtOfs))
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenStats: Write to %s - %s",pszOutfile,strerror(errno));
 		Reset();
@@ -1133,7 +1133,7 @@ for(Idx = 0; Idx < (int)m_NumDescrReads; Idx++)
 		continue;
 	if((WrtOfs + 2 * (cMaxFastQSeqLen + cMaxDescrIDLen + sizeof(tsRawReadV6))) >= cRRWrtBuffSize)		// allow a small safety margin
 		{
-		if(!CUtility::SafeWrite(m_hOutFile,m_pWrtBuff,WrtOfs))
+		if(!CUtility::RetryWrites(m_hOutFile,m_pWrtBuff,WrtOfs))
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Errors whilst writing %d bytes - '%s' - %s",WrtOfs, pszOutFile, strerror(errno));
 			Reset();
@@ -1158,7 +1158,7 @@ for(Idx = 0; Idx < (int)m_NumDescrReads; Idx++)
 		}
 	}
 
-if(WrtOfs && !CUtility::SafeWrite(m_hOutFile,m_pWrtBuff,WrtOfs))
+if(WrtOfs && !CUtility::RetryWrites(m_hOutFile,m_pWrtBuff,WrtOfs))
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Errors whilst writing %d bytes - '%s' - %s",WrtOfs, pszOutFile, strerror(errno));
 	Reset();
@@ -1521,7 +1521,7 @@ if(NumInputFilesProcessed < 1)
 BuffOfs = sprintf(szBuff,",\"Seq\"");
 for(Idx = 0; Idx < NumInputFilesProcessed; Idx++)
 	BuffOfs += sprintf(&szBuff[BuffOfs],",\"%s\"",LocateFileName(Idx+1));
-CUtility::SafeWrite(m_hOutFile,szBuff,BuffOfs);
+CUtility::RetryWrites(m_hOutFile,szBuff,BuffOfs);
 BuffOfs = 0;
 
 // construct an index of ptrs to each and initialise
@@ -1590,7 +1590,7 @@ for(Idx = 1; Idx < (int)m_NumDescrReads; Idx++)
 			// output current set of counts for pRead here
 			if((BuffOfs + 1000) > sizeof(szBuff))
 				{
-				CUtility::SafeWrite(m_hOutFile,szBuff,(unsigned int)BuffOfs);
+				CUtility::RetryWrites(m_hOutFile,szBuff,(unsigned int)BuffOfs);
 				BuffOfs = 0;
 				}
 
@@ -1629,7 +1629,7 @@ if(bMinAnySampleCnts && NumSamplesTotalCnts >= MinTotalCnts)
 	pRead = pRead1;
 	if((BuffOfs + 3000) > sizeof(szBuff))
 		{
-		CUtility::SafeWrite(m_hOutFile,szBuff,(unsigned int)BuffOfs);
+		CUtility::RetryWrites(m_hOutFile,szBuff,(unsigned int)BuffOfs);
 		BuffOfs = 0;
 		}
 	pDst = Sequence;
@@ -1645,7 +1645,7 @@ if(bMinAnySampleCnts && NumSamplesTotalCnts >= MinTotalCnts)
 	NumUniqueReadSeqs += 1;
 	}
 if(BuffOfs)
-	CUtility::SafeWrite(m_hOutFile,szBuff,(unsigned int)BuffOfs);
+	CUtility::RetryWrites(m_hOutFile,szBuff,(unsigned int)BuffOfs);
 close(m_hOutFile);
 m_hOutFile = -1;
 

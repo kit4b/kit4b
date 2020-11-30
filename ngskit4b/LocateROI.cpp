@@ -986,7 +986,7 @@ if(pszAnnoFile != NULL && pszAnnoFile[0] != '\0')
 if(bFirst == true && FMode == eFROIbed)
 	{
 	BuffIdx = sprintf(szLineBuff,"track type=bed name=\"%s\" description=\"%s\"\n",pszTitle,pszTitle);
-	CUtility::SafeWrite(m_hRsltsFile,szLineBuff,BuffIdx);
+	CUtility::RetryWrites(m_hRsltsFile,szLineBuff,BuffIdx);
 	bFirst = false;
 	}
 
@@ -1026,7 +1026,7 @@ for(ROIidx = 0; ROIidx < m_NumOfROIs; ROIidx++,pROI++)
 									
 	if((BuffIdx + 200)> sizeof(szLineBuff))
 		{
-		CUtility::SafeWrite(m_hRsltsFile,szLineBuff,BuffIdx);
+		CUtility::RetryWrites(m_hRsltsFile,szLineBuff,BuffIdx);
 		BuffIdx = 0;
 		}
 	}
@@ -1049,14 +1049,14 @@ if(FMode == eFROIsumCSV && bFinal)
 								
 		if((BuffIdx + 200) > sizeof(szLineBuff))
 			{
-			CUtility::SafeWrite(m_hRsltsFile,szLineBuff,BuffIdx);
+			CUtility::RetryWrites(m_hRsltsFile,szLineBuff,BuffIdx);
 			BuffIdx = 0;
 			}
 		}
 	}
 
 if(BuffIdx)
-	CUtility::SafeWrite(m_hRsltsFile,szLineBuff,BuffIdx);
+	CUtility::RetryWrites(m_hRsltsFile,szLineBuff,BuffIdx);
 delete m_pDistBEDFile;
 m_pDistBEDFile = NULL;
 return(m_NumOfROIs);

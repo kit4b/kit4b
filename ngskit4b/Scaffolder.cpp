@@ -1610,7 +1610,7 @@ for(VertIdx = 0; VertIdx < m_NumSeqVertices; VertIdx++,pVertex++)
 				}
 			if((m_ScaffoldBuffLen + 2000) > m_AllocScaffoldBuff)
 				{
-				CUtility::SafeWrite(m_hScaffoldFasta,m_pszScaffoldBuff,m_ScaffoldBuffLen);
+				CUtility::RetryWrites(m_hScaffoldFasta,m_pszScaffoldBuff,m_ScaffoldBuffLen);
 				m_ScaffoldBuffLen = 0;
 				}
 			}
@@ -1640,7 +1640,7 @@ for(VertIdx = 0; VertIdx < m_NumSeqVertices; VertIdx++,pVertex++)
 	
 	if((m_ScaffoldBuffLen + 2000) > m_AllocScaffoldBuff)
 		{
-		CUtility::SafeWrite(m_hScaffoldFasta,m_pszScaffoldBuff,m_ScaffoldBuffLen);
+		CUtility::RetryWrites(m_hScaffoldFasta,m_pszScaffoldBuff,m_ScaffoldBuffLen);
 		m_ScaffoldBuffLen = 0;
 		}
 	m_AcceptedScaffolds += 1;
@@ -1648,7 +1648,7 @@ for(VertIdx = 0; VertIdx < m_NumSeqVertices; VertIdx++,pVertex++)
 	}
 
 if(m_ScaffoldBuffLen)
-	CUtility::SafeWrite(m_hScaffoldFasta,m_pszScaffoldBuff,m_ScaffoldBuffLen);
+	CUtility::RetryWrites(m_hScaffoldFasta,m_pszScaffoldBuff,m_ScaffoldBuffLen);
 
 #ifdef _WIN32
 _commit(m_hScaffoldFasta);

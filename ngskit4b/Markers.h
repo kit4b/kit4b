@@ -25,7 +25,7 @@ Original 'BioKanga' copyright notice has been retained and immediately follows t
 #include "../libkit4b/commdefs.h"
 
 const int cMaxLenName = 100;			// accept species or chrom/contig names of at most this length
-const int cMaxMarkerSpecies = 4000;		// allow at most 4000 different species or cultivars
+const int cMaxMarkerSpecies = 20000;	// allow at most 20000 different species or cultivars
 const int cMaxSeqID = 100000000;		// allow at most 10^8 different target species sequences
 
 // following two constants are used when determining species specific SNPs
@@ -57,8 +57,8 @@ typedef struct TAG_sAlignLoci {
 	UINT32 ProbeBaseCnts[5];	// indexed by A,C,G,T,N : number instances probe base aligned to TargRefBase 
 } tsAlignLoci;
 
-const int cAllocAlignLoci = 50000000;	// initially allocate to hold this many alignments
-const int cReAllocAlignPerc = 125;	    // if required to realloc then realloc by this percentage of the current allocation
+const int cAllocAlignLoci = 100000000;	// initially allocate to hold this many alignments
+const int cReAllocAlignPerc = 120;	    // if required to realloc then proportionally realloc by this percentage
 
 typedef struct TAG_sSNPSSpecies {
 	UINT16 SpeciesID;	// uniquely identifies this species instance
@@ -172,7 +172,12 @@ public:
 					int FType = 0,				// input alignment file format: 0 - auto, 1 - CSV, 2 - BED, 3 - SAM)
 					bool bSeqs = false,			// if alignment file contains the read sequence then impute bases from the actual sequences	
 					int EstNumSeqs = 0,			// estimated number of sequences (0 if no estimate)
-					int EstSeqLen = 0);			// estimated mean sequence length (0 if no estimate)			
+					int EstSeqLen = 0);			// estimated mean sequence length (0 if no estimate)		
+
+	INT64	// Add simulated alignments for when no actual alignments were available, just SNP calls
+		AddSimulatedAlignments(int MinBases,			// using this as the simulated number of reads covering the SNP loci
+					 char *pszRefSpecies,				// this is the reference species 
+					char *pszProbeSpecies);				// this species reads were aligned to the reference species from which SNPs were called
 
 	UINT16									// returned species identifer (1..cMaxSpecies)
 		AddSpecies(char *pszSpecies,bool IsRefSpecies = false);	// cultivar or species

@@ -196,7 +196,7 @@ repassemb(int argc, char **argv)
 		gStopWatch.Start ();
 		Rslt = 0;
 		Rslt = Process (PMode,			// processing mode
-						szSNPsFile,		// descriptor prefix
+						szSNPsFile,		// kalign called SNPs
 						szInFile,		// input fasta or SAM file
 						szOutFile);		// output to this file
 		Rslt = Rslt >= 0 ? 0 : 1;
@@ -774,7 +774,7 @@ if(m_NumChromSites)
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "%d replacements completed, writing repurposed assembly to '%s'",BasesReplaced,pszOutFile);
 
 if(m_SeqBuffIdx)
-	CUtility::SafeWrite(m_hOutFile, m_pSeqBuffer, m_SeqBuffIdx);	
+	CUtility::RetryWrites(m_hOutFile, m_pSeqBuffer, m_SeqBuffIdx);	
 
 // close input file
 close(m_hInFile);

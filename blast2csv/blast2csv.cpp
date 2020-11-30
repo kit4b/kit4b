@@ -613,7 +613,7 @@ if(bFirst)
 	{
 	bFirst=false;
 	BuffIdx=sprintf(szLineBuff,"\"QueryID\",\"SubjectID\",\"Strand\",\"Identity\",\"AlignLen\",\"Mismatches\",\"GapOpenings\",\"QueryStart\",\"QueryEnd\",\"SubjectStart\",\"SubjectEnd\",\"Expect\",\"BitScore\"\n");
-	CUtility::SafeWrite(pParams->hOutFile,szLineBuff,BuffIdx);
+	CUtility::RetryWrites(pParams->hOutFile,szLineBuff,BuffIdx);
 	}
 
 BuffIdx = sprintf(szLineBuff,"\"%s\",\"%s\",\"%c\",%1.4f,%d,%d,%d,%d,%d,%d,%d,%1.3g,%1.3g\n",
@@ -622,7 +622,7 @@ BuffIdx = sprintf(szLineBuff,"\"%s\",\"%s\",\"%c\",%1.4f,%d,%d,%d,%d,%d,%d,%d,%1
 							pBLAST->QueryEnd,pBLAST->SubjectStart,pBLAST->SubjectEnd,
 							pBLAST->Expect,pBLAST->BitScore);
 
-CUtility::SafeWrite(pParams->hOutFile,szLineBuff,BuffIdx);
+CUtility::RetryWrites(pParams->hOutFile,szLineBuff,BuffIdx);
 return(0);
 }
 

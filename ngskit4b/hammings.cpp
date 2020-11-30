@@ -1054,13 +1054,13 @@ for(ChromIdx = 0; ChromIdx < m_pPregenHamHdr->NumChroms; ChromIdx++)
 		BuffOfs += sprintf(&szBuff[BuffOfs],"\"%s\",%d,%d\n",pCurChrom->szChrom,Loci,pCurChrom->Dists[Loci]);
 		if(BuffOfs + 100 > sizeof(szBuff))
 			{
-			CUtility::SafeWrite(m_hOutFile,szBuff,BuffOfs);
+			CUtility::RetryWrites(m_hOutFile,szBuff,BuffOfs);
 			BuffOfs = 0;
 			}
 		}
 	}
 if(BuffOfs)
-	CUtility::SafeWrite(m_hOutFile,szBuff,BuffOfs);
+	CUtility::RetryWrites(m_hOutFile,szBuff,BuffOfs);
 Reset(true);
 return(eBSFSuccess);
 }
@@ -1296,7 +1296,7 @@ while(1)	// onto next line containing fields
 	BuffIdx += sprintf(&szBuff[BuffIdx],"\n\"%s\",%d,%d",pszFromChrom,FromLoci,FromHammingDist);
 	if((BuffIdx + 100) > sizeof(szBuff))
 		{
-		CUtility::SafeWrite(hOutFile,szBuff,BuffIdx);
+		CUtility::RetryWrites(hOutFile,szBuff,BuffIdx);
 		BuffIdx = 0;
 		}
 	}
@@ -1304,7 +1304,7 @@ while(1)	// onto next line containing fields
 if(hOutFile != -1 && (RsltFrom >= 0 && RsltInto >= 0))
 	{
 	if(BuffIdx)
-		CUtility::SafeWrite(hOutFile,szBuff,BuffIdx);
+		CUtility::RetryWrites(hOutFile,szBuff,BuffIdx);
 	}
 if(hOutFile != -1)
 	close(hOutFile);
@@ -1500,7 +1500,7 @@ if(m_hOutFile < 0)
 	return(eBSFerrCreateFile);
 	}
 
-CUtility::SafeWrite(m_hOutFile,m_pHamHdr,m_pHamHdr->Len);
+CUtility::RetryWrites(m_hOutFile,m_pHamHdr,m_pHamHdr->Len);
 
 // that's it!
 #ifdef _WIN32
@@ -1770,7 +1770,7 @@ if((pszBuffer = new char [cRptBuffAllocsize])==NULL)
 
 
 BuffOfs = sprintf(pszBuffer,"\"Chrom\",\"StartLoci\",\"Len\",\"Hamming\"\n"); // header line
-CUtility::SafeWrite(m_hOutFile,pszBuffer,BuffOfs);
+CUtility::RetryWrites(m_hOutFile,pszBuffer,BuffOfs);
 BuffOfs = 0;
 CurLoci = 0;
 
@@ -1825,7 +1825,7 @@ for(ChromID = 0; ChromID < NumEntries; ChromID++)
 
 		if((BuffOfs + 1000) > cRptBuffAllocsize)
 			{
-			CUtility::SafeWrite(m_hOutFile,pszBuffer,BuffOfs);
+			CUtility::RetryWrites(m_hOutFile,pszBuffer,BuffOfs);
 			BuffOfs = 0;
 			}
 		}
@@ -1834,7 +1834,7 @@ for(ChromID = 0; ChromID < NumEntries; ChromID++)
 
 if(BuffOfs)
 	{
-	CUtility::SafeWrite(m_hOutFile,pszBuffer,BuffOfs);
+	CUtility::RetryWrites(m_hOutFile,pszBuffer,BuffOfs);
 	BuffOfs = 0;
 	}
 #ifdef _WIN32
@@ -1908,7 +1908,7 @@ if(m_hOutFile < 0)
 	}
 
 BuffOfs = sprintf(szBuffer,"track type=bedGraph name=ResHamming%d_%d description=\"Restricted Hammings for K-mer length %d and Hamming limit %d\"\n",KMerLen,RHamm,KMerLen,RHamm); // header line
-CUtility::SafeWrite(m_hOutFile,szBuffer,BuffOfs);
+CUtility::RetryWrites(m_hOutFile,szBuffer,BuffOfs);
 BuffOfs = 0;
 CurLoci = 0;
 
@@ -1961,7 +1961,7 @@ for(ChromID = 0; ChromID < NumEntries; ChromID++)
 
 		if((BuffOfs + 200) > sizeof(szBuffer))
 			{
-			CUtility::SafeWrite(m_hOutFile,szBuffer,BuffOfs);
+			CUtility::RetryWrites(m_hOutFile,szBuffer,BuffOfs);
 			BuffOfs = 0;
 			}
 		}
@@ -1970,7 +1970,7 @@ for(ChromID = 0; ChromID < NumEntries; ChromID++)
 
 if(BuffOfs)
 	{
-	CUtility::SafeWrite(m_hOutFile,szBuffer,BuffOfs);
+	CUtility::RetryWrites(m_hOutFile,szBuffer,BuffOfs);
 	BuffOfs = 0;
 	}
 #ifdef _WIN32
@@ -2094,7 +2094,7 @@ for(ChromID = 0; ChromID < NumEntries; ChromID++)
 		SpanLen++;
 		if((BuffOfs + 500) > sizeof(szBuffer))
 			{
-			CUtility::SafeWrite(m_hOutFile,szBuffer,BuffOfs);
+			CUtility::RetryWrites(m_hOutFile,szBuffer,BuffOfs);
 			BuffOfs = 0;
 			}
 		}
@@ -2104,7 +2104,7 @@ for(ChromID = 0; ChromID < NumEntries; ChromID++)
 
 if(BuffOfs)
 	{
-	CUtility::SafeWrite(m_hOutFile,szBuffer,BuffOfs);
+	CUtility::RetryWrites(m_hOutFile,szBuffer,BuffOfs);
 	BuffOfs = 0;
 	}
 #ifdef _WIN32
@@ -2917,14 +2917,14 @@ if(pszHammingFile != NULL && pszHammingFile[0] != '\0')
 			BuffOfs += sprintf(&szBuffer[BuffOfs],"\"%s\",%d,%d\n",pChrom->szChromName,CurLoci,*pHamDist1);
 			if((BuffOfs + 200) > sizeof(szBuffer))
 				{
-				CUtility::SafeWrite(m_hOutFile,szBuffer,BuffOfs);
+				CUtility::RetryWrites(m_hOutFile,szBuffer,BuffOfs);
 				BuffOfs = 0;
 				}
 			}
 		}
 	if(BuffOfs)
 		{
-		CUtility::SafeWrite(m_hOutFile,szBuffer,BuffOfs);
+		CUtility::RetryWrites(m_hOutFile,szBuffer,BuffOfs);
 		BuffOfs = 0;
 		}
 #ifdef _WIN32

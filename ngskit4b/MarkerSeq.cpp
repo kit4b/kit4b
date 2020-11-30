@@ -460,7 +460,7 @@ while((Rslt = CurSeqLen = m_pFasta->ReadSequence(m_pSeq,(int)(m_AllocdSeqMem-1))
 
 			if(MarkerBuffOfs > (m_AllocdMarkerBuff - 5000))
 				{
-				CUtility::SafeWrite(m_hOutMarkerFile,m_pMarkerBuff,MarkerBuffOfs);
+				CUtility::RetryWrites(m_hOutMarkerFile,m_pMarkerBuff,MarkerBuffOfs);
 				MarkerBuffOfs = 0;
 				}
 			}
@@ -475,7 +475,7 @@ while((Rslt = CurSeqLen = m_pFasta->ReadSequence(m_pSeq,(int)(m_AllocdSeqMem-1))
 if(m_hOutMarkerFile != -1)
 	{
 	if(MarkerBuffOfs > 0)
-		CUtility::SafeWrite(m_hOutMarkerFile,m_pMarkerBuff,MarkerBuffOfs);
+		CUtility::RetryWrites(m_hOutMarkerFile,m_pMarkerBuff,MarkerBuffOfs);
 #ifdef _WIN32
 	_commit(m_hOutMarkerFile);
 #else

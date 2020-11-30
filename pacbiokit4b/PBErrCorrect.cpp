@@ -3255,7 +3255,7 @@ if(m_szErrCorFile[0] != '\0' && m_hErrCorFile == -1)
 if(m_PMode == ePBPMOverlapDetail)
 	{
 	m_ScaffLineBuffIdx=sprintf(m_szScaffLineBuff,"\"Class\",\"ProbeID\",\"ProbDescr\",\"TargID\",\"TargDescr\",\"SeedHits\",\"ProbeSense\",\"TargSense\",\"ProbeLen\",\"TargLen\",\"ProbeAlignLength\",\"TargAlignLength\",\"PeakScore\",\"FinalScore\",\"NumAlignedBases\",\"NumExactBases\",\"NumProbeInserts\",\"NumProbeInsertBases\",\"NumTargInserts\",\"NumTargInsertBases\",\"ProbeStartOfs\",\"TargStartOfs\",\"ProbeEndOfs\",\"TargEndOfs\",\"ProbeOfs5\",\"TargOfs5\",\"ProbeOfs3\",\"TargOfs3\"");
-	CUtility::SafeWrite(m_hErrCorFile,m_szScaffLineBuff,m_ScaffLineBuffIdx);
+	CUtility::RetryWrites(m_hErrCorFile,m_szScaffLineBuff,m_ScaffLineBuffIdx);
 	m_ScaffLineBuffIdx = 0;
 	}
 
@@ -4513,9 +4513,9 @@ for(CurNodeID = (LowestCpltdProcNodeID+1); CurNodeID <= m_NumPBScaffNodes; CurNo
 					AcquireCASSerialise();
 					if(m_ScaffLineBuffIdx > (sizeof(m_szScaffLineBuff) - 1000))
 						{
-						if(!CUtility::SafeWrite(m_hErrCorFile,m_szScaffLineBuff,m_ScaffLineBuffIdx))
+						if(!CUtility::RetryWrites(m_hErrCorFile,m_szScaffLineBuff,m_ScaffLineBuffIdx))
 							{
-							gDiagnostics.DiagOut(eDLFatal,gszProcName,"SafeWrite() failed writing %u chars to overlap details file",m_ScaffLineBuffIdx);
+							gDiagnostics.DiagOut(eDLFatal,gszProcName,"RetryWrites() failed writing %u chars to overlap details file",m_ScaffLineBuffIdx);
 							ReleaseCASSerialise();
 							goto CompletedNodeProcessing;
 							}
@@ -4568,9 +4568,9 @@ for(CurNodeID = (LowestCpltdProcNodeID+1); CurNodeID <= m_NumPBScaffNodes; CurNo
 				if(pThreadPar->ErrCorBuffIdx > 0)
 					{
 					AcquireCASSerialise();
-					if(!CUtility::SafeWrite(m_hErrCorFile,pThreadPar->pszErrCorLineBuff,pThreadPar->ErrCorBuffIdx))
+					if(!CUtility::RetryWrites(m_hErrCorFile,pThreadPar->pszErrCorLineBuff,pThreadPar->ErrCorBuffIdx))
 						{
-						gDiagnostics.DiagOut(eDLFatal,gszProcName,"SafeWrite() failed writing %u chars to error corrected reads file",pThreadPar->ErrCorBuffIdx);
+						gDiagnostics.DiagOut(eDLFatal,gszProcName,"RetryWrites() failed writing %u chars to error corrected reads file",pThreadPar->ErrCorBuffIdx);
 						ReleaseCASSerialise();
 						goto CompletedNodeProcessing;
 						}
@@ -4591,9 +4591,9 @@ for(CurNodeID = (LowestCpltdProcNodeID+1); CurNodeID <= m_NumPBScaffNodes; CurNo
 						CurChkPt.flgContained = pCurPBScaffNode->flgContained;
 						CurChkPt.flgContains = pCurPBScaffNode->flgContains;
 						CurChkPt.flgCpltdProc = 1;
-						if(!CUtility::SafeWrite(m_hChkPtsFile,&CurChkPt,sizeof(tsECChkPt)))
+						if(!CUtility::RetryWrites(m_hChkPtsFile,&CurChkPt,sizeof(tsECChkPt)))
 							{
-							gDiagnostics.DiagOut(eDLFatal,gszProcName,"SafeWrite() failed writing to checkpoint file");
+							gDiagnostics.DiagOut(eDLFatal,gszProcName,"RetryWrites() failed writing to checkpoint file");
 							ReleaseCASSerialise();
 							goto CompletedNodeProcessing;
 							}
@@ -4622,9 +4622,9 @@ for(CurNodeID = (LowestCpltdProcNodeID+1); CurNodeID <= m_NumPBScaffNodes; CurNo
 					{
 					pThreadPar->pszMultiAlignLineBuff[pThreadPar->MultiAlignBuffIdx++] = '\n';
 					AcquireCASSerialise();
-					if(!CUtility::SafeWrite(m_hMultiAlignFile,pThreadPar->pszMultiAlignLineBuff,pThreadPar->MultiAlignBuffIdx))
+					if(!CUtility::RetryWrites(m_hMultiAlignFile,pThreadPar->pszMultiAlignLineBuff,pThreadPar->MultiAlignBuffIdx))
 						{
-						gDiagnostics.DiagOut(eDLFatal,gszProcName,"SafeWrite() failed writing %u chars to multialignment file",pThreadPar->MultiAlignBuffIdx);
+						gDiagnostics.DiagOut(eDLFatal,gszProcName,"RetryWrites() failed writing %u chars to multialignment file",pThreadPar->MultiAlignBuffIdx);
 						ReleaseCASSerialise();
 						goto CompletedNodeProcessing;
 						}
@@ -4660,9 +4660,9 @@ for(CurNodeID = (LowestCpltdProcNodeID+1); CurNodeID <= m_NumPBScaffNodes; CurNo
 					pThreadPar->ErrCorBuffIdx += sprintf(&pThreadPar->pszErrCorLineBuff[pThreadPar->ErrCorBuffIdx],"\n");
 					if(pThreadPar->ErrCorBuffIdx + 100 > pThreadPar->AllocdErrCorLineBuff)
 						{
-						if(!CUtility::SafeWrite(m_hErrCorFile,pThreadPar->pszErrCorLineBuff,pThreadPar->ErrCorBuffIdx))
+						if(!CUtility::RetryWrites(m_hErrCorFile,pThreadPar->pszErrCorLineBuff,pThreadPar->ErrCorBuffIdx))
 							{
-							gDiagnostics.DiagOut(eDLFatal,gszProcName,"SafeWrite() failed writing %u chars to error corrected reads file",pThreadPar->ErrCorBuffIdx);
+							gDiagnostics.DiagOut(eDLFatal,gszProcName,"RetryWrites() failed writing %u chars to error corrected reads file",pThreadPar->ErrCorBuffIdx);
 							ReleaseCASSerialise();
 							goto CompletedNodeProcessing;
 							}		
@@ -4673,9 +4673,9 @@ for(CurNodeID = (LowestCpltdProcNodeID+1); CurNodeID <= m_NumPBScaffNodes; CurNo
 				if(pThreadPar->ErrCorBuffIdx > 0)
 					{
 					AcquireCASSerialise();
-					if(!CUtility::SafeWrite(m_hErrCorFile,pThreadPar->pszErrCorLineBuff,pThreadPar->ErrCorBuffIdx))
+					if(!CUtility::RetryWrites(m_hErrCorFile,pThreadPar->pszErrCorLineBuff,pThreadPar->ErrCorBuffIdx))
 						{
-						gDiagnostics.DiagOut(eDLFatal,gszProcName,"SafeWrite() failed writing %u chars to error corrected reads file",pThreadPar->ErrCorBuffIdx);
+						gDiagnostics.DiagOut(eDLFatal,gszProcName,"RetryWrites() failed writing %u chars to error corrected reads file",pThreadPar->ErrCorBuffIdx);
 						ReleaseCASSerialise();
 						goto CompletedNodeProcessing;
 						}
@@ -4699,9 +4699,9 @@ for(CurNodeID = (LowestCpltdProcNodeID+1); CurNodeID <= m_NumPBScaffNodes; CurNo
 					CurChkPt.flgContained = pCurPBScaffNode->flgContained;
 					CurChkPt.flgContains = pCurPBScaffNode->flgContains;
 					CurChkPt.flgCpltdProc = 1;
-					if(!CUtility::SafeWrite(m_hChkPtsFile,&CurChkPt,sizeof(tsECChkPt)))
+					if(!CUtility::RetryWrites(m_hChkPtsFile,&CurChkPt,sizeof(tsECChkPt)))
 						{
-						gDiagnostics.DiagOut(eDLFatal,gszProcName,"SafeWrite() failed writing to checkpoint file");
+						gDiagnostics.DiagOut(eDLFatal,gszProcName,"RetryWrites() failed writing to checkpoint file");
 						ReleaseCASSerialise();
 						goto CompletedNodeProcessing;
 						}
@@ -4739,9 +4739,9 @@ SloughedSeq:     // branch to here for target sequences marked as not to be proc
 		CurChkPt.flgContained = pCurPBScaffNode->flgContained;
 		CurChkPt.flgContains = pCurPBScaffNode->flgContains;
 		CurChkPt.flgCpltdProc = 1;
-		if(!CUtility::SafeWrite(m_hChkPtsFile,&CurChkPt,sizeof(tsECChkPt)))
+		if(!CUtility::RetryWrites(m_hChkPtsFile,&CurChkPt,sizeof(tsECChkPt)))
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"SafeWrite() failed writing to checkpoint file");
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"RetryWrites() failed writing to checkpoint file");
 			ReleaseCASSerialise();
 			goto CompletedNodeProcessing;
 			}
@@ -4770,7 +4770,7 @@ CompletedNodeProcessing:     // when no more nodes requiring processing then got
 AcquireCASSerialise();
 if((m_PMode == ePBPMErrCorrect  || m_PMode == ePBMConsolidate) && m_hErrCorFile != -1 && pThreadPar->ErrCorBuffIdx > 0)
 	{
-	CUtility::SafeWrite(m_hErrCorFile,pThreadPar->pszErrCorLineBuff,pThreadPar->ErrCorBuffIdx);
+	CUtility::RetryWrites(m_hErrCorFile,pThreadPar->pszErrCorLineBuff,pThreadPar->ErrCorBuffIdx);
 	pThreadPar->ErrCorBuffIdx = 0;
 #ifdef _WIN32
 	_commit(m_hErrCorFile);
@@ -4781,7 +4781,7 @@ if((m_PMode == ePBPMErrCorrect  || m_PMode == ePBMConsolidate) && m_hErrCorFile 
 	}
 if(m_hMultiAlignFile != -1 && pThreadPar->MultiAlignBuffIdx > 0)
 	{
-	CUtility::SafeWrite(m_hMultiAlignFile,pThreadPar->pszMultiAlignLineBuff,pThreadPar->MultiAlignBuffIdx);
+	CUtility::RetryWrites(m_hMultiAlignFile,pThreadPar->pszMultiAlignLineBuff,pThreadPar->MultiAlignBuffIdx);
 	pThreadPar->MultiAlignBuffIdx = 0;
 #ifdef _WIN32
 	_commit(m_hMultiAlignFile);
@@ -4792,7 +4792,7 @@ if(m_hMultiAlignFile != -1 && pThreadPar->MultiAlignBuffIdx > 0)
 	}
 if(m_PMode == ePBPMOverlapDetail && m_ScaffLineBuffIdx > 0)
 	{
-	CUtility::SafeWrite(m_hErrCorFile,m_szScaffLineBuff,m_ScaffLineBuffIdx);
+	CUtility::RetryWrites(m_hErrCorFile,m_szScaffLineBuff,m_ScaffLineBuffIdx);
 	m_ScaffLineBuffIdx = 0;
 #ifdef _WIN32
 	_commit(m_hErrCorFile);

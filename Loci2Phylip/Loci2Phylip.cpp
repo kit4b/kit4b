@@ -2613,7 +2613,7 @@ if(pProcParams->hOutFile != -1)
 			NumChrsProcessed += sprintf(&szRsltBuffer[NumChrsProcessed],",\"%s\"",Distances[SpeciesIdx].szSpeciesName);
 		NumChrsProcessed += sprintf(&szRsltBuffer[NumChrsProcessed],"\n");
 		pProcParams->bWrtHdr = false;
-		CUtility::SafeWrite(pProcParams->hOutFile,szRsltBuffer,NumChrsProcessed);
+		CUtility::RetryWrites(pProcParams->hOutFile,szRsltBuffer,NumChrsProcessed);
 		}
 
 	NumChrsProcessed = 0;
@@ -2625,7 +2625,7 @@ if(pProcParams->hOutFile != -1)
 			NumChrsProcessed += sprintf(&szRsltBuffer[NumChrsProcessed],",%.6f",Distances[SpeciesIdx].Values[ValueIdx]);
 		NumChrsProcessed += sprintf(&szRsltBuffer[NumChrsProcessed],"\n");
 		}
-	CUtility::SafeWrite(pProcParams->hOutFile,szRsltBuffer,NumChrsProcessed);
+	CUtility::RetryWrites(pProcParams->hOutFile,szRsltBuffer,NumChrsProcessed);
 	}
 return(0);
 }
@@ -2780,7 +2780,7 @@ if(hOutFile == -1)					// check if file open succeeded
 	}
 
 LineLen = sprintf(szLineBuff,"  %d   %d\n",pProcParams->MaxNumSpecies,pProcParams->PhylipLen);
-CUtility::SafeWrite(hOutFile,szLineBuff,LineLen);
+CUtility::RetryWrites(hOutFile,szLineBuff,LineLen);
 bFirst = true;
 BasesEmitted = 0;
 while(BasesEmitted < pProcParams->PhylipLen) 
@@ -2817,10 +2817,10 @@ while(BasesEmitted < pProcParams->PhylipLen)
 			LineLen++;
 			}
 		LineLen += sprintf(&szLineBuff[LineLen],"\n");
-		CUtility::SafeWrite(hOutFile,szLineBuff,LineLen);
+		CUtility::RetryWrites(hOutFile,szLineBuff,LineLen);
 		}
 	LineLen = sprintf(szLineBuff,"\n");
-	CUtility::SafeWrite(hOutFile,szLineBuff,LineLen);
+	CUtility::RetryWrites(hOutFile,szLineBuff,LineLen);
 	BasesEmitted += SeqLen;
 	bFirst = false;
 	}

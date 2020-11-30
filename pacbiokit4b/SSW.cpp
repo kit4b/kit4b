@@ -2300,7 +2300,7 @@ do {
 						 MinErrCorrectLen);			// and sequence lengths must be of at least this length 
 
 	if(ConsSeqLen > 0)
-		CUtility::SafeWrite(m_hConsSeqFile,m_pszConsensusBuff,ConsSeqLen);
+		CUtility::RetryWrites(m_hConsSeqFile,m_pszConsensusBuff,ConsSeqLen);
 	NumParsedBlocks += 1;
 	}
 while(Rslt >= 0);

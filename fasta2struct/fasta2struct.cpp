@@ -2289,7 +2289,7 @@ for(AggIdx = 0; AggIdx < DispRange; AggIdx++)
 			Reset();
 			return(eBSFerrWrite);
 			}
-		CUtility::SafeWrite(m_hRslts,szBuff,BuffOfs);
+		CUtility::RetryWrites(m_hRslts,szBuff,BuffOfs);
 		BuffOfs = 0;
 		}
 	}
@@ -2321,7 +2321,7 @@ for(CurPermuteMode = 0; CurPermuteMode <= (int)RMode; CurPermuteMode++)
 		BuffOfs += sprintf(&szBuff[BuffOfs],"\n\"%s%s\"",szChromName,pszPermMode);
 		if((BuffOfs + 100) > sizeof(szBuff))
 			{
-			CUtility::SafeWrite(m_hRslts,szBuff,BuffOfs);
+			CUtility::RetryWrites(m_hRslts,szBuff,BuffOfs);
 			BuffOfs = 0;
 			}
 		pCurChromBins = &m_pHistBins[((ProcChroms -1) * HistBins) + BinIdxMin];
@@ -2333,7 +2333,7 @@ for(CurPermuteMode = 0; CurPermuteMode <= (int)RMode; CurPermuteMode++)
 			BuffOfs += sprintf(&szBuff[BuffOfs],",%d",AggCnt);
 			if((BuffOfs + 100) > sizeof(szBuff))
 				{
-				CUtility::SafeWrite(m_hRslts,szBuff,BuffOfs);
+				CUtility::RetryWrites(m_hRslts,szBuff,BuffOfs);
 				BuffOfs = 0;
 				}
 			}
@@ -2342,7 +2342,7 @@ for(CurPermuteMode = 0; CurPermuteMode <= (int)RMode; CurPermuteMode++)
 
 
 if(BuffOfs)
-    CUtility::SafeWrite(m_hRslts,szBuff,BuffOfs);
+    CUtility::RetryWrites(m_hRslts,szBuff,BuffOfs);
 
 Reset();
 return(Rslt);

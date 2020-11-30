@@ -590,7 +590,7 @@ if(PMode>= ePMNallOpt)
 	BuffOfs = sprintf(szBuff,"\"BkgndGroove\",\"DyadratioThres\",\"Dyad2ratioThres\",\"Dyad3ratioThres\",\"ExprSet.NSamples\",\"ExprSet.NumDyads\"");
 	if(szFastaCtrlFile[0] != '\0')	
 		BuffOfs += sprintf(&szBuff[BuffOfs],",\"CtrlSet.NSamples\",\"CtrlSet.NumDyads\"");
-	CUtility::SafeWrite(m_hProfileFile,szBuff,BuffOfs);
+	CUtility::RetryWrites(m_hProfileFile,szBuff,BuffOfs);
 	BuffOfs = 0;
 	for(BkgndGroove = cMinBkgndGroove; BkgndGroove <= cMaxBkgndGroove; BkgndGroove += cDeltaBkgndGroove)
 		{
@@ -610,7 +610,7 @@ if(PMode>= ePMNallOpt)
 					if(szFastaCtrlFile[0] != '\0')
 						BuffOfs += sprintf(&szBuff[BuffOfs],",%d,%d,%4.4f",
 										m_CtrlSet.NSamples,m_CtrlSet.NumDyads,(float)m_ExprSet.NumDyads/m_CtrlSet.NumDyads);
-					CUtility::SafeWrite(m_hProfileFile,szBuff,BuffOfs);
+					CUtility::RetryWrites(m_hProfileFile,szBuff,BuffOfs);
 					BuffOfs = 0;
 					}
 				}
@@ -662,12 +662,12 @@ while((pSeqValues = IterNext(&m_ExprSet,bFirst,PMode == ePMrandsel ? true : fals
 	BuffOfs += sprintf(&szBuff[BuffOfs],"%d,\"%s\",\"%s\",%d,%d,%d,%d,%d\n",Ident,szSpecies,szChrom,StartLoci,EndLoci,ElLen,pSeqValues->Score,NumReads);
 	if((BuffOfs + 200) > sizeof(szBuff))
 		{	
-		CUtility::SafeWrite(m_hProfileFile,szBuff,BuffOfs);
+		CUtility::RetryWrites(m_hProfileFile,szBuff,BuffOfs);
 		BuffOfs = 0;
 		}
 	}
 if(BuffOfs)
-	CUtility::SafeWrite(m_hProfileFile,szBuff,BuffOfs);
+	CUtility::RetryWrites(m_hProfileFile,szBuff,BuffOfs);
 gDiagnostics.DiagOut(eDLInfo,"ProcessFastaStruct","From %d sequences there are %d predicted dyads, %d with no dyads",m_ExprSet.NSamples,NumDyads, m_ExprSet.NSamples - NumDyads);
 
 close(m_hProfileFile);

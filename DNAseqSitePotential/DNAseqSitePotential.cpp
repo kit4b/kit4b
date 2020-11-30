@@ -722,12 +722,12 @@ for(OctIdx = 0; OctIdx <= 0x0ffff; OctIdx++)
 	BuffIdx += sprintf(&szBuff[BuffIdx],"\"%s\",%d,%d,%8.8f\n",StepIdx2Seq(8,OctIdx),m_pGenomeOct[OctIdx],m_pSiteOct[OctIdx],Ratio);
 	if(BuffIdx + 100 > sizeof(szBuff))
 		{
-		CUtility::SafeWrite(m_hRsltFile,szBuff,BuffIdx);
+		CUtility::RetryWrites(m_hRsltFile,szBuff,BuffIdx);
 		BuffIdx = 0;
 		}
 	}
 if(BuffIdx)
-	CUtility::SafeWrite(m_hRsltFile,szBuff,BuffIdx);
+	CUtility::RetryWrites(m_hRsltFile,szBuff,BuffIdx);
 Reset();
 return(Rslt);
 }

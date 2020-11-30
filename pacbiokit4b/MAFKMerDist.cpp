@@ -516,7 +516,7 @@ for(Idx = 1; Idx <= cMaxKMerLenCnts; Idx++)
 for(Idx = 1; Idx <= cMaxKMerLenCnts; Idx++)
 	m_OfsRptBuff+=sprintf(&m_pszRptBuff[m_OfsRptBuff],",\"%d-mer InDel RT Norm 5Kbp\"",Idx);
 
-CUtility::SafeWrite(m_hConsSeqFile, m_pszRptBuff,m_OfsRptBuff);
+CUtility::RetryWrites(m_hConsSeqFile, m_pszRptBuff,m_OfsRptBuff);
 m_OfsRptBuff = 0;
 
 // now open the pszMultiAlignFile
@@ -616,7 +616,7 @@ while(Rslt >= 0);
 
 if(m_OfsRptBuff)
 	{
-	CUtility::SafeWrite(m_hConsSeqFile, m_pszRptBuff,m_OfsRptBuff);
+	CUtility::RetryWrites(m_hConsSeqFile, m_pszRptBuff,m_OfsRptBuff);
 	m_OfsRptBuff = 0;
 	}
 
@@ -718,7 +718,7 @@ for(; m_MAFAlignBuffIdx < m_MAFAlignBuffered; m_MAFAlignBuffIdx += 1,pBuff+=1)
 			Then += 60;
 			if(m_OfsRptBuff > 0)	// once every 60 secs ensuring user can observe output file is growing!
 				{
-				CUtility::SafeWrite(m_hConsSeqFile, m_pszRptBuff,m_OfsRptBuff);
+				CUtility::RetryWrites(m_hConsSeqFile, m_pszRptBuff,m_OfsRptBuff);
 				m_OfsRptBuff = 0;
 				}
 			}
@@ -1192,7 +1192,7 @@ for(Idx = 0; Idx < cMaxKMerLenCnts; Idx++)
 
 if(m_OfsRptBuff + 5000 >= m_AllocRptBuffSize)
 	{
-	CUtility::SafeWrite(m_hConsSeqFile, m_pszRptBuff,m_OfsRptBuff);
+	CUtility::RetryWrites(m_hConsSeqFile, m_pszRptBuff,m_OfsRptBuff);
 	m_OfsRptBuff = 0;
 	}
 

@@ -2410,7 +2410,7 @@ if(pProcParams->hRsltsFile != -1)
 	for(int Idx = 0; Idx < pProcParams->NumDistSegs; Idx++)
 		Len += sprintf(&szLineBuff[Len],",%d,%d,%d,%d",SegCnts[Idx].Matches,SegCnts[Idx].Mismatches,SegCnts[Idx].InDels,SegCnts[Idx].Unaligned);
 	Len += sprintf(&szLineBuff[Len],"\n");
-	CUtility::SafeWrite(pProcParams->hRsltsFile,szLineBuff,Len);
+	CUtility::RetryWrites(pProcParams->hRsltsFile,szLineBuff,Len);
 	}
 return(true);
 }
@@ -2434,7 +2434,7 @@ if(pProcParams->hSummaryFile != -1 && pProcParams->pCntStepCnts != NULL)
 		{
 		bOutputHdrFirst = false;
 		Len = sprintf(szLineBuff,"\"LenRange\",\"Mismatches\",\"TotInstances\",\"IG\",\"US\",\"5'UTR\",\"CDS\",\"INTRON\",\"3'UTR\",\"DS\",\"5'ExSplice\",\"3'ExSplice\"");
-		CUtility::SafeWrite(pProcParams->hSummaryFile,szLineBuff,Len);
+		CUtility::RetryWrites(pProcParams->hSummaryFile,szLineBuff,Len);
 		}
 	pStep = pProcParams->pCntStepCnts;
 	for(Idx = 0; Idx < cLenRanges; Idx++, pStep += pProcParams->Regions)
@@ -2446,7 +2446,7 @@ if(pProcParams->hSummaryFile != -1 && pProcParams->pCntStepCnts != NULL)
 							pRange->pszDescr,Instances);
 		for(Steps = 0; Steps < pProcParams->Regions; Steps++)
 				Len += sprintf(&szLineBuff[Len],",%d",pStep[Steps]);
-		CUtility::SafeWrite(pProcParams->hSummaryFile,szLineBuff,Len);
+		CUtility::RetryWrites(pProcParams->hSummaryFile,szLineBuff,Len);
 		}
 	}
 return(true);

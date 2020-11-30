@@ -829,7 +829,7 @@ for(CurElID = 1; CurElID <= pProcParams->NumRefEls; CurElID++)
 								pszRefChrom,
 								CurStartLoci,CurEndLoci,CurLength,
 								pszRelSpecies);
-				CUtility::SafeWrite(pProcParams->hLociFile,szLineBuff,LineLen);
+				CUtility::RetryWrites(pProcParams->hLociFile,szLineBuff,LineLen);
 				}
 			CurChromID = pCurEl->ChromID;
 			CurStartLoci = pCurEl->StartLoci;
@@ -864,7 +864,7 @@ if(CurLength >= pProcParams->MinLength &&
 								pszRefChrom,
 								CurStartLoci,CurEndLoci,CurLength,
 								pszRelSpecies);
-	CUtility::SafeWrite(pProcParams->hLociFile,szLineBuff,LineLen);
+	CUtility::RetryWrites(pProcParams->hLociFile,szLineBuff,LineLen);
 	}
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Total original elements: %d, combined elements: %d", pProcParams->NumRefEls,NumCombinedEls);
 return(NumCombinedEls);
@@ -987,7 +987,7 @@ for(RefElID = 1; RefElID <= pProcParams->NumRefEls; RefElID++)
 			pszRelSpecies,
 			pRefEl->Features,
 			pRelEl == NULL ? 0 : pRelEl->SrcID);
-		CUtility::SafeWrite(pProcParams->hLociFile,szLineBuff,LineLen);
+		CUtility::RetryWrites(pProcParams->hLociFile,szLineBuff,LineLen);
 		}
 	}
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Total ref elements: %d, matching elements: %d", pProcParams->NumRefEls,NumElsLocated);
@@ -1080,7 +1080,7 @@ for(RefElID = 1; RefElID <= pProcParams->NumRefEls; RefElID++)
 				OverlapLoci,OverlapLoci + OverlapLen - 1,OverlapLen,
 				pszRelSpecies,
 				pRefEl->Features);
-			CUtility::SafeWrite(pProcParams->hLociFile,szLineBuff,LineLen);
+			CUtility::RetryWrites(pProcParams->hLociFile,szLineBuff,LineLen);
 			}
 		}
 	}
@@ -1180,7 +1180,7 @@ Len = sprintf(szLineBuff,"%d,\"%s\",\"%s\",\"%s\",%d,%d,%d,\"%s\",%d\n",
 		pszChrom,StartLoci,EndLoci,EndLoci-StartLoci+1,
 		pszSpeciesList,0);
 
-CUtility::SafeWrite(pProcParams->hLociFile,szLineBuff,Len);
+CUtility::RetryWrites(pProcParams->hLociFile,szLineBuff,Len);
 return(true);
 }
 
@@ -1205,7 +1205,7 @@ if(bOutputHdrFirst)
 	{
 	bOutputHdrFirst = false;
 	Len = sprintf(szLineBuff,"\"LenRange\",\"Mismatches\",\"TotInstances\",\"IG\",\"US\",\"5'UTR\",\"CDS\",\"INTRON\",\"3'UTR\",\"DS\",\"5'ExSplice\",\"3'ExSplice\"");
-	CUtility::SafeWrite(pProcParams->hStatsFile,szLineBuff,Len);
+	CUtility::RetryWrites(pProcParams->hStatsFile,szLineBuff,Len);
 	}
 pStep = pCntStepCnts;
 for(Idx = 0; Idx < cLenRanges; Idx++, pStep += 7)
@@ -1218,7 +1218,7 @@ for(Idx = 0; Idx < cLenRanges; Idx++, pStep += 7)
 	for(Steps = 0; Steps < 7; Steps++)
 			Len += sprintf(&szLineBuff[Len],",%d",pStep[Steps]);
 	Len += sprintf(&szLineBuff[Len],",0,0");
-	CUtility::SafeWrite(pProcParams->hStatsFile,szLineBuff,Len);
+	CUtility::RetryWrites(pProcParams->hStatsFile,szLineBuff,Len);
 	}
 return(true);
 }

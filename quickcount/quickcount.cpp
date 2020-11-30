@@ -1072,7 +1072,7 @@ if(Rslt >= eBSFSuccess)
 	if(pProcParams->ProcMode == eProcModeNMerDistAllSeqs)
 		{
 		Len = sprintf(szTitleLine,"\"Genome\",\"N-Mer\",\"Ref\",\"Oligo\",\"Total\",\"IG\",\"5'US\",\"5'UTR\",\"CDS\",\"INTRON\",\"3'UTR\",\"3'DS\",\"5'ExSplice\",\"3'ExSplice\"\n");
-		CUtility::SafeWrite(pProcParams->hRsltsFile,szTitleLine,Len);
+		CUtility::RetryWrites(pProcParams->hRsltsFile,szTitleLine,Len);
 		Rslt = OutputResults(pProcParams);
 		}
 	else
@@ -1339,7 +1339,7 @@ for(Idx = 0; Idx < pProcParams->MaxNMerLen; Idx++)
 		else
 			pCnt++;
 		Len += sprintf(&szLineBuff[Len],"\n");
-		CUtility::SafeWrite(pProcParams->hRsltsFile,szLineBuff,Len);
+		CUtility::RetryWrites(pProcParams->hRsltsFile,szLineBuff,Len);
 		}
 	}
 return(eBSFSuccess);
@@ -1386,7 +1386,7 @@ for(Idx = 0; Idx < pProcParams->NumNormCnts; Idx++,pCurDensity++)
 			Idx+1,pCurDensity->COV,pCurDensity->SumDensitiesSquared,pCurDensity->SumDensities,StepIdx2Seq(pProcParams->MaxNMerLen,pCurDensity->Instances));
 		if(Len > (sizeof(szLineBuff) * 9) / 10)
 			{
-			CUtility::SafeWrite(pProcParams->hRsltsFile,szLineBuff,Len);
+			CUtility::RetryWrites(pProcParams->hRsltsFile,szLineBuff,Len);
 			Len = 0;
 			}
 		if(++NumReported > MaxLim)
@@ -1404,14 +1404,14 @@ for(Idx = 0; Idx < MaxLim; Idx++,pCurDensity++)
 			pProcParams->NumNormCnts-MaxLim+Idx+1,pCurDensity->COV,pCurDensity->SumDensitiesSquared,pCurDensity->SumDensities,StepIdx2Seq(pProcParams->MaxNMerLen,pCurDensity->Instances));
 		if(Len > (sizeof(szLineBuff) * 9) / 10)
 			{
-			CUtility::SafeWrite(pProcParams->hRsltsFile,szLineBuff,Len);
+			CUtility::RetryWrites(pProcParams->hRsltsFile,szLineBuff,Len);
 			Len = 0;
 			}
 		}
 	}
 
 if(Len)
-	CUtility::SafeWrite(pProcParams->hRsltsFile,szLineBuff,Len);
+	CUtility::RetryWrites(pProcParams->hRsltsFile,szLineBuff,Len);
 	
 return(eBSFSuccess);
 }

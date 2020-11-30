@@ -649,7 +649,7 @@ for(ElID = 1; ElID <= m_NumEls; ElID++)
 
 	if(m_hRsltFile != -1 && ((BuffIdx + 200) > sizeof(szLineBuff)))
 		{
-		CUtility::SafeWrite(m_hRsltFile,szLineBuff,BuffIdx);
+		CUtility::RetryWrites(m_hRsltFile,szLineBuff,BuffIdx);
 		BuffIdx = 0;
 		}
 	}
@@ -658,7 +658,7 @@ printf("\b\b\b\b\b\b\b\b%8.8d",ElID-1);
 if(m_hRsltFile != -1)
 	{
 	if(BuffIdx > 0)
-		CUtility::SafeWrite(m_hRsltFile,szLineBuff,BuffIdx);
+		CUtility::RetryWrites(m_hRsltFile,szLineBuff,BuffIdx);
 	close(m_hRsltFile);
 	m_hRsltFile = -1;
 	}
@@ -961,12 +961,12 @@ if(m_hRsltFile != -1 && m_pFeatCntDists != NULL)
 		BuffIdx += sprintf(&szLineBuff[BuffIdx],",%1.2f,%d",pCurFeatCntDist->RPKM,pCurFeatCntDist->NumExonReads);
 		if((BuffIdx + 200) > sizeof(szLineBuff))
 			{
-			CUtility::SafeWrite(m_hRsltFile,szLineBuff,BuffIdx);
+			CUtility::RetryWrites(m_hRsltFile,szLineBuff,BuffIdx);
 			BuffIdx = 0;
 			}
 		}
 	if(BuffIdx)
-		CUtility::SafeWrite(m_hRsltFile,szLineBuff,BuffIdx);
+		CUtility::RetryWrites(m_hRsltFile,szLineBuff,BuffIdx);
 	close(m_hRsltFile);
 	m_hRsltFile = -1;
 	}
@@ -1243,7 +1243,7 @@ while(pDist != NULL)
 	pDist = pDist->pNext;
 	if(BuffOfs + 250 > sizeof(szBuffer))
 		{
-		CUtility::SafeWrite(m_hRsltsFile,szBuffer,BuffOfs);
+		CUtility::RetryWrites(m_hRsltsFile,szBuffer,BuffOfs);
 		BuffOfs = 0;
 		}
 	}
@@ -1259,13 +1259,13 @@ for(CntIdx = 0; CntIdx <= MaxLength; CntIdx++)
 		pDist = pDist->pNext;
 		if(BuffOfs + 250 > sizeof(szBuffer))
 			{
-			CUtility::SafeWrite(m_hRsltsFile,szBuffer,BuffOfs);
+			CUtility::RetryWrites(m_hRsltsFile,szBuffer,BuffOfs);
 			BuffOfs = 0;
 			}
 		}
 	}
 if(BuffOfs > 0)
-	CUtility::SafeWrite(m_hRsltsFile,szBuffer,BuffOfs);
+	CUtility::RetryWrites(m_hRsltsFile,szBuffer,BuffOfs);
 return(0);
 }
 

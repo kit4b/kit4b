@@ -559,7 +559,7 @@ while(Rslt >= eBSFSuccess && (CurFeatureID = pBedFile->GetNextFeatureID(CurFeatu
 	m_OutBuffIdx += sprintf(&m_pszOutBuff[m_OutBuffIdx],"\n");
 	if((m_OutBuffIdx + 10000) > m_AllocOutBuff)
 		{
-		CUtility::SafeWrite(m_hOutFile,m_pszOutBuff,m_OutBuffIdx);
+		CUtility::RetryWrites(m_hOutFile,m_pszOutBuff,m_OutBuffIdx);
 		m_OutBuffIdx = 0;
 		}
 	NumEls++;
@@ -567,7 +567,7 @@ while(Rslt >= eBSFSuccess && (CurFeatureID = pBedFile->GetNextFeatureID(CurFeatu
 delete pBedFile;
 if(m_OutBuffIdx)
 	{
-	CUtility::SafeWrite(m_hOutFile,m_pszOutBuff,m_OutBuffIdx);
+	CUtility::RetryWrites(m_hOutFile,m_pszOutBuff,m_OutBuffIdx);
 	m_OutBuffIdx = 0;
 	}
 #ifdef _WIN32

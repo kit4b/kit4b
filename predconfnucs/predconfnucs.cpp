@@ -1239,7 +1239,7 @@ if(FMode == eFMbedGraphDyads || FMode == eFMbedGraphNucs)
 	m_UsedOutBuff = sprintf(m_pszOutBuff,
 	 "track type=bedGraph name=\"%s\" description=\"%s\" visibility=full color=200,100,0 altColor=0,100,200 priority=20 autoScale=on alwaysZero=on graphType=bar smoothingWindow=4\n",
 		pszTrackName,pszTrackName);
-	CUtility::SafeWrite(m_hOutFile,m_pszOutBuff,m_UsedOutBuff);
+	CUtility::RetryWrites(m_hOutFile,m_pszOutBuff,m_UsedOutBuff);
 	m_UsedOutBuff = 0;
 	}
 

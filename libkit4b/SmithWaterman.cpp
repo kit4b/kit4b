@@ -1109,7 +1109,7 @@ for(BuffIdx = TargIdx = 0; TargIdx < m_TargLen; TargIdx++)
 	BuffIdx += sprintf(&pszBuff[BuffIdx],",\" \",\"%c\"", CSeqTrans::MapBase2Ascii(m_pTarg[TargIdx]));
 	if(BuffIdx + 1000 > EstDumpLen)
 		{
-		CUtility::SafeWrite(hDumpFile,pszBuff,BuffIdx);
+		CUtility::RetryWrites(hDumpFile,pszBuff,BuffIdx);
 		BuffIdx = 0;
 		}
 	}
@@ -1137,13 +1137,13 @@ for(ProbeIdx = 0; ProbeIdx < m_ProbeLen; ProbeIdx++)
 			}
 		if(BuffIdx + 1000 > EstDumpLen)
 			{
-			CUtility::SafeWrite(hDumpFile,pszBuff,BuffIdx);
+			CUtility::RetryWrites(hDumpFile,pszBuff,BuffIdx);
 			BuffIdx = 0;
 			}
 		}
 	}
 if(BuffIdx)
-	CUtility::SafeWrite(hDumpFile,pszBuff,BuffIdx);
+	CUtility::RetryWrites(hDumpFile,pszBuff,BuffIdx);
 #ifdef _WIN32
 _commit(hDumpFile);
 #else

@@ -654,7 +654,7 @@ if((Rslt = LoadHammings(pszHammFile)) < eBSFSuccess)
 gDiagnostics.DiagOutMsgOnly(eDLInfo,"Loading Hamming edit distances completed");
 
 BuffIdx = sprintf(szLineBuff,"track type=wiggle_0 name=\"Hamming\" description=\"Hamming Edit Distances\"\n");
-CUtility::SafeWrite(m_hRsltsFile,szLineBuff,BuffIdx);
+CUtility::RetryWrites(m_hRsltsFile,szLineBuff,BuffIdx);
 BuffIdx = 0;
 
 int ChromIdx;
@@ -664,7 +664,7 @@ for(ChromIdx = 0; ChromIdx < m_pHamHdr->NumChroms; ChromIdx++)
 	m_pCurHamChrom = (tsHamChrom *)((UINT8 *)m_pHamHdr + m_pHamHdr->ChromOfs[ChromIdx]);
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Processing chromosome: '%s'",m_pCurHamChrom->szChrom);
 	BuffIdx += sprintf(&szLineBuff[BuffIdx],"fixedStep chrom=%s start=%d step=1\n",m_pCurHamChrom->szChrom,1);
-	CUtility::SafeWrite(m_hRsltsFile,szLineBuff,BuffIdx);
+	CUtility::RetryWrites(m_hRsltsFile,szLineBuff,BuffIdx);
 	BuffIdx = 0;
 	for(SeqIdx = 0; SeqIdx < (int)m_pCurHamChrom->NumEls; SeqIdx++)
 		{
@@ -675,13 +675,13 @@ for(ChromIdx = 0; ChromIdx < m_pHamHdr->NumChroms; ChromIdx++)
 		BuffIdx += sprintf(&szLineBuff[BuffIdx],"%d\n",HammingDist);
 		if(BuffIdx + 100 > sizeof(szLineBuff))
 			{
-			CUtility::SafeWrite(m_hRsltsFile,szLineBuff,BuffIdx);
+			CUtility::RetryWrites(m_hRsltsFile,szLineBuff,BuffIdx);
 			BuffIdx = 0;
 			}
 		}
 	}
 if(BuffIdx)
-	CUtility::SafeWrite(m_hRsltsFile,szLineBuff,BuffIdx);
+	CUtility::RetryWrites(m_hRsltsFile,szLineBuff,BuffIdx);
 return(eBSFSuccess);
 }
 
@@ -812,7 +812,7 @@ if((Rslt = InitMNaseSitePrefs(pszInFile)) < 0)
 	}
 
 BuffIdx = sprintf(szLineBuff,"track type=wiggle_0 name=\"MNase Prefsites\" description=\"MNase Cut Site Preferences\"\n");
-CUtility::SafeWrite(m_hRsltsFile,szLineBuff,BuffIdx);
+CUtility::RetryWrites(m_hRsltsFile,szLineBuff,BuffIdx);
 BuffIdx = 0;
 
 while((Rslt = LoadNxtChrom()) > 0)
@@ -832,7 +832,7 @@ while((Rslt = LoadNxtChrom()) > 0)
 		if(bStartSect)
 			{
 			BuffIdx += sprintf(&szLineBuff[BuffIdx],"fixedStep chrom=%s start=%d step=1\n",m_szCurChrom,SeqIdx+1);
-			CUtility::SafeWrite(m_hRsltsFile,szLineBuff,BuffIdx);
+			CUtility::RetryWrites(m_hRsltsFile,szLineBuff,BuffIdx);
 			BuffIdx = 0;
 			bStartSect = false;
 			}
@@ -841,7 +841,7 @@ while((Rslt = LoadNxtChrom()) > 0)
 		BuffIdx += sprintf(&szLineBuff[BuffIdx],"%1.4f\n",MNaseScore);
 		if(BuffIdx + 100 > sizeof(szLineBuff))
 			{
-			CUtility::SafeWrite(m_hRsltsFile,szLineBuff,BuffIdx);
+			CUtility::RetryWrites(m_hRsltsFile,szLineBuff,BuffIdx);
 			BuffIdx = 0;
 			}
 		if(Limit > 0 && SeqIdx > Limit)
@@ -849,7 +849,7 @@ while((Rslt = LoadNxtChrom()) > 0)
 		}
 	}
 if(BuffIdx)
-	CUtility::SafeWrite(m_hRsltsFile,szLineBuff,BuffIdx);
+	CUtility::RetryWrites(m_hRsltsFile,szLineBuff,BuffIdx);
 return(eBSFSuccess);
 }
 
@@ -1014,7 +1014,7 @@ bool bStartRegion;
 int EmptyRegionLen;
 
 BuffIdx = sprintf(szLineBuff,"track type=wiggle_0 color=50,150,255 autoScale=off maxHeightPixels=128:32:8 name=\"Reads - %s\" description=\"Reads distribution for %s\"\n",pszSrcFile,pszSrcFile);
-CUtility::SafeWrite(m_hRsltsFile,szLineBuff,BuffIdx);
+CUtility::RetryWrites(m_hRsltsFile,szLineBuff,BuffIdx);
 BuffIdx = 0;
 pChrom = &m_ChromCnts[0];
 for(ChromIdx = 0 ; ChromIdx < m_NumChromsCov; ChromIdx++,pChrom++)
@@ -1043,21 +1043,21 @@ for(ChromIdx = 0 ; ChromIdx < m_NumChromsCov; ChromIdx++,pChrom++)
 		if(bStartRegion)
 			{
 			BuffIdx += sprintf(&szLineBuff[BuffIdx],"fixedStep chrom=%s start=%d step=1\n",pChrom->szChrom,SeqIdx+1);
-			CUtility::SafeWrite(m_hRsltsFile,szLineBuff,BuffIdx);
+			CUtility::RetryWrites(m_hRsltsFile,szLineBuff,BuffIdx);
 			BuffIdx = 0;
 			bStartRegion = false;
 			}
 		BuffIdx += sprintf(&szLineBuff[BuffIdx],"%d\n",*pCnts);
 		if(BuffIdx + 100 > sizeof(szLineBuff))
 			{
-			CUtility::SafeWrite(m_hRsltsFile,szLineBuff,BuffIdx);
+			CUtility::RetryWrites(m_hRsltsFile,szLineBuff,BuffIdx);
 			BuffIdx = 0;
 			}
 
 		}
 	}
 if(BuffIdx)
-	CUtility::SafeWrite(m_hRsltsFile,szLineBuff,BuffIdx);
+	CUtility::RetryWrites(m_hRsltsFile,szLineBuff,BuffIdx);
 return(eBSFSuccess);
 }
 
@@ -1381,7 +1381,7 @@ if((Rslt = initConformation(pszInFile)) < 0)
 	}
 pszConf = Conf2Txt(ConfParam);
 BuffIdx = sprintf(szLineBuff,"track type=wiggle_0 name=\"Conformation - %s\" description=\"DNA Conformation for %s\"\n",pszConf,pszConf);
-CUtility::SafeWrite(m_hRsltsFile,szLineBuff,BuffIdx);
+CUtility::RetryWrites(m_hRsltsFile,szLineBuff,BuffIdx);
 BuffIdx = 0;
 
 while((Rslt = LoadNxtChrom()) > 0)
@@ -1430,14 +1430,14 @@ while((Rslt = LoadNxtChrom()) > 0)
 		if(bStartSect)
 			{
 			BuffIdx += sprintf(&szLineBuff[BuffIdx],"fixedStep chrom=%s start=%d step=1\n",m_szCurChrom,ConfIdx+1);
-			CUtility::SafeWrite(m_hRsltsFile,szLineBuff,BuffIdx);
+			CUtility::RetryWrites(m_hRsltsFile,szLineBuff,BuffIdx);
 			BuffIdx = 0;
 			bStartSect = false;
 			}
 		BuffIdx += sprintf(&szLineBuff[BuffIdx],"%1.3f\n",ConfValue);
 		if(BuffIdx + 100 > sizeof(szLineBuff))
 			{
-			CUtility::SafeWrite(m_hRsltsFile,szLineBuff,BuffIdx);
+			CUtility::RetryWrites(m_hRsltsFile,szLineBuff,BuffIdx);
 			BuffIdx = 0;
 			}
 		if(Limit > 0 && ConfIdx > Limit)
@@ -1445,7 +1445,7 @@ while((Rslt = LoadNxtChrom()) > 0)
 		}
 	}
 if(BuffIdx)
-	CUtility::SafeWrite(m_hRsltsFile,szLineBuff,BuffIdx);
+	CUtility::RetryWrites(m_hRsltsFile,szLineBuff,BuffIdx);
 return(eBSFSuccess);
 }
 

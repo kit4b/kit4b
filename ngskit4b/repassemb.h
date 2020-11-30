@@ -26,7 +26,7 @@ typedef struct TAG_sSNPSSite
 	uint32_t ChromID;		// SNP is on the chromosome
 	uint32_t Loci;			// at this loci
 	etSeqBase RefBase;		// reference assembly base
-	etSeqBase AlleleBase;	// allignment has this major allelic base called
+	etSeqBase AlleleBase;	// alignment has this major allelic base called
 } tsSNPSite;
 
 typedef struct TAG_sChromSites

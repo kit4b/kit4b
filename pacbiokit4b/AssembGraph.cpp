@@ -2101,7 +2101,7 @@ BuffIdx += sprintf(&szBuffer[BuffIdx],"\t\t<attributes class=\"edge\">\n");
 BuffIdx += sprintf(&szBuffer[BuffIdx],"\t\t\t<attribute id=\"weight\" title=\"weight\" type=\"float\"></attribute>\n");
 BuffIdx += sprintf(&szBuffer[BuffIdx],"\t\t</attributes>\n");
 BuffIdx += sprintf(&szBuffer[BuffIdx],"\t\t<nodes>\n");
-CUtility::SafeWrite(hOutFile,szBuffer,BuffIdx);
+CUtility::RetryWrites(hOutFile,szBuffer,BuffIdx);
 BuffIdx = 0;
 // generate list of nodes
 
@@ -2131,7 +2131,7 @@ for(CurCompID = 1; CurCompID <= m_NumComponents; CurCompID++,pComponent++)
 	
 		if(BuffIdx + 500 > sizeof(szBuffer))
 			{
-			CUtility::SafeWrite(hOutFile,szBuffer,BuffIdx);
+			CUtility::RetryWrites(hOutFile,szBuffer,BuffIdx);
 			BuffIdx = 0;
 			}
 		}
@@ -2165,7 +2165,7 @@ for(CurCompID = 1; CurCompID <= m_NumComponents; CurCompID++,pComponent++)
 
 			if(BuffIdx + 500 > sizeof(szBuffer))
 				{
-				CUtility::SafeWrite(hOutFile,szBuffer,BuffIdx);
+				CUtility::RetryWrites(hOutFile,szBuffer,BuffIdx);
 				BuffIdx = 0;
 				}
 			}
@@ -2177,7 +2177,7 @@ BuffIdx += sprintf(&szBuffer[BuffIdx],"\t\t</edges>\n");
 BuffIdx += sprintf(&szBuffer[BuffIdx],"\t</graph>\n");
 BuffIdx += sprintf(&szBuffer[BuffIdx],"</gexf>\n");
 
-CUtility::SafeWrite(hOutFile,szBuffer,BuffIdx);
+CUtility::RetryWrites(hOutFile,szBuffer,BuffIdx);
 
 #ifdef _WIN32
 _commit(hOutFile);
@@ -2238,7 +2238,7 @@ BuffIdx += sprintf(&szBuffer[BuffIdx],"\t<key id=\"n4\" for=\"node\" attr.name=\
 BuffIdx += sprintf(&szBuffer[BuffIdx],"\t<key id=\"e1\" for=\"edge\" attr.name=\"weight\" attr.type=\"double\"/>\n");
 BuffIdx += sprintf(&szBuffer[BuffIdx],"\t<graph id=\"ECreads\" edgedefault=\"directed\">\n");
 
-CUtility::SafeWrite(hOutFile,szBuffer,BuffIdx);
+CUtility::RetryWrites(hOutFile,szBuffer,BuffIdx);
 BuffIdx = 0;
 // generate list of nodes
 pComponent = m_pComponents;
@@ -2265,7 +2265,7 @@ for(CurCompID = 1; CurCompID <= m_NumComponents; CurCompID++,pComponent++)
 	
 		if(BuffIdx + 500 > sizeof(szBuffer))
 			{
-			CUtility::SafeWrite(hOutFile,szBuffer,BuffIdx);
+			CUtility::RetryWrites(hOutFile,szBuffer,BuffIdx);
 			BuffIdx = 0;
 			}
 		}
@@ -2294,7 +2294,7 @@ for(CurCompID = 1; CurCompID <= m_NumComponents; CurCompID++,pComponent++)
 
 			if(BuffIdx + 500 > sizeof(szBuffer))
 				{
-				CUtility::SafeWrite(hOutFile,szBuffer,BuffIdx);
+				CUtility::RetryWrites(hOutFile,szBuffer,BuffIdx);
 				BuffIdx = 0;
 				}
 			}
@@ -2305,7 +2305,7 @@ for(CurCompID = 1; CurCompID <= m_NumComponents; CurCompID++,pComponent++)
 BuffIdx += sprintf(&szBuffer[BuffIdx],"\t</graph>\n");
 BuffIdx += sprintf(&szBuffer[BuffIdx],"</graphml>\n");
 
-CUtility::SafeWrite(hOutFile,szBuffer,BuffIdx);
+CUtility::RetryWrites(hOutFile,szBuffer,BuffIdx);
 
 #ifdef _WIN32
 _commit(hOutFile);
@@ -2726,7 +2726,7 @@ for(ComponentIdx = 0; ComponentIdx < m_NumComponents; ComponentIdx+=1,pCurCompon
 		}
 	while(BaseIdx < ContigLen);
 
-	CUtility::SafeWrite(hOutFile,pszFastaBuff,ChrIdx);
+	CUtility::RetryWrites(hOutFile,pszFastaBuff,ChrIdx);
 	}
 
 #ifdef _WIN32

@@ -610,7 +610,7 @@ if(bAppend)
 if((!bAppend || FileLen == 0) && pszTrackName != NULL && pszTrackName[0] != '\0' && pszDescr != NULL && pszDescr[0] != '\0')
 	{
 	LineLen = sprintf(szLineBuff,"\ntrack name=%s description=\"%s\" useScore=0\n",pszTrackName,pszDescr);
-	CUtility::SafeWrite(hFile,szLineBuff,LineLen);
+	CUtility::RetryWrites(hFile,szLineBuff,LineLen);
 	LineLen = 0;
 	}
 	
@@ -675,13 +675,13 @@ while((Rslt=pCSV->NextLine()) > 0)	// onto next line containing fields
 		pszAliasChrom,StartLoci,StartLoci+Len,pszAliasChrom,SrcID,Len < 1000 ? Len : 1000,Strand);
 	if(LineLen > (cLineBuffSize-200))
 		{
-		CUtility::SafeWrite(hFile,szLineBuff,LineLen);
+		CUtility::RetryWrites(hFile,szLineBuff,LineLen);
 		LineLen = 0;
 		}
 	NumElsAccepted += 1;
 	}
 if(LineLen)
-	CUtility::SafeWrite(hFile,szLineBuff,LineLen);
+	CUtility::RetryWrites(hFile,szLineBuff,LineLen);
 close(hFile);
 delete pCSV;
 if(pFilterRefIDs != NULL)
@@ -809,13 +809,13 @@ while((Rslt=pCSV->NextLine()) > 0)	// onto next line containing fields
 		pszChrom,StartLoci,StartLoci+Len,SrcID,Len < 1000 ? Len : 1000,pszStrand);
 	if(LineLen > (cLineBuffSize-200))
 		{
-		CUtility::SafeWrite(hFile,szLineBuff,LineLen);
+		CUtility::RetryWrites(hFile,szLineBuff,LineLen);
 		LineLen = 0;
 		}
 	NumElsAccepted += 1;
 	}
 if(LineLen)
-	CUtility::SafeWrite(hFile,szLineBuff,LineLen);
+	CUtility::RetryWrites(hFile,szLineBuff,LineLen);
 close(hFile);
 delete pCSV;
 if(pFilterRefIDs != NULL)
@@ -973,13 +973,13 @@ while((Rslt=pCSV->NextLine()) > 0)	// onto next line containing fields
 		pszChrom,StartLoci,StartLoci+Len,SrcID,Identity*10);
 	if(LineLen > (cLineBuffSize-200))
 		{
-		CUtility::SafeWrite(hFile,szLineBuff,LineLen);
+		CUtility::RetryWrites(hFile,szLineBuff,LineLen);
 		LineLen = 0;
 		}
 	NumElsAccepted += 1;
 	}
 if(LineLen)
-	CUtility::SafeWrite(hFile,szLineBuff,LineLen);
+	CUtility::RetryWrites(hFile,szLineBuff,LineLen);
 close(hFile);
 delete pCSV;
 if(pFilterRefIDs != NULL)
@@ -1106,13 +1106,13 @@ while((Rslt=pCSV->NextLine()) > 0)	// onto next line containing fields
 		pszChrom,StartLoci,StartLoci+Len,SrcID,Len < 1000 ? Len : 1000);
 	if(LineLen > (cLineBuffSize-200))
 		{
-		CUtility::SafeWrite(hFile,szLineBuff,LineLen);
+		CUtility::RetryWrites(hFile,szLineBuff,LineLen);
 		LineLen = 0;
 		}
 	NumElsAccepted += 1;
 	}
 if(LineLen)
-	CUtility::SafeWrite(hFile,szLineBuff,LineLen);
+	CUtility::RetryWrites(hFile,szLineBuff,LineLen);
 close(hFile);
 delete pCSV;
 if(pFilterRefIDs != NULL)
@@ -1449,7 +1449,7 @@ for(Idx=0; Idx < gCurNumRefIDInstances; Idx++, pCurRefIDInstance++)
 						gpChroms[pStartRefIDInstance->ChromID-1].szChromName,pStartRefIDInstance->StartLoci,pStartRefIDInstance->EndLoci,pStartRefIDInstance->SrcID,InstCnt,pStartRefIDInstance->Strand);
 				if(LineLen > (cLineBuffSize-200))
 					{
-					CUtility::SafeWrite(hFile,szLineBuff,LineLen);
+					CUtility::RetryWrites(hFile,szLineBuff,LineLen);
 					LineLen = 0;
 					}
 				pStartRefIDInstance+=1;
@@ -1471,7 +1471,7 @@ if(InstCnt >= MinInstances && InstCnt <= MaxInstances)
 					gpChroms[pStartRefIDInstance->ChromID-1].szChromName,pStartRefIDInstance->StartLoci,pStartRefIDInstance->EndLoci,SrcID,InstCnt,pStartRefIDInstance->Strand);
 		if(LineLen > (cLineBuffSize-200))
 			{
-			CUtility::SafeWrite(hFile,szLineBuff,LineLen);
+			CUtility::RetryWrites(hFile,szLineBuff,LineLen);
 			LineLen = 0;
 			}
 		NumAccepted += 1;
@@ -1481,7 +1481,7 @@ if(InstCnt >= MinInstances && InstCnt <= MaxInstances)
 else
 	NumFiltInstances += InstCnt;
 if(LineLen)
-	CUtility::SafeWrite(hFile,szLineBuff,LineLen);
+	CUtility::RetryWrites(hFile,szLineBuff,LineLen);
 close(hFile);
 if(Rslt >= 0)
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"%s: Read: %d, Accepted: %d, FiltRefIDs: %d, FiltLen: %d, FiltInstances: %d",
@@ -1656,7 +1656,7 @@ for(Idx=0; Idx < gCurNumRefIDInstances; Idx++, pCurRefIDInstance++)
 						gpChroms[pStartRefIDInstance->ChromID-1].szChromName,pStartRefIDInstance->StartLoci,pStartRefIDInstance->EndLoci,pStartRefIDInstance->SrcID,InstCnt,pStartRefIDInstance->Strand);
 				if(LineLen > (cLineBuffSize-200))
 					{
-					CUtility::SafeWrite(hFile,szLineBuff,LineLen);
+					CUtility::RetryWrites(hFile,szLineBuff,LineLen);
 					LineLen = 0;
 					}
 				pStartRefIDInstance+=1;
@@ -1678,7 +1678,7 @@ if(InstCnt >= MinInstances && InstCnt <= MaxInstances)
 					gpChroms[pStartRefIDInstance->ChromID-1].szChromName,pStartRefIDInstance->StartLoci,pStartRefIDInstance->EndLoci,SrcID,InstCnt,pStartRefIDInstance->Strand);
 		if(LineLen > (cLineBuffSize-200))
 			{
-			CUtility::SafeWrite(hFile,szLineBuff,LineLen);
+			CUtility::RetryWrites(hFile,szLineBuff,LineLen);
 			LineLen = 0;
 			}
 		NumAccepted += 1;
@@ -1688,7 +1688,7 @@ if(InstCnt >= MinInstances && InstCnt <= MaxInstances)
 else
 	NumFiltInstances += InstCnt;
 if(LineLen)
-	CUtility::SafeWrite(hFile,szLineBuff,LineLen);
+	CUtility::RetryWrites(hFile,szLineBuff,LineLen);
 close(hFile);
 if(Rslt >= 0)
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"%s: Read: %d, Accepted: %d, FiltRefIDs: %d, FiltLen: %d, FiltInstances: %d",

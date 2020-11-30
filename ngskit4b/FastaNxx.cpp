@@ -920,13 +920,13 @@ if(Mode == ePMdefault)
 			WrtOfs += sprintf(&szWrtBuff[WrtOfs],"%d,%d\n",CtgLenIdx * BinDelta,*pCnts);
 			if(WrtOfs + 50 > sizeof(szWrtBuff))
 				{
-				CUtility::SafeWrite(hRslts,szWrtBuff,WrtOfs);
+				CUtility::RetryWrites(hRslts,szWrtBuff,WrtOfs);
 				WrtOfs = 0;
 				}
 			}
 		if(WrtOfs > 0)
 			{
-			CUtility::SafeWrite(hRslts,szWrtBuff,WrtOfs);
+			CUtility::RetryWrites(hRslts,szWrtBuff,WrtOfs);
 			WrtOfs = 0;
 			}
 #ifdef _WIN32
@@ -1007,7 +1007,7 @@ for(SeqIdx = 1; SeqIdx <= m_MaxLengthRead; SeqIdx++)
 	WrtOfs += sprintf(&szWrtBuff[WrtOfs],",%d",SeqIdx);
 	if(WrtOfs + 100 >= sizeof(szWrtBuff))
 		{
-		CUtility::SafeWrite(hRslts,szWrtBuff,WrtOfs);
+		CUtility::RetryWrites(hRslts,szWrtBuff,WrtOfs);
 		WrtOfs = 0;
 		}
 	}
@@ -1016,7 +1016,7 @@ for(ReadIdx = 0; ReadIdx < 5; ReadIdx++)
 	WrtOfs += sprintf(&szWrtBuff[WrtOfs],"\n%c",CSeqTrans::MapBase2Ascii(ReadIdx));
 	if(WrtOfs + 100 >= sizeof(szWrtBuff))
 		{
-		CUtility::SafeWrite(hRslts,szWrtBuff,WrtOfs);
+		CUtility::RetryWrites(hRslts,szWrtBuff,WrtOfs);
 		WrtOfs = 0;
 		}
 	for(SeqIdx = 0; SeqIdx < m_MaxLengthRead; SeqIdx++)
@@ -1024,13 +1024,13 @@ for(ReadIdx = 0; ReadIdx < 5; ReadIdx++)
 		WrtOfs += sprintf(&szWrtBuff[WrtOfs],",%d",m_DistBaseCnts[ReadIdx][SeqIdx]);
 		if(WrtOfs + 100 >= sizeof(szWrtBuff))
 			{
-			CUtility::SafeWrite(hRslts,szWrtBuff,WrtOfs);
+			CUtility::RetryWrites(hRslts,szWrtBuff,WrtOfs);
 			WrtOfs = 0;
 			}
 		}
 	}
 WrtOfs += sprintf(&szWrtBuff[WrtOfs],"\n\n");
-CUtility::SafeWrite(hRslts,szWrtBuff,WrtOfs);
+CUtility::RetryWrites(hRslts,szWrtBuff,WrtOfs);
 WrtOfs = 0;
 
 // repeat monomer distribution but this time as proportions
@@ -1039,7 +1039,7 @@ for(SeqIdx = 1; SeqIdx <= m_MaxLengthRead; SeqIdx++)
 	WrtOfs += sprintf(&szWrtBuff[WrtOfs],",%d",SeqIdx);
 	if(WrtOfs + 100 >= sizeof(szWrtBuff))
 		{
-		CUtility::SafeWrite(hRslts,szWrtBuff,WrtOfs);
+		CUtility::RetryWrites(hRslts,szWrtBuff,WrtOfs);
 		WrtOfs = 0;
 		}
 	}
@@ -1048,7 +1048,7 @@ for(ReadIdx = 0; ReadIdx < 4; ReadIdx++)
 	WrtOfs += sprintf(&szWrtBuff[WrtOfs],"\n%c",CSeqTrans::MapBase2Ascii(ReadIdx));
 	if(WrtOfs + 100 >= sizeof(szWrtBuff))
 		{
-		CUtility::SafeWrite(hRslts,szWrtBuff,WrtOfs);
+		CUtility::RetryWrites(hRslts,szWrtBuff,WrtOfs);
 		WrtOfs = 0;
 		}
 	for(SeqIdx = 0; SeqIdx < m_MaxLengthRead; SeqIdx++)
@@ -1062,13 +1062,13 @@ for(ReadIdx = 0; ReadIdx < 4; ReadIdx++)
 			WrtOfs += sprintf(&szWrtBuff[WrtOfs],"0.0000");
 		if(WrtOfs + 100 >= sizeof(szWrtBuff))
 			{
-			CUtility::SafeWrite(hRslts,szWrtBuff,WrtOfs);
+			CUtility::RetryWrites(hRslts,szWrtBuff,WrtOfs);
 			WrtOfs = 0;
 			}
 		}
 	}
 WrtOfs += sprintf(&szWrtBuff[WrtOfs],"\n\n");
-CUtility::SafeWrite(hRslts,szWrtBuff,WrtOfs);
+CUtility::RetryWrites(hRslts,szWrtBuff,WrtOfs);
 WrtOfs = 0;
 
 
@@ -1079,7 +1079,7 @@ for(SeqIdx = 1; SeqIdx <= m_MaxLengthRead-1; SeqIdx++)
 	WrtOfs += sprintf(&szWrtBuff[WrtOfs],",%d",SeqIdx);
 	if(WrtOfs + 100 >= sizeof(szWrtBuff))
 		{
-		CUtility::SafeWrite(hRslts,szWrtBuff,WrtOfs);
+		CUtility::RetryWrites(hRslts,szWrtBuff,WrtOfs);
 		WrtOfs = 0;
 		}
 	}
@@ -1095,13 +1095,13 @@ for(Base1Idx = 0; Base1Idx < 25; Base1Idx++)
 		WrtOfs += sprintf(&szWrtBuff[WrtOfs],",%d",m_pDimerCnts[CntIdx + SeqIdx]);
 		if(WrtOfs + 100 >= sizeof(szWrtBuff))
 			{
-			CUtility::SafeWrite(hRslts,szWrtBuff,WrtOfs);
+			CUtility::RetryWrites(hRslts,szWrtBuff,WrtOfs);
 			WrtOfs = 0;
 			}
 		}
 	}
 WrtOfs += sprintf(&szWrtBuff[WrtOfs],"\n\n");
-CUtility::SafeWrite(hRslts,szWrtBuff,WrtOfs);
+CUtility::RetryWrites(hRslts,szWrtBuff,WrtOfs);
 WrtOfs = 0;
 
 // trimer distributions
@@ -1111,7 +1111,7 @@ for(SeqIdx = 1; SeqIdx <= m_MaxLengthRead-2; SeqIdx++)
 	WrtOfs += sprintf(&szWrtBuff[WrtOfs],",%d",SeqIdx);
 	if(WrtOfs + 100 >= sizeof(szWrtBuff))
 		{
-		CUtility::SafeWrite(hRslts,szWrtBuff,WrtOfs);
+		CUtility::RetryWrites(hRslts,szWrtBuff,WrtOfs);
 		WrtOfs = 0;
 		}
 	}
@@ -1125,7 +1125,7 @@ for(Base1Idx = 0; Base1Idx < (5*5*5); Base1Idx++)
 	CntIdx = Base1Idx * cMaxFastQSeqLen;
 	if(WrtOfs + 100 >= sizeof(szWrtBuff))
 		{
-		CUtility::SafeWrite(hRslts,szWrtBuff,WrtOfs);
+		CUtility::RetryWrites(hRslts,szWrtBuff,WrtOfs);
 		WrtOfs = 0;
 		}
 	for(SeqIdx = 0; SeqIdx < m_MaxLengthRead-2; SeqIdx++)
@@ -1133,13 +1133,13 @@ for(Base1Idx = 0; Base1Idx < (5*5*5); Base1Idx++)
 		WrtOfs += sprintf(&szWrtBuff[WrtOfs],",%d",m_pTrimerCnts[CntIdx+SeqIdx]);
 		if(WrtOfs + 100 >= sizeof(szWrtBuff))
 			{
-			CUtility::SafeWrite(hRslts,szWrtBuff,WrtOfs);
+			CUtility::RetryWrites(hRslts,szWrtBuff,WrtOfs);
 			WrtOfs = 0;
 			}
 		}
 	}
 WrtOfs += sprintf(&szWrtBuff[WrtOfs],"\n\n");
-CUtility::SafeWrite(hRslts,szWrtBuff,WrtOfs);
+CUtility::RetryWrites(hRslts,szWrtBuff,WrtOfs);
 WrtOfs = 0;
 
 // tetramer distributions
@@ -1149,7 +1149,7 @@ for(SeqIdx = 1; SeqIdx <= m_MaxLengthRead-3; SeqIdx++)
 	WrtOfs += sprintf(&szWrtBuff[WrtOfs],",%d",SeqIdx);
 	if(WrtOfs + 100 >= sizeof(szWrtBuff))
 		{
-		CUtility::SafeWrite(hRslts,szWrtBuff,WrtOfs);
+		CUtility::RetryWrites(hRslts,szWrtBuff,WrtOfs);
 		WrtOfs = 0;
 		}
 	}
@@ -1165,7 +1165,7 @@ for(Base1Idx = 0; Base1Idx < (5*5*5*5); Base1Idx++)
 
 	if(WrtOfs + 100 >= sizeof(szWrtBuff))
 		{
-		CUtility::SafeWrite(hRslts,szWrtBuff,WrtOfs);
+		CUtility::RetryWrites(hRslts,szWrtBuff,WrtOfs);
 		WrtOfs = 0;
 		}
 	for(SeqIdx = 0; SeqIdx < m_MaxLengthRead-3; SeqIdx++)
@@ -1173,13 +1173,13 @@ for(Base1Idx = 0; Base1Idx < (5*5*5*5); Base1Idx++)
 		WrtOfs += sprintf(&szWrtBuff[WrtOfs],",%d",m_pTetramerCnts[CntIdx+SeqIdx]);
 		if(WrtOfs + 100 >= sizeof(szWrtBuff))
 			{
-			CUtility::SafeWrite(hRslts,szWrtBuff,WrtOfs);
+			CUtility::RetryWrites(hRslts,szWrtBuff,WrtOfs);
 			WrtOfs = 0;
 			}
 		}
 	}
 WrtOfs += sprintf(&szWrtBuff[WrtOfs],"\n");
-CUtility::SafeWrite(hRslts,szWrtBuff,WrtOfs);
+CUtility::RetryWrites(hRslts,szWrtBuff,WrtOfs);
 #ifdef _WIN32
 _commit(hRslts);
 #else

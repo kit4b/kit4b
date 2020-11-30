@@ -1574,7 +1574,7 @@ if(FMode == eFMbedGraphDyads)
 	BuffIdx = sprintf(szBuff,
 	 "track type=bedGraph name=\"%s\" description=\"%s\" visibility=full color=200,100,0 altColor=0,100,200 priority=20 autoScale=on alwaysZero=on graphType=bar smoothingWindow=4\n",
 		pszTrackName,pszTrackName);
-	CUtility::SafeWrite(hFile,szBuff,BuffIdx);
+	CUtility::RetryWrites(hFile,szBuff,BuffIdx);
 	}
 
 if((pDyadScores = new int [cDyadsInitialAlloc])==NULL)
@@ -1797,12 +1797,12 @@ if(FMode == eFMMNaseScore)
 		BuffIdx += sprintf(&szLineBuff[BuffIdx],"%1.3f,%d\n",(double)Idx/1000.0f,m_MNaseScoreHist[Idx]);
 		if((BuffIdx + 100) > sizeof(szLineBuff))
 			{
-			CUtility::SafeWrite(hFile,szLineBuff,BuffIdx);
+			CUtility::RetryWrites(hFile,szLineBuff,BuffIdx);
 			BuffIdx = 0;
 			}
 		}
 	if(BuffIdx)
-		CUtility::SafeWrite(hFile,szLineBuff,BuffIdx);
+		CUtility::RetryWrites(hFile,szLineBuff,BuffIdx);
 	}
 if(hFile != -1)
 	{

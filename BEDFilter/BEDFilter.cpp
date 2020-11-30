@@ -629,7 +629,7 @@ while(Rslt == eBSFSuccess && (CurFeatureID = m_pBedFile->GetNextFeatureID(CurFea
 
 	if((m_BuffIdx + 0x07fff) > m_AllocBuffSize)
 		{
-		CUtility::SafeWrite(m_hOutFile,m_pszOutBuff,m_BuffIdx);
+		CUtility::RetryWrites(m_hOutFile,m_pszOutBuff,m_BuffIdx);
 		m_BuffIdx = 0;
 		}
 	Rslt = (teBSFrsltCodes)m_pBedFile->GetBEDFormatedFeature(CurFeatureID,m_AllocBuffSize - m_BuffIdx,&m_pszOutBuff[m_BuffIdx]);
@@ -645,7 +645,7 @@ while(Rslt == eBSFSuccess && (CurFeatureID = m_pBedFile->GetNextFeatureID(CurFea
 	Rslt = eBSFSuccess;
 	}
 if(m_BuffIdx > 0)
-	CUtility::SafeWrite(m_hOutFile,m_pszOutBuff,m_BuffIdx);
+	CUtility::RetryWrites(m_hOutFile,m_pszOutBuff,m_BuffIdx);
 close(m_hOutFile);
 m_hOutFile = -1;
 

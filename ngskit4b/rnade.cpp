@@ -286,7 +286,7 @@ teBSFrsltCodes Process(etDEPMode PMode,					// processing mode
 					int NumThreads,						// number of threads (0 defaults to number of CPUs)
 					int  CoWinLen,						// counts coalescing window length
 					int ArtifactCntsThres,				// if counts at any loci are >= this threshold then process for PCR artifact reduction
-				    UINT32 LimitAligned,				// for test/evaluation can limit number of reads parsed to be no more than this number (0 for no limit)
+					UINT32 LimitAligned,				// for test/evaluation can limit number of reads parsed to be no more than this number (0 for no limit)
 					bool bFiltNonaligned,				// true if only features having at least one read aligned are to be be reported
 					char AlignStrand,					// process for reads aligning to this strand only
 					char FeatStrand,					// process for genes or features on this strand only
@@ -369,7 +369,7 @@ PearsonsPValue(tsThreadInstData *pThreadInst,	// thread instance
 
 teBSFrsltCodes
 GenBinAlignStarts(tsThreadInstData *pThreadInst,	// thread instance
-			      UINT32 RegionOfs,			// StartLoci is at this region offset
+				  UINT32 RegionOfs,			// StartLoci is at this region offset
 				  char *pszChrom,			// alignments are on this chrom
 				  UINT32 StartLoci,			// must start on or after this loci
 				  UINT32 EndLoci);			// must start on or before this loci
@@ -509,23 +509,23 @@ if(argerrors >= 0)
 
 /* special case: '--help' takes precedence over error reporting */
 if (help->count > 0)
-        {
+		{
 		printf("\n%s %s %s, Version %s\nOptions ---\n", gszProcName,gpszSubProcess->pszName,gpszSubProcess->pszFullDescr,kit4bversion);
-        arg_print_syntax(stdout,argtable,"\n");
-        arg_print_glossary(stdout,argtable,"  %-25s %s\n");
+		arg_print_syntax(stdout,argtable,"\n");
+		arg_print_glossary(stdout,argtable,"  %-25s %s\n");
 		printf("\nNote: Parameters can be entered into a parameter file, one parameter per line.");
 		printf("\n      To invoke this parameter file then precede its name with '@'");
 		printf("\n      e.g. %s %s @myparams.txt\n",gszProcName,gpszSubProcess->pszName);
 		printf("\nPlease report any issues regarding usage of %s to https://github.com/kit4b/kit4b/issues\n\n",gszProcName);
 		return(1);
-        }
+		}
 
-    /* special case: '--version' takes precedence error reporting */
+	/* special case: '--version' takes precedence error reporting */
 if (version->count > 0)
-        {
+		{
 		printf("\n%s %s Version %s\n",gszProcName,gpszSubProcess->pszName,kit4bversion);
 		return(1);
-        }
+		}
 
 if (!argerrors)
 	{
@@ -966,7 +966,7 @@ if (!argerrors)
 	}
 else
 	{
-    printf("\n%s %s %s, Version %s\n", gszProcName,gpszSubProcess->pszName,gpszSubProcess->pszFullDescr,kit4bversion);
+	printf("\n%s %s %s, Version %s\n", gszProcName,gpszSubProcess->pszName,gpszSubProcess->pszFullDescr,kit4bversion);
 	arg_print_errors(stdout,end,gszProcName);
 	arg_print_syntax(stdout,argtable,"\nUse '-h' to view option and parameter usage\n");
 	exit(1);
@@ -1871,7 +1871,7 @@ for(ThreadInst = 1; ThreadInst <= (UINT32)m_NumDEThreads; ThreadInst++,pThreadIn
 	pThreadInst->pSimpleRNG->Reset();
 	pThreadInst->pStats = new CStats();
 	pThreadInst->pStats->Init();
-    pThreadInst->MaxFeats2Proc = m_FeatsPerThread;
+	pThreadInst->MaxFeats2Proc = m_FeatsPerThread;
 	pThreadInst->pPearsons = pPearsons;
 	pThreadInst->pAlignBins = pAlignBins;
 	pThreadInst->pPoissonAlignBins = pPoissonAlignBins;
@@ -2480,7 +2480,7 @@ if(m_hOutStatsFile != -1)
 	{
 	if(m_WrtStatsBuffOfs > 0)
 		{
-		CUtility::SafeWrite(m_hOutStatsFile,m_pWrtStatsBuff,m_WrtStatsBuffOfs);
+		CUtility::RetryWrites(m_hOutStatsFile,m_pWrtStatsBuff,m_WrtStatsBuffOfs);
 		m_WrtStatsBuffOfs = 0;
 		}
 #ifdef _WIN32
@@ -2496,7 +2496,7 @@ if(m_hOutBinFile != -1)
 	{
 	if(m_WrtBinBuffOfs > 0)
 		{
-		CUtility::SafeWrite(m_hOutBinFile,m_pWrtBinBuff,m_WrtBinBuffOfs);
+		CUtility::RetryWrites(m_hOutBinFile,m_pWrtBinBuff,m_WrtBinBuffOfs);
 		m_WrtBinBuffOfs = 0;
 		}
 #ifdef _WIN32
@@ -2894,7 +2894,7 @@ return(eBSFSuccess);
 // A user specified sliding window of WinLen is used and reads within the window are coalesced
 int
 CoalesceReadAlignments(int WinLen,		// coalescing window length 1..20
-                       bool bSamesense,	 // if true then only coalesce reads with same sense
+					   bool bSamesense,	 // if true then only coalesce reads with same sense
 					   bool bExperiment) // if true then coalesce experiment read loci otherwise control read loci
 {
 size_t memreq;
@@ -3110,7 +3110,7 @@ for(Idx = 0; Idx < CurNumAlignReadsLoci; Idx++,pCurLoci++)
 	if(Diff >= 0.5)
 		{
 		pCurLoci->NormCnts += 1;
-	    Diff -= 1.0;
+		Diff -= 1.0;
 		}
 	pCurLoci->ArtCnts = pCurLoci->NormCnts;
 	TotNormCnts += pCurLoci->NormCnts;
@@ -3327,7 +3327,7 @@ while((LineLen = pBAMfile->GetNxtSAMline(szLine)) > 0)
 		TLen = (int)strlen(szReadSeq);
 
 	if((Rslt = AddReadHit(FileID,		// parsed from this file
-		    bIsExperiment,			// true if this is an experimental read
+			bIsExperiment,			// true if this is an experimental read
 			szChrom,				// hit to this chrom
 			Flags & 0x010 ? '-' : '+',					// on this strand
 			StartLoci,				// starts at this loci
@@ -3411,15 +3411,15 @@ while(Rslt == eBSFSuccess && (CurFeatureID = pBEDFile->GetNextFeatureID(CurFeatu
 				szChrom,				// where to return chromosome name
 				&StartLoci,				// where to return feature start on chromosome (0..n)
 				&EndLoci,				// where to return feature end on chromosome
- 				&Score,					// where to return score
- 				&Strand);				// where to return strand
+				&Score,					// where to return score
+				&Strand);				// where to return strand
 
 
 	if(FiltStrand != '*' && Strand != FiltStrand)
 		continue;
 
 	if((Rslt = AddReadHit(FileID,		// parsed from this file
-		    bIsExperiment,			// true if this is an experimental read
+			bIsExperiment,			// true if this is an experimental read
 			szChrom,				// hit to this chrom
 			Strand,					// on this strand
 			StartLoci,				// starts at this loci
@@ -3530,7 +3530,7 @@ while((Rslt=(teBSFrsltCodes)pCSVAligns->NextLine()) > 0)	// onto next line conta
 		continue;
 
 	if((Rslt = AddReadHit(FileID,		// parsed from this file
-		    bIsExperiment,				// true if this is an experimental read
+			bIsExperiment,				// true if this is an experimental read
 			pszChromName,				// hit to this chrom
 			*pszStrand,					// on this strand
 			Loci,						// starts at this loci
@@ -3969,7 +3969,7 @@ return(0);	// unable to locate any alignment instances
 
 teBSFrsltCodes
 GenBinStarts(tsThreadInstData *pThreadInst,	// thread instance
-			      UINT32 RegionOfs,			// StartLoci is at this rlative offset within the current region
+				  UINT32 RegionOfs,			// StartLoci is at this rlative offset within the current region
 				  UINT32 ChromID,			// alignments are on this chrom
 				  UINT32 StartLoci,			// must start on or after this loci
 				  UINT32 EndLoci,			// must start on or before this loci
@@ -4515,7 +4515,7 @@ for(Idx = 0; Idx < m_NumFeatsDEd; Idx++,pFeatDE++)
 		continue;
 	if((m_WrtBinBuffOfs + 10000) > m_AllocBinWrtBuff)
 		{
-		CUtility::SafeWrite(m_hOutBinFile,m_pWrtBinBuff,m_WrtBinBuffOfs);
+		CUtility::RetryWrites(m_hOutBinFile,m_pWrtBinBuff,m_WrtBinBuffOfs);
 		m_WrtBinBuffOfs = 0;
 		}
 	if(pFeatDE->SumCtrlExprCnts < 1)
@@ -4571,7 +4571,7 @@ for(Idx = 0; Idx < m_NumFeatsDEd; Idx++,pFeatDE++)
 
 if(m_WrtBinBuffOfs > 0)
 	{
-	CUtility::SafeWrite(m_hOutBinFile,m_pWrtBinBuff,m_WrtBinBuffOfs);
+	CUtility::RetryWrites(m_hOutBinFile,m_pWrtBinBuff,m_WrtBinBuffOfs);
 	m_WrtBinBuffOfs = 0;
 	}
 
@@ -4604,7 +4604,7 @@ if(m_NumFeatsDEd > 0)
 			continue;
 		if((m_WrtStatsBuffOfs + 10000) > m_AllocStatsWrtBuff)
 			{
-			CUtility::SafeWrite(m_hOutStatsFile,m_pWrtStatsBuff,m_WrtStatsBuffOfs);
+			CUtility::RetryWrites(m_hOutStatsFile,m_pWrtStatsBuff,m_WrtStatsBuffOfs);
 			m_WrtStatsBuffOfs = 0;
 			}
 
@@ -4616,7 +4616,7 @@ if(m_NumFeatsDEd > 0)
 
 		if((m_WrtStatsBuffOfs + 1000) > m_AllocStatsWrtBuff)
 			{
-			CUtility::SafeWrite(m_hOutStatsFile,m_pWrtStatsBuff,m_WrtStatsBuffOfs);
+			CUtility::RetryWrites(m_hOutStatsFile,m_pWrtStatsBuff,m_WrtStatsBuffOfs);
 			m_WrtStatsBuffOfs = 0;
 			}
 
@@ -4637,7 +4637,7 @@ if(m_NumFeatsDEd > 0)
 
 if(m_WrtStatsBuffOfs)
 	{
-	CUtility::SafeWrite(m_hOutStatsFile,m_pWrtStatsBuff,m_WrtStatsBuffOfs);
+	CUtility::RetryWrites(m_hOutStatsFile,m_pWrtStatsBuff,m_WrtStatsBuffOfs);
 	m_WrtStatsBuffOfs = 0;
 	}
 
@@ -4744,7 +4744,7 @@ if((pFeatDE->CtrlCnts >= m_MinFeatCntThres || pFeatDE->ExprCnts >= m_MinFeatCntT
 			}
 		}
 
-    // characterise the FoldMedian (0.0 to n.0) into 1 of 4 classes
+	// characterise the FoldMedian (0.0 to n.0) into 1 of 4 classes
 	double AbsFoldMedian;
 	AbsFoldMedian = ClampFoldChange(pFeatDE->FoldMedian);
 	if(pFeatDE->FoldMedian >= 0.1)
@@ -4910,7 +4910,7 @@ static char sccsfid[] = "@(#) z.c 5.1 (|stat) 12/26/85";
 double	critz (double	p);
 
 
-/*FUNCTION poz: probability of normal z value */
+ /*FUNCTION poz: probability of normal z value */
 /*ALGORITHM
 	Adapted from a polynomial approximation in:
 		Ibbetson D, Algorithm 209
@@ -4956,7 +4956,7 @@ poz (double	z)        /*VAR normal z value */
 	return (z > 0.0 ? ((x + 1.0) * 0.5) : ((1.0 - x) * 0.5));
 	}
 
-/*FUNCTION critz: compute critical z value to produce given probability */
+ /*FUNCTION critz: compute critical z value to produce given probability */
 /*ALGORITHM
 	Begin with upper and lower limits for z values (maxz and minz)
 	set to extremes.  Choose a z value (zval) between the extremes.

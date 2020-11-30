@@ -2552,7 +2552,7 @@ if(bOutputHdrFirst)
 		Len = sprintf(szLineBuff,"\"LenRange\",\"Mismatches\",\"TotInstances\"");
 	else
 		Len = sprintf(szLineBuff,"\"LenRange\",\"Mismatches\",\"TotInstances\",\"IG\",\"US\",\"5'UTR\",\"CDS\",\"INTRON\",\"3'UTR\",\"DS\",\"5'ExSplice\",\"3'ExSplice\"");
-	CUtility::SafeWrite(pProcParams->hRsltsFile,szLineBuff,Len);
+	CUtility::RetryWrites(pProcParams->hRsltsFile,szLineBuff,Len);
 	}
 pStep = pProcParams->pCntStepCnts;
 for(Idx = 0; Idx < m_NumLenRangeBins; Idx++, pStep += pProcParams->Regions)
@@ -2572,7 +2572,7 @@ for(Idx = 0; Idx < m_NumLenRangeBins; Idx++, pStep += pProcParams->Regions)
 			Len += sprintf(&szLineBuff[Len],",%d",pStep[Steps]);
 	if(Idx == m_NumLenRangeBins-1)
 		Len += sprintf(&szLineBuff[Len],"\n");
-	CUtility::SafeWrite(pProcParams->hRsltsFile,szLineBuff,Len);
+	CUtility::RetryWrites(pProcParams->hRsltsFile,szLineBuff,Len);
 	}
 return(true);
 }
@@ -2662,7 +2662,7 @@ if(bOutputHdrFirst)
 	Len = sprintf(szLineBuff,"\"Class\",\"TotInstances\"");
 	if(pProcParams->Regions == 9)
 		Len += sprintf(&szLineBuff[Len],",\"IG\",\"US\",\"5'UTR\",\"CDS\",\"INTRON\",\"3'UTR\",\"DS\",\"5'ExSplice\",\"3'ExSplice\"");
-	CUtility::SafeWrite(pProcParams->hRsltsFile,szLineBuff,Len);
+	CUtility::RetryWrites(pProcParams->hRsltsFile,szLineBuff,Len);
 	}
 
 pStep = pProcParams->pCntStepCnts;
@@ -2692,7 +2692,7 @@ for(Idx = 0; Idx < 4; Idx++,pStep += pProcParams->Regions)
 		for(Steps = 0; Steps < pProcParams->Regions; Steps++)
 			Len += sprintf(&szLineBuff[Len],",%d",pStep[Steps]);
 		}
-	CUtility::SafeWrite(pProcParams->hRsltsFile,szLineBuff,Len);
+	CUtility::RetryWrites(pProcParams->hRsltsFile,szLineBuff,Len);
 	}
 
 pStep = pProcParams->pCntStepCnts;
@@ -2738,7 +2738,7 @@ for(Idx = 0; Idx < 2; Idx++)
 #endif
 			}
 		}
-	CUtility::SafeWrite(pProcParams->hRsltsFile,szLineBuff,Len);
+	CUtility::RetryWrites(pProcParams->hRsltsFile,szLineBuff,Len);
 	}
 return(true);
 }

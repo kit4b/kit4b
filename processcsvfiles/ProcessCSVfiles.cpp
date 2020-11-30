@@ -643,7 +643,7 @@ for(SpeciesIdx = 0; SpeciesIdx < pParams->CurFileIdx; SpeciesIdx++)
 	Len += sprintf(&szLineBuff[Len],",\"%s\"",szFname);
 	}
 Len += sprintf(&szLineBuff[Len],"\n");
-CUtility::SafeWrite(pParams->hRsltsFile,szLineBuff,Len);
+CUtility::RetryWrites(pParams->hRsltsFile,szLineBuff,Len);
 
 pCurRslt = pParams->pRsltItems;
 for(RsltIdx = 0; RsltIdx < pParams->NumRsltItems; RsltIdx++,pCurRslt++)
@@ -683,7 +683,7 @@ for(RsltIdx = 0; RsltIdx < pParams->NumRsltItems; RsltIdx++,pCurRslt++)
 		Len += sprintf(&szLineBuff[Len],",%2.3f",Identity);
 		}
 	Len += sprintf(&szLineBuff[Len],"\n");
-	CUtility::SafeWrite(pParams->hRsltsFile,szLineBuff,Len);
+	CUtility::RetryWrites(pParams->hRsltsFile,szLineBuff,Len);
 	}
 
 if(pParams->hRsltsFile != -1)

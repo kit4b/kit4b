@@ -771,7 +771,7 @@ for(SrcEntryID = 1; SrcEntryID <= m_NumSfxEntries; SrcEntryID++, pSrcEntryCnts++
 			RsltsIdx += sprintf(&szRslts[RsltsIdx],"\"%s\",%d,\"%s\",%d,%1.6f\n",szSrcEntryName,*pSrcEntryCnts,szTargEntryName,*pTargEntryCnts,Zigosity);
 			if((RsltsIdx + 200) > sizeof(szRslts))
 				{
-				CUtility::SafeWrite(m_hRsltsFile,szRslts,RsltsIdx);
+				CUtility::RetryWrites(m_hRsltsFile,szRslts,RsltsIdx);
 				RsltsIdx = 0;
 				}
 			}
@@ -780,7 +780,7 @@ for(SrcEntryID = 1; SrcEntryID <= m_NumSfxEntries; SrcEntryID++, pSrcEntryCnts++
 			m_szLineBuffIdx += sprintf(&m_pszLineBuff[m_szLineBuffIdx],"\"%s\",%d,\"%s\",%d\n",szSrcEntryName,*pSrcEntryCnts,szTargEntryName,*pTargEntryCnts);
 			if((m_szLineBuffIdx + 200) > cAllocLineBuffSize)
 				{
-				CUtility::SafeWrite(m_hRawRsltsFile,m_pszLineBuff,m_szLineBuffIdx);
+				CUtility::RetryWrites(m_hRawRsltsFile,m_pszLineBuff,m_szLineBuffIdx);
 				m_szLineBuffIdx = 0;
 				}
 			}
@@ -788,13 +788,13 @@ for(SrcEntryID = 1; SrcEntryID <= m_NumSfxEntries; SrcEntryID++, pSrcEntryCnts++
 	}
 if(RsltsIdx > 0)
 	{
-	CUtility::SafeWrite(m_hRsltsFile,szRslts,RsltsIdx);
+	CUtility::RetryWrites(m_hRsltsFile,szRslts,RsltsIdx);
 	RsltsIdx = 0;
 	}
 
 if(m_hRawRsltsFile != -1 && m_szLineBuffIdx > 0)
 	{
-	CUtility::SafeWrite(m_hRawRsltsFile,m_pszLineBuff,m_szLineBuffIdx);
+	CUtility::RetryWrites(m_hRawRsltsFile,m_pszLineBuff,m_szLineBuffIdx);
 	m_szLineBuffIdx = 0;
 	}
 

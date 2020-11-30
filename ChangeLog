@@ -57,7 +57,8 @@ Release 1.3.0 - New processing module 'seghaplotypes' which takes SAM/BAM alignm
 Release 1.3.2 - 'hammings' now has functionality to generate founder specific hammings from a pan-genomic suffix array
 Release 1.3.3 - 'sarscov2ml' mutation linkage reporting now implemented
 Release 1.3.4 - Fastq parsing now accepts - with a log warning - records containing empty sequence and quality lines by simulating single sequence base and quality. Subsequent processing will treat these as underlength without interrupting processing of complete fastq records.
-Release 1.3.5 - SQLite updated to latest current release being version 3.33.0, 'csv2sqlite' removed as a separate process - was already integrated as a subprocess into 'ngskit4b' 
+Release 1.3.5 - SQLite updated to latest current release being version 3.33.0, 'csv2sqlite' removed as a separate process - was already integrated as a subprocess into 'ngskit4b'
+Release 1.3.6 - SafeWrite refactored as RetryWrite with extended errno processing - incomplete write issues encountered when processing on Amazon EC2. Max number marker species/cultivars/isolates increased to 20,000.  
  
  
 

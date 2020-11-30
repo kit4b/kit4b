@@ -2368,7 +2368,7 @@ if(bOutputHdrFirst)
 	Len = sprintf(szLineBuff,"\"Area\",\"Offset\",\"SeqID\",\"centroid\",\"centroid3\",\"Seq\",\"TotInstances\"");
 	if(pProcParams->Regions > 1)
 		Len += sprintf(&szLineBuff[Len],",\"IGInstances\",\"US5Instances\",\"UTR5Instances\",\"CDSInstances\",\"IntronInstances\",\"UTR3Instances\",\"DS3Instances\"");
-	CUtility::SafeWrite(pProcParams->hRsltsFile,szLineBuff,Len);
+	CUtility::RetryWrites(pProcParams->hRsltsFile,szLineBuff,Len);
 	}
 
 pStep = pProcParams->pCntStepCnts;
@@ -2390,13 +2390,13 @@ for(Idx = 0; Idx < pProcParams->NumCnts; Idx++, pStep += pProcParams->Regions)
 		{
 		for(Steps = 0; Steps < pProcParams->Regions; Steps++)
 			Len += sprintf(&szLineBuff[Len],",0");
-		CUtility::SafeWrite(pProcParams->hRsltsFile,szLineBuff,Len);
+		CUtility::RetryWrites(pProcParams->hRsltsFile,szLineBuff,Len);
 		continue;
 		}
 	// for each region generate raw stats
 	for(Steps = 0; Steps < pProcParams->Regions; Steps++)
 		Len += sprintf(&szLineBuff[Len],",%d",pStep[MapStep2Region(Steps)]);
-	CUtility::SafeWrite(pProcParams->hRsltsFile,szLineBuff,Len);
+	CUtility::RetryWrites(pProcParams->hRsltsFile,szLineBuff,Len);
 	}
 memset(pProcParams->pCntStepCnts,0,pProcParams->NumCnts * pProcParams->Regions * sizeof(int));
 pProcParams->bCountsAvail = false;
@@ -2433,7 +2433,7 @@ if(bOutputHdrFirst)
 		Len += sprintf(&szLineBuff[Len],"\"UTR3BaseA\",\"UTR3BaseC\",\"UTR3BaseG\",\"UTR3BaseT\",");
 		Len += sprintf(&szLineBuff[Len],"\"DS3BaseA\",\"DS3BaseC\",\"DS3BaseG\",\"DS3BaseT\"");
 		}
-	CUtility::SafeWrite(pProcParams->hRsltsFile,szLineBuff,Len);
+	CUtility::RetryWrites(pProcParams->hRsltsFile,szLineBuff,Len);
 	}
 
 pStep = pProcParams->pCntStepCnts;
@@ -2456,7 +2456,7 @@ for(Idx = 0; Idx < pProcParams->NumCnts; Idx++, pStep += cRegionLen * pProcParam
 		{
 		for(Steps = 0; Steps < pProcParams->Regions; Steps++)
 			Len += sprintf(&szLineBuff[Len],",0,0,0,0");
-		CUtility::SafeWrite(pProcParams->hRsltsFile,szLineBuff,Len);
+		CUtility::RetryWrites(pProcParams->hRsltsFile,szLineBuff,Len);
 		continue;
 		}
 
@@ -2467,7 +2467,7 @@ for(Idx = 0; Idx < pProcParams->NumCnts; Idx++, pStep += cRegionLen * pProcParam
 		pCnt = &pStep[RegionIdx*cRegionLen];
 		Len += sprintf(&szLineBuff[Len],",%d,%d,%d,%d",	pCnt[0],pCnt[1],pCnt[2],pCnt[3]);
 		}
-	CUtility::SafeWrite(pProcParams->hRsltsFile,szLineBuff,Len);
+	CUtility::RetryWrites(pProcParams->hRsltsFile,szLineBuff,Len);
 	}
 memset(pProcParams->pCntStepCnts,0,pProcParams->NumCnts * cRegionLen * pProcParams->Regions * sizeof(int));
 pProcParams->bCountsAvail = false;

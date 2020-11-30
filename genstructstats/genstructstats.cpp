@@ -185,7 +185,7 @@ if((hRsltsFile = open(pszOutFile, O_RDWR | O_CREAT | O_TRUNC, S_IREAD | S_IWRITE
 
 
 Len=sprintf(szLine,"\"ID\",\"Octamer\",\"energy\",\"minor groove\",\"inferenced major groove\",\"twist\",\"roll\",\"tilt\",\"rise\",\"slide\",\"shift\",\"rmsd\",\"ORChID hydroxyl radical cleavage\"\n");
-CUtility::SafeWrite(hRsltsFile,szLine,Len);
+CUtility::RetryWrites(hRsltsFile,szLine,Len);
 
 
 for(Idx = 0; Idx < cNumParamOctamers; Idx++)
@@ -203,7 +203,7 @@ for(Idx = 0; Idx < cNumParamOctamers; Idx++)
 	for(Param = 0; Param < eSSNumStatParams; Param++)
 		Len+=sprintf(&szLine[Len],",%d",ParamValues[Param]);
 	Len += sprintf(&szLine[Len],"\n");
-	CUtility::SafeWrite(hRsltsFile,szLine,Len);
+	CUtility::RetryWrites(hRsltsFile,szLine,Len);
 	}
 close(hRsltsFile);
 return(0);

@@ -52,14 +52,14 @@ typedef enum TAG_eRPMode {
 int GSMProcess(etRPMode PMode,				// report processing mode
 			int MinCovBases,				// accept SNPs with at least this number covering bases
 			double MaxPValue,				// accept SNPs with at most this P-value
-		    double SNPMmajorPC,				// only accept for processing if more/equal than this percentage number of reads are major SNP at putative SNP loci (defaults to 50.0) 
+			double SNPMmajorPC,				// only accept for processing if more/equal than this percentage number of reads are major SNP at putative SNP loci (defaults to 50.0) 
 			int MinSpeciesTotCntThres,		// individual species must have at least this number of total bases at SNP loci to count as SNP - 0 if no threshold
 			int MinSpeciesWithCnts,			// only report markers where at least this number of species has SNP at the SNP loci
 			int AltSpeciesMaxCnt,			// only report markers if no other species has more than this number of counts at the putative SNP loci, 0 if no limit
 			char *pszRefGenome,				// reference genome assembly against which other species were aligned
 			int NumRelGenomes,				// number of relative genome names
 			char *pszRelGenomes[],			// relative genome names
-    		int NumSNPFiles,				// number of input SNP files
+			int NumSNPFiles,				// number of input SNP files
 			char *pszSNPFiles[],			// names of input files,
 			int NumAlignFiles,				// number of input alignment files
 			char *pszAlignFiles[],			// names of alignment files
@@ -131,7 +131,7 @@ struct arg_int *altspeciesmaxcnt = arg_int0("a","altspeciesmaxcnt","<int>",	"Onl
 struct arg_str *refgenome=arg_str1("r", "refgenome","<str>",	 "alignments and SNPs of relative genomes were against this reference genome assembly (default 'RefGenome')");
 struct arg_str *relgenomes = arg_strn("R","relgenomes","<relgenomes>",1,cMaxMarkerSpecies,"alignments and SNPs from these species or cultivars");
 struct arg_file *snpfiles = arg_filen("i","insnps","<file>",1,cMaxMarkerSpecies,"Load SNPs from file(s)");
-struct arg_file *alignfiles = arg_filen("I","inaligns","<file>",1,cMaxMarkerSpecies,"Load alignments from file(s)");
+struct arg_file *alignfiles = arg_filen("I","inaligns","<file>",0,cMaxMarkerSpecies,"Load alignments from file(s)");
 
 struct arg_file *markerfile = arg_file1("o","out","<file>",		"Output marker SNP loci to this file");
 struct arg_file *summrslts = arg_file0("q","sumrslts","<file>",		"Output results summary to this SQLite3 database file");
@@ -151,23 +151,23 @@ if(argerrors >= 0)
 
 /* special case: '--help' takes precedence over error reporting */
 if (help->count > 0)
-        {
+		{
 		printf("\n%s %s %s, Version %s\nOptions ---\n", gszProcName,gpszSubProcess->pszName,gpszSubProcess->pszFullDescr,kit4bversion);
-        arg_print_syntax(stdout,argtable,"\n");
-        arg_print_glossary(stdout,argtable,"  %-25s %s\n");
+		arg_print_syntax(stdout,argtable,"\n");
+		arg_print_glossary(stdout,argtable,"  %-25s %s\n");
 		printf("\nNote: Parameters can be entered into a parameter file, one parameter per line.");
 		printf("\n      To invoke this parameter file then precede its name with '@'");
 		printf("\n      e.g. %s %s @myparams.txt\n",gszProcName,gpszSubProcess->pszName);
 		printf("\nPlease report any issues regarding usage of %s at https://github.com/kit4b/issues\n\n",gszProcName);
 		return(1);
-        }
+		}
 
-    /* special case: '--version' takes precedence error reporting */
+	/* special case: '--version' takes precedence error reporting */
 if (version->count > 0)
-        {
+		{
 		printf("\n%s %s Version %s\n",gszProcName,gpszSubProcess->pszName,kit4bversion);
 		return(1);
-        }
+		}
 
 if (!argerrors)
 	{
@@ -376,35 +376,38 @@ if (!argerrors)
 		exit(1);
 		}
 
+	NumAlignFiles = 0;
+	pszAlignFiles[0] = NULL;
 	if(!alignfiles->count)
+		gDiagnostics.DiagOut(eDLWarn,gszProcName,"Warning: Can't impute as no input alignment file(s) specified with with '-I<filespec>' option)");
+	else
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: No input alignment file(s) specified with with '-I<filespec>' option)");
-		exit(1);
-		}
+		for(NumAlignFiles=Idx=0;NumAlignFiles < cMaxMarkerSpecies && Idx < alignfiles->count; Idx++)
+			{
+			pszAlignFiles[Idx] = NULL;
+			if(pszAlignFiles[NumAlignFiles] == NULL)
+				pszAlignFiles[NumAlignFiles] = new char [_MAX_PATH];
+			strncpy(pszAlignFiles[NumAlignFiles],alignfiles->filename[Idx],_MAX_PATH);
+			pszAlignFiles[NumAlignFiles][_MAX_PATH-1] = '\0';
+			CUtility::TrimQuotedWhitespcExtd(pszAlignFiles[NumAlignFiles]);
+			if(pszAlignFiles[NumAlignFiles][0] != '\0')
+				NumAlignFiles++;
+			}
 
-	for(NumAlignFiles=Idx=0;NumAlignFiles < cMaxMarkerSpecies && Idx < alignfiles->count; Idx++)
-		{
-		pszAlignFiles[Idx] = NULL;
-		if(pszAlignFiles[NumAlignFiles] == NULL)
-			pszAlignFiles[NumAlignFiles] = new char [_MAX_PATH];
-		strncpy(pszAlignFiles[NumAlignFiles],alignfiles->filename[Idx],_MAX_PATH);
-		pszAlignFiles[NumAlignFiles][_MAX_PATH-1] = '\0';
-		CUtility::TrimQuotedWhitespcExtd(pszAlignFiles[NumAlignFiles]);
-		if(pszAlignFiles[NumAlignFiles][0] != '\0')
-			NumAlignFiles++;
-		}
-
-	if(!NumAlignFiles)
-		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: After removal of whitespace, no input alignment file(s) specified with '-I<filespec>' option");
-		exit(1);
-		}
-
-	// number of alignment files must be same as the number of SNP files and genome names!
-	if(NumAlignFiles != NumSNPFiles && NumAlignFiles != NumRelGenomes)
-		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Expected same number of genome names, alignment files and SNP files, %d genome names, %d alignment files, %d SNP files",NumRelGenomes,NumAlignFiles,NumSNPFiles);
-		exit(1);
+		if(!NumAlignFiles)
+			{
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: After removal of whitespace, no input alignment file(s) specified with '-I<filespec>' option");
+			exit(1);
+			}
+		else
+			{
+			// number of alignment files must be same as the number of SNP files and genome names!
+			if(NumAlignFiles != NumSNPFiles && NumAlignFiles != NumRelGenomes)
+				{
+				gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Expected same number of genome names, alignment files and SNP files, %d genome names, %d alignment files, %d SNP files",NumRelGenomes,NumAlignFiles,NumSNPFiles);
+				exit(1);
+				}
+			}
 		}
 	
 	MinSpeciesTotCntThres = mintotcntthres->count ? mintotcntthres->ival[0] : 0;
@@ -415,9 +418,9 @@ if (!argerrors)
 		}
 
 	MinSpeciesWithCnts = mincovspecies->count ? mincovspecies->ival[0] : 1;
-	if(MinSpeciesWithCnts < 1 || MinSpeciesWithCnts > NumAlignFiles)
+	if(MinSpeciesWithCnts < 1 || MinSpeciesWithCnts > NumRelGenomes)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Minimum species to call marker '-Z%d' must be in range 1..%d",NumAlignFiles);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Minimum species to call marker '-Z%d' must be in range 1..%d",NumRelGenomes);
 		exit(1);
 		}
 
@@ -456,8 +459,11 @@ if (!argerrors)
 	for(Idx=0; Idx < NumSNPFiles; Idx++)
 		gDiagnostics.DiagOutMsgOnly(eDLInfo,"Input SNP file (%d) : '%s'",Idx+1,pszSNPFiles[Idx]);
 
-	for(Idx=0; Idx < NumAlignFiles; Idx++)
-		gDiagnostics.DiagOutMsgOnly(eDLInfo,"Input alignment file (%d) : '%s'",Idx+1,pszAlignFiles[Idx]);
+	if(NumAlignFiles)
+		{
+		for(Idx=0; Idx < NumAlignFiles; Idx++)
+			gDiagnostics.DiagOutMsgOnly(eDLInfo,"Input alignment file (%d) : '%s'",Idx+1,pszAlignFiles[Idx]);
+		}
 
 	gDiagnostics.DiagOutMsgOnly(eDLInfo,"Output markers to file : '%s'",szMarkerFile);
 
@@ -520,7 +526,7 @@ if (!argerrors)
 	}
 else
 	{
-    printf("\n%s %s %s, Version %s\n", gszProcName,gpszSubProcess->pszName,gpszSubProcess->pszFullDescr,kit4bversion);
+	printf("\n%s %s %s, Version %s\n", gszProcName,gpszSubProcess->pszName,gpszSubProcess->pszFullDescr,kit4bversion);
 	arg_print_errors(stdout,end,gszProcName);
 	arg_print_syntax(stdout,argtable,"\nUse '-h' to view option and parameter usage\n");
 	exit(1);
@@ -536,14 +542,14 @@ typedef struct TAG_sSAMFileEls {
 int GSMProcess(etRPMode PMode,				// processing mode
 			int MinCovBases,				// accept SNPs with at least this number covering bases
 			double MaxPValue,				// accept SNPs with at most this P-value
-		    double SNPMmajorPC,				// only accept for processing if more/equal than this percentage number of reads are major SNP at putative SNP loci (defaults to 50.0) 
+			double SNPMmajorPC,				// only accept for processing if more/equal than this percentage number of reads are major SNP at putative SNP loci (defaults to 50.0) 
 			int MinSpeciesTotCntThres,		// individual species must have at least this number of total bases at SNP loci to count as SNP - 0 if no threshold
 			int MinSpeciesWithCnts,			// only report markers where at least this number of species has SNP at the SNP loci
 			int AltSpeciesMaxCnt,			// only report markers if no other species has more than this number of counts at the putative SNP loci, 0 if no limit
 			char *pszRefGenome,				// reference genome assembly against which other species were aligned
 			int NumRelGenomes,				// number of relative genome names
 			char *pszRelGenomes[],			// relative genome names
-    		int NumSNPFiles,				// number of input SNP files
+			int NumSNPFiles,				// number of input SNP files
 			char *pszSNPFiles[],			// names of input files,
 			int NumAlignFiles,				// number of input alignment files
 			char *pszAlignFiles[],			// names of alignment files
@@ -619,39 +625,44 @@ size_t EstSAMFileMem;
 size_t MaxEstSAMFileMem;
 
 MaxEstSAMFileMem = 0;
-for(FileIdx = 0; FileIdx < NumAlignFiles; FileIdx++)
+
+if(NumAlignFiles)
 	{
-	UINT32 NumAlignments;
-	EstSAMFileEls[FileIdx].NumAlignments = 0;
-	EstSAMFileEls[FileIdx].SeqLen = 0;
-	pszAlignFile = pszAlignFiles[FileIdx];
+	for(FileIdx = 0; FileIdx < NumAlignFiles; FileIdx++)
+		{
+		UINT32 NumAlignments;
+		EstSAMFileEls[FileIdx].NumAlignments = 0;
+		EstSAMFileEls[FileIdx].SeqLen = 0;
+		pszAlignFile = pszAlignFiles[FileIdx];
 	
-	if((NumAlignments = pSAM->EstSizes(pszAlignFile,NULL,NULL,NULL,NULL,&MeanSeqLen,NULL))==0)
-		{
-		delete pSAM;
-		delete pMarkers;
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to estimate memory required for alignments in file: '%s'",pszAlignFile);
-		return(eBSFerrParse);
+		if((NumAlignments = pSAM->EstSizes(pszAlignFile,NULL,NULL,NULL,NULL,&MeanSeqLen,NULL))==0)
+			{
+			delete pSAM;
+			delete pMarkers;
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to estimate memory required for alignments in file: '%s'",pszAlignFile);
+			return(eBSFerrParse);
+			}
+		gDiagnostics.DiagOut(eDLInfo,gszProcName,"Estimating %u alignments with mean sequence length %u in file: '%s'",NumAlignments,MeanSeqLen,pszAlignFile);
+
+		NumAlignments = (UINT32)(((UINT64)NumAlignments * 105)/100); // allow 5% extra when allocating memory in case underestimating
+		MeanSeqLen = (UINT32)(((UINT64)MeanSeqLen * 105)/100);
+
+
+		EstSAMFileEls[FileIdx].NumAlignments = NumAlignments;
+		EstSAMFileEls[FileIdx].SeqLen = MeanSeqLen;
+		EstSAMFileMem = NumAlignments * (sizeof(tsHyperElement) + MeanSeqLen);
+		if(EstSAMFileMem > MaxEstSAMFileMem)
+			{
+			MaxEstSAMFileIdx = FileIdx;
+			MaxEstSAMFileMem = EstSAMFileMem;
+			}
+		TotAlignments += NumAlignments;
 		}
-	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Estimating %u alignments with mean sequence length %u in file: '%s'",NumAlignments,MeanSeqLen,pszAlignFile);
-
-	NumAlignments = (UINT32)(((UINT64)NumAlignments * 105)/100); // allow 5% extra when allocating memory in case underestimating
-	MeanSeqLen = (UINT32)(((UINT64)MeanSeqLen * 105)/100);
-
-
-	EstSAMFileEls[FileIdx].NumAlignments = NumAlignments;
-	EstSAMFileEls[FileIdx].SeqLen = MeanSeqLen;
-	EstSAMFileMem = NumAlignments * (sizeof(tsHyperElement) + MeanSeqLen);
-	if(EstSAMFileMem > MaxEstSAMFileMem)
-		{
-		MaxEstSAMFileIdx = FileIdx;
-		MaxEstSAMFileMem = EstSAMFileMem;
-		}
-	TotAlignments += NumAlignments;
+	delete pSAM;
+	TotSNPRows *= 11;					// assume a 10x overhead for additional SNPs from imputed alignments
 	}
-delete pSAM;
+
 // estimate a minimum total memory required
-TotSNPRows *= 11;					// assume a 10x overhead for additional SNPs from imputed alignments
 TotMemToAlloc = MaxEstSAMFileMem;
 TotMemToAlloc += TotSNPRows * sizeof(tsAlignLoci);
 // allow 15% overhead for indexes, reallocs, other allocations etc
@@ -668,23 +679,26 @@ if((Rslt = pMarkers->PreAllocEstSNPs(TotSNPRows)) != eBSFSuccess)
 	return(eBSFerrMem);
 	}
 
-// then try an allocation of memory for the maximal sized SAM file sequences to check if allocations whilst imputing SNPs are likely to be successful
-CHyperEls *pHyperEls;
-if((pHyperEls = new CHyperEls) == NULL)
+if(NumAlignFiles)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to instantiate CHyperEls");
-	delete pMarkers;
-	return(eBSFerrObj);
-	}
-gDiagnostics.DiagOut(eDLFatal,gszProcName,"Pre-allocating memory for maximal %u SAM alignments with mean sequence length of %u in any SAM file allowing 5%% additional for underestimation",EstSAMFileEls[MaxEstSAMFileIdx].NumAlignments, EstSAMFileEls[MaxEstSAMFileIdx].SeqLen);
+	// then try an allocation of memory for the maximal sized SAM file sequences to check if allocations whilst imputing SNPs are likely to be successful
+	CHyperEls *pHyperEls;
+	if((pHyperEls = new CHyperEls) == NULL)
+		{
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to instantiate CHyperEls");
+		delete pMarkers;
+		return(eBSFerrObj);
+		}
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Pre-allocating memory for maximal %u SAM alignments with mean sequence length of %u in any SAM file allowing 5%% additional for underestimation",EstSAMFileEls[MaxEstSAMFileIdx].NumAlignments, EstSAMFileEls[MaxEstSAMFileIdx].SeqLen);
 
-if((Rslt = pHyperEls->PreAllocMem(EstSAMFileEls[MaxEstSAMFileIdx].NumAlignments,EstSAMFileEls[MaxEstSAMFileIdx].SeqLen)) != eBSFSuccess)
-	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to pre-allocate memory for SAM alignments");
-	delete pMarkers;
-	return(eBSFerrMem);
+	if((Rslt = pHyperEls->PreAllocMem(EstSAMFileEls[MaxEstSAMFileIdx].NumAlignments,EstSAMFileEls[MaxEstSAMFileIdx].SeqLen)) != eBSFSuccess)
+		{
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to pre-allocate memory for SAM alignments");
+		delete pMarkers;
+		return(eBSFerrMem);
+		}
+	delete pHyperEls;
 	}
-delete pHyperEls;
 
 // load all aligner identified  SNPS
 for(FileIdx = 0; FileIdx < NumSNPFiles; FileIdx++)
@@ -724,14 +738,19 @@ if((Rslt = pMarkers->PreAllocImputedSNPs(NumSNPFiles)) != eBSFSuccess)
 	}
 
 gDiagnostics.DiagOut(eDLFatal, gszProcName, "Now checking for imputed alignments where no SNP called in one or more cultivars...");
-for(FileIdx = 0; FileIdx < NumAlignFiles; FileIdx++)
+for(FileIdx = 0; FileIdx < NumSNPFiles; FileIdx++)
 	{
 	pszAlignFile = pszAlignFiles[FileIdx];
 	sprintf(szProbeSpecies,"ProbeSpecies%d",FileIdx+1);
-	Rslt64 = pMarkers->AddImputedAlignments(MinCovBases,	// must be at least this number of reads covering the SNP loci
-					pszRefGenome,				// this is the reference species 
-					szProbeSpecies,				// this species reads were aligned to the reference species from which SNPs were called 
-					pszAlignFile,0,true,EstSAMFileEls[FileIdx].NumAlignments, EstSAMFileEls[FileIdx].SeqLen);		// alignment file to parse and load
+	if(NumAlignFiles)
+		Rslt64 = pMarkers->AddImputedAlignments(MinCovBases,	// must be at least this number of reads covering the SNP loci
+							pszRefGenome,				// this is the reference species 
+							szProbeSpecies,				// this species reads were aligned to the reference species from which SNPs were called 
+							pszAlignFile,0,true,EstSAMFileEls[FileIdx].NumAlignments, EstSAMFileEls[FileIdx].SeqLen);		// alignment file to parse and load
+	else
+		Rslt64 = pMarkers->AddSimulatedAlignments(MinCovBases,	// must be at least this number of reads covering the SNP loci
+							pszRefGenome,				// this is the reference species 
+							szProbeSpecies);
 	if(Rslt64 < 0)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddImputedAlignments('%s') returned error %d",pszAlignFile,(int)Rslt64);
@@ -739,12 +758,16 @@ for(FileIdx = 0; FileIdx < NumAlignFiles; FileIdx++)
 		return((int)Rslt64);
 		}
 	CurAlignLoci =  pMarkers->NumAlignLoci();
-	gDiagnostics.DiagOut(eDLInfo,gszProcName,"AddImputedAlignments('%s') imputed %lld alignments, subtotal %lld",pszAlignFile,CurAlignLoci - PrevAlignLoci, CurAlignLoci - InitalAlignLoci);
+	if(NumAlignFiles)
+		gDiagnostics.DiagOut(eDLInfo,gszProcName,"AddImputedAlignments('%s') imputed %lld alignments, subtotal %lld",pszAlignFile,CurAlignLoci - PrevAlignLoci, CurAlignLoci - InitalAlignLoci);
+	else
+			gDiagnostics.DiagOut(eDLInfo,gszProcName,"AddSimulatedAlignments ('%s') imputed %lld alignments, subtotal %lld",szProbeSpecies,CurAlignLoci - PrevAlignLoci, CurAlignLoci - InitalAlignLoci);
 	PrevAlignLoci = CurAlignLoci;
 	}
 
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Total SNPs %lld of which %lld are from imputed alignments",CurAlignLoci, CurAlignLoci - InitalAlignLoci);
 gDiagnostics.DiagOut(eDLFatal, gszProcName, "Sorting %lld known and imputed SNPs ...", CurAlignLoci);
+
 Rslt64 = pMarkers->SortTargSeqLociSpecies();
 gDiagnostics.DiagOut(eDLFatal, gszProcName, "Applying filtering ...");
 pMarkers->IdentSpeciesSpec(AltSpeciesMaxCnt,	// max count allowed for base being processed in any other species, 0 if no limit

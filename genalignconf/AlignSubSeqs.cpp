@@ -647,7 +647,7 @@ if((hUCSCfile = open(pSubSeqAligns->szUCSCfa, O_RDWR | O_CREAT | O_TRUNC, S_IREA
 	delete pszInBuff;
 	return(eBSFerrCreateFile);
 	}
-CUtility::SafeWrite(hUCSCfile,pszInBuff,BuffIdx);
+CUtility::RetryWrites(hUCSCfile,pszInBuff,BuffIdx);
 close(hUCSCfile);
 
 BuffIdx = 0;
@@ -703,7 +703,7 @@ if((hUCSCfile = open(pSubSeqAligns->Blocks[0].szMFA, O_RDWR | O_CREAT | O_TRUNC,
 	delete pszInBuff;
 	return(eBSFerrCreateFile);
 	}
-CUtility::SafeWrite(hUCSCfile,pszInBuff,BuffIdx);
+CUtility::RetryWrites(hUCSCfile,pszInBuff,BuffIdx);
 close(hUCSCfile);
 
 // generate muscle alignment
@@ -1394,7 +1394,7 @@ if(pSubSeqAligns->szUCSCMAFfile[0] != '\0')
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"CAlignSubSeqs::OpenMAFs Unable to create or truncate UCSC MAF %s - %s",pSubSeqAligns->szUCSCMAFfile,strerror(errno));
 		return(eBSFerrCreateFile);
 		}
-	CUtility::SafeWrite(m_hUCSCMAF,szBuffer,BuffLen);
+	CUtility::RetryWrites(m_hUCSCMAF,szBuffer,BuffLen);
 	}
 else
 	m_hUCSCMAF = -1;
@@ -1414,7 +1414,7 @@ if(pSubSeqAligns->szMuscleMAFfile[0] != '\0')
 			}
 		return(eBSFerrCreateFile);
 		}
-	CUtility::SafeWrite(m_hMuscleMAF,szBuffer,BuffLen);
+	CUtility::RetryWrites(m_hMuscleMAF,szBuffer,BuffLen);
 	}
 else
 	m_hMuscleMAF = -1;
@@ -1441,7 +1441,7 @@ if(pSubSeqAligns->szClustalWMAFfile[0] != '\0')
 			}
 		return(eBSFerrCreateFile);
 		}
-	CUtility::SafeWrite(m_hClustalWMAF,szBuffer,BuffLen);
+	CUtility::RetryWrites(m_hClustalWMAF,szBuffer,BuffLen);
 	}
 else
 	m_hClustalWMAF = -1;
@@ -1456,20 +1456,20 @@ int BuffLen;
 BuffLen = sprintf(szBuffer,"\n\n");
 if(m_hUCSCMAF != -1)
 	{
-	CUtility::SafeWrite(m_hUCSCMAF,szBuffer,BuffLen);
+	CUtility::RetryWrites(m_hUCSCMAF,szBuffer,BuffLen);
 	close(m_hUCSCMAF);
 	m_hUCSCMAF = -1;
 	}
 
 if(m_hMuscleMAF != -1)
 	{
-	CUtility::SafeWrite(m_hMuscleMAF,szBuffer,BuffLen);
+	CUtility::RetryWrites(m_hMuscleMAF,szBuffer,BuffLen);
 	close(m_hMuscleMAF);
 	m_hMuscleMAF = -1;
 	}
 if(m_hClustalWMAF != -1)
 	{
-	CUtility::SafeWrite(m_hClustalWMAF,szBuffer,BuffLen);
+	CUtility::RetryWrites(m_hClustalWMAF,szBuffer,BuffLen);
 	close(m_hClustalWMAF);
 	m_hClustalWMAF = -1;
 	}
@@ -1505,13 +1505,13 @@ if(m_hUCSCMAF == -1 && m_hClustalWMAF == -1 && m_hMuscleMAF == -1)
 BuffLen = sprintf(szBuffer,"\n\na score=%d.0",pSubSeqAligns->BlockID);
 
 if(m_hUCSCMAF != -1)
-	CUtility::SafeWrite(m_hUCSCMAF,szBuffer,BuffLen);
+	CUtility::RetryWrites(m_hUCSCMAF,szBuffer,BuffLen);
 
 if(m_hMuscleMAF != -1)
-	CUtility::SafeWrite(m_hMuscleMAF,szBuffer,BuffLen);
+	CUtility::RetryWrites(m_hMuscleMAF,szBuffer,BuffLen);
 
 if(m_hClustalWMAF != -1)
-	CUtility::SafeWrite(m_hClustalWMAF,szBuffer,BuffLen);
+	CUtility::RetryWrites(m_hClustalWMAF,szBuffer,BuffLen);
 
 for(Idx = 0; Idx < pSubSeqAligns->CurNumSpecies; Idx++,pAligns++)
 	{
@@ -1521,22 +1521,22 @@ for(Idx = 0; Idx < pSubSeqAligns->CurNumSpecies; Idx++,pAligns++)
 
 	if(m_hUCSCMAF != -1)
 		{
-		CUtility::SafeWrite(m_hUCSCMAF,szBuffer,BuffLen);
+		CUtility::RetryWrites(m_hUCSCMAF,szBuffer,BuffLen);
 		CSeqTrans::MapSeq2Ascii(pAligns->UCSCSeq,pSubSeqAligns->Blocks[0].SeqInDelsLen,pSubSeqAligns->MAFseqBuff);
-		CUtility::SafeWrite(m_hUCSCMAF,pSubSeqAligns->MAFseqBuff,pSubSeqAligns->Blocks[0].SeqInDelsLen);
+		CUtility::RetryWrites(m_hUCSCMAF,pSubSeqAligns->MAFseqBuff,pSubSeqAligns->Blocks[0].SeqInDelsLen);
 		}
 
 	if(m_hClustalWMAF != -1)
 		{
-		CUtility::SafeWrite(m_hClustalWMAF,szBuffer,BuffLen);
+		CUtility::RetryWrites(m_hClustalWMAF,szBuffer,BuffLen);
 		CSeqTrans::MapSeq2Ascii(pAligns->ClustalwSeq,pSubSeqAligns->Blocks[2].SeqInDelsLen,pSubSeqAligns->MAFseqBuff);
-		CUtility::SafeWrite(m_hClustalWMAF,pSubSeqAligns->MAFseqBuff,pSubSeqAligns->Blocks[2].SeqInDelsLen);
+		CUtility::RetryWrites(m_hClustalWMAF,pSubSeqAligns->MAFseqBuff,pSubSeqAligns->Blocks[2].SeqInDelsLen);
 		}
 	if(m_hMuscleMAF != -1)
 		{
-		CUtility::SafeWrite(m_hMuscleMAF,szBuffer,BuffLen);
+		CUtility::RetryWrites(m_hMuscleMAF,szBuffer,BuffLen);
 		CSeqTrans::MapSeq2Ascii(pAligns->MuscleSeq,pSubSeqAligns->Blocks[1].SeqInDelsLen,pSubSeqAligns->MAFseqBuff);
-		CUtility::SafeWrite(m_hMuscleMAF,pSubSeqAligns->MAFseqBuff,pSubSeqAligns->Blocks[1].SeqInDelsLen);
+		CUtility::RetryWrites(m_hMuscleMAF,pSubSeqAligns->MAFseqBuff,pSubSeqAligns->Blocks[1].SeqInDelsLen);
 		}
 	}
 return(eBSFSuccess);
@@ -1597,7 +1597,7 @@ else
 	NumChrs += sprintf(&szLineBuff[NumChrs],"\"MvCCline\",\"MvCModeler\",\"MvCPREFABQ\",\"MvCTC\"");
 	}
 NumChrs += sprintf(&szLineBuff[NumChrs],"\n");
-CUtility::SafeWrite(m_hRsltsFile,szLineBuff,NumChrs);
+CUtility::RetryWrites(m_hRsltsFile,szLineBuff,NumChrs);
 return(eBSFSuccess);
 }
 
@@ -1763,12 +1763,12 @@ for(RegionIdx =0; RegionIdx < NumRegions; RegionIdx++)
 						
 	if(NumChrs > 2000)
 		{
-		CUtility::SafeWrite(m_hRsltsFile,szLineBuff,NumChrs);
+		CUtility::RetryWrites(m_hRsltsFile,szLineBuff,NumChrs);
 		NumChrs = 0;
 		}
 	}
 if(NumChrs)
-	CUtility::SafeWrite(m_hRsltsFile,szLineBuff,NumChrs);
+	CUtility::RetryWrites(m_hRsltsFile,szLineBuff,NumChrs);
 
 m_NumSubSeqStats = 0; // reset seqstats ready for next primary chromosome
 return(eBSFSuccess);
@@ -1803,7 +1803,7 @@ for(Idx=0;Idx< 3; Idx++)
 			pSubSeqAligns->Scores[Idx].TCScore);
 	}
 NumChrs += sprintf(&szLineBuff[NumChrs],"\n");
-CUtility::SafeWrite(m_hRsltsFile,szLineBuff,NumChrs);
+CUtility::RetryWrites(m_hRsltsFile,szLineBuff,NumChrs);
 return(eBSFSuccess);
 }
 

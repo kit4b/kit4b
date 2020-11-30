@@ -1148,7 +1148,7 @@ for(int Idx = 0; Idx < m_NumFeatRPMs; Idx++,pFeatRPKM++)
 			NumFeaturesDEd += 1;
 			if(BuffIdx > (sizeof(szBuff)-500))
 				{
-				CUtility::SafeWrite(m_hOutDESeqFile,szBuff,BuffIdx);
+				CUtility::RetryWrites(m_hOutDESeqFile,szBuff,BuffIdx);
 				BuffIdx = 0;
 				}
 			}
@@ -1175,7 +1175,7 @@ if(pszCurFeature != NULL && pszCurFeature[0] != '\0')
 	NumFeaturesDEd += 1;
 	}
 if(BuffIdx)
-	CUtility::SafeWrite(m_hOutDESeqFile,szBuff,BuffIdx);
+	CUtility::RetryWrites(m_hOutDESeqFile,szBuff,BuffIdx);
 close(m_hOutDESeqFile);
 m_hOutDESeqFile = -1;
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Generated DE counts for %d features",NumFeaturesDEd);

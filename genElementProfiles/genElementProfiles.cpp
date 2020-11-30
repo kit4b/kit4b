@@ -841,7 +841,7 @@ int Score;
 if(FMode == 0) //eFMbed)
 	{
 	BuffIdx = sprintf(szLineBuff,"track type=bed name=\"%s\" description=\"%s\"\n",pszTitle,pszTitle);
-	CUtility::SafeWrite(m_hRsltsFile,szLineBuff,BuffIdx);
+	CUtility::RetryWrites(m_hRsltsFile,szLineBuff,BuffIdx);
 	}
 
 BuffIdx = 0;
@@ -897,7 +897,7 @@ for(ChromIdx = 0 ; ChromIdx < m_NumChromsCov; ChromIdx++,pChrom++)
 								
 						if((BuffIdx + 200)> sizeof(szLineBuff))
 							{
-							CUtility::SafeWrite(m_hRsltsFile,szLineBuff,BuffIdx);
+							CUtility::RetryWrites(m_hRsltsFile,szLineBuff,BuffIdx);
 							BuffIdx = 0;
 							}
 						}
@@ -932,7 +932,7 @@ for(ChromIdx = 0 ; ChromIdx < m_NumChromsCov; ChromIdx++,pChrom++)
 		}
 	}
 if(BuffIdx)
-	CUtility::SafeWrite(m_hRsltsFile,szLineBuff,BuffIdx);
+	CUtility::RetryWrites(m_hRsltsFile,szLineBuff,BuffIdx);
 
 return(NumRegions);
 }
@@ -1285,7 +1285,7 @@ BuffIdx = sprintf(szOutBuff,"\"%s\",\"%s\",\"%c\",%d,%d,%d,%d,%d,%d,%d",pszIdent
 for(BinIdx = 0; BinIdx < NumBins; BinIdx++)
 	BuffIdx += sprintf(&szOutBuff[BuffIdx],",%d",BinCnts[BinIdx]);
 BuffIdx += sprintf(&szOutBuff[BuffIdx],"\n");
-CUtility::SafeWrite(m_hRsltsFile,szOutBuff,BuffIdx);
+CUtility::RetryWrites(m_hRsltsFile,szOutBuff,BuffIdx);
 return(0);
 }
 
@@ -1486,7 +1486,7 @@ BuffIdx = sprintf(szOutBuff,"\"%s\",\"%s\",\"%c\",%d,%d,%d,%d,%d,%d,%d",szFeatNa
 for(BinIdx = 0; BinIdx < NumBins; BinIdx++)
 	BuffIdx += sprintf(&szOutBuff[BuffIdx],",%d",BinCnts[BinIdx]);
 BuffIdx += sprintf(&szOutBuff[BuffIdx],"\n");
-CUtility::SafeWrite(m_hRsltsFile,szOutBuff,BuffIdx);
+CUtility::RetryWrites(m_hRsltsFile,szOutBuff,BuffIdx);
 return(0);
 }
 
@@ -1624,7 +1624,7 @@ BuffIdx = sprintf(szOutBuff,"\"Name\",\"Chrom\",\"Strand\",\"NumExons\",\"DNAlen
 for(BinIdx = 0; BinIdx < NumBins; BinIdx++)
 	BuffIdx += sprintf(&szOutBuff[BuffIdx],",\"Bin%d\"",BinIdx+1);
 BuffIdx += sprintf(&szOutBuff[BuffIdx],"\n");
-CUtility::SafeWrite(m_hRsltsFile,szOutBuff,BuffIdx);
+CUtility::RetryWrites(m_hRsltsFile,szOutBuff,BuffIdx);
 
 szPrevChrom[0] = '\0';
 CurFeatureID = 0;

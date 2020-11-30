@@ -247,7 +247,7 @@ CSeqTrans::MapSeq2UCAscii(pMarker->MarkerSeq,TruncMarkerLen,szMarkerSeq);
 AcquireLock(true);
 if((m_MarkerBuffOfs + (2 * cMaxKMerLen)) > m_AllocMarkerBuffSize)
 	{
-	CUtility::SafeWrite(m_hOutFile,m_pMarkerBuff,m_MarkerBuffOfs);
+	CUtility::RetryWrites(m_hOutFile,m_pMarkerBuff,m_MarkerBuffOfs);
 	m_MarkerBuffOfs = 0;
 	}
 m_MarkerID += 1;
@@ -534,7 +534,7 @@ if(m_NumPutMarkers == 0 || m_NumPutMarkers > 0x07fffffff)
 	if(m_hOutFile != -1)
 		{
 		if(m_MarkerBuffOfs)
-			CUtility::SafeWrite(m_hOutFile,m_pMarkerBuff,m_MarkerBuffOfs);
+			CUtility::RetryWrites(m_hOutFile,m_pMarkerBuff,m_MarkerBuffOfs);
 #ifdef _WIN32
 		_commit(m_hOutFile);
 #else
@@ -666,7 +666,7 @@ for(Idx = 0; Idx < m_NumPutMarkers; Idx++, pPutMarkerIdx++)
 if(m_hOutFile != -1)
 	{
 	if(m_MarkerBuffOfs)
-		CUtility::SafeWrite(m_hOutFile,m_pMarkerBuff,m_MarkerBuffOfs);
+		CUtility::RetryWrites(m_hOutFile,m_pMarkerBuff,m_MarkerBuffOfs);
 #ifdef _WIN32
 	_commit(m_hOutFile);
 #else

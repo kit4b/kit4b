@@ -676,12 +676,12 @@ for(SeqIdx = 0; SeqIdx < SeqLen; SeqIdx++,pSeq++,LineLen++)
 	szOutBuff[BuffIdx++] = Chr;
 	if(BuffIdx > (sizeof(szOutBuff) - 100))
 		{
-		CUtility::SafeWrite(m_hFEOutFile,szOutBuff,BuffIdx);
+		CUtility::RetryWrites(m_hFEOutFile,szOutBuff,BuffIdx);
 		BuffIdx = 0;
 		}
 	}
 szOutBuff[BuffIdx++] = '\n';
-CUtility::SafeWrite(m_hFEOutFile,szOutBuff,BuffIdx);
+CUtility::RetryWrites(m_hFEOutFile,szOutBuff,BuffIdx);
 return(SeqLen);
 }
 

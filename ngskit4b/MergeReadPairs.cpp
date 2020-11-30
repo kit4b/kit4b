@@ -661,7 +661,7 @@ if(m_ProcPhase != ePPUninit)
 				if(pWellFile->pOutBuffer != NULL)
 					{
 					if(bSync && pWellFile->CurBuffLen && pWellFile->hOutFile != -1)
-						CUtility::SafeWrite(pWellFile->hOutFile, pWellFile->pOutBuffer, pWellFile->CurBuffLen);
+						CUtility::RetryWrites(pWellFile->hOutFile, pWellFile->pOutBuffer, pWellFile->CurBuffLen);
 					delete pWellFile->pOutBuffer;
 					pWellFile->pOutBuffer = NULL;
 					}
@@ -684,7 +684,7 @@ if(m_ProcPhase != ePPUninit)
 	if(m_pszMSeqs != NULL)
 		{
 		if(bSync && m_CurMSeqLen && m_hOutMerged != -1)
-			CUtility::SafeWrite(m_hOutMerged,m_pszMSeqs,m_CurMSeqLen);
+			CUtility::RetryWrites(m_hOutMerged,m_pszMSeqs,m_CurMSeqLen);
 		delete m_pszMSeqs;
 		m_pszMSeqs = NULL;
 		}
@@ -693,7 +693,7 @@ if(m_ProcPhase != ePPUninit)
 	if(m_pszUnmergedP1Seqs != NULL)
 		{
 		if(bSync && m_CurUnmergedP1Seqs && m_hOut5Unmerged != -1)
-			CUtility::SafeWrite(m_hOut5Unmerged,m_pszUnmergedP1Seqs,m_CurUnmergedP1Seqs);
+			CUtility::RetryWrites(m_hOut5Unmerged,m_pszUnmergedP1Seqs,m_CurUnmergedP1Seqs);
 		delete m_pszUnmergedP1Seqs;
 		m_pszUnmergedP1Seqs = NULL;
 		}
@@ -702,7 +702,7 @@ if(m_ProcPhase != ePPUninit)
 	if(bSync && m_pszUnmergedP2Seqs != NULL)
 		{
 		if(m_CurUnmergedP2Seqs && m_hOut3Unmerged != -1)
-			CUtility::SafeWrite(m_hOut3Unmerged,m_pszUnmergedP2Seqs,m_CurUnmergedP2Seqs);
+			CUtility::RetryWrites(m_hOut3Unmerged,m_pszUnmergedP2Seqs,m_CurUnmergedP2Seqs);
 		delete m_pszUnmergedP2Seqs;
 		m_pszUnmergedP2Seqs = NULL;
 		}
@@ -1310,12 +1310,12 @@ while((Rslt = (teBSFrsltCodes)(PE5SeqLen = m_PE5Fasta.ReadSequence(PE5Seq,ccMaxF
 				{
 				if(m_CurUnmergedP1Seqs > 0)
 					{
-					CUtility::SafeWrite(m_hOut5Unmerged,m_pszUnmergedP1Seqs,(size_t)m_CurUnmergedP1Seqs);
+					CUtility::RetryWrites(m_hOut5Unmerged,m_pszUnmergedP1Seqs,(size_t)m_CurUnmergedP1Seqs);
 					m_CurUnmergedP1Seqs = 0;
 					}
 				if(m_CurUnmergedP2Seqs > 0)
 					{
-					CUtility::SafeWrite(m_hOut3Unmerged,m_pszUnmergedP2Seqs,(size_t)m_CurUnmergedP2Seqs);
+					CUtility::RetryWrites(m_hOut3Unmerged,m_pszUnmergedP2Seqs,(size_t)m_CurUnmergedP2Seqs);
 					m_CurUnmergedP2Seqs = 0;
 					}
 				}
@@ -1329,12 +1329,12 @@ while((Rslt = (teBSFrsltCodes)(PE5SeqLen = m_PE5Fasta.ReadSequence(PE5Seq,ccMaxF
 					{
 					if(pWell->WellFile[0].CurBuffLen > 0)
 						{
-						CUtility::SafeWrite(pWell->WellFile[0].hOutFile, pWell->WellFile[0].pOutBuffer,(size_t)pWell->WellFile[0].CurBuffLen);
+						CUtility::RetryWrites(pWell->WellFile[0].hOutFile, pWell->WellFile[0].pOutBuffer,(size_t)pWell->WellFile[0].CurBuffLen);
 						pWell->WellFile[0].CurBuffLen = 0;
 						}
 					if(pWell->WellFile[1].hOutFile != -1 && pWell->WellFile[1].CurBuffLen > 0)
 						{
-						CUtility::SafeWrite(pWell->WellFile[1].hOutFile, pWell->WellFile[1].pOutBuffer, (size_t)pWell->WellFile[1].CurBuffLen);
+						CUtility::RetryWrites(pWell->WellFile[1].hOutFile, pWell->WellFile[1].pOutBuffer, (size_t)pWell->WellFile[1].CurBuffLen);
 						pWell->WellFile[1].CurBuffLen = 0;
 						}
 					}
@@ -1436,7 +1436,7 @@ while((Rslt = (teBSFrsltCodes)(PE5SeqLen = m_PE5Fasta.ReadSequence(PE5Seq,ccMaxF
 				
 			if (pWell->WellFile[0].CurBuffLen > pWell->WellFile[0].AllocdOutBuff - (4 * ccMaxFastQSeqLen))
 				{
-				CUtility::SafeWrite(pWell->WellFile[0].hOutFile, pWell->WellFile[0].pOutBuffer, (size_t)pWell->WellFile[0].CurBuffLen);
+				CUtility::RetryWrites(pWell->WellFile[0].hOutFile, pWell->WellFile[0].pOutBuffer, (size_t)pWell->WellFile[0].CurBuffLen);
 				pWell->WellFile[0].CurBuffLen = 0;
 				}
 
@@ -1454,7 +1454,7 @@ while((Rslt = (teBSFrsltCodes)(PE5SeqLen = m_PE5Fasta.ReadSequence(PE5Seq,ccMaxF
 
 			if (pWell->WellFile[1].CurBuffLen > pWell->WellFile[1].AllocdOutBuff - (4 * ccMaxFastQSeqLen))
 				{
-				CUtility::SafeWrite(pWell->WellFile[1].hOutFile, pWell->WellFile[1].pOutBuffer, (size_t)pWell->WellFile[1].CurBuffLen);
+				CUtility::RetryWrites(pWell->WellFile[1].hOutFile, pWell->WellFile[1].pOutBuffer, (size_t)pWell->WellFile[1].CurBuffLen);
 				pWell->WellFile[1].CurBuffLen = 0;
 				}
 			NumPEWithBarcode += 1;
@@ -1559,7 +1559,7 @@ while((Rslt = (teBSFrsltCodes)(PE5SeqLen = m_PE5Fasta.ReadSequence(PE5Seq,ccMaxF
 				
 			if(m_CurUnmergedP2Seqs > (cAllocOutBuffLen - (8 * ccMaxFastQSeqLen)))
 				{
-				CUtility::SafeWrite(m_hOut3Unmerged,m_pszUnmergedP2Seqs,(size_t)m_CurUnmergedP2Seqs);
+				CUtility::RetryWrites(m_hOut3Unmerged,m_pszUnmergedP2Seqs,(size_t)m_CurUnmergedP2Seqs);
 				m_CurUnmergedP2Seqs = 0;
 				}
 			}
@@ -1572,7 +1572,7 @@ while((Rslt = (teBSFrsltCodes)(PE5SeqLen = m_PE5Fasta.ReadSequence(PE5Seq,ccMaxF
 
 			if(m_CurMSeqLen > (cAllocOutBuffLen - (8 * ccMaxFastQSeqLen)))
 				{
-				CUtility::SafeWrite(m_hOutMerged,m_pszMSeqs,(size_t)m_CurMSeqLen);
+				CUtility::RetryWrites(m_hOutMerged,m_pszMSeqs,(size_t)m_CurMSeqLen);
 				m_CurMSeqLen = 0;
 				}	
 			}
@@ -1596,7 +1596,7 @@ while((Rslt = (teBSFrsltCodes)(PE5SeqLen = m_PE5Fasta.ReadSequence(PE5Seq,ccMaxF
 
 			if(m_CurUnmergedP1Seqs > (cAllocOutBuffLen - (8 * ccMaxFastQSeqLen)))
 				{
-				CUtility::SafeWrite(m_hOut5Unmerged,m_pszUnmergedP1Seqs,(size_t)m_CurUnmergedP1Seqs);
+				CUtility::RetryWrites(m_hOut5Unmerged,m_pszUnmergedP1Seqs,(size_t)m_CurUnmergedP1Seqs);
 				m_CurUnmergedP1Seqs = 0;
 				}
 			}
@@ -1609,7 +1609,7 @@ while((Rslt = (teBSFrsltCodes)(PE5SeqLen = m_PE5Fasta.ReadSequence(PE5Seq,ccMaxF
 
 			if(m_CurMSeqLen > (cAllocOutBuffLen - (8 * ccMaxFastQSeqLen)))
 				{
-				CUtility::SafeWrite(m_hOutMerged,m_pszMSeqs,(size_t)m_CurMSeqLen);
+				CUtility::RetryWrites(m_hOutMerged,m_pszMSeqs,(size_t)m_CurMSeqLen);
 				m_CurMSeqLen = 0;
 				}	
 			}
@@ -1756,7 +1756,7 @@ while((Rslt = (teBSFrsltCodes)(PE5SeqLen = m_PE5Fasta.ReadSequence(PE5Seq,ccMaxF
 				}
 			if(pWell->WellFile[0].CurBuffLen > pWell->WellFile[0].AllocdOutBuff - (4 * ccMaxFastQSeqLen))
 				{
-				CUtility::SafeWrite(pWell->WellFile[0].hOutFile, pWell->WellFile[0].pOutBuffer,(size_t)pWell->WellFile[0].CurBuffLen);
+				CUtility::RetryWrites(pWell->WellFile[0].hOutFile, pWell->WellFile[0].pOutBuffer,(size_t)pWell->WellFile[0].CurBuffLen);
 				pWell->WellFile[0].CurBuffLen = 0;
 				}
 			}
@@ -1771,7 +1771,7 @@ while((Rslt = (teBSFrsltCodes)(PE5SeqLen = m_PE5Fasta.ReadSequence(PE5Seq,ccMaxF
 				}
 			if(m_CurMSeqLen > (cAllocOutBuffLen - (8 * ccMaxFastQSeqLen)))
 				{
-				CUtility::SafeWrite(m_hOutMerged,m_pszMSeqs,(size_t)m_CurMSeqLen);
+				CUtility::RetryWrites(m_hOutMerged,m_pszMSeqs,(size_t)m_CurMSeqLen);
 				m_CurMSeqLen = 0;
 				}
 			}
@@ -1786,13 +1786,13 @@ if(m_PMode == ePMAmplicon && m_NumWells)
 		{
 		if(pWell->WellFile[0].CurBuffLen > 0)
 			{
-			CUtility::SafeWrite(pWell->WellFile[0].hOutFile, pWell->WellFile[0].pOutBuffer,(size_t)pWell->WellFile[0].CurBuffLen);
+			CUtility::RetryWrites(pWell->WellFile[0].hOutFile, pWell->WellFile[0].pOutBuffer,(size_t)pWell->WellFile[0].CurBuffLen);
 			pWell->WellFile[0].CurBuffLen = 0;
 			}
 
 		if (pWell->WellFile[1].hOutFile != -1 && pWell->WellFile[1].CurBuffLen > 0)
 			{
-			CUtility::SafeWrite(pWell->WellFile[1].hOutFile, pWell->WellFile[1].pOutBuffer, (size_t)pWell->WellFile[1].CurBuffLen);
+			CUtility::RetryWrites(pWell->WellFile[1].hOutFile, pWell->WellFile[1].pOutBuffer, (size_t)pWell->WellFile[1].CurBuffLen);
 			pWell->WellFile[1].CurBuffLen = 0;
 			}
 		}
@@ -1800,19 +1800,19 @@ if(m_PMode == ePMAmplicon && m_NumWells)
 
 if(m_CurMSeqLen > 0)
 	{
-	CUtility::SafeWrite(m_hOutMerged,m_pszMSeqs,(size_t)m_CurMSeqLen);
+	CUtility::RetryWrites(m_hOutMerged,m_pszMSeqs,(size_t)m_CurMSeqLen);
 	m_CurMSeqLen = 0;
 	}
 
 if(m_CurUnmergedP1Seqs > 0)
 	{
-	CUtility::SafeWrite(m_hOut5Unmerged,m_pszUnmergedP1Seqs,(size_t)m_CurUnmergedP1Seqs);
+	CUtility::RetryWrites(m_hOut5Unmerged,m_pszUnmergedP1Seqs,(size_t)m_CurUnmergedP1Seqs);
 	m_CurUnmergedP1Seqs = 0;
 	}
 
 if(m_CurUnmergedP2Seqs > 0)
 	{
-	CUtility::SafeWrite(m_hOut3Unmerged,m_pszUnmergedP2Seqs,(size_t)m_CurUnmergedP2Seqs);
+	CUtility::RetryWrites(m_hOut3Unmerged,m_pszUnmergedP2Seqs,(size_t)m_CurUnmergedP2Seqs);
 	m_CurUnmergedP2Seqs = 0;
 	}
 

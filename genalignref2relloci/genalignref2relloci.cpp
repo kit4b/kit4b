@@ -841,7 +841,7 @@ for(CurIdx = 0; CurIdx < pProcParams->NumCoreLocs; CurIdx++,pCurCore++)
 			Len += sprintf(&szLineBuff[Len],",%d",OverlapRefIDs[ProbeIdx]);
 		Len += sprintf(&szLineBuff[Len],"\"\n");
 		}
-	CUtility::SafeWrite(hOverFile,szLineBuff,Len);
+	CUtility::RetryWrites(hOverFile,szLineBuff,Len);
 	}
 if(hOverFile != -1)
 	close(hOverFile);
@@ -1048,7 +1048,7 @@ for(SpeciesIdx = 0; SpeciesIdx < pProcParams->NumSpecies; SpeciesIdx++,pRelSpeci
 			StartLoci,EndLoci,1 + EndLoci - StartLoci,
 			pProcParams->pszRefSpecies,pProcParams->RefFeatures,
 			pRelSpecies->Strand);
-		CUtility::SafeWrite(hFile,szBuff,BuffLen);
+		CUtility::RetryWrites(hFile,szBuff,BuffLen);
 		Cnt+=1;
 		}
 

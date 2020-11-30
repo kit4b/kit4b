@@ -1271,7 +1271,7 @@ if(pProcParams->ProcMode > eProcModePairwise)
 							TotSpeciesBases == 0 ? 0.0 : (1.0 * pStats->MonoCnts[RefBase][RelBase])/TotSpeciesBases);
 					if(LineLen > ((sizeof(szLineBuff) * 9) / 10))
 						{
-						CUtility::SafeWrite(pProcParams->hRsltsFile,szLineBuff,LineLen);
+						CUtility::RetryWrites(pProcParams->hRsltsFile,szLineBuff,LineLen);
 						LineLen = 0;
 						}
 					}
@@ -1295,7 +1295,7 @@ else
 					CSeqTrans::MapBase2Ascii(RefBase),pColStats->Aligned[RefBase],pColStats->Identical[RefBase]);
 			if(LineLen > ((sizeof(szLineBuff) * 9) / 10))
 				{
-				CUtility::SafeWrite(pProcParams->hRsltsFile,szLineBuff,LineLen);
+				CUtility::RetryWrites(pProcParams->hRsltsFile,szLineBuff,LineLen);
 				LineLen = 0;
 				}
 			}
@@ -1303,7 +1303,7 @@ else
 	}
 
 if(LineLen)
-	CUtility::SafeWrite(pProcParams->hRsltsFile,szLineBuff,LineLen);
+	CUtility::RetryWrites(pProcParams->hRsltsFile,szLineBuff,LineLen);
 return(eBSFSuccess);
 }
 

@@ -721,7 +721,7 @@ else
 	BuffL += sprintf(&szBuff[BuffL],"\n\t<chromid>%d</chromid><statid>%d</statid><steps>%d</steps><value>%d</value><freq>%d</freq>\n</bin>\n",
 				EntryID,Stat,Steps,Value,Freq);
 	}
-CUtility::SafeWrite(hRslts,szBuff,BuffL);
+CUtility::RetryWrites(hRslts,szBuff,BuffL);
 }
 
 int

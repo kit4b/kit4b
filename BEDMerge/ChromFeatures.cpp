@@ -648,7 +648,7 @@ CChromFeatures::ReportMergedFeat(UINT32 FeatID,				// uniquely identifies this m
 {
 if((m_LineBuffIdx + 100) > sizeof(m_LineBuff))
 	{
-	CUtility::SafeWrite(m_hOutFile,m_LineBuff,m_LineBuffIdx);
+	CUtility::RetryWrites(m_hOutFile,m_LineBuff,m_LineBuffIdx);
 	m_LineBuffIdx = 0;
 	}
 
@@ -765,7 +765,7 @@ for(ChromIdx = 0; ChromIdx < m_NumChroms; ChromIdx++,pChrom++)
 	}
 if(m_LineBuffIdx > 0)
 	{
-	CUtility::SafeWrite(m_hOutFile,m_LineBuff,m_LineBuffIdx);
+	CUtility::RetryWrites(m_hOutFile,m_LineBuff,m_LineBuffIdx);
 	m_LineBuffIdx = 0;
 	}
 close(m_hOutFile);

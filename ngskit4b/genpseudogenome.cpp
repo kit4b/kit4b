@@ -496,7 +496,7 @@ while(SeqLen)
 	SeqLen -= NumCols;
 	if((m_OutFastaOfs + 1000) > cAllocOutFasta)
 		{
-		CUtility::SafeWrite(m_hOutGenomeFile,m_pOutFastaBuff,m_OutFastaOfs);
+		CUtility::RetryWrites(m_hOutGenomeFile,m_pOutFastaBuff,m_OutFastaOfs);
 		m_OutFastaOfs = 0;
 		}
 	}
@@ -513,7 +513,7 @@ OutputGene(char *pszGenome,
 
 if(m_OutBEDOfs + 1000  > cAllocInBED)
 	{
-	CUtility::SafeWrite(m_hOutGeneFile,m_pOutBEDBuff,m_OutBEDOfs);
+	CUtility::RetryWrites(m_hOutGeneFile,m_pOutBEDBuff,m_OutBEDOfs);
 	m_OutBEDOfs = 0;
 	}
 
@@ -699,7 +699,7 @@ if(m_hOutGenomeFile != -1)
 	{
 	if(m_OutFastaOfs > 0)
 		{
-		CUtility::SafeWrite(m_hOutGenomeFile,m_pOutFastaBuff,m_OutFastaOfs);
+		CUtility::RetryWrites(m_hOutGenomeFile,m_pOutFastaBuff,m_OutFastaOfs);
 		m_OutFastaOfs = 0;
 		}
 	close(m_hOutGenomeFile);
@@ -710,7 +710,7 @@ if(m_hOutGeneFile != -1)
 	{
 	if(m_OutBEDOfs)
 		{
-		CUtility::SafeWrite(m_hOutGeneFile,m_pOutBEDBuff,m_OutBEDOfs);
+		CUtility::RetryWrites(m_hOutGeneFile,m_pOutBEDBuff,m_OutBEDOfs);
 		m_OutBEDOfs = 0;
 		}
 	close(m_hOutGeneFile);

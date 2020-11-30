@@ -268,7 +268,7 @@ while(Rslt == 1) {
 
 		case 1:			// new output file required
 			if(pParams->OutBuffIdx > 0)
-				CUtility::SafeWrite(pParams->hOutFile,pParams->pOutBuffer,pParams->OutBuffIdx);
+				CUtility::RetryWrites(pParams->hOutFile,pParams->pOutBuffer,pParams->OutBuffIdx);
 			close(pParams->hOutFile);
 			pParams->hOutFile = -1;
 			break;
@@ -374,7 +374,7 @@ else
 if(ProcParams.hOutFile != -1)			// close output file if still opened
 	{
 	if(ProcParams.OutBuffIdx && Rslt >= 0)
-		CUtility::SafeWrite(ProcParams.hOutFile,ProcParams.pOutBuffer,ProcParams.OutBuffIdx);
+		CUtility::RetryWrites(ProcParams.hOutFile,ProcParams.pOutBuffer,ProcParams.OutBuffIdx);
 	close(ProcParams.hOutFile);
 	}
 if(ProcParams.hInFile != -1)
@@ -426,7 +426,7 @@ if(pParams->OutBuffIdx < cMaxOutBuffSize)
 	}
 if(pParams->hOutFile != -1)			
 	{
-	CUtility::SafeWrite(pParams->hOutFile,pParams->pOutBuffer,pParams->OutBuffIdx);
+	CUtility::RetryWrites(pParams->hOutFile,pParams->pOutBuffer,pParams->OutBuffIdx);
 	pParams->OutBuffIdx = 0;
 	pParams->pOutBuffer[pParams->OutBuffIdx++] = (char)Chr;
 	return(0);

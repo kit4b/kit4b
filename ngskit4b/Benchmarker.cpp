@@ -1045,12 +1045,12 @@ while ((Rslt = SeqLen = pReads->ReadSequence(szSeqBuff, cBMMaxReadLen, false, fa
 		break;
 	if (BuffOffs + (2 * cBMMaxReadLen) > cBMCIGARAllocBuffSize)
 		{
-		CUtility::SafeWrite(hOutReads, pszLineBuff, BuffOffs);
+		CUtility::RetryWrites(hOutReads, pszLineBuff, BuffOffs);
 		BuffOffs = 0;
 		}
 	}
 if (BuffOffs)
-	CUtility::SafeWrite(hOutReads, pszLineBuff, BuffOffs);
+	CUtility::RetryWrites(hOutReads, pszLineBuff, BuffOffs);
 #ifdef _WIN32
 _commit(hOutReads);
 #else
@@ -1256,7 +1256,7 @@ if(bPEReads)
 	m_ObsCIGARBuffLen = sprintf(m_pObsCIGARBuff,"\"ID\",\"SeqLen\",\"PE1 Strand\",\"PE1 CIGAR\",\"PE1 Error Profile\",\"PE Insert Size\",\"PE2 Strand\",\"PE2 CIGAR\",\"PE2 Error Profile\"\n");
 else
 	m_ObsCIGARBuffLen = sprintf(m_pObsCIGARBuff, "\"ID\",\"SeqLen\",\"Strand\",\"CIGAR\",\"Error Profile\"\n");
-CUtility::SafeWrite(m_hObsSIGARs, m_pObsCIGARBuff, m_ObsCIGARBuffLen);
+CUtility::RetryWrites(m_hObsSIGARs, m_pObsCIGARBuff, m_ObsCIGARBuffLen);
 m_ObsCIGARBuffLen = 0;
 
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "Opening alignment targeted assembly/transcriptome indexed file %s for processing", m_szRefGenomeFile);
@@ -1721,14 +1721,14 @@ if(bPEReads)
 			&pNxtObsCIGAR->NameCIGARErrProfile[pNxtObsCIGAR->NameLen + pNxtObsCIGAR->ObsCIGARlen]);
 		if ((m_ObsCIGARBuffLen + 1000) >= m_AllocdObsCIGARBuffSize)
 			{
-			CUtility::SafeWrite(m_hObsSIGARs, m_pObsCIGARBuff, m_ObsCIGARBuffLen);
+			CUtility::RetryWrites(m_hObsSIGARs, m_pObsCIGARBuff, m_ObsCIGARBuffLen);
 			m_ObsCIGARBuffLen = 0;
 			}
 		Idx += 1;
 		}
 	if (m_ObsCIGARBuffLen)
 		{
-		CUtility::SafeWrite(m_hObsSIGARs, m_pObsCIGARBuff, m_ObsCIGARBuffLen);
+		CUtility::RetryWrites(m_hObsSIGARs, m_pObsCIGARBuff, m_ObsCIGARBuffLen);
 		m_ObsCIGARBuffLen = 0;
 		}
 	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Reported %d PE read pair error profiles to '%s' with read lengths of %dbp", NumPairs, pszObsCIGARsFile, MaxProfileSeqLen);
@@ -1747,7 +1747,7 @@ else
 				(pObsCIGAR->Flags & 0x10) ? '-' : '+', &pObsCIGAR->NameCIGARErrProfile[pObsCIGAR->NameLen], &pObsCIGAR->NameCIGARErrProfile[pObsCIGAR->NameLen + pObsCIGAR->ObsCIGARlen]);
 			if((m_ObsCIGARBuffLen + 1000) >= m_AllocdObsCIGARBuffSize)
 				{
-				CUtility::SafeWrite(m_hObsSIGARs, m_pObsCIGARBuff, m_ObsCIGARBuffLen);
+				CUtility::RetryWrites(m_hObsSIGARs, m_pObsCIGARBuff, m_ObsCIGARBuffLen);
 				m_ObsCIGARBuffLen = 0;
 				}
 			}
@@ -1757,7 +1757,7 @@ else
 		}
 	if (m_ObsCIGARBuffLen)
 		{
-		CUtility::SafeWrite(m_hObsSIGARs, m_pObsCIGARBuff, m_ObsCIGARBuffLen);
+		CUtility::RetryWrites(m_hObsSIGARs, m_pObsCIGARBuff, m_ObsCIGARBuffLen);
 		m_ObsCIGARBuffLen = 0;
 		}
 	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Reported %d SE read error profiles to '%s' with read lengths of %dbp", NumSEs, pszObsCIGARsFile, MaxProfileSeqLen);
@@ -2049,7 +2049,7 @@ for(SeqIdx = 0; SeqIdx < MaxNumReads; SeqIdx++)
 
 	if (m_OutSEBuffIdx)
 		{
-		if (!CUtility::SafeWrite(m_hSEReads, m_pszSESimReadBuff, m_OutSEBuffIdx))
+		if (!CUtility::RetryWrites(m_hSEReads, m_pszSESimReadBuff, m_OutSEBuffIdx))
 			return(eBSFerrFileAccess);
 		m_OutSEBuffIdx = 0;
 #ifdef _WIN32
@@ -2063,7 +2063,7 @@ for(SeqIdx = 0; SeqIdx < MaxNumReads; SeqIdx++)
 
 	if (m_OutPE2BuffIdx)
 		{
-		if (!CUtility::SafeWrite(m_hPE2Reads, m_pszPE2SimReadBuff, m_OutPE2BuffIdx))
+		if (!CUtility::RetryWrites(m_hPE2Reads, m_pszPE2SimReadBuff, m_OutPE2BuffIdx))
 			return(eBSFerrFileAccess);
 		m_OutPE2BuffIdx = 0;
 #ifdef _WIN32
@@ -2205,7 +2205,7 @@ pChr = &pOutBuff[*pOutBuffIdx];
 
 if (*pOutBuffIdx > (m_AllocOutBuffSize - (pCurCIGAR->ReadLen * 2)))
 	{
-	if (!CUtility::SafeWrite(hSimReads, pOutBuff, *pOutBuffIdx))
+	if (!CUtility::RetryWrites(hSimReads, pOutBuff, *pOutBuffIdx))
 		return(eBSFerrFileAccess);
 	*pOutBuffIdx = 0;
 	pChr = pOutBuff;
@@ -2836,7 +2836,7 @@ if(m_szResultsFile[0] != '\0')
 		for (int Idx = 0; Idx < 101; Idx++)
 			LineBuffIdx += sprintf(&szLineBuffer[LineBuffIdx], ",RBO %u%%", Idx);
 		LineBuffIdx += sprintf(&szLineBuffer[LineBuffIdx], "\n");
-		CUtility::SafeWrite(hRslts, szLineBuffer, LineBuffIdx);
+		CUtility::RetryWrites(hRslts, szLineBuffer, LineBuffIdx);
 		}
 
 	LineBuffIdx = sprintf(szLineBuffer,"\"%s\",\"%s\",\"%s\",\"%s\",", pszExperimentDescr, pszControlAligner, pszScoredAligner,pszAlignmentsFile);
@@ -2848,7 +2848,7 @@ if(m_szResultsFile[0] != '\0')
 	for (int Idx = 0; Idx < 101; Idx++)
 		LineBuffIdx += sprintf(&szLineBuffer[LineBuffIdx],",%u", m_ReadOverlapHistogram[Idx]);
 	LineBuffIdx += sprintf(&szLineBuffer[LineBuffIdx], "\n");
-	CUtility::SafeWrite(hRslts, szLineBuffer, LineBuffIdx);
+	CUtility::RetryWrites(hRslts, szLineBuffer, LineBuffIdx);
 #ifdef _WIN32
 	_commit(hRslts);
 #else

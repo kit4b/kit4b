@@ -728,7 +728,7 @@ if((m_hRsltsFile = open(pszRsltsFile, O_RDWR | O_CREAT | O_TRUNC, S_IREAD | S_IW
 	}
 
 BuffIdx = sprintf(szLineBuff,"track type=wiggle_0 color=50,150,255 autoScale=off maxHeightPixels=128:32:8 name=\"Reads - %s\" description=\"Reads distribution for %s\"\n",pszSrcFile,pszSrcFile);
-CUtility::SafeWrite(m_hRsltsFile,szLineBuff,BuffIdx);
+CUtility::RetryWrites(m_hRsltsFile,szLineBuff,BuffIdx);
 BuffIdx = 0;
 pChrom = &m_ChromCnts[0];
 for(ChromIdx = 0 ; ChromIdx < m_NumChromsCov; ChromIdx++,pChrom++)
@@ -757,21 +757,21 @@ for(ChromIdx = 0 ; ChromIdx < m_NumChromsCov; ChromIdx++,pChrom++)
 		if(bStartRegion)
 			{
 			BuffIdx += sprintf(&szLineBuff[BuffIdx],"fixedStep chrom=%s start=%d step=1\n",pChrom->szChrom,SeqIdx+1);
-			CUtility::SafeWrite(m_hRsltsFile,szLineBuff,BuffIdx);
+			CUtility::RetryWrites(m_hRsltsFile,szLineBuff,BuffIdx);
 			BuffIdx = 0;
 			bStartRegion = false;
 			}
 		BuffIdx += sprintf(&szLineBuff[BuffIdx],"%d\n",*pCnts);
 		if(BuffIdx + 100 > sizeof(szLineBuff))
 			{
-			CUtility::SafeWrite(m_hRsltsFile,szLineBuff,BuffIdx);
+			CUtility::RetryWrites(m_hRsltsFile,szLineBuff,BuffIdx);
 			BuffIdx = 0;
 			}
 
 		}
 	}
 if(BuffIdx)
-	CUtility::SafeWrite(m_hRsltsFile,szLineBuff,BuffIdx);
+	CUtility::RetryWrites(m_hRsltsFile,szLineBuff,BuffIdx);
 close(m_hRsltsFile);
 m_hRsltsFile = -1;
 return(eBSFSuccess);
@@ -1178,14 +1178,14 @@ for(KMerIdx = 0; KMerIdx <  (int)m_KMerDists; KMerIdx++)
 
 		if((BuffIdx + 1000) > sizeof(szLineBuff))
 			{
-			CUtility::SafeWrite(m_hRsltsFile,szLineBuff,BuffIdx);
+			CUtility::RetryWrites(m_hRsltsFile,szLineBuff,BuffIdx);
 			BuffIdx = 0;
 			}
 		}
 	}
 
 if(BuffIdx > 0)
-	CUtility::SafeWrite(m_hRsltsFile,szLineBuff,BuffIdx);
+	CUtility::RetryWrites(m_hRsltsFile,szLineBuff,BuffIdx);
 
 close(m_hRsltsFile);
 m_hRsltsFile = -1;
@@ -1420,7 +1420,7 @@ while((CurFeatID = m_pBEDElFile->GetNextFeatureID(CurFeatID)) > 0)
 
 			if((BuffIdx + 1000) > sizeof(szLineBuff))
 				{
-				CUtility::SafeWrite(m_hRsltsFile,szLineBuff,BuffIdx);
+				CUtility::RetryWrites(m_hRsltsFile,szLineBuff,BuffIdx);
 				BuffIdx = 0;
 				}
 			}
@@ -1429,7 +1429,7 @@ while((CurFeatID = m_pBEDElFile->GetNextFeatureID(CurFeatID)) > 0)
 
 
 if(BuffIdx > 0)
-	CUtility::SafeWrite(m_hRsltsFile,szLineBuff,BuffIdx);
+	CUtility::RetryWrites(m_hRsltsFile,szLineBuff,BuffIdx);
 
 close(m_hRsltsFile);
 m_hRsltsFile = -1;
@@ -1543,12 +1543,12 @@ for(KMerIdx = 0; KMerIdx < (int)m_KMerDists; KMerIdx++,pKMer++)
 	BuffIdx += sprintf(&szLineBuff[BuffIdx],"\n");
 	if((BuffIdx + 1000) > sizeof(szLineBuff))
 		{
-		CUtility::SafeWrite(m_hRsltsFile,szLineBuff,BuffIdx);
+		CUtility::RetryWrites(m_hRsltsFile,szLineBuff,BuffIdx);
 		BuffIdx = 0;
 		}
 	}
 if(BuffIdx > 0)
-	CUtility::SafeWrite(m_hRsltsFile,szLineBuff,BuffIdx);
+	CUtility::RetryWrites(m_hRsltsFile,szLineBuff,BuffIdx);
 close(m_hRsltsFile);
 m_hRsltsFile = -1;
 return(eBSFSuccess);

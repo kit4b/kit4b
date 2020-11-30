@@ -1532,7 +1532,7 @@ for(Idx = 0; Idx < pParams->MaxNMerLen; Idx++)
 			pParams->ProcMode == eProcModeNMerDistAllSeqs ? pParams->pszInLociFile : pParams->pszCurChrom,
 				Idx+1,StepIdx+1,StepIdx2Seq(Idx+1,StepIdx),*pCnt,*pCnt/(double)Tot);
 		Len += sprintf(&szLineBuff[Len],"\n");
-		CUtility::SafeWrite(pParams->hRsltsFile,szLineBuff,Len);
+		CUtility::RetryWrites(pParams->hRsltsFile,szLineBuff,Len);
 		}
 	}
 return(eBSFSuccess);

@@ -1904,7 +1904,11 @@ if(pszChimericSeqFile != NULL && pszChimericSeqFile[0] != '\0')
 		return(eBSFerrMem);
 		}	
 	BuffIdx = sprintf(pszLineBuff,"\"Chrom\",\"Loci\",\"Strand\",\"ReadDescr\",\"5'TrimLen\",\"5'TrimSeq\",\"AlignLen\",\"AlignSeq\",\"3'TrimLen\",\"3'TrimSeq\"\n");
-	CUtility::SafeWrite(hChimerics,pszLineBuff,BuffIdx);
+	if(!CUtility::RetryWrites(hChimerics,pszLineBuff,BuffIdx))
+		{
+		gDiagnostics.DiagOut(eDLInfo,gszProcName,"RetryWrites() error");
+		return(eBSFerrWrite);
+		}
 	BuffIdx = 0;
 	}
 NumTrimmed = 0;
@@ -1994,7 +1998,11 @@ while(pCurReadHit != NULL) {
 
 	if(hChimerics != -1 && BuffIdx > (cChimericSeqBuffLen / 2))
 		{
-		CUtility::SafeWrite(hChimerics,pszLineBuff,BuffIdx);
+		if(!CUtility::RetryWrites(hChimerics,pszLineBuff,BuffIdx))
+			{
+			gDiagnostics.DiagOut(eDLInfo,gszProcName,"RetryWrites() error");
+			return(eBSFerrWrite);
+			}
 		BuffIdx = 0;
 		}
 
@@ -2005,7 +2013,11 @@ while(pCurReadHit != NULL) {
 if(hChimerics != -1)
 	{
 	if(BuffIdx)
-		CUtility::SafeWrite(hChimerics,pszLineBuff,BuffIdx);
+		if(!CUtility::RetryWrites(hChimerics,pszLineBuff,BuffIdx))
+			{
+			gDiagnostics.DiagOut(eDLInfo,gszProcName,"RetryWrites() error");
+			return(eBSFerrWrite);
+			}
 
 #ifdef _WIN32
 	_commit(hChimerics);
@@ -3076,13 +3088,21 @@ if(m_hStatsFile != -1)
 		BuffIdx += sprintf(&szLineBuff[BuffIdx],"%d,%d\n",PairReadIdx,m_pLenDist[PairReadIdx]);
 		if(BuffIdx + 100 > sizeof(szLineBuff))
 			{
-			CUtility::SafeWrite(hGlobalPEInsertDist,szLineBuff,BuffIdx);
+			if(!CUtility::RetryWrites(hGlobalPEInsertDist,szLineBuff,BuffIdx))
+				{
+				gDiagnostics.DiagOut(eDLInfo,gszProcName,"RetryWrites() error");
+				return(eBSFerrWrite);
+				}
 			BuffIdx = 0;
 			}
 		}
 	if(BuffIdx)
 		{
-		CUtility::SafeWrite(hGlobalPEInsertDist,szLineBuff,BuffIdx);
+		if(!CUtility::RetryWrites(hGlobalPEInsertDist,szLineBuff,BuffIdx))
+			{
+			gDiagnostics.DiagOut(eDLInfo,gszProcName,"RetryWrites() error");
+			return(eBSFerrWrite);
+			}
 		BuffIdx = 0;
 		}
 #ifdef _WIN32
@@ -3813,7 +3833,7 @@ if(m_hNoneAlignFile != -1 || m_gzNoneAlignFile != NULL)
 		if((LineLen + (2 * cMaxFastQSeqLen)) > cAllocLineBuffSize)
 			{
 			if(m_hNoneAlignFile != -1)
-				CUtility::SafeWrite(m_hNoneAlignFile,m_pszLineBuff,LineLen);
+				CUtility::RetryWrites(m_hNoneAlignFile,m_pszLineBuff,LineLen);
 			else
 				CUtility::SafeWrite_gz(m_gzNoneAlignFile,m_pszLineBuff,LineLen);
 			LineLen = 0;
@@ -3839,7 +3859,7 @@ if(m_hNoneAlignFile != -1 || m_gzNoneAlignFile != NULL)
 			if((LineLen + (2 * cMaxFastQSeqLen)) > cAllocLineBuffSize)
 				{
 				if(m_hNoneAlignFile != -1)
-					CUtility::SafeWrite(m_hNoneAlignFile,m_pszLineBuff,LineLen);
+					CUtility::RetryWrites(m_hNoneAlignFile,m_pszLineBuff,LineLen);
 				else
 					CUtility::SafeWrite_gz(m_gzNoneAlignFile,m_pszLineBuff,LineLen);
 				LineLen = 0;
@@ -3849,7 +3869,7 @@ if(m_hNoneAlignFile != -1 || m_gzNoneAlignFile != NULL)
 	if(LineLen)
 		{
 		if(m_hNoneAlignFile != -1)
-			CUtility::SafeWrite(m_hNoneAlignFile,m_pszLineBuff,LineLen);
+			CUtility::RetryWrites(m_hNoneAlignFile,m_pszLineBuff,LineLen);
 		else
 			CUtility::SafeWrite_gz(m_gzNoneAlignFile,m_pszLineBuff,LineLen);
 		}
@@ -3906,7 +3926,7 @@ if(m_hMultiAlignFile != -1 || m_gzMultiAlignFile != NULL)
 		if((LineLen + (2 * cMaxFastQSeqLen)) > cAllocLineBuffSize)
 			{
 			if(m_hMultiAlignFile != -1)
-				CUtility::SafeWrite(m_hMultiAlignFile,m_pszLineBuff,LineLen);
+				CUtility::RetryWrites(m_hMultiAlignFile,m_pszLineBuff,LineLen);
 			else
 				CUtility::SafeWrite_gz(m_gzMultiAlignFile,m_pszLineBuff,LineLen);
 			LineLen = 0;
@@ -3932,7 +3952,7 @@ if(m_hMultiAlignFile != -1 || m_gzMultiAlignFile != NULL)
 			if((LineLen + (2 * cMaxFastQSeqLen)) > cAllocLineBuffSize)
 				{
 				if(m_hMultiAlignFile != -1)
-					CUtility::SafeWrite(m_hMultiAlignFile,m_pszLineBuff,LineLen);
+					CUtility::RetryWrites(m_hMultiAlignFile,m_pszLineBuff,LineLen);
 				else
 					CUtility::SafeWrite_gz(m_gzMultiAlignFile,m_pszLineBuff,LineLen);
 				LineLen = 0;
@@ -3942,7 +3962,7 @@ if(m_hMultiAlignFile != -1 || m_gzMultiAlignFile != NULL)
 	if(LineLen)
 		{
 		if(m_hMultiAlignFile != -1)
-			CUtility::SafeWrite(m_hMultiAlignFile,m_pszLineBuff,LineLen);
+			CUtility::RetryWrites(m_hMultiAlignFile,m_pszLineBuff,LineLen);
 		else
 			CUtility::SafeWrite_gz(m_gzMultiAlignFile,m_pszLineBuff,LineLen);
 		}
@@ -4163,7 +4183,7 @@ if(m_hStatsFile > 0 && m_MaxAlignLen > 0)
 			BuffIdx += sprintf(&szLineBuff[BuffIdx],",%d",Idx+1);
 			if((BuffIdx + 512) > sizeof(szLineBuff))
 				{
-				CUtility::SafeWrite(m_hStatsFile,szLineBuff,BuffIdx);
+				CUtility::RetryWrites(m_hStatsFile,szLineBuff,BuffIdx);
 				BuffIdx = 0;
 				}
 			}
@@ -4173,7 +4193,7 @@ if(m_hStatsFile > 0 && m_MaxAlignLen > 0)
 			BuffIdx += sprintf(&szLineBuff[BuffIdx],",%d",m_MultiHitDist[Idx]);
 			if((BuffIdx + 512) > sizeof(szLineBuff))
 				{
-				CUtility::SafeWrite(m_hStatsFile,szLineBuff,BuffIdx);
+				CUtility::RetryWrites(m_hStatsFile,szLineBuff,BuffIdx);
 				BuffIdx = 0;
 				}
 			}
@@ -4186,7 +4206,7 @@ if(m_hStatsFile > 0 && m_MaxAlignLen > 0)
 		BuffIdx += sprintf(&szLineBuff[BuffIdx],",%d",SeqOfs+1);
 		if((BuffIdx + 512) > sizeof(szLineBuff))
 			{
-			CUtility::SafeWrite(m_hStatsFile,szLineBuff,BuffIdx);
+			CUtility::RetryWrites(m_hStatsFile,szLineBuff,BuffIdx);
 			BuffIdx = 0;
 			}
 		}
@@ -4213,7 +4233,7 @@ if(m_hStatsFile > 0 && m_MaxAlignLen > 0)
 			BuffIdx += sprintf(&szLineBuff[BuffIdx],",%d",m_AlignQSubDist[PhredBand][SeqOfs].QInsts);
 			if((BuffIdx + 512) > sizeof(szLineBuff))
 				{
-				CUtility::SafeWrite(m_hStatsFile,szLineBuff,BuffIdx);
+				CUtility::RetryWrites(m_hStatsFile,szLineBuff,BuffIdx);
 				BuffIdx = 0;
 				}
 			}
@@ -4225,7 +4245,7 @@ if(m_hStatsFile > 0 && m_MaxAlignLen > 0)
 		BuffIdx += sprintf(&szLineBuff[BuffIdx],",%d",SeqOfs+1);
 		if((BuffIdx + 512) > sizeof(szLineBuff))
 			{
-			CUtility::SafeWrite(m_hStatsFile,szLineBuff,BuffIdx);
+			CUtility::RetryWrites(m_hStatsFile,szLineBuff,BuffIdx);
 			BuffIdx = 0;
 			}
 		}
@@ -4252,7 +4272,7 @@ if(m_hStatsFile > 0 && m_MaxAlignLen > 0)
 			BuffIdx += sprintf(&szLineBuff[BuffIdx],",%d",m_AlignQSubDist[PhredBand][SeqOfs].Subs);
 			if((BuffIdx + 512) > sizeof(szLineBuff))
 				{
-				CUtility::SafeWrite(m_hStatsFile,szLineBuff,BuffIdx);
+				CUtility::RetryWrites(m_hStatsFile,szLineBuff,BuffIdx);
 				BuffIdx = 0;
 				}
 			}
@@ -4264,7 +4284,7 @@ if(m_hStatsFile > 0 && m_MaxAlignLen > 0)
 		BuffIdx += sprintf(&szLineBuff[BuffIdx],",%d",SeqOfs);
 		if((BuffIdx + 512) > sizeof(szLineBuff))
 			{
-			CUtility::SafeWrite(m_hStatsFile,szLineBuff,BuffIdx);
+			CUtility::RetryWrites(m_hStatsFile,szLineBuff,BuffIdx);
 			BuffIdx = 0;
 			}
 		}
@@ -4274,12 +4294,12 @@ if(m_hStatsFile > 0 && m_MaxAlignLen > 0)
 		BuffIdx += sprintf(&szLineBuff[BuffIdx],",%d",m_AlignMSubDist[SeqOfs]);
 		if((BuffIdx + 512) > sizeof(szLineBuff))
 			{
-			CUtility::SafeWrite(m_hStatsFile,szLineBuff,BuffIdx);
+			CUtility::RetryWrites(m_hStatsFile,szLineBuff,BuffIdx);
 			BuffIdx = 0;
 			}
 		}
 	BuffIdx += sprintf(&szLineBuff[BuffIdx],"\n");
-	CUtility::SafeWrite(m_hStatsFile,szLineBuff,BuffIdx);
+	CUtility::RetryWrites(m_hStatsFile,szLineBuff,BuffIdx);
 	BuffIdx = 0;
 	}
 return(eBSFSuccess);
@@ -4359,7 +4379,7 @@ if(m_FMode == eFMbed && m_MLMode == eMLall)
 	{
 	LineLen = sprintf(m_pszLineBuff,"track type=bed name=\"%s\" description=\"%s\"\n",m_pszTrackTitle,m_pszTrackTitle);
 	if(!m_bgzOutFile)
-		CUtility::SafeWrite(m_hOutFile,m_pszLineBuff,LineLen);
+		CUtility::RetryWrites(m_hOutFile,m_pszLineBuff,LineLen);
 	else
 		CUtility::SafeWrite_gz(m_gzOutFile,m_pszLineBuff,LineLen);
 	LineLen = 0;
@@ -5322,7 +5342,7 @@ BuffOfs = sprintf(szDistBuff,"\"TargSeq\",\"TargLen\",\"TotPEs\",\"MedianInsertL
 for(Idx = 0; Idx < 50; Idx++)
 	BuffOfs += sprintf(&szDistBuff[BuffOfs],",\"Insert %dbp\"",100 + (10 * Idx));
 BuffOfs += sprintf(&szDistBuff[BuffOfs],",\"Insert >600bp\"\n");
-CUtility::SafeWrite(m_hInsertLensFile,szDistBuff,BuffOfs);
+CUtility::RetryWrites(m_hInsertLensFile,szDistBuff,BuffOfs);
 BuffOfs = 0;
 
 pPE1ReadHit = NULL;
@@ -5353,7 +5373,7 @@ while((pPE1ReadHit = IterSortedReads(pPE1ReadHit))!=NULL)
 			BuffOfs += sprintf(&szDistBuff[BuffOfs],"\n");
 			if((BuffOfs + 4096) > sizeof(szDistBuff))
 				{
-				CUtility::SafeWrite(m_hInsertLensFile,szDistBuff,BuffOfs);
+				CUtility::RetryWrites(m_hInsertLensFile,szDistBuff,BuffOfs);
 				BuffOfs = 0;
 				}
 			}
@@ -5411,7 +5431,7 @@ if(NumTargIDs)
 		}
 
 	if(BuffOfs)
-		CUtility::SafeWrite(m_hInsertLensFile,szDistBuff,BuffOfs);
+		CUtility::RetryWrites(m_hInsertLensFile,szDistBuff,BuffOfs);
 	}
 
 delete pInsertLens;
@@ -5505,7 +5525,11 @@ for (TriIdx = 0; TriIdx < 64; TriIdx++)
 	}
 BuffOfs += sprintf(&szDistBuff[BuffOfs],",Indeterminates\n");
 
-CUtility::SafeWrite(hTargHitCnts,szDistBuff,BuffOfs);
+if(!CUtility::RetryWrites(hTargHitCnts,szDistBuff,BuffOfs))
+	{
+	gDiagnostics.DiagOut(eDLInfo,gszProcName,"RetryWrites() error");
+	return(eBSFerrWrite);
+	}
 BuffOfs = 0;
 
 pReadHit = NULL;
@@ -5548,7 +5572,11 @@ while((pReadHit = IterSortedReads(pReadHit))!=NULL)
 			BuffOfs += sprintf(&szDistBuff[BuffOfs], ",%u\n", Indeterminates);
 			if (((size_t)BuffOfs + 4096) > sizeof(szDistBuff))
 				{
-				CUtility::SafeWrite(hTargHitCnts, szDistBuff, BuffOfs);
+				if(!CUtility::RetryWrites(hTargHitCnts, szDistBuff, BuffOfs))
+					{
+					gDiagnostics.DiagOut(eDLInfo,gszProcName,"RetryWrites() error");
+					return(eBSFerrWrite);
+					}
 				BuffOfs = 0;
 				}
 			ExpTargID = CurTargID + 1;
@@ -5566,7 +5594,11 @@ while((pReadHit = IterSortedReads(pReadHit))!=NULL)
 			BuffOfs += sprintf(&szDistBuff[BuffOfs], ",0\n");
 			if (((size_t)BuffOfs + 4096) > sizeof(szDistBuff))
 				{
-				CUtility::SafeWrite(hTargHitCnts, szDistBuff, BuffOfs);
+				if(!CUtility::RetryWrites(hTargHitCnts, szDistBuff, BuffOfs))
+					{
+					gDiagnostics.DiagOut(eDLInfo,gszProcName,"RetryWrites() error");
+					return(eBSFerrWrite);
+					}
 				BuffOfs = 0;
 				}
 			ExpTargID += 1;
@@ -5619,7 +5651,11 @@ if(NumHits)
 	for(TriIdx = 0; TriIdx < (4*4*4); TriIdx++)
 		BuffOfs += sprintf(&szDistBuff[BuffOfs], ",%1.4f", NumHits == 0 ? 0.0 : (double)TriMerCnts[TriIdx]/(double)NumHits);
 	BuffOfs += sprintf(&szDistBuff[BuffOfs], ",%u\n", Indeterminates);
-	CUtility::SafeWrite(hTargHitCnts,szDistBuff,BuffOfs);
+	if(!CUtility::RetryWrites(hTargHitCnts,szDistBuff,BuffOfs))
+		{
+		gDiagnostics.DiagOut(eDLInfo,gszProcName,"RetryWrites() error");
+		return(eBSFerrWrite);
+		}
 	BuffOfs = 0;
 	}
 ExpTargID = m_pSfxArray->GetNumEntries();
@@ -5633,14 +5669,22 @@ while (CurTargID != ExpTargID) // checking for targets w/o hits and reporting th
 	BuffOfs += sprintf(&szDistBuff[BuffOfs], ",0\n");
 	if (((size_t)BuffOfs + 4096) > sizeof(szDistBuff))
 		{
-		CUtility::SafeWrite(hTargHitCnts, szDistBuff, BuffOfs);
+		if(!CUtility::RetryWrites(hTargHitCnts, szDistBuff, BuffOfs))
+			{
+			gDiagnostics.DiagOut(eDLInfo,gszProcName,"RetryWrites() error");
+			return(eBSFerrWrite);
+			}
 		BuffOfs = 0;
 		}
 	CurTargID += 1;
 	}
 if (BuffOfs)
 	{
-	CUtility::SafeWrite(hTargHitCnts, szDistBuff, BuffOfs);
+	if(!CUtility::RetryWrites(hTargHitCnts, szDistBuff, BuffOfs))
+		{
+		gDiagnostics.DiagOut(eDLInfo,gszProcName,"RetryWrites() error");
+		return(eBSFerrWrite);
+		}
 	BuffOfs = 0;
 	}
 
@@ -6480,7 +6524,13 @@ if(m_FMode == eFMbed)
 	{
 	LineLen = sprintf(m_pszLineBuff,"track type=bed name=\"%s\" description=\"%s\"\n",m_pszTrackTitle,m_pszTrackTitle);
 	if(!m_bgzOutFile)
-		CUtility::SafeWrite(m_hOutFile,m_pszLineBuff,LineLen);
+		{
+		if(!CUtility::RetryWrites(m_hOutFile,m_pszLineBuff,LineLen))
+			{
+			gDiagnostics.DiagOut(eDLInfo,gszProcName,"RetryWrites() error");
+			return(eBSFerrWrite);
+			}
+		}
 	else
 		CUtility::SafeWrite_gz(m_gzOutFile,m_pszLineBuff,LineLen);
 	}
@@ -6488,13 +6538,21 @@ if(m_FMode == eFMbed)
 if(m_hJctOutFile != -1)
 	{
 	LineLen = sprintf(m_pszLineBuff,"track type=bed name=\"JCT_%s\" description=\"%s\"\n",m_pszTrackTitle,m_pszTrackTitle);
-	CUtility::SafeWrite(m_hJctOutFile,m_pszLineBuff,LineLen);
+	if(!CUtility::RetryWrites(m_hJctOutFile,m_pszLineBuff,LineLen))
+		{
+		gDiagnostics.DiagOut(eDLInfo,gszProcName,"RetryWrites() error");
+		return(eBSFerrWrite);
+		}
 	}
 
 if(m_hIndOutFile != -1)
 	{
 	LineLen = sprintf(m_pszLineBuff,"track type=bed name=\"IND_%s\" description=\"%s\"\n",m_pszTrackTitle,m_pszTrackTitle);
-	CUtility::SafeWrite(m_hIndOutFile,m_pszLineBuff,LineLen);
+	if(!CUtility::RetryWrites(m_hIndOutFile,m_pszLineBuff,LineLen))
+		{
+		gDiagnostics.DiagOut(eDLInfo,gszProcName,"RetryWrites() error");
+		return(eBSFerrWrite);
+		}
 	}
 LineLen = 0;
 
@@ -6561,10 +6619,22 @@ while((pReadHit = IterSortedReads(pReadHit))!=NULL)
 					if(LineLen > 0)
 						{
 						if(bPrevInDelSeg && m_hIndOutFile != -1)
-							CUtility::SafeWrite(m_hIndOutFile,m_pszLineBuff,LineLen);
+							{
+							if(!CUtility::RetryWrites(m_hIndOutFile,m_pszLineBuff,LineLen))
+								{
+								gDiagnostics.DiagOut(eDLInfo,gszProcName,"RetryWrites() error");
+								return(eBSFerrWrite);
+								}
+							}
 						else
 							if(bPrevJunctSeg && m_hJctOutFile != -1)
-								CUtility::SafeWrite(m_hJctOutFile,m_pszLineBuff,LineLen);
+								{
+								if(!CUtility::RetryWrites(m_hJctOutFile,m_pszLineBuff,LineLen))
+									{
+									gDiagnostics.DiagOut(eDLInfo,gszProcName,"RetryWrites() error");
+									return(eBSFerrWrite);
+									}
+								}
 						LineLen = 0;
 						}
 					bPrevInDelSeg = false;
@@ -6586,7 +6656,7 @@ while((pReadHit = IterSortedReads(pReadHit))!=NULL)
 						if(m_FMode == eFMbed)
 							{
 							if(!m_bgzOutFile)
-								CUtility::SafeWrite(m_hOutFile,m_pszLineBuff,LineLen);
+								CUtility::RetryWrites(m_hOutFile,m_pszLineBuff,LineLen);
 							else
 								CUtility::SafeWrite_gz(m_gzOutFile,m_pszLineBuff,LineLen);
 							}
@@ -6599,7 +6669,11 @@ while((pReadHit = IterSortedReads(pReadHit))!=NULL)
 					if(bPrevJunctSeg && m_hJctOutFile != -1)
 						{
 						if(LineLen > 0)
-							CUtility::SafeWrite(m_hJctOutFile,m_pszLineBuff,LineLen);
+							if(!CUtility::RetryWrites(m_hJctOutFile,m_pszLineBuff,LineLen))
+								{
+								gDiagnostics.DiagOut(eDLInfo,gszProcName,"RetryWrites() error");
+								return(eBSFerrWrite);
+								}
 						LineLen = 0;
 						}
 					bPrevJunctSeg = false;
@@ -6611,7 +6685,11 @@ while((pReadHit = IterSortedReads(pReadHit))!=NULL)
 						{
 						if(LineLen > 0)
 							{
-							CUtility::SafeWrite(m_hIndOutFile,m_pszLineBuff,LineLen);
+							if(!CUtility::RetryWrites(m_hIndOutFile,m_pszLineBuff,LineLen))
+								{
+								gDiagnostics.DiagOut(eDLInfo,gszProcName,"RetryWrites() error");
+								return(eBSFerrWrite);
+								}
 							LineLen = 0;
 							}
 						}
@@ -6639,7 +6717,7 @@ while((pReadHit = IterSortedReads(pReadHit))!=NULL)
 					if(m_FMode == eFMbed)
 						{
 						if(!m_bgzOutFile)
-							CUtility::SafeWrite(m_hOutFile,m_pszLineBuff,LineLen);
+							CUtility::RetryWrites(m_hOutFile,m_pszLineBuff,LineLen);
 						else
 							CUtility::SafeWrite_gz(m_gzOutFile,m_pszLineBuff,LineLen);
 						}
@@ -6649,10 +6727,10 @@ while((pReadHit = IterSortedReads(pReadHit))!=NULL)
 				else
 					{
 					if(bPrevInDelSeg && m_hIndOutFile != -1)
-						CUtility::SafeWrite(m_hIndOutFile,m_pszLineBuff,LineLen);
+						CUtility::RetryWrites(m_hIndOutFile,m_pszLineBuff,LineLen);
 					else
 						if(bPrevJunctSeg && m_hJctOutFile != -1)
-							CUtility::SafeWrite(m_hJctOutFile,m_pszLineBuff,LineLen);
+							CUtility::RetryWrites(m_hJctOutFile,m_pszLineBuff,LineLen);
 					LineLen = 0;
 					bPrevInDelSeg = false;
 					bPrevJunctSeg = false;
@@ -6729,7 +6807,7 @@ while((pReadHit = IterSortedReads(pReadHit))!=NULL)
 			if(LineLen + ((cMaxFastQSeqLen * 2) + 1024) > cAllocLineBuffSize)
 				{
 				if(!m_bgzOutFile)
-					CUtility::SafeWrite(m_hOutFile,m_pszLineBuff,LineLen);
+					CUtility::RetryWrites(m_hOutFile,m_pszLineBuff,LineLen);
 				else
 					CUtility::SafeWrite_gz(m_gzOutFile,m_pszLineBuff,LineLen);
 				LineLen = 0;
@@ -6747,7 +6825,7 @@ if(LineLen)
 	if(bPrevAlignSeg && m_FMode <= eFMbed)
 		{
 		if(!m_bgzOutFile)
-			CUtility::SafeWrite(m_hOutFile,m_pszLineBuff,LineLen);
+			CUtility::RetryWrites(m_hOutFile,m_pszLineBuff,LineLen);
 		else
 			CUtility::SafeWrite_gz(m_gzOutFile,m_pszLineBuff,LineLen);
 
@@ -6757,10 +6835,10 @@ if(LineLen)
 	else
 		{
 		if(bPrevInDelSeg && m_hIndOutFile != -1)
-			CUtility::SafeWrite(m_hIndOutFile,m_pszLineBuff,LineLen);
+			CUtility::RetryWrites(m_hIndOutFile,m_pszLineBuff,LineLen);
 		else
 			if(bPrevJunctSeg && m_hJctOutFile != -1)
-				CUtility::SafeWrite(m_hJctOutFile,m_pszLineBuff,LineLen);
+				CUtility::RetryWrites(m_hJctOutFile,m_pszLineBuff,LineLen);
 		LineLen = 0;
 		bPrevInDelSeg = false;
 		bPrevJunctSeg = false;
@@ -7216,7 +7294,7 @@ CKAligner::OutputSNPs(void)
 
 			if ((LineLen + cMaxSeqLen) > cAllocLineBuffSize)
 			{
-				CUtility::SafeWrite(m_hMarkerFile, m_pszLineBuff, LineLen);
+				CUtility::RetryWrites(m_hMarkerFile, m_pszLineBuff, LineLen);
 				LineLen = 0;
 			}
 		}
@@ -7242,7 +7320,7 @@ CKAligner::OutputSNPs(void)
 
 	if (m_hMarkerFile != -1 && LineLen)
 	{
-		CUtility::SafeWrite(m_hMarkerFile, m_pszLineBuff, LineLen);
+		CUtility::RetryWrites(m_hMarkerFile, m_pszLineBuff, LineLen);
 		LineLen = 0;
 	}
 
@@ -7373,7 +7451,7 @@ CKAligner::OutputSNPs(void)
 			}
 		if ((LineLen + cMaxSeqLen + 1) > cAllocLineBuffSize)
 			{
-			CUtility::SafeWrite(m_hSNPfile, m_pszLineBuff, LineLen);
+			CUtility::RetryWrites(m_hSNPfile, m_pszLineBuff, LineLen);
 			LineLen = 0;
 			}
 
@@ -7554,7 +7632,11 @@ CKAligner::OutputSNPs(void)
 
 					if ((DiSNPBuffIdx + 200) > sizeof(szDiSNPs))
 					{
-						CUtility::SafeWrite(m_hDiSNPfile, szDiSNPs, DiSNPBuffIdx);
+						if(!CUtility::RetryWrites(m_hDiSNPfile, szDiSNPs, DiSNPBuffIdx))
+							{
+							gDiagnostics.DiagOut(eDLInfo,gszProcName,"RetryWrites() error");
+							return(eBSFerrWrite);
+							}
 						DiSNPBuffIdx = 0;
 					}
 				}
@@ -7712,7 +7794,7 @@ CKAligner::OutputSNPs(void)
 						gSQLiteSummaries.AddTriSNP(gExperimentID, gProcessingID, &sTriSNP);
 					if ((TriSNPBuffIdx + 500) > sizeof(szTriSNPs))
 					{
-						CUtility::SafeWrite(m_hTriSNPfile, szTriSNPs, TriSNPBuffIdx);
+						CUtility::RetryWrites(m_hTriSNPfile, szTriSNPs, TriSNPBuffIdx);
 						TriSNPBuffIdx = 0;
 					}
 				}
@@ -7757,17 +7839,29 @@ CKAligner::OutputSNPs(void)
 	}
 	if (m_hDiSNPfile != -1 && DiSNPBuffIdx > 0)
 	{
-		CUtility::SafeWrite(m_hDiSNPfile, szDiSNPs, DiSNPBuffIdx);
+		if(!CUtility::RetryWrites(m_hDiSNPfile, szDiSNPs, DiSNPBuffIdx))
+			{
+			gDiagnostics.DiagOut(eDLInfo,gszProcName,"RetryWrites() error");
+			return(eBSFerrWrite);
+			}
 		DiSNPBuffIdx = 0;
 	}
 	if (m_hTriSNPfile != -1 && TriSNPBuffIdx > 0)
 	{
-		CUtility::SafeWrite(m_hTriSNPfile, szTriSNPs, TriSNPBuffIdx);
+		if(!CUtility::RetryWrites(m_hTriSNPfile, szTriSNPs, TriSNPBuffIdx))
+			{
+			gDiagnostics.DiagOut(eDLInfo,gszProcName,"RetryWrites() error");
+			return(eBSFerrWrite);
+			}
 		DiSNPBuffIdx = 0;
 	}
 
 	if (LineLen)
-		CUtility::SafeWrite(m_hSNPfile, m_pszLineBuff, LineLen);
+		if(!CUtility::RetryWrites(m_hSNPfile, m_pszLineBuff, LineLen))
+			{
+			gDiagnostics.DiagOut(eDLInfo,gszProcName,"RetryWrites() error");
+			return(eBSFerrWrite);
+			}
 	return(eBSFSuccess);
 	}
 
@@ -7801,7 +7895,7 @@ UINT32 PrevMMLoci;
 if(m_FMode == eFMbed)
 	{
 	LineLen = sprintf(m_pszLineBuff,"track type=bed name=\"%s_SNPs\" description=\"%s SNPs\"\n",m_pszTrackTitle,m_pszTrackTitle);
-	CUtility::SafeWrite(m_hSNPfile,m_pszLineBuff,LineLen);
+	CUtility::RetryWrites(m_hSNPfile,m_pszLineBuff,LineLen);
 	LineLen = 0;
 	}
 else			// else must be either CSV or VCF
@@ -7841,7 +7935,7 @@ else			// else must be either CSV or VCF
 			}
 		LineLen += sprintf(&m_pszLineBuff[LineLen],"\n");
 		}
-	CUtility::SafeWrite(m_hSNPfile,m_pszLineBuff,LineLen);
+	CUtility::RetryWrites(m_hSNPfile,m_pszLineBuff,LineLen);
 	LineLen = 0;
 	}
 
@@ -7868,7 +7962,11 @@ if(m_hDiSNPfile != -1)
 		LineLen += sprintf(&m_pszLineBuff[LineLen],",\"%s\"",szDiSNPs);
 		}
 	LineLen += sprintf(&m_pszLineBuff[LineLen],"\n");
-	CUtility::SafeWrite(m_hDiSNPfile,m_pszLineBuff,LineLen);
+	if(!CUtility::RetryWrites(m_hDiSNPfile,m_pszLineBuff,LineLen))
+		{
+		gDiagnostics.DiagOut(eDLInfo,gszProcName,"RetryWrites() error");
+		return(eBSFerrWrite);
+		}
 	LineLen = 0;
 	}
 
@@ -7901,7 +7999,7 @@ if(m_hTriSNPfile != -1)
 		LineLen += sprintf(&m_pszLineBuff[LineLen],",\"%s\"",szTriSNPs);
 		}
 	LineLen += sprintf(&m_pszLineBuff[LineLen],"\n");
-	CUtility::SafeWrite(m_hTriSNPfile,m_pszLineBuff,LineLen);
+	CUtility::RetryWrites(m_hTriSNPfile,m_pszLineBuff,LineLen);
 	LineLen = 0;
 	}
 
@@ -8224,12 +8322,12 @@ if(m_hSNPCentsfile != -1)
 
 		if(BuffIdx + 200 > sizeof(szCentroids))
 			{
-			CUtility::SafeWrite(m_hSNPCentsfile,szCentroids,BuffIdx);
+			CUtility::RetryWrites(m_hSNPCentsfile,szCentroids,BuffIdx);
 			BuffIdx = 0;
 			}
 		}
 	if(BuffIdx)
-		CUtility::SafeWrite(m_hSNPCentsfile,szCentroids,BuffIdx);
+		CUtility::RetryWrites(m_hSNPCentsfile,szCentroids,BuffIdx);
 	}
 
 if(m_hSNPCentsfile != -1)
@@ -8480,7 +8578,7 @@ for(SiteIdx = 0; SiteIdx < 0x0ffff; SiteIdx++,pSite++)
 	BuffIdx += sprintf(&szBuff[BuffIdx],"%d,\"+\",\"%s\",%d,%d,%1.3f\n",SiteIdx+1,Octamer2Txt(pSite->Octamer),pSite->NumOccs,pSite->NumSites,pSite->RelScale);
 	if(BuffIdx + 200 > sizeof(szBuff))
 		{
-		CUtility::SafeWrite(m_hSitePrefsFile,szBuff,BuffIdx);
+		CUtility::RetryWrites(m_hSitePrefsFile,szBuff,BuffIdx);
 		BuffIdx = 0;
 		}
 	}
@@ -8490,14 +8588,14 @@ for(SiteIdx = 0; SiteIdx < 0x0ffff; SiteIdx++,pSite++)
 	BuffIdx += sprintf(&szBuff[BuffIdx],"%d,\"-\",\"%s\",%d,%d,%1.3f\n",SiteIdx+1,Octamer2Txt(pSite->Octamer),pSite->NumOccs,pSite->NumSites,pSite->RelScale);
 	if(BuffIdx + 200 > sizeof(szBuff))
 		{
-		CUtility::SafeWrite(m_hSitePrefsFile,szBuff,BuffIdx);
+		CUtility::RetryWrites(m_hSitePrefsFile,szBuff,BuffIdx);
 		BuffIdx = 0;
 		}
 	}
 
 if(BuffIdx > 0)
 	{
-	CUtility::SafeWrite(m_hSitePrefsFile,szBuff,BuffIdx);
+	CUtility::RetryWrites(m_hSitePrefsFile,szBuff,BuffIdx);
 	BuffIdx = 0;
 	}
 return(eBSFSuccess);
@@ -9059,7 +9157,7 @@ for(ThreadIdx = 0; ThreadIdx < m_NumThreads; ThreadIdx++, pWorkerThread++)
 		if((cAllocLineBuffSize - m_szLineBuffIdx) < (int)(pWorkerThread->OutBuffIdx + ((cMaxFastQSeqLen * 2) + 1024)))
 			{
 			if(!m_bgzOutFile)
-				CUtility::SafeWrite(m_hOutFile,m_pszLineBuff,m_szLineBuffIdx);
+				CUtility::RetryWrites(m_hOutFile,m_pszLineBuff,m_szLineBuffIdx);
 			else
 				CUtility::SafeWrite_gz(m_gzOutFile,m_pszLineBuff,m_szLineBuffIdx);
 			m_szLineBuffIdx = 0;
@@ -9135,7 +9233,7 @@ if((m_FMode == eFMsam || m_FMode == eFMsamAll) && m_MLMode == eMLall)
 if(m_szLineBuffIdx > 0)
 	{
 	if(!m_bgzOutFile)
-		CUtility::SafeWrite(m_hOutFile,m_pszLineBuff,m_szLineBuffIdx);
+		CUtility::RetryWrites(m_hOutFile,m_pszLineBuff,m_szLineBuffIdx);
 	else
 		CUtility::SafeWrite_gz(m_gzOutFile,m_pszLineBuff,m_szLineBuffIdx);
 	m_szLineBuffIdx = 0;

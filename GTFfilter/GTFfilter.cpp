@@ -299,7 +299,7 @@ while((Rslt=m_pGTFFile->NextRecordOfType(eGGTFany)) > 0)
 		}
 	if((BufOfs + 1000) > sizeof(szLineBuff))
 		{
-		CUtility::SafeWrite(m_hRsltsFile,szLineBuff,BufOfs);
+		CUtility::RetryWrites(m_hRsltsFile,szLineBuff,BufOfs);
 		BufOfs = 0;
 		}
 	BufOfs += sprintf(&szLineBuff[BufOfs],"%s\t%s\t%s\t%d\t%d\t",pCurFields->szSeqName,pCurFields->szSeqSource,pCurFields->szFeature,pCurFields->Start,pCurFields->End);
@@ -307,7 +307,7 @@ while((Rslt=m_pGTFFile->NextRecordOfType(eGGTFany)) > 0)
 	}
 
 if(Rslt >= eBSFSuccess && (BufOfs + 1000) > sizeof(szLineBuff))
-	CUtility::SafeWrite(m_hRsltsFile,szLineBuff,BufOfs);
+	CUtility::RetryWrites(m_hRsltsFile,szLineBuff,BufOfs);
 close(m_hRsltsFile);
 m_hRsltsFile = 0;
 if(Rslt >= eBSFSuccess)
