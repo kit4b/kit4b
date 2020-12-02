@@ -808,7 +808,7 @@ if(m_pSeqBuffer == MAP_FAILED)
 	}
 #endif
 
-gDiagnostics.DiagOut(eDLInfo,gszProcName,"Loading fasta assembly from : '%s'",pszOutFile);
+gDiagnostics.DiagOut(eDLInfo,gszProcName,"Loading fasta assembly from : '%s'",pszInFile);
 m_AllocSeqBuffMem = memreq;
 m_SeqBuffIdx = 0;
 

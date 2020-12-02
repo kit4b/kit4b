@@ -966,7 +966,7 @@ if(pszIsolateClassFile != NULL && pszIsolateClassFile[0] != '\0')
 	}
 else   // no classification file so default to a single unclassified class
 	{
-	uint32_t ClassificationID = AddClassification("Defaulted");
+	uint32_t ClassificationID = AddClassification((char *)"Defaulted");
 	m_Classifications[0].NumReadsets = m_NumReadsetNames;
 	for(uint32_t ReadSetID = 0; ReadSetID < m_NumReadsetNames; ReadSetID++)
 		{
