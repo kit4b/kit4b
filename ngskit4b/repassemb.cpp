@@ -21,7 +21,7 @@
 
 int
 Process(etRPPMode PMode,				// processing mode
-	char *pszSNPsFile,					// input SNPs file
+	char *pszSNPsFile,					// input kalign generated SNPs file, can be wild-carded to process multiple SNP files
 	char *pszAssembFile,				// assembly to repurpose
 	char *pszRepAssembFile);			// write out repurposed assembly to this file
 
@@ -54,7 +54,7 @@ repassemb(int argc, char **argv)
 	struct arg_file *LogFile = arg_file0 ("F", "log", "<file>", "diagnostics log file");
 
 	struct arg_int *pmode = arg_int0 ("m", "mode", "<int>", "processing mode: 0 only currently supported processing mode");
-	struct arg_file *snpsfile = arg_file1("s","snps","<file>", "input file containing kalign called SNPs");
+	struct arg_file *snpsfile = arg_file1("s","snps","<file>", "input file containing kalign called SNPs, use wild cards if multiple SNP files to be processed");
 	struct arg_file *infile = arg_file1("i", "in", "<file>", "input file containing fasta assembly sequences to be repurposed");
 	struct arg_file *outfile = arg_file1 ("o", "out", "<file>", "output file into which to write fasta assembly sequences with SNP loci bases replaced by SNP call major allele bases");
 	struct arg_end *end = arg_end (200);
@@ -217,7 +217,7 @@ repassemb(int argc, char **argv)
 
 int
 Process(etRPPMode PMode,				// processing mode
-		char* pszSNPsFile,					// input SNPs file
+		char* pszSNPsFile,					// input SNPs file, can be wild-carded to process multiple SNP files
 		char* pszAssembFile,				// assembly to repurpose
 		char* pszRepAssembFile)				// write out repurposed assembly to this file
 {
@@ -229,7 +229,7 @@ if((pRepAssemb = new CRepAssemb) == NULL)
 	return(eBSFerrInternal);
 	}
 
-Rslt = pRepAssemb->ProccessAssembly(pszSNPsFile,			// input kalign generated SNPs file
+Rslt = pRepAssemb->ProccessAssembly(pszSNPsFile,			// input kalign generated SNPs file, can be wild-carded to process multiple SNP files
 									pszAssembFile,			// input fasta assembly file
 									pszRepAssembFile);		// output to this fasta assembly file
 
@@ -245,6 +245,7 @@ m_pCSV = NULL;
 m_pSeqBuffer = NULL;
 m_hInFile = -1;
 m_hOutFile = -1;
+m_hOutRepSNPsFile = -1;
 Reset();
 }
 
@@ -275,6 +276,8 @@ if(m_hInFile != -1)
 	close(m_hInFile);
 if(m_hOutFile != -1)
 	close(m_hOutFile);
+if(m_hOutRepSNPsFile != -1)
+	close(m_hOutRepSNPsFile);
 }
 
 void
@@ -317,7 +320,13 @@ if(m_hOutFile != -1)
 	close(m_hOutFile);
 	m_hOutFile = -1;
 	}
+if(m_hOutRepSNPsFile != -1)
+	{
+	close(m_hOutRepSNPsFile);
+	m_hOutRepSNPsFile = -1;
+	}
 
+m_NumSortedSites = 0;
 m_NumSNPSites = 0;
 m_NumAllocdSNPSites = 0;
 m_AllocdSNPSitesMem = 0;
@@ -338,9 +347,10 @@ m_PValueThres = cDfltPValueThres;
 }
 
 int						// eBSFSuccess or error
-CRepAssemb::LoadKalignSNPs(char *pszSNPFile)	// load and parse kalign generated SNPs
+CRepAssemb::LoadKalignSNPs(char *pszSNPFiles)	// load and parse kalign generated SNPs from this - can be wild-carded
 {
 int Rslt;
+char *pszSNPFile;
 int NumFields;
 UINT32 EstNumSNPs;
 UINT32 NumSNPsAccepted;
@@ -359,228 +369,279 @@ uint32_t BaseCnts[5];
 char szChrom[cMaxDatasetSpeciesChrom+1];
 
 int CntRef;
-double PValue;
-double LocalSeqErrRate;
+
+CSimpleGlob glob(SG_GLOB_FULLSORT);
+glob.Init();
+if(glob.Add(pszSNPFiles) < SG_SUCCESS)
+	{
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to glob '%s",pszSNPFiles);
+	return(eBSFerrOpnFile);	// treat as though unable to open file
+	}
 
 tsSNPSite *pSNPSite;
+m_NumSortedSites = 0;
+m_NumSNPFiles = glob.FileCount();
 
-if ((m_pCSV = new CCSVFile) == NULL)
+for(int FileIdx = 0;FileIdx < m_NumSNPFiles; FileIdx++)
 	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to instantiate CCSVfile");
-	Reset();
-	return(eBSFerrObj);
-	}
-m_pCSV->SetMaxFields(cAlignNumSSNPXfields);
-
-if((Rslt = m_pCSV->Open(pszSNPFile)) != eBSFSuccess)
-	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to open file: '%s'", pszSNPFile);
-	Reset();
-	return(Rslt);
-	}
-gDiagnostics.DiagOut(eDLInfo, gszProcName, "Loading SNP calls from file: '%s'", pszSNPFile);
-EstNumSNPs = m_pCSV->EstNumRows();
-NumSNPsParsed = 0;
-NumSNPsAccepted = 0;
-RowNumber = 0;
-ExpNumFields = 0;
-szChrom[0] = '\0';
-while ((Rslt = m_pCSV->NextLine()) > 0)				// onto next line containing fields
-	{
-	RowNumber += 1;
-	NumFields = m_pCSV->GetCurFields();
-	if (ExpNumFields && ExpNumFields != NumFields)
+	pszSNPFile = glob.File(FileIdx);;
+	if ((m_pCSV = new CCSVFile) == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Inconsistency in number of fields, previously %d but %d fields parsed from '%s' near line %d", ExpNumFields, NumFields, pszSNPFile, RowNumber);
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to instantiate CCSVfile");
 		Reset();
-		return(eBSFerrFieldCnt);
+		return(eBSFerrObj);
 		}
-	if (!ExpNumFields)
-		{
-		if (!(NumFields == cAlignNumSSNPfields || NumFields == cAlignNumSSNPXfields))								// must be exactly this many if 'ngskit4b kalign' format
-			{
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "%d fields parsed from '%s' near line %d, expected %d, was file generated by 'kit4b kalign'?", NumFields, pszSNPFile, RowNumber, cAlignNumSSNPfields);
-			Reset();
-			return(eBSFerrFieldCnt);
-			}
-		ExpNumFields = NumFields;
-		}
+	m_pCSV->SetMaxFields(cAlignNumSSNPXfields);
 
-	if (RowNumber == 1)
+	if((Rslt = m_pCSV->Open(pszSNPFile)) != eBSFSuccess)
 		{
-		if (m_pCSV->IsLikelyHeaderLine())
-			continue;
-		else
-			{
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Expected CSV file '%s' first line to be a header line with  fully quoted field names", pszSNPFile);
-			Reset();
-			return(eBSFerrFieldCnt);
-			}
-		}
-
-	if (!NumSNPsParsed)
-		{
-		// parse out target assembly name against which alignments were made and the chromosome name
-		char* pSrc;
-		char* pDst;
-		char Chr;
-		int Len;
-
-		m_pCSV->GetText(3, &pSrc);
-		pDst = m_szTargAssemblyName;
-		Len = 0;
-		while (Len < sizeof(m_szTargAssemblyName) - 1 && (Chr = *pSrc++))
-			{
-			*pDst++ = Chr;
-			Len++;
-			*pDst = '\0';
-			}
-		}
-
-	char* pszTxt;
-	int SNPlen;
-	m_pCSV->GetInt(7, &SNPlen);			// check that we are processing SNPs!
-	if (SNPlen != 1)
-		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Expected SNP CSV file '%s' to only contain 1 base SNPs, 'Len' = %d near line %d", pszSNPFile, SNPlen, RowNumber);
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to open file: '%s'", pszSNPFile);
 		Reset();
-		return(eBSFerrFieldCnt);
+		return(Rslt);
 		}
-	m_pCSV->GetUint(11, &CoveringBases);		// get "Bases"
-	if(CoveringBases < m_MinCoverage)
-		continue;
-
-	NumSNPsParsed++;
-	m_pCSV->GetText(4, &pszTxt);			// get "Chrom"
-	strncpy(szChrom, pszTxt, sizeof(szChrom));
-	szChrom[sizeof(szChrom) - 1] = '\0';
-	if(m_szCurChrom[0] == 0 || m_CurChromID == 0 || stricmp(szChrom, m_szCurChrom))
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Loading SNP calls from file: '%s'", pszSNPFile);
+	EstNumSNPs = m_pCSV->EstNumRows();
+	NumSNPsParsed = 0;
+	NumSNPsAccepted = 0;
+	RowNumber = 0;
+	ExpNumFields = 0;
+	szChrom[0] = '\0';
+	while ((Rslt = m_pCSV->NextLine()) > 0)				// onto next line containing fields
 		{
-		if((Rslt = ChromID = AddChrom(szChrom)) < 1)
+		RowNumber += 1;
+		NumFields = m_pCSV->GetCurFields();
+		if (ExpNumFields && ExpNumFields != NumFields)
 			{
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Failed generating a unique chromosome name identifier '%s'", szChrom);
-			Reset();
-			return(Rslt);
-			}
-		strncpy(m_szCurChrom, szChrom, sizeof(m_szCurChrom));
-		m_CurChromID = ChromID;
-		}
-	m_pCSV->GetUint(1, &ReadsetSiteId);
-	m_pCSV->GetUint(5, &Loci);			// get "StartLoci"
-	m_pCSV->GetUint(12, &TotMismatches);		// get "Mismatches"
-	CntRef = CoveringBases - TotMismatches;
-	m_pCSV->GetUint(14, &BaseCnts[0]);	// get "MMBaseA"
-	m_pCSV->GetUint(15, &BaseCnts[1]);	// get "MMBaseC"
-	m_pCSV->GetUint(16, &BaseCnts[2]);	// get "MMBaseG"
-	m_pCSV->GetUint(17, &BaseCnts[3]);	// get "MMBaseT"
-	m_pCSV->GetUint(18, &BaseCnts[4]);	// get "MMBaseN"
-	m_pCSV->GetText(13, &pszTxt);		// get "RefBase"
-	switch (*pszTxt) {
-		case 'a': case 'A':
-			RefBase = eBaseA;
-			break;
-		case 'c': case 'C':
-			RefBase = eBaseC;
-			break;
-		case 'g': case 'G':
-			RefBase = eBaseG;
-			break;
-		case 't': case 'T': case 'u': case 'U':	// U in case RNA alignments..
-			RefBase = eBaseT;
-			break;
-		case 'n': case 'N':				// unlikely to have a SNP against an indeterminate base but you never know...
-			RefBase = eBaseN;
-			break;
-		default:
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Expected SNP RefBase ('%s') to be one of 'ACGTN' in CSV file '%s' near line %d", pszTxt, pszSNPFile, RowNumber);
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Inconsistency in number of fields, previously %d but %d fields parsed from '%s' near line %d", ExpNumFields, NumFields, pszSNPFile, RowNumber);
 			Reset();
 			return(eBSFerrFieldCnt);
-		}
-	m_pCSV->GetDouble(19, &LocalSeqErrRate);	// get "BackgroundSubRate"
+			}
+		if (!ExpNumFields)
+			{
+			if (!(NumFields == cAlignNumSSNPfields || NumFields == cAlignNumSSNPXfields))								// must be exactly this many if 'ngskit4b kalign' format
+				{
+				gDiagnostics.DiagOut(eDLFatal, gszProcName, "%d fields parsed from '%s' near line %d, expected %d, was file generated by 'kit4b kalign'?", NumFields, pszSNPFile, RowNumber, cAlignNumSSNPfields);
+				Reset();
+				return(eBSFerrFieldCnt);
+				}
+			ExpNumFields = NumFields;
+			}
 
-	if(m_MinAlleleProp > 0.0 && (CoveringBases == 0 || (TotMismatches / (double)CoveringBases) < m_MinAlleleProp))
-		continue;
+		if (RowNumber == 1)
+			{
+			if (m_pCSV->IsLikelyHeaderLine())
+				continue;
+			else
+				{
+				gDiagnostics.DiagOut(eDLFatal, gszProcName, "Expected CSV file '%s' first line to be a header line with  fully quoted field names", pszSNPFile);
+				Reset();
+				return(eBSFerrFieldCnt);
+				}
+			}
 
-	PValue = 1.0 - m_Stats.Binomial(CoveringBases, TotMismatches, LocalSeqErrRate);
-	if(PValue > m_PValueThres)
-		continue;
+		if (!NumSNPsParsed)
+			{
+			// parse out target assembly name against which alignments were made and the chromosome name
+			char* pSrc;
+			char* pDst;
+			char Chr;
+			int Len;
 
-	AlleleBase = eBaseN;
-	for (int Idx = 0; Idx < 4; Idx++)
-		{
-		if(Idx == RefBase)
+			m_pCSV->GetText(3, &pSrc);
+			pDst = m_szTargAssemblyName;
+			Len = 0;
+			while (Len < sizeof(m_szTargAssemblyName) - 1 && (Chr = *pSrc++))
+				{
+				*pDst++ = Chr;
+				Len++;
+				*pDst = '\0';
+				}
+			}
+
+		char* pszTxt;
+		int SNPlen;
+		m_pCSV->GetInt(7, &SNPlen);			// check that we are processing SNPs!
+		if (SNPlen != 1)
+			{
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Expected SNP CSV file '%s' to only contain 1 base SNPs, 'Len' = %d near line %d", pszSNPFile, SNPlen, RowNumber);
+			Reset();
+			return(eBSFerrFieldCnt);
+			}
+		m_pCSV->GetUint(11, &CoveringBases);		// get "Bases"
+		if(CoveringBases < m_MinCoverage)
 			continue;
-		if(m_MinAlleleProp > 0.0 && (BaseCnts[Idx] == 0 || (((double)BaseCnts[Idx] * 4) / (double)CoveringBases) < m_MinAlleleProp))
+
+		NumSNPsParsed++;
+		m_pCSV->GetText(4, &pszTxt);			// get "Chrom"
+		strncpy(szChrom, pszTxt, sizeof(szChrom));
+		szChrom[sizeof(szChrom) - 1] = '\0';
+		if(m_szCurChrom[0] == 0 || m_CurChromID == 0 || stricmp(szChrom, m_szCurChrom))
+			{
+			if((Rslt = ChromID = AddChrom(szChrom)) < 1)
+				{
+				gDiagnostics.DiagOut(eDLFatal, gszProcName, "Failed generating a unique chromosome name identifier '%s'", szChrom);
+				Reset();
+				return(Rslt);
+				}
+			strncpy(m_szCurChrom, szChrom, sizeof(m_szCurChrom));
+			m_CurChromID = ChromID;
+			}
+		m_pCSV->GetUint(1, &ReadsetSiteId);
+		m_pCSV->GetUint(5, &Loci);			// get "StartLoci"
+		m_pCSV->GetUint(12, &TotMismatches);		// get "Mismatches"
+		CntRef = CoveringBases - TotMismatches;
+		m_pCSV->GetUint(14, &BaseCnts[0]);	// get "MMBaseA"
+		m_pCSV->GetUint(15, &BaseCnts[1]);	// get "MMBaseC"
+		m_pCSV->GetUint(16, &BaseCnts[2]);	// get "MMBaseG"
+		m_pCSV->GetUint(17, &BaseCnts[3]);	// get "MMBaseT"
+		m_pCSV->GetUint(18, &BaseCnts[4]);	// get "MMBaseN"
+		m_pCSV->GetText(13, &pszTxt);		// get "RefBase"
+		
+		switch (*pszTxt) {
+			case 'a': case 'A':
+				RefBase = eBaseA;
+				break;
+			case 'c': case 'C':
+				RefBase = eBaseC;
+				break;
+			case 'g': case 'G':
+				RefBase = eBaseG;
+				break;
+			case 't': case 'T': case 'u': case 'U':	// U in case RNA alignments..
+				RefBase = eBaseT;
+				break;
+			case 'n': case 'N':				// unlikely to have a SNP against an indeterminate base but you never know...
+				RefBase = eBaseN;
+				break;
+			default:
+				gDiagnostics.DiagOut(eDLFatal, gszProcName, "Expected SNP RefBase ('%s') to be one of 'ACGTN' in CSV file '%s' near line %d", pszTxt, pszSNPFile, RowNumber);
+				Reset();
+				return(eBSFerrFieldCnt);
+			}
+
+		if(TotMismatches < (uint32_t)CntRef)
+			continue;
+		AlleleBase = eBaseN;
+		uint32_t AlleleBaseCnts = 0;
+		for (int Idx = 0; Idx < 4; Idx++)
+			{
+			if(m_MinAlleleProp > 0.0 && (BaseCnts[Idx] == 0 || (((double)BaseCnts[Idx] * 4) / (double)CoveringBases) < m_MinAlleleProp))
+				continue;
+
+			if(BaseCnts[Idx] > AlleleBaseCnts)
+				{
+				AlleleBaseCnts = BaseCnts[Idx];
+				AlleleBase = Idx;
+				}
+			}
+		if(AlleleBase == eBaseN || AlleleBase == RefBase)
 			continue;
 
-		PValue = 1.0 - m_Stats.Binomial(CoveringBases, BaseCnts[Idx], LocalSeqErrRate);
-		if(PValue > m_PValueThres)
+		NumSNPsAccepted++;
+
+		if((pSNPSite = LocateSite(ChromID, Loci)) != NULL)
+			{
+			if(pSNPSite->ChromID != ChromID || pSNPSite->Loci != Loci)
+				gDiagnostics.DiagOut(eDLFatal, gszProcName, "SNPs: Inconsistency in LocateSite()");
+				
+			if(pSNPSite->RefBase != RefBase)	// double check for consistency in reference bases - same chrom and loci expected to have same reference base!
+				{
+				char SiteRefBaseChr = CFasta::Base2Chr(pSNPSite->RefBase);
+				char RefBaseChr = CFasta::Base2Chr(RefBase);
+				gDiagnostics.DiagOut(eDLFatal, gszProcName, "SNPs: Inconsistency in reference base, previously was '%c', in this readset called as being '%c' in CSV file '%s' near line %d", SiteRefBaseChr,RefBaseChr, pszSNPFile, RowNumber);
+				
+				Reset();
+				return(eBSFErrBase);
+				}
+			pSNPSite->AlleleBaseCnts[AlleleBase]++;
 			continue;
+			}
 
-		AlleleBase = Idx;
-		}
-	if(AlleleBase == eBaseN)
-		continue;
-	NumSNPsAccepted++;
-
-	if(m_pSNPSites == NULL)
-		{
-		size_t memreq = (size_t)(sizeof(tsSNPSite) * cAllocNumSNPs);
-
-#ifdef _WIN32
-		m_pSNPSites = (tsSNPSite*)malloc(memreq);	// initial and perhaps the only allocation
 		if(m_pSNPSites == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "SNPs: Initial memory allocation of %lld bytes - %s", (INT64)memreq, strerror(errno));
-			Reset();
-			return(eBSFerrMem);
-			}
-#else
-		// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-		m_pSNPSites = (tsSNPSite *)mmap(NULL, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-		if(m_pSNPSites == MAP_FAILED)
-			{
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "SNPs: Memory allocation of %lld bytes through mmap()  failed - %s", (INT64)memreq, strerror(errno));
-			m_pSNPSites = NULL;
-			Reset();
-			return(eBSFerrMem);
-			}
-#endif
-		m_AllocdSNPSitesMem = memreq;
-		m_NumSNPSites = 0;
-		m_NumAllocdSNPSites = cAllocNumSNPs;
-		}
-	else
-		{
-		if((m_NumSNPSites + 100) > m_NumAllocdSNPSites)
-			{
-			size_t memreq = m_AllocdSNPSitesMem + (cAllocNumSNPs * sizeof(tsSNPSite));
-				
-#ifdef _WIN32
-			pSNPSite = (tsSNPSite*)realloc(m_pSNPSites, memreq);
-#else
-			pSNPSite = (tsSNPSite*)mremap(m_pSNPSites, m_AllocdSNPSitesMem, memreq, MREMAP_MAYMOVE);
-			if(pSNPSite == MAP_FAILED)
-				pSNPSite = NULL;
-#endif
-			if(pSNPSite == NULL)
+			size_t memreq = (size_t)(sizeof(tsSNPSite) * cAllocNumSNPs);
+
+	#ifdef _WIN32
+			m_pSNPSites = (tsSNPSite*)malloc(memreq);	// initial and perhaps the only allocation
+			if(m_pSNPSites == NULL)
 				{
-				gDiagnostics.DiagOut(eDLFatal, gszProcName, "SNPs: Memory re-allocation to %lld bytes - %s", memreq, strerror(errno));
+				gDiagnostics.DiagOut(eDLFatal, gszProcName, "SNPs: Initial memory allocation of %lld bytes - %s", (INT64)memreq, strerror(errno));
+				Reset();
 				return(eBSFerrMem);
 				}
-			m_pSNPSites = pSNPSite;
-			m_NumAllocdSNPSites += cAllocNumSNPs;
+	#else
+			// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
+			m_pSNPSites = (tsSNPSite *)mmap(NULL, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+			if(m_pSNPSites == MAP_FAILED)
+				{
+				gDiagnostics.DiagOut(eDLFatal, gszProcName, "SNPs: Memory allocation of %lld bytes through mmap()  failed - %s", (INT64)memreq, strerror(errno));
+				m_pSNPSites = NULL;
+				Reset();
+				return(eBSFerrMem);
+				}
+	#endif
 			m_AllocdSNPSitesMem = memreq;
+			m_NumSNPSites = 0;
+			m_NumSortedSites = 0;
+			m_NumAllocdSNPSites = cAllocNumSNPs;
+			}
+		else
+			{
+			if((m_NumSNPSites + 100) > m_NumAllocdSNPSites)
+				{
+				size_t memreq = m_AllocdSNPSitesMem + (cAllocNumSNPs * sizeof(tsSNPSite));
+				
+	#ifdef _WIN32
+				pSNPSite = (tsSNPSite*)realloc(m_pSNPSites, memreq);
+	#else
+				pSNPSite = (tsSNPSite*)mremap(m_pSNPSites, m_AllocdSNPSitesMem, memreq, MREMAP_MAYMOVE);
+				if(pSNPSite == MAP_FAILED)
+					pSNPSite = NULL;
+	#endif
+				if(pSNPSite == NULL)
+					{
+					gDiagnostics.DiagOut(eDLFatal, gszProcName, "SNPs: Memory re-allocation to %lld bytes - %s", memreq, strerror(errno));
+					return(eBSFerrMem);
+					}
+				m_pSNPSites = pSNPSite;
+				m_NumAllocdSNPSites += cAllocNumSNPs;
+				m_AllocdSNPSitesMem = memreq;
+				}
+			}
+
+		pSNPSite = &m_pSNPSites[m_NumSNPSites++];
+		memset(pSNPSite,0,sizeof(tsSNPSite));
+		pSNPSite->AlleleBaseCnts[AlleleBase] = 1;
+		pSNPSite->ChromID = ChromID;
+		pSNPSite->Loci = Loci;
+		pSNPSite->RefBase = RefBase;
+		}
+	delete m_pCSV;
+	m_pCSV = NULL;
+	if(m_NumSNPSites > 1 && m_NumSNPSites != m_NumSortedSites)
+		qsort(m_pSNPSites, m_NumSNPSites, sizeof(tsSNPSite), SortSNPChromLoci);
+	m_NumSortedSites = m_NumSNPSites;
+	}
+
+uint32_t NumAcceptedSites;
+NumAcceptedSites = 0;
+pSNPSite = m_pSNPSites;
+for(uint32_t SNPIdx = 0; SNPIdx < m_NumSNPSites; SNPIdx++,pSNPSite++)
+	{
+	pSNPSite->RepBase = eBaseN;
+	for(int AlleleIdx = 0; AlleleIdx < 4; AlleleIdx++)
+		{
+		if(pSNPSite->AlleleBaseCnts[AlleleIdx] > (uint32_t)(m_NumSNPFiles/2))
+			{
+			NumAcceptedSites+=1;
+			pSNPSite->RepBase = AlleleIdx;
+			break;
 			}
 		}
-	pSNPSite = &m_pSNPSites[m_NumSNPSites++];
-	pSNPSite->AlleleBase = AlleleBase;
-	pSNPSite->ChromID = ChromID;
-	pSNPSite->Loci = Loci;
-	pSNPSite->RefBase = RefBase;
 	}
-if(m_NumSNPSites > 1)
-	qsort(m_pSNPSites, m_NumSNPSites, sizeof(tsSNPSite), SortSNPChromLoci);
+
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "SNPs: Processed %u files containing %u unique major allele SNP loci of which %u were accepted as being consensus sites", m_NumSNPFiles, m_NumSNPSites, NumAcceptedSites);
+
 
 tsChromSites *pChromSites;
 uint32_t SNPIdx;
@@ -611,12 +672,12 @@ if(m_NumSNPSites)
 			pChromSites->NumSNPSites+=1;
 		}
 	}
-gDiagnostics.DiagOut(eDLInfo, gszProcName, "SNPs: Parsed %u called SNPs, accepted %u as major allele SNPs on %u chromosomes", NumSNPsParsed,m_NumSNPSites,m_NumChromSites);
+
 return(eBSFSuccess);
 }
 
 int
-CRepAssemb::ProccessAssembly(char *pszSNPFile,	// input kalign generated SNPs file
+CRepAssemb::ProccessAssembly(char *pszSNPFile,	// input kalign generated SNPs file, filespec can be wildcarded
 				char* pszInFile,		// input fasta assembly file
 				char* pszOutFile)		// output to this fasta assembly file
 {
@@ -668,6 +729,61 @@ if(m_hOutFile < 0)
 	Reset();
 	return(eBSFerrCreateFile);
 	}
+
+// put in function ...
+tsSNPSite *pSNPSite;
+int RepSNPs;
+char szOutRepSNPsFile[_MAX_PATH];
+char szBuff[4096];
+int BuffIdx;
+strcpy(szOutRepSNPsFile,pszOutFile);
+strcat(szOutRepSNPsFile,".snps.csv");
+
+#ifdef _WIN32
+m_hOutRepSNPsFile = open(szOutRepSNPsFile,( O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC),(_S_IREAD | _S_IWRITE));
+#else
+if((m_hOutRepSNPsFile = open64(szOutRepSNPsFile,O_WRONLY | O_CREAT,S_IREAD | S_IWRITE)) != -1)
+	if(ftruncate(m_hOutRepSNPsFile,0)!=0)
+		{
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate %s - %s",szOutRepSNPsFile,strerror(errno));
+		Reset();
+		return(eBSFerrCreateFile);
+		}
+#endif
+if(m_hOutRepSNPsFile < 0)
+	{
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate %s - %s",szOutRepSNPsFile,strerror(errno));
+	Reset();
+	return(eBSFerrCreateFile);
+	}
+// write out header line
+BuffIdx = sprintf(szBuff,"\"ID\",\"Chrom\",\"Loci\",\"RefBase\",\"RepBase\",\"Instances\"\n");
+
+pSNPSite = m_pSNPSites;
+RepSNPs = 0;
+for(uint32_t SNPIdx = 0; SNPIdx < m_NumSNPSites; SNPIdx++,pSNPSite++)
+	{
+	if(pSNPSite->RepBase == eBaseN)
+		continue;
+	RepSNPs+=1;
+	BuffIdx += sprintf(&szBuff[BuffIdx],"%u,\"%s\",%u,%c,%c,%u\n",RepSNPs,LocateChrom(pSNPSite->ChromID),pSNPSite->Loci,CFasta::Base2Chr(pSNPSite->RefBase),CFasta::Base2Chr(pSNPSite->RepBase),pSNPSite->AlleleBaseCnts[pSNPSite->RepBase]);
+	if((BuffIdx + 500) > (int)sizeof(szBuff))
+		{
+		CUtility::RetryWrites(m_hOutRepSNPsFile,szBuff,BuffIdx);
+		BuffIdx = 0;
+		}
+	}
+if(BuffIdx)
+	CUtility::RetryWrites(m_hOutRepSNPsFile,szBuff,BuffIdx);
+// commit and close output file
+#ifdef _WIN32
+_commit(m_hOutRepSNPsFile);
+#else
+fsync(m_hOutRepSNPsFile);
+#endif
+close(m_hOutRepSNPsFile);
+m_hOutRepSNPsFile = -1;
+// return from function here
 
 // an initial allocation for buffering input assembly, will be realloc'd if required so as to contain complete assembly
 memreq = (size_t)cAllocAssembFastaMem;
@@ -726,7 +842,7 @@ if(NumRead < 0)
 	return(eBSFerrFileAccess);
 	}
 BasesReplaced = 0;
-gDiagnostics.DiagOut(eDLFatal, gszProcName, "Replacing assembly sequence major allele sites ...");
+gDiagnostics.DiagOut(eDLFatal, gszProcName, "Updating assembly sequence with consensus major allele sites ...");
 if(m_NumChromSites)
 	{
 	bNL = true; // 1st line in fasta may be a descriptor with no preceding NL so pretend there was a preceding NL
@@ -771,7 +887,7 @@ if(m_NumChromSites)
 		}
 	}
 
-gDiagnostics.DiagOut(eDLInfo, gszProcName, "%d replacements completed, writing repurposed assembly to '%s'",BasesReplaced,pszOutFile);
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "%d replacements completed, writing updated assembly to '%s'",BasesReplaced,pszOutFile);
 
 if(m_SeqBuffIdx)
 	CUtility::RetryWrites(m_hOutFile, m_pSeqBuffer, m_SeqBuffIdx);	
@@ -889,30 +1005,78 @@ while(SeqLen-- && NumSNPBases != pChromSites->NumSNPSites)
 	
 	if(RefLoci++ == pSNPSite->Loci)
 		{
-		switch(pSNPSite->AlleleBase){
+		switch(pSNPSite->RepBase) {
 			case eBaseA:
+				NumSNPBases++;
 				*pszSeq = 'a';
 				break;
 			case eBaseC:
+				NumSNPBases++;
 				*pszSeq = 'c';
 				break;
 			case eBaseG:
+				NumSNPBases++;
 				*pszSeq = 'g';
 				break;
 			case eBaseT:
+				NumSNPBases++;
 				*pszSeq = 't';
 				break;
 			default:
-				*pszSeq = 'N';
 				break;
 			}
-		NumSNPBases++;
 		pSNPSite++;
 		}
 	pszSeq+=1;
 	}
 
 return(NumSNPBases);
+}
+
+tsSNPSite *
+CRepAssemb::LocateSite(uint32_t ChromID, uint32_t Loci)	// locate existing site using a binary search over sorted sites
+{
+tsSNPSite* pEl1;
+int32_t IdxLo;
+int32_t MidIdx;
+int32_t IdxHi;
+
+if(m_NumSortedSites == 0)
+	return(NULL);
+
+if(m_NumSortedSites < 10)				// if just a few then do a simple linear search
+	{
+	pEl1 = m_pSNPSites;
+	for(IdxLo = 0; IdxLo < (int32_t)m_NumSortedSites; IdxLo++,pEl1++)
+		if(pEl1->ChromID == ChromID && pEl1->Loci == Loci)
+			return(pEl1);
+	return(NULL);
+	}
+
+IdxLo = 0;
+IdxHi = m_NumSortedSites-1;
+do {
+	MidIdx = (IdxHi + IdxLo)/2;
+	pEl1 = &m_pSNPSites[MidIdx];
+	if(pEl1->ChromID == ChromID)
+		{
+		if(pEl1->Loci == Loci)
+			return(pEl1);
+		if(pEl1->Loci > Loci)
+			IdxHi = MidIdx - 1;
+		else
+			IdxLo = MidIdx + 1;
+		}
+	else
+		{
+		if(pEl1->ChromID > ChromID)
+			IdxHi = MidIdx - 1;
+		else
+			IdxLo = MidIdx + 1;
+		}
+	}
+while(IdxHi >= IdxLo);
+return(NULL);
 }
 
 // SortSNPChromIDLoci

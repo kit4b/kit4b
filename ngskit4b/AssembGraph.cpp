@@ -680,7 +680,7 @@ UINT32 NodeLo;
 UINT32 NodeHi;				
 if( SeqID < 1,								// must be valid
 	m_pGraphVertices == NULL,				// must be allocated
-  	m_UsedGraphVertices < 1 ||				// must have at least 1 vertex
+	m_UsedGraphVertices < 1 ||				// must have at least 1 vertex
 	m_VerticesSortOrder != eVSOSeqID)		// and vertices must be sorted by SeqID ascending
 	return(NULL);
 
@@ -722,7 +722,7 @@ UINT32 NodeLo;
 UINT32 NodeHi;				
 if( VertexID < 1,								// must be valid
 	m_pGraphVertices == NULL,				// must be allocated
-  	m_UsedGraphVertices < 1 ||				// must have at least 1 vertex
+	m_UsedGraphVertices < 1 ||				// must have at least 1 vertex
 	m_VerticesSortOrder != eVSOVertexID)		// and vertices must be sorted by VertexID ascending
 	return(NULL);
 
@@ -764,7 +764,7 @@ UINT32 Idx;
 tsGraphVertex *pVertex;
 tsGraphVertex *pPEVertex;
 if(m_pGraphVertices == NULL ||				// must be allocated
-  	m_UsedGraphVertices < 1)				// must have at least 1 vertex
+	m_UsedGraphVertices < 1)				// must have at least 1 vertex
 	return(0);
 if(m_VerticesSortOrder != eVSOSeqID)
 	{

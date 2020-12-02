@@ -1569,6 +1569,39 @@ while(SeqLen < MaxLen && (Cnt = ReadSequence(Buffer,sizeof(Buffer),true))>=0)
 return(SeqLen);
 }
 
+char 
+CFasta::Base2Chr(etSeqBase Base)		 // returns ASCII representation of Base
+{
+Base &= 0x0f;
+switch(Base) {
+	case eBaseA:
+		return('a');
+	case eBaseC:
+		return('c');
+	case eBaseG:
+		return('g');
+	case eBaseT:
+		return('t');
+	}
+return('n');
+}
+
+etSeqBase 
+CFasta::Chr2Base(char Base)			 // returns etSeqBase representation of ASCII base
+{
+switch(Base) {
+	case 'a': case 'A':
+		return(eBaseA);
+	case 'c': case 'C':
+		return(eBaseC);
+	case 'g': case 'G':
+		return(eBaseG);
+	case 't': case 'T': case 'u': case 'U':
+		return(eBaseT);
+	}
+return(eBaseN);
+}
+
 // Ascii2Sense
 // Translates ascii into etSeqBase's
 // Caller can override assumption that lowercase represents softmasked repeats

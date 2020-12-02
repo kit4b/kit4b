@@ -26,7 +26,8 @@ typedef struct TAG_sSNPSSite
 	uint32_t ChromID;		// SNP is on the chromosome
 	uint32_t Loci;			// at this loci
 	etSeqBase RefBase;		// reference assembly base
-	etSeqBase AlleleBase;	// alignment has this major allelic base called
+	etSeqBase RepBase;		// use this base when repurposing the assembly - if eBaseN then do not repurpose
+	uint32_t AlleleBaseCnts[5]; // counts of major allelic base called over all readset alignments
 } tsSNPSite;
 
 typedef struct TAG_sChromSites
@@ -41,7 +42,8 @@ typedef struct TAG_sChromSites
 class CRepAssemb
 {
 	char m_szTargAssemblyName[cMaxDatasetSpeciesChrom + 1]; // alignments were against this targeted assembly
-	char m_szCurChrom[cMaxDatasetSpeciesChrom+1];	  // processing SNP on this chromosome
+	int m_NumSNPFiles;								// re-purposing from this number of kalign generated SNP files
+	char m_szCurChrom[cMaxDatasetSpeciesChrom+1];	// processing SNP on this chromosome
 	uint32_t m_CurChromID;						// current chromosome identifier
 
 	int m_LAChromNameID;						// last accessed chromosome identifier from call to AddChrom()
@@ -63,7 +65,9 @@ class CRepAssemb
 	uint8_t *m_pSeqBuffer;						// allocated to buffer input/output fasta sequences 
 	int m_hInFile;								// input assembly file handle
 	int m_hOutFile;								// output assembly file handle
+	int m_hOutRepSNPsFile;						// output consensus sites file handle
 
+	uint32_t m_NumSortedSites;					// number of sorted sites enabling a binary search over this number of sites
 	uint32_t m_NumSNPSites;						// number of SNP sites accepted
 	uint32_t m_NumAllocdSNPSites;				// number of SNP sites currently allocated
 	size_t m_AllocdSNPSitesMem;					// allocd memory size for holding m_NumAllocdSNPSites
@@ -80,7 +84,7 @@ class CRepAssemb
 		LocateChromSites(char* pszChrom);	// sites are to be those on this chromosome
 
 	int						// returned total number of SNPs parsed and accepted
-		LoadKalignSNPs(char *pszSNPFile);	// load and parse kalign generated SNPs
+		LoadKalignSNPs(char *pszSNPFile);	// load and parse kalign generated SNPs from wild-carded file specification
 
 
 	int									// number of bases replaced
@@ -90,6 +94,7 @@ class CRepAssemb
 
 	CStats m_Stats;								// basic statistics
 
+	tsSNPSite *LocateSite(uint32_t ChromID, uint32_t Loci);	// locate existing site using a binary search over sorted sites
 	static int SortSNPChromLoci(const void* arg1, const void* arg2);
 
 public:

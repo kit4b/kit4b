@@ -132,6 +132,9 @@ public:
 					etSeqBase *pSeq,			  // where to return sequence
 					bool RptMskUpperCase=false);  // true if bases are softmasked as uppercase instead of default lowercase
 
+	static char Base2Chr(etSeqBase Base);		 // returns ascii representation of Base
+	static etSeqBase Chr2Base(char Base);			 // returns etSeqBase representation of ascii base
+
 	int Write(char Symbol);							// writes sequence char to fasta file
 	int Write(char *pSymbols,unsigned int Cnt);		// writes Cnt sequence chars to fasta file
 	int WriteDescriptor(char *pszDescriptor);		// terminates any current sequence and writes fasta file descriptor starting new sequence
