@@ -926,6 +926,31 @@ strcpy(m_szIsolateClassFile,pszIsolateClassFile);
 strcpy(m_szOutFile,pszOutFile);
 m_MinRowsClassified = MinLinkedRows;
 
+
+
+// load the input matrix containing row isolates and column loci
+if((Rslt=LoadMatrix(pszMatrixFile))!=eBSFSuccess)
+	return(Rslt);
+
+// if present then parse in the classification file
+if(pszIsolateClassFile != NULL && pszIsolateClassFile[0] != '\0')
+	{
+	if((Rslt=LoadClassifications(pszIsolateClassFile))!=eBSFSuccess)
+		return(Rslt);
+	}
+else   // no classification file so default to a single unclassified class
+	{
+	uint32_t ClassificationID = AddClassification((char *)"Defaulted");
+	m_Classifications[0].NumReadsets = m_NumReadsetNames;
+	for(uint32_t ReadSetID = 0; ReadSetID < m_NumReadsetNames; ReadSetID++)
+		{
+		m_ReadsetClassification[ReadSetID].ReadsetID = ReadSetID+1;
+		m_ReadsetClassification[ReadSetID].ClassificationID = ClassificationID;
+		}
+	m_Classifications[0].Proportion = 1.0;
+	}
+
+
 #ifdef _WIN32
 m_hOutFile = open(pszOutFile,( O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC),(_S_IREAD | _S_IWRITE));
 #else
@@ -950,34 +975,11 @@ m_AllocOutBuff = cMaxAllocOutBuff;
 m_OutBuffIdx = sprintf(m_pOutBuffer,"\"TotSamples\",\"LinkedSamples\",\"MinSamples\",\"FeatLinks\",\"MinFeatValue\"");
 for(uint32_t LinkIdx = 0; LinkIdx < NumLinkedFeatures; LinkIdx++)
 	m_OutBuffIdx += sprintf(&m_pOutBuffer[m_OutBuffIdx],",\"L%u\"",LinkIdx);
-
-
-// load the input matrix containing row isolates and column loci
-if((Rslt=LoadMatrix(pszMatrixFile))!=eBSFSuccess)
-	return(Rslt);
-
-// if present then parse in the classification file
-if(pszIsolateClassFile != NULL && pszIsolateClassFile[0] != '\0')
-	{
-	if((Rslt=LoadClassifications(pszIsolateClassFile))!=eBSFSuccess)
-		return(Rslt);
-	for(uint32_t Idx = 0; Idx < m_NumClassificationNames; Idx++)
-		m_OutBuffIdx += sprintf(&m_pOutBuffer[m_OutBuffIdx],",\"%s\"", LocateClassification(Idx+1));
-	}
-else   // no classification file so default to a single unclassified class
-	{
-	uint32_t ClassificationID = AddClassification((char *)"Defaulted");
-	m_Classifications[0].NumReadsets = m_NumReadsetNames;
-	for(uint32_t ReadSetID = 0; ReadSetID < m_NumReadsetNames; ReadSetID++)
-		{
-		m_ReadsetClassification[ReadSetID].ReadsetID = ReadSetID+1;
-		m_ReadsetClassification[ReadSetID].ClassificationID = ClassificationID;
-		}
-	m_Classifications[0].Proportion = 1.0;
-
-	m_OutBuffIdx += sprintf(&m_pOutBuffer[m_OutBuffIdx],",\"Defaulted\"");
-	}
+for(uint32_t Idx = 0; Idx < m_NumClassificationNames; Idx++)
+	m_OutBuffIdx += sprintf(&m_pOutBuffer[m_OutBuffIdx],",\"%s (%u)\"", LocateClassification(Idx+1),m_Classifications[Idx].NumReadsets);
 m_OutBuffIdx += sprintf(&m_pOutBuffer[m_OutBuffIdx],"\n");
+CUtility::RetryWrites(m_hOutFile,m_pOutBuffer,m_OutBuffIdx);
+m_OutBuffIdx = 0;
 
 int K = RunKernel(Mode,NumLinkedFeatures,MinLinkedRows,FeatClassValue);
 
