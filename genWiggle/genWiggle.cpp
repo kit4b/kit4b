@@ -176,24 +176,24 @@ argerrors = CUtility::arg_parsefromfile(argc,(char **)argv,&pAllArgs);
 if(argerrors >= 0)
 	argerrors = arg_parse(argerrors,pAllArgs,argtable);
 
-    /* special case: '--help' takes precedence over error reporting */
+	/* special case: '--help' takes precedence over error reporting */
 if (help->count > 0)
-        {
+		{
 		printf("\n%s a component of the K-mer Adaptive Next Generation Aligner toolset, Version %s\nOptions ---\n", gszProcName,kit4bversion);
-        arg_print_syntax(stdout,argtable,"\n");
-        arg_print_glossary(stdout,argtable,"  %-25s %s\n");
+		arg_print_syntax(stdout,argtable,"\n");
+		arg_print_glossary(stdout,argtable,"  %-25s %s\n");
 		printf("\nNote: Parameters can be entered into a parameter file, one parameter per line.");
 		printf("\n      To invoke this parameter file then precede its name with '@'");
 		printf("\n      e.g. %s @myparams.txt\n",gszProcName);
 		printf("\nPlease report any issues regarding usage of %s to https://github.com/kit4b/kit4b/issues\n\n",gszProcName);
-        }
+		}
 
-    /* special case: '--version' takes precedence error reporting */
+	/* special case: '--version' takes precedence error reporting */
 if (version->count > 0)
-        {
+		{
 		printf("\n%s Version %s\n",gszProcName,kit4bversion);
 		exit(1);
-        }
+		}
 if (!argerrors)
 	{
 	if(FileLogLevel->count && !LogFile->count)
@@ -1190,8 +1190,8 @@ while(Rslt == eBSFSuccess && (CurFeatureID = m_pBEDFile->GetNextFeatureID(CurFea
 				szChrom,				// where to return chromosome name
 				&StartLoci,				// where to return feature start on chromosome (0..n) 
 				&EndLoci,				// where to return feature end on chromosome
- 				&Score,					// where to return score
- 				&Strand);				// where to return strand
+				&Score,					// where to return score
+				&Strand);				// where to return strand
 
 	if(CurFeatureID == 1 || stricmp(szChrom,szPrevChrom))	// if new chromosome then reset IntergenicStart
 		{
@@ -1410,7 +1410,7 @@ while((Rslt = LoadNxtChrom()) > 0)
 	if((Rslt = m_pTwister->GetSequenceConformation(ConfParam,	// process for this conformational parameter
 							  0,						// initial starting offset (0..n) in pSeq
 							  0,						// number of steps (0 for all) to process starting at pSeq[iStartPsn]|pSeq[iStartPsn+1]
-  							  m_ChromSeqLen,			// total length of sequence
+							  m_ChromSeqLen,			// total length of sequence
 							  m_pChromSeq,				// sequence to be processed
 							  m_pConfValues))!=eBSFSuccess) // where to return step conformational values
 					{

@@ -61,7 +61,7 @@ seghaplotypes(int argc, char **argv)
 	struct arg_int *binsizekbp = arg_int0 ("b", "binsizekbp", "<int>", "Maximum Kbp bin size (default 10, range 1..1000");
 	struct arg_str *trackname = arg_str0("t","trackname","<str>","BED Track name");
 	struct arg_str *trackdescr = arg_str0("d","trackdescr","<str>","BED Track description");
-	struct arg_file *infile = arg_file1("i", "in", "<file>", "SAM/BAM input file");
+	struct arg_file *infile = arg_file1("i", "in", "<file>", "SAM/BAM input file (can contain wildcards for multiple SAM file processing)");
 	struct arg_file *outfile = arg_file1 ("o", "out", "<file>", "BED output file");
 	struct arg_end *end = arg_end (200);
 
@@ -152,7 +152,7 @@ seghaplotypes(int argc, char **argv)
 		else
 			szTrackName[0] = '\0';
 		if (szTrackName[0] == '\0')
-			strcpy(szTrackName,"Seqmented Haplotypes");
+			strcpy(szTrackName,"Segmented Haplotypes");
 
 		if(trackdescr->count)
 			{
@@ -423,28 +423,45 @@ if(Chr == cTagSHTerm1 && *pszIn == cTagSHTerm2 && TagLen >= 1)
 return(0);
 }
 
-// generate segmented haplotypes file from SAM/BAM alignment input file
-int	
-CSegHaplotypes::GenBinnedSegments(eModeSH PMode,			// processing mode
-			char *pszTrackName,		// track name
-			char *pszTrackDescr,	// track descriptor
-			bool bDontScore,		// don't score haplotype bin segments
-			uint32_t BinSizeKbp,	// Wiggle score is number of alignments over this sized bins
-			char* pszInFile,		// alignments are in this SAM/BAM file 
-			char* pszOutFile)		// write out segments to this file
+
+int			// returned number of alignments accepted for the SAM file processed 
+CSegHaplotypes::ParseSAMAlignments(char *pszSAMFile)	// SAM file to be processed
 {
 teBSFrsltCodes Rslt;
-
 int LineLen;
 char *pszTxt;
-int WindowSize = BinSizeKbp * 1000;
-int TargID;
+int NumAcceptedAlignments;
+int NumAlignmentsProc;
+uint32_t NumMissingFeatures = 0;
+uint32_t NumUnmapped = 0;
+char szGenome[cMaxDatasetSpeciesChrom];
+char szContig[cMaxDatasetSpeciesChrom+cMaxSHLenPrefix+1];
+int ContigLen;
+int NumMappedChroms;
+
+
+
+tsTargSeq *pTargSeq;
+char *pszRefSeqName;
+int FounderNameLen;
+char szFounder[cMaxSHLenPrefix+3];
+int FounderID;
+int NumBinsRequired;
 tsSHSAMloci *pSAMloci;
-m_BinSizeKbp = BinSizeKbp;
+int TargID;
+
+NumMappedChroms = 0;
+NumBinsRequired = 0;
+m_NumAlignedTargSeqs = 0;
 
 // open SAM for reading
-if(pszInFile == NULL || *pszInFile == '\0')
+if(pszSAMFile == NULL || *pszSAMFile == '\0')
 	return(eBSFerrParams);
+if(m_pSAMfile != NULL)
+	{
+	delete m_pSAMfile;
+	m_pSAMfile = NULL;
+	}
 
 if((m_pSAMfile = new CSAMfile) == NULL)
 	{
@@ -452,101 +469,16 @@ if((m_pSAMfile = new CSAMfile) == NULL)
 	return(eBSFerrInternal);
 	}
 
-if((m_pBAMalignment = new tsBAMalign) == NULL)
+if((Rslt = (teBSFrsltCodes)m_pSAMfile->Open(pszSAMFile)) != eBSFSuccess)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenBinnedSegments: Unable to instantiate tsBAMalign");
-	Reset();
-	return(eBSFerrInternal);
-	}
-
-if((m_pInBuffer = new uint8_t[cMaxReadLen * 3]) == NULL)
-	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenBinnedSegments: Unable to allocate buffers");
-	Reset();
-	return(eBSFerrMem);
-	}
-m_AllocInBuff = cMaxReadLen * 3;
-
-if((m_pOutBuffer = new uint8_t[cAllocSHBuffOutSize]) == NULL)
-	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenBinnedSegments: Unable to allocate buffers");
-	Reset();
-	return(eBSFerrMem);
-	}
-m_AllocOutBuff = cAllocSHBuffOutSize;
-
-#ifdef _WIN32
-m_hOutFile = open(pszOutFile,( O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC),(_S_IREAD | _S_IWRITE));
-#else
-if((m_hOutFile = open64(pszOutFile,O_WRONLY | O_CREAT,S_IREAD | S_IWRITE)) != -1)
-	if(ftruncate(m_hOutFile,0)!=0)
-		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate %s - %s",pszOutFile,strerror(errno));
-		Reset();
-		return(eBSFerrCreateFile);
-		}
-#endif
-if(m_hOutFile < 0)
-	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate %s - %s",pszOutFile,strerror(errno));
-	Reset();
-	return(eBSFerrCreateFile);
-	}
-
-m_AllocdSAMlociMem = (size_t)cAllocSHNumSAMloci * sizeof(tsSHSAMloci);
-#ifdef _WIN32
-m_pSAMloci = (tsSHSAMloci*)malloc(m_AllocdSAMlociMem);
-if (m_pSAMloci == NULL)
-	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenBinnedSegments: Memory allocation of %lld bytes failed", (INT64)m_AllocdSAMlociMem);
-	m_AllocdSAMlociMem = 0;
-	Reset();
-	return(eBSFerrMem);
-	}
-#else
-// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-m_pSAMloci = (tsSHSAMloci*)mmap(NULL, m_AllocdSAMlociMem, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-if (m_pSAMloci == MAP_FAILED)
-	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenBinnedSegments: Memory allocation of %lld bytes through mmap()  failed", (INT64)m_AllocdSAMlociMem, strerror(errno));
-	m_pSAMloci = NULL;
-	m_AllocdSAMlociMem = 0;
-	Reset();
-	return(eBSFerrMem);
-	}
-#endif
-m_AllocdSAMloci = cAllocSHNumSAMloci;
-
-if((Rslt = (teBSFrsltCodes)m_pSAMfile->Open(pszInFile)) != eBSFSuccess)
-	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenBinnedSegments: Unable to open SAM/BAM format file %s",pszInFile);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenBinnedSegments: Unable to open SAM/BAM format file %s",pszSAMFile);
 	Reset();
 	return((teBSFrsltCodes)Rslt);
 	}
 
-uint32_t NumMissingFeatures = 0;
-size_t NumAlignmentsProc = 0;
-size_t NumAcceptedAlignments = 0;
-uint32_t NumUnmapped = 0;
-char szGenome[cMaxDatasetSpeciesChrom];
-char szContig[cMaxDatasetSpeciesChrom+cMaxSHLenPrefix+1];
-int ContigLen;
-int NumMappedChroms;
-uint32_t NumUniqueLoci;
-size_t LociIdx;
-tsSHSAMloci *pUniqueSamLoci;
-tsTargSeq *pTargSeq;
-char *pszRefSeqName;
-int FounderNameLen;
-char szFounder[cMaxSHLenPrefix+3];
-int FounderID;
-int NumBinsRequired;
-
-NumMappedChroms = 0;
-NumBinsRequired = 0;
-m_NumAlignedTargSeqs = 0;
-m_AllocdBins = 0;
 AddFounder((char *)"N/A");			// must have a default in case unable to parse out a founder tag
+NumAcceptedAlignments = 0;
+NumAlignmentsProc = 0;
 time_t Then = time(NULL);
 time_t Now;
 while(Rslt >= eBSFSuccess && (LineLen = m_pSAMfile->GetNxtSAMline((char *)m_pInBuffer)) > 0)
@@ -685,6 +617,148 @@ while(Rslt >= eBSFSuccess && (LineLen = m_pSAMfile->GetNxtSAMline((char *)m_pInB
 	NumAcceptedAlignments++;
 	}
 
+if(m_pSAMfile != NULL)
+	{
+	delete m_pSAMfile;
+	m_pSAMfile = NULL;
+	}
+
+if(NumAcceptedAlignments == 0)		// ugh, no alignments!
+	{
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "ParseSAMAlignments: No alignments accepted for processing!");
+	Reset();
+	return(eBSFSuccess);			// not an error!
+	}
+else
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "ParseSAMAlignments: Accepted %d total alignments onto %d target seqs for binning from  %d processed",NumAcceptedAlignments, m_NumAlignedTargSeqs, NumAlignmentsProc);
+
+
+return(NumAcceptedAlignments);
+}
+
+// generate segmented haplotypes file from SAM/BAM alignment input file
+int	
+CSegHaplotypes::GenBinnedSegments(eModeSH PMode,			// processing mode
+			char *pszTrackName,		// track name
+			char *pszTrackDescr,	// track descriptor
+			bool bDontScore,		// don't score haplotype bin segments
+			uint32_t BinSizeKbp,	// Wiggle score is number of alignments over this sized bins
+			char* pszInFile,		// alignments are in this SAM/BAM file 
+			char* pszOutFile)		// write out segments to this file
+{
+teBSFrsltCodes Rslt;
+uint32_t TargSeqIdx;
+uint32_t BinStartLoci;
+tsSHSAMloci *pSAMloci;
+tsSHSAMloci *pUniqueSamLoci;
+pSAMloci = m_pSAMloci;
+uint32_t NumUniqueLoci;
+size_t LociIdx;
+tsSHBin *pBin;
+tsTargSeq *pTargSeq;
+size_t NumAcceptedAlignments;
+int WindowSize = BinSizeKbp * 1000;
+m_BinSizeKbp = BinSizeKbp;
+
+if((m_pBAMalignment = new tsBAMalign) == NULL)
+	{
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenBinnedSegments: Unable to instantiate tsBAMalign");
+	Reset();
+	return(eBSFerrInternal);
+	}
+
+if((m_pInBuffer = new uint8_t[cMaxReadLen * 3]) == NULL)
+	{
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenBinnedSegments: Unable to allocate buffers");
+	Reset();
+	return(eBSFerrMem);
+	}
+m_AllocInBuff = cMaxReadLen * 3;
+
+if((m_pOutBuffer = new uint8_t[cAllocSHBuffOutSize]) == NULL)
+	{
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenBinnedSegments: Unable to allocate buffers");
+	Reset();
+	return(eBSFerrMem);
+	}
+m_AllocOutBuff = cAllocSHBuffOutSize;
+
+#ifdef _WIN32
+m_hOutFile = open(pszOutFile,( O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC),(_S_IREAD | _S_IWRITE));
+#else
+if((m_hOutFile = open64(pszOutFile,O_WRONLY | O_CREAT,S_IREAD | S_IWRITE)) != -1)
+	if(ftruncate(m_hOutFile,0)!=0)
+		{
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate %s - %s",pszOutFile,strerror(errno));
+		Reset();
+		return(eBSFerrCreateFile);
+		}
+#endif
+if(m_hOutFile < 0)
+	{
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate %s - %s",pszOutFile,strerror(errno));
+	Reset();
+	return(eBSFerrCreateFile);
+	}
+
+m_AllocdSAMlociMem = (size_t)cAllocSHNumSAMloci * sizeof(tsSHSAMloci);
+#ifdef _WIN32
+m_pSAMloci = (tsSHSAMloci*)malloc(m_AllocdSAMlociMem);
+if (m_pSAMloci == NULL)
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenBinnedSegments: Memory allocation of %lld bytes failed", (INT64)m_AllocdSAMlociMem);
+	m_AllocdSAMlociMem = 0;
+	Reset();
+	return(eBSFerrMem);
+	}
+#else
+// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
+m_pSAMloci = (tsSHSAMloci*)mmap(NULL, m_AllocdSAMlociMem, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+if (m_pSAMloci == MAP_FAILED)
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenBinnedSegments: Memory allocation of %lld bytes through mmap()  failed", (INT64)m_AllocdSAMlociMem, strerror(errno));
+	m_pSAMloci = NULL;
+	m_AllocdSAMlociMem = 0;
+	Reset();
+	return(eBSFerrMem);
+	}
+#endif
+m_AllocdSAMloci = cAllocSHNumSAMloci;
+
+NumAcceptedAlignments = 0;
+m_AllocdBins = 0;
+
+AddFounder((char *)"N/A");			// must have a default in case unable to parse out a founder tag
+
+CSimpleGlob glob(SG_GLOB_FULLSORT);
+glob.Init();
+if(glob.Add(pszInFile) < SG_SUCCESS)
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to glob '%s", pszInFile);
+	Reset();
+	return(eBSFerrOpnFile);	// treat as though unable to open file
+	}
+
+if(glob.FileCount() <= 0)
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to locate any SAM file matching '%s", pszInFile);
+	Reset();
+	return(eBSFerrOpnFile);	// treat as though unable to open file
+	}
+
+Rslt = eBSFSuccess;
+for(int FileID = 0; Rslt >= eBSFSuccess && FileID < glob.FileCount(); ++FileID)
+	{
+	char *pszSAMFile = glob.File(FileID);
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Processing SAM file '%s'\n", pszSAMFile);
+	if((Rslt = (teBSFrsltCodes)ParseSAMAlignments(pszSAMFile)) < eBSFSuccess)
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenBinnedSegments: Fatal error processing '%s'",pszSAMFile);
+		return(Rslt);
+		}
+	NumAcceptedAlignments += (size_t)Rslt;
+	}
+
 if(NumAcceptedAlignments == 0)		// ugh, no alignments!
 	{
 	gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenBinnedSegments: No alignments accepted for processing!");
@@ -692,7 +766,7 @@ if(NumAcceptedAlignments == 0)		// ugh, no alignments!
 	return(eBSFSuccess);			// not an error!
 	}
 else
-	gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenBinnedSegments: Accepted %lld total alignments onto %d target seqs for binning from  %lld processed",NumAcceptedAlignments, m_NumAlignedTargSeqs, NumAlignmentsProc);
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenBinnedSegments: Accepted %lld total alignments onto %d targets for binning",NumAcceptedAlignments, m_NumAlignedTargSeqs);
 
 
 if((m_pBins = new tsSHBin[m_AllocdBins]) == NULL)
@@ -703,10 +777,7 @@ if((m_pBins = new tsSHBin[m_AllocdBins]) == NULL)
 	}
 memset(m_pBins,0,m_AllocdBins * sizeof(tsSHBin));
 
-uint32_t TargSeqIdx;
-uint32_t BinStartLoci;
 
-tsSHBin *pBin;
 pTargSeq = m_TargSeqs;
 for(TargSeqIdx = 0; TargSeqIdx < m_NumSeqNames; TargSeqIdx++,pTargSeq++)
 	{

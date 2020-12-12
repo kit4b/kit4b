@@ -146,6 +146,8 @@ class CSegHaplotypes
 	int			// returned len of parsed founder name, 0 if unable to parse out a founder (add 2 to len to obtain start of non-prefixed original string 
 		ParseFounder(char* pszIn);			// input null terminated string assumed to contain founder name within first cMaxSHLenPrefix chars
 
+	int			// returned number of alignments accepted for the SAM file processed 
+		ParseSAMAlignments(char *pszSAMFile);	// SAM file to be processed
 
 	// SortSAMTargLoci
 // Sort m_pSAMloci by ascending Targ.Loci
