@@ -87,7 +87,7 @@ return retval;
 /* Incomplete gamma function with scale=1: */
 /* Returns  Prob(Gam(alpha,1)<=xx)  */
 /*   = (1/Ga(alpha)) int(0,xx) y^{alpha-1} exp(-y) dy  */
-/* Adapted from Press etal, 2nd ed, p216-219. */
+/* Adapted from Press et al, 2nd ed, p216-219. */
 
 double 
 CStats::gamminc(double aa, double xx)
@@ -375,7 +375,6 @@ else
 return(PValue);
 }
 
-#ifdef USETHISCODE
 // Wald–Wolfowitz runs test
 // Given a sequence containing 0's or 1's determines the number of runs
 // and returns the probability of these being random
@@ -452,13 +451,12 @@ if(!(NumRuns&0x01))	// is even? then
 else		// else NumRuns is odd
 	{
 	for(z = 2; z <= NumRuns; z++)
-		sum += (Stats.Calc_nCk(NumN0s-1,z/2-1)* Stats.Calc_nCk(NumN1s-1,z/2-1))  + Stats.Calc_nCk(NumN0s-1,k-2)* Stats.Calc_nCk(NumN1s-1,k-2));
+		sum += (Stats.Calc_nCk(NumN0s-1,z/2-1) * Stats.Calc_nCk(NumN1s-1,z/2-1))  + (Stats.Calc_nCk(NumN0s-1,NumN1s-2)* Stats.Calc_nCk(NumN1s-1,NumN1s-2));
 	PrLessEqlR = (1/Stats.Calc_nCk(NumN0s+NumN1s,NumN0s)) * sum;
 	}
 
 return(PrLessEqlR);
 }
-#endif
 
 // 
 

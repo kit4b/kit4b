@@ -2221,7 +2221,7 @@ if(m_hOutFile == -1)
 	Reset();
 	return(eBSFerrClosed);
 	}
-if(bForce || ((m_OutBuffOffs + 32000) >= m_AllocdOutBuff))
+if(bForce || ((m_OutBuffOffs + 200000) >= m_AllocdOutBuff))
 	{
 	if(m_OutBuffOffs)
 		{
@@ -2542,6 +2542,7 @@ switch(Mode) {
 				}
 			}
 		CloseOutFile();					// primary output file
+		Rslt = 0;
 		if(m_NumReadsetNames == 0)
 			{
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, "No SNP file contained any accepted SNPs");
@@ -2550,25 +2551,59 @@ switch(Mode) {
 			}
 		m_NumCultivars = m_NumReadsetNames;
 		// load and report loci isolate matrix
-		LoadLociIsolateMatrix();
+		gDiagnostics.DiagOut(eDLInfo, gszProcName, "Initialising loci isolate matrix ...");
+		if((Rslt = LoadLociIsolateMatrix()) < 0)
+			{
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Initialising loci isolate matrix failed");
+			Reset();
+			return(Rslt);
+			}
+		
+		gDiagnostics.DiagOut(eDLInfo, gszProcName, "Reporting loci isolate matrix ...");
+		if((Rslt = ReportLociIsolateMatrix((char *)".ReadsetLociMatrix.csv"))<0)
+			{
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Reporting loci isolate matrix failed");
+			Reset();
+			return(Rslt);
+			}
 
-		ReportLociIsolateMatrix((char *)".ReadsetLociMatrix.csv");
-
-		ReportSimilaritiesMatrix((char *)".ReadsetSimilaritiesMatrix.csv");
+		gDiagnostics.DiagOut(eDLInfo, gszProcName, "Reporting readset similarities matrix ...");
+		if((Rslt = ReportSimilaritiesMatrix((char *)".ReadsetSimilaritiesMatrix.csv")) < 0)
+			{
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Reporting readset similarities matrix failed");
+			Reset();
+			return(Rslt);
+			}
 
 		// now identifying the shared SNP site loci distributions ..
-		IdentifySharedSiteLociDist((char *)".SharedReadsetLociDist.csv");
+		gDiagnostics.DiagOut(eDLInfo, gszProcName, "Identifying shared SNP site loci distributions ...");
+		if((Rslt = IdentifySharedSiteLociDist((char *)".SharedReadsetLociDist.csv")) < 0)
+			{
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Identifying shared SNP site loci distributions failed");
+			Reset();
+			return(Rslt);
+			}
+
 
 		if(m_NumFeatures)
 			{
 			if((Rslt = CreateOutFile((char *)".Feats.csv")) < eBSFSuccess)
 				{
+				gDiagnostics.DiagOut(eDLFatal, gszProcName, "Creating output file failed");
 				Reset();
 				return(Rslt);
 				}
-			ReportFeatSNPcnts(true,m_NumFeatures,m_pFeatures);
+			gDiagnostics.DiagOut(eDLInfo, gszProcName, "Reporting shared SNP site loci distributions ...");
+			Rslt = ReportFeatSNPcnts(true,m_NumFeatures,m_pFeatures);
 			CloseOutFile();
+			if(Rslt < 0)
+				{
+				gDiagnostics.DiagOut(eDLFatal, gszProcName, "Reporting shared SNP site loci distributions failed");
+				Reset();
+				return(Rslt);
+				}
 			}
+		gDiagnostics.DiagOut(eDLInfo, gszProcName, "Reporting distributions completed");
 		break;
 
 	case eMpgSSNPmarkers:
@@ -2937,10 +2972,12 @@ for(RowReadsetIdx = 1; RowReadsetIdx <= m_SimilaritiesMatrixRows; RowReadsetIdx+
 	pRowMatrixCell = &m_pMatrix[RowReadsetIdx * m_MatrixCols];
 	if(RowReadsetIdx != *pRowMatrixCell++)
 		{
-		gDiagnostics.DiagOut(eDLInfo, gszProcName, "Inconsistency between Similarities and Isolates matrix ReadsetIDs");
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Inconsistency between Similarities and Isolates matrix ReadsetIDs");
 		Reset();
 		return(-1);
 		}
+	if(!(RowReadsetIdx % 500))
+		gDiagnostics.DiagOut(eDLInfo, gszProcName, "Processing isolate %u",RowReadsetIdx);
 	SumReadsetSNPs = 0;
 	for(LociIdx = 1; LociIdx < m_MatrixCols; LociIdx++)
 		SumReadsetSNPs += *pRowMatrixCell++;
@@ -2952,7 +2989,7 @@ for(RowReadsetIdx = 1; RowReadsetIdx <= m_SimilaritiesMatrixRows; RowReadsetIdx+
 		
 		if(ColReadsetIdx != *pColMatrixCell++)
 			{
-			gDiagnostics.DiagOut(eDLInfo, gszProcName, "Inconsistency between Similarities and Isolates matrix ReadsetIDs");
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Inconsistency between Similarities and Isolates matrix ReadsetIDs");
 			Reset();
 			return(-1);
 			}
@@ -2993,6 +3030,7 @@ for(RowReadsetIdx = 1; RowReadsetIdx <= m_SimilaritiesMatrixRows; RowReadsetIdx+
 		m_pSimilaritiesMatrix[((RowReadsetIdx - 1) * m_SimilaritiesMatrixCols) + (ColReadsetIdx - 1)] = Score;
 		}
 	}
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "Processed %u isolates",m_SimilaritiesMatrixRows);
 return(eBSFSuccess);
 }
 

@@ -4,7 +4,7 @@ const int cMaxMatrixCols = 30000;		// allowing for matrix containing at most thi
 const int cMaxMatrixRows = 50000;		// allowing for matrix to contain this many readsets or isolates
 const int cMaxClassifications = 100;	// allowing for this many classifications
 const int cMaxR_nCr = 50;				// allowing for at most this many r elements as a combination to be drawn from n total elements
-const int cMaxN_nCr = 1000;				// allowing for at most this many n total elements from which r elements can be drawn from as a combination
+const int cMaxN_nCr = 10000;			// allowing for at most this many n total elements from which r elements can be drawn from as a combination
 
 const uint32_t DfltMinRowsClassified = 50;	// default minimum number of rows (samples) containing feature
 
@@ -18,8 +18,8 @@ typedef enum TAG_eModeSC2 {
 #pragma pack(1)
 typedef struct TAG_sScoredCol
 	{
-	double Prob;				// PValue of feature significance
-	uint32_t ColIdx;			// matrix (feature) column index 
+	uint32_t LinkedRows;	// number of rows having counts at this column index (loci)
+	uint32_t ColIdx;		// matrix (feature) column index 
 	} tsScoredCol;
 
 typedef struct TAG_sTrainClassify {
@@ -33,6 +33,27 @@ typedef struct TAG_sClassifications {
 	uint32_t NumReadsets;		// number of readsets with this classification
 	double Proportion;		// readsets with this classification are this proportion of all classified readsets
 } tsClassifications;
+
+
+
+typedef struct TAG_sThreadML
+{
+	int ThreadIdx;					// uniquely identifies this thread
+	void *pThis;					// will be initialised to pt to CSarsCov2ML instance
+
+#ifdef _WIN32
+	HANDLE threadHandle;			// handle as returned by _beginthreadex()
+	unsigned int threadID;			// identifier as set by _beginthreadex()
+#else
+	int threadRslt;					// result as returned by pthread_create ()
+	pthread_t threadID;				// identifier as set by pthread_create ()
+#endif
+	uint32_t NumLinkedFeatures;			// require this many features to be linked
+	uint32_t MinLinkedRows;				// require at least this many rows to show same linkage
+	uint32_t FeatClassValue;			// linkage is between these minimum feature class values
+	int Rslt;						// returned result code
+} tsThreadML;
+
 #pragma pack()
 
 class CSarsCov2ML
@@ -76,8 +97,9 @@ class CSarsCov2ML
 	uint32_t m_nCombination;						// from n total elements
 	uint32_t m_rCombination;						// will be drawing combinations of r elements
 	uint32_t m_nCrCombinations[cMaxR_nCr];			// indexes for each potential nCr combination instance
-
-	tsScoredCol m_TopLinkages[cMaxN_nCr];			// columns containing features which potentially have linkages
+	uint64_t m_NthCombination;						// total number of combinations returned by Iter_nCr()
+	
+	tsScoredCol m_TopLinkages[cMaxN_nCr];				// columns containing features which potentially have linkages
 	uint32_t m_ColClassifiedThresCnts[cMaxClassifications];	// classification thresholds
 	uint32_t m_ColClassifiedBelowCnts[cMaxClassifications];
 
@@ -117,6 +139,27 @@ class CSarsCov2ML
 	char* // returned ptr to classification
 			LocateClassification(uint32_t ClassificationID);	// Classification identifier
 
+	void AcquireSerialise(void);
+	void ReleaseSerialise(void);
+
+	static int SortTopLinkages(const void* arg1, const void* arg2);
+
+	bool m_bMutexesCreated;			// will be set true if synchronisation mutexes have been created
+	int CreateMutexes(void);
+	void DeleteMutexes(void);
+
+#ifdef _WIN32
+	HANDLE m_hMtxIterReads;
+#else
+	pthread_mutex_t m_hMtxIterReads;
+#endif
+
+	int
+		InitSarsCov2MLThreads(	uint32_t NumLinkedFeatures,			// require this many features to be linked
+					uint32_t MinLinkedRows,				// require at least this many rows to show same linkage
+					uint32_t FeatClassValue,			// linkage is between these minimum feature class values
+					int NumThreads);			// use this many threads
+
 public:
 	CSarsCov2ML(void);
 	~CSarsCov2ML(void);
@@ -136,6 +179,8 @@ public:
 					uint32_t NumLinkedFeatures,			// require this many features to be linked
 					uint32_t MinPropRows,				// require at least this many rows to show same linkage
 					uint32_t FeatClassValue);			// linkage is between these minimum feature class values
+
+	int ProcThreadML(tsThreadML *pPars);	// processing thread
 
 };
 

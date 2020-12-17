@@ -377,6 +377,7 @@ m_NxtszClassificationIdx = 0;
 m_szClassificationNames[0] = '\0';
 m_nCombination = 0;
 m_rCombination = 0;
+m_NthCombination = 0;
 }
 
 
@@ -558,6 +559,7 @@ CSarsCov2ML::LoadClassifications(char* pszClassFile)	// classifications file to 
 int Rslt;
 int LineNum;
 int ReadsetID;
+uint32_t NumMissing;
 uint32_t ClassificationID;
 char *pTxt;
 CCSVFile *pCSV;
@@ -574,6 +576,7 @@ if((Rslt = pCSV->Open(pszClassFile)) != eBSFSuccess)
 	}
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "Processing file: %s", pszClassFile);
 LineNum = 0;
+NumMissing = 0;
 while((Rslt = pCSV->NextLine()) > 0)	// onto next line
 	{
 	LineNum++;
@@ -582,7 +585,8 @@ while((Rslt = pCSV->NextLine()) > 0)	// onto next line
 	pCSV->GetText(1, &pTxt);			// expected to contain the readset prefix
 	if((ReadsetID = LocateReadset(pTxt)) < 1)
 		{
-		gDiagnostics.DiagOut(eDLWarn, gszProcName, "Unable to locate matching readset for '%s' from file: '%s'",pTxt,pszClassFile);
+		gDiagnostics.DiagOut(eDLWarn, gszProcName, "Unable to locate matching entry in matrix for '%s' from file: '%s'",pTxt,pszClassFile);
+		NumMissing++;
 		continue;
 		}
 
@@ -602,6 +606,8 @@ while((Rslt = pCSV->NextLine()) > 0)	// onto next line
 	m_ReadsetClassification[ReadsetID-1].ReadsetID = ReadsetID;
 	m_ReadsetClassification[ReadsetID-1].ClassificationID = ClassificationID;
 	}
+if(NumMissing)
+	gDiagnostics.DiagOut(eDLWarn, gszProcName, "Unable to locate a total of %u readsets",NumMissing);
 for(ClassificationID = 0; ClassificationID < m_NumClassificationNames; ClassificationID++)
 	m_Classifications[ClassificationID].Proportion = m_Classifications[ClassificationID].NumReadsets / (double)m_TotClassified;
 delete pCSV;
@@ -752,6 +758,7 @@ m_nCombination = n;
 m_rCombination = r;
 for(Idx = r-1; Idx >= 0; Idx--)
 	m_nCrCombinations[Idx]=Idx;
+m_NthCombination = 0;	// incremented with each call to Iter_nCr()
 return(true);
 }
 
@@ -766,18 +773,21 @@ if(m_nCombination == 0 || m_rCombination == 0)
 if(m_nCrCombinations[0] >= m_nCombination - m_rCombination)
 	return(false);	// exhausted all combinations
 
-for(Idx = m_rCombination-1; Idx >= 0; Idx--)
+if(m_NthCombination++)	// if not first then iterate next combination
 	{
-	if(m_nCrCombinations[Idx] < m_nCombination - m_rCombination + Idx)
+	for(Idx = m_rCombination-1; Idx >= 0; Idx--)
 		{
-		m_nCrCombinations[Idx] += 1;
-		break;
+		if(m_nCrCombinations[Idx] < m_nCombination - m_rCombination + Idx)
+			{
+			m_nCrCombinations[Idx] += 1;
+			break;
+			}
 		}
-	}
-while(Idx != m_rCombination-1)
-	{
-	m_nCrCombinations[Idx+1] = m_nCrCombinations[Idx] + 1;
-	Idx++;
+	while(Idx != m_rCombination-1)
+		{
+		m_nCrCombinations[Idx+1] = m_nCrCombinations[Idx] + 1;
+		Idx++;
+		}
 	}
 return(true);
 }
@@ -800,7 +810,7 @@ uint32_t RowIdx;
 uint32_t ColIdx;
 uint32_t *pCell;
 uint32_t NumRowsClassified;
-uint32_t TotColCnts;
+uint32_t LinkedRows;
 CStats Stats;
 // iterate over feature loci and discover which loci are proportionally over/under represented relative to classification
 ClassIdx = 0;
@@ -808,7 +818,7 @@ memset(m_TopLinkages,0,sizeof(m_TopLinkages));
 
 for(ColIdx = 1; ColIdx < m_NumCols; ColIdx++)
 	{
-	TotColCnts = 0;
+	LinkedRows = 0;
 	NumRowsClassified = 0;
 	memset(m_ColClassifiedThresCnts,0,sizeof(m_ColClassifiedThresCnts));
 	memset(m_ColClassifiedBelowCnts,0,sizeof(m_ColClassifiedBelowCnts));
@@ -820,25 +830,36 @@ for(ColIdx = 1; ColIdx < m_NumCols; ColIdx++)
 		if(*pCell >= FeatClassValue)
 			{
 			m_ColClassifiedThresCnts[0] += 1;
-			TotColCnts += 1;
+			LinkedRows += 1;
 			}
 		else
 			m_ColClassifiedBelowCnts[0] += 1;
 		}
-	if(NumRowsClassified < m_MinRowsClassified)
+	if(LinkedRows < MinLinkedRows)
 		continue;
 	if(m_ColClassifiedThresCnts[0] == 0)
 		continue;
 
-	double Prob = 1.0 - Stats.Binomial(NumRowsClassified,m_ColClassifiedThresCnts[0],0.005);
-	if(Prob <= 0.05)
+	if(ClassIdx >= cMaxN_nCr)		// need to prune?
 		{
-		m_TopLinkages[ClassIdx].Prob = Prob;
-		m_TopLinkages[ClassIdx].ColIdx = ColIdx;
-		ClassIdx+=1;
-		if(ClassIdx > cMaxN_nCr)
-			break;
+		// attempt to find a linkage which is lower than this columns LinkedRows and if located then replace
+		tsScoredCol *pLinkage = m_TopLinkages;
+		uint32_t Idx;
+		for(Idx = 0; Idx < ClassIdx; Idx++,pLinkage++)
+			{
+			if(pLinkage->LinkedRows < LinkedRows)
+				{
+				pLinkage->LinkedRows = LinkedRows;
+				pLinkage->ColIdx = ColIdx;
+				break;
+				}
+			}
+		if(Idx == (int)cMaxN_nCr)
+			continue;
 		}
+	m_TopLinkages[ClassIdx].LinkedRows = LinkedRows;
+	m_TopLinkages[ClassIdx].ColIdx = ColIdx;
+	ClassIdx+=1;
 	}
 
 if(ClassIdx < NumLinkedFeatures)
@@ -847,15 +868,35 @@ if(ClassIdx < NumLinkedFeatures)
 if(ClassIdx > cMaxN_nCr)	// can't handle more!
 	ClassIdx = cMaxN_nCr;
 
+qsort(m_TopLinkages, ClassIdx, sizeof(tsScoredCol), SortTopLinkages);
+
+Init_nCr(ClassIdx,NumLinkedFeatures);
+InitSarsCov2MLThreads(NumLinkedFeatures,MinLinkedRows,FeatClassValue,20);
+
+
+return(ClassIdx);
+}
+
+int
+CSarsCov2ML::ProcThreadML(tsThreadML *pPars)
+{
+// local per thread
+int NumReportedLinkages;
+uint32_t RowIdx;
 uint32_t NumFeatsLinked;
 uint32_t NumRowsLinked;
 uint32_t *pLinkedCell;
-
+uint32_t *pCell;
+char *pszLoci;
+uint32_t nCrCombinations[cMaxR_nCr];			// indexes for each potential nCr combination instance
 uint32_t ClassifiedAsCnts[cMaxClassifications];
-Init_nCr(ClassIdx,NumLinkedFeatures);
-do
+
+NumReportedLinkages = 0;
+AcquireSerialise();
+while(Iter_nCr())
 	{
-	// work to do here!
+	memcpy(nCrCombinations,m_nCrCombinations,sizeof(nCrCombinations));
+	ReleaseSerialise();
 	if(m_NumClassificationNames)
 		memset(ClassifiedAsCnts,0,sizeof(ClassifiedAsCnts));
 	NumRowsLinked = 0;
@@ -868,24 +909,28 @@ do
 		NumFeatsLinked = 0;
 		for(uint32_t IdxR = 0; IdxR < m_rCombination; IdxR++)
 			{
-			pLinkedCell = pCell + m_TopLinkages[m_nCrCombinations[IdxR]].ColIdx;
-			if(*pLinkedCell >= FeatClassValue)
+			pLinkedCell = pCell + m_TopLinkages[nCrCombinations[IdxR]].ColIdx;
+			if(*pLinkedCell >= pPars->FeatClassValue)
 				NumFeatsLinked++;
 			}
-		if(NumFeatsLinked < NumLinkedFeatures)
+		if(NumFeatsLinked < pPars->NumLinkedFeatures)
 			continue;
 		if(m_NumClassificationNames)
 			ClassifiedAsCnts[m_ReadsetClassification[*pCell-1].ClassificationID-1]++;
 		NumRowsLinked++;
 		}
 
-	if(NumRowsLinked >= MinLinkedRows)		
+	AcquireSerialise();
+	if(NumRowsLinked >= pPars->MinLinkedRows)
 		{
-		m_OutBuffIdx += sprintf(&m_pOutBuffer[m_OutBuffIdx],"%u,%u,%u,%u,%d",m_NumRows,NumRowsLinked,MinLinkedRows,NumLinkedFeatures, FeatClassValue);
+		m_OutBuffIdx += sprintf(&m_pOutBuffer[m_OutBuffIdx],"%u,%u,%u,%u,%d",m_NumRows,NumRowsLinked,pPars->MinLinkedRows,pPars->NumLinkedFeatures, pPars->FeatClassValue);
 		NumFeatsLinked = 0;
 		for(uint32_t IdxR = 0; IdxR < m_rCombination; IdxR++)
 			{
-			m_OutBuffIdx += sprintf(&m_pOutBuffer[m_OutBuffIdx],",\"%s\"", LocateFeature(m_TopLinkages[m_nCrCombinations[IdxR]].ColIdx));
+			pszLoci = LocateFeature(m_TopLinkages[nCrCombinations[IdxR]].ColIdx);
+			if(!strncmp(pszLoci,"Loci:",5))	// if loci using 'Loci:' as a chrom/seq name then strip this off as only used if processing a single unnamed sequence as in SARS-Cov-2
+				pszLoci+=5;
+			m_OutBuffIdx += sprintf(&m_pOutBuffer[m_OutBuffIdx],",\"%s\"", pszLoci);
 			NumFeatsLinked++;
 			}
 		if(m_NumClassificationNames)
@@ -902,13 +947,111 @@ do
 			CUtility::RetryWrites(m_hOutFile,m_pOutBuffer,m_OutBuffIdx);
 			m_OutBuffIdx = 0;
 			}
+		NumReportedLinkages+=1;
 		}
 	}
-while(Iter_nCr());
-
-
-return(ClassIdx);
+ReleaseSerialise();
+return(NumReportedLinkages);
 }
+
+#ifdef _WIN32
+unsigned __stdcall ProcessMLThread(void * pThreadPars)
+#else
+void *ProcessMLThread(void * pThreadPars)
+#endif
+{
+int Rslt;
+tsThreadML *pPars = (tsThreadML *)pThreadPars;			// makes it easier not having to deal with casts!
+CSarsCov2ML *pSarsCov2ML = (CSarsCov2ML *)pPars->pThis;
+Rslt = pSarsCov2ML->ProcThreadML(pPars);
+pPars->Rslt = Rslt;
+#ifdef _WIN32
+_endthreadex(0);
+return(eBSFSuccess);
+#else
+pthread_exit(NULL);
+#endif
+}
+
+int
+CSarsCov2ML::InitSarsCov2MLThreads(	uint32_t NumLinkedFeatures,			// require this many features to be linked
+				uint32_t MinLinkedRows,				// require at least this many rows to show same linkage
+				uint32_t FeatClassValue,			// linkage is between these minimum feature class values
+				int NumThreads)			// use this many threads
+{
+tsThreadML *pThreads;
+tsThreadML *pThread;
+
+if(CreateMutexes()!=eBSFSuccess)
+	{
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Failed to create thread synchronisation mutexes");
+	Reset();
+	return(cBSFSyncObjErr);
+	}
+
+if ((pThreads = new tsThreadML[NumThreads]) == NULL)
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "InitSarsCov2MLThreads: Memory allocation for thread context failed");
+	return(eBSFerrMem);
+	}
+memset(pThreads,0,sizeof(tsThreadML) * NumThreads);
+int ThreadIdx;
+pThread = pThreads;
+for (ThreadIdx = 1; ThreadIdx <= NumThreads; ThreadIdx++, pThread++)
+	{
+	pThread->ThreadIdx = ThreadIdx;
+	pThread->pThis = this;
+
+	pThread->NumLinkedFeatures=NumLinkedFeatures;
+	pThread->MinLinkedRows=MinLinkedRows;
+	pThread->FeatClassValue=FeatClassValue;
+
+#ifdef _WIN32
+	pThread->threadHandle = (HANDLE)_beginthreadex(NULL, 0x0fffff, ProcessMLThread, pThread, 0, &pThread->threadID);
+#else
+	pThread->threadRslt = pthread_create(&pThread->threadID, NULL, ProcessMLThread, pThread);
+#endif
+	}
+
+// allow threads a few seconds to startup
+#ifdef _WIN32
+Sleep(5000);
+#else
+sleep(5);
+#endif
+
+pThread = pThreads;
+for (ThreadIdx = 0; ThreadIdx < NumThreads; ThreadIdx++, pThread++)
+	{
+#ifdef _WIN32
+	while (WAIT_TIMEOUT == WaitForSingleObject(pThread->threadHandle, 60000))
+		{
+		AcquireSerialise();
+
+		ReleaseSerialise();
+		};
+	CloseHandle(pThread->threadHandle);
+#else
+	struct timespec ts;
+	int JoinRlt;
+	clock_gettime(CLOCK_REALTIME, &ts);
+	ts.tv_sec += 60;
+	while ((JoinRlt = pthread_timedjoin_np(pThread->threadID, NULL, &ts)) != 0)
+		{
+		AcquireSerialise();
+
+		ReleaseSerialise();
+		ts.tv_sec += 60;
+		}
+#endif
+	}
+
+if(pThreads != NULL)
+	delete pThreads;
+DeleteMutexes();
+return(0);
+}
+
 
 int 
 CSarsCov2ML::Process(eModeSC2 Mode,						// processing mode
@@ -999,4 +1142,75 @@ m_hOutFile = -1;
 Reset();
 return(0);
 }
+
+
+int
+CSarsCov2ML::CreateMutexes(void)
+{
+if(m_bMutexesCreated)
+	return(eBSFSuccess);
+
+#ifdef _WIN32
+if((m_hMtxIterReads = CreateMutex(NULL,false,NULL))==NULL)
+	{
+#else
+if(pthread_mutex_init (&m_hMtxIterReads,NULL)!=0)
+	{
+#endif
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to create mutex");
+	return(eBSFerrInternal);
+	}
+
+m_bMutexesCreated = true;
+return(eBSFSuccess);
+}
+
+void
+CSarsCov2ML::DeleteMutexes(void)
+{
+if(!m_bMutexesCreated)
+	return;
+#ifdef _WIN32
+CloseHandle(m_hMtxIterReads);
+#else
+pthread_mutex_destroy(&m_hMtxIterReads);
+#endif
+m_bMutexesCreated = false;
+}
+
+
+void
+CSarsCov2ML::AcquireSerialise(void)
+{
+#ifdef _WIN32
+WaitForSingleObject(m_hMtxIterReads,INFINITE);
+#else
+pthread_mutex_lock(&m_hMtxIterReads);
+#endif
+}
+
+void
+CSarsCov2ML::ReleaseSerialise(void)
+{
+#ifdef _WIN32
+ReleaseMutex(m_hMtxIterReads);
+#else
+pthread_mutex_unlock(&m_hMtxIterReads);
+#endif
+}
+
+
+int
+CSarsCov2ML::SortTopLinkages(const void* arg1, const void* arg2)
+{
+tsScoredCol* pEl1 = (tsScoredCol*)arg1;
+tsScoredCol* pEl2 = (tsScoredCol*)arg2;
+
+if(pEl1->ColIdx < pEl2->ColIdx)
+	return(-1);
+if(pEl1->ColIdx > pEl2->ColIdx)
+	return(1);
+return(0);
+}
+
 

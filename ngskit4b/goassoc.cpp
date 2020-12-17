@@ -131,7 +131,7 @@ Process(etPMode PMode,			// processing mode
 int
 SetBkgndCnts(etMTCMode MTC,		// multiple test correction mode
 		bool bCanonicalise,     // canonicalise sample name isoforms by removing any numerical suffix in range '.[0-99] (TAIR ge
- 		etOntologies Ontology, // which root ontology to process
+		etOntologies Ontology, // which root ontology to process
 		bool bProp,				// propagate counts from GO:Term into parent terms
 		bool bBkgndLen,			// background counts proportional to gene lengths
 		char Strand,			// background counts are for which strand '*', '+' or '-'
@@ -145,8 +145,8 @@ SetBkgndCnts(etMTCMode MTC,		// multiple test correction mode
 
 int
 SetSampleCnts(etMTCMode MTC,	// multiple test correction mode
-	    bool bCanonicalise,     // canonicalise sample name isoforms by removing any numerical suffix in range '.[0-99] (TAIR ge
-  		etOntologies Ontology, // which root ontology to process
+		bool bCanonicalise,     // canonicalise sample name isoforms by removing any numerical suffix in range '.[0-99] (TAIR ge
+		etOntologies Ontology, // which root ontology to process
 		bool bProp,				// propagate counts from GO:Term into parent terms
 		char Strand,			// background counts are for which strand '*', '+' or '-'
 		int SampleCnt,			// number of genes in sample 
@@ -304,25 +304,25 @@ argerrors = CUtility::arg_parsefromfile(argc,(char **)argv,&pAllArgs);
 if(argerrors >= 0)
 	argerrors = arg_parse(argerrors,pAllArgs,argtable);
 
-    /* special case: '--help' takes precedence over error reporting */
+	/* special case: '--help' takes precedence over error reporting */
 if (help->count > 0)
-        {
+		{
 		printf("\n%s %s %s, Version %s\nOptions ---\n", gszProcName, gpszSubProcess->pszName, gpszSubProcess->pszFullDescr, kit4bversion);
 		arg_print_syntax(stdout,argtable,"\n");
-        arg_print_glossary(stdout,argtable,"  %-25s %s\n");
+		arg_print_glossary(stdout,argtable,"  %-25s %s\n");
 		printf("\nNote: Parameters can be entered into a parameter file, one parameter per line.");
 		printf("\n      To invoke this parameter file then precede its name with '@'");
 		printf("\n      e.g. %s @myparams.txt\n",gszProcName);
 		printf("\nPlease report any issues regarding usage of %s to stuart.stephen@csiro.au\n\n",gszProcName);
 		exit(1);
-        }
+		}
 
-    /* special case: '--version' takes precedence error reporting */
+	/* special case: '--version' takes precedence error reporting */
 if (version->count > 0)
-        {
+		{
 		printf("\n%s Version %s\n",gszProcName,kit4bversion);
 		exit(1);
-        }
+		}
 
 if (!argerrors)
 	{
@@ -1481,7 +1481,7 @@ return(eBSFSuccess);
 int
 SetBkgndCnts(etMTCMode MTC,		// multiple test correction mode
 		bool bCanonicalise,     // canonicalise sample name isoforms by removing any numerical suffix in range '.[0-99] (TAIR ge
- 		etOntologies Ontology, // which root ontology to process
+		etOntologies Ontology, // which root ontology to process
 		bool bProp,				// propagate counts from GO:Term into parent terms
 		bool bBkgndLen,			// background counts proportional to gene lengths
 		char Strand,			// background counts are for which strand '*', '+' or '-'
@@ -1635,7 +1635,7 @@ return(Rslt >= eBSFSuccess ? TotGOIDsCounted : Rslt);
 int
 SetSampleCnts(etMTCMode MTC,		// multiple test correction mode
 		bool bCanonicalise,     // canonicalise sample name isoforms by removing any numerical suffix in range '.[0-99] (TAIR ge
-  		etOntologies Ontology, // which root ontology to process
+		etOntologies Ontology, // which root ontology to process
 		bool bProp,				// propagate counts from GO:Term into parent terms
 		char Strand,			// background counts are for which strand '*', '+' or '-'
 		int SampleCnt,			// number of genes in sample 
@@ -1941,7 +1941,7 @@ return(0);
 // Writes results out to file
 int
 OutputResults(etOntologies Ontology,
-  			  tsTermStats *pPopulationStats,
+			  tsTermStats *pPopulationStats,
 			  tsTermStats *pSampleStats,
 			  char *pszResultsFile,
 			  char *pszGraphViz,
