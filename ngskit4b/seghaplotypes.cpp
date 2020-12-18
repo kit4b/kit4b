@@ -18,6 +18,7 @@
 
 
 int SegHaplotypes(eModeSH PMode,	// processing mode
+			bool bNoSplit,			// true if not to split output files by haplotype tag
 			char *pszTrackName,		// track name
 			char *pszTrackDescr,	// track descriptor
 			bool bDontScore,		// don't score haplotype bin segments
@@ -44,6 +45,7 @@ seghaplotypes(int argc, char **argv)
 	int NumberOfProcessors;		// number of installed CPUs
 
 	 eModeSH PMode;					// processing mode
+	 bool bNoSplit;					// true if not splitting haplotype founders
 	 bool bDontScore;				// don't score haplotype bin segments
 	 char szTrackName[_MAX_PATH];	// track name
 	 char szTrackDescr[_MAX_PATH];	// track description
@@ -57,16 +59,17 @@ seghaplotypes(int argc, char **argv)
 	struct arg_file *LogFile = arg_file0 ("F", "log", "<file>", "diagnostics log file");
 
 	struct arg_int *pmode = arg_int0 ("m", "mode", "<int>", "processing mode: 0 default is to generate segmentations using bin counts of unique loci only, 1 use all alignments");
+	struct arg_lit *nosplit = arg_lit0 ("s", "split", "don't split output files by haplotype tag");
 	struct arg_lit *dontscore = arg_lit0 ("n", "noscore", "don't score haplotype segment bins");
 	struct arg_int *binsizekbp = arg_int0 ("b", "binsizekbp", "<int>", "Maximum Kbp bin size (default 10, range 1..1000");
 	struct arg_str *trackname = arg_str0("t","trackname","<str>","BED Track name");
 	struct arg_str *trackdescr = arg_str0("d","trackdescr","<str>","BED Track description");
-	struct arg_file *infile = arg_file1("i", "in", "<file>", "SAM/BAM input file (can contain wildcards for multiple SAM file processing)");
+	struct arg_file *infile = arg_file1("i", "in", "<file>", "SAM/BAM input file(s) (can contain wildcards for multiple SAM file processing)");
 	struct arg_file *outfile = arg_file1 ("o", "out", "<file>", "BED output file");
 	struct arg_end *end = arg_end (200);
 
 	void *argtable[] = { help,version,FileLogLevel,LogFile,
-						pmode,trackname,trackdescr,dontscore,binsizekbp,infile,outfile,end };
+						pmode,nosplit,trackname,trackdescr,dontscore,binsizekbp,infile,outfile,end };
 
 	char **pAllArgs;
 	int argerrors;
@@ -154,6 +157,8 @@ seghaplotypes(int argc, char **argv)
 		if (szTrackName[0] == '\0')
 			strcpy(szTrackName,"Segmented Haplotypes");
 
+		bNoSplit = nosplit->count ? true : false;
+
 		if(trackdescr->count)
 			{
 			strncpy(szTrackDescr, trackdescr->sval[0],80);
@@ -217,13 +222,13 @@ seghaplotypes(int argc, char **argv)
 		}
 
 
-
+		gDiagnostics.DiagOutMsgOnly (eDLInfo, "Split output files by haplotype segment tag", bNoSplit ? "No" : "Yes");
 		gDiagnostics.DiagOutMsgOnly (eDLInfo, "Segment haplotypes : '%s'", pszDescr);
 		gDiagnostics.DiagOutMsgOnly (eDLInfo, "Track name : '%s'", szTrackName);
 		gDiagnostics.DiagOutMsgOnly (eDLInfo, "Track name : '%s'", szTrackDescr);
 		gDiagnostics.DiagOutMsgOnly (eDLInfo, "Score haplotype segment bins : '%s'", bDontScore ? "No" : "Yes");
 		gDiagnostics.DiagOutMsgOnly (eDLInfo, "Counts accumulated into maximal sized bins of : %dKbp'", BinSizeKbp);	
-		gDiagnostics.DiagOutMsgOnly (eDLInfo, "Input file : '%s'", szInFile);
+		gDiagnostics.DiagOutMsgOnly (eDLInfo, "Input file(s) : '%s'", szInFile);
 		gDiagnostics.DiagOutMsgOnly (eDLInfo, "Output file : '%s'", szOutFile);
 
 
@@ -233,6 +238,7 @@ seghaplotypes(int argc, char **argv)
 		gStopWatch.Start ();
 		Rslt = 0;
 		Rslt = SegHaplotypes(PMode,			// processing mode
+						bNoSplit,			// true if not to split output files by haplotype tag
 						szTrackName,		// track name
 						szTrackDescr,		// track descriptor
 						bDontScore,			// don't score haplotype segment bins
@@ -359,12 +365,12 @@ m_NxtszFounderIdx = 0;
 m_szFounders[0] = '\0';
 m_szFounderIdx[0] = 0;
 
-m_NumAlignedTargSeqs = 0;
 m_AllocdBins = 0;
 }
 
 
 int SegHaplotypes(eModeSH PMode,	// processing mode
+			bool bNoSplit,			// true if not to split output files by haplotype tag
 			char *pszTrackName,		// track name
 			char *pszTrackDescr,	// track descriptor
 			bool bDontScore,		// don't score haplotype bin segments
@@ -380,13 +386,14 @@ if((pSegHaplotypes = new CSegHaplotypes) == NULL)
 	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Unable to instantiate instance of CSegHaplotypes");
 	return(eBSFerrObj);
 	}
-Rslt = pSegHaplotypes->Process(PMode,pszTrackName,pszTrackDescr,bDontScore,BinSizeKbp,pszInFile,pszOutFile);
+Rslt = pSegHaplotypes->Process(PMode,bNoSplit,pszTrackName,pszTrackDescr,bDontScore,BinSizeKbp,pszInFile,pszOutFile);
 delete pSegHaplotypes;
 return(Rslt);
 }
 
 int 
 CSegHaplotypes::Process(eModeSH PMode,			// processing mode
+			bool bNoSplit,			// true if not to split output files by haplotype tag
 			char *pszTrackName,		// track name
 			char *pszTrackDescr,	// track descriptor
 			bool bDontScore,		// don't score haplotype bin segments
@@ -396,6 +403,7 @@ CSegHaplotypes::Process(eModeSH PMode,			// processing mode
 {
 int Rslt;
 Rslt = GenBinnedSegments(PMode,			// processing mode
+			bNoSplit,			// true if not to split output files by haplotype tag (default is to split into separate files)
 			pszTrackName,				// track name
 			pszTrackDescr,				// track descriptor
 			bDontScore,					// don't score haplotype bin segments
@@ -452,7 +460,7 @@ int TargID;
 
 NumMappedChroms = 0;
 NumBinsRequired = 0;
-m_NumAlignedTargSeqs = 0;
+
 
 // open SAM for reading
 if(pszSAMFile == NULL || *pszSAMFile == '\0')
@@ -476,7 +484,7 @@ if((Rslt = (teBSFrsltCodes)m_pSAMfile->Open(pszSAMFile)) != eBSFSuccess)
 	return((teBSFrsltCodes)Rslt);
 	}
 
-AddFounder((char *)"N/A");			// must have a default in case unable to parse out a founder tag
+AddFounder((char *)"NA");			// must have a default in case unable to parse out a founder tag
 NumAcceptedAlignments = 0;
 NumAlignmentsProc = 0;
 time_t Then = time(NULL);
@@ -513,7 +521,7 @@ while(Rslt >= eBSFSuccess && (LineLen = m_pSAMfile->GetNxtSAMline((char *)m_pInB
 		else
 			{
 			pszRefSeqName = szContig;
-			FounderID = AddFounder((char *)"N/A");
+			FounderID = AddFounder((char *)"NA");
 			}
 
 		if((TargID = AddTargSeqName(pszRefSeqName, ContigLen)) == 0) // treating founder errors as if chrom name errors
@@ -558,7 +566,7 @@ while(Rslt >= eBSFSuccess && (LineLen = m_pSAMfile->GetNxtSAMline((char *)m_pInB
 		}
 
 	// parse out the founder name tag - if present!
-	// if not present then treat as if founder "N/A"
+	// if not present then treat as if founder "NA"
 	pszRefSeqName = m_pBAMalignment->szRefSeqName;
 	FounderNameLen = ParseFounder(pszRefSeqName);
 	if(FounderNameLen > 0)
@@ -569,7 +577,7 @@ while(Rslt >= eBSFSuccess && (LineLen = m_pSAMfile->GetNxtSAMline((char *)m_pInB
 		FounderID = LocateFounder(szFounder); 
 		}
 	else
-		FounderID = LocateFounder((char *)"N/A");
+		FounderID = LocateFounder((char *)"NA");
 
 	if(FounderID == 0 || (pTargSeq = LocateTargSeq(pszRefSeqName)) == NULL) // if founder or target unknown then simply slough
 		{
@@ -577,7 +585,7 @@ while(Rslt >= eBSFSuccess && (LineLen = m_pSAMfile->GetNxtSAMline((char *)m_pInB
 		Rslt = eBSFSuccess;
 		continue;
 		}
-	if(!pTargSeq->fAligned)
+	if(!pTargSeq->fAligned)  // first alignment to this targ seq?
 		{
 		pTargSeq->fAligned = true;												// at least one alignment to this target
 		m_NumAlignedTargSeqs++;
@@ -639,6 +647,7 @@ return(NumAcceptedAlignments);
 // generate segmented haplotypes file from SAM/BAM alignment input file
 int	
 CSegHaplotypes::GenBinnedSegments(eModeSH PMode,			// processing mode
+			bool bNoSplit,			// true if not to split output files by haplotype tag (default is to split into separate files)
 			char *pszTrackName,		// track name
 			char *pszTrackDescr,	// track descriptor
 			bool bDontScore,		// don't score haplotype bin segments
@@ -659,7 +668,7 @@ tsTargSeq *pTargSeq;
 size_t NumAcceptedAlignments;
 int WindowSize = BinSizeKbp * 1000;
 m_BinSizeKbp = BinSizeKbp;
-
+m_bNoSplit = bNoSplit;
 if((m_pBAMalignment = new tsBAMalign) == NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenBinnedSegments: Unable to instantiate tsBAMalign");
@@ -683,23 +692,7 @@ if((m_pOutBuffer = new uint8_t[cAllocSHBuffOutSize]) == NULL)
 	}
 m_AllocOutBuff = cAllocSHBuffOutSize;
 
-#ifdef _WIN32
-m_hOutFile = open(pszOutFile,( O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC),(_S_IREAD | _S_IWRITE));
-#else
-if((m_hOutFile = open64(pszOutFile,O_WRONLY | O_CREAT,S_IREAD | S_IWRITE)) != -1)
-	if(ftruncate(m_hOutFile,0)!=0)
-		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate %s - %s",pszOutFile,strerror(errno));
-		Reset();
-		return(eBSFerrCreateFile);
-		}
-#endif
-if(m_hOutFile < 0)
-	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate %s - %s",pszOutFile,strerror(errno));
-	Reset();
-	return(eBSFerrCreateFile);
-	}
+
 
 m_AllocdSAMlociMem = (size_t)cAllocSHNumSAMloci * sizeof(tsSHSAMloci);
 #ifdef _WIN32
@@ -728,7 +721,7 @@ m_AllocdSAMloci = cAllocSHNumSAMloci;
 NumAcceptedAlignments = 0;
 m_AllocdBins = 0;
 
-AddFounder((char *)"N/A");			// must have a default in case unable to parse out a founder tag
+AddFounder((char *)"NA");			// must have a default in case unable to parse out a founder tag
 
 CSimpleGlob glob(SG_GLOB_FULLSORT);
 glob.Init();
@@ -747,6 +740,7 @@ if(glob.FileCount() <= 0)
 	}
 
 Rslt = eBSFSuccess;
+m_NumAlignedTargSeqs = 0;
 for(int FileID = 0; Rslt >= eBSFSuccess && FileID < glob.FileCount(); ++FileID)
 	{
 	char *pszSAMFile = glob.File(FileID);
@@ -843,21 +837,69 @@ int CalledBins;
 TotCalledBins = IdentifySegments(4,false,bDontScore);	// identify higher confidence bins
 while((CalledBins = IdentifySegments(3,true,bDontScore)) > 0) // these will 'fill in the gaps' ...
 	TotCalledBins += CalledBins;
-	
-// output as a BED file with scoring
-genBED(pszTrackName,pszTrackDescr);
 
-if(m_OutBuffIdx)
+uint32_t FounderIdx;
+uint32_t FounderID;
+char *pszFounder;
+char szFounderOutFile[_MAX_PATH];
+char szFounderTrackName[_MAX_PATH];
+char szFounderTrackDescr[_MAX_PATH];
+
+for(FounderIdx = 0; FounderIdx < m_NumFounders; FounderIdx++)
 	{
-	CUtility::RetryWrites(m_hOutFile,m_pOutBuffer,m_OutBuffIdx);
-	m_OutBuffIdx = 0;
-	}
-	// commit output file
+	if(bNoSplit)
+		{
+		FounderID = 0;
+		strcpy(szFounderOutFile,pszOutFile);
+		strcpy(szFounderTrackName,pszTrackName);
+		strcpy(szFounderTrackDescr,pszTrackDescr);
+		}
+	else
+		{
+		FounderID = FounderIdx+1;
+		pszFounder=LocateFounder(FounderIdx+1);
+		sprintf(szFounderOutFile,"%s.%s.bed",pszOutFile,pszFounder);
+		sprintf(szFounderTrackName,"%s:%s",pszFounder,pszTrackName);
+		sprintf(szFounderTrackDescr,"%s:%s",pszFounder,pszTrackDescr);
+		}
 #ifdef _WIN32
-_commit(m_hOutFile);
+	m_hOutFile = open(szFounderOutFile,( O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC),(_S_IREAD | _S_IWRITE));
 #else
-fsync(m_hOutFile);
+	if((m_hOutFile = open64(szFounderOutFile,O_WRONLY | O_CREAT,S_IREAD | S_IWRITE)) != -1)
+		if(ftruncate(m_hOutFile,0)!=0)
+			{
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate %s - %s",szFounderOutFile,strerror(errno));
+			Reset();
+			return(eBSFerrCreateFile);
+			}
 #endif
+	if(m_hOutFile < 0)
+		{
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate %s - %s",szFounderOutFile,strerror(errno));
+		Reset();
+		return(eBSFerrCreateFile);
+		}
+	
+	// output as a BED file with scoring
+	genBED(FounderID,szFounderTrackName,szFounderTrackDescr);
+
+	if(m_OutBuffIdx)
+		{
+		CUtility::RetryWrites(m_hOutFile,m_pOutBuffer,m_OutBuffIdx);
+		m_OutBuffIdx = 0;
+		}
+		// commit output file
+#ifdef _WIN32
+	_commit(m_hOutFile);
+#else
+	fsync(m_hOutFile);
+#endif
+	close(m_hOutFile);
+	m_hOutFile = -1;
+	if(bNoSplit)
+		break;
+	}
+
 Reset();
 return(eBSFSuccess);
 }
@@ -1013,7 +1055,8 @@ return(NumCalledBins);
 }
 
 int
-CSegHaplotypes::genBED(char *pszTrackName,		// track name
+CSegHaplotypes::genBED(uint32_t SplitByFounderID, // if 0 then combining all founders in same output BED, otherwise BED to only contain haplotype segments specific to the founder specified
+						char *pszTrackName,		// track name
 						char *pszTrackDescr)	// track descriptor
 {
 uint32_t FounderIdx;
@@ -1036,6 +1079,8 @@ m_OutBuffIdx = sprintf((char *)m_pOutBuffer,"track name=%s description=\"%s\" us
 // <chrom> <chromStart (0..n)> <chromEnd (chromStart + Len)> <name> <score (0..999)
 for(FounderIdx = 0; FounderIdx < m_NumFounders; FounderIdx++)
 	{
+	if(SplitByFounderID != 0 && FounderIdx != SplitByFounderID-1)
+		continue;
 	pTargSeq = m_TargSeqs;
 	for(TargSeqIdx = 0; TargSeqIdx < m_NumSeqNames; TargSeqIdx++,pTargSeq++)
 		{

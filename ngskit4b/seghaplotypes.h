@@ -58,6 +58,7 @@ typedef struct TAG_tsTargSeq
 
 class CSegHaplotypes
 {
+	bool m_bNoSplit;				// true if not to split output files by haplotype tag (default is to split into separate files)
 	uint32_t m_BinSizeKbp;			// each bin is at most this many Kbp in size
 	uint32_t m_AllocdBins;			// number of allocated bins
 	tsSHBin *m_pBins;				// allocated to hold bins for maximal sized targeted sequence
@@ -101,12 +102,14 @@ class CSegHaplotypes
 						 bool bInterpolate = false, // if true - if bin counts less than minimum coverage then interpolate from adjacent bins which were called
 						 bool bDontScore = false);	// if true then mark bin haplotype with score of cBEDNoScore without actually scoring according to bin counts
 
-	int genBED(char *pszTrackName,		// track name
+	int genBED(uint32_t SplitByFounderID, // if 0 then combining all founders in same output BED, otherwise BED to only contain haplotype segments specific to the founder specified 
+				char *pszTrackName,		// track name
 				char *pszTrackDescr);	// track descriptor
 
 
 	int	
 		GenBinnedSegments(eModeSH PMode,			// processing mode
+			bool bNoSplit,			// true if not to split output files by haplotype tag (default is to split into separate files)
 			char *pszTrackName,		// track name
 			char *pszTrackDescr,	// track descriptor
 			bool bDontScore,			// don't score segment bins
@@ -163,9 +166,10 @@ public:
 	void Reset(void);	// resets class instance state back to that immediately following instantiation
 
 	int Process(eModeSH PMode,			// processing mode
+			bool bNoSplit,				// true if not to split output files by haplotype tag
 			char *pszTrackName,			// track name
 			char *pszTrackDescr,		// track descriptor
-			bool bDontScore,				// don't score segment bins
+			bool bDontScore,			// don't score segment bins
 			int BinSizeKbp,				// using this sized bins
 			char* pszInFile,			// input SAM file
 			char* pszOutFile);			// output to this file
