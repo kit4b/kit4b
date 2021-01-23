@@ -65,4 +65,7 @@ Release 1.3.9 - 'sarscov2ml' output includes potential counts of isolates in eac
 Release 1.4.0 - 'seghaplotypes' can now differentiate inter and intra haplotype segments
 Release 1.4.1 - 'sarscov2ml' is now multithreaded enabling substantial throughput improvements
 Release 1.4.3 - Option added whereby 'seghaplotypes' can split output into separate files for each tagged founder haplotype
+Release 1.4.5 - 'kalign' generates a scored reads alignment coverage BED file when SNPs are called. 'repassemb' can use this BED file and mark regions in the repurposed assembly which were not covered by reads as being indeterminate preventing subsequent alignments to these regions.
+
+           
 

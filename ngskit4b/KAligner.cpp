@@ -248,6 +248,7 @@ m_microInDelLen = microInDelLen;
 m_SpliceJunctLen = SpliceJunctLen;
 m_MinSNPreads = MinSNPreads;
 m_SNPNonRefPcnt = SNPNonRefPcnt/100.0;
+m_MinCoverageSegments = min(m_MinSNPreads,cMinCoverageSegments);
 
 m_QValue = QValue;
 m_Marker5Len = MarkerLen/2;
@@ -819,6 +820,7 @@ m_hDiSNPfile = -1;
 m_hTriSNPfile = -1;
 m_hMarkerFile = -1;	
 m_hSNPCentsfile = -1;
+m_hCoverageSegmentsfile = -1;
 
 m_gzOutFile = NULL;
 m_gzIndOutFile = NULL;
@@ -916,6 +918,7 @@ m_SitePrefsOfs = cDfltRelSiteStartOfs;
 m_pszOutFile = NULL;
 m_szIndRsltsFile[0] = '\0';
 m_szJctRsltsFile[0] = '\0';
+m_szCoverageSegmentsFile[0] = '\0';
 m_szDiSNPFile[0] = '\0';
 m_pszSNPRsltsFile = NULL;
 m_pszSNPCentroidFile = NULL;
@@ -1090,6 +1093,19 @@ if(m_hTriSNPfile != -1)
 	close(m_hTriSNPfile);
 	m_hTriSNPfile = -1;
 	}
+
+if(m_hCoverageSegmentsfile != -1)
+	{
+	if(bSync)
+#ifdef _WIN32
+		_commit(m_hCoverageSegmentsfile);
+#else
+		fsync(m_hCoverageSegmentsfile);
+#endif
+	close(m_hCoverageSegmentsfile);
+	m_hCoverageSegmentsfile = -1;
+	}
+
 
 if(m_hMarkerFile != -1)
 	{
@@ -4476,6 +4492,25 @@ if(m_pszSNPRsltsFile != NULL && m_pszSNPRsltsFile[0] != '\0' && m_MinSNPreads > 
 		return(eBSFerrCreateFile);
 		}
 
+	CUtility::AppendFileNameSuffix(m_szCoverageSegmentsFile, m_pszSNPRsltsFile, (char*)".covsegs.bed",'.');
+
+#ifdef _WIN32
+	m_hCoverageSegmentsfile = open(m_szCoverageSegmentsFile,( O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC),(_S_IREAD | _S_IWRITE) );
+#else
+	if((m_hCoverageSegmentsfile = open(m_szCoverageSegmentsFile,O_WRONLY | O_CREAT,S_IREAD | S_IWRITE))!=-1)
+		if(ftruncate(m_hCoverageSegmentsfile,0)!=0)
+			{
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to truncate coverage segments file  %s - %s",m_szCoverageSegmentsFile,strerror(errno));
+			return(eBSFerrCreateFile);
+			}
+#endif
+	if(m_hCoverageSegmentsfile < 0)
+		{
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: unable to create/truncate coverage segments output file '%s'",m_szCoverageSegmentsFile);
+		return(eBSFerrCreateFile);
+		}
+
+
 	if(m_pszSNPCentroidFile != NULL && m_pszSNPCentroidFile[0] != '\0')
 		{
 #ifdef _WIN32
@@ -6990,7 +7025,13 @@ CKAligner::OutputSNPs(void)
 	double GlobalSeqErrRate;
 	double LocalSeqErrRate;
 	tsSNPcnts* pSNP;
-	UINT32 Loci;
+	uint32_t Loci;
+
+	char szCovSegBuff[4000];
+	uint32_t PrevScaledLociCoverage;
+	uint32_t	CoverageSegLen;
+	uint32_t	StartCoverageSegLoci;
+	int CovSegBuffIdx;
 	int Idx;
 	int NumSNPs;
 	int TotBases;
@@ -7003,12 +7044,12 @@ CKAligner::OutputSNPs(void)
 	size_t memreq;
 	tsSNPcnts* pSNPWinL;
 	tsSNPcnts* pSNPWinR;
-	UINT32 LocalBkgndRateWindow;
-	UINT32 LocalBkgndRateWinFlank;
-	UINT32 LocalTotMismatches;
-	UINT32 LocalTotMatches;
-	UINT32 LocTMM;
-	UINT32 LocTM;
+	uint32_t LocalBkgndRateWindow;
+	uint32_t LocalBkgndRateWinFlank;
+	uint32_t LocalTotMismatches;
+	uint32_t LocalTotMatches;
+	uint32_t LocTMM;
+	uint32_t LocTM;
 	CStats Stats;
 
 	tsMonoSNP sMonoSNP;
@@ -7072,7 +7113,8 @@ CKAligner::OutputSNPs(void)
 	LocalBkgndRateWindow = (LocalBkgndRateWinFlank * 2) + 1;
 	LocalTotMismatches = 0;
 	LocalTotMatches = 0;
-
+	CoverageSegLen = 0;
+	StartCoverageSegLoci = 0;
 
 	for (Loci = 0; Loci < min(LocalBkgndRateWindow, m_pChromSNPs->ChromLen); Loci++, pSNPWinR++)
 		{
@@ -7086,6 +7128,10 @@ CKAligner::OutputSNPs(void)
 	pSNPWinL = pSNP;
 	LineLen = 0;
 
+	PrevScaledLociCoverage = 0;
+	CoverageSegLen = 0;
+	StartCoverageSegLoci = 0;
+	CovSegBuffIdx = 0;
 	m_MaxDiSNPSep = m_pChromSNPs->MeanReadLen;
 	for (Loci = 0; Loci < m_pChromSNPs->ChromLen; Loci++, pSNP++)
 		{
@@ -7114,7 +7160,52 @@ CKAligner::OutputSNPs(void)
 			m_LociBasesCoverage += TotBases;
 			}
 
-		if (TotBases < m_MinSNPreads)
+		// scale current read coverage
+		// scaling is intended such that segments of very low coverage are easily identified
+		// coverage => BED score
+		// 0 => 0
+		// 1 => 100
+		// 2..3 => 200
+		// 4..7 => 300
+		// 8..15 => 400
+		// 16..31 => 500
+		// 32..63 => 600
+		// 64..127 => 700
+		// 128..255 => 800
+		// 256..511 => 900
+		// 512+     => 999
+		uint32_t CurScaledLociCoverage = 0;
+		uint32_t CurLociCoverage = TotBases;
+		while(CurLociCoverage)
+			{
+			CurScaledLociCoverage+=1;
+			CurLociCoverage >>= 1;
+			}
+		CurScaledLociCoverage *=100;		
+		if(CurScaledLociCoverage > 999)
+			CurScaledLociCoverage = 999;
+		if(CurScaledLociCoverage == PrevScaledLociCoverage)		// same coverage, extending segment?
+			CoverageSegLen++;
+		else							// change in coverage so report segment and start a new segment
+			{
+			if(CoverageSegLen > 0 && PrevScaledLociCoverage > 0)
+				CovSegBuffIdx+=sprintf(&szCovSegBuff[CovSegBuffIdx],"\n%s\t%u\t%u\tScaled:%u\t%u",szChromName,StartCoverageSegLoci,StartCoverageSegLoci+CoverageSegLen,PrevScaledLociCoverage,PrevScaledLociCoverage);
+			StartCoverageSegLoci = Loci;
+			PrevScaledLociCoverage = CurScaledLociCoverage;
+			CoverageSegLen = 1;
+			}
+
+		if((CovSegBuffIdx + 100) > (uint32_t)sizeof(szCovSegBuff))
+			{
+			if(!CUtility::RetryWrites(m_hCoverageSegmentsfile, szCovSegBuff, CovSegBuffIdx))
+				{
+				gDiagnostics.DiagOut(eDLInfo,gszProcName,"RetryWrites() error");
+				return(eBSFerrWrite);
+				}
+			CovSegBuffIdx = 0;
+			}
+
+		if (TotBases < m_MinSNPreads) // if not meeting threshold for SNP calling coverage at current loci then iterate onto next loci
 			continue;
 
 		if (m_hSNPCentsfile != -1)
@@ -7300,10 +7391,10 @@ CKAligner::OutputSNPs(void)
 		}
 
 		if (m_hMarkerFile == -1)
-		{
+			{
 			pLociPValues->MarkerID = 0;
 			pLociPValues->NumPolymorphicSites = 0;
-		}
+			}
 		PValue = 1.0 - Stats.Binomial(TotBases, pSNP->NumNonRefBases, LocalSeqErrRate);
 		pLociPValues->PValue = PValue;
 		pLociPValues->Loci = Loci;
@@ -7319,26 +7410,47 @@ CKAligner::OutputSNPs(void)
 		}
 
 	if (m_hMarkerFile != -1 && LineLen)
-	{
+		{
 		CUtility::RetryWrites(m_hMarkerFile, m_pszLineBuff, LineLen);
 		LineLen = 0;
-	}
+		}
 
 
 	if (m_NumLociPValues == 0)
+		{
+		if(m_hCoverageSegmentsfile != -1)
+			{
+			if(CoverageSegLen > 0 && PrevScaledLociCoverage > 0)
+				{
+				CovSegBuffIdx+=sprintf(&szCovSegBuff[CovSegBuffIdx],"\n%s\t%u\t%u\tScaled:%u\t%u",szChromName,StartCoverageSegLoci,StartCoverageSegLoci+CoverageSegLen,PrevScaledLociCoverage,PrevScaledLociCoverage);
+				CoverageSegLen = 0;
+				}
+			if(CovSegBuffIdx > 0)
+				{
+				if(!CUtility::RetryWrites(m_hCoverageSegmentsfile, szCovSegBuff, CovSegBuffIdx))
+					{
+					gDiagnostics.DiagOut(eDLInfo,gszProcName,"RetryWrites() error");
+					return(eBSFerrWrite);
+					}
+				CovSegBuffIdx = 0;
+				}
+			}
+
 		return(eBSFSuccess);
+		}
+
 	if (m_NumLociPValues > 1)
 		m_mtqsort.qsort(m_pLociPValues, m_NumLociPValues, sizeof(tsLociPValues), SortLociPValues);
 	pLociPValues = m_pLociPValues;
 	NumSNPs = 0;
 	for (Idx = 0; Idx < (int)m_NumLociPValues; Idx++, pLociPValues++)
-	{
+		{
 		AdjPValue = ((Idx + 1) / (double)m_NumLociPValues) * m_QValue;
 		if (pLociPValues->PValue >= AdjPValue)
 			break;
 		NumSNPs += 1;
 		pLociPValues->Rank = Idx + 1;
-	}
+		}
 	m_NumLociPValues = NumSNPs;
 	if (m_NumLociPValues > 1)
 		m_mtqsort.qsort(m_pLociPValues, m_NumLociPValues, sizeof(tsLociPValues), SortPValuesLoci);
@@ -7644,7 +7756,7 @@ CKAligner::OutputSNPs(void)
 
 			CurTriSNPLoci = Loci;
 			if (FirstTriSNPLoci != -1 && PrevTriSNPLoci > 0 && CurTriSNPLoci > 0 && ((CurTriSNPLoci - FirstTriSNPLoci) <= m_MaxDiSNPSep))
-			{
+				{
 				NumReadsOverlapping = 0;
 				NumReadsAntisense = 0;
 				memset(DiSNPCnts, 0, sizeof(DiSNPCnts));
@@ -7655,7 +7767,7 @@ CKAligner::OutputSNPs(void)
 				PrevSNPs[2].RefBase = pSNP->RefBase;
 
 				while ((pCurOverlappingRead = IterateReadsOverlapping(true, m_pChromSNPs, FirstTriSNPLoci, CurTriSNPLoci)) != NULL)
-				{
+					{
 					// get bases at all three SNP loci
 					FirstTriSNPBase = AdjAlignSNPBase(pCurOverlappingRead, m_pChromSNPs->ChromID, FirstTriSNPLoci);
 					if (FirstTriSNPBase > eBaseT)
@@ -7688,9 +7800,9 @@ CKAligner::OutputSNPs(void)
 						NumReadsAntisense += 1;
 					DiSNPIdx = ((FirstTriSNPBase & 0x03) << 4) | ((PrevTriSNPBase & 0x03) << 2) | (CurTriSNPBase & 0x03);
 					DiSNPCnts[DiSNPIdx] += 1;
-				}
+					}
 				if (NumReadsOverlapping >= m_MinSNPreads)
-				{
+					{
 					NumHaplotypes = 0;       // very simplistic - calling haplotype if at least 3 for any putative DiSNP and more than 5% of read depth
 					HaplotypeCntThres = max(3, NumReadsOverlapping / 20);
 					for (DiSNPIdx = 0; DiSNPIdx < 64; DiSNPIdx++)
@@ -7700,39 +7812,39 @@ CKAligner::OutputSNPs(void)
 
 					TriSNPBuffIdx += sprintf(&szTriSNPs[TriSNPBuffIdx], "%d,\"TriSNPs\",\"%s\",\"%s\",", TotNumTriSNPs, m_szTargSpecies, szChromName);
 					if (gProcessingID > 0)
-					{
+						{
 						sTriSNP.TriSnpPID = TotNumTriSNPs;		// SNP instance, processing instance unique
 						strcpy(sTriSNP.szElType, "TriSNPs");		// SNP type
 						strcpy(sTriSNP.szSpecies, m_szTargSpecies);		// SNP located for alignments againts this target/species assembly	
 						strcpy(sTriSNP.szChrom, szChromName);		// SNP is on this chrom
-					}
+						}
 					char SNPrefBases[3];
 					int RefBasesIdx;
 
 					for (RefBasesIdx = 0; RefBasesIdx <= 2; RefBasesIdx++)
-					{
+						{
 						switch (PrevSNPs[RefBasesIdx].RefBase) {
-						case eBaseA:
-							SNPrefBases[RefBasesIdx] = 'a';
-							break;
-						case eBaseC:
-							SNPrefBases[RefBasesIdx] = 'c';
-							break;
-						case eBaseG:
-							SNPrefBases[RefBasesIdx] = 'g';
-							break;
-						case eBaseT:
-							SNPrefBases[RefBasesIdx] = 't';
-							break;
-						case eBaseN:
-							SNPrefBases[RefBasesIdx] = 'n';
-							break;
-						};
-						switch (RefBasesIdx) {
+							case eBaseA:
+								SNPrefBases[RefBasesIdx] = 'a';
+								break;
+							case eBaseC:
+								SNPrefBases[RefBasesIdx] = 'c';
+								break;
+							case eBaseG:
+								SNPrefBases[RefBasesIdx] = 'g';
+								break;
+							case eBaseT:
+								SNPrefBases[RefBasesIdx] = 't';
+								break;
+							case eBaseN:
+								SNPrefBases[RefBasesIdx] = 'n';
+								break;
+							};
+					switch (RefBasesIdx) {
 						case 0:
 							TriSNPBuffIdx += sprintf(&szTriSNPs[TriSNPBuffIdx], "%d,", FirstTriSNPLoci);
 							if (gProcessingID > 0)
-							{
+								{
 								sTriSNP.SNP1Loci = FirstTriSNPLoci;
 								sTriSNP.szSNP1RefBase[0] = SNPrefBases[RefBasesIdx];
 								sTriSNP.szSNP1RefBase[1] = '\0';
@@ -7741,12 +7853,12 @@ CKAligner::OutputSNPs(void)
 								sTriSNP.SNP1BaseGcnt = PrevSNPs[RefBasesIdx].NonRefBaseCnts[2];
 								sTriSNP.SNP1BaseTcnt = PrevSNPs[RefBasesIdx].NonRefBaseCnts[3];
 								sTriSNP.SNP1BaseNcnt = 0;
-							}
+								}
 							break;
 						case 1:
 							TriSNPBuffIdx += sprintf(&szTriSNPs[TriSNPBuffIdx], "%d,", PrevTriSNPLoci);
 							if (gProcessingID > 0)
-							{
+								{
 								sTriSNP.SNP2Loci = PrevTriSNPLoci;
 								sTriSNP.szSNP2RefBase[0] = SNPrefBases[RefBasesIdx];
 								sTriSNP.szSNP2RefBase[1] = '\0';
@@ -7755,12 +7867,12 @@ CKAligner::OutputSNPs(void)
 								sTriSNP.SNP2BaseGcnt = PrevSNPs[RefBasesIdx].NonRefBaseCnts[2];
 								sTriSNP.SNP2BaseTcnt = PrevSNPs[RefBasesIdx].NonRefBaseCnts[3];
 								sTriSNP.SNP2BaseNcnt = 0;
-							}
+								}
 							break;
 						case 2:
 							TriSNPBuffIdx += sprintf(&szTriSNPs[TriSNPBuffIdx], "%d,", CurTriSNPLoci);
 							if (gProcessingID > 0)
-							{
+								{
 								sTriSNP.SNP3Loci = CurTriSNPLoci;
 								sTriSNP.szSNP3RefBase[0] = SNPrefBases[RefBasesIdx];
 								sTriSNP.szSNP3RefBase[1] = '\0';
@@ -7769,101 +7881,117 @@ CKAligner::OutputSNPs(void)
 								sTriSNP.SNP3BaseGcnt = PrevSNPs[RefBasesIdx].NonRefBaseCnts[2];
 								sTriSNP.SNP3BaseTcnt = PrevSNPs[RefBasesIdx].NonRefBaseCnts[3];
 								sTriSNP.SNP3BaseNcnt = 0;
-							}
+								}
 							break;
 						}
 
-						TriSNPBuffIdx += sprintf(&szTriSNPs[TriSNPBuffIdx], "\"%c\",%d,%d,%d,%d,0,", SNPrefBases[RefBasesIdx], PrevSNPs[RefBasesIdx].NonRefBaseCnts[0], PrevSNPs[RefBasesIdx].NonRefBaseCnts[1], PrevSNPs[RefBasesIdx].NonRefBaseCnts[2], PrevSNPs[RefBasesIdx].NonRefBaseCnts[3]);
+					TriSNPBuffIdx += sprintf(&szTriSNPs[TriSNPBuffIdx], "\"%c\",%d,%d,%d,%d,0,", SNPrefBases[RefBasesIdx], PrevSNPs[RefBasesIdx].NonRefBaseCnts[0], PrevSNPs[RefBasesIdx].NonRefBaseCnts[1], PrevSNPs[RefBasesIdx].NonRefBaseCnts[2], PrevSNPs[RefBasesIdx].NonRefBaseCnts[3]);
 					}
 
-					TriSNPBuffIdx += sprintf(&szTriSNPs[TriSNPBuffIdx], "%d,%d,%d", NumReadsOverlapping, NumReadsAntisense, NumHaplotypes);
-					if (gProcessingID > 0)
+				TriSNPBuffIdx += sprintf(&szTriSNPs[TriSNPBuffIdx], "%d,%d,%d", NumReadsOverlapping, NumReadsAntisense, NumHaplotypes);
+				if (gProcessingID > 0)
 					{
-						sTriSNP.Depth = NumReadsOverlapping;
-						sTriSNP.Antisense = NumReadsAntisense;
-						sTriSNP.Haplotypes = NumHaplotypes;
+					sTriSNP.Depth = NumReadsOverlapping;
+					sTriSNP.Antisense = NumReadsAntisense;
+					sTriSNP.Haplotypes = NumHaplotypes;
 					}
-					for (DiSNPIdx = 0; DiSNPIdx < 64; DiSNPIdx++)
+				for (DiSNPIdx = 0; DiSNPIdx < 64; DiSNPIdx++)
 					{
-						TriSNPBuffIdx += sprintf(&szTriSNPs[TriSNPBuffIdx], ",%d", DiSNPCnts[DiSNPIdx]);
-						if (gProcessingID > 0)
-							sTriSNP.HaplotypeCnts[DiSNPIdx] = DiSNPCnts[DiSNPIdx];
-					}
-					TriSNPBuffIdx += sprintf(&szTriSNPs[TriSNPBuffIdx], "\n");
+					TriSNPBuffIdx += sprintf(&szTriSNPs[TriSNPBuffIdx], ",%d", DiSNPCnts[DiSNPIdx]);
 					if (gProcessingID > 0)
-						gSQLiteSummaries.AddTriSNP(gExperimentID, gProcessingID, &sTriSNP);
-					if ((TriSNPBuffIdx + 500) > sizeof(szTriSNPs))
+						sTriSNP.HaplotypeCnts[DiSNPIdx] = DiSNPCnts[DiSNPIdx];
+					}
+				TriSNPBuffIdx += sprintf(&szTriSNPs[TriSNPBuffIdx], "\n");
+				if (gProcessingID > 0)
+					gSQLiteSummaries.AddTriSNP(gExperimentID, gProcessingID, &sTriSNP);
+				if ((TriSNPBuffIdx + 500) > sizeof(szTriSNPs))
 					{
-						CUtility::RetryWrites(m_hTriSNPfile, szTriSNPs, TriSNPBuffIdx);
-						TriSNPBuffIdx = 0;
+					CUtility::RetryWrites(m_hTriSNPfile, szTriSNPs, TriSNPBuffIdx);
+					TriSNPBuffIdx = 0;
 					}
 				}
 			}
-			PrevDiSNPLoci = CurDiSNPLoci;
-			FirstTriSNPLoci = PrevTriSNPLoci;
-			PrevTriSNPLoci = CurTriSNPLoci;
+		PrevDiSNPLoci = CurDiSNPLoci;
+		FirstTriSNPLoci = PrevTriSNPLoci;
+		PrevTriSNPLoci = CurTriSNPLoci;
 		}
 #endif
 
-		if (m_hSNPCentsfile != -1)
+	if (m_hSNPCentsfile != -1)
 		{
-			// get 4bases up/dn stream from loci with SNP and use these to inc centroid counts of from/to counts
-			if (pLociPValues->Loci >= cSNPCentfFlankLen && pLociPValues->Loci < (m_pChromSNPs->ChromLen - cSNPCentfFlankLen))
+		// get 4bases up/dn stream from loci with SNP and use these to inc centroid counts of from/to counts
+		if (pLociPValues->Loci >= cSNPCentfFlankLen && pLociPValues->Loci < (m_pChromSNPs->ChromLen - cSNPCentfFlankLen))
 			{
-				m_pSfxArray->GetSeq(m_pChromSNPs->ChromID, pLociPValues->Loci - (UINT32)cSNPCentfFlankLen, SNPFlanks, cSNPCentroidLen);
-				pSNPFlank = &SNPFlanks[cSNPCentroidLen - 1];
-				SNPCentroidIdx = 0;
-				for (SNPFlankIdx = 0; SNPFlankIdx < cSNPCentroidLen; SNPFlankIdx++, pSNPFlank--)
+			m_pSfxArray->GetSeq(m_pChromSNPs->ChromID, pLociPValues->Loci - (UINT32)cSNPCentfFlankLen, SNPFlanks, cSNPCentroidLen);
+			pSNPFlank = &SNPFlanks[cSNPCentroidLen - 1];
+			SNPCentroidIdx = 0;
+			for (SNPFlankIdx = 0; SNPFlankIdx < cSNPCentroidLen; SNPFlankIdx++, pSNPFlank--)
 				{
-					Base = *pSNPFlank & 0x07;
-					if (Base > eBaseT)
-						break;
-					SNPCentroidIdx |= (Base << (SNPFlankIdx * 2));
+				Base = *pSNPFlank & 0x07;
+				if (Base > eBaseT)
+					break;
+				SNPCentroidIdx |= (Base << (SNPFlankIdx * 2));
 				}
-				if (SNPFlankIdx != cSNPCentroidLen)
-					continue;
+			if (SNPFlankIdx != cSNPCentroidLen)
+				continue;
 
-				pSNP = &m_pChromSNPs->Cnts[pLociPValues->Loci];
-				pCentroid = &m_pSNPCentroids[SNPCentroidIdx];
-				pCentroid->CentroidID = SNPCentroidIdx;
-				pCentroid->RefBaseCnt += pSNP->NumRefBases;
-				pCentroid->NonRefBaseCnts[0] += pSNP->NonRefBaseCnts[0];
-				pCentroid->NonRefBaseCnts[1] += pSNP->NonRefBaseCnts[1];
-				pCentroid->NonRefBaseCnts[2] += pSNP->NonRefBaseCnts[2];
-				pCentroid->NonRefBaseCnts[3] += pSNP->NonRefBaseCnts[3];
-				pCentroid->NonRefBaseCnts[4] += pSNP->NonRefBaseCnts[4];
-				pCentroid->NumSNPs += 1;
+			pSNP = &m_pChromSNPs->Cnts[pLociPValues->Loci];
+			pCentroid = &m_pSNPCentroids[SNPCentroidIdx];
+			pCentroid->CentroidID = SNPCentroidIdx;
+			pCentroid->RefBaseCnt += pSNP->NumRefBases;
+			pCentroid->NonRefBaseCnts[0] += pSNP->NonRefBaseCnts[0];
+			pCentroid->NonRefBaseCnts[1] += pSNP->NonRefBaseCnts[1];
+			pCentroid->NonRefBaseCnts[2] += pSNP->NonRefBaseCnts[2];
+			pCentroid->NonRefBaseCnts[3] += pSNP->NonRefBaseCnts[3];
+			pCentroid->NonRefBaseCnts[4] += pSNP->NonRefBaseCnts[4];
+			pCentroid->NumSNPs += 1;
 			}
 		}
-
-	}
-	if (m_hDiSNPfile != -1 && DiSNPBuffIdx > 0)
-	{
-		if(!CUtility::RetryWrites(m_hDiSNPfile, szDiSNPs, DiSNPBuffIdx))
-			{
-			gDiagnostics.DiagOut(eDLInfo,gszProcName,"RetryWrites() error");
-			return(eBSFerrWrite);
-			}
-		DiSNPBuffIdx = 0;
-	}
-	if (m_hTriSNPfile != -1 && TriSNPBuffIdx > 0)
-	{
-		if(!CUtility::RetryWrites(m_hTriSNPfile, szTriSNPs, TriSNPBuffIdx))
-			{
-			gDiagnostics.DiagOut(eDLInfo,gszProcName,"RetryWrites() error");
-			return(eBSFerrWrite);
-			}
-		DiSNPBuffIdx = 0;
 	}
 
-	if (LineLen)
-		if(!CUtility::RetryWrites(m_hSNPfile, m_pszLineBuff, LineLen))
+if(m_hCoverageSegmentsfile != -1)
+	{
+	if(CoverageSegLen > 0 && PrevScaledLociCoverage > 0)
+		CovSegBuffIdx+=sprintf(&szCovSegBuff[CovSegBuffIdx],"\n%s\t%u\t%u\tScaled:%u\t%u",szChromName,StartCoverageSegLoci,StartCoverageSegLoci+CoverageSegLen,PrevScaledLociCoverage,PrevScaledLociCoverage);
+	CoverageSegLen = 0;
+	if(CovSegBuffIdx > 0)
+		{
+		if(!CUtility::RetryWrites(m_hCoverageSegmentsfile, szCovSegBuff, CovSegBuffIdx))
 			{
 			gDiagnostics.DiagOut(eDLInfo,gszProcName,"RetryWrites() error");
 			return(eBSFerrWrite);
 			}
-	return(eBSFSuccess);
+		CovSegBuffIdx = 0;
+		}
 	}
+
+if (m_hDiSNPfile != -1 && DiSNPBuffIdx > 0)
+	{
+	if(!CUtility::RetryWrites(m_hDiSNPfile, szDiSNPs, DiSNPBuffIdx))
+		{
+		gDiagnostics.DiagOut(eDLInfo,gszProcName,"RetryWrites() error");
+		return(eBSFerrWrite);
+		}
+	DiSNPBuffIdx = 0;
+	}
+if (m_hTriSNPfile != -1 && TriSNPBuffIdx > 0)
+	{
+	if(!CUtility::RetryWrites(m_hTriSNPfile, szTriSNPs, TriSNPBuffIdx))
+		{
+		gDiagnostics.DiagOut(eDLInfo,gszProcName,"RetryWrites() error");
+		return(eBSFerrWrite);
+		}
+	DiSNPBuffIdx = 0;
+	}
+
+if (LineLen)
+	if(!CUtility::RetryWrites(m_hSNPfile, m_pszLineBuff, LineLen))
+		{
+		gDiagnostics.DiagOut(eDLInfo,gszProcName,"RetryWrites() error");
+		return(eBSFerrWrite);
+		}
+return(eBSFSuccess);
+}
 
 
 
@@ -7936,6 +8064,17 @@ else			// else must be either CSV or VCF
 		LineLen += sprintf(&m_pszLineBuff[LineLen],"\n");
 		}
 	CUtility::RetryWrites(m_hSNPfile,m_pszLineBuff,LineLen);
+	LineLen = 0;
+	}
+
+if(m_hCoverageSegmentsfile != -1)
+	{
+	LineLen = sprintf(m_pszLineBuff,"track type=bed name=\"Coverage\" description=\"Alignment Segment Coverage\" useScore=1");
+	if(!CUtility::RetryWrites(m_hCoverageSegmentsfile,m_pszLineBuff,LineLen))
+		{
+		gDiagnostics.DiagOut(eDLInfo,gszProcName,"RetryWrites() error");
+		return(eBSFerrWrite);
+		}
 	LineLen = 0;
 	}
 
@@ -8291,6 +8430,17 @@ if(m_hTriSNPfile != -1)
 #endif
 	close(m_hTriSNPfile);
 	m_hTriSNPfile = -1;
+	}
+
+if(m_hCoverageSegmentsfile != -1)
+	{
+#ifdef _WIN32
+	_commit(m_hCoverageSegmentsfile);
+#else
+	fsync(m_hCoverageSegmentsfile);
+#endif
+	close(m_hCoverageSegmentsfile);
+	m_hCoverageSegmentsfile = -1;
 	}
 
 if(m_hSNPCentsfile != -1)

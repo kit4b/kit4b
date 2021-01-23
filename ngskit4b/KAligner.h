@@ -60,6 +60,8 @@ const int cPriorityExacts = 10;			// when attempting to prioritorise exactly mat
 const int cDfltMaxNs = 1;				// default max number of indeterminate 'N's in the read or aligned to subsequence
 const int cMaxNs = 5;					// allow user to specify at most this number of 'N's in the read or aligned to subsequence
 
+const int cMinCoverageSegments = 1;		// requiring at least this coverage to call segment as being covered
+
 
 const double cDfltQValueSNP = 0.05;     // default - used in Benjamini–Hochberg 
 const int cDfltMinSNPreads = 5;         // default - must be at least this number of reads covering the loci before exploring as a SNP
@@ -582,6 +584,7 @@ class CKAligner
 
 	int m_MinSNPreads;				// before SNP can be called there must be at least this number of reads covering the loci
 	double m_SNPNonRefPcnt;			// only process for SNP if more/equal than this percentage number of reads are non-ref at putative SNP loci (defaults to 25) 
+	int m_MinCoverageSegments;		// calling segment coverage if at least this number of reads covering all loci within segment 
 	int m_MaxDiSNPSep;				// putative DiSNPs only processed if separation between the SNPs <= this many bp
 
 	tBSFEntryID m_PrevSAMTargEntry; // used to determine when generating SAM output if the target chrom has already been loaded
@@ -626,6 +629,7 @@ class CKAligner
 	int m_hSNPfile;			// file handle used if SNPs are being processed
 	int m_hDiSNPfile;       // file handle used if DiSNPs are being processed
 	int m_hTriSNPfile;       // file handle used if TriSNPs are being processed
+	int m_hCoverageSegmentsfile; // file handle used if coverage segments are being processed
 	int m_hSNPCentsfile;	// file handle used if SNP centroids are being processed
 
 	gzFile m_gzOutFile;			// results output when compressing the output as gzip
@@ -636,6 +640,7 @@ class CKAligner
 	gzFile m_gzSNPfile;			// when compressing the output as gzip used if SNPs are being processed
 	gzFile m_gzSNPCentsfile;	// fwhen compressing the output as gzip if SNP centroids are being processed
 
+	char m_szCoverageSegmentsFile[_MAX_PATH]; // coverage segments to this file
 	char m_szDiSNPFile[_MAX_PATH];		// DiSNP results to this file
 	char m_szTriSNPFile[_MAX_PATH];		// TriSNP results to this file
 	char m_szIndRsltsFile[_MAX_PATH];		// microIndel results to this file
@@ -656,6 +661,7 @@ class CKAligner
 	char *m_pszOutFile;				// write alignments to this file
 	char *m_pszOutBAIFile;			// write BAM indexes to this file
 	char *m_pszSNPRsltsFile;		// write SNPs to this file
+	char *m_pszCoverageSegmentsFile; // write coverage segments to this file
 	char *m_pszSNPCentroidFile;		// write SNP centroids to this file
 	bool m_bXCSVFrameShifts;		// true if generating extended SNP csv file containing codon frame shifts
 

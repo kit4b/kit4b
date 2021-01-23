@@ -20,10 +20,10 @@
 
 
 int
-Process(etRPPMode PMode,				// processing mode
-	char *pszSNPsFile,					// input kalign generated SNPs file, can be wild-carded to process multiple SNP files
-	char *pszAssembFile,				// assembly to repurpose
-	char *pszRepAssembFile);			// write out repurposed assembly to this file
+Process(etRPPMode PMode,	// processing mode
+	char *pszProcFile,		// input kalign generated SNPs or alignment segments file name, filename can be wildcardeds
+	char *pszAssembFile,	// input assembly to repurpose
+	char *pszRepAssembFile);	// write out repurposed assembly to this file
 
 #ifdef _WIN32
 int repassemb(int argc, char *argv[])
@@ -53,10 +53,10 @@ repassemb(int argc, char **argv)
 	struct arg_int *FileLogLevel = arg_int0 ("f", "FileLogLevel", "<int>", "Level of diagnostics written to screen and logfile 0=fatal,1=errors,2=info,3=diagnostics,4=debug");
 	struct arg_file *LogFile = arg_file0 ("F", "log", "<file>", "diagnostics log file");
 
-	struct arg_int *pmode = arg_int0 ("m", "mode", "<int>", "processing mode: 0 only currently supported processing mode");
-	struct arg_file *snpsfile = arg_file1("s","snps","<file>", "input file containing kalign called SNPs, use wild cards if multiple SNP files to be processed");
-	struct arg_file *infile = arg_file1("i", "in", "<file>", "input file containing fasta assembly sequences to be repurposed");
-	struct arg_file *outfile = arg_file1 ("o", "out", "<file>", "output file into which to write fasta assembly sequences with SNP loci bases replaced by SNP call major allele bases");
+	struct arg_int *pmode = arg_int0 ("m", "mode", "<int>", "processing mode: 0 SNP call major allele base replacement, 1 non-alignment segment bases replaced by 'N'");
+	struct arg_file *snpsfile = arg_file1("i","ref","<file>", "input file containing kalign called SNPs - use wild cards if multiple SNP files to be processed, or aligned segments BED");
+	struct arg_file *infile = arg_file1("I", "in", "<file>", "input file containing fasta assembly sequences to be repurposed");
+	struct arg_file *outfile = arg_file1 ("o", "out", "<file>", "output file into which to write repurposed fasta assembly sequences");
 	struct arg_end *end = arg_end (200);
 
 	void *argtable[] = { help,version,FileLogLevel,LogFile,
@@ -153,7 +153,7 @@ repassemb(int argc, char **argv)
 		CUtility::TrimQuotedWhitespcExtd (szSNPsFile);
 		if (szSNPsFile[0] == '\0')
 			{
-			gDiagnostics.DiagOut (eDLFatal, gszProcName, "No input file containing kalign generated SNP calls specified");
+			gDiagnostics.DiagOut (eDLFatal, gszProcName, "No input file containing kalign generated calls specified");
 			exit (1);
 			}
 
@@ -170,7 +170,7 @@ repassemb(int argc, char **argv)
 		CUtility::TrimQuotedWhitespcExtd (szOutFile);
 		if (szOutFile[0] == '\0')
 			{
-			gDiagnostics.DiagOut (eDLFatal, gszProcName, "No output file into which to write fasta assembly sequences with SNP loci bases replaced by SNP call major allele bases");
+			gDiagnostics.DiagOut (eDLFatal, gszProcName, "No output file into which to write repurposed fasta assembly sequences");
 			exit (1);
 			}
 
@@ -178,14 +178,27 @@ repassemb(int argc, char **argv)
 		const char *pszDescr;
 		switch (PMode) {
 			case eRPMdefault:
-				pszDescr = "Default SNP loci base replacements";
+				pszDescr = "SNP loci major allele base replacements";
+				break;
+			case eRPMNonalignSegs:
+				pszDescr = "Non-aligned segment base replacements";
 				break;
 		}
 
 
 
 		gDiagnostics.DiagOutMsgOnly (eDLInfo, "Processing : '%s'", pszDescr);
-		gDiagnostics.DiagOutMsgOnly (eDLInfo, "SNP file : '%s'", szSNPsFile);
+		
+		switch (PMode) {
+			case eRPMdefault:
+				gDiagnostics.DiagOutMsgOnly (eDLInfo, "SNPs file : '%s'", szSNPsFile);
+				break;
+
+			case eRPMNonalignSegs:
+				gDiagnostics.DiagOutMsgOnly (eDLInfo, "BED file : '%s'", szSNPsFile);
+				break;
+			}
+
 		gDiagnostics.DiagOutMsgOnly (eDLInfo, "Input file : '%s'", szInFile);
 		gDiagnostics.DiagOutMsgOnly (eDLInfo, "Output file : '%s'", szOutFile);
 
@@ -195,8 +208,8 @@ repassemb(int argc, char **argv)
 #endif
 		gStopWatch.Start ();
 		Rslt = 0;
-		Rslt = Process (PMode,			// processing mode
-						szSNPsFile,		// kalign called SNPs
+		Rslt = Process(PMode,			// processing mode
+						szSNPsFile,		// kalign called SNPs or non-aligned BED file
 						szInFile,		// input fasta or SAM file
 						szOutFile);		// output to this file
 		Rslt = Rslt >= 0 ? 0 : 1;
@@ -216,10 +229,10 @@ repassemb(int argc, char **argv)
 }
 
 int
-Process(etRPPMode PMode,				// processing mode
-		char* pszSNPsFile,					// input SNPs file, can be wild-carded to process multiple SNP files
-		char* pszAssembFile,				// assembly to repurpose
-		char* pszRepAssembFile)				// write out repurposed assembly to this file
+Process(etRPPMode PMode,	// processing mode
+		char *pszProcFile,		// input kalign generated SNPs or alignment segments file name, filename can be wildcarded
+		char *pszAssembFile,	// input assembly to repurpose
+		char *pszRepAssembFile)	// write out repurposed assembly to this file
 {
 int Rslt;
 CRepAssemb *pRepAssemb;
@@ -229,7 +242,8 @@ if((pRepAssemb = new CRepAssemb) == NULL)
 	return(eBSFerrInternal);
 	}
 
-Rslt = pRepAssemb->ProccessAssembly(pszSNPsFile,			// input kalign generated SNPs file, can be wild-carded to process multiple SNP files
+Rslt = pRepAssemb->ProccessAssembly(PMode,	// processing mode
+									pszProcFile,			// input kalign generated SNPs or alignment segments file name, filename can be wildcarded
 									pszAssembFile,			// input fasta assembly file
 									pszRepAssembFile);		// output to this fasta assembly file
 
@@ -243,6 +257,7 @@ CRepAssemb::CRepAssemb(void)			// constructor
 m_pSNPSites = NULL;
 m_pCSV = NULL;
 m_pSeqBuffer = NULL;
+m_pASegments = NULL;
 m_hInFile = -1;
 m_hOutFile = -1;
 m_hOutRepSNPsFile = -1;
@@ -260,6 +275,15 @@ if(m_pSNPSites != NULL)
 #else
 	if(m_pSNPSites != MAP_FAILED)
 		munmap(m_pSNPSites, m_AllocdSNPSitesMem);
+#endif
+	}
+if(m_pASegments != NULL)
+	{
+#ifdef _WIN32
+	free(m_pASegments);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
+#else
+	if(m_pASegments != MAP_FAILED)
+		munmap(m_pASegments, m_AllocdASegmentsMem);
 #endif
 	}
 if(m_pSeqBuffer != NULL)
@@ -299,6 +323,17 @@ if(m_pSNPSites != NULL)
 	m_pSNPSites = NULL;
 	}
 
+if(m_pASegments != NULL)
+	{
+#ifdef _WIN32
+	free(m_pASegments);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
+#else
+	if(m_pASegments != MAP_FAILED)
+		munmap(m_pASegments, m_AllocdASegmentsMem);
+#endif
+	m_pASegments = NULL;
+	}
+
 if(m_pSeqBuffer != NULL)
 	{
 #ifdef _WIN32
@@ -330,6 +365,11 @@ m_NumSortedSites = 0;
 m_NumSNPSites = 0;
 m_NumAllocdSNPSites = 0;
 m_AllocdSNPSitesMem = 0;
+
+m_MaxASegmentLen = 0;
+m_NumASegments = 0;
+m_NumAllocdASegments = 0;
+m_AllocdASegmentsMem = 0;
 
 m_SeqBuffIdx = 0;
 m_AllocSeqBuffMem = 0;
@@ -676,114 +716,224 @@ if(m_NumSNPSites)
 return(eBSFSuccess);
 }
 
+
 int
-CRepAssemb::ProccessAssembly(char *pszSNPFile,	// input kalign generated SNPs file, filespec can be wildcarded
-				char* pszInFile,		// input fasta assembly file
-				char* pszOutFile)		// output to this fasta assembly file
+CRepAssemb::MergeASegs(char* pszChrom,		// segment is on this chromosome
+			uint32_t Loci,		// starting at this loci inclusive
+			uint32_t Len,		// segment is this length
+			uint32_t Score)		// 0 if segment is an unaligned segment
 {
 int Rslt;
-bool bNL;
-bool bDescr;
-int NumRead;
-uint8_t InChr;
-uint8_t *pInChr;
-size_t FastaIdx;
-uint8_t FastaChr;
-uint8_t *pszChromName;
-uint8_t szChromName[cMaxDatasetSpeciesChrom+1];
-uint8_t *pChromNameChr;
-size_t memreq;
-int BasesReplaced;
-Reset();
-if((Rslt = LoadKalignSNPs(pszSNPFile)) < 0)
+int ChromID;
+
+tsASegment *pASeg;
+static tsASegment *pMRAASeg = NULL;
+
+if(m_pASegments == NULL)
 	{
+	size_t memreq = (size_t)(sizeof(tsASegment) * cAllocNumASegments);
+
+#ifdef _WIN32
+	m_pASegments = (tsASegment*)malloc(memreq);	// initial and perhaps the only allocation
+	if(m_pASegments == NULL)
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "MergeASegs: Initial memory allocation of %lld bytes - %s", (INT64)memreq, strerror(errno));
+		Reset();
+		return(eBSFerrMem);
+		}
+#else
+	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
+	m_pASegments = (tsASegment *)mmap(NULL, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	if(m_pASegments == MAP_FAILED)
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "MergeASegs: Memory allocation of %lld bytes through mmap()  failed - %s", (INT64)memreq, strerror(errno));
+		m_pASegments = NULL;
+		Reset();
+		return(eBSFerrMem);
+		}
+#endif
+	m_AllocdASegmentsMem = memreq;
+	m_NumASegments = 0;
+	m_NumAllocdASegments = cAllocNumASegments;
+	pMRAASeg = NULL;
+	}
+else
+	{
+	if((m_NumASegments + 100) > m_NumAllocdASegments)
+		{
+		size_t memreq = m_AllocdASegmentsMem + (cAllocNumASegments * sizeof(tsASegment));
+				
+#ifdef _WIN32
+		pASeg = (tsASegment*)realloc(m_pASegments, memreq);
+#else
+		pASeg = (tsASegment*)mremap(m_pASegments, m_AllocdASegmentsMem, memreq, MREMAP_MAYMOVE);
+		if(pASeg == MAP_FAILED)
+			pASeg = NULL;
+#endif
+		if(pASeg == NULL)
+			{
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "MergeASegs: Memory re-allocation to %lld bytes - %s", memreq, strerror(errno));
+			return(eBSFerrMem);
+			}
+		m_pASegments = pASeg;
+		m_NumAllocdASegments += cAllocNumASegments;
+		m_AllocdASegmentsMem = memreq;
+		pMRAASeg = NULL;
+		}
+	}
+
+if((Rslt = ChromID = AddChrom(pszChrom)) < 1)
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Failed generating a unique chromosome name identifier '%s'", pszChrom);
 	Reset();
 	return(Rslt);
 	}
 
+if(Score == 0)			// only accepting segments which were aligned
+	return(eBSFSuccess);
+
+// It is highly probable that the previously processed alignment segment is adjacent to this new segment because
+// the BED file processing will have resulted in ordering of BED features by chrom.loci
+// So optimisation is to check against last accessed segment
+if(pMRAASeg != NULL && pMRAASeg->ChromID == ChromID)
+	{
+	if(((Loci + Len) >= pMRAASeg->Loci) && (Loci <= (pMRAASeg->Loci + pMRAASeg->Len)))
+		{
+		if(pMRAASeg->Loci <= Loci)
+			pMRAASeg->Len = max(pMRAASeg->Len,Loci - pMRAASeg->Loci + Len);
+		else
+			{
+			pMRAASeg->Loci = Loci;
+			pMRAASeg->Len = pMRAASeg->Loci - max(pMRAASeg->Len,Loci+Len);
+			}
+		return(eBSFSuccess);
+		}
+	}
+
+
+// iterate over all previously merged segments; if an overlapping or adjoining then merge with that previous segment
+// objective is to reduce the number of segments needing to be stored
+if(m_NumASegments)
+	{
+	pASeg = m_pASegments;
+	for(uint32_t Idx = 0; Idx < m_NumASegments; Idx++,pASeg++) {
+		if(pASeg->ChromID != ChromID)
+			continue;
+		if((pASeg->Loci + pASeg->Len) < Loci)
+			continue;
+		if(Loci > pASeg->Loci + pASeg->Len)
+			continue;
+		// merge
+		if(pASeg->Loci <= Loci)
+			pASeg->Len = max(pASeg->Len,Loci - pASeg->Loci + Len);
+		else
+			{
+			pASeg->Loci = Loci;
+			pASeg->Len = pASeg->Loci - max(pASeg->Len,Loci+Len);
+			}
+		pMRAASeg = pASeg;
+		return(eBSFSuccess);
+		}
+	}
+
+// unable to merge, use a new aligned segment
+pASeg = &m_pASegments[m_NumASegments++];
+pASeg->ChromID = ChromID;
+pASeg->Loci = Loci;
+pASeg->Len = Len;
+pMRAASeg = pASeg;
+return(eBSFSuccess);
+}
+
+int						// eBSFSuccess or error
+CRepAssemb::LoadKalignASegs(char *pszASegsFiles)	// load and parse kalign generated aligned segments from this BED file- can be wild-carded
+{
+int Rslt;
+char *pszASegFile;
+CBEDfile *pBedFile;
+tsASegment *pASegment;
+
+int StartLoci;
+int EndLoci;
+int Score;
+
+char szChrom[cMaxDatasetSpeciesChrom+1];
+char szFeatName[cMaxDatasetSpeciesChrom+1];
+
+if((pBedFile = new CBEDfile) == NULL)
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to instantiate instance of CBEDfile");
+	Reset();
+	return(eBSFerrInternal);
+	}
+CSimpleGlob glob(SG_GLOB_FULLSORT);
+glob.Init();
+if(glob.Add(pszASegsFiles) < SG_SUCCESS)
+	{
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to glob '%s",pszASegsFiles);
+	return(eBSFerrOpnFile);	// treat as though unable to open file
+	}
+
+m_MaxASegmentLen = 0;
+m_NumSortedSites = 0;
+m_NumSNPFiles = glob.FileCount();
+
+for(int FileIdx = 0;FileIdx < m_NumSNPFiles; FileIdx++)
+	{
+	pszASegFile = glob.File(FileIdx);
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Loading alignment regions from file: '%s'", pszASegFile);
+	if((Rslt = pBedFile->Open(pszASegFile)) != eBSFSuccess) // loads and processes complete BED file
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to open file: '%s'", pszASegFile);
+		delete pBedFile;
+		Reset();
+		return(Rslt);
+		}
+
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Completed loading %d alignment segments from file: '%s'", pBedFile->GetNumFeatures(),pszASegFile);
+	int CurFeatureID = 0;
+	while((CurFeatureID = pBedFile->GetNextFeatureID(CurFeatureID)) > 0)
+		{
+		pBedFile->GetFeature(CurFeatureID,	// feature instance identifier
+					szFeatName,				// where to return feature name
+					szChrom,				// where to return chromosome name
+					&StartLoci,				// where to return feature start on chromosome (0..n) 
+					&EndLoci,				// where to return feature end on chromosome
+					&Score);				// where to return score
+		if(Score > 0)
+			MergeASegs(szChrom,StartLoci,1+EndLoci-StartLoci,Score);
+		}
+	if(m_NumASegments)
+		qsort(m_pASegments,m_NumASegments,sizeof(tsASegment),SortASegmentChromIDLoci);
+	pASegment = m_pASegments;
+	for(uint32_t Idx = 0; Idx < m_NumASegments; Idx++, pASegment++)
+		if(pASegment->Len > m_MaxASegmentLen)
+			m_MaxASegmentLen = pASegment->Len;
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "LoadKalignASegs: Processed '%s' resulting in %u merged aligned segments", pszASegFile,m_NumASegments);
+	}
+
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "LoadKalignASegs: Processed %u file(s) resulting in %u merged segments", m_NumSNPFiles,m_NumASegments);
+
+return(eBSFSuccess);
+}
+
+int
+CRepAssemb::LoadAssembly(char* pszAssembly)	// load assembly sequences in this fasta file into memory (m_pSeqBuffer will be allocated to hold raw fasta sequences)
+{
+int NumRead;
+size_t memreq;
+uint8_t *pInChr;
+
 #ifdef _WIN32
-m_hInFile = open(pszInFile, O_READSEQ );		// file access is normally sequential..
+m_hInFile = open(pszAssembly, O_READSEQ );		// file access is normally sequential..
 #else
-m_hInFile = open64(pszInFile, O_READSEQ );		// file access is normally sequential..
+m_hInFile = open64(pszAssembly, O_READSEQ );		// file access is normally sequential..
 #endif
 if(m_hInFile == -1)							// check if file open succeeded
 	{
-	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Unable to open input file '%s' : %s",pszInFile,strerror(errno));
+	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Unable to open input file '%s' : %s",pszAssembly,strerror(errno));
 	return(eBSFerrOpnFile);
 	}
-
-#ifdef _WIN32
-m_hOutFile = open(pszOutFile,( O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC),(_S_IREAD | _S_IWRITE));
-#else
-if((m_hOutFile = open64(pszOutFile,O_WRONLY | O_CREAT,S_IREAD | S_IWRITE)) != -1)
-	if(ftruncate(m_hOutFile,0)!=0)
-		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate %s - %s",pszOutFile,strerror(errno));
-		Reset();
-		return(eBSFerrCreateFile);
-		}
-#endif
-if(m_hOutFile < 0)
-	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate %s - %s",pszOutFile,strerror(errno));
-	Reset();
-	return(eBSFerrCreateFile);
-	}
-
-// put in function ...
-tsSNPSite *pSNPSite;
-int RepSNPs;
-char szOutRepSNPsFile[_MAX_PATH];
-char szBuff[4096];
-int BuffIdx;
-strcpy(szOutRepSNPsFile,pszOutFile);
-strcat(szOutRepSNPsFile,".snps.csv");
-
-#ifdef _WIN32
-m_hOutRepSNPsFile = open(szOutRepSNPsFile,( O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC),(_S_IREAD | _S_IWRITE));
-#else
-if((m_hOutRepSNPsFile = open64(szOutRepSNPsFile,O_WRONLY | O_CREAT,S_IREAD | S_IWRITE)) != -1)
-	if(ftruncate(m_hOutRepSNPsFile,0)!=0)
-		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate %s - %s",szOutRepSNPsFile,strerror(errno));
-		Reset();
-		return(eBSFerrCreateFile);
-		}
-#endif
-if(m_hOutRepSNPsFile < 0)
-	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate %s - %s",szOutRepSNPsFile,strerror(errno));
-	Reset();
-	return(eBSFerrCreateFile);
-	}
-// write out header line
-BuffIdx = sprintf(szBuff,"\"ID\",\"Chrom\",\"Loci\",\"RefBase\",\"RepBase\",\"Instances\"\n");
-
-pSNPSite = m_pSNPSites;
-RepSNPs = 0;
-for(uint32_t SNPIdx = 0; SNPIdx < m_NumSNPSites; SNPIdx++,pSNPSite++)
-	{
-	if(pSNPSite->RepBase == eBaseN)
-		continue;
-	RepSNPs+=1;
-	BuffIdx += sprintf(&szBuff[BuffIdx],"%u,\"%s\",%u,%c,%c,%u\n",RepSNPs,LocateChrom(pSNPSite->ChromID),pSNPSite->Loci,CFasta::Base2Chr(pSNPSite->RefBase),CFasta::Base2Chr(pSNPSite->RepBase),pSNPSite->AlleleBaseCnts[pSNPSite->RepBase]);
-	if((BuffIdx + 500) > (int)sizeof(szBuff))
-		{
-		CUtility::RetryWrites(m_hOutRepSNPsFile,szBuff,BuffIdx);
-		BuffIdx = 0;
-		}
-	}
-if(BuffIdx)
-	CUtility::RetryWrites(m_hOutRepSNPsFile,szBuff,BuffIdx);
-// commit and close output file
-#ifdef _WIN32
-_commit(m_hOutRepSNPsFile);
-#else
-fsync(m_hOutRepSNPsFile);
-#endif
-close(m_hOutRepSNPsFile);
-m_hOutRepSNPsFile = -1;
-// return from function here
 
 // an initial allocation for buffering input assembly, will be realloc'd if required so as to contain complete assembly
 memreq = (size_t)cAllocAssembFastaMem;
@@ -808,7 +958,7 @@ if(m_pSeqBuffer == MAP_FAILED)
 	}
 #endif
 
-gDiagnostics.DiagOut(eDLInfo,gszProcName,"Loading fasta assembly from : '%s'",pszInFile);
+gDiagnostics.DiagOut(eDLInfo,gszProcName,"Loading fasta assembly from : '%s'",pszAssembly);
 m_AllocSeqBuffMem = memreq;
 m_SeqBuffIdx = 0;
 
@@ -837,57 +987,191 @@ while((NumRead = (int)read(m_hInFile, &m_pSeqBuffer[m_SeqBuffIdx], (int)(m_Alloc
 
 if(NumRead < 0)
 	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Loading assembly '%s' failed - %s", pszOutFile,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Loading assembly '%s' failed - %s", pszAssembly,strerror(errno));
 	Reset();
 	return(eBSFerrFileAccess);
 	}
-BasesReplaced = 0;
-gDiagnostics.DiagOut(eDLFatal, gszProcName, "Updating assembly sequence with consensus major allele sites ...");
-if(m_NumChromSites)
-	{
-	bNL = true; // 1st line in fasta may be a descriptor with no preceding NL so pretend there was a preceding NL
-	bDescr = false;	// only true if sequence name parsed out from descriptor line
-	pInChr = m_pSeqBuffer;
-	for(FastaIdx = 0; FastaIdx < m_SeqBuffIdx; FastaIdx++,pInChr++)
-		{
-		if((InChr = *pInChr) == '\0')
-			break;
-		switch(InChr) {
-			case '\t': case '\n': case '\r':	// whitespace or line endings are accepted
-				break;
-			default:
-				if(InChr >= 0x20 && InChr <= 0x7f)
-					break;
-				gDiagnostics.DiagOut (eDLFatal, gszProcName, "Expected Fasta '%s' to only contain ascii chars",pszInFile);
-				Reset();
-				return(eBSFerrFastqChr);
-			}
 
-		if(InChr == '\n')
-			{
-			if(bDescr)
-				BasesReplaced += ReplaceBases((char *)szChromName,(uint32_t)min(0x0ffffffff,m_SeqBuffIdx-FastaIdx),(char *)pInChr+1);
-			bDescr = false;
-			bNL = true;
-			}
-		else
-			{
-			if(bNL == true && InChr == '>')		// start of descriptor, sequence name is terminated by whitespace
-				{
-				// extract sequence name
-				pszChromName = szChromName;
-				pChromNameChr = pInChr+1;
-				while((FastaChr = *pChromNameChr++) != ' ' && FastaChr != '\t' && FastaChr != '\r' && FastaChr != '\n')
-					*pszChromName++ = FastaChr;
-				*pszChromName = '\0';
-				bDescr = true;
-				}
-			bNL = false;
-			}
+return(eBSFSuccess);
+}
+
+
+int
+CRepAssemb::ReportSNPdist(char *pszRepAssembFile)	// base file name used for reporting major allele SNPs used when purposing assembly file
+{
+tsSNPSite *pSNPSite;
+int RepSNPs;
+char szOutRepSNPsFile[_MAX_PATH];
+char szBuff[4096];
+int BuffIdx;
+strcpy(szOutRepSNPsFile,pszRepAssembFile);
+strcat(szOutRepSNPsFile,".snps.csv");
+
+#ifdef _WIN32
+m_hOutRepSNPsFile = open(szOutRepSNPsFile,( O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC),(_S_IREAD | _S_IWRITE));
+#else
+if((m_hOutRepSNPsFile = open64(szOutRepSNPsFile,O_WRONLY | O_CREAT,S_IREAD | S_IWRITE)) != -1)
+	if(ftruncate(m_hOutRepSNPsFile,0)!=0)
+		{
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate %s - %s",szOutRepSNPsFile,strerror(errno));
+		Reset();
+		return(eBSFerrCreateFile);
+		}
+#endif
+if(m_hOutRepSNPsFile < 0)
+	{
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate %s - %s",szOutRepSNPsFile,strerror(errno));
+	Reset();
+	return(eBSFerrCreateFile);
+	}
+
+// write out header line
+BuffIdx = sprintf(szBuff,"\"ID\",\"Chrom\",\"Loci\",\"RefBase\",\"RepBase\",\"Instances\"\n");
+
+pSNPSite = m_pSNPSites;
+RepSNPs = 0;
+for(uint32_t SNPIdx = 0; SNPIdx < m_NumSNPSites; SNPIdx++,pSNPSite++)
+	{
+	if(pSNPSite->RepBase == eBaseN)
+		continue;
+	RepSNPs+=1;
+	BuffIdx += sprintf(&szBuff[BuffIdx],"%u,\"%s\",%u,%c,%c,%u\n",RepSNPs,LocateChrom(pSNPSite->ChromID),pSNPSite->Loci,CFasta::Base2Chr(pSNPSite->RefBase),CFasta::Base2Chr(pSNPSite->RepBase),pSNPSite->AlleleBaseCnts[pSNPSite->RepBase]);
+	if((BuffIdx + 500) > (int)sizeof(szBuff))
+		{
+		CUtility::RetryWrites(m_hOutRepSNPsFile,szBuff,BuffIdx);
+		BuffIdx = 0;
+		}
+	}
+if(BuffIdx)
+	CUtility::RetryWrites(m_hOutRepSNPsFile,szBuff,BuffIdx);
+// commit and close output file
+#ifdef _WIN32
+_commit(m_hOutRepSNPsFile);
+#else
+fsync(m_hOutRepSNPsFile);
+#endif
+close(m_hOutRepSNPsFile);
+m_hOutRepSNPsFile = -1;
+return(eBSFSuccess);
+}
+
+int
+CRepAssemb::ProccessAssembly(etRPPMode PMode,	// processing mode
+				char *pszProcFile,		// input kalign generated SNPs or alignment segments file name, filename can be wildcarded
+				char *pszAssembFile,	// input assembly to repurpose
+				char *pszRepAssembFile)	// write out repurposed assembly to this file
+{
+int Rslt;
+bool bNL;
+bool bDescr;
+uint8_t InChr;
+uint8_t *pInChr;
+size_t FastaIdx;
+uint8_t FastaChr;
+uint8_t *pszChromName;
+uint8_t szChromName[cMaxDatasetSpeciesChrom+1];
+uint8_t *pChromNameChr;
+int BasesReplaced;
+Reset();
+
+if((Rslt = LoadAssembly(pszAssembFile)) < 0)
+	{
+	Reset();
+	return(Rslt);
+	}
+
+if(PMode == eRPMdefault)
+	{
+	if((Rslt = LoadKalignSNPs(pszProcFile)) < 0)
+		{
+		Reset();
+		return(Rslt);
+		}
+	}
+else
+	{
+	if((Rslt = LoadKalignASegs(pszProcFile)) < 0)
+		{
+		Reset();
+		return(Rslt);
 		}
 	}
 
-gDiagnostics.DiagOut(eDLInfo, gszProcName, "%d replacements completed, writing updated assembly to '%s'",BasesReplaced,pszOutFile);
+#ifdef _WIN32
+m_hOutFile = open(pszRepAssembFile,( O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC),(_S_IREAD | _S_IWRITE));
+#else
+if((m_hOutFile = open64(pszRepAssembFile,O_WRONLY | O_CREAT,S_IREAD | S_IWRITE)) != -1)
+	if(ftruncate(m_hOutFile,0)!=0)
+		{
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate %s - %s",pszRepAssembFile,strerror(errno));
+		Reset();
+		return(eBSFerrCreateFile);
+		}
+#endif
+if(m_hOutFile < 0)
+	{
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate %s - %s",pszRepAssembFile,strerror(errno));
+	Reset();
+	return(eBSFerrCreateFile);
+	}
+
+if(PMode == eRPMdefault && ((Rslt = ReportSNPdist(pszRepAssembFile))<eBSFSuccess))
+	{
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to report major allele SNPs used");
+	Reset();
+	return(Rslt);
+	}
+
+BasesReplaced = 0;
+gDiagnostics.DiagOut(eDLFatal, gszProcName, "Updating assembly sequence with replacement bases ...");
+
+bNL = true; // 1st line in fasta may be a descriptor with no preceding NL so pretend there was a preceding NL
+bDescr = false;	// only true if sequence name parsed out from descriptor line
+pInChr = m_pSeqBuffer;
+for(FastaIdx = 0; FastaIdx < m_SeqBuffIdx; FastaIdx++,pInChr++)
+	{
+	if((InChr = *pInChr) == '\0')
+		break;
+	switch(InChr) {
+		case '\t': case '\n': case '\r':	// whitespace or line endings are accepted
+			break;
+		default:
+			if(InChr >= 0x20 && InChr <= 0x7f)
+				break;
+			gDiagnostics.DiagOut (eDLFatal, gszProcName, "Expected Fasta '%s' to only contain ascii chars",pszAssembFile);
+			Reset();
+			return(eBSFerrFastqChr);
+		}
+
+	if(InChr == '\n')
+		{
+		if(bDescr)
+			{
+			if(PMode == eRPMdefault)
+				BasesReplaced += ReplaceSNPBases((char *)szChromName,(uint32_t)min(0x0ffffffff,m_SeqBuffIdx-FastaIdx),(char *)pInChr+1);
+			else
+				BasesReplaced += ReplaceASegmentBases((char *)szChromName,(uint32_t)min(0x0ffffffff,m_SeqBuffIdx-FastaIdx),(char *)pInChr+1);
+			}
+		bDescr = false;
+		bNL = true;
+		}
+	else
+		{
+		if(bNL == true && InChr == '>')		// start of descriptor, sequence name is terminated by whitespace
+			{
+			// extract sequence name
+			pszChromName = szChromName;
+			pChromNameChr = pInChr+1;
+			while((FastaChr = *pChromNameChr++) != ' ' && FastaChr != '\t' && FastaChr != '\r' && FastaChr != '\n')
+				*pszChromName++ = FastaChr;
+			*pszChromName = '\0';
+			bDescr = true;
+			}
+		bNL = false;
+		}
+	}
+
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "%d base replacements completed, writing updated assembly to '%s'",BasesReplaced,pszRepAssembFile);
 
 if(m_SeqBuffIdx)
 	CUtility::RetryWrites(m_hOutFile, m_pSeqBuffer, m_SeqBuffIdx);	
@@ -941,6 +1225,28 @@ m_LAChromNameID = m_NumChromNames;
 return(m_LAChromNameID);
 }
 
+
+int		// returned chrom identifier, < 1 if unable to locate this chromosome name
+CRepAssemb::LocateChrom(char* pszChrom) // return unique identifier associated with this chromosome name
+{
+int ChromNameIdx;
+char *pszLAname;
+
+// with any luck the sequence name will be same as the last accessed
+if((pszLAname = LocateChrom(m_LAChromNameID)) != NULL)
+	if(!stricmp(pszChrom,pszLAname))
+		return(m_LAChromNameID);
+
+// iterate over all known chroms
+for(ChromNameIdx = 0; ChromNameIdx < m_NumChromNames; ChromNameIdx++)
+	if(!stricmp(pszChrom, &m_szChromNames[m_szChromIdx[ChromNameIdx]]))
+		{
+		m_LAChromNameID = ChromNameIdx + 1;
+		return(m_LAChromNameID);
+		}
+return(eBSFerrChrom);
+}
+
 char* 
 CRepAssemb::LocateChrom(int ChromID)
 {
@@ -967,7 +1273,7 @@ return(NULL);
 }
 
 int									// number of bases replaced
-CRepAssemb::ReplaceBases(char *pszChrom, // chromosome name
+CRepAssemb::ReplaceSNPBases(char *pszChrom, // chromosome name
 			 uint32_t SeqLen,			// max of this number of bases in fasta sequence length - includes any whitespace
 			 char *pszSeq)			// sequence
 {
@@ -1033,6 +1339,59 @@ while(SeqLen-- && NumSNPBases != pChromSites->NumSNPSites)
 return(NumSNPBases);
 }
 
+int									// number of bases replaced
+CRepAssemb::ReplaceASegmentBases(char *pszChrom, // chromosome name
+			 uint32_t SeqLen,			// max of this number of bases in fasta sequence length - includes any whitespace
+			 char *pszSeq)			// sequence
+{
+uint32_t RefLoci;
+int ChromID;
+tsASegment *pASegment;
+uint32_t NumRepBases;
+
+if(SeqLen == 0 || pszChrom == NULL || pszChrom[0] == '\0' || pszSeq == NULL || pszSeq[0] == '\0')
+	return(0);
+
+// locate ChromSites for name
+if((ChromID = LocateChrom(pszChrom))< 1)
+	return(0);
+
+NumRepBases = 0;
+RefLoci = 0;
+
+while(SeqLen--)
+	{
+	switch(*pszSeq) {
+		case 'a': case 'A':
+		case 'c': case 'C':
+		case 'g': case 'G':
+		case 't': case 'T':
+			break;
+		case '>':
+		case '\0':
+			return(NumRepBases);
+		case 'n': case 'N':				// existing indeterminates occupy a loci
+			RefLoci++;;
+			pszSeq+=1;
+			continue;
+		default:						// skipping over any whitespace or non-base character
+			pszSeq+=1;					// but loci is unchanged
+			continue;
+		}
+
+	if((pASegment = LocateASegment(ChromID, RefLoci)) == NULL)
+		{
+		*pszSeq = 'N';
+		NumRepBases++;
+		}
+
+	RefLoci++;
+	pszSeq+=1;
+	}
+
+return(NumRepBases);
+}
+
 tsSNPSite *
 CRepAssemb::LocateSite(uint32_t ChromID, uint32_t Loci)	// locate existing site using a binary search over sorted sites
 {
@@ -1079,6 +1438,76 @@ while(IdxHi >= IdxLo);
 return(NULL);
 }
 
+tsASegment *
+CRepAssemb::LocateASegment(uint32_t ChromID, uint32_t Loci)	// locate a tsASegment containing the requested ChromID.Loci
+{
+static tsASegment *pLastLocatedASegment = NULL;
+tsASegment* pEl1;
+int32_t MidIdx;
+int32_t HiIdx = m_NumASegments - 1;
+int32_t LoIdx = 0;
+if(m_NumASegments == 0)
+	return(NULL);
+
+if(pLastLocatedASegment != NULL && 
+		ChromID == pLastLocatedASegment->ChromID && pLastLocatedASegment->Loci <= Loci && (pLastLocatedASegment->Loci+pLastLocatedASegment->Len >  Loci))
+	return(pLastLocatedASegment);
+pLastLocatedASegment = NULL;
+
+if(m_NumASegments < 10)				// if just a few then do a simple linear search
+	{
+	pEl1 = m_pASegments;
+	for(LoIdx = 0; LoIdx < (int32_t)m_NumASegments; LoIdx++,pEl1++)
+		if(pEl1->ChromID == ChromID && pEl1->Loci <= Loci && (pEl1->Loci+pEl1->Len >  Loci))
+			{
+			pLastLocatedASegment = pEl1;
+			return(pEl1);
+			}
+	return(NULL);
+	}
+
+tsASegment *pCurASegment;
+
+int CurStart;
+int CurEnd;
+
+while(HiIdx >= LoIdx) {
+	MidIdx = (HiIdx + LoIdx)/2;
+	pCurASegment = &m_pASegments[MidIdx];
+	if(pCurASegment->ChromID == ChromID)
+		{
+		// read aligned to requested chrom
+		CurStart = pCurASegment->Loci;
+		CurEnd = pCurASegment->Loci+pCurASegment->Len-1;
+		if(Loci >= (uint32_t)CurStart && Loci <= (uint32_t)CurEnd)	// have an overlap?
+			{
+			pLastLocatedASegment = pCurASegment;
+			return(pCurASegment);
+			}
+
+		if(CurStart > (int32_t)Loci)		// CurStart after loci then reads sorted higher can't overlap - places an upper limit on search bounds
+			HiIdx = MidIdx - 1;
+		else                    // CurStart is <= loci but CurEnd is also < target loci
+			{
+			if((Loci - CurStart) > (int)m_MaxASegmentLen)
+				LoIdx = MidIdx + 1;
+			else
+				LoIdx += 1;
+			}
+		continue;
+		}
+
+	// need to locate chromosome before can start looking for read overlaps onto loci
+	if(pCurASegment->ChromID < ChromID)
+		LoIdx = MidIdx+1;
+	else
+		HiIdx = MidIdx - 1;
+	};
+
+return(NULL);
+}
+
+
 // SortSNPChromIDLoci
 // Sort m_pSNPSites by ascending ChromID.Loci
 int
@@ -1098,4 +1527,25 @@ if(pEl1->Loci > pEl2->Loci)
 	return(1);
 return(0);
 }
+
+// SortASegmentChromIDLoci
+// Sort m_pASegments by ascending ChromID.Loci
+int
+CRepAssemb::SortASegmentChromIDLoci(const void* arg1, const void* arg2)
+{
+tsASegment* pEl1 = (tsASegment*)arg1;
+tsASegment* pEl2 = (tsASegment*)arg2;
+
+if(pEl1->ChromID < pEl2->ChromID)
+	return(-1);
+if(pEl1->ChromID > pEl2->ChromID)
+	return(1);
+
+if(pEl1->Loci < pEl2->Loci)
+	return(-1);
+if(pEl1->Loci > pEl2->Loci)
+	return(1);
+return(0);
+}
+
 

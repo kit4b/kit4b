@@ -189,7 +189,7 @@ class CBEDfile  : protected CEndian, public CErrorCodes
 
 	 char *TrimWhitespace(char *pTxt);		// trim leading and trailing whitespace, returns ptr to 1st non-whitspace char
 
-    static int SortFeatureNames(const void *arg1, const void *arg2); // used to sort by feature name->chromid->start->end
+	static int SortFeatureNames(const void *arg1, const void *arg2); // used to sort by feature name->chromid->start->end
 	static int SortChromStarts(const void *arg1, const void *arg2);  // used to sort by feature chromid->start->end
 	static int SortChromNames( const void *arg1, const void *arg2);  // used to sort chromosome names
 	static int SortU2S( const void *arg1, const void *arg2);	// used to sort chrom ids when mapping features on to chrom initialisation
@@ -218,7 +218,7 @@ public:
 	teBSFrsltCodes ProcessUltraCoreFile(char *pszFileName); // process/parse UltraCore format file
 	teBSFrsltCodes ProcessGroupCoreFile(char *pszFileName,int MinLen = INT_MIN, int MaxLen = INT_MAX); // process/parse group - multispecies - UltraCores  format file
 
-    
+	
 	teBSFrsltCodes AddFeature(char *pszFeatName,	// feature name
 					 char *pszChromName,		// chromosome name
 					 int Start,					// start offset (0..n) on chromosome
@@ -242,12 +242,12 @@ public:
 
 	int LocateFeatureAfter(int ChromID,				// feature is on this chromosome
 					 int ChromOfs,					// feature starts on or immediately after this offset
- 					 int FiltInFlags=cFeatFiltIn,		// filter out any features which do not have at least one of the specified filter flags set
+					 int FiltInFlags=cFeatFiltIn,		// filter out any features which do not have at least one of the specified filter flags set
 					 int FiltOutFlags=cFeatFiltOut);	// filter out any features which have at least one of the specified filter flags set
 
 	int LocateFeatureBefore(int ChromID,	// feature is on this chromosome
 					 int ChromOfs,			// feature ends on or immediately before this offset
- 					 int FiltInFlags=cFeatFiltIn,		// filter out any features which do not have at least one of the specified filter flags set
+					 int FiltInFlags=cFeatFiltIn,		// filter out any features which do not have at least one of the specified filter flags set
 					 int FiltOutFlags=cFeatFiltOut); 	// filter out any features which have at least one of the specified filter flags set
 
 	int											// returned feature identifer
@@ -260,8 +260,8 @@ public:
 					 char *pszChrom=NULL,	// where to return chromosome name
 					 int *pStart=NULL,		// where to return feature start on chromosome (0..n) 
 					 int *pEnd=NULL,		// where to return feature end on chromosome
- 					 int *pScore=NULL,		// where to return score
- 					 char *pStrand=NULL,	// where to return strand
+					 int *pScore=NULL,		// where to return score
+					 char *pStrand=NULL,	// where to return strand
 					 int MaxSuppInfoLen = 0,	// how much memory has been allocated to pSuppInfo
 					 void *pSuppInfo = NULL);	// where to return any supplementary information
 
@@ -301,31 +301,31 @@ public:
 		LocateFeatureIDonChrom(int ChromID,	 // feature is on which chromosome
 							 int OverLapsOfs, // a point on the chromosome which returned feature is to overlap by at least one base
 							 int Ith,		 // Ith instance to overlap (1..n)
- 							 int FiltInFlags=cFeatFiltIn, // filter out any features which do not have at least one of the specified filter flags set
-  							 int FiltOutFlags=cFeatFiltOut); // filter out any features which have at least one of the specified filter flags set
+							 int FiltInFlags=cFeatFiltIn, // filter out any features which do not have at least one of the specified filter flags set
+							 int FiltOutFlags=cFeatFiltOut); // filter out any features which have at least one of the specified filter flags set
 
 	int										  // returned feature identifier
 		LocateFeatureIDinRangeOnChrom(int ChromID,	  // feature is on which chromosome
 							 int Start,       // feature must end on or after Start
 							 int End,		  // and start on or before End 
 							 int Ith,		  // Ith instance to return (1..n)
- 							 int FiltInFlags=cFeatFiltIn, // filter out any features which do not have at least one of the specified filter flags set
-  							 int FiltOutFlags=cFeatFiltOut); // filter out any features which have at least one of the specified filter flags set
+							 int FiltInFlags=cFeatFiltIn, // filter out any features which do not have at least one of the specified filter flags set
+							 int FiltOutFlags=cFeatFiltOut); // filter out any features which have at least one of the specified filter flags set
 
 	int										  // returned number of features
 		GetNumFeatures(int ChromID,			  // features are on which chromosome
 					   int Start,			  // features must end on or after Start
 					   int End, 		      // and start on or before End
-    				 int FiltInFlags=cFeatFiltIn,    // filter out any features which do not have at least one of the specified filter flags set
-    				 int FiltOutFlags=cFeatFiltOut); // filter out any features which have at least one of the specified filter flags set
+					 int FiltInFlags=cFeatFiltIn,    // filter out any features which do not have at least one of the specified filter flags set
+					 int FiltOutFlags=cFeatFiltOut); // filter out any features which have at least one of the specified filter flags set
 
 	int GetFirstFeatureID(int ChromID,				// first feature is on this chromosome
-    				 int FiltInFlags=cFeatFiltIn, // filter out any features which do not have at least one of the specified filter flags set
-			 		int FiltOutFlags=cFeatFiltOut); // filter out any features which have at least one of the specified filter flags set
+					 int FiltInFlags=cFeatFiltIn, // filter out any features which do not have at least one of the specified filter flags set
+					int FiltOutFlags=cFeatFiltOut); // filter out any features which have at least one of the specified filter flags set
 
 	int GetLastFeatureID(int ChromID,				// last feature is on this chromosome
-    				 int FiltInFlags=cFeatFiltIn, // filter out any features which do not have at least one of the specified filter flags set
-			 		int FiltOutFlags=cFeatFiltOut); // filter out any features which have at least one of the specified filter flags set
+					 int FiltInFlags=cFeatFiltIn, // filter out any features which do not have at least one of the specified filter flags set
+					int FiltOutFlags=cFeatFiltOut); // filter out any features which have at least one of the specified filter flags set
 
 	
 	int GetNumChromosomes(void);			  // returns the number of chromosomes
@@ -339,7 +339,7 @@ public:
 
 	int										  // Maps feature or transcript relative ofs to chrom loci, assumes always that the RelOfs is on the '+' strand and returns '+' strand loci 
 		MapTransOfs2Loci(int FeatureID,		  // identifies which feature/transcript
-		            int RelOfs,				  // relative offset from start of feature
+					int RelOfs,				  // relative offset from start of feature
 					char *pStrand,			  // feature is on this strand
 					tChromID *pChromID,			  // feature is on this chrom
 					int *pLoci);			  // feature relative offset is at this chrom loci
