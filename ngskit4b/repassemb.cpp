@@ -876,7 +876,13 @@ if(glob.Add(pszASegsFiles) < SG_SUCCESS)
 
 m_MaxASegmentLen = 0;
 m_NumSortedSites = 0;
-m_NumSNPFiles = glob.FileCount();
+if((m_NumSNPFiles = glob.FileCount()) <= 0)
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to locate file(s): '%s'", pszASegsFiles);
+	delete pBedFile;
+	Reset();
+	return(eBSFerrOpnFile);
+	}
 
 for(int FileIdx = 0;FileIdx < m_NumSNPFiles; FileIdx++)
 	{
