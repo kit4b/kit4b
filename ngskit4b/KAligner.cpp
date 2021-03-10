@@ -7132,7 +7132,7 @@ CKAligner::OutputSNPs(void)
 	CoverageSegLen = 0;
 	StartCoverageSegLoci = 0;
 	CovSegBuffIdx = 0;
-	m_MaxDiSNPSep = m_pChromSNPs->MeanReadLen;
+	m_MaxDiSNPSep = min((int)cDfltMaxDiSNPSep, m_pChromSNPs->MeanReadLen);
 	for (Loci = 0; Loci < m_pChromSNPs->ChromLen; Loci++, pSNP++)
 		{
 		// determine background expected error rate from window surrounding the current loci
@@ -7597,8 +7597,8 @@ CKAligner::OutputSNPs(void)
 
 #ifdef _DISNPS_
 		if (!m_bIsSOLiD && m_hDiSNPfile != -1)
-		{
-			// try to find all reads which are overlapping this SNP plus the prev within 300bp SNP
+			{
+			// try to find all reads which are overlapping this SNP plus the prev within m_MaxDiSNPSep (max 300bp)
 			tsReadHit* pCurOverlappingRead;
 			UINT8 PrevDiSNPBase;
 			UINT8 CurDiSNPBase;
@@ -7617,7 +7617,7 @@ CKAligner::OutputSNPs(void)
 			CurDiSNPLoci = Loci;
 			pSNP = &m_pChromSNPs->Cnts[Loci];
 			if (PrevDiSNPLoci != -1 && CurDiSNPLoci > 0 && ((CurDiSNPLoci - PrevDiSNPLoci) <= m_MaxDiSNPSep))
-			{
+				{
 				NumReadsOverlapping = 0;
 				NumReadsAntisense = 0;
 				memset(DiSNPCnts, 0, sizeof(DiSNPCnts));
@@ -7626,7 +7626,7 @@ CKAligner::OutputSNPs(void)
 				PrevSNPs[1].RefBase = pSNP->RefBase;
 
 				while ((pCurOverlappingRead = IterateReadsOverlapping(false, m_pChromSNPs, PrevDiSNPLoci, CurDiSNPLoci)) != NULL)
-				{
+					{
 					// get bases at both SNP loci for current overlapping read
 					PrevDiSNPBase = AdjAlignSNPBase(pCurOverlappingRead, m_pChromSNPs->ChromID, PrevDiSNPLoci);
 					if (PrevDiSNPBase > eBaseT)
@@ -7649,111 +7649,119 @@ CKAligner::OutputSNPs(void)
 						NumReadsAntisense += 1;
 					DiSNPIdx = ((PrevDiSNPBase & 0x03) << 2) | (CurDiSNPBase & 0x03);
 					DiSNPCnts[DiSNPIdx] += 1;
-				}
+					}
+				NumHaplotypes = 0;	// haplotype calling very simplistic very simplistic - calling haplotype if was called a SNP loci and allele coverage >= than 10% of total counts (min 5)
 				if (NumReadsOverlapping >= m_MinSNPreads)
-				{
-					NumHaplotypes = 0;       // very simplistic - calling haplotype if at least 3 for any putative DiSNP and more than 5% of read depth
-					HaplotypeCntThres = max(3, NumReadsOverlapping / 20);
+					{
+					HaplotypeCntThres = max(5, (NumReadsOverlapping+5) / 10); // if fewer than 5 reads overlapping with same allele then simply too noisy to use as a haplotype!
 					for (DiSNPIdx = 0; DiSNPIdx < 16; DiSNPIdx++)
 						if (DiSNPCnts[DiSNPIdx] >= HaplotypeCntThres)
 							NumHaplotypes += 1;
+						else
+							DiSNPCnts[DiSNPIdx] = 0;
+					}
+
+				if(NumHaplotypes >= 2)		// only reporting if at least 2 DiSNP localised haplotypes
+					{
 					TotNumDiSNPs += 1;
 					DiSNPBuffIdx += sprintf(&szDiSNPs[DiSNPBuffIdx], "%d,\"DiSNPs\",\"%s\",\"%s\",", TotNumDiSNPs, m_szTargSpecies, szChromName);
 
 					if (gProcessingID > 0)
-					{
+						{
 						sDiSNP.DiSnpPID = TotNumDiSNPs;		// SNP instance, processing instance unique
 						strcpy(sDiSNP.szElType, "DiSNPs");		// SNP type
 						strcpy(sDiSNP.szSpecies, m_szTargSpecies);		// SNP located for alignments againts this target/species assembly	
 						strcpy(sDiSNP.szChrom, szChromName);		// SNP is on this chrom
-					}
+						}
 
 					char SNPrefBases[2];
 					int RefBasesIdx;
 					for (RefBasesIdx = 0; RefBasesIdx <= 1; RefBasesIdx++)
-					{
+						{
 						switch (PrevSNPs[RefBasesIdx].RefBase) {
-						case eBaseA:
-							SNPrefBases[RefBasesIdx] = 'a';
-							break;
-						case eBaseC:
-							SNPrefBases[RefBasesIdx] = 'c';
-							break;
-						case eBaseG:
-							SNPrefBases[RefBasesIdx] = 'g';
-							break;
-						case eBaseT:
-							SNPrefBases[RefBasesIdx] = 't';
-							break;
-						case eBaseN:
-							SNPrefBases[RefBasesIdx] = 'n';
-							break;
-						};
+							case eBaseA:
+								SNPrefBases[RefBasesIdx] = 'a';
+								break;
+							case eBaseC:
+								SNPrefBases[RefBasesIdx] = 'c';
+								break;
+							case eBaseG:
+								SNPrefBases[RefBasesIdx] = 'g';
+								break;
+							case eBaseT:
+								SNPrefBases[RefBasesIdx] = 't';
+								break;
+							case eBaseN:
+								SNPrefBases[RefBasesIdx] = 'n';
+								break;
+							};
 						switch (RefBasesIdx) {
-						case 0:
-							DiSNPBuffIdx += sprintf(&szDiSNPs[DiSNPBuffIdx], "%d,", PrevDiSNPLoci);
-							if (gProcessingID > 0)
-							{
-								sDiSNP.SNP1Loci = PrevDiSNPLoci;
-								sDiSNP.szSNP1RefBase[0] = SNPrefBases[RefBasesIdx];
-								sDiSNP.szSNP1RefBase[1] = '\0';
-								sDiSNP.SNP1BaseAcnt = PrevSNPs[RefBasesIdx].NonRefBaseCnts[0];
-								sDiSNP.SNP1BaseCcnt = PrevSNPs[RefBasesIdx].NonRefBaseCnts[1];
-								sDiSNP.SNP1BaseGcnt = PrevSNPs[RefBasesIdx].NonRefBaseCnts[2];
-								sDiSNP.SNP1BaseTcnt = PrevSNPs[RefBasesIdx].NonRefBaseCnts[3];
-								sDiSNP.SNP1BaseNcnt = 0;
+							case 0:
+								DiSNPBuffIdx += sprintf(&szDiSNPs[DiSNPBuffIdx], "%d,", PrevDiSNPLoci);
+								if (gProcessingID > 0)
+									{
+									sDiSNP.SNP1Loci = PrevDiSNPLoci;
+									sDiSNP.szSNP1RefBase[0] = SNPrefBases[RefBasesIdx];
+									sDiSNP.szSNP1RefBase[1] = '\0';
+									sDiSNP.SNP1BaseAcnt = PrevSNPs[RefBasesIdx].NonRefBaseCnts[0];
+									sDiSNP.SNP1BaseCcnt = PrevSNPs[RefBasesIdx].NonRefBaseCnts[1];
+									sDiSNP.SNP1BaseGcnt = PrevSNPs[RefBasesIdx].NonRefBaseCnts[2];
+									sDiSNP.SNP1BaseTcnt = PrevSNPs[RefBasesIdx].NonRefBaseCnts[3];
+									sDiSNP.SNP1BaseNcnt = 0;
+									}
+								break;
+							case 1:
+								DiSNPBuffIdx += sprintf(&szDiSNPs[DiSNPBuffIdx], "%d,", CurDiSNPLoci);
+								if (gProcessingID > 0)
+									{
+									sDiSNP.SNP2Loci = CurDiSNPLoci;
+									sDiSNP.szSNP2RefBase[0] = SNPrefBases[RefBasesIdx];
+									sDiSNP.szSNP2RefBase[1] = '\0';
+									sDiSNP.SNP2BaseAcnt = PrevSNPs[RefBasesIdx].NonRefBaseCnts[0];
+									sDiSNP.SNP2BaseCcnt = PrevSNPs[RefBasesIdx].NonRefBaseCnts[1];
+									sDiSNP.SNP2BaseGcnt = PrevSNPs[RefBasesIdx].NonRefBaseCnts[2];
+									sDiSNP.SNP2BaseTcnt = PrevSNPs[RefBasesIdx].NonRefBaseCnts[3];
+									sDiSNP.SNP2BaseNcnt = 0;
+									}
+								break;
 							}
-							break;
-						case 1:
-							DiSNPBuffIdx += sprintf(&szDiSNPs[DiSNPBuffIdx], "%d,", CurDiSNPLoci);
-							if (gProcessingID > 0)
-							{
-								sDiSNP.SNP2Loci = CurDiSNPLoci;
-								sDiSNP.szSNP2RefBase[0] = SNPrefBases[RefBasesIdx];
-								sDiSNP.szSNP2RefBase[1] = '\0';
-								sDiSNP.SNP2BaseAcnt = PrevSNPs[RefBasesIdx].NonRefBaseCnts[0];
-								sDiSNP.SNP2BaseCcnt = PrevSNPs[RefBasesIdx].NonRefBaseCnts[1];
-								sDiSNP.SNP2BaseGcnt = PrevSNPs[RefBasesIdx].NonRefBaseCnts[2];
-								sDiSNP.SNP2BaseTcnt = PrevSNPs[RefBasesIdx].NonRefBaseCnts[3];
-								sDiSNP.SNP2BaseNcnt = 0;
-							}
-							break;
-						}
 
 						DiSNPBuffIdx += sprintf(&szDiSNPs[DiSNPBuffIdx], "\"%c\",%d,%d,%d,%d,0,", SNPrefBases[RefBasesIdx], PrevSNPs[RefBasesIdx].NonRefBaseCnts[0], PrevSNPs[RefBasesIdx].NonRefBaseCnts[1], PrevSNPs[RefBasesIdx].NonRefBaseCnts[2], PrevSNPs[RefBasesIdx].NonRefBaseCnts[3]);
-					}
+						}
 
 					DiSNPBuffIdx += sprintf(&szDiSNPs[DiSNPBuffIdx], "%d,%d,%d", NumReadsOverlapping, NumReadsAntisense, NumHaplotypes);
 					if (gProcessingID > 0)
-					{
+						{
 						sDiSNP.Depth = NumReadsOverlapping;
 						sDiSNP.Antisense = NumReadsAntisense;
 						sDiSNP.Haplotypes = NumHaplotypes;
-					}
+						}
 
 
 					for (DiSNPIdx = 0; DiSNPIdx < 16; DiSNPIdx++)
-					{
+						{
 						DiSNPBuffIdx += sprintf(&szDiSNPs[DiSNPBuffIdx], ",%d", DiSNPCnts[DiSNPIdx]);
 						if (gProcessingID > 0)
 							sDiSNP.HaplotypeCnts[DiSNPIdx] = DiSNPCnts[DiSNPIdx];
-					}
+						}
 					DiSNPBuffIdx += sprintf(&szDiSNPs[DiSNPBuffIdx], "\n");
 					if (gProcessingID > 0)
 						gSQLiteSummaries.AddDiSNP(gExperimentID, gProcessingID, &sDiSNP);
 
 					if ((DiSNPBuffIdx + 200) > sizeof(szDiSNPs))
-					{
+						{
 						if(!CUtility::RetryWrites(m_hDiSNPfile, szDiSNPs, DiSNPBuffIdx))
 							{
 							gDiagnostics.DiagOut(eDLInfo,gszProcName,"RetryWrites() error");
 							return(eBSFerrWrite);
 							}
 						DiSNPBuffIdx = 0;
+						}
 					}
 				}
-			}
+			// DiSNP processing completed
 
+			// starting on TriSNPs
 			CurTriSNPLoci = Loci;
 			if (FirstTriSNPLoci != -1 && PrevTriSNPLoci > 0 && CurTriSNPLoci > 0 && ((CurTriSNPLoci - FirstTriSNPLoci) <= m_MaxDiSNPSep))
 				{
@@ -7801,22 +7809,29 @@ CKAligner::OutputSNPs(void)
 					DiSNPIdx = ((FirstTriSNPBase & 0x03) << 4) | ((PrevTriSNPBase & 0x03) << 2) | (CurTriSNPBase & 0x03);
 					DiSNPCnts[DiSNPIdx] += 1;
 					}
+
+				NumHaplotypes = 0;	// haplotype calling very simplistic very simplistic - calling haplotype if was called a SNP loci and allele coverage >= than 10% of total counts (min 5)
 				if (NumReadsOverlapping >= m_MinSNPreads)
 					{
-					NumHaplotypes = 0;       // very simplistic - calling haplotype if at least 3 for any putative DiSNP and more than 5% of read depth
-					HaplotypeCntThres = max(3, NumReadsOverlapping / 20);
+					HaplotypeCntThres = max(5, (NumReadsOverlapping+5) / 10); // if fewer than 5 reads overlapping with same allele then simply too noisy to use as a haplotype!
 					for (DiSNPIdx = 0; DiSNPIdx < 64; DiSNPIdx++)
 						if (DiSNPCnts[DiSNPIdx] >= HaplotypeCntThres)
 							NumHaplotypes += 1;
+						else
+							DiSNPCnts[DiSNPIdx] = 0;
+					}
+
+				if(NumHaplotypes >= 3)		// only reporting if at least 3 TriSNP localised haplotypes
+					{
 					TotNumTriSNPs += 1;
 
 					TriSNPBuffIdx += sprintf(&szTriSNPs[TriSNPBuffIdx], "%d,\"TriSNPs\",\"%s\",\"%s\",", TotNumTriSNPs, m_szTargSpecies, szChromName);
 					if (gProcessingID > 0)
 						{
-						sTriSNP.TriSnpPID = TotNumTriSNPs;		// SNP instance, processing instance unique
-						strcpy(sTriSNP.szElType, "TriSNPs");		// SNP type
-						strcpy(sTriSNP.szSpecies, m_szTargSpecies);		// SNP located for alignments againts this target/species assembly	
-						strcpy(sTriSNP.szChrom, szChromName);		// SNP is on this chrom
+						sTriSNP.TriSnpPID = TotNumTriSNPs;				// SNP instance, processing instance unique
+						strcpy(sTriSNP.szElType, "TriSNPs");			// SNP type
+						strcpy(sTriSNP.szSpecies, m_szTargSpecies);		// SNP located for alignments against this target/species assembly	
+						strcpy(sTriSNP.szChrom, szChromName);			// SNP is on this chrom
 						}
 					char SNPrefBases[3];
 					int RefBasesIdx;

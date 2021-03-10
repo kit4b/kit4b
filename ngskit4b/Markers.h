@@ -105,8 +105,17 @@ class CMarkers
 	size_t m_AllocMemAlignLoci;			// allocation memory size
 	tsAlignLoci *m_pAllocAlignLoci;		// allocated to hold alignment loci 
 
+	int m_hOutFile;						// file handle for outputting snpmarkers 
+	char *m_pszBuff;					// snpmarkers buffer
+	int m_BuffIdx;						// currently this many chars buffered
+
+	int m_hBEDOutFile;					// file handle for outputting VCF 
+	char *m_pszBEDBuff;					// VCF buffer
+	int m_BEDBuffIdx;					// currently this many chars buffered
+
 	double m_LSER;						// if local sequencing error rate unknown then use this default
 
+	int m_NumThreads;					// max number of threads
 
 	INT64 AddLoci(UINT16 TargSpeciesID,		// reads were aligned to this cultivar or species
 				UINT32 TargSeqID,		// alignments to this sequence - could be a chrom/contig/transcript - from pszSpecies
@@ -152,7 +161,7 @@ public:
 	~CMarkers(void);
 	void Reset(void);	// clears all allocated resources
 
-	int Init(int NumThreads); //Initialise resources for specified number of threads
+	int Init(int NumThreads = 1); //Initialise resources for specified number of threads; currently not actually multithreaded but may be in future
 
 	INT64		// qsorts alignment loci by TargSeqID,TargLoci,ProbeSpeciesID ascending
 		SortTargSeqLociSpecies(void);
@@ -160,6 +169,7 @@ public:
 	int 
 		LoadSNPFile(int MinBases,			// accept SNPs with at least this number covering bases
 					  double MaxPValue,		// accept SNPs with at most this P-value
+					  double SNPMmajorPC,	// only accept SNP for processing if major allele >= this proportion of total allele counts
 					  char *pszRefSpecies,	// this is the reference species 
 					  char *pszProbeSpecies, // this species reads were aligned to the reference species from which SNPs were called 
 					  char *pszSNPFile);	// SNP file to parse and load
@@ -168,7 +178,7 @@ public:
 		AddImputedAlignments(int MinBases,		// must be at least this number of reads covering the SNP loci
 					  char *pszRefSpecies,		// this is the reference species 
 					char *pszProbeSpecies,		// this species reads were aligned to the reference species from which SNPs were called 
-					char *pszAlignFile,			// file containing alignments
+					char *pszAlignFile,			// file containing alignments (CSV,BED, or SAM)
 					int FType = 0,				// input alignment file format: 0 - auto, 1 - CSV, 2 - BED, 3 - SAM)
 					bool bSeqs = false,			// if alignment file contains the read sequence then impute bases from the actual sequences	
 					int EstNumSeqs = 0,			// estimated number of sequences (0 if no estimate)
@@ -228,7 +238,8 @@ public:
 			char *pszReportFile,				// report to this file
 			int MinSpeciesWithCnts = 0,			// must be at least this number of species with base counts more than MinSpeciesTotCntThres - 0 if no limit 
 			int MinSpeciesTotCntThres = 0,  	// individual species must have at least this number of total bases at SNP loci - 0 if no threshold
-			bool bSloughRefOnly = false);		// do not report if no inter-cultivar SNP marker, i.e if cultivars all same with the polymorthic site relative to reference only 
+			bool bSloughRefOnly = false,		// do not report if no inter-cultivar SNP marker, i.e if cultivars all same with the polymorthic site relative to reference only
+			bool bSloughNonHetero = false);		// do not report unless all cultivars are relative heterozygotic - no two cultivars have same base 
 };
 
 

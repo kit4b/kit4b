@@ -21,6 +21,9 @@
 
 int
 Process(etRPPMode PMode,	// processing mode
+	int MinSNPreads,				// must be at least this number of reads covering any loci before processing for SNPs at this loci
+	double SNPMajorAllele,			// SNP major allele must be at least this proportion of allele counts at SNP site
+	double PValueThres,				// SNP PValue must be <= this threshold
 	char *pszProcFile,		// input kalign generated SNPs or alignment segments file name, filename can be wildcardeds
 	char *pszAssembFile,	// input assembly to repurpose
 	char *pszRepAssembFile);	// write out repurposed assembly to this file
@@ -43,10 +46,13 @@ repassemb(int argc, char **argv)
 	int Rslt = 0;   			// function result code >= 0 represents success, < 0 on failure
 	int NumberOfProcessors;		// number of installed CPUs
 
-	 etRPPMode PMode;				// processing mode
-	 char szInFile[_MAX_PATH];		// input fasta assembly file
-	 char szSNPsFile[_MAX_PATH];		// file containing kalign called SNPs
-	 char szOutFile[_MAX_PATH];		 // output fasta assembly file
+	etRPPMode PMode;				// processing mode
+	int MinSNPreads;				// must be at least this number of reads covering any loci before processing for SNPs at this loci
+	double SNPMajorAllele;			// SNP major allele must be at least this proportion of allele counts at SNP site
+	double PValueThres;				// SNP PValue must be <= this threshold
+	char szInFile[_MAX_PATH];		// input fasta assembly file
+	char szSNPsFile[_MAX_PATH];		// file containing kalign called SNPs
+	char szOutFile[_MAX_PATH];		 // output fasta assembly file
 
 	struct arg_lit *help = arg_lit0 ("h", "help", "print this help and exit");
 	struct arg_lit *version = arg_lit0 ("v", "version,ver", "print version information and exit");
@@ -54,13 +60,16 @@ repassemb(int argc, char **argv)
 	struct arg_file *LogFile = arg_file0 ("F", "log", "<file>", "diagnostics log file");
 
 	struct arg_int *pmode = arg_int0 ("m", "mode", "<int>", "processing mode: 0 SNP call major allele base replacement, 1 non-alignment segment bases replaced by 'N'");
+	struct arg_int *minsnpreads = arg_int0("d","snpreadsmin","<int>","filter out SNP loci having less than this read coverage (default is 20)");
+	struct arg_dbl *snpmajorallele = arg_dbl0("P","snpmajorallele","<dbl>", "SNP major allele must be at least this proportion of all counts at SNP site (defaults to 0.5, range 0.25 to 1.0)");
+	struct arg_dbl *pvaluethres = arg_dbl0("p","pvaluethres","<dbl>", "SNP PValue must be <= this threshold (defaults to 0.05, range 0.0 to 0.05)");
 	struct arg_file *snpsfile = arg_file1("i","ref","<file>", "input file containing kalign called SNPs - use wild cards if multiple SNP files to be processed, or aligned segments BED");
 	struct arg_file *infile = arg_file1("I", "in", "<file>", "input file containing fasta assembly sequences to be repurposed");
 	struct arg_file *outfile = arg_file1 ("o", "out", "<file>", "output file into which to write repurposed fasta assembly sequences");
 	struct arg_end *end = arg_end (200);
 
 	void *argtable[] = { help,version,FileLogLevel,LogFile,
-						pmode,snpsfile,infile,outfile,end };
+						pmode,minsnpreads,snpmajorallele,pvaluethres,snpsfile,infile,outfile,end };
 
 	char **pAllArgs;
 	int argerrors;
@@ -135,6 +144,35 @@ repassemb(int argc, char **argv)
 			exit (1);
 		}
 
+	if(PMode == eRPMdefault)
+		{
+		MinSNPreads = minsnpreads->count ? minsnpreads->ival[0] : cDfltMinSiteCoverage;
+		if(MinSNPreads < 5 || MinSNPreads > 100)
+			{
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Minimum read coverage at any loci '-d%d' must be in range %d..%d\n",MinSNPreads,5,100);
+			exit(1);
+			}
+
+		SNPMajorAllele = snpmajorallele->count ? snpmajorallele->dval[0] : cDfltMinAlleleProp;
+		if(SNPMajorAllele < 0.25 || SNPMajorAllele > 1.0)
+			{
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: SNP major allele proportion  '-P%f' must be in range %f..%f\n",SNPMajorAllele,0.25,1.0);
+			exit(1);
+			}
+
+		PValueThres = pvaluethres->count ? pvaluethres->dval[0] : cDfltPValueThres;
+		if(PValueThres < 0.0 || PValueThres > 0.10)
+			{
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: PValue threshold  '-p%f' must be in range %f..%f\n",SNPMajorAllele,0.0,0.05);
+			exit(1);
+			}
+		}
+	else
+		{
+		MinSNPreads = 0;
+		SNPMajorAllele = 0.0;
+		PValueThres = 0.0;
+		}
 
 		// show user current resource limits
 #ifndef _WIN32
@@ -191,6 +229,9 @@ repassemb(int argc, char **argv)
 		
 		switch (PMode) {
 			case eRPMdefault:
+				gDiagnostics.DiagOutMsgOnly (eDLInfo, "SNP minimum read coverage : %d", MinSNPreads);
+				gDiagnostics.DiagOutMsgOnly (eDLInfo, "SNP major allele proportion : %f", SNPMajorAllele);
+				gDiagnostics.DiagOutMsgOnly(eDLInfo,"SNP PValue threshold : %f",PValueThres);
 				gDiagnostics.DiagOutMsgOnly (eDLInfo, "SNPs file : '%s'", szSNPsFile);
 				break;
 
@@ -208,10 +249,13 @@ repassemb(int argc, char **argv)
 #endif
 		gStopWatch.Start ();
 		Rslt = 0;
-		Rslt = Process(PMode,			// processing mode
-						szSNPsFile,		// kalign called SNPs or non-aligned BED file
-						szInFile,		// input fasta or SAM file
-						szOutFile);		// output to this file
+		Rslt = Process(PMode,				// processing mode
+						MinSNPreads,		// must be at least this number of reads covering any loci before processing for SNPs at this loci
+						SNPMajorAllele,		// SNP major allele must be at least this proportion of allele counts at SNP site
+						PValueThres,		// SNP PValue must be <= this threshold
+						szSNPsFile,			// kalign called SNPs or non-aligned BED file
+						szInFile,			// input fasta or SAM file
+						szOutFile);			// output to this file
 		Rslt = Rslt >= 0 ? 0 : 1;
 		gStopWatch.Stop ();
 
@@ -229,7 +273,10 @@ repassemb(int argc, char **argv)
 }
 
 int
-Process(etRPPMode PMode,	// processing mode
+Process(etRPPMode PMode,				// processing mode
+		int MinSNPreads,				// must be at least this number of reads covering any loci before processing for SNPs at this loci
+		double SNPMajorAllele,			// SNP major allele must be at least this proportion of allele counts at SNP site
+		double PValueThres,				// SNP PValue must be <= this threshold
 		char *pszProcFile,		// input kalign generated SNPs or alignment segments file name, filename can be wildcarded
 		char *pszAssembFile,	// input assembly to repurpose
 		char *pszRepAssembFile)	// write out repurposed assembly to this file
@@ -243,9 +290,12 @@ if((pRepAssemb = new CRepAssemb) == NULL)
 	}
 
 Rslt = pRepAssemb->ProccessAssembly(PMode,	// processing mode
-									pszProcFile,			// input kalign generated SNPs or alignment segments file name, filename can be wildcarded
-									pszAssembFile,			// input fasta assembly file
-									pszRepAssembFile);		// output to this fasta assembly file
+						MinSNPreads,			// must be at least this number of reads covering any loci before processing for SNPs at this loci
+						SNPMajorAllele,			// SNP major allele must be at least this proportion of allele counts at SNP site
+						PValueThres,			// SNP PValue must be <= this threshold
+						pszProcFile,			// input kalign generated SNPs or alignment segments file name, filename can be wildcarded
+						pszAssembFile,			// input fasta assembly file
+						pszRepAssembFile);		// output to this fasta assembly file
 
 if(pRepAssemb != NULL)
 	delete pRepAssemb;
@@ -402,6 +452,7 @@ int ExpNumFields;
 uint32_t ChromID;
 uint32_t Loci;
 etSeqBase RefBase;
+double PValue;
 etSeqBase AlleleBase;
 uint32_t CoveringBases;
 uint32_t TotMismatches;
@@ -528,7 +579,8 @@ for(int FileIdx = 0;FileIdx < m_NumSNPFiles; FileIdx++)
 			}
 		m_pCSV->GetUint(1, &ReadsetSiteId);
 		m_pCSV->GetUint(5, &Loci);			// get "StartLoci"
-		m_pCSV->GetUint(12, &TotMismatches);		// get "Mismatches"
+		m_pCSV->GetDouble(10, &PValue);			// get "PValue"
+		m_pCSV->GetUint(12, &TotMismatches);	// get "Mismatches"
 		CntRef = CoveringBases - TotMismatches;
 		m_pCSV->GetUint(14, &BaseCnts[0]);	// get "MMBaseA"
 		m_pCSV->GetUint(15, &BaseCnts[1]);	// get "MMBaseC"
@@ -559,16 +611,23 @@ for(int FileIdx = 0;FileIdx < m_NumSNPFiles; FileIdx++)
 				return(eBSFerrFieldCnt);
 			}
 
-		if(TotMismatches < (uint32_t)CntRef)
+		if((uint32_t)CntRef > TotMismatches)	// can't have a major allele if reference count >= mismatches
 			continue;
+
+		if(PValue > m_PValueThres || CoveringBases < m_MinCoverage)
+			continue;
+
+		if((((double)TotMismatches+1)/CoveringBases) < m_MinAlleleProp)
+			continue;
+
 		AlleleBase = eBaseN;
 		uint32_t AlleleBaseCnts = 0;
 		for (int Idx = 0; Idx < 4; Idx++)
 			{
-			if(m_MinAlleleProp > 0.0 && (BaseCnts[Idx] == 0 || (((double)BaseCnts[Idx] * 4) / (double)CoveringBases) < m_MinAlleleProp))
+			if(BaseCnts[Idx] == 0 || (((double)BaseCnts[Idx]+1) / (double)CoveringBases) < m_MinAlleleProp)
 				continue;
 
-			if(BaseCnts[Idx] > AlleleBaseCnts)
+			if(BaseCnts[Idx] > AlleleBaseCnts)	// major allele will be that with highest counts!
 				{
 				AlleleBaseCnts = BaseCnts[Idx];
 				AlleleBase = Idx;
@@ -1063,9 +1122,12 @@ return(eBSFSuccess);
 
 int
 CRepAssemb::ProccessAssembly(etRPPMode PMode,	// processing mode
-				char *pszProcFile,		// input kalign generated SNPs or alignment segments file name, filename can be wildcarded
-				char *pszAssembFile,	// input assembly to repurpose
-				char *pszRepAssembFile)	// write out repurposed assembly to this file
+				uint32_t MinCoverage,			// must be at least this number of covering bases at SNP site to be accepted
+				double MinAlleleProp,			// major allele must be at least this proportion of all alleles (incl ref base) at SNP site to be accepted
+				double PValueThres,				// SNP PValue must be <= this threshold
+				char *pszProcFile,				// input kalign generated SNPs or alignment segments file name, filename can be wildcarded
+				char *pszAssembFile,			// input assembly to repurpose
+				char *pszRepAssembFile)			// write out repurposed assembly to this file
 {
 int Rslt;
 bool bNL;
@@ -1088,6 +1150,9 @@ if((Rslt = LoadAssembly(pszAssembFile)) < 0)
 
 if(PMode == eRPMdefault)
 	{
+	m_MinCoverage = MinCoverage;
+	m_MinAlleleProp = MinAlleleProp;
+	m_PValueThres = PValueThres;
 	if((Rslt = LoadKalignSNPs(pszProcFile)) < 0)
 		{
 		Reset();

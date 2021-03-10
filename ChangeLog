@@ -67,6 +67,4 @@ Release 1.4.1 - 'sarscov2ml' is now multithreaded enabling substantial throughpu
 Release 1.4.3 - Option added whereby 'seghaplotypes' can split output into separate files for each tagged founder haplotype
 Release 1.4.5 - 'kalign' generates a scored reads alignment coverage BED file when SNPs are called. 'repassemb' can use this BED file and mark regions in the repurposed assembly which were not covered by reads as being indeterminate preventing subsequent alignments to these regions.
 Release 1.4.7 - 'repassemb' terminates if unable to locate specified alignment coverage BED file
-
-           
-
+Release 1.5.0 - 'snpmarkers' now has option to filter out marker loci which are not heterozygous between all cultivars, and 'seghaplotypes' can use these marker loci to boost identified haplotype segment scores.

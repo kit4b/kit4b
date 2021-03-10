@@ -3921,9 +3921,9 @@ return((teBSFrsltCodes)NumAcceptedContigs);
 }
 
 	// Imortant:
-    // Normally Levenshtein distance uses penalty of 0 for matches, and 1 for mismatches, inserts and deletions so that
-    // the distance represents the number of edits between two sequences to make both equal
-    // Because of the extreme InDel biases with PacBio long reads different penalties can be specified to the Levenshtein generating functions
+	// Normally Levenshtein distance uses penalty of 0 for matches, and 1 for mismatches, inserts and deletions so that
+	// the distance represents the number of edits between two sequences to make both equal
+	// Because of the extreme InDel biases with PacBio long reads different penalties can be specified to the Levenshtein generating functions
 bool											// returns true if QuerySeq within MaxDist from RefSeq
 CKit4bdna::IsLevenshteinAcceptedFwd(UINT32 KMerLen,// number (1..16) of packed bases in RefSeq and QuerySeq, bits 31/30 containing 5' base
 							UINT32 RefSeq,		// calculate levenshtein distance between packed sequence (2bits/base) in RefSeq, bits 1/0 containing 3' base
@@ -3978,17 +3978,17 @@ for (y = 1; y <= KMerLen; y++)
 
 for (x = 1; x <= KMerLen; x++) 
 	{
-    column[0] = x;
+	column[0] = x;
 	TmpSeq =RefSeq; 
-    for (y = 1, lastdiag = x-1; y <= KMerLen; y++) 
+	for (y = 1, lastdiag = x-1; y <= KMerLen; y++) 
 		{
-        olddiag = column[y];
-        column[y] = MIN3(column[y] + PenaltyInsert, column[y-1] + PenaltyDelete, lastdiag + ((TmpSeq & BaseMsk) == (QuerySeq & BaseMsk) ? PenaltyMatch : PenaltyMisMatch)); 
-        lastdiag = olddiag;
+		olddiag = column[y];
+		column[y] = MIN3(column[y] + PenaltyInsert, column[y-1] + PenaltyDelete, lastdiag + ((TmpSeq & BaseMsk) == (QuerySeq & BaseMsk) ? PenaltyMatch : PenaltyMisMatch)); 
+		lastdiag = olddiag;
 		TmpSeq <<= 2;
-        }
+		}
 	QuerySeq <<= 2;
-    }
+	}
 return((int)column[KMerLen]);
 }
 
@@ -4016,27 +4016,27 @@ for (y = 1; y <= KMerLen; y++)
 
 for (x = 1; x <= KMerLen; x++) 
 	{
-    column[0] = x;
+	column[0] = x;
 	pQueryBase = pQuerySeq;
 	if((RefBase = *pRefSeq++ & 0x07) > eBaseT)
 		{
 		RefBase = eBaseEOS;
 		pRefSeq -= 1;
 		}
-    for (y = 1, lastdiag = x-1; y <= KMerLen; y++) 
+	for (y = 1, lastdiag = x-1; y <= KMerLen; y++) 
 		{
-        olddiag = column[y];
+		olddiag = column[y];
 		if((QueryBase = *pQueryBase++ & 0x07) > eBaseT)
 			{
 			QueryBase = eBaseEOS;
 			pQuerySeq -= 1;
 			}
-        column[y] = MIN3(column[y] + PenaltyInsert, column[y-1] + PenaltyDelete, lastdiag + (RefBase == QueryBase ? PenaltyMatch : PenaltyMisMatch));
-        lastdiag = olddiag;
-        }
+		column[y] = MIN3(column[y] + PenaltyInsert, column[y-1] + PenaltyDelete, lastdiag + (RefBase == QueryBase ? PenaltyMatch : PenaltyMisMatch));
+		lastdiag = olddiag;
+		}
 	if(MaxExpDist > 0 && column[KMerLen] > (UINT32)MaxExpDist && (KMerLen - x) < (column[KMerLen] - (UINT32)MaxExpDist))
 		return((int)column[KMerLen]);
-    }
+	}
 return((int)column[KMerLen]);
 }
 
@@ -4064,27 +4064,27 @@ for (y = 1; y <= KMerLen; y++)
 
 for (x = 1; x <= KMerLen; x++) 
 	{
-    column[0] = x;
+	column[0] = x;
 	pQueryBase = pQuerySeq;
 	if((RefBase = *pRefSeq-- & 0x07) > eBaseT)
 		{
 		RefBase = eBaseEOS;
 		pRefSeq += 1;
 		}
-    for (y = 1, lastdiag = x-1; y <= KMerLen; y++) 
+	for (y = 1, lastdiag = x-1; y <= KMerLen; y++) 
 		{
-        olddiag = column[y];
+		olddiag = column[y];
 		if((QueryBase = *pQueryBase-- & 0x07) > eBaseT)
 			{
 			QueryBase = eBaseEOS;
 			pQuerySeq += 1;
 			}
-        column[y] = MIN3(column[y] + PenaltyInsert, column[y-1] + PenaltyDelete, lastdiag + (RefBase == QueryBase ? PenaltyMatch : PenaltyMisMatch));
-        lastdiag = olddiag;
-        }
+		column[y] = MIN3(column[y] + PenaltyInsert, column[y-1] + PenaltyDelete, lastdiag + (RefBase == QueryBase ? PenaltyMatch : PenaltyMisMatch));
+		lastdiag = olddiag;
+		}
 	if(MaxExpDist > 0 && column[KMerLen] > (UINT32)MaxExpDist && (KMerLen - x) < (column[KMerLen] - (UINT32)MaxExpDist))
 		return((int)column[KMerLen]);
-    }
+	}
 return((int)column[KMerLen]);
 }
 
@@ -4117,7 +4117,7 @@ for (y = 1; y <= KMerLen; y++)     // initialise with affine gap scoring
 
 for (x = 1; x <= KMerLen; x++) 
 	{
-    column[0] = (((x-1) * PenaltyInDelExtd) + (UINT32)PenaltyInDelOpen) | cFlgAGopened;
+	column[0] = (((x-1) * PenaltyInDelExtd) + (UINT32)PenaltyInDelOpen) | cFlgAGopened;
 	pQueryBase = pQuerySeq;
 	if((RefBase = *pRefSeq++ & 0x07) > eBaseT)
 		{
@@ -4126,9 +4126,9 @@ for (x = 1; x <= KMerLen; x++)
 		}
 
 	lastdiag = x == 1 ? 0 : (UINT32)PenaltyInDelOpen + ((x-2) * PenaltyInDelExtd);
-    for (y = 1; y <= KMerLen; y++) 
+	for (y = 1; y <= KMerLen; y++) 
 		{
-        olddiag = column[y] & ~cFlgAGopened;
+		olddiag = column[y] & ~cFlgAGopened;
 		if((QueryBase = *pQueryBase++ & 0x07) > eBaseT)
 			{
 			QueryBase = eBaseEOS;
@@ -4139,7 +4139,7 @@ for (x = 1; x <= KMerLen; x++)
 		UINT32 PutDelete = (column[y-1] & ~cFlgAGopened) + (column[y-1] & cFlgAGopened ? PenaltyInDelExtd : PenaltyInDelOpen);
 		UINT32 PutDiag = lastdiag + (RefBase == QueryBase ? PenaltyMatch : PenaltyMisMatch);
 
-	    if(PutInsert < PutDelete && PutInsert < PutDiag)
+		if(PutInsert < PutDelete && PutInsert < PutDiag)
 			column[y] = PutInsert | cFlgAGopened;
 		else
 			if(PutDelete < PutDiag)
@@ -4147,9 +4147,9 @@ for (x = 1; x <= KMerLen; x++)
 			else
 				column[y] = PutDiag;
 
-        lastdiag = olddiag;
-        }
-    }
+		lastdiag = olddiag;
+		}
+	}
 return((int)(column[KMerLen] & ~cFlgAGopened));
 }
 
@@ -5181,7 +5181,7 @@ while(MaxSeqWrds-- && !((SeqWrd = *pSeqToCpl) & cSeqWrd4MSWHdr))
 			Filler |= 0x02;
 			}
 		SeqWrd &= cSeqWrd4Msk;
-    	SeqWrd |= cSeqWrd4PartSeq;
+		SeqWrd |= cSeqWrd4PartSeq;
 		}
 	*pSeqToCpl++ = SeqWrd;
 	}
@@ -6405,7 +6405,7 @@ return(eBSFSuccess);
 // NOTE: user can exclude any PE sequences from being indexed, useful when scaffolding
 teBSFrsltCodes
 CKit4bdna::GenRdsSfx(int FirstNSeqWrds,			// max number of SeqWrds (0 to index all), starting from 1st, to index in each read sequence
-		             int ExcludeLastNSeqWrds,	// exclude last N SeqWrds in each read sequence from indexing, 0 to index FirstNSeqWrds
+					 int ExcludeLastNSeqWrds,	// exclude last N SeqWrds in each read sequence from indexing, 0 to index FirstNSeqWrds
 					 bool bExclPE)				// true to exclude sequences marked as being PE from being indexed
 {
 int ElSize;
@@ -6819,7 +6819,7 @@ CKit4bdna::IterSeqHeaders(tSeqWrd4 *pCurSeq, // iterate to next sequence followi
 			UINT32 *pSrcFileID,		// returned 8 bit source file identifier
 			UINT32 *pFlgs,			// returned 16 bit sequence flags
 			UINT32 *pSeqLen,		// returned 30 bit sequence length
-    		bool bSerialise)		// true if access to headers are to be serialised
+			bool bSerialise)		// true if access to headers are to be serialised
 {
 bool bNoHdr;
 if(m_Sequences.NumSeqs2Assemb == 0)
@@ -7556,7 +7556,7 @@ while(!((SeqWrd = *pSeq1++) & cSeqWrd4MSWHdr)) // iterate over sequence words un
 
 	// its a partial sequence word containing at most 14 bases
 	if(Ofs >= 14)
-    	return(eBaseEOS);
+		return(eBaseEOS);
 
 	// how many bases are in this partial sequence word?
 	BaseMsk = 0x03;
@@ -7565,7 +7565,7 @@ while(!((SeqWrd = *pSeq1++) & cSeqWrd4MSWHdr)) // iterate over sequence words un
 			break;
 
 	if(Ofs >= NumSeqWrdBases)					// can't return a base which at an Ofs not within sequence
-    	return(eBaseEOS);
+		return(eBaseEOS);
 
 	Shf = 2 * (14 - Ofs);
 	SeqWrd >>= Shf;
@@ -7769,7 +7769,7 @@ for(NumBasesChkd = 0; NumBasesChkd < ReqMatchLen; NumBasesChkd+=1, Seq1Ofs+=1, S
 	if(!(Seq2Ofs%15))
 		CurSeq2Wrd = *pStartSeq2++;
 	else
-	    CurSeq2Wrd <<= 2;
+		CurSeq2Wrd <<= 2;
 	}
 if(pNumSubs != NULL && NumBasesChkd == ReqMatchLen)
 	*pNumSubs = NumMMs + Num5MMs + Num3MMs;
@@ -7948,7 +7948,7 @@ if(bNoSeqBOvrlapA || ((ABMaxOverlapLen == min(SeqALen,SeqBLen)) && ABNumSubs <= 
 		*pNumSubs = ABNumSubs;
 
 // double check!!!!!
-    if(ABMaxOverlapLen > 0 &&
+	if(ABMaxOverlapLen > 0 &&
 		ABMaxOverlapLen != min(SeqALen - SeqALeft, SeqBLen))
 		printf("\nCheck this!!!!");
 	return(ABMaxOverlapLen);
@@ -8525,7 +8525,7 @@ return(eBSFSuccess);
 int
 CKit4bdna::SetAssemblyPars(bool bStrand,			// true if read strand specific assembly
 				  int MinOverlap,				// minimum flank overlap length
-  				  int MeanInsert,				// if paired end processing - mean insert size (defaults to 0 for single ended assembly)
+				  int MeanInsert,				// if paired end processing - mean insert size (defaults to 0 for single ended assembly)
 				  int MinInsert,				// if paired end processing - paired end minimum insert size
 				  int MaxInsert)				// if paired end processing - paired end maximum insert size
 {
@@ -8613,11 +8613,11 @@ return(MaxReq);
 int											// total number of bases in both pPE1DstSeqWrd and pPE2DstSeqWrd after merging or 0 if unable to merge because flags cFlgAsmbSeed | cFlgAsmbExtn | cFlgAsmbCplt already set for sequence Seq1ID or Seq2ID
 CKit4bdna::AtomicSeqMerge(int PE1RelOverlap,	// if >= 0 then pPE1SrcSeqWrd sequence starts at this pPE1DstSeqWrd[PE1RelOverlap]; if < 0 then pPE1DstSeqWrd starts at this pPE1SrcSeqWrd[PE1RelOverlap]; PE1RelOverlap is in bases
 					int PE1SrcSeqLen,			// number of bases in pPE1SrcSeqWrd sequence
-				    tSeqWrd4 *pPE1SrcSeqWrd,	// merge this sequence with pPE1DstSeqWrd
+					tSeqWrd4 *pPE1SrcSeqWrd,	// merge this sequence with pPE1DstSeqWrd
 
 					int PE2RelOverlap,			// if >= 0 then pPE2SrcSeqWrd starts at this pPE2DstSeqWrd[PE2RelOverlap]; if < 0 then pPE2DstSeqWrd starts at this pPE2SrcSeqWrd[PE2RelOverlap]; PE2RelOverlap is in bases
 					int PE2SrcSeqLen,			// number of bases in pPE2SrcSeqWrd sequence
-				    tSeqWrd4 *pPE2SrcSeqWrd,	// merge this sequence with pPE2DstSeqWrd				   
+					tSeqWrd4 *pPE2SrcSeqWrd,	// merge this sequence with pPE2DstSeqWrd				   
 
 					int PE1DstSeqLen,			// number of bases currently in pPE1DstSeqWrd sequence
 					int *pPE1DstSeqLen,			// returned length after merging
@@ -8662,11 +8662,11 @@ return(MergePE1DstSeqLen + MergePE2DstSeqLen);
 int												// number of bases in sequence pDstSeqWrd after merging or 0 if unable to merge because flags cFlgAsmbSeed | cFlgAsmbExtn | cFlgAsmbCplt already set for sequence Seq1ID or Seq2ID
 CKit4bdna::AtomicSeqMerge(int PE1RelOverlap,	// if >= 0 then PE1 sequence starts at this pDstSeq[PE1RelOverlap]; if < 0 then pDstSeq starts at this PE1 sequence[PE1RelOverlap]; PE1RelOverlap is in bases
 					int PE1SrcSeqLen,			// number of bases in pPE1SrcSeqWrd sequence
-				    tSeqWrd4 *pPE1SrcSeqWrd,	// merge this sequence with pDstSeqWrd
+					tSeqWrd4 *pPE1SrcSeqWrd,	// merge this sequence with pDstSeqWrd
 					int PE2RelOverlap,			// if >= 0 then pPESrcSeqWrd starts at this pDstSeq[PE2RelOverlap]; if < 0 then pDstSeq starts at this PE2 sequence[PE2RelOverlap]; PE2RelOverlap is in bases
 					int PE2SrcSeqLen,			// number of bases in pPE2SrcSeqWrd sequence
-				    tSeqWrd4 *pPE2SrcSeqWrd,	// merge this sequence with pDstSeqWrd				   
-				    int DstSeqLen,				// number of bases currently in pDstSeqWrd sequence
+					tSeqWrd4 *pPE2SrcSeqWrd,	// merge this sequence with pDstSeqWrd				   
+					int DstSeqLen,				// number of bases currently in pDstSeqWrd sequence
 				   tSeqWrd4 *pDstSeqWrd,		// merge this sequence with pPE1SrcSeqWrd and pPE2SrcSeqWrd; merged sequence replaces this sequence
 				   tSeqWrd4 *pTmpSeqWrd,		// temp sequence space for use as may be needed whilst merging
 				   tSeqID Seq1ID,				// mandatory sequence identifier to test/set flags cFlgAsmbExtn | cFlgAsmbCplt

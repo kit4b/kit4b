@@ -37,10 +37,12 @@ Original 'BioKanga' copyright notice has been retained and immediately follows t
 #endif
 #include "Markers.h"
 
-static int QSortAlignSeqLociSpecies(const void *p1,const void *p2);
-
 CMarkers::CMarkers(void)
 {
+m_hOutFile = -1; 
+m_pszBuff = NULL;
+m_hBEDOutFile = -1;
+m_pszBEDBuff = NULL;
 m_pAllocSeqNames = NULL;
 m_pAllocSeqNameIDsOfs = NULL;
 m_pSeqNameHashArray = NULL;
@@ -56,11 +58,12 @@ Reset();
 }
 
 
-// this process is not currently multithreaded but one day, real soon, it will be multithreaded :-)
+// this process is not currently not actually multithreaded but one day, real soon, it will be multithreaded :-)
 int
 CMarkers::Init(int NumThreads)	//Initialise resources for specified number of threads
 {
 int Rslt;
+m_NumThreads = NumThreads;
 if((Rslt=CreateMutexes())!= eBSFSuccess)
 	return(Rslt);
 return(eBSFSuccess);
@@ -110,6 +113,33 @@ if(m_pSeqNameHashArray != NULL)
 	m_pSeqNameHashArray = NULL;
 	}
 
+if(m_hOutFile != -1)
+	{
+	close(m_hOutFile);
+	m_hOutFile = -1;
+	}
+
+if(m_pszBuff != NULL)
+	{
+	delete m_pszBuff;
+	m_pszBuff = NULL;
+	}
+
+if(m_hBEDOutFile != -1)
+	{
+	close(m_hBEDOutFile);
+	m_hBEDOutFile = -1;
+	}
+
+if(m_pszBEDBuff != NULL)
+	{
+	delete m_pszBEDBuff;
+	m_pszBEDBuff = NULL;
+	}
+
+m_BuffIdx = 0;
+m_BEDBuffIdx = 0;
+
 DeleteMutexes();
 m_bMutexesCreated = false;
 m_NumSpecies = 0; 
@@ -128,6 +158,7 @@ m_szCurSeqName[0] = '\0';
 m_CurSeqNameID = 0;
 m_bSorted = false; 
 m_LSER = cDfltLSER;
+m_NumThreads = 1;
 }
 
 UINT16											// returned species identifier (1..cMaxSpecies)
@@ -661,6 +692,7 @@ return(Rslt);
 int 
 CMarkers::LoadSNPFile(int MinBases,			// accept SNPs with at least this number covering bases
 					  double MaxPValue,		// accept SNPs with at most this P-value
+					  double SNPMmajorPC,	// only accept SNP for processing if major allele >= this proportion of total allele counts
 					  char *pszRefSpecies,	// this is the reference species 
 					  char *pszProbeSpecies, // this species reads were aligned to the reference species from which SNPs were called 
 					  char *pszSNPFile)		// SNP file to parse and load
@@ -675,17 +707,14 @@ etSeqBase RefBase;
 int StartLoci;
 int Mismatches;
 char *pszRefBase;
-int MMBaseA;
-int MMBaseC;
-int MMBaseG;
-int MMBaseT;
-int MMBaseN;
+int BaseCnt[5];
 double LSER;
 
 int CoveringBases;
 int NumFilteredOut;
 int FilteredCovBases;
 int FilteredPValue;
+int FilteredMajor;
 
 CCSVFile *pCSV = new CCSVFile;
 if(pCSV == NULL)
@@ -729,6 +758,7 @@ NumElsParsed = 0;
 NumFilteredOut = 0;
 FilteredCovBases = 0;
 FilteredPValue = 0;
+FilteredMajor = 0;
 
 while((Rslt=pCSV->NextLine()) > 0)	// onto next line containing fields
 	{
@@ -742,11 +772,11 @@ while((Rslt=pCSV->NextLine()) > 0)	// onto next line containing fields
 	pCSV->GetInt(5,&StartLoci);
 	pCSV->GetInt(12,&Mismatches);
 	pCSV->GetText(13,&pszRefBase);
-	pCSV->GetInt(14,&MMBaseA);
-	pCSV->GetInt(15,&MMBaseC);
-	pCSV->GetInt(16,&MMBaseG);
-	pCSV->GetInt(17,&MMBaseT);
-	pCSV->GetInt(18,&MMBaseN);
+	pCSV->GetInt(14,&BaseCnt[0]);
+	pCSV->GetInt(15,&BaseCnt[1]);
+	pCSV->GetInt(16,&BaseCnt[2]);
+	pCSV->GetInt(17,&BaseCnt[3]);
+	pCSV->GetInt(18,&BaseCnt[4]);
 
 	TargSeqID = AddTargSeq(pszRefSeq);
 	if (TargSeqID == 0)
@@ -769,6 +799,13 @@ while((Rslt=pCSV->NextLine()) > 0)	// onto next line containing fields
 		continue;
 		}
 
+	if((double)Mismatches/CoveringBases < SNPMmajorPC)
+		{
+		NumFilteredOut += 1;
+		FilteredMajor += 1;
+		continue;
+		}
+
 	pCSV->GetDouble(19, &LSER);
 	if(LSER < cFloorLSER)		// use a floor to prevent potential div errors later in processing
 		LSER = cFloorLSER;
@@ -776,24 +813,39 @@ while((Rslt=pCSV->NextLine()) > 0)	// onto next line containing fields
 	switch(pszRefBase[0]) {
 		case 'a': case 'A':
 			RefBase = eBaseA;
-			MMBaseA = CoveringBases - Mismatches;
+			BaseCnt[0] = CoveringBases - Mismatches;
 			break;
 		case 'c': case 'C':
 			RefBase = eBaseC;
-			MMBaseC = CoveringBases - Mismatches;
+			BaseCnt[1] = CoveringBases - Mismatches;
 			break;
 		case 'g': case 'G':
 			RefBase = eBaseG;
-			MMBaseG = CoveringBases - Mismatches;
+			BaseCnt[2] = CoveringBases - Mismatches;
 			break;
 		case 't': case 'T':
 			RefBase = eBaseT;
-			MMBaseT = CoveringBases - Mismatches;
+			BaseCnt[3] = CoveringBases - Mismatches;
 			break;
 		default:
 			RefBase = eBaseN;
-			MMBaseN = CoveringBases - Mismatches;
+			BaseCnt[4] = CoveringBases - Mismatches;
 			break;
+		}
+
+	int BaseIdx;
+	for(BaseIdx = 0; BaseIdx < 5; BaseIdx++)
+		{
+		if(BaseIdx == RefBase)
+			continue;
+		if(((double)BaseCnt[BaseIdx] + 1)/CoveringBases >= SNPMmajorPC)
+			break;
+		}
+	if(BaseIdx > 4)
+		{
+		NumFilteredOut += 1;
+		FilteredMajor += 1;
+		continue;
 		}
 
 	Rslt64 = AddLoci(pszRefSpecies,		// reads were aligned to this cultivar or species
@@ -801,11 +853,11 @@ while((Rslt=pCSV->NextLine()) > 0)	// onto next line containing fields
 				StartLoci,		// loci within target sequence at which SNPs observed
 				RefBase,		// loci has this reference base
 				pszProbeSpecies,// reads were aligned from this cultivar or species
-				MMBaseA,		// number instances probe base A aligned to TargRefBase 
-				MMBaseC,		// number instances probe base C aligned to TargRefBase
-				MMBaseG,		// number instances probe base G aligned to TargRefBase
-				MMBaseT,		// number instances probe base T aligned to TargRefBase
-				MMBaseN,		// number instances probe base U aligned to TargRefBase
+				BaseCnt[0],		// number instances probe base A aligned to TargRefBase 
+				BaseCnt[1],		// number instances probe base C aligned to TargRefBase
+				BaseCnt[2],		// number instances probe base G aligned to TargRefBase
+				BaseCnt[3],		// number instances probe base T aligned to TargRefBase
+				BaseCnt[4],		// number instances probe base U aligned to TargRefBase
 				LSER);			// local sequencing error rate
 
 	if(Rslt64 < 1)
@@ -818,8 +870,8 @@ while((Rslt=pCSV->NextLine()) > 0)	// onto next line containing fields
 if(pCSV != NULL)
 	delete pCSV;
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Parsed %d SNPs from file: %s",NumElsParsed,pszSNPFile);
-gDiagnostics.DiagOut(eDLInfo,gszProcName,"Accepted %d SNPs, filtered out %d high P-Value (> %.3f), filtered out %d low coverage ( < %d bases)",
-					NumElsParsed - NumFilteredOut, FilteredPValue, MaxPValue, FilteredCovBases, MinBases);
+gDiagnostics.DiagOut(eDLInfo,gszProcName,"Accepted %d SNPs, filtered out - %d high P-Value, %d low coverage, %d major allele",
+					NumElsParsed - NumFilteredOut, FilteredPValue, FilteredCovBases, FilteredMajor);
 m_NumSSNPLoci = m_UsedAlignLoci;
 return(NumElsParsed - NumFilteredOut);
 }
@@ -1291,7 +1343,7 @@ return(TotSimulated);
 int
 CMarkers::IdentSpeciesSpec(int AltMaxCnt,				// max count allowed for base being processed in any other species, 0 if no limit
 						int MinCnt,						// min count required for base being processed in species
-						double SNPMmajorPC,				// to be processed major putative SNP base must be at least this percentage of total
+						double SNPMmajorPC,				// to be processed major putative SNP base must be at least this proportion of total
 						int MinSpeciesWithCnts,			// must be at least this number of species with base counts more than MinSpeciesTotCntThres - 0 if no limit 
 						int MinSpeciesTotCntThres)		// individual species must have at least this number of total bases at SNP loci - 0 if no threshold
 
@@ -1350,8 +1402,8 @@ for(AlignIdx = 0; AlignIdx < m_UsedAlignLoci; AlignIdx += NumSpecies, pAlign += 
 		BestAcceptConf = 0.0;
 		for(BaseIdx = 0; BaseIdx < 4; BaseIdx++)
 			{
-			CurConf = (pAlignSpecies->ProbeBaseCnts[BaseIdx] / (double)pAlignSpecies->TotBases);
-			if(pAlignSpecies->ProbeBaseCnts[BaseIdx] >= (UINT32)MinCnt && ((CurConf * 100.0) >= SNPMmajorPC))
+			CurConf = ((pAlignSpecies->ProbeBaseCnts[BaseIdx] + 1) / (double)pAlignSpecies->TotBases);
+			if(pAlignSpecies->ProbeBaseCnts[BaseIdx] >= (UINT32)MinCnt && (CurConf >= SNPMmajorPC))
 				{
 				bAcceptSpec = true;
 				pAlignSpeciesA = pAlign;
@@ -1398,12 +1450,10 @@ CMarkers::Report(char *pszRefGenome,		// reference genome assembly against which
 			char *pszReportFile,			// report to this file
 			int MinSpeciesWithCnts,			// must be at least this number of species with base counts more than MinSpeciesTotCntThres - 0 if no limit 
 			int MinSpeciesTotCntThres,		// individual species must have at least this number of total bases at SNP loci - 0 if no limit
-			bool bSloughRefOnly)			// do not report if no inter-cultivar SNP marker, i.e if cultivars all same with the polymorphic site relative to reference only 
+			bool bSloughRefOnly,			// do not report if no inter-cultivar SNP marker, i.e if cultivars all same with the polymorphic site relative to reference only
+			bool bSloughNonHetero)			// do not report unless all cultivars are relative heterozygotic - no two cultivars have same base 
 {
 UINT32 Idx;
-int m_hOutFile;
-char *pszBuff;
-int BuffIdx;
 char cBase;
 tsAlignLoci *pAlign;
 tsAlignLoci *pTmpAlign;
@@ -1413,6 +1463,7 @@ UINT32 NumCultivars;
 UINT32 PrevTargSeqID;
 INT64 NumSloughed;
 INT64 NumReported;
+char szBEDReportFile[_MAX_PATH+1];
 
 SortTargSeqLociSpecies();
 
@@ -1435,30 +1486,67 @@ if(m_hOutFile < 0)
 	return(eBSFerrCreateFile);
 	}
 
-if((pszBuff = new char [cRptBuffSize]) == NULL)
+if((m_pszBuff = new char [cRptBuffSize]) == NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Report: unable to allocate memory for buffering reports");
 	Reset();
 	return(eBSFerrMem);
 	}
-
 NumCultivars = m_NumSpecies - 1;
-BuffIdx = 0;
-BuffIdx += sprintf(&pszBuff[BuffIdx],"\"%s:TargSeq\",\"Loci\",\"TargBase\",\"NumSpeciesWithCnts\"",pszRefGenome);
+
+// only generating a BED if maximum of 4 cultivars and bSloughNonHetero
+if(NumCultivars <= 4 && bSloughNonHetero)
+	{
+	int NameLen = (int)strlen(pszReportFile);
+	strcpy(szBEDReportFile,pszReportFile);
+	if(NameLen > 4 && !stricmp(&szBEDReportFile[NameLen-4],".csv"))
+		szBEDReportFile[NameLen-4] = '\0';
+	strcat(szBEDReportFile,".bed");
+#ifdef _WIN32
+	m_hBEDOutFile = open(szBEDReportFile,O_CREATETRUNC );
+#else
+	if((m_hBEDOutFile = open(szBEDReportFile,O_RDWR | O_CREAT,S_IREAD | S_IWRITE))!=-1)
+		if(ftruncate(m_hBEDOutFile,0)!=0)
+				{
+				gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to truncate %s - %s",szBEDReportFile,strerror(errno));
+				Reset();
+				return(eBSFerrCreateFile);
+				}
+#endif
+
+	if(m_hBEDOutFile < 0)
+		{
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: unable to create/truncate output file '%s'",szBEDReportFile);
+		Reset();
+		return(eBSFerrCreateFile);
+		}
+
+	if((m_pszBEDBuff = new char [cRptBuffSize]) == NULL)
+		{
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Report: unable to allocate memory for buffering BED");
+		Reset();
+		return(eBSFerrMem);
+		}
+
+	m_BEDBuffIdx = sprintf(m_pszBEDBuff, "track name=\"SNP Dirac loci\" description=\"SNP Dirac Loci\" useScore=0\n");
+	}
+
+
+m_BuffIdx = sprintf(m_pszBuff,"\"%s:TargSeq\",\"Loci\",\"TargBase\",\"NumSpeciesWithCnts\"",pszRefGenome);
 for(Idx = 0; Idx < NumCultivars; Idx++)
 	{
-	BuffIdx += sprintf(&pszBuff[BuffIdx],",\"%s:CntsSrc\",\"%s:Base\",\"%s:LSER\",\"%s:BaseCntTot\",\"%s:BaseCntA\",\"%s:BaseCntC\",\"%s:BaseCntG\",\"%s:BaseCntT\",\"%s:BaseCntN\"",
+	m_BuffIdx += sprintf(&m_pszBuff[m_BuffIdx],",\"%s:CntsSrc\",\"%s:Base\",\"%s:LSER\",\"%s:BaseCntTot\",\"%s:BaseCntA\",\"%s:BaseCntC\",\"%s:BaseCntG\",\"%s:BaseCntT\",\"%s:BaseCntN\"",
 				pszRelGenomes[Idx],pszRelGenomes[Idx],pszRelGenomes[Idx],pszRelGenomes[Idx],pszRelGenomes[Idx],pszRelGenomes[Idx],pszRelGenomes[Idx],pszRelGenomes[Idx],pszRelGenomes[Idx]);
-	if((BuffIdx + (cRptBuffSize/4)) > cRptBuffSize)
+	if((m_BuffIdx + (cRptBuffSize/4)) > cRptBuffSize)
 		{
-		CUtility::RetryWrites(m_hOutFile, pszBuff, BuffIdx);
-		BuffIdx = 0;
+		CUtility::RetryWrites(m_hOutFile, m_pszBuff, m_BuffIdx);
+		m_BuffIdx = 0;
 		}
 	}
-if(BuffIdx > 0)
+if(m_BuffIdx > 0)
 	{
-	CUtility::RetryWrites(m_hOutFile,pszBuff,BuffIdx);
-	BuffIdx = 0;
+	CUtility::RetryWrites(m_hOutFile,m_pszBuff,m_BuffIdx);
+	m_BuffIdx = 0;
 	}
 
 pAlign = &m_pAllocAlignLoci[0];
@@ -1490,12 +1578,26 @@ for(LociIdx = 0; LociIdx < m_UsedAlignLoci; LociIdx += NumCultivars)
 		continue;
 		}
 
+	if(bSloughRefOnly) // user may have requested that only variants between the cultivars are of interest; if any cultivar has a indeterminate base then slough
+		{
+		pTmpAlign = pAlign;
+		for(ChkIdx = 0; ChkIdx < NumCultivars; ChkIdx++,pTmpAlign++)
+			{
+			if(pTmpAlign->CultSpecBase == eBaseN)
+				break;
+			}
+		if(ChkIdx != NumCultivars)	// at least 1 cultivar was indeterminate?
+			{
+			NumSloughed += 1;
+			continue;
+			}
+		}
+
 	// user may have requested that only variants between the cultivars are of interest; if all cultivars have same variant, even if different to reference, then slough
-	if(bSloughRefOnly)	
+	if(bSloughNonHetero)
 		{
 		pTmpAlign = pAlign;
 		UINT8 CultBase = 0x0ff;
-		
 		for(ChkIdx = 0; ChkIdx < NumCultivars; ChkIdx++,pTmpAlign++)
 			{
 			if(!pTmpAlign->FiltLowTotBases)
@@ -1513,23 +1615,23 @@ for(LociIdx = 0; LociIdx < m_UsedAlignLoci; LociIdx += NumCultivars)
 			continue;
 			}
 		}
-
+	char RefBase;
 	pTmpAlign = pAlign;
 	switch(pTmpAlign->TargRefBase) {
 		case eBaseA:
-			cBase = 'A';
+			RefBase = 'A';
 			break;
 		case eBaseC:
-			cBase = 'C';
+			RefBase = 'C';
 			break;
 		case eBaseG:
-			cBase = 'G';
+			RefBase = 'G';
 			break;
 		case eBaseT:
-			cBase = 'T';
+			RefBase = 'T';
 			break;
-		case eBaseN:
-			cBase = 'N';
+		default:
+			RefBase = 'N';
 			break;
 		}
 
@@ -1538,14 +1640,16 @@ for(LociIdx = 0; LociIdx < m_UsedAlignLoci; LociIdx += NumCultivars)
 		if((pszTargSeq = SeqIDtoName(pTmpAlign->TargSeqID))==NULL)
 			{
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Report: unable to locate target sequence name for identifier: %u", pTmpAlign->TargSeqID);
-			delete []pszBuff;
 			Reset();
 			return(eBSFerrInternal);
 			}
 		PrevTargSeqID = pTmpAlign->TargSeqID;
 		}
-	BuffIdx += sprintf(&pszBuff[BuffIdx], "\n\"%s\",%d,\"%c\",%d", pszTargSeq, pTmpAlign->TargLoci, cBase, pTmpAlign->NumSpeciesWithCnts);
-		
+	m_BuffIdx += sprintf(&m_pszBuff[m_BuffIdx], "\n\"%s\",%d,\"%c\",%d", pszTargSeq, pTmpAlign->TargLoci, RefBase, pTmpAlign->NumSpeciesWithCnts);
+		// if also reporting in BED format
+	if(m_hBEDOutFile != -1)
+		m_BEDBuffIdx += sprintf(&m_pszBEDBuff[m_BEDBuffIdx],"%s\t%u\t%u\t", pszTargSeq, pTmpAlign->TargLoci, pTmpAlign->TargLoci + 1);
+
 	for(ChkIdx = 0; ChkIdx < (UINT16)NumCultivars; ChkIdx++, pTmpAlign++)
 		{
 		switch(pTmpAlign->CultSpecBase) {
@@ -1565,32 +1669,72 @@ for(LociIdx = 0; LociIdx < m_UsedAlignLoci; LociIdx += NumCultivars)
 					cBase = 'N';
 					break;
 				}
-		BuffIdx += sprintf(&pszBuff[BuffIdx],",\"%c\",\"%c\",%f,%u,%u,%u,%u,%u,%u",(pTmpAlign->Flags & cFlgSNPcnts) ? 'S' : 'I',	cBase,
+		m_BuffIdx += sprintf(&m_pszBuff[m_BuffIdx],",\"%c\",\"%c\",%f,%u,%u,%u,%u,%u,%u",(pTmpAlign->Flags & cFlgSNPcnts) ? 'S' : 'I',	cBase,
 						pTmpAlign->LSER, pTmpAlign->TotBases, pTmpAlign->ProbeBaseCnts[0], pTmpAlign->ProbeBaseCnts[1], pTmpAlign->ProbeBaseCnts[2], pTmpAlign->ProbeBaseCnts[3], pTmpAlign->ProbeBaseCnts[4]);
-		if((BuffIdx + (cRptBuffSize / 8)) > cRptBuffSize)
-			{
-			CUtility::RetryWrites(m_hOutFile,pszBuff,BuffIdx);
-			BuffIdx = 0;
-			}
+
+		if(m_hBEDOutFile != -1)
+			m_BEDBuffIdx += sprintf(&m_pszBEDBuff[m_BEDBuffIdx],"%c%c",cBase,ChkIdx==NumCultivars-1 ? '\n':',');
 		}
+
+	if((m_BuffIdx + (cRptBuffSize / 4)) > cRptBuffSize)
+		{
+		CUtility::RetryWrites(m_hOutFile,m_pszBuff,m_BuffIdx);
+		m_BuffIdx = 0;
+		}
+
+	if(m_hBEDOutFile != -1 && ((m_BEDBuffIdx + (cRptBuffSize / 4)) > cRptBuffSize))
+			{
+			CUtility::RetryWrites(m_hBEDOutFile,m_pszBEDBuff,m_BEDBuffIdx);
+			m_BEDBuffIdx = 0;
+			}
+
 	NumReported += 1;
 	}
-if(BuffIdx && pszBuff != NULL)
-	{
-	CUtility::RetryWrites(m_hOutFile,pszBuff,BuffIdx);
-	BuffIdx = 0;
-	}
-#ifdef _WIN32
-_commit(m_hOutFile);
-#else
-fsync(m_hOutFile);
-#endif
-close(m_hOutFile);
-m_hOutFile = -1;
-gDiagnostics.DiagOut(eDLInfo, gszProcName, "Reported: Processed %lld from putative SNP loci accepting %lld", NumLociProc, NumReported);
-if(pszBuff != NULL)
-	delete []pszBuff;
 
+if(m_hOutFile != -1)
+	{
+	if(m_BuffIdx && m_pszBuff != NULL)
+		{
+		CUtility::RetryWrites(m_hOutFile,m_pszBuff,m_BuffIdx);
+		m_BuffIdx = 0;
+		}
+#ifdef _WIN32
+	_commit(m_hOutFile);
+#else
+	fsync(m_hOutFile);
+#endif
+	close(m_hOutFile);
+	m_hOutFile = -1;
+
+	if(m_pszBuff != NULL)
+		{
+		delete m_pszBuff;
+		m_pszBuff = NULL;
+		}
+	}
+
+if(m_hBEDOutFile != -1)
+	{
+	if(m_BEDBuffIdx && m_pszBEDBuff != NULL)
+		{
+		CUtility::RetryWrites(m_hBEDOutFile,m_pszBEDBuff,m_BEDBuffIdx);
+		m_BEDBuffIdx = 0;
+		}
+#ifdef _WIN32
+	_commit(m_hBEDOutFile);
+#else
+	fsync(m_hBEDOutFile);
+#endif
+	close(m_hBEDOutFile);
+	m_hBEDOutFile = -1;
+	if(m_pszBEDBuff != NULL)
+		{
+		delete m_pszBEDBuff;
+		m_pszBEDBuff = NULL;
+		}
+	}
+
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "Reported: Processed %lld from putative SNP loci accepting %lld", NumLociProc, NumReported);
 return(NumReported);
 }
 

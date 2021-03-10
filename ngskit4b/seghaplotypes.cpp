@@ -23,6 +23,7 @@ int SegHaplotypes(eModeSH PMode,	// processing mode
 			char *pszTrackDescr,	// track descriptor
 			bool bDontScore,		// don't score haplotype bin segments
 			int BinSizeKbp,			// segmentation sized bins
+			char *pszSNPMarkers,		// SNP marker loci association file
 			char* pszInFile,		// input SAM file
 			char* pszOutFile);		// output to this file
 
@@ -51,6 +52,7 @@ seghaplotypes(int argc, char **argv)
 	 char szTrackDescr[_MAX_PATH];	// track description
 	 int BinSizeKbp;				// number of alignments over these sized bins
 	 char szInFile[_MAX_PATH];		// input SAM file
+	 char szSNPMarkers[_MAX_PATH];	// input SNP marker loci association file
 	 char szOutFile[_MAX_PATH];		 // output file
 
 	struct arg_lit *help = arg_lit0 ("h", "help", "print this help and exit");
@@ -65,11 +67,12 @@ seghaplotypes(int argc, char **argv)
 	struct arg_str *trackname = arg_str0("t","trackname","<str>","BED Track name");
 	struct arg_str *trackdescr = arg_str0("d","trackdescr","<str>","BED Track description");
 	struct arg_file *infile = arg_file1("i", "in", "<file>", "SAM/BAM input file(s) (can contain wildcards for multiple SAM file processing)");
+	struct arg_file *insnpmarkers = arg_file0("I", "snpmarkers", "<file>", "SNP marker loci association file");
 	struct arg_file *outfile = arg_file1 ("o", "out", "<file>", "BED output file");
 	struct arg_end *end = arg_end (200);
 
 	void *argtable[] = { help,version,FileLogLevel,LogFile,
-						pmode,nosplit,trackname,trackdescr,dontscore,binsizekbp,infile,outfile,end };
+						pmode,nosplit,trackname,trackdescr,dontscore,binsizekbp,insnpmarkers,infile,outfile,end };
 
 	char **pAllArgs;
 	int argerrors;
@@ -192,6 +195,13 @@ seghaplotypes(int argc, char **argv)
 #else
 		NumberOfProcessors = sysconf (_SC_NPROCESSORS_CONF);
 #endif
+		if(insnpmarkers->count)
+			{
+			strcpy (szSNPMarkers, insnpmarkers->filename[0]);
+			CUtility::TrimQuotedWhitespcExtd (szSNPMarkers);
+			}
+		else
+			szSNPMarkers[0] = '\0';
 
 		strcpy (szInFile, infile->filename[0]);
 		CUtility::TrimQuotedWhitespcExtd (szInFile);
@@ -227,7 +237,10 @@ seghaplotypes(int argc, char **argv)
 		gDiagnostics.DiagOutMsgOnly (eDLInfo, "Track name : '%s'", szTrackName);
 		gDiagnostics.DiagOutMsgOnly (eDLInfo, "Track name : '%s'", szTrackDescr);
 		gDiagnostics.DiagOutMsgOnly (eDLInfo, "Score haplotype segment bins : '%s'", bDontScore ? "No" : "Yes");
-		gDiagnostics.DiagOutMsgOnly (eDLInfo, "Counts accumulated into maximal sized bins of : %dKbp'", BinSizeKbp);	
+		gDiagnostics.DiagOutMsgOnly (eDLInfo, "Counts accumulated into maximal sized bins of : %dKbp'", BinSizeKbp);
+		if(szSNPMarkers[0] != '\0')
+			gDiagnostics.DiagOutMsgOnly (eDLInfo, "SNP marker loci file : '%s'", szSNPMarkers);
+		gDiagnostics.DiagOutMsgOnly (eDLInfo, "Output file : '%s'", szOutFile);
 		gDiagnostics.DiagOutMsgOnly (eDLInfo, "Input file(s) : '%s'", szInFile);
 		gDiagnostics.DiagOutMsgOnly (eDLInfo, "Output file : '%s'", szOutFile);
 
@@ -243,6 +256,7 @@ seghaplotypes(int argc, char **argv)
 						szTrackDescr,		// track descriptor
 						bDontScore,			// don't score haplotype segment bins
 						BinSizeKbp,		// bin size in Kbp
+						szSNPMarkers,	// SNP marker loci association file
 						szInFile,		// input SAM file
 						szOutFile);		// output to this file
 		Rslt = Rslt >= 0 ? 0 : 1;
@@ -270,6 +284,8 @@ m_pSAMfile=NULL;
 m_pBAMalignment =NULL;
 m_pSAMloci = NULL;
 m_pBins = NULL;
+m_pAllocSNPSites = NULL;
+m_pSNPMarkerCSV = NULL;
 m_hOutFile = -1;			// output file handle
 Reset();
 }
@@ -284,9 +300,12 @@ if(m_pOutBuffer != NULL)
 	delete []m_pOutBuffer;
 if(m_pSAMfile!=NULL)
 	delete m_pSAMfile;
+if(m_pSNPMarkerCSV != NULL)
+	delete m_pSNPMarkerCSV;
 
 if(m_pBAMalignment !=NULL)
 	delete m_pBAMalignment;
+
 
 if(m_pBins != NULL)
 	delete []m_pBins;
@@ -298,6 +317,16 @@ if (m_pSAMloci != NULL)
 #else
 	if (m_pSAMloci != MAP_FAILED)
 		munmap(m_pSAMloci, m_AllocdSAMlociMem);
+#endif
+	}
+
+if(m_pAllocSNPSites != NULL)
+	{
+#ifdef _WIN32
+	free(m_pAllocSNPSites);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
+#else
+	if (m_pAllocSNPSites != MAP_FAILED)
+		munmap(m_pAllocSNPSites, m_AllocMemSNPSites);
 #endif
 	}
 }
@@ -334,6 +363,22 @@ if (m_pSAMloci != NULL)
 	m_pSAMloci = NULL;
 	}
 
+if(m_pAllocSNPSites != NULL)
+	{
+#ifdef _WIN32
+	free(m_pAllocSNPSites);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
+#else
+	if (m_pAllocSNPSites != MAP_FAILED)
+		munmap(m_pAllocSNPSites, m_AllocMemSNPSites);
+#endif
+	m_pAllocSNPSites = NULL;
+	}
+
+if(m_pSNPMarkerCSV != NULL)
+	{
+	delete m_pSNPMarkerCSV;
+	m_pSNPMarkerCSV = NULL;
+	}
 if(m_pBins != NULL)
 	{
 	delete []m_pBins;
@@ -366,6 +411,20 @@ m_szFounders[0] = '\0';
 m_szFounderIdx[0] = 0;
 
 m_AllocdBins = 0;
+
+m_ParentsCommonAncestor[0] = '\0';
+m_NumParents = 0;
+memset(m_Parents,0,sizeof(m_Parents));
+m_ReadsetIdentifier[0] = '\0';
+
+m_UsedSNPSites = 0;
+m_AllocSNPSites = 0;
+m_AllocMemSNPSites = 0;
+
+m_NumReadsetNames=0;
+m_NxtszReadsetIdx=0; 
+m_szReadsetNames[0]='\0';
+memset(m_szReadsetIdx,0,sizeof(m_szReadsetIdx));
 }
 
 
@@ -375,6 +434,7 @@ int SegHaplotypes(eModeSH PMode,	// processing mode
 			char *pszTrackDescr,	// track descriptor
 			bool bDontScore,		// don't score haplotype bin segments
 			int BinSizeKbp,			// segmentation sized bins
+			char *pszSNPMarkers,		// SNP marker loci association file
 			char* pszInFile,		// input SAM file
 			char* pszOutFile)		// output to this file
 {
@@ -386,7 +446,7 @@ if((pSegHaplotypes = new CSegHaplotypes) == NULL)
 	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Unable to instantiate instance of CSegHaplotypes");
 	return(eBSFerrObj);
 	}
-Rslt = pSegHaplotypes->Process(PMode,bNoSplit,pszTrackName,pszTrackDescr,bDontScore,BinSizeKbp,pszInFile,pszOutFile);
+Rslt = pSegHaplotypes->Process(PMode,bNoSplit,pszTrackName,pszTrackDescr,bDontScore,BinSizeKbp,pszSNPMarkers,pszInFile,pszOutFile);
 delete pSegHaplotypes;
 return(Rslt);
 }
@@ -398,6 +458,7 @@ CSegHaplotypes::Process(eModeSH PMode,			// processing mode
 			char *pszTrackDescr,	// track descriptor
 			bool bDontScore,		// don't score haplotype bin segments
 			int BinSizeKbp,			// bin size in Kbp
+			char *pszSNPMarkers,		// SNP marker loci association file
 			char* pszInFile,		// input SAM file
 			char* pszOutFile)		// output to this file
 {
@@ -408,6 +469,7 @@ Rslt = GenBinnedSegments(PMode,			// processing mode
 			pszTrackDescr,				// track descriptor
 			bDontScore,					// don't score haplotype bin segments
 			BinSizeKbp,					// Wiggle score is number of alignments over this sized bin
+			pszSNPMarkers,				// SNP marker loci association file
 			pszInFile,					// alignments are in this SAM/BAM file 
 			pszOutFile);				// write out Wiggle to this file
 return(Rslt);
@@ -442,12 +504,13 @@ int NumAcceptedAlignments;
 int NumAlignmentsProc;
 uint32_t NumMissingFeatures = 0;
 uint32_t NumUnmapped = 0;
+
+uint32_t NumSNPsOverlaid;
+uint32_t AlignmentsWithSNPSites;
 char szGenome[cMaxDatasetSpeciesChrom];
 char szContig[cMaxDatasetSpeciesChrom+cMaxSHLenPrefix+1];
 int ContigLen;
 int NumMappedChroms;
-
-
 
 tsTargSeq *pTargSeq;
 char *pszRefSeqName;
@@ -460,7 +523,8 @@ int TargID;
 
 NumMappedChroms = 0;
 NumBinsRequired = 0;
-
+NumSNPsOverlaid = 0;
+AlignmentsWithSNPSites = 0;
 
 // open SAM for reading
 if(pszSAMFile == NULL || *pszSAMFile == '\0')
@@ -621,7 +685,30 @@ while(Rslt >= eBSFSuccess && (LineLen = m_pSAMfile->GetNxtSAMline((char *)m_pInB
 	pSAMloci->TargID = pTargSeq->TargSeqID;
 	pSAMloci->FounderID = FounderID;
 	pSAMloci->TargLoci = m_pBAMalignment->pos;
+	pSAMloci->AlignLen = m_pBAMalignment->end + 1 - m_pBAMalignment->pos;
+	pSAMloci->bASense = ((m_pBAMalignment->flag_nc >> 16) & cSAMFlgAS) ? 1 : 0;
+	pSAMloci->NumMarkerSNPs = 0;
 	pSAMloci->Cnt = 1;
+
+// following code determining if read alignment overlapped a marker SNP  will likely need much optimization!
+// currently just a linear scan along the alignment checking if a loci on the alignment same as a marker SNP loci
+// not checking if alignment base is the expected, as assuming no substitutions were allowed in the alignment, and
+// even if a few substitution were allowed then probability of a substitution at the exact marker loci is relatively low
+	if(m_UsedSNPSites)
+		{
+		tsSHSNPSSite *pSNPSite;
+		int SitesInAlignment = 0;
+		for(uint32_t ScanIdx = pSAMloci->TargLoci; ScanIdx < pSAMloci->TargLoci+pSAMloci->AlignLen; ScanIdx++)
+			if((pSNPSite=LocateSNPSite(pSAMloci->TargID,ScanIdx))!=NULL)
+				{
+				if(pSAMloci->NumMarkerSNPs < 127)
+					pSAMloci->NumMarkerSNPs += 1;
+				NumSNPsOverlaid++;
+				SitesInAlignment++;
+				}
+		if(SitesInAlignment)
+			AlignmentsWithSNPSites++;
+		}
 	NumAcceptedAlignments++;
 	}
 
@@ -638,8 +725,10 @@ if(NumAcceptedAlignments == 0)		// ugh, no alignments!
 	return(eBSFSuccess);			// not an error!
 	}
 else
-	gDiagnostics.DiagOut(eDLInfo, gszProcName, "ParseSAMAlignments: Accepted %d total alignments onto %d target seqs for binning from  %d processed",NumAcceptedAlignments, m_NumAlignedTargSeqs, NumAlignmentsProc);
+	{
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "ParseSAMAlignments: Accepted %d total alignments overlaying %d SNP markers onto %d target seqs for binning from  %d processed",NumAcceptedAlignments, AlignmentsWithSNPSites, m_NumAlignedTargSeqs, NumAlignmentsProc);
 
+	}
 
 return(NumAcceptedAlignments);
 }
@@ -652,6 +741,7 @@ CSegHaplotypes::GenBinnedSegments(eModeSH PMode,			// processing mode
 			char *pszTrackDescr,	// track descriptor
 			bool bDontScore,		// don't score haplotype bin segments
 			uint32_t BinSizeKbp,	// Wiggle score is number of alignments over this sized bins
+			char *pszSNPMarkers,		// SNP marker loci association file
 			char* pszInFile,		// alignments are in this SAM/BAM file 
 			char* pszOutFile)		// write out segments to this file
 {
@@ -723,6 +813,31 @@ m_AllocdBins = 0;
 
 AddFounder((char *)"NA");			// must have a default in case unable to parse out a founder tag
 
+// load SNP markers if file has been specified
+if(!(pszSNPMarkers == NULL || pszSNPMarkers[0] == '\0'))
+	{
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Processing SNPs from snpmarkers file '%s", pszSNPMarkers);
+	if((m_pSNPMarkerCSV = new CCSVFile)==NULL)
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenBinnedSegments: Unable to instantiate class CCSVFile for '%s'",pszSNPMarkers);
+		Reset();
+		return(eBSFerrInternal);
+		}
+	if((m_pSNPMarkerCSV->Open(pszSNPMarkers))!=eBSFSuccess)
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenBinnedSegments: Unable to open SNP markers file '%s'",pszSNPMarkers);
+		Reset();
+		return(eBSFerrOpnFile);
+		}
+	if((Rslt = (teBSFrsltCodes)ProcessSnpmarkersSNPs(pszSNPMarkers)) < eBSFSuccess)
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenBinnedSegments: Errors processing SNP markers file '%s'",pszSNPMarkers);
+		Reset();
+		return(Rslt);
+		}
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Completed processing SNPs (%u accepted) from snpmarkers file '%s", (uint32_t)(m_UsedSNPSites & 0x0ffffffff), pszSNPMarkers);
+	}
+	
 CSimpleGlob glob(SG_GLOB_FULLSORT);
 glob.Init();
 if(glob.Add(pszInFile) < SG_SUCCESS)
@@ -770,7 +885,6 @@ if((m_pBins = new tsSHBin[m_AllocdBins]) == NULL)
 	return(eBSFerrMem);
 	}
 memset(m_pBins,0,m_AllocdBins * sizeof(tsSHBin));
-
 
 pTargSeq = m_TargSeqs;
 for(TargSeqIdx = 0; TargSeqIdx < m_NumSeqNames; TargSeqIdx++,pTargSeq++)
@@ -825,6 +939,8 @@ for(LociIdx = 0; LociIdx < m_CurNumSAMloci; LociIdx++,pSAMloci++)
 	pBin = &m_pBins[pTargSeq->BinsOfs];
 	pBin += pSAMloci->TargLoci / (m_BinSizeKbp * 1000);
 	pBin->RawCnts[pSAMloci->FounderID-1]++;
+	if(pSAMloci->NumMarkerSNPs)
+		pBin->RawCnts[pSAMloci->FounderID-1]+=(cMarkerSNPBonus * pSAMloci->NumMarkerSNPs * pSAMloci->Cnt);
 	}
 
 // apply weighted smoothing. 50% of adjacent raw bin counts contribute to each bin smoothed counts
@@ -1149,14 +1265,14 @@ return((int)BinCnts);
 
 uint32_t		// returned sequence name identifier, 0 if unable to accept this chromosome name
 CSegHaplotypes::AddTargSeqName(char* pszSeqName,	// associate unique identifier with this sequence name
-								int SeqLen)			 // sequence is this length
+								uint32_t SeqLen)			// sequence is this length - SeqLen associated to sequence identifier will be maximum of all SeqLens specified for this pszSeqName
 {
 uint32_t SeqNameIdx;
 int SeqNameLen;
 tsTargSeq *pTargSeq;
 char *pszLAname;
 
-if(pszSeqName == NULL || pszSeqName[0] == '\0' || SeqLen == 0)
+if(pszSeqName == NULL || pszSeqName[0] == '\0')
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddTargSeqName: Invalid parameters");
 	return(0);
@@ -1168,11 +1284,8 @@ if((pTargSeq = LocateTargSeq(m_LASeqNameID)) != NULL)
 	pszLAname = &m_szSeqNames[pTargSeq->TargSeqNameOfs];
 	if(!stricmp(pszSeqName,pszLAname))
 		{
-		if(SeqLen != pTargSeq->TargSeqLen)
-			{
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddTargSeqName: Inconsistency in sequence lengths for '%s', previously %d but now %d",pszSeqName,pTargSeq->TargSeqLen,SeqLen);
-			return(0);
-			}
+		if(SeqLen > pTargSeq->TargSeqLen)
+			pTargSeq->TargSeqLen = SeqLen;
 		return(m_LASeqNameID);
 		}
 	}
@@ -1183,11 +1296,8 @@ for(SeqNameIdx = 0; SeqNameIdx < m_NumSeqNames; SeqNameIdx++)
 	pszLAname = &m_szSeqNames[m_TargSeqs[SeqNameIdx].TargSeqNameOfs];
 	if(!stricmp(pszSeqName, pszLAname))
 		{
-		if(SeqLen != m_TargSeqs[SeqNameIdx].TargSeqLen)
-			{
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddTargSeqName: Inconsistency in sequence lengths for '%s', previously %d but now %d",pszSeqName,m_TargSeqs[SeqNameIdx].TargSeqLen,SeqLen);
-			return(0);
-			}
+		if(SeqLen > m_TargSeqs[SeqNameIdx].TargSeqLen)
+			m_TargSeqs[SeqNameIdx].TargSeqLen = SeqLen;
 		m_LASeqNameID = m_TargSeqs[SeqNameIdx].TargSeqID;
 		return(m_LASeqNameID);
 		}
@@ -1309,6 +1419,272 @@ m_LAFounderID = m_NumFounders;
 return(m_NumFounders);
 }
 
+int		// returned readset identifier, < 1 if unable to accept this readset name
+CSegHaplotypes::AddReadset(char* pszReadset) // associate unique identifier with this readset name
+{
+int ReadsetIdx;
+int ReadsetNameLen;
+
+// iterate over all known readset in case this readset to add is a duplicate
+for(ReadsetIdx = 0; ReadsetIdx < m_NumReadsetNames; ReadsetIdx++)
+	if(!stricmp(pszReadset, &m_szReadsetNames[m_szReadsetIdx[ReadsetIdx]]))
+		return(ReadsetIdx + 1);
+
+// readset is not a duplicate
+ReadsetNameLen = (int)strlen(pszReadset);
+if((m_NxtszReadsetIdx + ReadsetNameLen + 1) > sizeof(m_szReadsetNames))
+	return(eBSFerrMaxEntries);
+if(m_NumReadsetNames == cMaxSHParents)
+	return(eBSFerrMaxEntries);
+
+m_szReadsetIdx[m_NumReadsetNames] = m_NxtszReadsetIdx;
+strcpy(&m_szReadsetNames[m_NxtszReadsetIdx], pszReadset);
+m_NxtszReadsetIdx += ReadsetNameLen + 1;
+return(++m_NumReadsetNames);
+}
+
+int 
+CSegHaplotypes::ProcessSnpmarkersSNPs(char *pszSNPMarkersFile)	// file containing SNP marker loci
+{
+	int Rslt;
+	int NumFields;
+	uint32_t ParentIdx;
+	uint32_t EstNumSNPs;
+	uint32_t NumSNPsParsed;
+	uint32_t RowNumber;
+	int ExpNumFields;
+
+	tsSHParent* pParent;
+
+	int NumParentsWithCnts;
+	uint32_t SiteSeqID;
+	uint32_t SiteLoci;
+	etSeqBase SiteBase[cMaxSHParents];
+
+	EstNumSNPs = m_pSNPMarkerCSV->EstNumRows();
+	NumSNPsParsed = 0;
+	RowNumber = 0;
+	ExpNumFields = 0;
+	m_NumParents = 0;
+
+	memset(SiteBase,eBaseN,sizeof(SiteBase));
+	while((Rslt = m_pSNPMarkerCSV->NextLine()) > 0)				// onto next line containing fields
+		{
+		RowNumber += 1;
+		NumFields = m_pSNPMarkerCSV->GetCurFields();
+		if(NumFields < cSSNPMarkerNumFields)
+			{
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Number of fields (%d) at row %d does not match expected fields for a snpmarkers file '%s'", NumFields, RowNumber, pszSNPMarkersFile, RowNumber);
+			Reset();
+			return(eBSFerrFieldCnt);
+			}
+		if(ExpNumFields && ExpNumFields != NumFields)
+			{
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Inconsistency in number of fields, previously %d but %d fields parsed from '%s' near line %d", ExpNumFields, NumFields, pszSNPMarkersFile, RowNumber);
+			Reset();
+			return(eBSFerrFieldCnt);
+			}
+		if(!ExpNumFields)
+			{
+			m_NumParents = (NumFields - 4) / 9;
+			if(((m_NumParents * 9) + 4) != NumFields)
+				{
+				gDiagnostics.DiagOut(eDLFatal, gszProcName, "Invalid number (%d) of fields parsed from '%s' near line %d, was this file generated by 'ngskit4b snpmarkers'?", NumFields, pszSNPMarkersFile, RowNumber);
+				Reset();
+				return(eBSFerrFieldCnt);
+				}
+			if(m_NumParents > cMaxSHParents)
+				{
+				gDiagnostics.DiagOut(eDLFatal, gszProcName, "Too many parents (%d) in '%s', max allowed is %d", m_NumParents, pszSNPMarkersFile, cMaxSHParents);
+				Reset();
+				return(eBSFerrFieldCnt);
+				}
+			ExpNumFields = NumFields;
+			}
+
+		if(RowNumber == 1)
+			{
+			if(m_pSNPMarkerCSV->IsLikelyHeaderLine())
+				{
+				if(!NumSNPsParsed)
+				{
+				// parse out target assembly name against which alignments were made and the parent names
+					char* pSrc;
+					char* pDst;
+					char Chr;
+					int Len;
+
+					m_pSNPMarkerCSV->GetText(1, &pSrc);
+					pDst = m_ParentsCommonAncestor;
+					Len = 0;
+					while(Len < sizeof(m_ParentsCommonAncestor) - 1 && (Chr = *pSrc++) && Chr != ':')
+						{
+						*pDst++ = Chr;
+						Len++;
+						*pDst = '\0';
+						}
+					memset(m_Parents, 0, sizeof(m_Parents));
+					for(ParentIdx = 0; ParentIdx < m_NumParents; ParentIdx++)
+						{
+						m_pSNPMarkerCSV->GetText(5 + (ParentIdx * 9), &pSrc);
+						pDst = m_Parents[ParentIdx].szName;
+						Len = 0;
+						while(Len < sizeof(m_Parents[ParentIdx].szName) - 1 && (Chr = *pSrc++) && Chr != ':')
+							{
+							*pDst++ = Chr;
+							Len++;
+							*pDst = '\0';
+							}
+						m_Parents[ParentIdx].FounderID = LocateFounder(m_Parents[ParentIdx].szName);
+						}
+					}
+				}
+			else
+				{
+				gDiagnostics.DiagOut(eDLFatal, gszProcName, "Expected CSV file '%s' first line to be a header line with  fully quoted field names", pszSNPMarkersFile);
+				Reset();
+				return(eBSFerrFieldCnt);
+				}
+			continue;
+			}
+
+		char* pszTxt;
+		m_pSNPMarkerCSV->GetText(1, &pszTxt);
+		if((SiteSeqID = AddTargSeqName(pszTxt)) == 0)
+			{
+			gDiagnostics.DiagOut(eDLWarn, gszProcName, "Failed to add identifier for sequence '%s'", pszTxt);
+			Reset();
+			return(eBSFerrMaxChroms);
+			}
+		m_pSNPMarkerCSV->GetInt(2, (int*)&SiteLoci);			// get "Loci"
+		m_pSNPMarkerCSV->GetInt(4, (int *)&NumParentsWithCnts);	// how many parents do have a representative base - must be same as number of parents in snpmarkers generated file
+		if(NumParentsWithCnts != m_NumParents)
+			{
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Expected number of parents with called bases (%d) to be %d in CSV file '%s' near line %d", NumParentsWithCnts, m_NumParents, pszSNPMarkersFile, RowNumber);
+			Reset();
+			return(eBSFerrNumRange);
+			}
+
+		int FieldIdx = 6;
+		pParent = m_Parents;
+		for(ParentIdx = 0; ParentIdx < m_NumParents; ParentIdx++, pParent++)
+			{
+			m_pSNPMarkerCSV->GetText(FieldIdx++, &pszTxt);			// get parent ":Base"
+			switch(*pszTxt) {
+				case 'a': case 'A':
+					SiteBase[ParentIdx] = eBaseA;
+					break;
+				case 'c': case 'C':
+					SiteBase[ParentIdx] = eBaseC;
+					break;
+				case 'g': case 'G':
+					SiteBase[ParentIdx] = eBaseG;
+					break;
+				case 't': case 'T': case 'u': case 'U':	// U in case RNA alignments..
+					SiteBase[ParentIdx] = eBaseT;
+					break;
+				default:
+					gDiagnostics.DiagOut(eDLFatal, gszProcName, "Expected SNP TargBase ('%s') to be one of 'ACGT' in CSV file '%s' near line %d", pszTxt, pszSNPMarkersFile, RowNumber);
+					Reset();
+					return(eBSFerrFieldCnt);
+				}
+			FieldIdx+=8;
+			}
+
+		// have all parents and their counts at the SNP loci
+		// iterate the parents and for every parent determine which bases are allelic and count occurrences over all parents
+	if(!AddSNPSite(SiteSeqID,SiteLoci,SiteBase[0],SiteBase[1],SiteBase[2],SiteBase[3]))
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Failed adding SNP site from CSV file '%s' near line %d", pszSNPMarkersFile, RowNumber);
+		Reset();
+		return(eBSFerrEntry);
+		}
+	}
+
+m_pSNPMarkerCSV->Close();
+delete m_pSNPMarkerCSV;
+m_pSNPMarkerCSV = NULL;
+
+if(m_UsedSNPSites > 1)
+	qsort(m_pAllocSNPSites, m_UsedSNPSites, sizeof(tsSHSNPSSite), SortSNPSites);
+
+return(eBSFSuccess);
+}
+
+size_t 
+CSegHaplotypes::AddSNPSite( uint32_t SiteSeqID,		// alignments were to this sequence - could be a chrom/contig/transcript
+			  uint32_t SiteLoci,			// loci within target sequence at which SNP for parents were observed
+			  etSeqBase P1Base,			// parent 1 base
+			  etSeqBase P2Base,			// parent 2 base
+			  etSeqBase P3Base,			// parent 3 base
+			  etSeqBase P4Base)			// parent 4 base
+{
+tsSHSNPSSite *pSNPSite;
+
+if(m_pAllocSNPSites == NULL)		// initial allocation?
+	{
+	size_t memreq = (size_t)cAllocSNPSites * sizeof(tsSHSNPSSite);
+
+#ifdef _WIN32
+	m_pAllocSNPSites = (tsSHSNPSSite *) malloc(memreq);	// initial and perhaps the only allocation
+	if(m_pAllocSNPSites == NULL)
+		{
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddLoci: Memory allocation of %lld bytes - %s",(INT64)memreq,strerror(errno));
+		return(eBSFerrMem);
+		}
+#else
+	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
+	m_pAllocSNPSites = (tsSHSNPSSite *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+	if(m_pAllocSNPSites == MAP_FAILED)
+		{
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddLoci: Memory allocation of %lld bytes through mmap()  failed - %s",(INT64)memreq,strerror(errno));
+		m_pAllocSNPSites = NULL;
+		return(eBSFerrMem);
+		}
+#endif
+	m_AllocMemSNPSites = memreq;
+	m_UsedSNPSites = 0;
+	m_AllocSNPSites = cAllocSNPSites;
+	}
+else
+	{
+	if(m_AllocSNPSites <= (m_UsedSNPSites + 100))	// play safe when increasing allocation
+		{
+		size_t memreq;
+		size_t AllocTo;
+		AllocTo = (size_t)cAllocSNPSites + m_AllocMemSNPSites;
+		memreq = AllocTo * sizeof(tsSHSNPSSite);
+		gDiagnostics.DiagOut(eDLInfo,gszProcName,"AddLoci: memory re-allocation to %lld from %lld bytes",(INT64)memreq,(INT64)m_AllocMemSNPSites);
+
+#ifdef _WIN32
+		pSNPSite = (tsSHSNPSSite *) realloc(m_pAllocSNPSites,memreq);
+#else
+		pSNPSite = (tsSHSNPSSite *)mremap(m_pAllocSNPSites,m_AllocMemSNPSites,memreq,MREMAP_MAYMOVE);
+		if(pSNPSite == MAP_FAILED)
+			pSNPSite = NULL;
+#endif
+		if(pSNPSite == NULL)
+			{
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddLoci: Memory re-allocation to %lld bytes - %s",(INT64)memreq,strerror(errno));
+			return(eBSFerrMem);
+			}
+		m_pAllocSNPSites = pSNPSite;
+		m_AllocMemSNPSites = memreq;
+		m_AllocSNPSites = AllocTo; 
+		}
+	}
+
+pSNPSite = &m_pAllocSNPSites[m_UsedSNPSites++];
+
+pSNPSite->SiteId = m_UsedSNPSites;
+pSNPSite->SiteSeqID = SiteSeqID;
+pSNPSite->SiteLoci = SiteLoci;
+pSNPSite->ParentBase[0] = P1Base;
+pSNPSite->ParentBase[1] = P2Base;
+pSNPSite->ParentBase[2] = P3Base;
+pSNPSite->ParentBase[3] = P4Base;
+return(m_UsedSNPSites);
+}
 
 uint32_t		// returned founder name identifier, 0 if unable to accept this founder name
 CSegHaplotypes::LocateFounder(char* pszFounder) // associate unique identifier with this founder name
@@ -1340,6 +1716,51 @@ if(FounderID < 1 || FounderID > m_NumFounders)
 return(&m_szFounders[m_szFounderIdx[FounderID-1]]);
 }
 
+tsSHSNPSSite *
+CSegHaplotypes::LocateSNPSite(uint32_t ChromID, uint32_t Loci)	// locate SNP site using a binary search over sorted sites
+{
+tsSHSNPSSite* pEl1;
+int32_t IdxLo;
+int32_t MidIdx;
+int32_t IdxHi;
+
+if(m_UsedSNPSites == 0)
+	return(NULL);
+
+if(m_UsedSNPSites < 10)				// if just a few then do a simple linear search
+	{
+	pEl1 = m_pAllocSNPSites;
+	for(IdxLo = 0; IdxLo < (int32_t)m_UsedSNPSites; IdxLo++,pEl1++)
+		if(pEl1->SiteSeqID == ChromID && pEl1->SiteLoci == Loci)
+			return(pEl1);
+	return(NULL);
+	}
+
+IdxLo = 0;
+IdxHi = (int32_t)m_UsedSNPSites-1;
+do {
+	MidIdx = (IdxHi + IdxLo)/2;
+	pEl1 = &m_pAllocSNPSites[MidIdx];
+	if(pEl1->SiteSeqID == ChromID)
+		{
+		if(pEl1->SiteLoci == Loci)
+			return(pEl1);
+		if(pEl1->SiteLoci > Loci)
+			IdxHi = MidIdx - 1;
+		else
+			IdxLo = MidIdx + 1;
+		}
+	else
+		{
+		if(pEl1->SiteSeqID > ChromID)
+			IdxHi = MidIdx - 1;
+		else
+			IdxLo = MidIdx + 1;
+		}
+	}
+while(IdxHi >= IdxLo);
+return(NULL);
+}
 
 // SortSAMFounderTargLoci
 // Sort m_pSAMloci by ascending Founder.Targ.Loci
@@ -1382,6 +1803,25 @@ if(pEl1->TargID > pEl2->TargID)
 if(pEl1->TargLoci < pEl2->TargLoci)
 	return(-1);
 if(pEl1->TargLoci > pEl2->TargLoci)
+	return(1);
+return(0);
+}
+
+// SortSNPSites
+// 	// Sort SNPSites by ascending SiteSeqID.SiteLoci
+int CSegHaplotypes::SortSNPSites(const void* arg1, const void* arg2)
+{
+tsSHSNPSSite* pEl1 = (tsSHSNPSSite*)arg1;
+tsSHSNPSSite* pEl2 = (tsSHSNPSSite*)arg2;
+
+if(pEl1->SiteSeqID < pEl2->SiteSeqID)
+	return(-1);
+if(pEl1->SiteSeqID > pEl2->SiteSeqID)
+	return(1);
+
+if(pEl1->SiteLoci < pEl2->SiteLoci)
+	return(-1);
+if(pEl1->SiteLoci > pEl2->SiteLoci)
 	return(1);
 return(0);
 }

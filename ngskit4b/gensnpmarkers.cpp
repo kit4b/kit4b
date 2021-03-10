@@ -45,6 +45,7 @@ Original 'BioKanga' copyright notice has been retained and immediately follows t
 typedef enum TAG_eRPMode {
 	eRPMdefault,				// default processing mode
 	eRPMInterCultOnly,			// must be inter-cultivar SNP markers
+	eRPMInterCultHeteroOnly,	// must be inter-cultivar SNP markers and heterozygotic between cultivar SNP bases
 	eRPMplaceholder				// used to set the enumeration range
 	} etRPMode;
 
@@ -52,7 +53,7 @@ typedef enum TAG_eRPMode {
 int GSMProcess(etRPMode PMode,				// report processing mode
 			int MinCovBases,				// accept SNPs with at least this number covering bases
 			double MaxPValue,				// accept SNPs with at most this P-value
-			double SNPMmajorPC,				// only accept for processing if more/equal than this percentage number of reads are major SNP at putative SNP loci (defaults to 50.0) 
+			double SNPMmajorPC,				// only accept SNP for processing if major allele >= this proportion of total allele counts 
 			int MinSpeciesTotCntThres,		// individual species must have at least this number of total bases at SNP loci to count as SNP - 0 if no threshold
 			int MinSpeciesWithCnts,			// only report markers where at least this number of species has SNP at the SNP loci
 			int AltSpeciesMaxCnt,			// only report markers if no other species has more than this number of counts at the putative SNP loci, 0 if no limit
@@ -88,7 +89,7 @@ int PMode;				// processing mode
 
 int MinCovBases;				// accept SNPs with at least this number covering bases
 double MaxPValue;				// accept SNPs with at most this P-value
-double SNPMmajorPC;				// only accept for processing if more/equal than this percentage number of reads are major SNP at putative SNP loci (defaults to 50.0) 
+double SNPMmajorPC;				// only accept SNP for processing if major allele >= this proportion of total allele counts
 int MinSpeciesTotCntThres;		// individual species must have at least this number of total bases at SNP loci to count as SNP - 0 if no threshold
 int AltSpeciesMaxCnt;			// only report markers if no other species has more than this number of counts at the putative SNP loci - 0 if no limit
 int MinSpeciesWithCnts;			// only report markers where at least this number of species has SNP at the SNP loci
@@ -119,10 +120,10 @@ struct arg_lit  *version = arg_lit0("v","version,ver",			"print version informat
 struct arg_int *FileLogLevel=arg_int0("f", "FileLogLevel",		"<int>","Level of diagnostics written to logfile 0=fatal,1=errors,2=info,3=diagnostics,4=debug");
 struct arg_file *LogFile = arg_file0("F","log","<file>",		"diagnostics log file");
 
-struct arg_int *pmode = arg_int0("m","mode","<int>",		    "Marker reporting mode: 0 - SNP markers if either inter-species/cultivar or relative to reference, 1 - report SNP markers only if inter-species/cultivar differences (default 0)");
+struct arg_int *pmode = arg_int0("m","mode","<int>",		    "Marker reporting mode:\n\t\t\t\t 0 - SNP markers if either inter-species/cultivar or relative to reference, \n\t\t\t\t 1 - report SNP markers only if inter-species/cultivar differences, \n\t\t\t\t 2 - report SNP markers only if inter-species/cultivar differences are all heterozygotic  (default 0)");
 struct arg_int *mincovbases=arg_int0("b", "mincovbases","<int>","Filter out SNPs with less than this number of covering bases (default 5)");
 struct arg_dbl *maxpvalue=arg_dbl0("p", "maxpvalue","<dbl>",	"Filter out SNPs with P-Value higher (default 0.05)");
-struct arg_dbl *snpmajorpc = arg_dbl0("P", "snpmajorpc", "<dbl>", "Min percentage Major SNP at putative loci (defaults to 50.0, range 15.0 to 90.0)");
+struct arg_dbl *snpmajorpc = arg_dbl0("P", "snpmajorpc", "<dbl>", "Only accept SNP for processing if major allele >= this proportion of total allele counts (defaults to 0.5, range 0.25 to 0.95)");
 
 struct arg_int *mintotcntthres = arg_int0("z","mintotcntthres","<int>",	"Species must have at least this number of total bases covering marker loci (defaults to 0 for no limit)");
 struct arg_int *mincovspecies=arg_int0("Z", "mincovspecies","<int>","Do not report marker SNPs unless this minimum number of species have SNP at same loci");
@@ -315,10 +316,10 @@ if (!argerrors)
 		exit(1);
 		}
 
-	SNPMmajorPC = snpmajorpc->count ? snpmajorpc->dval[0] : 50.0;
-	if (SNPMmajorPC < 15.0 || SNPMmajorPC > 90.0)
+	SNPMmajorPC = snpmajorpc->count ? snpmajorpc->dval[0] : 0.5;
+	if (SNPMmajorPC < 0.25 || SNPMmajorPC > 0.95)
 	{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Error: Major SNP minimum non-ref '-P%f' for controlling SNP FDR must be in range 15.0 to 90.0\n", SNPMmajorPC);
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Error: Major SNP minimum non-ref '-P%f' for controlling SNP FDR must be in range 0.25 to 0.95\n", SNPMmajorPC);
 		exit(1);
 	}
 
@@ -434,13 +435,16 @@ if (!argerrors)
 		case eRPMInterCultOnly:
 			pszDescr = "Inter-cultivar SNP markers only";
 			break;
+		case eRPMInterCultHeteroOnly:
+			pszDescr = "Inter-cultivar and all SNP markers are heterozygotic";
+			break;
 		}
 
 	gDiagnostics.DiagOutMsgOnly(eDLInfo,"Processing mode is : '%s'",pszDescr);
 
 	gDiagnostics.DiagOutMsgOnly(eDLInfo,"Minimum coverage : %d",MinCovBases);
 	gDiagnostics.DiagOutMsgOnly(eDLInfo,"Maximum P-Value : %1.4f'",MaxPValue);
-	gDiagnostics.DiagOutMsgOnly(eDLInfo, "Minimum Major SNP percentage : %1.4f'", SNPMmajorPC);
+	gDiagnostics.DiagOutMsgOnly(eDLInfo, "Minimum Major SNP proportion : %1.4f'", SNPMmajorPC);
 
 
 	gDiagnostics.DiagOutMsgOnly(eDLInfo,"Reference genome assembly name : '%s'",szRefGenome);
@@ -542,7 +546,7 @@ typedef struct TAG_sSAMFileEls {
 int GSMProcess(etRPMode PMode,				// processing mode
 			int MinCovBases,				// accept SNPs with at least this number covering bases
 			double MaxPValue,				// accept SNPs with at most this P-value
-			double SNPMmajorPC,				// only accept for processing if more/equal than this percentage number of reads are major SNP at putative SNP loci (defaults to 50.0) 
+			double SNPMmajorPC,				// only accept SNP for processing if major allele >= this proportion of total allele counts
 			int MinSpeciesTotCntThres,		// individual species must have at least this number of total bases at SNP loci to count as SNP - 0 if no threshold
 			int MinSpeciesWithCnts,			// only report markers where at least this number of species has SNP at the SNP loci
 			int AltSpeciesMaxCnt,			// only report markers if no other species has more than this number of counts at the putative SNP loci, 0 if no limit
@@ -708,6 +712,7 @@ for(FileIdx = 0; FileIdx < NumSNPFiles; FileIdx++)
 
 	Rslt = pMarkers->LoadSNPFile(MinCovBases,	// accept SNPs with at least this number covering bases
 					MaxPValue,					// accept SNPs with at most this P-value
+					SNPMmajorPC,				// only accept SNP for processing if major allele >= this proportion of total allele counts
 					pszRefGenome,				// this is the reference species 
 					szProbeSpecies,				// this species reads were aligned to the reference species from which SNPs were called 
 					pszSNPFile);				// SNP file to parse and load
@@ -775,7 +780,7 @@ pMarkers->IdentSpeciesSpec(AltSpeciesMaxCnt,	// max count allowed for base being
 						   SNPMmajorPC);		// to be processed major putative SNP base must be at least this proportion of total
 
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Reporting marker SNPs to '%s'...",pszMarkerFile);
-Rslt64 = pMarkers->Report(pszRefGenome,NumRelGenomes,pszRelGenomes,pszMarkerFile,MinSpeciesWithCnts,MinSpeciesTotCntThres,PMode == eRPMInterCultOnly ? true : false);
+Rslt64 = pMarkers->Report(pszRefGenome,NumRelGenomes,pszRelGenomes,pszMarkerFile,MinSpeciesWithCnts,MinSpeciesTotCntThres,PMode >= eRPMInterCultOnly ? true : false, PMode == eRPMInterCultHeteroOnly ? true : false);
 if(Rslt64 < 0)
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Reporting of marker SNPs to '%s' error %d",pszMarkerFile,(int)Rslt64);
 else

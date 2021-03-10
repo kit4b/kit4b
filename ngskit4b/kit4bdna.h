@@ -970,7 +970,7 @@ public:
 	teBSFrsltCodes SetSfxSparsity(etSfxSparsity SfxSparsity);		// set suffix sparsity
 
 
-	// Imortant:
+	// Important:
     // Normally Levenshtein distance uses penalty of 0 for matches, and 1 for mismatches, inserts and deletions so that
     // the distance represents the number of edits between two sequences to make both equal
     // Because of the extreme InDel biases with PacBio long reads different penalties can be specified to the Levenshtein generating functions

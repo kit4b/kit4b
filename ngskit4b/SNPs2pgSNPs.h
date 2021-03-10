@@ -62,15 +62,15 @@ typedef enum TAG_etSSetOp {
 typedef struct TAG_sSCultivar {
 	char szName[cMaxDatasetSpeciesChrom + 1];		// name of this cultivar
 	uint32_t NumSitesInferenced;					// number of SNP sites originally inferenced
-	uint32_t NumSitesCalled;						// number of SNP sites originally called as SNP loci
-	uint32_t NumSitesAccepted;						// number of SNP sites accepted as being SNPs after set/coverage/PValue filtering
+	uint32_t NumSitesCalled;					// number of SNP sites originally called as SNP loci
+	uint32_t NumSitesAccepted;					// number of SNP sites accepted as being SNPs after set/coverage/PValue filtering
 
 	etSeqBase CalledBase;						// base called as being the major allele for this cultivar
 	double Score;								// score
 	uint32_t TotBaseCnts;						// total number of base counts
-	uint32_t TotMismatches;					// total number of non-reference bases
+	uint32_t TotMismatches;						// total number of non-reference bases
 	uint32_t BaseCnts[5];						// counts for each base
-	uint8_t flgSNPInferenced : 1;					// 1 if allele was inferenced 
+	uint8_t flgSNPInferenced : 1;				// 1 if allele was inferenced 
 	uint8_t flgInSetA : 1;						// 1 if this cultivar is a member of SetA
 	uint8_t flgInSetB : 1;						// 1 if this cultivar is a member of SetB
 } tsSCultivar;

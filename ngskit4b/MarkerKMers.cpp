@@ -276,7 +276,7 @@ return(NumPutMarkers);
 int
 CMarkerKMers::LocKMers(etPMode PMode,			// processing mode - defaults to 0
 		  int KMerLen,					// this length K-mers
-	  	  int PrefixLen,				// inter-cultivar shared prefix length
+		  int PrefixLen,				// inter-cultivar shared prefix length
 		  int SuffixLen,				// cultivar specific suffix length
 		  int MinWithPrefix,			// minimum number of cultivars required to have the shared prefix
 		  int MaxHomozygotic,			// only report prefixes if K-Mer suffixes are homozygotic between a maximum of this many cultivars, if 1 then no other cultivars
@@ -422,7 +422,7 @@ gDiagnostics.DiagOut(eDLInfo,gszProcName,"Truncating/Creating output multi-fasta
 m_hOutFile = open(m_szMarkerFile,O_CREATETRUNC );
 #else
 if((m_hOutFile = open(m_szMarkerFile,O_RDWR | O_CREAT,S_IREAD | S_IWRITE))!=-1)
-    if(ftruncate(m_hOutFile,0)!=0)
+	if(ftruncate(m_hOutFile,0)!=0)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to truncate %s - %s",m_szMarkerFile,strerror(errno));
 			Reset();

@@ -45,7 +45,7 @@ const int cSNPBkgndRateWindow = 51;		// window size within which the substitutio
 const int cSNPCentfFlankLen = 3;			// SNP centroid flank length
 const int cSNPCentroidLen = ((cSNPCentfFlankLen * 2) + 1); // SNP centroid k-mer length
 const int cSNPCentroidEls = ( 4 * 4 * 4 * 4 * 4 * 4 * 4);  // number of SNP centroid elements - could develop a macro but not worth the effort???
-const int cDfltMaxDiSNPSep = 300;       // DiSNPs (TriSNPs) are two (three) individual SNPs separated by at most this many bp 
+const int cDfltMaxDiSNPSep = 300;       // DiSNPs (TriSNPs) are two (three) individual SNPs within a sequence window of at most this many bp 
 
 const int cMinMarkerLen = 25;			// minimum allowed marker length
 const int cMaxMarkerLen = 500;			// maximum allowed marker length

@@ -221,7 +221,7 @@ tsLenRangeClass LenRangeClasses[] = {
 	{3,10,14,(char *)"10-14"},
 	{4,15,19,(char *)"15-19"},
 	{5,20,29,(char *)"20-29"},
-    {6,30,49,(char *)"30-49"},
+	{6,30,49,(char *)"30-49"},
 	{7,50,74,(char *)"50-74"},
 	{8,75,99,(char *)"75-99"},
 	{9,100,124,(char *)"100-124"},
@@ -268,8 +268,8 @@ int
 Process(etProcMode ProcMode,						// processing mode
 				etLociFileType LociFileType,		// expected loci file type
 				 char *pszInputFile,				// core loci (CSV or Biobed .bsb) file to process
-		 		 char *pszFilterRefIDFile,			// exclude any RefIDs in this filter file 
- 				 char *pszMAFFile,					// multiple alignment file
+				 char *pszFilterRefIDFile,			// exclude any RefIDs in this filter file 
+				 char *pszMAFFile,					// multiple alignment file
 					char *pszRsltsFile,				// file to write results into
 					char *pszSummaryFile,			// file to write summary into
 					char *pszFeaturesFile,			// feature charaterisation biobed file
@@ -336,13 +336,13 @@ ProcessAlignments(char *pszMAF,			 // source bioseq multialignment file
 int NormaliseInDelColumns(tsProcParams *pProcParams,int AlignLen);
 int										// returned blockid to next start loading from
 LoadContiguousBlocks(int RefSpeciesID,	// reference species identifier
- 			   int  BlockID,			// which block to initially start loading from
+			   int  BlockID,			// which block to initially start loading from
 			   bool *pbLoaded,			// returned indicator as to if any loaded blocks meet processing requirements
 			   int *pRefChromID,		// returned reference chromosome identifier 
 			   char *pRefStrand,		// returned reference strand
 			   int *pRefAlignLen,		// returned alignment (incl InDels) length
-   			   int *pRefChromOfs,		// returned alignment start offset
-   			   int *pSpeciesIDs,		// input - species of interest identifier array
+			   int *pRefChromOfs,		// returned alignment start offset
+			   int *pSpeciesIDs,		// input - species of interest identifier array
 			   CMAlignFile *pAlignments,
 			   tsProcParams *pProcParams);
 bool 
@@ -353,7 +353,7 @@ ProcAlignBlock(int RefChromID,	    // reference chromosome
 
 tsCoreLoci *
 GetFirstLociOverlaps(char *pszChrom,			// reference species chromosome
-   				int RefChromID,			// chrom identifier
+				int RefChromID,			// chrom identifier
 				char RefStrand,			// strand
 				int RefChromOfs,		// start loci
 				int RefChromEndOfs,		// end loci
@@ -474,24 +474,24 @@ argerrors = CUtility::arg_parsefromfile(argc,(char **)argv,&pAllArgs);
 if(argerrors >= 0)
 	argerrors = arg_parse(argerrors,pAllArgs,argtable);
 
-    /* special case: '--help' takes precedence over error reporting */
+	/* special case: '--help' takes precedence over error reporting */
 if (help->count > 0)
-        {
+		{
 		printf("\n%s ", gszProcName);
-        arg_print_syntax(stdout,argtable,"\n");
-        arg_print_glossary(stdout,argtable,"  %-25s %s\n");
+		arg_print_syntax(stdout,argtable,"\n");
+		arg_print_glossary(stdout,argtable,"  %-25s %s\n");
 		printf("\nNote: Parameters can be entered into a parameter file, one parameter per line.");
 		printf("\n      To invoke this parameter file then precede its name with '@'");
 		printf("\n      e.g. %s @myparams.txt\n\n",gszProcName);
 		exit(1);
-        }
+		}
 
-    /* special case: '--version' takes precedence error reporting */
+	/* special case: '--version' takes precedence error reporting */
 if (version->count > 0)
-        {
+		{
 		printf("\n%s: Version: %s\n",gszProcName, kit4bversion);
 		exit(1);
-        }
+		}
 
 if (!argerrors)
 	{
@@ -933,7 +933,7 @@ int
 Process(etProcMode ProcMode,				// processing mode
 		etLociFileType LociFileType,		// expected loci file type
 				 char *pszInputFile,		// core loci (CSV or Biobed .bsb) file to process
-		 		char *pszFilterRefIDFile, // exclude any RefIDs in this filter file
+				char *pszFilterRefIDFile, // exclude any RefIDs in this filter file
 				 char *pszMAFFile,			// multiple alignment file
 					char *pszRsltsFile,		// where to write out results
 					char *pszSummaryFile,	// where to write out summary
@@ -1251,7 +1251,7 @@ for(Idx = 0; Idx < ProcParams.MaxNumSpecies; Idx++)
 	{
 	if((ProcParams.pSeqs[Idx] = new unsigned char [ProcParams.MaxSeqAlignLen])==NULL)
 		{
-	    CleanupResources(&ProcParams);
+		CleanupResources(&ProcParams);
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory (%d bytes) for holding species sequences",ProcParams.MaxSeqAlignLen);
 		return(eBSFerrMem);
 		}
@@ -1260,7 +1260,7 @@ for(Idx = 0; Idx < ProcParams.MaxNumSpecies; Idx++)
 #ifdef _WIN32
 	ProcParams.hRsltsFile = open(pszRsltsFile, O_CREATETRUNC);
 #else
-     if((ProcParams.hRsltsFile = open64(pszRsltsFile,O_RDWR | O_CREAT,S_IREAD | S_IWRITE))!=-1)
+	 if((ProcParams.hRsltsFile = open64(pszRsltsFile,O_RDWR | O_CREAT,S_IREAD | S_IWRITE))!=-1)
 		 if(ftruncate(ProcParams.hRsltsFile,0)){};
 #endif
 
@@ -2456,7 +2456,7 @@ return(true);
 
 tsCoreLoci *
 GetFirstLociOverlaps(char *pszChrom,	// reference species chromosome
-   				int RefChromID,			// chrom identifier
+				int RefChromID,			// chrom identifier
 				char RefStrand,			// strand
 				int RefChromOfs,		// start loci
 				int RefChromEndOfs,		// end loci
