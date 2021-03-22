@@ -19,11 +19,14 @@
 
 int SegHaplotypes(eModeSH PMode,	// processing mode
 			bool bNoSplit,			// true if not to split output files by haplotype tag
+			int MinBinScore,		// founder bin must be at least this absolute minimum score before being counted as founder segment presence (default 10)
+			double MinBinProp,		// founder bin must be at least this minimum proportion before counted as founder segment presence (default 0.2)
+			int SnpMarkerMult,		// boost alignments overlaying SNP markers confidence by this confidence multiplier (default 5)
 			char *pszTrackName,		// track name
 			char *pszTrackDescr,	// track descriptor
 			bool bDontScore,		// don't score haplotype bin segments
 			int BinSizeKbp,			// segmentation sized bins
-			char *pszSNPMarkers,		// SNP marker loci association file
+			char *pszSNPMarkers,	// SNP marker loci association file
 			char* pszInFile,		// input SAM file
 			char* pszOutFile);		// output to this file
 
@@ -48,6 +51,11 @@ seghaplotypes(int argc, char **argv)
 	 eModeSH PMode;					// processing mode
 	 bool bNoSplit;					// true if not splitting haplotype founders
 	 bool bDontScore;				// don't score haplotype bin segments
+
+	 int MinBinScore;				// founder bin must be at least this absolute minimum score before being counted as founder segment presence (default 10)
+	 double MinBinProp;				// founder bin must be at least this minimum proportion before counted as founder segment presence (default 0.2)
+	 int SnpMarkerMult;				// boost alignments overlaying SNP markers confidence by this confidence multiplier (default 5)
+
 	 char szTrackName[_MAX_PATH];	// track name
 	 char szTrackDescr[_MAX_PATH];	// track description
 	 int BinSizeKbp;				// number of alignments over these sized bins
@@ -64,6 +72,11 @@ seghaplotypes(int argc, char **argv)
 	struct arg_lit *nosplit = arg_lit0 ("s", "split", "don't split output files by haplotype tag");
 	struct arg_lit *dontscore = arg_lit0 ("n", "noscore", "don't score haplotype segment bins");
 	struct arg_int *binsizekbp = arg_int0 ("b", "binsizekbp", "<int>", "Maximum Kbp bin size (default 10, range 1..1000");
+
+	struct arg_int *minbinscore = arg_int0 ("m", "minbinscore", "<int>", "founder bin must be at least this absolute minimum score before being counted as founder segment presence (default 10)");
+	struct arg_dbl *minbinprop = arg_dbl0 ("M", "minbinprop", "<int>", "founder bin must be at least this minimum proportion of all founders before accepted as founder segment presence (default 0.2)");
+	struct arg_int *snpmarkermult = arg_int0 ("c", "snpmarkermult", "<int>", " boost alignments overlaying SNP markers confidence by this confidence multiplier (default 5)");
+
 	struct arg_str *trackname = arg_str0("t","trackname","<str>","BED Track name");
 	struct arg_str *trackdescr = arg_str0("d","trackdescr","<str>","BED Track description");
 	struct arg_file *infile = arg_file1("i", "in", "<file>", "SAM/BAM input file(s) (can contain wildcards for multiple SAM file processing)");
@@ -72,7 +85,7 @@ seghaplotypes(int argc, char **argv)
 	struct arg_end *end = arg_end (200);
 
 	void *argtable[] = { help,version,FileLogLevel,LogFile,
-						pmode,nosplit,trackname,trackdescr,dontscore,binsizekbp,insnpmarkers,infile,outfile,end };
+						pmode,nosplit,minbinscore,minbinprop,snpmarkermult,trackname,trackdescr,dontscore,binsizekbp,insnpmarkers,infile,outfile,end };
 
 	char **pAllArgs;
 	int argerrors;
@@ -160,6 +173,27 @@ seghaplotypes(int argc, char **argv)
 		if (szTrackName[0] == '\0')
 			strcpy(szTrackName,"Segmented Haplotypes");
 
+		MinBinScore = minbinscore->count ? minbinscore->ival[0] : 10;
+		if(MinBinScore < 1)			// force to be within a reasonable range
+			MinBinScore = 1;
+		else
+			if(MinBinScore > 10000)
+				MinBinScore = 10000;
+
+		MinBinProp = minbinprop->count ? minbinprop->dval[0] : 0.2;
+		if(MinBinProp < 0.05)			// force to be within a reasonable range
+			MinBinProp = 0.05;
+		else
+			if(MinBinProp > 0.5)
+				MinBinProp = 0.5;
+
+		SnpMarkerMult = snpmarkermult->count ? snpmarkermult->ival[0] : 5;
+		if(SnpMarkerMult < 1)			// force to be within a reasonable range
+			SnpMarkerMult = 1;
+		else
+			if(SnpMarkerMult > 10)
+				SnpMarkerMult = 10;
+
 		bNoSplit = nosplit->count ? true : false;
 
 		if(trackdescr->count)
@@ -233,6 +267,10 @@ seghaplotypes(int argc, char **argv)
 
 
 		gDiagnostics.DiagOutMsgOnly (eDLInfo, "Split output files by haplotype segment tag", bNoSplit ? "No" : "Yes");
+		gDiagnostics.DiagOutMsgOnly (eDLInfo, "founder bin must be at least this absolute minimum score before being counted as founder segment presence : %d",MinBinScore);
+		gDiagnostics.DiagOutMsgOnly (eDLInfo, "founder bin must be at least this minimum proportion before counted as founder segment presence : %f",MinBinProp);
+		gDiagnostics.DiagOutMsgOnly (eDLInfo, "boost alignments overlaying SNP markers confidence by this confidence multiplier : %d",SnpMarkerMult);
+		
 		gDiagnostics.DiagOutMsgOnly (eDLInfo, "Segment haplotypes : '%s'", pszDescr);
 		gDiagnostics.DiagOutMsgOnly (eDLInfo, "Track name : '%s'", szTrackName);
 		gDiagnostics.DiagOutMsgOnly (eDLInfo, "Track name : '%s'", szTrackDescr);
@@ -252,13 +290,16 @@ seghaplotypes(int argc, char **argv)
 		Rslt = 0;
 		Rslt = SegHaplotypes(PMode,			// processing mode
 						bNoSplit,			// true if not to split output files by haplotype tag
+						MinBinScore,		// founder bin must be at least this absolute minimum score before being counted as founder segment presence (default 10)
+						MinBinProp,			// founder bin must be at least this minimum proportion before counted as founder segment presence (default 0.2)
+						SnpMarkerMult,		// boost alignments overlaying SNP markers confidence by this confidence multiplier (default 5)
 						szTrackName,		// track name
 						szTrackDescr,		// track descriptor
 						bDontScore,			// don't score haplotype segment bins
-						BinSizeKbp,		// bin size in Kbp
-						szSNPMarkers,	// SNP marker loci association file
-						szInFile,		// input SAM file
-						szOutFile);		// output to this file
+						BinSizeKbp,			// bin size in Kbp
+						szSNPMarkers,		// SNP marker loci association file
+						szInFile,			// input SAM file
+						szOutFile);			// output to this file
 		Rslt = Rslt >= 0 ? 0 : 1;
 		gStopWatch.Stop ();
 
@@ -412,6 +453,10 @@ m_szFounderIdx[0] = 0;
 
 m_AllocdBins = 0;
 
+m_MinBinScore = 10;
+m_MinBinProp = 0.2;
+m_SnpMarkerMult = 5;
+
 m_ParentsCommonAncestor[0] = '\0';
 m_NumParents = 0;
 memset(m_Parents,0,sizeof(m_Parents));
@@ -430,6 +475,9 @@ memset(m_szReadsetIdx,0,sizeof(m_szReadsetIdx));
 
 int SegHaplotypes(eModeSH PMode,	// processing mode
 			bool bNoSplit,			// true if not to split output files by haplotype tag
+			int MinBinScore,		// founder bin must be at least this absolute minimum score before being counted as founder segment presence (default 10)
+			double MinBinProp,		// founder bin must be at least this minimum proportion before counted as founder segment presence (default 0.2)
+			int SnpMarkerMult,		// boost alignments overlaying SNP markers confidence by this confidence multiplier (default 5)
 			char *pszTrackName,		// track name
 			char *pszTrackDescr,	// track descriptor
 			bool bDontScore,		// don't score haplotype bin segments
@@ -446,7 +494,7 @@ if((pSegHaplotypes = new CSegHaplotypes) == NULL)
 	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Unable to instantiate instance of CSegHaplotypes");
 	return(eBSFerrObj);
 	}
-Rslt = pSegHaplotypes->Process(PMode,bNoSplit,pszTrackName,pszTrackDescr,bDontScore,BinSizeKbp,pszSNPMarkers,pszInFile,pszOutFile);
+Rslt = pSegHaplotypes->Process(PMode,bNoSplit,MinBinScore,MinBinProp,SnpMarkerMult,pszTrackName,pszTrackDescr,bDontScore,BinSizeKbp,pszSNPMarkers,pszInFile,pszOutFile);
 delete pSegHaplotypes;
 return(Rslt);
 }
@@ -454,6 +502,9 @@ return(Rslt);
 int 
 CSegHaplotypes::Process(eModeSH PMode,			// processing mode
 			bool bNoSplit,			// true if not to split output files by haplotype tag
+			int MinBinScore,		// founder bin must be at least this absolute minimum score before being counted as founder segment presence (default 10)
+			double MinBinProp,		// founder bin must be at least this minimum proportion before counted as founder segment presence (default 0.2)
+			int SnpMarkerMult,		// boost alignments overlaying SNP markers confidence by this confidence multiplier (default 5)
 			char *pszTrackName,		// track name
 			char *pszTrackDescr,	// track descriptor
 			bool bDontScore,		// don't score haplotype bin segments
@@ -464,7 +515,10 @@ CSegHaplotypes::Process(eModeSH PMode,			// processing mode
 {
 int Rslt;
 Rslt = GenBinnedSegments(PMode,			// processing mode
-			bNoSplit,			// true if not to split output files by haplotype tag (default is to split into separate files)
+			bNoSplit,					// true if not to split output files by haplotype tag (default is to split into separate files)
+			MinBinScore,				// founder bin must be at least this absolute minimum score before being counted as founder segment presence (default 10)
+			MinBinProp,					// founder bin must be at least this minimum proportion before counted as founder segment presence (default 0.2)
+			SnpMarkerMult,				// boost alignments overlaying SNP markers confidence by this confidence multiplier (default 5)
 			pszTrackName,				// track name
 			pszTrackDescr,				// track descriptor
 			bDontScore,					// don't score haplotype bin segments
@@ -548,9 +602,10 @@ if((Rslt = (teBSFrsltCodes)m_pSAMfile->Open(pszSAMFile)) != eBSFSuccess)
 	return((teBSFrsltCodes)Rslt);
 	}
 
-AddFounder((char *)"NA");			// must have a default in case unable to parse out a founder tag
 NumAcceptedAlignments = 0;
 NumAlignmentsProc = 0;
+int NumFounder1IDs = 0;
+int NumFounder2IDs = 0;
 time_t Then = time(NULL);
 time_t Now;
 while(Rslt >= eBSFSuccess && (LineLen = m_pSAMfile->GetNxtSAMline((char *)m_pInBuffer)) > 0)
@@ -569,7 +624,6 @@ while(Rslt >= eBSFSuccess && (LineLen = m_pSAMfile->GetNxtSAMline((char *)m_pInB
 			continue;
 		
 			// parse out the founder name tag - if present - must be at most cMaxSHLenPrefix chars long with separator cTagSHTerm1 and cTagSHTerm1 (currently "|#") between it and actual target sequence name!
-		
 		FounderNameLen = ParseFounder(szContig);
 		if(FounderNameLen > 0)
 			{
@@ -585,7 +639,7 @@ while(Rslt >= eBSFSuccess && (LineLen = m_pSAMfile->GetNxtSAMline((char *)m_pInB
 		else
 			{
 			pszRefSeqName = szContig;
-			FounderID = AddFounder((char *)"NA");
+			FounderID = AddFounder((char *)"NA"); // using this as the default if founder not specified
 			}
 
 		if((TargID = AddTargSeqName(pszRefSeqName, ContigLen)) == 0) // treating founder errors as if chrom name errors
@@ -597,6 +651,10 @@ while(Rslt >= eBSFSuccess && (LineLen = m_pSAMfile->GetNxtSAMline((char *)m_pInB
 		continue;
 		}
 
+// number of founders is now known
+// create bed files to hold alignments for each of the founders
+
+//
 	// now processing the alignments
 	NumAlignmentsProc += 1;
 	if (!(NumAlignmentsProc % 100000) || NumAlignmentsProc == 1)
@@ -643,7 +701,13 @@ while(Rslt >= eBSFSuccess && (LineLen = m_pSAMfile->GetNxtSAMline((char *)m_pInB
 	else
 		FounderID = LocateFounder((char *)"NA");
 
-	if(FounderID == 0 || (pTargSeq = LocateTargSeq(pszRefSeqName)) == NULL) // if founder or target unknown then simply slough
+	if(FounderID ==0) // treating founder errors as if chrom name errors
+			{
+			Reset();
+			return(eBSFerrChrom);
+			}
+
+	if((pTargSeq = LocateTargSeq(pszRefSeqName)) == NULL) // target unknown then simply slough
 		{
 		NumMissingFeatures++;
 		Rslt = eBSFSuccess;
@@ -725,18 +789,87 @@ if(NumAcceptedAlignments == 0)		// ugh, no alignments!
 	return(eBSFSuccess);			// not an error!
 	}
 else
-	{
 	gDiagnostics.DiagOut(eDLInfo, gszProcName, "ParseSAMAlignments: Accepted %d total alignments overlaying %d SNP markers onto %d target seqs for binning from  %d processed",NumAcceptedAlignments, AlignmentsWithSNPSites, m_NumAlignedTargSeqs, NumAlignmentsProc);
-
-	}
 
 return(NumAcceptedAlignments);
 }
 
+
+// generate BEDs for each founder skim read alignments
+// objective is to be able to view just what the distribution of these skim alignments along the chromosomes looks like - are they IID distributed or clustering?
+int
+CSegHaplotypes::GenerateAlignmentBEDs(char *pszSAMfile)	// generate BEDs for each founder skim read alignments which have been parsed from this SAM file
+{
+uint32_t FounderID;
+uint32_t LociIdx;
+tsSHSAMloci *pSAMloci;
+char szFounderOutFile[_MAX_PATH];
+
+// <chrom> <chromStart (0..n)> <chromEnd (chromStart + Len)> <name> <score (0..999)
+for(FounderID = 1; FounderID <= m_NumFounders; FounderID++)
+	{
+	pSAMloci = m_pSAMloci;
+	for(LociIdx = 0; LociIdx < m_UsedSNPSites; LociIdx++,pSAMloci++)
+		{
+		if(pSAMloci->FounderID != FounderID)
+			continue;
+		if(m_hOutFile == -1)
+			{
+			sprintf(szFounderOutFile,"%s.%s.bed",pszSAMfile,LocateFounder(FounderID));
+#ifdef _WIN32
+			m_hOutFile = open(szFounderOutFile,( O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC),(_S_IREAD | _S_IWRITE));
+#else
+			if((m_hOutFile = open64(szFounderOutFile,O_WRONLY | O_CREAT,S_IREAD | S_IWRITE)) != -1)
+				if(ftruncate(m_hOutFile,0)!=0)
+					{
+					gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate %s - %s",szFounderOutFile,strerror(errno));
+					Reset();
+					return(eBSFerrCreateFile);
+					}
+#endif
+			if(m_hOutFile < 0)
+				{
+				gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate %s - %s",szFounderOutFile,strerror(errno));
+				Reset();
+				return(eBSFerrCreateFile);
+				}
+			m_OutBuffIdx = sprintf((char *)m_pOutBuffer,"track name=\"%s alignments\" description=\"%s skim alignments to founder %s\"\n",LocateFounder(FounderID),pszSAMfile,LocateFounder(FounderID));
+			}
+
+		m_OutBuffIdx += sprintf((char *)&m_pOutBuffer[m_OutBuffIdx],"%s\t%u\t%u\t%s\n",LocateTargSeqName(pSAMloci->TargID),pSAMloci->TargLoci,pSAMloci->TargLoci+pSAMloci->AlignLen,LocateFounder(FounderID));
+		if((m_OutBuffIdx + 1000) > m_AllocOutBuff)
+			{
+			CUtility::RetryWrites(m_hOutFile,m_pOutBuffer,m_OutBuffIdx);
+			m_OutBuffIdx = 0;
+			}
+		}
+	if(m_hOutFile != -1)
+		{
+		if(m_OutBuffIdx)
+			{
+			CUtility::RetryWrites(m_hOutFile,m_pOutBuffer,m_OutBuffIdx);
+			m_OutBuffIdx = 0;
+			}
+#ifdef _WIN32
+		_commit(m_hOutFile);
+#else
+		fsync(m_hOutFile);
+#endif
+		close(m_hOutFile);
+		m_hOutFile = -1;
+		}
+	}
+return(0);
+}
+
+// 
 // generate segmented haplotypes file from SAM/BAM alignment input file
 int	
 CSegHaplotypes::GenBinnedSegments(eModeSH PMode,			// processing mode
 			bool bNoSplit,			// true if not to split output files by haplotype tag (default is to split into separate files)
+			int MinBinScore,		// founder bin must be at least this absolute minimum score before being counted as founder segment presence (default 10)
+			double MinBinProp,		// founder bin must be at least this minimum proportion before counted as founder segment presence (default 0.2)
+			int SnpMarkerMult,		// boost alignments overlaying SNP markers confidence by this confidence multiplier (default 5)
 			char *pszTrackName,		// track name
 			char *pszTrackDescr,	// track descriptor
 			bool bDontScore,		// don't score haplotype bin segments
@@ -759,6 +892,10 @@ size_t NumAcceptedAlignments;
 int WindowSize = BinSizeKbp * 1000;
 m_BinSizeKbp = BinSizeKbp;
 m_bNoSplit = bNoSplit;
+m_MinBinScore = MinBinScore;
+m_MinBinProp = MinBinProp;
+m_SnpMarkerMult = SnpMarkerMult;
+
 if((m_pBAMalignment = new tsBAMalign) == NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenBinnedSegments: Unable to instantiate tsBAMalign");
@@ -811,8 +948,6 @@ m_AllocdSAMloci = cAllocSHNumSAMloci;
 NumAcceptedAlignments = 0;
 m_AllocdBins = 0;
 
-AddFounder((char *)"NA");			// must have a default in case unable to parse out a founder tag
-
 // load SNP markers if file has been specified
 if(!(pszSNPMarkers == NULL || pszSNPMarkers[0] == '\0'))
 	{
@@ -856,9 +991,10 @@ if(glob.FileCount() <= 0)
 
 Rslt = eBSFSuccess;
 m_NumAlignedTargSeqs = 0;
+char *pszSAMFile;
 for(int FileID = 0; Rslt >= eBSFSuccess && FileID < glob.FileCount(); ++FileID)
 	{
-	char *pszSAMFile = glob.File(FileID);
+	pszSAMFile = glob.File(FileID);
 	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Processing SAM file '%s'\n", pszSAMFile);
 	if((Rslt = (teBSFrsltCodes)ParseSAMAlignments(pszSAMFile)) < eBSFSuccess)
 		{
@@ -877,6 +1013,11 @@ if(NumAcceptedAlignments == 0)		// ugh, no alignments!
 else
 	gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenBinnedSegments: Accepted %lld total alignments onto %d targets for binning",NumAcceptedAlignments, m_NumAlignedTargSeqs);
 
+if((Rslt =(teBSFrsltCodes)GenerateAlignmentBEDs(pszSAMFile)) < eBSFSuccess)	
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenBinnedSegments: Fatal error processing '%s'",pszSAMFile);
+	return(Rslt);
+	}
 
 if((m_pBins = new tsSHBin[m_AllocdBins]) == NULL)
 	{
@@ -914,8 +1055,14 @@ pSAMloci = m_pSAMloci;
 pUniqueSamLoci = pSAMloci++;
 pUniqueSamLoci->Cnt = 1;
 NumUniqueLoci = 1;
+int NumFounder1IDs = 0;
+int NumFounder2IDs = 0;
 for(LociIdx = 1; LociIdx < m_CurNumSAMloci; LociIdx++, pSAMloci++)
 	{
+	if(pSAMloci->FounderID == 1)
+		NumFounder1IDs++;
+	else
+		NumFounder2IDs++;	
 	if(pSAMloci->FounderID == pUniqueSamLoci->FounderID && pSAMloci->TargID == pUniqueSamLoci->TargID && pSAMloci->TargLoci == pUniqueSamLoci->TargLoci)
 		{
 		if(PMode == eMSHSegAll) // if all to be counted then counting multiple alignments to this loci
@@ -933,6 +1080,8 @@ m_CurNumSAMloci = NumUniqueLoci;
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenBinnedSegments: Alignments were to %lld unique loci",m_CurNumSAMloci);
 
 pSAMloci = m_pSAMloci;
+NumFounder1IDs = 0;
+NumFounder2IDs = 0;
 for(LociIdx = 0; LociIdx < m_CurNumSAMloci; LociIdx++,pSAMloci++)
 	{
 	pTargSeq = &m_TargSeqs[pSAMloci->TargID-1];
@@ -940,7 +1089,11 @@ for(LociIdx = 0; LociIdx < m_CurNumSAMloci; LociIdx++,pSAMloci++)
 	pBin += pSAMloci->TargLoci / (m_BinSizeKbp * 1000);
 	pBin->RawCnts[pSAMloci->FounderID-1]++;
 	if(pSAMloci->NumMarkerSNPs)
-		pBin->RawCnts[pSAMloci->FounderID-1]+=(cMarkerSNPBonus * pSAMloci->NumMarkerSNPs * pSAMloci->Cnt);
+		pBin->RawCnts[pSAMloci->FounderID-1]+=((m_SnpMarkerMult-1) * pSAMloci->NumMarkerSNPs * pSAMloci->Cnt);
+	if(pSAMloci->FounderID == 1)
+		NumFounder1IDs++;
+	else
+		NumFounder2IDs++;	
 	}
 
 // apply weighted smoothing. 50% of adjacent raw bin counts contribute to each bin smoothed counts
@@ -950,8 +1103,8 @@ ApplySmoothing();
 int TotCalledBins=0;
 int CalledBins;
 
-TotCalledBins = IdentifySegments(4,false,bDontScore);	// identify higher confidence bins
-while((CalledBins = IdentifySegments(3,true,bDontScore)) > 0) // these will 'fill in the gaps' ...
+TotCalledBins = IdentifySegments(false,bDontScore);	// identify higher confidence bins
+while((CalledBins = IdentifySegments(true,bDontScore)) > 0) // these will 'fill in the gaps' ...
 	TotCalledBins += CalledBins;
 
 uint32_t FounderIdx;
@@ -1061,8 +1214,7 @@ return(0);
 // now attempt to call the haplotype segments!!!!!!!!!!!!!!!!!!!!!!!!!!
 // when bin calling, counts in immediately adjacent bins contribute to the haplotype(s) call for any individual bin  
 int
-CSegHaplotypes::IdentifySegments(int MinCoverage,  // requiring at least this min number of counts to make call for any bin
-						bool bInterpolate,	// if true - if bin counts less than minimum coverage then interpolate from adjacent bins which were called
+CSegHaplotypes::IdentifySegments(bool bInterpolate,	// if true - if bin counts less than minimum coverage then interpolate from adjacent bins which were called
 						bool bDontScore)	// if true then mark bin haplotype with score of cBEDNoScore without actually scoring according to bin counts
 {
 tsTargSeq *pTargSeq;
@@ -1096,7 +1248,7 @@ for(TargSeqIdx = 0; TargSeqIdx < m_NumSeqNames; TargSeqIdx++,pTargSeq++)
 		for(FounderIdx = 0; FounderIdx < m_NumFounders; FounderIdx++)
 			TotBinCnts += pBin->SmoothedCnts[FounderIdx];
 
-		if(TotBinCnts < (uint32_t)MinCoverage) // need at least this many counts to have any degree of confidence for this bin to be a seed bin
+		if(TotBinCnts < (uint32_t)m_MinBinScore) // need at least this many counts to have any degree of confidence for this bin to be a seed bin
 			{
 			if(bInterpolate)	
 				{
@@ -1147,18 +1299,18 @@ for(TargSeqIdx = 0; TargSeqIdx < m_NumSeqNames; TargSeqIdx++,pTargSeq++)
 			}
 
 		// look at proportions of founder counts in this bin
-		// if any single founder making up 80% of counts then call that founder as the only haplotype
-		// otherwise call as having both haplotypes in that bin
+		// only calling a founder haplotype if that founder is a least MinBinProp as a proportion of total of all founders in that bin
+		// otherwise call as having multiple haplotypes in that bin
 		for(FounderIdx = 0; FounderIdx < m_NumFounders; FounderIdx++)
 			{
-			if(((pBin->SmoothedCnts[FounderIdx] * 1000) / TotBinCnts) >= 250)	// min 1/4 of total counts required to accept that haplotype combination
+			if(pBin->SmoothedCnts[FounderIdx] >= (uint32_t)m_MinBinScore && ((double)pBin->SmoothedCnts[FounderIdx] / TotBinCnts) >= m_MinBinProp)
 				{
 				if(bDontScore)
 					pBin->CalledHaplotype[FounderIdx] = cBEDNoScore;
 				else
 					{
 					int NormalisedCnts;
-					NormalisedCnts = max(2,(TotBinCnts * 100000) / pBin->BinLen);		// counts per 100Kbp
+					NormalisedCnts = max(2,(pBin->SmoothedCnts[FounderIdx] * 100000) / pBin->BinLen);		// counts per 100Kbp
 					pBin->CalledHaplotype[FounderIdx] = min(NormalisedCnts, 999);
 					}
 				}
@@ -1535,7 +1687,12 @@ CSegHaplotypes::ProcessSnpmarkersSNPs(char *pszSNPMarkersFile)	// file containin
 							Len++;
 							*pDst = '\0';
 							}
-						m_Parents[ParentIdx].FounderID = LocateFounder(m_Parents[ParentIdx].szName);
+						if((m_Parents[ParentIdx].FounderID = AddFounder(m_Parents[ParentIdx].szName))==0)
+							{
+							gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to add founder '%s'", m_Parents[ParentIdx].szName);
+							Reset();
+							return(eBSFerrSpecies);
+							}
 						}
 					}
 				}
