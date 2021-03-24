@@ -1086,7 +1086,7 @@ if(pFname != NULL && *pszFullPath)
 	}
 }
 
-// utility function for appended a filename suffix onto a base file name starting from the last occurrence of a marker char in the base file name
+// utility function for appending a filename suffix onto a base file name starting from the last occurrence of a marker char in the base file name
 int				// returned length of suffixed file name
 CUtility::AppendFileNameSuffix(char *pszRetSuffixedName,	// buffer allocated by caller to hold suffixed name
 					 char *pszBaseFileName,		// base file name prefix

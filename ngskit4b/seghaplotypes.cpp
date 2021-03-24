@@ -20,8 +20,8 @@
 int SegHaplotypes(eModeSH PMode,	// processing mode
 			bool bNoSplit,			// true if not to split output files by haplotype tag
 			int MinBinScore,		// founder bin must be at least this absolute minimum score before being counted as founder segment presence (default 10)
-			double MinBinProp,		// founder bin must be at least this minimum proportion before counted as founder segment presence (default 0.2)
-			int SnpMarkerMult,		// boost alignments overlaying SNP markers confidence by this confidence multiplier (default 5)
+			double MinBinProp,		// founder bin must be at least this minimum proportion before counted as founder segment presence (default 0.3)
+			int SnpMarkerMult,		// boost alignments overlaying SNP markers confidence by this confidence multiplier (default 25)
 			char *pszTrackName,		// track name
 			char *pszTrackDescr,	// track descriptor
 			bool bDontScore,		// don't score haplotype bin segments
@@ -53,8 +53,8 @@ seghaplotypes(int argc, char **argv)
 	 bool bDontScore;				// don't score haplotype bin segments
 
 	 int MinBinScore;				// founder bin must be at least this absolute minimum score before being counted as founder segment presence (default 10)
-	 double MinBinProp;				// founder bin must be at least this minimum proportion before counted as founder segment presence (default 0.2)
-	 int SnpMarkerMult;				// boost alignments overlaying SNP markers confidence by this confidence multiplier (default 5)
+	 double MinBinProp;				// founder bin must be at least this minimum proportion before counted as founder segment presence (default 0.3)
+	 int SnpMarkerMult;				// boost alignments overlaying SNP markers confidence by this confidence multiplier (default 25)
 
 	 char szTrackName[_MAX_PATH];	// track name
 	 char szTrackDescr[_MAX_PATH];	// track description
@@ -74,8 +74,8 @@ seghaplotypes(int argc, char **argv)
 	struct arg_int *binsizekbp = arg_int0 ("b", "binsizekbp", "<int>", "Maximum Kbp bin size (default 10, range 1..1000");
 
 	struct arg_int *minbinscore = arg_int0 ("m", "minbinscore", "<int>", "founder bin must be at least this absolute minimum score before being counted as founder segment presence (default 10)");
-	struct arg_dbl *minbinprop = arg_dbl0 ("M", "minbinprop", "<int>", "founder bin must be at least this minimum proportion of all founders before accepted as founder segment presence (default 0.2)");
-	struct arg_int *snpmarkermult = arg_int0 ("c", "snpmarkermult", "<int>", " boost alignments overlaying SNP markers confidence by this confidence multiplier (default 5)");
+	struct arg_dbl *minbinprop = arg_dbl0 ("M", "minbinprop", "<int>", "founder bin must be at least this minimum proportion of all founders before accepted as founder segment presence (default 0.3)");
+	struct arg_int *snpmarkermult = arg_int0 ("c", "snpmarkermult", "<int>", " boost alignments overlaying SNP markers confidence by this confidence multiplier (default 25)");
 
 	struct arg_str *trackname = arg_str0("t","trackname","<str>","BED Track name");
 	struct arg_str *trackdescr = arg_str0("d","trackdescr","<str>","BED Track description");
@@ -171,7 +171,7 @@ seghaplotypes(int argc, char **argv)
 		else
 			szTrackName[0] = '\0';
 		if (szTrackName[0] == '\0')
-			strcpy(szTrackName,"Segmented Haplotypes");
+			strcpy(szTrackName,"SH");
 
 		MinBinScore = minbinscore->count ? minbinscore->ival[0] : 10;
 		if(MinBinScore < 1)			// force to be within a reasonable range
@@ -180,19 +180,19 @@ seghaplotypes(int argc, char **argv)
 			if(MinBinScore > 10000)
 				MinBinScore = 10000;
 
-		MinBinProp = minbinprop->count ? minbinprop->dval[0] : 0.2;
+		MinBinProp = minbinprop->count ? minbinprop->dval[0] : 0.3;
 		if(MinBinProp < 0.05)			// force to be within a reasonable range
 			MinBinProp = 0.05;
 		else
 			if(MinBinProp > 0.5)
 				MinBinProp = 0.5;
 
-		SnpMarkerMult = snpmarkermult->count ? snpmarkermult->ival[0] : 5;
+		SnpMarkerMult = snpmarkermult->count ? snpmarkermult->ival[0] : 25;
 		if(SnpMarkerMult < 1)			// force to be within a reasonable range
 			SnpMarkerMult = 1;
 		else
-			if(SnpMarkerMult > 10)
-				SnpMarkerMult = 10;
+			if(SnpMarkerMult > 100)
+				SnpMarkerMult = 100;
 
 		bNoSplit = nosplit->count ? true : false;
 
@@ -804,62 +804,81 @@ uint32_t FounderID;
 uint32_t LociIdx;
 tsSHSAMloci *pSAMloci;
 char szFounderOutFile[_MAX_PATH];
+char szFileName[_MAX_PATH];
+
+char *pszFounder;
+
+if(m_hOutFile != -1)
+	{
+	close(m_hOutFile);
+	m_hOutFile = -1;
+	}
+m_OutBuffIdx = 0;
 
 // <chrom> <chromStart (0..n)> <chromEnd (chromStart + Len)> <name> <score (0..999)
 for(FounderID = 1; FounderID <= m_NumFounders; FounderID++)
 	{
+	pszFounder = LocateFounder(FounderID);
+	sprintf(szFounderOutFile,"%s.%s.bed",pszSAMfile,pszFounder);
+#ifdef _WIN32
+	m_hOutFile = open(szFounderOutFile,( O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC),(_S_IREAD | _S_IWRITE));
+#else
+	if((m_hOutFile = open64(szFounderOutFile,O_WRONLY | O_CREAT,S_IREAD | S_IWRITE)) != -1)
+		if(ftruncate(m_hOutFile,0)!=0)
+			{
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate %s - %s",szFounderOutFile,strerror(errno));
+			Reset();
+			return(eBSFerrCreateFile);
+			}
+#endif
+	if(m_hOutFile < 0)
+		{
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate %s - %s",szFounderOutFile,strerror(errno));
+		Reset();
+		return(eBSFerrCreateFile);
+		}
+	CUtility::splitpath(pszSAMfile,NULL,szFileName);
+	szFileName[strlen(szFileName)-4] = '\0';
+	m_OutBuffIdx = sprintf((char *)m_pOutBuffer,"track name=\"FAL %s.%s\" description=\"Founder Alignment Loci %s.%s\"\n",szFileName,pszFounder,szFileName,pszFounder);
+	
 	pSAMloci = m_pSAMloci;
-	for(LociIdx = 0; LociIdx < m_UsedSNPSites; LociIdx++,pSAMloci++)
+	for(LociIdx = 0; LociIdx < m_CurNumSAMloci; LociIdx++,pSAMloci++)
 		{
 		if(pSAMloci->FounderID != FounderID)
 			continue;
-		if(m_hOutFile == -1)
-			{
-			sprintf(szFounderOutFile,"%s.%s.bed",pszSAMfile,LocateFounder(FounderID));
-#ifdef _WIN32
-			m_hOutFile = open(szFounderOutFile,( O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC),(_S_IREAD | _S_IWRITE));
-#else
-			if((m_hOutFile = open64(szFounderOutFile,O_WRONLY | O_CREAT,S_IREAD | S_IWRITE)) != -1)
-				if(ftruncate(m_hOutFile,0)!=0)
-					{
-					gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate %s - %s",szFounderOutFile,strerror(errno));
-					Reset();
-					return(eBSFerrCreateFile);
-					}
-#endif
-			if(m_hOutFile < 0)
-				{
-				gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate %s - %s",szFounderOutFile,strerror(errno));
-				Reset();
-				return(eBSFerrCreateFile);
-				}
-			m_OutBuffIdx = sprintf((char *)m_pOutBuffer,"track name=\"%s alignments\" description=\"%s skim alignments to founder %s\"\n",LocateFounder(FounderID),pszSAMfile,LocateFounder(FounderID));
-			}
 
-		m_OutBuffIdx += sprintf((char *)&m_pOutBuffer[m_OutBuffIdx],"%s\t%u\t%u\t%s\n",LocateTargSeqName(pSAMloci->TargID),pSAMloci->TargLoci,pSAMloci->TargLoci+pSAMloci->AlignLen,LocateFounder(FounderID));
-		if((m_OutBuffIdx + 1000) > m_AllocOutBuff)
+		m_OutBuffIdx += sprintf((char *)&m_pOutBuffer[m_OutBuffIdx],"%s\t%u\t%u\t%s\n",LocateTargSeqName(pSAMloci->TargID),pSAMloci->TargLoci,pSAMloci->TargLoci+pSAMloci->AlignLen,pszFounder);
+		if((m_OutBuffIdx + 5000) > m_AllocOutBuff)
 			{
-			CUtility::RetryWrites(m_hOutFile,m_pOutBuffer,m_OutBuffIdx);
+			if (!CUtility::RetryWrites(m_hOutFile,m_pOutBuffer,m_OutBuffIdx))
+				{
+				gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenerateAlignmentBEDs: Fatal error in RetryWrites()");
+				Reset();
+				return(eBSFerrFileAccess);
+				}
 			m_OutBuffIdx = 0;
 			}
 		}
-	if(m_hOutFile != -1)
+
+	if(m_OutBuffIdx)
 		{
-		if(m_OutBuffIdx)
+		if (!CUtility::RetryWrites(m_hOutFile,m_pOutBuffer,m_OutBuffIdx))
 			{
-			CUtility::RetryWrites(m_hOutFile,m_pOutBuffer,m_OutBuffIdx);
-			m_OutBuffIdx = 0;
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenerateAlignmentBEDs: Fatal error in RetryWrites()");
+			Reset();
+			return(eBSFerrFileAccess);
 			}
-#ifdef _WIN32
-		_commit(m_hOutFile);
-#else
-		fsync(m_hOutFile);
-#endif
-		close(m_hOutFile);
-		m_hOutFile = -1;
+		m_OutBuffIdx = 0;
 		}
+#ifdef _WIN32
+	_commit(m_hOutFile);
+#else
+	fsync(m_hOutFile);
+#endif
+	close(m_hOutFile);
+	m_hOutFile = -1;
 	}
-return(0);
+return(eBSFSuccess);
 }
 
 // 
@@ -991,6 +1010,7 @@ if(glob.FileCount() <= 0)
 
 Rslt = eBSFSuccess;
 m_NumAlignedTargSeqs = 0;
+m_CurNumSAMloci = 0;
 char *pszSAMFile;
 for(int FileID = 0; Rslt >= eBSFSuccess && FileID < glob.FileCount(); ++FileID)
 	{
@@ -1004,20 +1024,14 @@ for(int FileID = 0; Rslt >= eBSFSuccess && FileID < glob.FileCount(); ++FileID)
 	NumAcceptedAlignments += (size_t)Rslt;
 	}
 
-if(NumAcceptedAlignments == 0)		// ugh, no alignments!
+if(m_CurNumSAMloci == 0)		// ugh, no alignments!
 	{
 	gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenBinnedSegments: No alignments accepted for processing!");
 	Reset();
 	return(eBSFSuccess);			// not an error!
 	}
 else
-	gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenBinnedSegments: Accepted %lld total alignments onto %d targets for binning",NumAcceptedAlignments, m_NumAlignedTargSeqs);
-
-if((Rslt =(teBSFrsltCodes)GenerateAlignmentBEDs(pszSAMFile)) < eBSFSuccess)	
-	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenBinnedSegments: Fatal error processing '%s'",pszSAMFile);
-	return(Rslt);
-	}
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenBinnedSegments: Accepted %lld total alignments onto %d targets for binning",m_CurNumSAMloci, m_NumAlignedTargSeqs);
 
 if((m_pBins = new tsSHBin[m_AllocdBins]) == NULL)
 	{
@@ -1049,6 +1063,12 @@ for(TargSeqIdx = 0; TargSeqIdx < m_NumSeqNames; TargSeqIdx++,pTargSeq++)
 // sort SAMloci by FounderID.TargID.TargLoci ascending
 if(m_CurNumSAMloci > 1)
 	qsort(m_pSAMloci, m_CurNumSAMloci, sizeof(tsSHSAMloci), SortSAMFounderTargLoci);
+
+if((Rslt =(teBSFrsltCodes)GenerateAlignmentBEDs(pszSAMFile)) < eBSFSuccess)	
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenBinnedSegments: Fatal error processing '%s' for reporting of alignments",pszSAMFile);
+	return(Rslt);
+	}
 
 // could be multiple alignments to same loci so reduce such that each loci is unique with a count of alignments to that loci unless unique loci in which case only 1 count attributed
 pSAMloci = m_pSAMloci;
@@ -1128,8 +1148,8 @@ for(FounderIdx = 0; FounderIdx < m_NumFounders; FounderIdx++)
 		FounderID = FounderIdx+1;
 		pszFounder=LocateFounder(FounderIdx+1);
 		sprintf(szFounderOutFile,"%s.%s.bed",pszOutFile,pszFounder);
-		sprintf(szFounderTrackName,"%s:%s",pszFounder,pszTrackName);
-		sprintf(szFounderTrackDescr,"%s:%s",pszFounder,pszTrackDescr);
+		sprintf(szFounderTrackName,"%s %s:%s",pszTrackName,pszOutFile,pszFounder);
+		sprintf(szFounderTrackDescr,"%s %s:%s",pszTrackDescr,pszOutFile,pszFounder);
 		}
 #ifdef _WIN32
 	m_hOutFile = open(szFounderOutFile,( O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC),(_S_IREAD | _S_IWRITE));
@@ -1154,7 +1174,12 @@ for(FounderIdx = 0; FounderIdx < m_NumFounders; FounderIdx++)
 
 	if(m_OutBuffIdx)
 		{
-		CUtility::RetryWrites(m_hOutFile,m_pOutBuffer,m_OutBuffIdx);
+		if (!CUtility::RetryWrites(m_hOutFile,m_pOutBuffer,m_OutBuffIdx))
+			{
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenBinnedSegments: Fatal error in RetryWrites()");
+			Reset();
+			return(eBSFerrFileAccess);
+			}
 		m_OutBuffIdx = 0;
 		}
 		// commit output file
@@ -1336,13 +1361,18 @@ uint32_t Score;
 tsTargSeq *pTargSeq;
 tsSHBin *pBin;
 
-if((m_OutBuffIdx + 1000) > m_AllocOutBuff)
+if((m_OutBuffIdx + 5000) > m_AllocOutBuff)
 	{
-	CUtility::RetryWrites(m_hOutFile,m_pOutBuffer,m_OutBuffIdx);
+	if (!CUtility::RetryWrites(m_hOutFile,m_pOutBuffer,m_OutBuffIdx))
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "genBED: Fatal error in RetryWrites()");
+		Reset();
+		return(eBSFerrFileAccess);
+		}
 	m_OutBuffIdx = 0;
 	}
 
-m_OutBuffIdx = sprintf((char *)m_pOutBuffer,"track name=%s description=\"%s\" useScore=1\n",pszTrackName,pszTrackDescr);
+m_OutBuffIdx = sprintf((char *)m_pOutBuffer,"track name=\"%s\" description=\"%s\" useScore=1\n",pszTrackName,pszTrackDescr);
 
 // <chrom> <chromStart (0..n)> <chromEnd (chromStart + Len)> <name> <score (0..999)
 for(FounderIdx = 0; FounderIdx < m_NumFounders; FounderIdx++)
@@ -1380,9 +1410,14 @@ for(FounderIdx = 0; FounderIdx < m_NumFounders; FounderIdx++)
 				}
 
 			m_OutBuffIdx += sprintf((char *)&m_pOutBuffer[m_OutBuffIdx],"%s\t%u\t%u\t%s\t%d\n",LocateTargSeqName(pTargSeq->TargSeqID),StartLoci,EndLoci,LocateFounder(FounderIdx+1),Score);
-			if((m_OutBuffIdx + 1000) > m_AllocOutBuff)
+			if((m_OutBuffIdx + 5000) > m_AllocOutBuff)
 				{
-				CUtility::RetryWrites(m_hOutFile,m_pOutBuffer,m_OutBuffIdx);
+				if (!CUtility::RetryWrites(m_hOutFile,m_pOutBuffer,m_OutBuffIdx))
+					{
+					gDiagnostics.DiagOut(eDLFatal, gszProcName, "genBED: Fatal error in RetryWrites()");
+					Reset();
+					return(eBSFerrFileAccess);
+					}
 				m_OutBuffIdx = 0;
 				}
 			}
@@ -1390,11 +1425,16 @@ for(FounderIdx = 0; FounderIdx < m_NumFounders; FounderIdx++)
 	}
 if(m_OutBuffIdx)
 	{
-	CUtility::RetryWrites(m_hOutFile,m_pOutBuffer,m_OutBuffIdx);
+	if (!CUtility::RetryWrites(m_hOutFile,m_pOutBuffer,m_OutBuffIdx))
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "genBED: Fatal error in RetryWrites()");
+		Reset();
+		return(eBSFerrFileAccess);
+		}
 	m_OutBuffIdx = 0;
 	}
 
-return(0);
+return(eBSFSuccess);
 }
 
 int		// bin score assigned
@@ -1407,7 +1447,12 @@ uint32_t BinLen;
 BinLen = 1 + BinEnd - BinStart; // inclusive!
 if((m_OutBuffIdx + 1000) > m_AllocOutBuff)
 	{
-	CUtility::RetryWrites(m_hOutFile,m_pOutBuffer,m_OutBuffIdx);
+	if (!CUtility::RetryWrites(m_hOutFile,m_pOutBuffer,m_OutBuffIdx))
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenBinnedCoverage: Fatal error in RetryWrites()");
+		Reset();
+		return(eBSFerrFileAccess);
+		}
 	m_OutBuffIdx = 0;
 	}
 m_OutBuffIdx += sprintf((char *)&m_pOutBuffer[m_OutBuffIdx],"variableStep chrom=%s span=%d\n%d %d\n",LocateTargSeqName(TargID),BinLen,BinStart + 1,BinCnts); // Wiggle uses 1-start coordinate system

@@ -69,4 +69,5 @@ Release 1.4.5 - 'kalign' generates a scored reads alignment coverage BED file wh
 Release 1.4.7 - 'repassemb' terminates if unable to locate specified alignment coverage BED file
 Release 1.5.0 - 'snpmarkers' now has option to filter out marker loci which are not heterozygous between all cultivars, and 'seghaplotypes' can use these marker loci to boost identified haplotype segment scores.
 Release 1.5.1 - 'seghaplotypes' now has additional parameters for thresholding founder segmentation calls and also generates skim read alignment loci distributions as BED files for each founder.
+Release 1.5.3 - 'seghaplotypes' updated default parameters to give increased weighting to skim reads overlapping marker loci.
  
