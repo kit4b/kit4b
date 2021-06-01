@@ -298,7 +298,7 @@ typedef struct TAG_sRegHammDist {
 	int Region;
 	char szRegion[50];
 	int HighestHamm;			// highest hamming in this region
-	UINT32 Cnts[cMaxHamming+1];
+	uint32_t Cnts[cMaxHamming+1];
     } tsRegHammDist;
 
 tsRegHammDist m_RegHammDists[cNumRegions];	// counts for each region
@@ -523,7 +523,7 @@ int Idx;
 
 int NumInputFilesProcessed;
 char *pszInfile;
-UINT32 RegionTotCnts[cNumRegions];
+uint32_t RegionTotCnts[cNumRegions];
 double RegionCummDist[cNumRegions];
 
 tsRegHammDist *pRegHammDist;

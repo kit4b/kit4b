@@ -247,7 +247,7 @@ pdf_putc( int c, PDFstrm *pdfs )
                 plexit( "pdf_putc: Insufficient memory" );
             }
         }
-        pdfs->buffer[pdfs->bp++] = (unsigned char) c;
+        pdfs->buffer[pdfs->bp++] = (uint8_t) c;
         result = c;
     }
     else
@@ -315,7 +315,7 @@ pdf_ungetc( int c, PDFstrm *pdfs )
     {
         if ( pdfs->bp > 0 )
         {
-            pdfs->buffer[--pdfs->bp] = (unsigned char) c;
+            pdfs->buffer[--pdfs->bp] = (uint8_t) c;
             result = c;
         }
     }

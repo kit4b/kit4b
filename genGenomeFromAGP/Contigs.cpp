@@ -142,12 +142,12 @@ int Descrlen;
 bool bEntryStarted;
 int Rslt;
 size_t memreq;
-UINT8 *pAllocSeqs;
+uint8_t *pAllocSeqs;
 
 // alloc for contig sequence chunk buffering
 if(m_pContigChunk == NULL)
 	{
-	if((m_pContigChunk = new unsigned char [cContigSeqChunk+1]) == NULL)	// why the additional 1 is required????
+	if((m_pContigChunk = new uint8_t [cContigSeqChunk+1]) == NULL)	// why the additional 1 is required????
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadContigFile: Unable to allocate memory (%d bytes) for contig sequence chunks",cContigSeqChunk+1);
 		Reset();
@@ -165,7 +165,7 @@ if(m_pContigEntries == NULL)
 
 	if(m_pContigEntries == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadContigFile: Memory allocation of %lld bytes for contig entries - %s",(INT64)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadContigFile: Memory allocation of %lld bytes for contig entries - %s",(int64_t)memreq,strerror(errno));
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -174,7 +174,7 @@ if(m_pContigEntries == NULL)
 	m_pContigEntries = (tsContigEntry *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pContigEntries == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadContigFile: Memory allocation of %lld bytes through mmap() for contig entries failed - %s",(INT64)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadContigFile: Memory allocation of %lld bytes through mmap() for contig entries failed - %s",(int64_t)memreq,strerror(errno));
 		m_pContigEntries = NULL;
 		Reset();
 		return(eBSFerrMem);
@@ -188,23 +188,23 @@ if(m_pContigEntries == NULL)
 if(m_pContigSeqs == NULL)
 	{
 	// initial allocation for contig sequences
-	memreq = (size_t)sizeof(UINT8) * cContigSeqAlloc;
+	memreq = (size_t)sizeof(uint8_t) * cContigSeqAlloc;
 
 #ifdef _WIN32
-	m_pContigSeqs = (UINT8 *) malloc(memreq);	// initial and perhaps the only allocation
+	m_pContigSeqs = (uint8_t *) malloc(memreq);	// initial and perhaps the only allocation
 
 	if(m_pContigSeqs == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadContigFile: Memory allocation of %lld bytes for contig sequences - %s",(INT64)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadContigFile: Memory allocation of %lld bytes for contig sequences - %s",(int64_t)memreq,strerror(errno));
 		Reset();
 		return(eBSFerrMem);
 		}
 #else
 		// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-	m_pContigSeqs = (UINT8 *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+	m_pContigSeqs = (uint8_t *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pContigSeqs == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadContigFile: Memory allocation of %lld bytes through mmap() for contig sequences failed - %s",(INT64)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadContigFile: Memory allocation of %lld bytes through mmap() for contig sequences failed - %s",(int64_t)memreq,strerror(errno));
 		m_pContigSeqs = NULL;
 		Reset();
 		return(eBSFerrMem);
@@ -271,7 +271,7 @@ _ASSERTE( _CrtCheckMemory());
 		strncpy(pCurContig->szContig,szName,sizeof(pCurContig->szContig));
 		pCurContig->szContig[sizeof(pCurContig->szContig)-1] = '\0';
 		pCurContig->ContigID = ++m_NumContigEntries;
-		pCurContig->ContigSeqOfs = (UINT32)m_ContigSeqsOfs;
+		pCurContig->ContigSeqOfs = (uint32_t)m_ContigSeqsOfs;
 		bEntryStarted = true;
 
 		continue;
@@ -287,11 +287,11 @@ _ASSERTE( _CrtCheckMemory());
 	// have sequence chunk, copy to m_pContigSeqs
 	if((m_AllocdContigSeqMem - m_ContigSeqsOfs) < (size_t)SeqLen)		// realloc as may be required
 		{
-		memreq = m_AllocdContigSeqMem + (sizeof(UINT8) * cContigSeqAlloc); 
+		memreq = m_AllocdContigSeqMem + (sizeof(uint8_t) * cContigSeqAlloc); 
 #ifdef _WIN32
-		pAllocSeqs = (UINT8 *) realloc(m_pContigSeqs,memreq);
+		pAllocSeqs = (uint8_t *) realloc(m_pContigSeqs,memreq);
 #else
-		pAllocSeqs = (UINT8 *)mremap(m_pContigSeqs,m_AllocdContigSeqMem,memreq,MREMAP_MAYMOVE);
+		pAllocSeqs = (uint8_t *)mremap(m_pContigSeqs,m_AllocdContigSeqMem,memreq,MREMAP_MAYMOVE);
 		if(pAllocSeqs == MAP_FAILED)
 			pAllocSeqs = NULL;
 #endif
@@ -342,8 +342,8 @@ return(NULL);
 }
 
 // returns ptr to sequence for pszContig starting at Start (1..ContigLen)
-UINT8 *
-CContigs::LocateSeq(char *pszContig,UINT32 Start) 
+uint8_t *
+CContigs::LocateSeq(char *pszContig,uint32_t Start) 
 {
 tsContigEntry *pContig;
 if((pContig = LocateContig(pszContig))==NULL)

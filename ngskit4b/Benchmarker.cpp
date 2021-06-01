@@ -921,7 +921,7 @@ if ((Rslt = m_pGenome->SetTargBlock(1)) < 0)
 TotLen = m_pGenome->GetTotSeqsLen();
 // assembly or multifasta sequences now loaded
 LenSCF = (double)INT_MAX / (double)TotLen;
-m_GenomeScaledLen = TotLen >= (INT64)INT_MAX ? (long)(TotLen * LenSCF) : (long)TotLen;
+m_GenomeScaledLen = TotLen >= (int64_t)INT_MAX ? (long)(TotLen * LenSCF) : (long)TotLen;
 m_NumChromSeqs = m_pGenome->GetNumEntries();
 m_pChromSeqs = new tsBMChromSeq [m_NumChromSeqs];
 
@@ -931,7 +931,7 @@ for (ChromID = 1; ChromID <= m_NumChromSeqs; ChromID++, pChromSeq++)
 	{
 	pChromSeq->ChromID = ChromID;
 	pChromSeq->Len = m_pGenome->GetSeqLen(ChromID);
-	pChromSeq->ScaledLen = TotLen >= (INT64)INT_MAX ? (int)(pChromSeq->Len * LenSCF) : pChromSeq->Len;
+	pChromSeq->ScaledLen = TotLen >= (int64_t)INT_MAX ? (int)(pChromSeq->Len * LenSCF) : pChromSeq->Len;
 	pChromSeq->ScaledStart = CurScaledStart;
 	CurScaledStart += pChromSeq->ScaledLen;
 	}
@@ -1211,20 +1211,20 @@ m_NumObsErrProfs = 0;
 
 m_AllocdObsErrProfMem = (size_t)cSRAllocdObsErrProfMemChunk;
 #ifdef _WIN32
-m_pObsErrProfiles = (UINT8*)malloc(m_AllocdObsErrProfMem);
+m_pObsErrProfiles = (uint8_t*)malloc(m_AllocdObsErrProfMem);
 if (m_pObsErrProfiles == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenObsCIGARs: Memory allocation of %lld bytes failed", (INT64)m_AllocdObsErrProfMem);
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenObsCIGARs: Memory allocation of %lld bytes failed", (int64_t)m_AllocdObsErrProfMem);
 	m_AllocdObsErrProfMem = 0;
 	Reset();
 	return(eBSFerrMem);
 	}
 #else
 // gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-m_pObsErrProfiles = (UINT8*)mmap(NULL, (size_t)m_AllocdObsErrProfMem, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+m_pObsErrProfiles = (uint8_t*)mmap(NULL, (size_t)m_AllocdObsErrProfMem, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 if (m_pObsErrProfiles == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenObsCIGARs: Memory allocation of %lld bytes through mmap()  failed", (INT64)m_AllocdObsErrProfMem, strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenObsCIGARs: Memory allocation of %lld bytes through mmap()  failed", (int64_t)m_AllocdObsErrProfMem, strerror(errno));
 	m_pObsErrProfiles = NULL;
 	m_AllocdObsErrProfMem = 0;
 	Reset();
@@ -1618,17 +1618,17 @@ while (Rslt >= eBSFSuccess && (LineLen = m_pAlignments->GetNxtSAMline(pszLine)) 
 	if (((sizeof(tsBMObsCIGAR) + cSRAllocdObsErrProfMemChunk/10) >= (m_AllocdObsErrProfMem - m_UsedObsErrProfMem)))
 		{
 		size_t memreq = m_AllocdObsErrProfMem + (size_t)cSRAllocdObsErrProfMemChunk;
-		UINT8* pTmp;
+		uint8_t* pTmp;
 #ifdef _WIN32
-		pTmp = (UINT8*)realloc(m_pObsErrProfiles, memreq);
+		pTmp = (uint8_t*)realloc(m_pObsErrProfiles, memreq);
 #else
-		pTmp = (UINT8*)mremap(m_pObsErrProfiles, m_AllocdObsErrProfMem, memreq, MREMAP_MAYMOVE);
+		pTmp = (uint8_t*)mremap(m_pObsErrProfiles, m_AllocdObsErrProfMem, memreq, MREMAP_MAYMOVE);
 		if (pTmp == MAP_FAILED)
 			pTmp = NULL;
 #endif
 		if (pTmp == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenObsCIGARs: Memory re-allocation to %lld bytes - %s", (INT64)(memreq), strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenObsCIGARs: Memory re-allocation to %lld bytes - %s", (int64_t)(memreq), strerror(errno));
 			delete pszLine;
 			delete pSAMalign;
 			Reset();
@@ -2305,20 +2305,20 @@ m_UsedGroundTruthsMem = 0;
 
 m_AllocdGroundTruthsMem = (size_t)cSRAllocdObsErrProfMemChunk;
 #ifdef _WIN32
-m_pGroundTruths = (UINT8*)malloc(m_AllocdGroundTruthsMem);
+m_pGroundTruths = (uint8_t*)malloc(m_AllocdGroundTruthsMem);
 if (m_pGroundTruths == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "LoadGroundTruths: Memory allocation of %lld bytes failed", (INT64)m_AllocdGroundTruthsMem);
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "LoadGroundTruths: Memory allocation of %lld bytes failed", (int64_t)m_AllocdGroundTruthsMem);
 	m_AllocdGroundTruthsMem = 0;
 	Reset();
 	return(eBSFerrMem);
 	}
 #else
 // gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-m_pGroundTruths = (UINT8*)mmap(NULL, (size_t)m_AllocdGroundTruthsMem, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+m_pGroundTruths = (uint8_t*)mmap(NULL, (size_t)m_AllocdGroundTruthsMem, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 if (m_pGroundTruths == MAP_FAILED)
 {
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "LoadGroundTruths: Memory allocation of %lld bytes through mmap()  failed", (INT64)m_AllocdGroundTruthsMem, strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "LoadGroundTruths: Memory allocation of %lld bytes through mmap()  failed", (int64_t)m_AllocdGroundTruthsMem, strerror(errno));
 	m_pGroundTruths = NULL;
 	m_AllocdGroundTruthsMem = 0;
 	Reset();
@@ -2366,17 +2366,17 @@ while ((Rslt = m_pSESimReads->ReadSequence()) > eBSFSuccess)
 		if ((cSRAllocdObsErrProfMemChunk / 10) >= (m_AllocdGroundTruthsMem - m_UsedGroundTruthsMem))
 		{
 			size_t memreq = m_AllocdGroundTruthsMem + (size_t)cSRAllocdObsErrProfMemChunk;
-			UINT8* pTmp;
+			uint8_t* pTmp;
 #ifdef _WIN32
-			pTmp = (UINT8*)realloc(m_pGroundTruths, memreq);
+			pTmp = (uint8_t*)realloc(m_pGroundTruths, memreq);
 #else
-			pTmp = (UINT8*)mremap(m_pGroundTruths, m_AllocdGroundTruthsMem, memreq, MREMAP_MAYMOVE);
+			pTmp = (uint8_t*)mremap(m_pGroundTruths, m_AllocdGroundTruthsMem, memreq, MREMAP_MAYMOVE);
 			if (pTmp == MAP_FAILED)
 				pTmp = NULL;
 #endif
 			if (pTmp == NULL)
 			{
-				gDiagnostics.DiagOut(eDLFatal, gszProcName, "LoadGroundTruths: Memory re-allocation to %lld bytes - %s", (INT64)(memreq), strerror(errno));
+				gDiagnostics.DiagOut(eDLFatal, gszProcName, "LoadGroundTruths: Memory re-allocation to %lld bytes - %s", (int64_t)(memreq), strerror(errno));
 				Reset();
 				return(eBSFerrMem);
 			}
@@ -2445,17 +2445,17 @@ if (m_bPEReads && pszPE2SimReads != NULL)
 			if ((cSRAllocdObsErrProfMemChunk / 10) >= (m_AllocdGroundTruthsMem - m_UsedGroundTruthsMem))
 			{
 				size_t memreq = m_AllocdGroundTruthsMem + (size_t)cSRAllocdObsErrProfMemChunk;
-				UINT8* pTmp;
+				uint8_t* pTmp;
 #ifdef _WIN32
-				pTmp = (UINT8*)realloc(m_pGroundTruths, memreq);
+				pTmp = (uint8_t*)realloc(m_pGroundTruths, memreq);
 #else
-				pTmp = (UINT8*)mremap(m_pGroundTruths, m_AllocdGroundTruthsMem, memreq, MREMAP_MAYMOVE);
+				pTmp = (uint8_t*)mremap(m_pGroundTruths, m_AllocdGroundTruthsMem, memreq, MREMAP_MAYMOVE);
 				if (pTmp == MAP_FAILED)
 					pTmp = NULL;
 #endif
 				if (pTmp == NULL)
 				{
-					gDiagnostics.DiagOut(eDLFatal, gszProcName, "LoadGroundTruths: Memory re-allocation to %lld bytes - %s", (INT64)(memreq), strerror(errno));
+					gDiagnostics.DiagOut(eDLFatal, gszProcName, "LoadGroundTruths: Memory re-allocation to %lld bytes - %s", (int64_t)(memreq), strerror(errno));
 					Reset();
 					return(eBSFerrMem);
 				}
@@ -2798,7 +2798,7 @@ double AlignBaseScoreRate = min(1.000f,(((double)m_NumBasesLociCorrect * m_Align
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "Completed scoring alignments in: '%s'", pszAlignmentsFile);
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "Experiment: %s", pszExperimentDescr);
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "Control aligner: '%s' Scored Aligner: '%s'",pszControlAligner,pszScoredAligner);
-gDiagnostics.DiagOut(eDLInfo, gszProcName, "Ground truth reads: %u containing %lld bases of which %lld were potential ground truth bases", m_NumGroundTruthReads, (INT64)m_TotGroundTruthReadBases, (INT64)m_TotNumPotentialAlignBases);
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "Ground truth reads: %u containing %lld bases of which %lld were potential ground truth bases", m_NumGroundTruthReads, (int64_t)m_TotGroundTruthReadBases, (int64_t)m_TotNumPotentialAlignBases);
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "There were a total of %u alignments scored", NumScoredAlignments);
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "%u alignments classified as misaligned due to: chrom: %u, strand: %u, PE mismatch: %u ", NumErrChroms+NumErrStrands+ NumErrPE2,NumErrChroms,NumErrStrands, NumErrPE2);
 gDiagnostics.DiagOut(eDLInfo, gszProcName,"Bases loci correct: %lld, misaligned: %lld, unaligned: %lld", m_NumBasesLociCorrect, m_NumBasesLociIncorrect, m_NumBasesLociUnclaimed);
@@ -2840,10 +2840,18 @@ if(m_szResultsFile[0] != '\0')
 		}
 
 	LineBuffIdx = sprintf(szLineBuffer,"\"%s\",\"%s\",\"%s\",\"%s\",", pszExperimentDescr, pszControlAligner, pszScoredAligner,pszAlignmentsFile);
-	LineBuffIdx += sprintf(&szLineBuffer[LineBuffIdx], "%u,%lld,%lld,", m_NumGroundTruthReads, (INT64)m_TotGroundTruthReadBases,(INT64)m_TotNumPotentialAlignBases);
+#ifdef _WIN32	
+	LineBuffIdx += sprintf(&szLineBuffer[LineBuffIdx], "%u,%lld,%lld,", m_NumGroundTruthReads, (int64_t)m_TotGroundTruthReadBases,(int64_t)m_TotNumPotentialAlignBases);
+#else
+	LineBuffIdx += sprintf(&szLineBuffer[LineBuffIdx], "%u,%ld,%ld,", m_NumGroundTruthReads, (int64_t)m_TotGroundTruthReadBases,(int64_t)m_TotNumPotentialAlignBases);
+#endif
 	LineBuffIdx += sprintf(&szLineBuffer[LineBuffIdx], "%u,", NumScoredAlignments);
 	LineBuffIdx += sprintf(&szLineBuffer[LineBuffIdx], "%u,%u,%u,%u,", NumErrChroms + NumErrStrands + NumErrPE2, NumErrChroms, NumErrStrands, NumErrPE2);
-	LineBuffIdx += sprintf(&szLineBuffer[LineBuffIdx], "%lld,%lld,%lld,", (INT64)m_NumBasesLociCorrect, (INT64)m_NumBasesLociIncorrect, (INT64)m_NumBasesLociUnclaimed);
+#ifdef _WIN32
+	LineBuffIdx += sprintf(&szLineBuffer[LineBuffIdx], "%lld,%lld,%lld,", (int64_t)m_NumBasesLociCorrect, (int64_t)m_NumBasesLociIncorrect, (int64_t)m_NumBasesLociUnclaimed);
+#else
+	LineBuffIdx += sprintf(&szLineBuffer[LineBuffIdx], "%ld,%ld,%ld,", (int64_t)m_NumBasesLociCorrect, (int64_t)m_NumBasesLociIncorrect, (int64_t)m_NumBasesLociUnclaimed);
+#endif
 	LineBuffIdx += sprintf(&szLineBuffer[LineBuffIdx], "%1.6f,%1.6f",BaseScoreRate, AlignBaseScoreRate);
 	for (int Idx = 0; Idx < 101; Idx++)
 		LineBuffIdx += sprintf(&szLineBuffer[LineBuffIdx],",%u", m_ReadOverlapHistogram[Idx]);
@@ -3547,20 +3555,20 @@ CBenchmark::InitObsErrProfile(char* pszInProfFile)	// read from this observed al
 
 	m_AllocdObsErrProfMem = (size_t)cSRAllocdObsErrProfMemChunk;
 #ifdef _WIN32
-	m_pObsErrProfiles = (UINT8*)malloc(m_AllocdObsErrProfMem);
+	m_pObsErrProfiles = (uint8_t*)malloc(m_AllocdObsErrProfMem);
 	if (m_pObsErrProfiles == NULL)
 	{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "InitObsErrProfile: Memory allocation of %lld bytes failed", (INT64)m_AllocdObsErrProfMem);
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "InitObsErrProfile: Memory allocation of %lld bytes failed", (int64_t)m_AllocdObsErrProfMem);
 		m_AllocdObsErrProfMem = 0;
 		Reset();
 		return(eBSFerrMem);
 	}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-	m_pObsErrProfiles = (UINT8*)mmap(NULL, (size_t)m_AllocdObsErrProfMem, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	m_pObsErrProfiles = (uint8_t*)mmap(NULL, (size_t)m_AllocdObsErrProfMem, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	if (m_pObsErrProfiles == MAP_FAILED)
 	{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "InitObsErrProfile: Memory allocation of %lld bytes through mmap()  failed", (INT64)m_AllocdObsErrProfMem, strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "InitObsErrProfile: Memory allocation of %lld bytes through mmap()  failed", (int64_t)m_AllocdObsErrProfMem, strerror(errno));
 		m_pObsErrProfiles = NULL;
 		m_AllocdObsErrProfMem = 0;
 		Reset();
@@ -3640,17 +3648,17 @@ CBenchmark::InitObsErrProfile(char* pszInProfFile)	// read from this observed al
 		if (((sizeof(tsBMPackedCIGARs) + 10000) >= (m_AllocdObsErrProfMem - m_UsedObsErrProfMem)))
 			{
 			size_t memreq = m_AllocdObsErrProfMem + (size_t)cSRAllocdObsErrProfMemChunk;
-			UINT8* pTmp;
+			uint8_t* pTmp;
 #ifdef _WIN32
-			pTmp = (UINT8*)realloc(m_pObsErrProfiles, memreq);
+			pTmp = (uint8_t*)realloc(m_pObsErrProfiles, memreq);
 #else
-			pTmp = (UINT8*)mremap(m_pObsErrProfiles, m_AllocdObsErrProfMem, memreq, MREMAP_MAYMOVE);
+			pTmp = (uint8_t*)mremap(m_pObsErrProfiles, m_AllocdObsErrProfMem, memreq, MREMAP_MAYMOVE);
 			if (pTmp == MAP_FAILED)
 				pTmp = NULL;
 #endif
 			if (pTmp == NULL)
 				{
-				gDiagnostics.DiagOut(eDLFatal, gszProcName, "InitObsErrProfile: Memory re-allocation to %lld bytes - %s", (INT64)(memreq), strerror(errno));
+				gDiagnostics.DiagOut(eDLFatal, gszProcName, "InitObsErrProfile: Memory re-allocation to %lld bytes - %s", (int64_t)(memreq), strerror(errno));
 				Reset();
 				return(eBSFerrMem);
 				}

@@ -807,16 +807,16 @@ CPBECContigs::ProcessFastaFile(int MinSeqLen,		// only accept for indexing seque
 				int Flags)							// default is for flags = cFlgLCSeq used with PacBio read sequences
 {
 CFasta Fasta;
-unsigned char *pSeqBuff;
-unsigned char *pMskBase;
-UINT32 MskIdx;
+uint8_t *pSeqBuff;
+uint8_t *pMskBase;
+uint32_t MskIdx;
 size_t BuffOfs;
 size_t AllocdBuffSize;
 size_t AvailBuffSize;
 char szName[cBSFSourceSize];
 char szDescription[cBSFDescriptionSize];
-UINT32 SeqLen;
-UINT32 MaxSeqLen;
+uint32_t SeqLen;
+uint32_t MaxSeqLen;
 int Descrlen;
 bool bFirstEntry;
 bool bEntryCreated;
@@ -824,7 +824,7 @@ int Rslt;
 int SeqID;
 int NumSeqsAccepted;
 size_t TotAcceptedLen;
-UINT32 NumSeqsUnderlength;
+uint32_t NumSeqsUnderlength;
 
 if((Rslt=Fasta.Open(pszFile,true))!=eBSFSuccess)
 	{
@@ -835,9 +835,9 @@ if((Rslt=Fasta.Open(pszFile,true))!=eBSFSuccess)
 
 AllocdBuffSize = (size_t)cMaxAllocBuffChunk * 16;
 // note malloc is used as can then simply realloc to expand as may later be required
-if((pSeqBuff = (unsigned char *)malloc(AllocdBuffSize)) == NULL)
+if((pSeqBuff = (uint8_t *)malloc(AllocdBuffSize)) == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessFastaFile:- Unable to allocate memory (%u bytes) for sequence buffer",(UINT32)AllocdBuffSize);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessFastaFile:- Unable to allocate memory (%u bytes) for sequence buffer",(uint32_t)AllocdBuffSize);
 	Fasta.Close();
 	return(eBSFerrMem);
 	}
@@ -866,13 +866,13 @@ while((Rslt = SeqLen = Fasta.ReadSequence(&pSeqBuff[BuffOfs],(int)min(AvailBuffS
 				{
 				if(bSeqStore)
 					{
-					if(m_pSeqStore->AddSeq(Flags,szName,(UINT32)BuffOfs,pSeqBuff) == 0)
+					if(m_pSeqStore->AddSeq(Flags,szName,(uint32_t)BuffOfs,pSeqBuff) == 0)
 						Rslt = -1;
 					else
 						Rslt = eBSFSuccess;
 					}
 				else
-					Rslt=m_pSfxArray->AddEntry(szName,pSeqBuff,(UINT32)BuffOfs,Flags);
+					Rslt=m_pSfxArray->AddEntry(szName,pSeqBuff,(uint32_t)BuffOfs,Flags);
 
 				if(Rslt < eBSFSuccess)
 					{
@@ -883,8 +883,8 @@ while((Rslt = SeqLen = Fasta.ReadSequence(&pSeqBuff[BuffOfs],(int)min(AvailBuffS
 					{
 					NumSeqsAccepted += 1;
 					TotAcceptedLen += BuffOfs;
-					if(MaxSeqLen < (UINT32)BuffOfs)
-						MaxSeqLen = (UINT32)BuffOfs;
+					if(MaxSeqLen < (uint32_t)BuffOfs)
+						MaxSeqLen = (uint32_t)BuffOfs;
 					}
 				}
 			Rslt = eBSFSuccess;
@@ -941,10 +941,10 @@ while((Rslt = SeqLen = Fasta.ReadSequence(&pSeqBuff[BuffOfs],(int)min(AvailBuffS
 	if(AvailBuffSize < (size_t)(cMaxAllocBuffChunk / 8))
 		{
 		size_t NewSize = (size_t)cMaxAllocBuffChunk + AllocdBuffSize;
-		unsigned char *pTmp;
-		if((pTmp = (unsigned char *)realloc(pSeqBuff,NewSize))==NULL)
+		uint8_t *pTmp;
+		if((pTmp = (uint8_t *)realloc(pSeqBuff,NewSize))==NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessFastaFile:- Unable to reallocate memory (%u bytes) for sequence buffer",(UINT32)NewSize);
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessFastaFile:- Unable to reallocate memory (%u bytes) for sequence buffer",(uint32_t)NewSize);
 			return(eBSFerrMem);
 			}
 		pSeqBuff = pTmp;
@@ -970,13 +970,13 @@ if(Rslt >= eBSFSuccess && bEntryCreated && BuffOfs > 0)			// close entry
 		{
 		if(bSeqStore)
 			{
-			if(m_pSeqStore->AddSeq(Flags,szName,(UINT32)BuffOfs,pSeqBuff) == 0)
+			if(m_pSeqStore->AddSeq(Flags,szName,(uint32_t)BuffOfs,pSeqBuff) == 0)
 				Rslt = -1;
 			else
 				Rslt = eBSFSuccess;
 			}
 		else
-			Rslt=m_pSfxArray->AddEntry(szName,pSeqBuff,(UINT32)BuffOfs,Flags);
+			Rslt=m_pSfxArray->AddEntry(szName,pSeqBuff,(uint32_t)BuffOfs,Flags);
 
 		if(Rslt < eBSFSuccess)
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessFastaFile - error %d %s",Rslt,bSeqStore ? "internal" : m_pSfxArray->GetErrMsg());
@@ -985,8 +985,8 @@ if(Rslt >= eBSFSuccess && bEntryCreated && BuffOfs > 0)			// close entry
 			Rslt = eBSFSuccess;
 			NumSeqsAccepted += 1;
 			TotAcceptedLen += BuffOfs;
-			if(MaxSeqLen < (UINT32)BuffOfs)
-				MaxSeqLen = (UINT32)BuffOfs;
+			if(MaxSeqLen < (uint32_t)BuffOfs)
+				MaxSeqLen = (uint32_t)BuffOfs;
 			}
 		}
 	}
@@ -1000,10 +1000,10 @@ gDiagnostics.DiagOut(eDLInfo,gszProcName,"ProcessFastaFile - %d parsed, %d accep
 return(Rslt);
 }
 
-INT64
+int64_t
 CPBECContigs::EstSumSeqLens(int NumTargFiles,char **pszTargFiles)		// guestimate total sequence length by simply summing the lengths of each file - likely to grossly over estimate
 {
-INT64 SumFileSizes;
+int64_t SumFileSizes;
 int Idx;
 int NumGlobs;
 
@@ -1015,7 +1015,7 @@ for(Idx = 0; Idx < NumTargFiles; Idx++)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to glob '%s",pszTargFiles[Idx]);
 		Reset(false);
-		return((INT64)eBSFerrOpnFile);
+		return((int64_t)eBSFerrOpnFile);
    		}
 
 
@@ -1029,7 +1029,7 @@ for (NumGlobs = 0; NumGlobs < glob.FileCount(); NumGlobs += 1)
 	struct stat64 st;
 	if(!stat64(glob.File(NumGlobs),&st))
 #endif
-		SumFileSizes += (INT64)st.st_size;
+		SumFileSizes += (int64_t)st.st_size;
 	}
 if(NumGlobs == 0)
 	{
@@ -1051,7 +1051,7 @@ CPBECContigs::LoadSeqs(int MinSeqLen,int NumTargFiles,
 int Rslt;
 int Idx;
 int NumGlobs;
-INT64 SumFileSizes;
+int64_t SumFileSizes;
 
 CSimpleGlob glob(SG_GLOB_FULLSORT);
 
@@ -1076,7 +1076,7 @@ for (NumGlobs = 0; NumGlobs < glob.FileCount(); NumGlobs += 1)
 	struct stat64 st;
 	if(!stat64(glob.File(NumGlobs),&st))
 #endif
-		SumFileSizes += (INT64)st.st_size;
+		SumFileSizes += (int64_t)st.st_size;
 	}
 if(NumGlobs == 0)
 	{
@@ -1126,13 +1126,13 @@ CPBECContigs::Process(etPBPMode PMode,	// processing mode
 		int NumThreads)				// maximum number of worker threads to use
 {
 int Rslt = eBSFSuccess;
-UINT32 CurNodeID;
-UINT32 MaxSeqLen;
+uint32_t CurNodeID;
+uint32_t MaxSeqLen;
 tsPBECCScaffNode *pCurPBScaffNode;
-UINT32 NumTargSeqs;
-UINT64 TotTargSeqLen;
-UINT32 MaxTargSeqLen;
-UINT32 RefSeqID;
+uint32_t NumTargSeqs;
+uint64_t TotTargSeqLen;
+uint32_t MaxTargSeqLen;
+uint32_t RefSeqID;
 etSeqBase *pRefSeq;
 
 Reset(false);
@@ -1162,7 +1162,7 @@ m_szHiConfFile[sizeof(m_szHiConfFile)-1] = '\0';
 strncpy(m_szErrCorFile,pszErrCorFile,sizeof(m_szErrCorFile));
 m_szErrCorFile[sizeof(m_szErrCorFile)-1] = '\0';
 
-INT64 SumContigsSizes;
+int64_t SumContigsSizes;
 
 SumContigsSizes = EstSumSeqLens(1,&pszContigFile);	// guestimate sum of all sequences; will return -1 if errors
 if(SumContigsSizes == -1)
@@ -1171,9 +1171,9 @@ if(SumContigsSizes == -1)
 	return(eBSFerrObj);
 	}
 
-INT64 HiConfFileSizes;
+int64_t HiConfFileSizes;
 HiConfFileSizes = EstSumSeqLens(1,&pszHiConfFile);	// guestimate sum of all sequences; will return eBSFerrOpnFile if errors
-if(HiConfFileSizes == (INT64)eBSFerrOpnFile)
+if(HiConfFileSizes == (int64_t)eBSFerrOpnFile)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Unable to access the high confidence sequences file");
 	return(eBSFerrObj);
@@ -1310,13 +1310,13 @@ if((m_pPBScaffNodes = new tsPBECCScaffNode [NumTargSeqs + 1]) == NULL)
 	}
 memset(m_pPBScaffNodes,0,sizeof(tsPBECCScaffNode) * (NumTargSeqs+1));
 m_AllocdPBScaffNodes = NumTargSeqs;
-if((m_pMapEntryID2NodeIDs = new UINT32 [NumTargSeqs + 1]) == NULL)
+if((m_pMapEntryID2NodeIDs = new uint32_t [NumTargSeqs + 1]) == NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate for %d mapping entries nodes",NumTargSeqs);
 	Reset(false);
 	return(eBSFerrMem);
 	}
-memset(m_pMapEntryID2NodeIDs,0,sizeof(UINT32) * (NumTargSeqs+1));
+memset(m_pMapEntryID2NodeIDs,0,sizeof(uint32_t) * (NumTargSeqs+1));
 m_NumPBScaffNodes = 0;
 
 if((m_pMAConsensus = new CMAConsensus)==NULL)
@@ -1342,7 +1342,7 @@ MaxSeqLen = 0;
 pCurPBScaffNode = m_pPBScaffNodes;
 for(CurNodeID = 1; CurNodeID <= NumTargSeqs; CurNodeID++,pCurPBScaffNode++)
 	{
-	UINT16 SeqFlags;
+	uint16_t SeqFlags;
 	pCurPBScaffNode->SeqLen = m_pSfxArray->GetSeqLen(CurNodeID);
 	if(pCurPBScaffNode->SeqLen > cMaxRefSeqLen)
 		{
@@ -1365,7 +1365,7 @@ for(CurNodeID = 1; CurNodeID <= NumTargSeqs; CurNodeID++,pCurPBScaffNode++)
 	SeqFlags = m_pSfxArray->GetIdentFlags(CurNodeID);
 	pCurPBScaffNode->flgHCseq = SeqFlags & cFlgHCSeq ? 1 : 0;
 	pCurPBScaffNode->flgUnderlength = pCurPBScaffNode->SeqLen < m_MinContigLen ? 1 : 0;
-	if(MaxSeqLen == 0 || pCurPBScaffNode->SeqLen > (UINT32)MaxSeqLen)
+	if(MaxSeqLen == 0 || pCurPBScaffNode->SeqLen > (uint32_t)MaxSeqLen)
 		MaxSeqLen = pCurPBScaffNode->SeqLen;
 	}
 m_NumPBScaffNodes = NumTargSeqs;
@@ -1442,7 +1442,7 @@ if(m_hErrCorFile != -1)
 				pConsensusSeq = NULL;
 				}
 			AllocdConsensusSeqSize = 10 + ((ConsensusLen * 4) / 3);
-			pConsensusSeq = new UINT8 [AllocdConsensusSeqSize];
+			pConsensusSeq = new uint8_t [AllocdConsensusSeqSize];
 			}
 		ConsensusLen = m_pMAConsensus->GetConsensus(pCurPBScaffNode->RefSeqID,1,ConsensusLen,pConsensusSeq);
 
@@ -1589,7 +1589,7 @@ if(ThreadIdx != NumECThreads)	// any errors whilst allocating memory for core hi
 	while(ThreadIdx >= 0);
 	delete pThreadPutOvlps;
 	Reset(false);
-	return((INT64)eBSFerrMem);
+	return((int64_t)eBSFerrMem);
 	}
 
 pThreadPar = pThreadPutOvlps;
@@ -1670,48 +1670,48 @@ return(0);
 int
 CPBECContigs::ThreadPBECContigs(tsThreadPBECContigs *pThreadPar)
 {
-UINT32 AdjOverlapFloat;
-UINT32 CurTargCoreHitCnts;
+uint32_t AdjOverlapFloat;
+uint32_t CurTargCoreHitCnts;
 tsPBECCScaffNode *pTargNode;
-UINT32 ProbeAlignLength;
-UINT32 TargAlignLength;
-UINT32 TargSeqLen;
-UINT32 LongSAligns;
-UINT32 LongAAligns;
+uint32_t ProbeAlignLength;
+uint32_t TargAlignLength;
+uint32_t TargSeqLen;
+uint32_t LongSAligns;
+uint32_t LongAAligns;
 tsSSWCell *pPeakMatchesCell;
 tsSSWCell PeakMatchesCell;
 #ifdef _PEAKSCOREACCEPT
 tsSSWCell PeakScoreCell;
 #endif
 bool bProbeSense;
-UINT32 Idx;
-UINT32 CurSummaryHitCnts;
-UINT32 LowestSummaryHitCnts;
+uint32_t Idx;
+uint32_t CurSummaryHitCnts;
+uint32_t LowestSummaryHitCnts;
 sPBECCCoreHitCnts *pLowestSummaryHitCnts;
-UINT32 HitIdx;
+uint32_t HitIdx;
 tsPBECCCoreHit *pCoreHit;
-UINT32 CurTargHitOfs;
-UINT32 CurProbeHitOfs;
-UINT32 CurSEntryIDHits;
-UINT32 CurAEntryIDHits;
-UINT32	CurSTargStartOfs;
-UINT32	CurSTargEndOfs;
-UINT32	CurATargStartOfs;
-UINT32	CurATargEndOfs;
-UINT32	CurSProbeStartOfs;
-UINT32	CurSProbeEndOfs;
-UINT32	CurAProbeStartOfs;
-UINT32	CurAProbeEndOfs;
-UINT32 ProvOverlapping;
-UINT32 ProvOverlapped;
-UINT32 ProvContained;
-UINT32 ProvArtefact;
-UINT32 ProvSWchecked;
-UINT32 MinOverlapLen;
+uint32_t CurTargHitOfs;
+uint32_t CurProbeHitOfs;
+uint32_t CurSEntryIDHits;
+uint32_t CurAEntryIDHits;
+uint32_t	CurSTargStartOfs;
+uint32_t	CurSTargEndOfs;
+uint32_t	CurATargStartOfs;
+uint32_t	CurATargEndOfs;
+uint32_t	CurSProbeStartOfs;
+uint32_t	CurSProbeEndOfs;
+uint32_t	CurAProbeStartOfs;
+uint32_t	CurAProbeEndOfs;
+uint32_t ProvOverlapping;
+uint32_t ProvOverlapped;
+uint32_t ProvContained;
+uint32_t ProvArtefact;
+uint32_t ProvSWchecked;
+uint32_t MinOverlapLen;
 sPBECCCoreHitCnts *pSummaryCnts;
-UINT32 HiConfSeqID;
-UINT32 HiConfSeqFlags;
-UINT32 HiConfSeqLen;
+uint32_t HiConfSeqID;
+uint32_t HiConfSeqFlags;
+uint32_t HiConfSeqLen;
 int NumInMultiAlignment;
 int Class;
 char szProbeSeqName[cMaxDatasetSpeciesChrom];
@@ -1764,17 +1764,17 @@ for(HiConfSeqID = 1; HiConfSeqID <= m_NumHiConfSeqs; HiConfSeqID++)
 	// process and mark these probable artifact hits by identifying the most spatially related cluster of hits; hits outside of
 	// the most spatially related cluster are marked as being artefactual 
 
-		UINT32 CurTargSeqID;
-		UINT32 ProbeSeqLen;
-		UINT32 MaxWinSize;
+		uint32_t CurTargSeqID;
+		uint32_t ProbeSeqLen;
+		uint32_t MaxWinSize;
 
-		UINT32 RelWinSize;
+		uint32_t RelWinSize;
 		bool bFirstHitNewTargSeq;
-		UINT32 PrevAcceptedProbeOfs;
-		UINT32 PrevAcceptedTargOfs;
-		UINT32 MaxNoHitGapLen;
-		UINT32 NumNoHitGaps;
-		UINT32 SumNoHitGapLens;
+		uint32_t PrevAcceptedProbeOfs;
+		uint32_t PrevAcceptedTargOfs;
+		uint32_t MaxNoHitGapLen;
+		uint32_t NumNoHitGaps;
+		uint32_t SumNoHitGapLens;
 		tsPBECCCoreHit *pFirstCoreHit;
 		tsPBECCCoreHit *pNxtCoreHit;
 		tsPBECCCoreHit *pMaxCoreHit;
@@ -1840,7 +1840,7 @@ for(HiConfSeqID = 1; HiConfSeqID <= m_NumHiConfSeqs; HiConfSeqID++)
 
 					if(pFirstCoreHit->WinHits >= pThreadPar->MinNumCores && ((PrevAcceptedProbeOfs + MaxNoHitGapLen) > ProbeSeqLen || (PrevAcceptedTargOfs + MaxNoHitGapLen) > TargSeqLen))
 						{
-						UINT32 PutativeOverlapLen = PrevAcceptedProbeOfs - pFirstCoreHit->ProbeOfs;
+						uint32_t PutativeOverlapLen = PrevAcceptedProbeOfs - pFirstCoreHit->ProbeOfs;
 						if(((SumNoHitGapLens * 100) / PutativeOverlapLen) <= 20)		// only accepting if no more than 20% of alignment sums to gaps > MaxNoHitGapLen
 							{
 							if (pMaxCoreHit == NULL || pFirstCoreHit->WinHits > pMaxCoreHit->WinHits)
@@ -2034,7 +2034,7 @@ for(HiConfSeqID = 1; HiConfSeqID <= m_NumHiConfSeqs; HiConfSeqID++)
 			pTargNode = &m_pPBScaffNodes[pSummaryCnts->TargNodeID-1];
 			MinOverlapLen = (HiConfSeqLen * 7) / 10;
 			TargSeqLen = pTargNode->SeqLen; 
-			if(TargSeqLen + 10 > (UINT32)pThreadPar->AllocdTargSeqSize)
+			if(TargSeqLen + 10 > (uint32_t)pThreadPar->AllocdTargSeqSize)
 				{
 				delete pThreadPar->pTargSeq;
 				pThreadPar->AllocdTargSeqSize = (TargSeqLen * 150) / 100;
@@ -2204,17 +2204,17 @@ return(0);
 
 
 int					// returns 0 if core overlapped (uses a non-exhaustive search) a previously added core, index 1..N of just added core hit or -1 if errors
-CPBECContigs::AddCoreHit(UINT32 ProbeNodeID,			// core hit was from this probe scaffold node 
+CPBECContigs::AddCoreHit(uint32_t ProbeNodeID,			// core hit was from this probe scaffold node 
 			   bool bRevCpl,					// true if core sequence was revcpl'd before matching
-			   UINT32 ProbeOfs,                 // hit started at this probe offset
-			   UINT32 TargNodeID,               // probe core matched onto this target scaffold node
-			   UINT32 TargOfs,                  // probe core matched starting at this target loci
-			   UINT32 HitLen,					// hit was of this length
+			   uint32_t ProbeOfs,                 // hit started at this probe offset
+			   uint32_t TargNodeID,               // probe core matched onto this target scaffold node
+			   uint32_t TargOfs,                  // probe core matched starting at this target loci
+			   uint32_t HitLen,					// hit was of this length
                tsThreadPBECContigs *pPars)			// thread specific
 {
-UINT32 ExpdHitLen;
-UINT32 NumHits2Chk; 
-UINT32 HitsChkd;
+uint32_t ExpdHitLen;
+uint32_t NumHits2Chk; 
+uint32_t HitsChkd;
 tsPBECCCoreHit *pCurCoreHit;
 
 if((pPars->NumCoreHits + 5) > pPars->AllocdCoreHits)	// need to realloc memory to hold additional cores?
@@ -2223,7 +2223,7 @@ if((pPars->NumCoreHits + 5) > pPars->AllocdCoreHits)	// need to realloc memory t
 	int coresreq;
 	size_t memreq;
 	void *pAllocd;
-	coresreq = (int)(((INT64)pPars->AllocdCoreHits * 125) / (INT64)100);
+	coresreq = (int)(((int64_t)pPars->AllocdCoreHits * 125) / (int64_t)100);
 	memreq = coresreq * sizeof(tsPBECCCoreHit);
 
 #ifdef _WIN32
@@ -2281,8 +2281,8 @@ return(pPars->NumCoreHits);
 
 // MapEntryID2NodeID
 // Given a suffix array entry identifier returns the corresponding node identifier
-UINT32										// returned tsPBScaffNode node identifier
-CPBECContigs::MapEntryID2NodeID(UINT32 EntryID)			// suffix array entry identifier
+uint32_t										// returned tsPBScaffNode node identifier
+CPBECContigs::MapEntryID2NodeID(uint32_t EntryID)			// suffix array entry identifier
 {
 if(EntryID == 0 || EntryID > m_NumPBScaffNodes || m_pMapEntryID2NodeIDs == NULL)
 	return(0);
@@ -2292,24 +2292,24 @@ return(m_pMapEntryID2NodeIDs[EntryID-1]);
 
 
 int
-CPBECContigs::IdentifyCoreHits(UINT32 HiConfSeqID,	// identify all overlaps of this probe sequence HiConfSeqID onto target sequences
-				UINT32 MinTargLen,				// accepted target hit sequences must be at least this length
-				UINT32 MaxTargLen,				// and if > 0 then accepted targets no longer than this length
+CPBECContigs::IdentifyCoreHits(uint32_t HiConfSeqID,	// identify all overlaps of this probe sequence HiConfSeqID onto target sequences
+				uint32_t MinTargLen,				// accepted target hit sequences must be at least this length
+				uint32_t MaxTargLen,				// and if > 0 then accepted targets no longer than this length
 				tsThreadPBECContigs *pPars)		// thread specific
 {
-INT64 PrevHitIdx;
-INT64 NextHitIdx;
-UINT32 HitEntryID;
-UINT32 HitLoci;
-UINT32 HitsThisCore;
-UINT32 HighHitsThisCore;
-UINT32 TotHitsAllCores;
-UINT32 HitSeqLen;
-UINT32 ProbeOfs;
-UINT32 LastProbeOfs;
+int64_t PrevHitIdx;
+int64_t NextHitIdx;
+uint32_t HitEntryID;
+uint32_t HitLoci;
+uint32_t HitsThisCore;
+uint32_t HighHitsThisCore;
+uint32_t TotHitsAllCores;
+uint32_t HitSeqLen;
+uint32_t ProbeOfs;
+uint32_t LastProbeOfs;
 
-UINT32 ChkOvrLapCoreProbeOfs;
-UINT32 LastCoreProbeOfs;
+uint32_t ChkOvrLapCoreProbeOfs;
+uint32_t LastCoreProbeOfs;
 int ChkOvrLapCoreStartIdx;
 
 etSeqBase *pCoreSeq;
@@ -2317,7 +2317,7 @@ tsPBECCScaffNode *pTargNode;
 
 if(HiConfSeqID < 1 || HiConfSeqID > m_NumHiConfSeqs)
 	return(eBSFerrParams);
-UINT32 ProbeSeqLen = m_pSeqStore->GetLen(HiConfSeqID);
+uint32_t ProbeSeqLen = m_pSeqStore->GetLen(HiConfSeqID);
 
 if(pPars->pProbeSeq == NULL || pPars->AllocdProbeSeqSize < (ProbeSeqLen + 10))
 	{
@@ -2359,7 +2359,7 @@ for(ProbeOfs = 0; ProbeOfs < LastProbeOfs; ProbeOfs+=pPars->DeltaCoreOfs,pCoreSe
 		HitSeqLen = pTargNode->SeqLen; 
 
 		if( pTargNode->flgUnderlength == 1 ||	// not interested in under length targets
-			 HitSeqLen < (UINT32)pPars->MinPBSeqLen)		// not interested if target sequence length not in range of accepted target sequence length to be processed
+			 HitSeqLen < (uint32_t)pPars->MinPBSeqLen)		// not interested if target sequence length not in range of accepted target sequence length to be processed
 			continue;
 
   		if(AddCoreHit(HiConfSeqID,pPars->bRevCpl,ProbeOfs,pTargNode->NodeID,HitLoci,pPars->CoreSeqLen,pPars)>0)
@@ -2471,8 +2471,8 @@ CPBECContigs::SortCoreHitsDescending(const void *arg1, const void *arg2)
 sPBECCCoreHitCnts *pEl1 = (sPBECCCoreHitCnts *)arg1;
 sPBECCCoreHitCnts *pEl2 = (sPBECCCoreHitCnts *)arg2;
 
-UINT32 El1NumHits;
-UINT32 El2NumHits;
+uint32_t El1NumHits;
+uint32_t El2NumHits;
 El1NumHits = max(pEl1->NumSHits,pEl1->NumAHits);
 El2NumHits = max(pEl2->NumSHits,pEl2->NumAHits);
 if(El1NumHits > El2NumHits)

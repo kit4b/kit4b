@@ -500,7 +500,7 @@ int Process(etPMode PMode,				// processing sensitivity mode
 int Rslt;
 int Idx;
 int NumInputFilesProcessed;
-UINT32 TotNumReadsAccepted;
+uint32_t TotNumReadsAccepted;
 int NumP1Files;
 int NumP2Files;
 

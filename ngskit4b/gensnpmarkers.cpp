@@ -539,8 +539,8 @@ return 0;
 }
 
 typedef struct TAG_sSAMFileEls {
-	UINT32 SeqLen;				// estimated mean sequence length
-	UINT32 NumAlignments;		// estimated number of alignments		
+	uint32_t SeqLen;				// estimated mean sequence length
+	uint32_t NumAlignments;		// estimated number of alignments		
 	} tsSAMFileEls;
 
 int GSMProcess(etRPMode PMode,				// processing mode
@@ -564,16 +564,16 @@ char *pszAlignFile;
 char szProbeSpecies[cMaxLenName];
 int FileIdx;
 int Rslt;
-INT64 Rslt64;
+int64_t Rslt64;
 tsSAMFileEls EstSAMFileEls[cMaxMarkerSpecies];
 
-INT64 PrevAlignLoci;
-INT64 CurAlignLoci;
-INT64 InitalAlignLoci;
-INT64 TotSNPRows;
-INT64 TotAlignments;
-INT64 SumMeanSeqLens;
-INT32 MeanSeqLen;
+int64_t PrevAlignLoci;
+int64_t CurAlignLoci;
+int64_t InitalAlignLoci;
+int64_t TotSNPRows;
+int64_t TotAlignments;
+int64_t SumMeanSeqLens;
+int32_t MeanSeqLen;
 CMarkers *pMarkers = NULL;
 CCSVFile *pCSV = NULL;
 CSAMfile *pSAM = NULL;
@@ -595,8 +595,8 @@ if((pCSV = new CCSVFile)==NULL)
 TotSNPRows = 0;
 for(FileIdx = 0; FileIdx < NumSNPFiles; FileIdx++)
 	{
-	UINT32 NumRows;
-	INT64 FileSize;
+	uint32_t NumRows;
+	int64_t FileSize;
 	int MaxChrsPerRow;
 	int MaxFields;
 	int MeanFields;
@@ -634,7 +634,7 @@ if(NumAlignFiles)
 	{
 	for(FileIdx = 0; FileIdx < NumAlignFiles; FileIdx++)
 		{
-		UINT32 NumAlignments;
+		uint32_t NumAlignments;
 		EstSAMFileEls[FileIdx].NumAlignments = 0;
 		EstSAMFileEls[FileIdx].SeqLen = 0;
 		pszAlignFile = pszAlignFiles[FileIdx];
@@ -648,8 +648,8 @@ if(NumAlignFiles)
 			}
 		gDiagnostics.DiagOut(eDLInfo,gszProcName,"Estimating %u alignments with mean sequence length %u in file: '%s'",NumAlignments,MeanSeqLen,pszAlignFile);
 
-		NumAlignments = (UINT32)(((UINT64)NumAlignments * 105)/100); // allow 5% extra when allocating memory in case underestimating
-		MeanSeqLen = (UINT32)(((UINT64)MeanSeqLen * 105)/100);
+		NumAlignments = (uint32_t)(((uint64_t)NumAlignments * 105)/100); // allow 5% extra when allocating memory in case underestimating
+		MeanSeqLen = (uint32_t)(((uint64_t)MeanSeqLen * 105)/100);
 
 
 		EstSAMFileEls[FileIdx].NumAlignments = NumAlignments;

@@ -50,13 +50,13 @@ typedef enum TAG_eKMPMode {
 typedef struct TAG_tsPartialCultivar {
 	int PartialCultivarID;		// uniquely identifies this instance (1..N)
 	int EntryID;				// suffix array pseudo-chrom identifier
-	UINT32 EntryLen;			// pseudo-chrom length
+	uint32_t EntryLen;			// pseudo-chrom length
 	char szEntryName[cMaxDatasetSpeciesChrom+1]; // pseudo-chrom name
 } tsPartialCultivar;
 
 typedef struct TAG_sCultivar {
 	tsPartialCultivar Cultivar;		// cultivar details
-	UINT32 Status;					// status of this cultivar
+	uint32_t Status;					// status of this cultivar
 } tsCultivar;
 
 
@@ -72,7 +72,7 @@ typedef struct TAG_sKMerThreadPars {
 	class CLocKMers *pThis;			// class
 	int Rslt;						// returned result code
 	int AllocBlockSeqsSize;			// pBlockSeqs allocated to hold this manybases
-	UINT8 *pBlockSeqs;				// used by thread to hold block of sequences for processing
+	uint8_t *pBlockSeqs;				// used by thread to hold block of sequences for processing
 } tsKMerThreadPars;
 #pragma pack()
 
@@ -82,7 +82,7 @@ class CLocKMers
 	char m_szTargetCultivar[cMaxDatasetSpeciesChrom+1];		// this is the name of the targeted cultivar for which unique K-mers are to be returned
 	int m_NumPartialCultivars;		//  this many pseudo chromosome names for targeted cultivar
 	int m_CurPartialCultivarID;		//  this partial pseudo-chromosome is currently being buffered for K-mer processing
-	UINT32 m_CurPartialCultivarOfs;	// load into buffer starting at this offset
+	uint32_t m_CurPartialCultivarOfs;	// load into buffer starting at this offset
 	tsPartialCultivar m_PartialCultivars[cMaxTargCultivarChroms];		// names of pseudo-chromosomes in suffix index file which belong to the targeted cultivar
 	int m_CultChromIDs[cMaxTargCultivarChroms];	// partial cultivar pseudo-chroms EntryIDs required by suffix array function MatchesOtherChroms()
 
@@ -99,25 +99,25 @@ class CLocKMers
 	int m_NumThreads;				// number of worker threads requested
 
 	// access to following is serialised via AcquireLock()
-	UINT32 m_NumBlocks;				// current total number of blocks containing multiple eBaseEOS terminated sequences processed by all threads
-	INT64 m_NumKMers;				// current total number of KMers processed by all threads
-	UINT32 m_NumPutativeKMers;		// current total number of KMers which are unique to target cultivar
-	UINT32 m_NumAcceptedKMers;		// current total number KMers which are unique and more than requested Hammings away in any non-target cultivar
-	UINT32 m_NumAcceptedExtdKMers;  // current total number length extended sequences in which any individual subsequence meets the KMer requirement of being more than requested Hammings away in any non-target cultivar  
+	uint32_t m_NumBlocks;				// current total number of blocks containing multiple eBaseEOS terminated sequences processed by all threads
+	int64_t m_NumKMers;				// current total number of KMers processed by all threads
+	uint32_t m_NumPutativeKMers;		// current total number of KMers which are unique to target cultivar
+	uint32_t m_NumAcceptedKMers;		// current total number KMers which are unique and more than requested Hammings away in any non-target cultivar
+	uint32_t m_NumAcceptedExtdKMers;  // current total number length extended sequences in which any individual subsequence meets the KMer requirement of being more than requested Hammings away in any non-target cultivar  
 	// end of serialised access ReleaseLock()
 
 	char m_szDataset[cMaxDatasetSpeciesChrom+1];			// SfxArray dataset name
 	bool m_bInitSeqBuffering;		// true if no sequences yet loaded, initialise buffering
 	bool m_bAllEntrySeqsLoaded;		// true if all cultivar partial chrom sequences have been loaded into m_pBlockSeqBuff
 	bool m_bAllBlocksReturned;		// true if all blocks of sequences have been returned for K-mer markers processing
-	UINT32 m_NxtBlockSeqBuffOfs;	// return block of sequences starting at this m_pBlockSeqBuff[m_NxtBlockSeqBuffOfs]
-	UINT32 m_BlockSeqBuffLen;		// m_pBlockSeqBuff currently  has been loaded with this many bases
-	UINT32 m_AllocBlockSeqBuffSize;	// m_pBlockSeqBuff allocated to hold at most this many bases
-	UINT8 *m_pBlockSeqBuff;			// allocated to buffer blocks of sequences to be returned by GetBlockSeqs()
+	uint32_t m_NxtBlockSeqBuffOfs;	// return block of sequences starting at this m_pBlockSeqBuff[m_NxtBlockSeqBuffOfs]
+	uint32_t m_BlockSeqBuffLen;		// m_pBlockSeqBuff currently  has been loaded with this many bases
+	uint32_t m_AllocBlockSeqBuffSize;	// m_pBlockSeqBuff allocated to hold at most this many bases
+	uint8_t *m_pBlockSeqBuff;			// allocated to buffer blocks of sequences to be returned by GetBlockSeqs()
 
 	int m_MaxMarkerLen;				// maximum observed K-mer marker length
 	int m_MinMarkerLen;				// maximum observed K-mer marker length
-	UINT32 *m_pMarkerLenDist;		// allocated to hold extended K-mer marker length distributions 
+	uint32_t *m_pMarkerLenDist;		// allocated to hold extended K-mer marker length distributions 
 
 	char m_szMarkerFile[_MAX_FNAME];	// write identified markers to this multifasta file
 	int m_hOutFile;					// marker output file handle
@@ -126,10 +126,10 @@ class CLocKMers
 	char m_szMarkerReadsFile[_MAX_FNAME];	// write reads containing identified markers to this multifasta file
 	int m_hOutReadsFile;			// marker containing reads output file handle
 
-	UINT32 m_MarkerID;				// uniquely identifies marker sequences
-	UINT32 m_MarkerBuffOfs;			// concatenate next marker fasta sequence at this offset
-	UINT32 m_AllocMarkerBuffSize;	// size of allocated marker buffer
-	UINT8 *m_pMarkerBuff;			// allocated to buffer reported marker fasta sequences
+	uint32_t m_MarkerID;				// uniquely identifies marker sequences
+	uint32_t m_MarkerBuffOfs;			// concatenate next marker fasta sequence at this offset
+	uint32_t m_AllocMarkerBuffSize;	// size of allocated marker buffer
+	uint8_t *m_pMarkerBuff;			// allocated to buffer reported marker fasta sequences
 
 	int	FillBlockSeqBuff(void);		// maximally fill sequence buffer	
 	
@@ -144,11 +144,11 @@ class CLocKMers
 
 	int LocateSharedUniqueKMers(tsKMerThreadPars *pPars);	// locate all unique K-mers of specified length which are common to all cultivars
 
-	UINT32											// returns number of accepted cultivar specific extended K-mers
-		GetKMerProcProgress(UINT32 *pNumBlocks,		// number of blocks processed
-					INT64 *pNumKMers,				// these blocks contain this number of K-mers
-					UINT32 *pNumPutativeKMers,		// putatively - before check for Hamming - there are this number of unique K-mers mapping to target cultivar
-					UINT32 *pNumAcceptedKMers);		// after Hamming check this number of K-mers have been accepted
+	uint32_t											// returns number of accepted cultivar specific extended K-mers
+		GetKMerProcProgress(uint32_t *pNumBlocks,		// number of blocks processed
+					int64_t *pNumKMers,				// these blocks contain this number of K-mers
+					uint32_t *pNumPutativeKMers,		// putatively - before check for Hamming - there are this number of unique K-mers mapping to target cultivar
+					uint32_t *pNumAcceptedKMers);		// after Hamming check this number of K-mers have been accepted
 	
 	int
 		ReportMarker(int MarkerLen,			// number of bases in marker sequence
@@ -173,7 +173,7 @@ class CLocKMers
 	void AcquireLock(bool bExclusive);
 	void ReleaseLock(bool bExclusive);
 
-	static int MarkersCallback(void *pThis,UINT32 EntryID,etSeqBase *pSeq);
+	static int MarkersCallback(void *pThis,uint32_t EntryID,etSeqBase *pSeq);
 	static int sortpartcultnames(const void *pEl1,const void *pEl2);		// used when sorting cultivar partial pseudo-chrom names
 
 public:
@@ -184,7 +184,7 @@ public:
 
 	int										// returned block of concatenated sequences total length
 		GetBlockSeqs(int MaxLength,			//  maximum total block length to return
-						UINT8 *pBlockSeqs);	// copy block of sequences into this buffer
+						uint8_t *pBlockSeqs);	// copy block of sequences into this buffer
 
 
 	int

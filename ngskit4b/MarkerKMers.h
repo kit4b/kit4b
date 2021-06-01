@@ -30,9 +30,9 @@ const int cMaxKMerLen = 200;			// maximum K-mer length
 const int cMarkerSeqBuffSize = 0x0fffff;	// marker sequence buffering used to hold markers prior to writing out to file
 const int cAllocNumPutativeSeqs = 0x0fffff;	// allocate for this many putative marker sequences, and realloc in this many increments as may be required
 
-const UINT8 cMarkerDupFlg = 0x01;			// marker prefix sequence is a duplicate
-const UINT8 cMarkerOvlFlg = 0x02;			// marker prefix sequence overlaps onto another prefix sequence
-const UINT8 cMarkerAntiFlg = 0x04;			// marker prefix sequence is antisense to another prefix sequence
+const uint8_t cMarkerDupFlg = 0x01;			// marker prefix sequence is a duplicate
+const uint8_t cMarkerOvlFlg = 0x02;			// marker prefix sequence overlaps onto another prefix sequence
+const uint8_t cMarkerAntiFlg = 0x04;			// marker prefix sequence is antisense to another prefix sequence
 
 
 // processing modes
@@ -46,18 +46,18 @@ typedef enum TAG_ePMode {
 
 typedef struct TAG_sCultivar {
 	int EntryID;				// suffix array pseudo-chrom (cultivar) identifier
-	UINT32 EntryLen;			// pseudo-chrom length
+	uint32_t EntryLen;			// pseudo-chrom length
 	char szEntryName[cMaxDatasetSpeciesChrom+1]; // pseudo-chrom name
-	UINT32 Status;					// status of this cultivar
+	uint32_t Status;					// status of this cultivar
 } tsCultivar;
 
 typedef struct TAG_sPutMarker {
-	UINT32 MarkerID;		// uniquely identifies this marker
-	UINT16  NumCultivars;	// number of cultivars in which marker was located
-	UINT32 SenseCnts;		// number of marker K-Mers on sense strand
-	UINT32 AntisenseCnts;	// number of marker K-Mers on antisense strand
-	UINT8  Flags;			// set to a combination of cMarkerDupFlg, cMarkerOvlFlg, cMarkerAntiFlg  
-	UINT8  MarkerSeq[1];	// to hold marker sequence bases
+	uint32_t MarkerID;		// uniquely identifies this marker
+	uint16_t  NumCultivars;	// number of cultivars in which marker was located
+	uint32_t SenseCnts;		// number of marker K-Mers on sense strand
+	uint32_t AntisenseCnts;	// number of marker K-Mers on antisense strand
+	uint8_t  Flags;			// set to a combination of cMarkerDupFlg, cMarkerOvlFlg, cMarkerAntiFlg  
+	uint8_t  MarkerSeq[1];	// to hold marker sequence bases
 } tsPutMarker;
 
 typedef struct TAG_sKMerThreadPars {
@@ -70,8 +70,8 @@ typedef struct TAG_sKMerThreadPars {
 	pthread_t threadID;				// identifier as set by pthread_create ()
 #endif
 	class CMarkerKMers *pThis;		// class instance
-	INT64 StartSfxIdx;				// thread to process from this suffix index inclusive
-	INT64 EndSfxIdx;				// thread to process until this suffix index inclusive
+	int64_t StartSfxIdx;				// thread to process from this suffix index inclusive
+	int64_t EndSfxIdx;				// thread to process until this suffix index inclusive
 	int Rslt;						// returned result code
 } tsKMerThreadPars;
 #pragma pack()
@@ -91,27 +91,27 @@ class CMarkerKMers
 	int m_MaxHomozygotic;			// only report prefixes if K-Mer suffixes are homozygotic between a maximum of this many cultivars, if 0 then no homozygotic check
 	int m_NumThreads;				// number of worker threads requested
 
-	UINT32 m_NumPrefixKMers;		// current total number of accepted unique prefixed KMers
-	INT64 m_TotSenseCnts;			// current total number of accepted KMers on sense strand
-	INT64 m_TotAntisenseCnts;		// current total number of accepted KMers on antisense strand
+	uint32_t m_NumPrefixKMers;		// current total number of accepted unique prefixed KMers
+	int64_t m_TotSenseCnts;			// current total number of accepted KMers on sense strand
+	int64_t m_TotAntisenseCnts;		// current total number of accepted KMers on antisense strand
 	
 	char m_szDataset[cMaxDatasetSpeciesChrom+1];			// SfxArray dataset name
 
 	char m_szMarkerFile[_MAX_FNAME];	// write identified markers to this multifasta file
 	int m_hOutFile;					// marker output file handle
 
-	UINT32 m_MarkerID;				// uniquely identifies marker sequences
+	uint32_t m_MarkerID;				// uniquely identifies marker sequences
 
-	UINT32 m_MarkerBuffOfs;			// concatenate next marker fasta sequence at this offset
-	UINT32 m_AllocMarkerBuffSize;	// size of allocated marker buffer
-	UINT8 *m_pMarkerBuff;			// allocated to buffer reported marker fasta sequences
+	uint32_t m_MarkerBuffOfs;			// concatenate next marker fasta sequence at this offset
+	uint32_t m_AllocMarkerBuffSize;	// size of allocated marker buffer
+	uint8_t *m_pMarkerBuff;			// allocated to buffer reported marker fasta sequences
 
 	int m_PutMarkerSize;			// size of each tsPutMarker allowing for m_PrefixLen sequence bases 
-	UINT32 m_NumPutMarkers;			// current number of putative marker sequences in m_pPutativeSeqs
+	uint32_t m_NumPutMarkers;			// current number of putative marker sequences in m_pPutativeSeqs
 	size_t m_AllocPutMarkersSize;	// current memory allocation size of m_pPutativeSeqs
 	tsPutMarker *m_pPutMarkers;		// used to hold all putative marker sequences
 	size_t m_AllocPutMarkersIndexSize; // current memory allocation size of m_pPutativeSeqs
-	UINT32 *m_pPutMarkersIndex;		// used to hold sorted index over m_pPutMarkers
+	uint32_t *m_pPutMarkersIndex;		// used to hold sorted index over m_pPutMarkers
 
 	int LocateSharedPrefixKMers(tsKMerThreadPars *pPars); // locate K-mers with shared prefixes 
 
@@ -124,9 +124,9 @@ class CMarkerKMers
 		GetMarkerAntisense(tsPutMarker *pMarker);		// marker to check if antisense to any other marker sequence
 							
 
-	INT64											// returns number of K-Mers processed
-		GetKMerProcProgress(INT64 *pTotSenseCnts,	// number of K-Mers on sense strand
-					INT64 *pTotAntisenseCnts);		// number of K-Mers on antisense strand
+	int64_t											// returns number of K-Mers processed
+		GetKMerProcProgress(int64_t *pTotSenseCnts,	// number of K-Mers on sense strand
+					int64_t *pTotAntisenseCnts);		// number of K-Mers on antisense strand
 	
 	int
 		ReportMarker(tsPutMarker *pMarker);			// marker to report
@@ -162,7 +162,7 @@ public:
 
 	int										// returned block of concatenated sequences total length
 		GetBlockSeqs(int MaxLength,			//  maximum total block length to return
-						UINT8 *pBlockSeqs);	// copy block of sequences into this buffer
+						uint8_t *pBlockSeqs);	// copy block of sequences into this buffer
 
 
 	int

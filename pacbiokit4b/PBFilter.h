@@ -44,19 +44,19 @@ typedef struct TAG_sThreadPBFilter {
 	void *pThis;					// will be initialised to pt to class instance
 #ifdef _WIN32
 	HANDLE threadHandle;			// handle as returned by _beginthreadex()
-	UINT32 threadID;				// identifier as set by _beginthreadex()
+	uint32_t threadID;				// identifier as set by _beginthreadex()
 #else
 	int threadRslt;					// result as returned by pthread_create ()
 	pthread_t threadID;				// identifier as set by pthread_create ()
 #endif
 	int Rslt;						// processing result
 
-	UINT32 SWAlignInstance;			// if contaminate filtering then will be set to the instance of SWAlign to use when aligning to the contaminate sequences
+	uint32_t SWAlignInstance;			// if contaminate filtering then will be set to the instance of SWAlign to use when aligning to the contaminate sequences
 	CSSW *pSW;						// Smith-Waterman class
 	int SMRTBellSensitivity; // sensitivity of SMRTBell detection - 5: max, 1: min
 
-	UINT32 AlignErrMem;				// number of times alignments failed because of memory allocation errors
-	UINT32 AlignExcessLen;			// number of times alignments failed because length of probe * target was excessive
+	uint32_t AlignErrMem;				// number of times alignments failed because of memory allocation errors
+	uint32_t AlignExcessLen;			// number of times alignments failed because length of probe * target was excessive
 
 } tsThreadPBFilter;
 

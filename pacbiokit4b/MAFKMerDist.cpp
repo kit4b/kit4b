@@ -675,16 +675,16 @@ int NumConConfs;
 int ExpNumConConfs;
 int SeqLen;
 bool bSloughLine;
-UINT32 ProbeID;
+uint32_t ProbeID;
 char Chr;
 char *pBuff;
 etSeqBase Base;
 tsKmerConfBase *pConsConfSeq;
 
-UINT32 SeqId;
-UINT32 ExpSeqID;
-INT32 NumProbeSeqBases;
-INT32 NumTargSeqBases;
+uint32_t SeqId;
+uint32_t ExpSeqID;
+int32_t NumProbeSeqBases;
+int32_t NumTargSeqBases;
 
 m_MAFFileLineNum = 1;
 State = 0;
@@ -897,7 +897,7 @@ for(; m_MAFAlignBuffIdx < m_MAFAlignBuffered; m_MAFAlignBuffIdx += 1,pBuff+=1)
 					return(eBSFerrAlignBlk);
 					}
 				NumConConfs += 1;
-				pConsConfSeq->Conf = (UINT8)(Chr - '0');	
+				pConsConfSeq->Conf = (uint8_t)(Chr - '0');	
 				pConsConfSeq += 1;	
 				continue;
 				}

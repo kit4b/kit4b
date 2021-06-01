@@ -171,14 +171,14 @@ if(m_NumFilterLocii > 1)
 return(m_NumFilterLocii);
 }
 
-UINT16 
+uint16_t 
 CFilterLoci::GenNameHash(char *pszName)
 {
 unsigned long hash = 5381;
 char Chr;
 while (Chr = *pszName++)
 	hash = ((hash << 5) + hash) + tolower(Chr);
-return ((UINT16)hash);
+return ((uint16_t)hash);
 }
 
 int
@@ -186,7 +186,7 @@ CFilterLoci::LocateChrom(char *pszChrom)
 {
 tsLociChrom *pChrom;
 int Idx;
-UINT16 Hash;
+uint16_t Hash;
 Hash = GenNameHash(pszChrom);
 
 if(m_pLociChroms != NULL && m_NumLociChroms)
@@ -213,7 +213,7 @@ CFilterLoci::AddChrom(char *pszChrom)
 {
 tsLociChrom *pChrom;
 int Idx;
-UINT16 Hash;
+uint16_t Hash;
 Hash = GenNameHash(pszChrom);
 
 if(m_pLociChroms != NULL && m_NumLociChroms)

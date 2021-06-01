@@ -55,91 +55,91 @@ typedef struct TAG_sMonoSNP {
 	char szElType[51];		// SNP type
 	char szSpecies[81];		// SNP located for alignments againts this target/species assembly	
 	char szChrom[81];		// SNP is on this chrom
-	UINT32 StartLoci;		// offset (0..N) at which SNP located
-	UINT32 EndLoci;			// offset (0..N) at which SNP located - allowing for future polymorphic varation covering multiple bases
-	UINT32 Len;				// polymorphic variation is of this length
+	uint32_t StartLoci;		// offset (0..N) at which SNP located
+	uint32_t EndLoci;			// offset (0..N) at which SNP located - allowing for future polymorphic varation covering multiple bases
+	uint32_t Len;				// polymorphic variation is of this length
 	char szStrand[2];		// SNP relative to this strand
-	UINT32 Rank;			// ranking confidence in thisSNP - min 0, max 1000
+	uint32_t Rank;			// ranking confidence in thisSNP - min 0, max 1000
 	double PValue;			// probability of this SNP being a false positive
-	UINT32 Bases;			// total number of bases aligning over the SNP loci
-	UINT32 Mismatches;		// aligned bases were aligning with this many mismatches
+	uint32_t Bases;			// total number of bases aligning over the SNP loci
+	uint32_t Mismatches;		// aligned bases were aligning with this many mismatches
 	char szRefBase[2];			// target sequence base at the SNP locai
-	UINT32 MMBaseA;			// this many mismatched bases were A
-	UINT32 MMBaseC;			// this many mismatched bases were C
-	UINT32 MMBaseG;			// this many mismatched bases were G
-	UINT32 MMBaseT;			// this many mismatched bases were T
-	UINT32 MMBaseN;			// this many mismatched bases were N
+	uint32_t MMBaseA;			// this many mismatched bases were A
+	uint32_t MMBaseC;			// this many mismatched bases were C
+	uint32_t MMBaseG;			// this many mismatched bases were G
+	uint32_t MMBaseT;			// this many mismatched bases were T
+	uint32_t MMBaseN;			// this many mismatched bases were N
 	double BackgroundSubRate; // background substitution rate within a window centered at SNP loci
-	UINT32 TotWinBases;		// total number of bases within centeredwindow
-	UINT32 TotWinMismatches;		// total number of mismatched bases within centered window
-	UINT32	MarkerID;			// marker identifier
-	UINT32 NumPolymorphicSites;	// number of polymorphic sites within marker
+	uint32_t TotWinBases;		// total number of bases within centeredwindow
+	uint32_t TotWinMismatches;		// total number of mismatched bases within centered window
+	uint32_t	MarkerID;			// marker identifier
+	uint32_t NumPolymorphicSites;	// number of polymorphic sites within marker
 } tsMonoSNP;
 
 typedef struct TAG_sDiSNP {
 	int ExprID;				// SNPs identified within this experiment
 	int ProcessingID;		// identifies processing instance
-	UINT32 DiSnpPID;		// DiSNP instance, processing instance unique
+	uint32_t DiSnpPID;		// DiSNP instance, processing instance unique
 	char szElType[51];		// SNP type
 	char szSpecies[81];		// DiSNP located for alignments againts this target/species assembly	
 	char szChrom[81];		// DiSNP is on this chrom
-	UINT32 SNP1Loci;		// offset (0..N) at which 1st SNP located
+	uint32_t SNP1Loci;		// offset (0..N) at which 1st SNP located
 	char szSNP1RefBase[2];		// target sequence base at the 1st SNP loci
-	UINT32 SNP1BaseAcnt;	// this many bases at SNP1 were A
-	UINT32 SNP1BaseCcnt;	// this many bases at SNP1 were C
-	UINT32 SNP1BaseGcnt;	// this many bases at SNP1 were G
-	UINT32 SNP1BaseTcnt;	// this many bases at SNP1 were T
-	UINT32 SNP1BaseNcnt;	// this many bases at SNP1 were N
+	uint32_t SNP1BaseAcnt;	// this many bases at SNP1 were A
+	uint32_t SNP1BaseCcnt;	// this many bases at SNP1 were C
+	uint32_t SNP1BaseGcnt;	// this many bases at SNP1 were G
+	uint32_t SNP1BaseTcnt;	// this many bases at SNP1 were T
+	uint32_t SNP1BaseNcnt;	// this many bases at SNP1 were N
 
-	UINT32 SNP2Loci;		// offset (0..N) at which 2nd SNP located
+	uint32_t SNP2Loci;		// offset (0..N) at which 2nd SNP located
 	char szSNP2RefBase[2];		// target sequence base at the 2nd SNP loci
-	UINT32 SNP2BaseAcnt;	// this many bases at SNP2 were A
-	UINT32 SNP2BaseCcnt;	// this many bases at SNP2 were C
-	UINT32 SNP2BaseGcnt;	// this many bases at SNP2 were G
-	UINT32 SNP2BaseTcnt;	// this many bases at SNP2 were T
-	UINT32 SNP2BaseNcnt;	// this many bases at SNP2 were N
+	uint32_t SNP2BaseAcnt;	// this many bases at SNP2 were A
+	uint32_t SNP2BaseCcnt;	// this many bases at SNP2 were C
+	uint32_t SNP2BaseGcnt;	// this many bases at SNP2 were G
+	uint32_t SNP2BaseTcnt;	// this many bases at SNP2 were T
+	uint32_t SNP2BaseNcnt;	// this many bases at SNP2 were N
 
-	UINT32 Depth;			// coverage depth of reads covering both SNP1 and SNP2
-	UINT32 Antisense;		// non-zero if reads were all antisense to target
-	UINT32 Haplotypes;		// minimum number of haplotypes
-	UINT32 HaplotypeCnts[16];	// number of instances of each (aa..tt) localised DiSNP haplotype
+	uint32_t Depth;			// coverage depth of reads covering both SNP1 and SNP2
+	uint32_t Antisense;		// non-zero if reads were all antisense to target
+	uint32_t Haplotypes;		// minimum number of haplotypes
+	uint32_t HaplotypeCnts[16];	// number of instances of each (aa..tt) localised DiSNP haplotype
 } tsDiSNP;
 
 typedef struct TAG_sTriSNP {
 	int ExprID;				// SNPs identified within this experiment
 	int ProcessingID;		// identifies processing instance
-	UINT32 TriSnpPID;		// DiSNP instance, processing instance unique
+	uint32_t TriSnpPID;		// DiSNP instance, processing instance unique
 	char szElType[51];		// SNP type
 	char szSpecies[81];		// DiSNP located for alignments againts this target/species assembly	
 	char szChrom[81];		// DiSNP is on this chrom
-	UINT32 SNP1Loci;		// offset (0..N) at which 1st SNP located
+	uint32_t SNP1Loci;		// offset (0..N) at which 1st SNP located
 	char szSNP1RefBase[2];		// target sequence base at the 1st SNP loci
-	UINT32 SNP1BaseAcnt;	// this many bases at SNP1 were A
-	UINT32 SNP1BaseCcnt;	// this many bases at SNP1 were C
-	UINT32 SNP1BaseGcnt;	// this many bases at SNP1 were G
-	UINT32 SNP1BaseTcnt;	// this many bases at SNP1 were T
-	UINT32 SNP1BaseNcnt;	// this many bases at SNP1 were N
+	uint32_t SNP1BaseAcnt;	// this many bases at SNP1 were A
+	uint32_t SNP1BaseCcnt;	// this many bases at SNP1 were C
+	uint32_t SNP1BaseGcnt;	// this many bases at SNP1 were G
+	uint32_t SNP1BaseTcnt;	// this many bases at SNP1 were T
+	uint32_t SNP1BaseNcnt;	// this many bases at SNP1 were N
 
-	UINT32 SNP2Loci;		// offset (0..N) at which 2nd SNP located
+	uint32_t SNP2Loci;		// offset (0..N) at which 2nd SNP located
 	char szSNP2RefBase[2];		// target sequence base at the 2nd SNP loci
-	UINT32 SNP2BaseAcnt;	// this many bases at SNP2 were A
-	UINT32 SNP2BaseCcnt;	// this many bases at SNP2 were C
-	UINT32 SNP2BaseGcnt;	// this many bases at SNP2 were G
-	UINT32 SNP2BaseTcnt;	// this many bases at SNP2 were T
-	UINT32 SNP2BaseNcnt;	// this many bases at SNP2 were N
+	uint32_t SNP2BaseAcnt;	// this many bases at SNP2 were A
+	uint32_t SNP2BaseCcnt;	// this many bases at SNP2 were C
+	uint32_t SNP2BaseGcnt;	// this many bases at SNP2 were G
+	uint32_t SNP2BaseTcnt;	// this many bases at SNP2 were T
+	uint32_t SNP2BaseNcnt;	// this many bases at SNP2 were N
 
-	UINT32 SNP3Loci;		// offset (0..N) at which 3rd SNP located
+	uint32_t SNP3Loci;		// offset (0..N) at which 3rd SNP located
 	char szSNP3RefBase[2];		// target sequence base at the 3rd SNP loci
-	UINT32 SNP3BaseAcnt;	// this many bases at SNP3 were A
-	UINT32 SNP3BaseCcnt;	// this many bases at SNP3 were C
-	UINT32 SNP3BaseGcnt;	// this many bases at SNP3 were G
-	UINT32 SNP3BaseTcnt;	// this many bases at SNP3 were T
-	UINT32 SNP3BaseNcnt;	// this many bases at SNP3 were N
+	uint32_t SNP3BaseAcnt;	// this many bases at SNP3 were A
+	uint32_t SNP3BaseCcnt;	// this many bases at SNP3 were C
+	uint32_t SNP3BaseGcnt;	// this many bases at SNP3 were G
+	uint32_t SNP3BaseTcnt;	// this many bases at SNP3 were T
+	uint32_t SNP3BaseNcnt;	// this many bases at SNP3 were N
 
-	UINT32 Depth;			// coverage depth of reads covering both SNP1 and SNP2
-	UINT32 Antisense;		// non-zero if reads were all antisense to target
-	UINT32 Haplotypes;		// minimum number of haplotypes
-	UINT32 HaplotypeCnts[64];	// number of instances of each (aaa..ttt) localised TriSNP haplotype
+	uint32_t Depth;			// coverage depth of reads covering both SNP1 and SNP2
+	uint32_t Antisense;		// non-zero if reads were all antisense to target
+	uint32_t Haplotypes;		// minimum number of haplotypes
+	uint32_t HaplotypeCnts[64];	// number of instances of each (aaa..ttt) localised TriSNP haplotype
 } tsTriSNP;
 
 

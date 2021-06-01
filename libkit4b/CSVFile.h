@@ -40,13 +40,13 @@ typedef struct TAG_sCSVField {
 class CCSVFile  : public CErrorCodes
 {
 	int m_hFile;			// opened file
-	INT64 m_StatFileSize;		// file size as returned by stat() when file initially opened
+	int64_t m_StatFileSize;		// file size as returned by stat() when file initially opened
 	char m_szFileName[_MAX_PATH+1];	// name of file
 	bool m_bEOF;			// true when CSV file read up to EOF
 
-	UINT32 m_EstNumRows;	// file is estimated to hold this many rows
-	INT32 m_EstMaxFields;	// estimated to hold this max number of fields for any row
-	INT32 m_EstMaxChrsRow;	// longest file row estimated to be of this length
+	uint32_t m_EstNumRows;	// file is estimated to hold this many rows
+	int32_t m_EstMaxFields;	// estimated to hold this max number of fields for any row
+	int32_t m_EstMaxChrsRow;	// longest file row estimated to be of this length
 
 	char m_FieldSepChar;	// character used to as field separator
 	char m_TextQuote;		// character used to quote text strings
@@ -78,15 +78,15 @@ public:
 	CCSVFile(void);
 	~CCSVFile(void);
 
-	UINT32									// returns estimated number of rows, 0 if unable to estimate
+	uint32_t									// returns estimated number of rows, 0 if unable to estimate
 		CSVEstSizes(char *pszFile,	// CSV file path+name to estimate sizes
-			  INT64 *pFileSize=NULL,			// file is this size on disk
-			  INT32 *pMaxNumFields=NULL,		// with this max number of fields in any row
-			  INT32 *pMeanNumFields=NULL,	// mean number of fields (should be same as MaxFields)
-			  INT32 *pMaxNumChrsRow=NULL,	// and this maximal number of chars in any row
-			  INT32 *pMeanNumChrsRow=NULL);	// mean number of chars per row
+			  int64_t *pFileSize=NULL,			// file is this size on disk
+			  int32_t *pMaxNumFields=NULL,		// with this max number of fields in any row
+			  int32_t *pMeanNumFields=NULL,	// mean number of fields (should be same as MaxFields)
+			  int32_t *pMaxNumChrsRow=NULL,	// and this maximal number of chars in any row
+			  int32_t *pMeanNumChrsRow=NULL);	// mean number of chars per row
 
-	UINT32	EstNumRows(void);				// returns an estimate of the number of rows in currently opened CSV file
+	uint32_t	EstNumRows(void);				// returns an estimate of the number of rows in currently opened CSV file
 	
 	int Open(char *pszFileName);	// file to open
 	int Close(void);
@@ -112,7 +112,7 @@ public:
 	int GetInt(int FieldID,int *pRetInt);	    // parses (atoi) and returns specified field as int
 	int GetUint(int FieldID, uint32_t* pRetUint32); // parses (atoi) and returns specified field as uint32_t
 	int GetLong(int FieldID,long *pRetLong);	// parses (atol) and returns specified field as long
-	int GetInt64(int FieldID,INT64 *pRetInt64);	// parses (atoi64) and returns specified field as INT64
+	int GetInt64(int FieldID,int64_t *pRetInt64);	// parses (atoi64) and returns specified field as int64_t
 	int GetDouble(int FieldID,double *pRetDouble); // parses (atof) and returns specified field as double
 	int GetChar(int FieldID, char* pRetChar);	// returns first non-white space char which is not a single or double quote char, '\0' if none
 	int GetText(int FieldID,char **ppRetText);	// returns text from specified field in current line 

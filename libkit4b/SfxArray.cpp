@@ -40,22 +40,22 @@ static int QSortSeqCmp32(const void *p1,const void *p2);
 static int QSortSeqCmp40(const void *p1,const void *p2);
 static int QSortEntryNames(const void *p1,const void *p2);
 
-static UINT8 *gpSfxArray = NULL;
+static uint8_t *gpSfxArray = NULL;
 static etSeqBase *gpSeq = NULL;
 
 // Suffix array elements can be sized as either 4 or 5 bytes dependent on the total length of concatenated sequences
 // If total length is less than 4G then can use 4 byte elements, if longer then will use 5 byte elements
 inline 
-INT64 SfxOfsToLoci(int SfxElSize,			// size in bytes of suffix element - expected to be either 4 or 5
+int64_t SfxOfsToLoci(int SfxElSize,			// size in bytes of suffix element - expected to be either 4 or 5
 				void *pSfx,					// pts to 1st element of suffix array
-				INT64 Ofs)					// offset to suffix element
+				int64_t Ofs)					// offset to suffix element
 {
-UINT64 Loci;
-UINT8 *pSfxEls = (UINT8 *)pSfx;
+uint64_t Loci;
+uint8_t *pSfxEls = (uint8_t *)pSfx;
 Ofs *= SfxElSize;
-Loci = (UINT64)*(UINT32 *)&pSfxEls[Ofs];
+Loci = (uint64_t)*(uint32_t *)&pSfxEls[Ofs];
 if(SfxElSize == 5)
-	Loci |= ((UINT64)pSfxEls[Ofs+4]) << 32;
+	Loci |= ((uint64_t)pSfxEls[Ofs+4]) << 32;
 return(Loci);
 }
 
@@ -348,7 +348,7 @@ return(PrevMaxBaseCmpLen);
 }
 
 void
-CSfxArray::SetInitalSfxAllocEls(INT64 EstSfxEls)		// user estimate of the initial number of suffix elements to allocate
+CSfxArray::SetInitalSfxAllocEls(int64_t EstSfxEls)		// user estimate of the initial number of suffix elements to allocate
 {
 m_EstSfxEls = EstSfxEls;
 }
@@ -414,24 +414,24 @@ return(m_bColorspace);
 // TransformToColorspace
 // transformation of basespace and colorspace (SOLiD)
 //
-UINT8 CSfxArray::CvrtSOLiDmap[5][7] = {
-	{0,1,2,3,4,(UINT8)eBaseEOS,(UINT8)eBaseEOG},	// PrevBase==etBaseA
-	{1,0,3,2,4,(UINT8)eBaseEOS,(UINT8)eBaseEOG},	// PrevBase==etBaseC
-	{2,3,0,1,4,(UINT8)eBaseEOS,(UINT8)eBaseEOG},	// PrevBase==etBaseG
-	{3,2,1,0,4,(UINT8)eBaseEOS,(UINT8)eBaseEOG},	// PrevBase==etBaseT
-	{0,1,2,3,4,(UINT8)eBaseEOS,(UINT8)eBaseEOG},	// PrevBase==etBaseN
+uint8_t CSfxArray::CvrtSOLiDmap[5][7] = {
+	{0,1,2,3,4,(uint8_t)eBaseEOS,(uint8_t)eBaseEOG},	// PrevBase==etBaseA
+	{1,0,3,2,4,(uint8_t)eBaseEOS,(uint8_t)eBaseEOG},	// PrevBase==etBaseC
+	{2,3,0,1,4,(uint8_t)eBaseEOS,(uint8_t)eBaseEOG},	// PrevBase==etBaseG
+	{3,2,1,0,4,(uint8_t)eBaseEOS,(uint8_t)eBaseEOG},	// PrevBase==etBaseT
+	{0,1,2,3,4,(uint8_t)eBaseEOS,(uint8_t)eBaseEOG},	// PrevBase==etBaseN
 	};
 
 int
-CSfxArray::TransformToColorspace(UINT8 *pSrcBases,	// basespace sequence to transform
-					INT64 SeqLen,				// sequence length
-					UINT8 *pDstColorspace,		// where to write transformed
+CSfxArray::TransformToColorspace(uint8_t *pSrcBases,	// basespace sequence to transform
+					int64_t SeqLen,				// sequence length
+					uint8_t *pDstColorspace,		// where to write transformed
 					bool bHiNibble,				// if false then write into bits 0..3, otherwise bits 4..7, of destination
 					etSeqBase Seed)				// use this base as the seed base immediately preceding the first base
 {
 etSeqBase PrvBase;
 etSeqBase CurBase;
-UINT8 ColorSpace;
+uint8_t ColorSpace;
 if(pSrcBases == NULL || SeqLen == 0 || pDstColorspace == NULL || Seed > eBaseN)
 	return(eBSFerrParams);
 PrvBase = Seed;
@@ -456,15 +456,15 @@ return(eBSFSuccess);
 }
 
 int
-CSfxArray::TransformToBasespace(UINT8 *pSrcColorspace,	// colorspace sequence to transform
-					INT64 SeqLen,				// sequence length
-					UINT8 *pDstBases,			// where to write transformed
+CSfxArray::TransformToBasespace(uint8_t *pSrcColorspace,	// colorspace sequence to transform
+					int64_t SeqLen,				// sequence length
+					uint8_t *pDstBases,			// where to write transformed
 					bool bHiNibble,				// if false then write into bits 0..3, otherwise bits 4..7, of destination
 					etSeqBase Seed)				// use this base as the seed base immediately preceding the first base
 {
 etSeqBase PrvBase;
 etSeqBase CurBase;
-UINT8 Base;
+uint8_t Base;
 if(pSrcColorspace == NULL || SeqLen == 0 || pDstBases == NULL || Seed > eBaseN)
 	return(eBSFerrParams);
 PrvBase = Seed;
@@ -498,11 +498,11 @@ teBSFrsltCodes
 CSfxArray::SfxBlock2Disk(void)
 {
 teBSFrsltCodes Rslt;
-UINT8 *pBisBases;
-UINT8 *pBases;
-UINT64 Idx;
+uint8_t *pBisBases;
+uint8_t *pBases;
+uint64_t Idx;
 
-UINT64 WrtLen;
+uint64_t WrtLen;
 // only need to write if something to write!
 if(m_pSfxBlock == NULL || m_pSfxBlock->BlockID == 0 || m_pSfxBlock->ConcatSeqLen == 0 || m_pSfxBlock->NumEntries == 0)
 	return(eBSFSuccess);
@@ -532,7 +532,7 @@ if(m_bBisulfite)
 		TransformToColorspace(m_pSfxBlock->SeqSuffix,m_pSfxBlock->ConcatSeqLen,m_pSfxBlock->SeqSuffix);
 		}
 
-	QSortSeq((INT64)m_pSfxBlock->ConcatSeqLen,m_pBisulfateBases,m_pSfxBlock->SfxElSize,(void *)&m_pSfxBlock->SeqSuffix[m_pSfxBlock->ConcatSeqLen]);
+	QSortSeq((int64_t)m_pSfxBlock->ConcatSeqLen,m_pBisulfateBases,m_pSfxBlock->SfxElSize,(void *)&m_pSfxBlock->SeqSuffix[m_pSfxBlock->ConcatSeqLen]);
 	}
 else
 	{
@@ -553,7 +553,7 @@ if (!m_bInMemSfx)
 
 	// now write...
 	WrtLen = sizeof(tsSfxBlock) + m_pSfxBlock->ConcatSeqLen - 1;
-	if((Rslt=ChunkedWrite(m_SfxHeader.FileLen,(UINT8 *)m_pSfxBlock,WrtLen))!=eBSFSuccess)
+	if((Rslt=ChunkedWrite(m_SfxHeader.FileLen,(uint8_t *)m_pSfxBlock,WrtLen))!=eBSFSuccess)
 		{
 		AddErrMsg("CSfxArray::SfxBlock2Disk","Unable to write suffix block sequence to disk");
 		Reset(false);
@@ -562,8 +562,8 @@ if (!m_bInMemSfx)
 
 	m_SfxHeader.FileLen += WrtLen;
 
-	WrtLen = (INT64)m_pSfxBlock->SfxElSize * m_pSfxBlock->ConcatSeqLen;
-	if((Rslt=ChunkedWrite(m_SfxHeader.FileLen,(UINT8 *)&m_pSfxBlock->SeqSuffix[m_pSfxBlock->ConcatSeqLen],WrtLen))!=eBSFSuccess)
+	WrtLen = (int64_t)m_pSfxBlock->SfxElSize * m_pSfxBlock->ConcatSeqLen;
+	if((Rslt=ChunkedWrite(m_SfxHeader.FileLen,(uint8_t *)&m_pSfxBlock->SeqSuffix[m_pSfxBlock->ConcatSeqLen],WrtLen))!=eBSFSuccess)
 		{
 		AddErrMsg("CSfxArray::SfxBlock2Disk","Unable to write suffix block array to disk");
 		Reset(false);
@@ -609,7 +609,7 @@ m_SfxHeader.EntriesSize = sizeof(tsSfxEntriesBlock) + (sizeof(tsSfxEntry) * (m_p
 if(!m_bInMemSfx)
 	{
 	m_SfxHeader.EntriesOfs = m_SfxHeader.FileLen;
-	if((Rslt=ChunkedWrite(m_SfxHeader.EntriesOfs,(UINT8 *)m_pEntriesBlock,(INT64)m_SfxHeader.EntriesSize))!=eBSFSuccess)
+	if((Rslt=ChunkedWrite(m_SfxHeader.EntriesOfs,(uint8_t *)m_pEntriesBlock,(int64_t)m_SfxHeader.EntriesSize))!=eBSFSuccess)
 		{
 		AddErrMsg("CSfxArray::AddEntry","Unable to write entries block to disk");
 		Reset(false);
@@ -627,8 +627,8 @@ return(eBSFSuccess);
 teBSFrsltCodes
 CSfxArray::Disk2Hdr(char *pszFile)
 {
-UINT8 HdrVer[8];
-UINT32 Version;
+uint8_t HdrVer[8];
+uint32_t Version;
 tsSfxHeaderVv SfxHeaderVv;
 
 if(_lseeki64(m_hFile,0,SEEK_SET)!=0)			// header is at start of file
@@ -658,7 +658,7 @@ if(tolower(HdrVer[0]) != 's' ||
 	}
 
 // can we handle this file structure version?
-Version = *(UINT32 *)&HdrVer[4];
+Version = *(uint32_t *)&HdrVer[4];
 if(Version < cSFXVersionBack || Version > cSFXVersion)
 	{
 	AddErrMsg("CSfxArray::Disk2Hdr","%s opened as 'kit4b index' generated suffix array file but structure version %d is incompatiable with this release %d of kit4b",
@@ -714,7 +714,7 @@ CSfxArray::Disk2Entries(void)
 {
 teBSFrsltCodes Rslt;
 
-UINT32 Idx;
+uint32_t Idx;
 tsSfxEntryV3 *pEntryV3;
 tsSfxEntry *pEntry;
 tsSfxEntriesBlockV3 *pSfxEntriesBlockV3;
@@ -736,14 +736,14 @@ if(m_SfxHeader.EntriesOfs == 0 || m_SfxHeader.EntriesSize == 0)
 
 if(m_bV3File)
 	{
-	if((pSfxEntriesBlockV3 = (tsSfxEntriesBlockV3 *)new UINT8 [m_SfxHeader.EntriesSize])==NULL)
+	if((pSfxEntriesBlockV3 = (tsSfxEntriesBlockV3 *)new uint8_t [m_SfxHeader.EntriesSize])==NULL)
 		{
 		AddErrMsg("CSfxArray::Disk2Entries","unable to allocate %d bytes for holding V3 entries block",m_SfxHeader.EntriesSize);
 		Reset(false);			// closes opened file..
 		return(eBSFerrMem);
 		}
 
-	if((Rslt=ChunkedRead(m_SfxHeader.EntriesOfs,(UINT8 *)pSfxEntriesBlockV3,m_SfxHeader.EntriesSize))!=eBSFSuccess)
+	if((Rslt=ChunkedRead(m_SfxHeader.EntriesOfs,(uint8_t *)pSfxEntriesBlockV3,m_SfxHeader.EntriesSize))!=eBSFSuccess)
 		{
 		AddErrMsg("CSfxArray::Disk2Entries","unable to load V3 entries block of length %d from offset %d",m_SfxHeader.EntriesSize,m_SfxHeader.EntriesOfs);
 		Reset(false);			// closes opened file..
@@ -777,15 +777,15 @@ if(m_bV3File)
 	m_pEntriesBlock->MaxEntries = pSfxEntriesBlockV3->NumEntries;
 	pEntryV3 = pSfxEntriesBlockV3->Entries;
 	pEntry = m_pEntriesBlock->Entries;
-	for(Idx = 0; Idx < (UINT32)m_pEntriesBlock->MaxEntries; Idx++, pEntryV3++,pEntry++)
+	for(Idx = 0; Idx < (uint32_t)m_pEntriesBlock->MaxEntries; Idx++, pEntryV3++,pEntry++)
 		{
 		pEntry->EntryID = pEntryV3->EntryID;						// identifies each entry (1..n), unique within this suffix file
 		pEntry->fBlockID = pEntryV3->fBlockID;					// which SfxBlock contains sequence for this entry
 		memmove(pEntry->szSeqName,pEntryV3->szSeqName,sizeof(pEntry->szSeqName));	// entry name - typically a chromosome name
 		pEntry->NameHash = pEntryV3->NameHash;					// hash over szSeqName
 		pEntry->SeqLen = pEntryV3->SeqLen;						// sequence length - excludes sequence terminator eSeqEOS
-		pEntry->StartOfs = (INT64)(UINT64)pEntryV3->StartOfs;						// offset into concatenated sequences of where this sequence starts
-		pEntry->EndOfs = (INT64)(UINT64)pEntryV3->EndOfs;						// offset into concatenated sequences of where this sequence ends
+		pEntry->StartOfs = (int64_t)(uint64_t)pEntryV3->StartOfs;						// offset into concatenated sequences of where this sequence starts
+		pEntry->EndOfs = (int64_t)(uint64_t)pEntryV3->EndOfs;						// offset into concatenated sequences of where this sequence ends
 		}
 	delete pSfxEntriesBlockV3;
 	}
@@ -812,7 +812,7 @@ else
 		}
 #endif
 
-	if((Rslt=ChunkedRead(m_SfxHeader.EntriesOfs,(UINT8 *)m_pEntriesBlock,m_SfxHeader.EntriesSize))!=eBSFSuccess)
+	if((Rslt=ChunkedRead(m_SfxHeader.EntriesOfs,(uint8_t *)m_pEntriesBlock,m_SfxHeader.EntriesSize))!=eBSFSuccess)
 		{
 		AddErrMsg("CSfxArray::Disk2Entries","unable to load entries block of length %d from offset %d",m_SfxHeader.EntriesSize,m_SfxHeader.EntriesOfs);
 		Reset(false);			// closes opened file..
@@ -827,19 +827,19 @@ return(eBSFSuccess);
 // ChunkedWrite
 // Seeks to specified 64bit file offset and writes to disk as chunks of no more than INT_MAX/16
 teBSFrsltCodes
-CSfxArray::ChunkedWrite(INT64 WrtOfs,UINT8 *pData,INT64 WrtLen)
+CSfxArray::ChunkedWrite(int64_t WrtOfs,uint8_t *pData,int64_t WrtLen)
 {
 int BlockLen;
 if(_lseeki64(m_hFile,WrtOfs,SEEK_SET) != WrtOfs)
 	{
-	AddErrMsg("CSfxArray::ChunkedWrite","Unable to seek to %ld on file %s - error %s",WrtOfs,m_szFile,strerror(errno));
+	AddErrMsg("CSfxArray::ChunkedWrite","Unable to seek to %lld on file %s - error %s",WrtOfs,m_szFile,strerror(errno));
 	Reset(false);
 	return(eBSFerrFileAccess);
 	}
 
 while(WrtLen)
 	{
-	BlockLen = WrtLen > (INT64)(INT_MAX/16) ? (INT_MAX/16) : (int)WrtLen;
+	BlockLen = WrtLen > (int64_t)(INT_MAX/16) ? (INT_MAX/16) : (int)WrtLen;
 	WrtLen -= BlockLen;
 	if(write(m_hFile,pData,BlockLen)!=BlockLen)
 		{
@@ -857,13 +857,13 @@ return(eBSFSuccess);
 // This allows checks for thread termination requests at reasonable time intervals
 // returns (teBSFrsltCodes)1 if m_bTermThread was set by another thread
 teBSFrsltCodes
-CSfxArray::ChunkedRead(INT64 RdOfs,UINT8 *pData,INT64 RdLen)
+CSfxArray::ChunkedRead(int64_t RdOfs,uint8_t *pData,int64_t RdLen)
 {
-UINT32 BlockLen;
-UINT32 ActualRdLen;
+uint32_t BlockLen;
+uint32_t ActualRdLen;
 if(_lseeki64(m_hFile,RdOfs,SEEK_SET) != RdOfs)
 	{
-	AddErrMsg("CSfxArray::ChunkedRead","Unable to seek to %ld on file %s - error %s",RdOfs,m_szFile,strerror(errno));
+	AddErrMsg("CSfxArray::ChunkedRead","Unable to seek to %lld on file %s - error %s",RdOfs,m_szFile,strerror(errno));
 	return(eBSFerrFileAccess);
 	}
 if(m_bTermThread)
@@ -871,7 +871,7 @@ if(m_bTermThread)
 
 while(RdLen)
 	{
-	BlockLen = RdLen > (INT64)(INT_MAX/2) ? (INT_MAX/2) : (UINT32)RdLen;
+	BlockLen = RdLen > (int64_t)(INT_MAX/2) ? (INT_MAX/2) : (uint32_t)RdLen;
 	RdLen -= BlockLen;
 	if((ActualRdLen = read(m_hFile,pData,BlockLen))!=BlockLen)
 		{
@@ -891,7 +891,7 @@ teBSFrsltCodes
 CSfxArray::Flush2Disk(void)			// flush and commit to disk
 {
 teBSFrsltCodes Rslt;
-INT64 ReallocSize;
+int64_t ReallocSize;
 
 if (!m_bInMemSfx && m_hFile == -1)
 	return(eBSFSuccess);
@@ -907,10 +907,10 @@ if(m_pSfxBlock->ConcatSeqLen)
 	else
 		m_pSfxBlock->SfxElSize = 5;
 
-	ReallocSize = (INT64)sizeof(tsSfxBlock) + m_pSfxBlock->ConcatSeqLen + (m_pSfxBlock->ConcatSeqLen * m_pSfxBlock->SfxElSize);
+	ReallocSize = (int64_t)sizeof(tsSfxBlock) + m_pSfxBlock->ConcatSeqLen + (m_pSfxBlock->ConcatSeqLen * m_pSfxBlock->SfxElSize);
 
 		// m_pSfxBlock almost certainly needs to be extended
-	if(ReallocSize > (INT64)m_AllocSfxBlockMem) 
+	if(ReallocSize > (int64_t)m_AllocSfxBlockMem) 
 		{
 		tsSfxBlock *pRealloc;
 #ifdef _WIN32
@@ -922,7 +922,7 @@ if(m_pSfxBlock->ConcatSeqLen)
 #endif
 		if(pRealloc == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: SfxBlock memory re-allocation to %lld bytes - %s",(INT64)ReallocSize,strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: SfxBlock memory re-allocation to %lld bytes - %s",(int64_t)ReallocSize,strerror(errno));
 			return(eBSFerrMem);
 			}
 
@@ -1058,7 +1058,7 @@ else // else opening existing file
 	m_pSfxBlock = (tsSfxBlock *) malloc((size_t)m_SfxHeader.SfxBlockSize);
 	if(m_pSfxBlock == NULL)
 		{
-		AddErrMsg("CSfxArray::Open","Fatal: unable to allocate %lld bytes contiguous memory for index",(INT64)m_SfxHeader.SfxBlockSize);
+		AddErrMsg("CSfxArray::Open","Fatal: unable to allocate %lld bytes contiguous memory for index",(int64_t)m_SfxHeader.SfxBlockSize);
 		Reset(false);
 		return(eBSFerrMem);
 		}
@@ -1184,28 +1184,28 @@ return(eBSFSuccess);
 // Suffix array can then be accessed as if read from a pre-generated suffix array file
 int
 CSfxArray::Fasta2InMemSfxArray(char *pszFile,	// generate in-memory suffix array from this fasta file
-	UINT32 MinSeqLen,				// skipping sequences which are less than this length
-	UINT32 MaxSeqLen,				// skipping sequences which are longer than this length
+	uint32_t MinSeqLen,				// skipping sequences which are less than this length
+	uint32_t MaxSeqLen,				// skipping sequences which are longer than this length
 	bool bBisulfite,				// true if Bisulfite
 	bool bColorspace)				// true if colorspace
 {
 CFasta Fasta;
-unsigned char *pSeqBuff;
-unsigned char *pMskBase;
-UINT32 MskIdx;
+uint8_t *pSeqBuff;
+uint8_t *pMskBase;
+uint32_t MskIdx;
 size_t BuffOfs;
 size_t AllocdBuffSize;
 size_t AvailBuffSize;
 char szName[cBSFSourceSize];
 char szDescription[cBSFDescriptionSize];
-UINT32 SeqLen;
+uint32_t SeqLen;
 int Descrlen;
 bool bFirstEntry;
 bool bEntryCreated;
 int Rslt;
 int SeqID;
-UINT32 NumSeqsUnderlength;
-UINT32 NumSeqsOverlength;
+uint32_t NumSeqsUnderlength;
+uint32_t NumSeqsOverlength;
 
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "Fasta2InMemSfxArray: generating in-memory suffix array from fasta format file '%s'", pszFile);
 
@@ -1240,9 +1240,9 @@ Open(bBisulfite, bColorspace);
 
 AllocdBuffSize = (size_t)cMaxMemSfxSeqAlloc;
 // note malloc is used as can then simply realloc to expand as may later be required
-if ((pSeqBuff = (unsigned char *)malloc(AllocdBuffSize)) == NULL)
+if ((pSeqBuff = (uint8_t *)malloc(AllocdBuffSize)) == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Fasta2InMemSfxArray: Unable to allocate memory (%u bytes) for sequence buffer", (UINT32)AllocdBuffSize);
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Fasta2InMemSfxArray: Unable to allocate memory (%u bytes) for sequence buffer", (uint32_t)AllocdBuffSize);
 	Fasta.Close();
 	return(eBSFerrMem);
 	}
@@ -1269,7 +1269,7 @@ while ((Rslt = SeqLen = Fasta.ReadSequence(&pSeqBuff[BuffOfs], (int)min(AvailBuf
 					NumSeqsOverlength += 1;
 				}
 			else
-				if ((Rslt = AddEntry(szName, pSeqBuff, (UINT32)BuffOfs)) < eBSFSuccess)
+				if ((Rslt = AddEntry(szName, pSeqBuff, (uint32_t)BuffOfs)) < eBSFSuccess)
 					{
 					gDiagnostics.DiagOut(eDLFatal, gszProcName, "Fasta2InMemSfxArray: AddEntry() error %d %s", Rslt, GetErrMsg());
 					if (pSeqBuff != NULL)
@@ -1331,10 +1331,10 @@ while ((Rslt = SeqLen = Fasta.ReadSequence(&pSeqBuff[BuffOfs], (int)min(AvailBuf
 	if (AvailBuffSize < (size_t)(cMaxMemSfxSeqAlloc / 8))
 		{
 		size_t NewSize = (size_t)cMaxMemSfxSeqAlloc + AllocdBuffSize;
-		unsigned char *pTmp;
-		if ((pTmp = (unsigned char *)realloc(pSeqBuff, NewSize)) == NULL)
+		uint8_t *pTmp;
+		if ((pTmp = (uint8_t *)realloc(pSeqBuff, NewSize)) == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Fasta2InMemSfxArray: Unable to reallocate memory (%u bytes) for sequence buffer", (UINT32)NewSize);
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Fasta2InMemSfxArray: Unable to reallocate memory (%u bytes) for sequence buffer", (uint32_t)NewSize);
 			if (pSeqBuff != NULL)
 				free(pSeqBuff);
 			Reset(false);
@@ -1358,7 +1358,7 @@ if (Rslt >= eBSFSuccess && bEntryCreated && BuffOfs > 0)			// close entry
 		}
 	else
 		{
-		if ((Rslt = AddEntry(szName, pSeqBuff, (UINT32)BuffOfs)) < eBSFSuccess)
+		if ((Rslt = AddEntry(szName, pSeqBuff, (uint32_t)BuffOfs)) < eBSFSuccess)
 			{
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Fasta2InMemSfxArray: AddEntry error %d %s", Rslt, GetErrMsg());
 			if (pSeqBuff != NULL)
@@ -1386,7 +1386,7 @@ if (m_pEntriesBlock->NumEntries == 0)
 	}
 
 int NumDupEntries;
-UINT32 DupEntries[10];
+uint32_t DupEntries[10];
 char szDupEntry[100];
 
 // check for any duplicate entry names
@@ -1516,10 +1516,10 @@ return(m_MaxIter);
 teBSFrsltCodes
 CSfxArray::AddEntry(char *pszSeqIdent,	// sequence identifier, typically chromosome name
 				etSeqBase   *pSeq,			// sequence to add to suffix array
-				UINT32 SeqLen,				// sequence length excluding any eBaseEOS
-				UINT16 Flags)				// any user specified flags
+				uint32_t SeqLen,				// sequence length excluding any eBaseEOS
+				uint16_t Flags)				// any user specified flags
 {
-UINT32 Idx;
+uint32_t Idx;
 etSeqBase  *pTmpSeq;
 tsSfxEntry *pTmpEntry;
 
@@ -1585,10 +1585,10 @@ if(m_pEntriesBlock == NULL)					// will be NULL until at least one entry has bee
 	m_AllocEntriesBlockMem = m_SfxHeader.EntriesSize;
 	m_SfxHeader.NumSfxBlocks = 0;
 
-	if(m_EstSfxEls < (INT64)cReallocBlockEls)
-		m_EstSfxEls = (INT64)cReallocBlockEls;
+	if(m_EstSfxEls < (int64_t)cReallocBlockEls)
+		m_EstSfxEls = (int64_t)cReallocBlockEls;
 
-	m_AllocSfxBlockMem = (UINT64)sizeof(tsSfxBlock) + (size_t)max(m_EstSfxEls,(UINT64)SeqLen + 10);
+	m_AllocSfxBlockMem = (uint64_t)sizeof(tsSfxBlock) + (size_t)max(m_EstSfxEls,(uint64_t)SeqLen + 10);
 #ifdef _WIN32
 	m_pSfxBlock = (tsSfxBlock *) malloc((size_t)m_AllocSfxBlockMem);
 	if(m_pSfxBlock == NULL)
@@ -1617,7 +1617,7 @@ if(m_pEntriesBlock == NULL)					// will be NULL until at least one entry has bee
 		{
 		m_AllocBisulfiteMem = sizeof(tsSfxBlock) + max(cReallocBlockEls,SeqLen + 10);
 #ifdef _WIN32
-		m_pBisulfateBases = (UINT8 *) malloc((size_t)m_AllocBisulfiteMem);
+		m_pBisulfateBases = (uint8_t *) malloc((size_t)m_AllocBisulfiteMem);
 		if(m_pBisulfateBases == NULL)
 			{
 			AddErrMsg("CSfxArray::AddEntry","Fatal: unable to allocate Bisulfite memory %llu",m_AllocBisulfiteMem);
@@ -1627,7 +1627,7 @@ if(m_pEntriesBlock == NULL)					// will be NULL until at least one entry has bee
 			}
 #else
 		// gnu malloc is still in the 32bit world and seems to have issues if more than 2GB allocation
-		m_pBisulfateBases = (UINT8 *)mmap(NULL,(size_t)m_AllocBisulfiteMem, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+		m_pBisulfateBases = (uint8_t *)mmap(NULL,(size_t)m_AllocBisulfiteMem, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 		if(m_pBisulfateBases == MAP_FAILED)
 			{
 			AddErrMsg("CSfxArray::AddEntry","Fatal: unable to allocate Bislfite memory %llu",m_AllocBisulfiteMem);
@@ -1677,7 +1677,7 @@ else	// else already at least one entry
 
 		m_pEntriesBlock = pRealloc;
 		m_pEntriesBlock->MaxEntries += cAllocSfxEntries;
-		m_SfxHeader.EntriesSize = (UINT32)ReallocSize;
+		m_SfxHeader.EntriesSize = (uint32_t)ReallocSize;
 		m_AllocEntriesBlockMem = ReallocSize;
 		}
 
@@ -1685,7 +1685,7 @@ else	// else already at least one entry
 	if((m_pSfxBlock->ConcatSeqLen + SeqLen + 16) > m_AllocSfxBlockMem) // 10 is to allow for appended eBaseEOS's and slight safety margin
 		{
 		tsSfxBlock *pRealloc;
-		INT64 ReallocSize = m_AllocSfxBlockMem + max(cReallocBlockEls,((INT64)SeqLen) + 10);	
+		int64_t ReallocSize = m_AllocSfxBlockMem + max(cReallocBlockEls,((int64_t)SeqLen) + 10);	
 
 #ifdef _WIN32
 		pRealloc = (tsSfxBlock *)realloc(m_pSfxBlock,(size_t)ReallocSize);
@@ -1696,7 +1696,7 @@ else	// else already at least one entry
 #endif
 		if(pRealloc == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: SfxBlock memory re-allocation to %lld bytes - %s",(INT64)ReallocSize,strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: SfxBlock memory re-allocation to %lld bytes - %s",(int64_t)ReallocSize,strerror(errno));
 			return(eBSFerrMem);
 			}
 
@@ -1709,12 +1709,12 @@ else	// else already at least one entry
 			// check if the m_pSfxBlock needs to be extended
 		if((m_pSfxBlock->ConcatSeqLen + SeqLen + 10) > m_AllocBisulfiteMem) // 10 is to allow a slight safety margin
 			{
-			UINT8 *pRealloc;
-			INT64 ReallocSize = m_AllocBisulfiteMem + max(cReallocBlockEls,SeqLen + 10);
+			uint8_t *pRealloc;
+			int64_t ReallocSize = m_AllocBisulfiteMem + max(cReallocBlockEls,SeqLen + 10);
 #ifdef _WIN32
-			pRealloc = (UINT8 *)realloc(m_pBisulfateBases,(size_t)ReallocSize);
+			pRealloc = (uint8_t *)realloc(m_pBisulfateBases,(size_t)ReallocSize);
 #else
-			pRealloc = (UINT8 *)mremap(m_pBisulfateBases,(size_t)m_AllocBisulfiteMem,(size_t)ReallocSize,MREMAP_MAYMOVE);
+			pRealloc = (uint8_t *)mremap(m_pBisulfateBases,(size_t)m_AllocBisulfiteMem,(size_t)ReallocSize,MREMAP_MAYMOVE);
 			if(pRealloc == MAP_FAILED)
 				pRealloc = NULL;
 #endif
@@ -1778,7 +1778,7 @@ void *CSfxArray::ThreadedPrereadBlocks(void * pThreadPars)
 CSfxArray *pSfxArray = (CSfxArray *)pThreadPars;
 teBSFrsltCodes Rslt;
 bool bTermThread;
-INT64 BlockSize;
+int64_t BlockSize;
 int ReqBlockID;
 bTermThread = false;		// set true if main thread requests this thread to terminate
 
@@ -1846,10 +1846,10 @@ do {
 		// if request was not preloaded then need to load from disk
 		if(ReqBlockID) // != 0 if need to load
 			{
-			INT64 BlkOfs;
+			int64_t BlkOfs;
 			BlkOfs = 0;
 			BlockSize = pSfxArray->m_SfxHeader.SfxBlockSize - BlkOfs;
-			if((Rslt=pSfxArray->ChunkedRead(pSfxArray->m_SfxHeader.SfxBlockOfs,((UINT8 *)pSfxArray->m_pSfxBlock) + BlkOfs,BlockSize)) < eBSFSuccess)
+			if((Rslt=pSfxArray->ChunkedRead(pSfxArray->m_SfxHeader.SfxBlockOfs,((uint8_t *)pSfxArray->m_pSfxBlock) + BlkOfs,BlockSize)) < eBSFSuccess)
 				{
 				pSfxArray->m_ReqBlockID = 0;
 				pSfxArray->m_ReqBlockRslt = Rslt;	// error reading from disk, let main thread know
@@ -1919,7 +1919,7 @@ teBSFrsltCodes Rslt;
 if(m_pSfxBlock == NULL || !m_bThreadActive)
 	return(eBSFerrInternal);
 
-if(BlockID < 1 || m_SfxHeader.NumSfxBlocks == 0 || (UINT32)BlockID > m_SfxHeader.NumSfxBlocks)
+if(BlockID < 1 || m_SfxHeader.NumSfxBlocks == 0 || (uint32_t)BlockID > m_SfxHeader.NumSfxBlocks)
 	return(eBSFerrParams);
 
 
@@ -1970,7 +1970,7 @@ return(Rslt);
 int
 CSfxArray::Next(int PrevBlockID)
 {
-if(PrevBlockID < 0 || (UINT32)PrevBlockID >= m_SfxHeader.NumSfxBlocks)
+if(PrevBlockID < 0 || (uint32_t)PrevBlockID >= m_SfxHeader.NumSfxBlocks)
 	return(0);
 return(PrevBlockID + 1);
 }
@@ -1985,7 +1985,7 @@ return(Disk2SfxBlock(BlockID));
 
 int										// if non-zero then returned number of identifiers 
 CSfxArray::ChkDupEntries(int MaxIdents,		// maximum number of identifers to return in pIdents (caller allocates to hold returned identifiers)
-					  UINT32 *pIdents)		// checks if there are duplicate entry names and reports identifier
+					  uint32_t *pIdents)		// checks if there are duplicate entry names and reports identifier
 {
 int NumDups;
 bool bInDup;
@@ -1993,7 +1993,7 @@ tsSfxEntry **ppEntries;
 tsSfxEntry *pCurEntry;
 tsSfxEntry *pPrevEntry;
 
-UINT32 Idx;
+uint32_t Idx;
 
 if(m_pEntriesBlock == NULL || MaxIdents > 0 && pIdents == NULL) 
 	return(eBSFerrEntry);
@@ -2043,13 +2043,13 @@ return(NumDups);
 }
 
 
-UINT16											// returned flags prior to this call
-CSfxArray::SetResetIdentFlags(UINT32 EntryID,	// atomic set/reset flags for this entry
-					UINT16 SetFlags,			// set these flags then
-					UINT16 ResetFlags)			// reset these flags
+uint16_t											// returned flags prior to this call
+CSfxArray::SetResetIdentFlags(uint32_t EntryID,	// atomic set/reset flags for this entry
+					uint16_t SetFlags,			// set these flags then
+					uint16_t ResetFlags)			// reset these flags
 {
-UINT32 fBlockID;
-UINT16 Flags;
+uint32_t fBlockID;
+uint16_t Flags;
 if(SetFlags == 0 && ResetFlags == 0)
 	return(GetIdentFlags(EntryID));
 
@@ -2060,15 +2060,15 @@ fBlockID = m_pEntriesBlock->Entries[EntryID-1].fBlockID;
 Flags = (fBlockID >> 8) & 0x0ffff;
 Flags |= SetFlags;
 Flags &= ~ResetFlags;
-m_pEntriesBlock->Entries[EntryID-1].fBlockID = ((UINT32)Flags << 8) | fBlockID & 0x0ff;
+m_pEntriesBlock->Entries[EntryID-1].fBlockID = ((uint32_t)Flags << 8) | fBlockID & 0x0ff;
 ReleaseBaseFlags();
 return((fBlockID >> 8) & 0x0ffff);
 }
 
-UINT16					// returned flags
-CSfxArray::GetIdentFlags(UINT32 EntryID)
+uint16_t					// returned flags
+CSfxArray::GetIdentFlags(uint32_t EntryID)
 {
-UINT32 Flags;
+uint32_t Flags;
 if(m_pEntriesBlock == NULL || EntryID < 1 || EntryID > m_pEntriesBlock->NumEntries)
 	return(eBSFerrEntry);
 SerialiseBaseFlags();
@@ -2079,15 +2079,15 @@ return((Flags >> 8) & 0x0ffff);
 
 
 void
-CSfxArray::InitAllIdentFlags(UINT16 Flags)		// initialise all entries to have these flags
+CSfxArray::InitAllIdentFlags(uint16_t Flags)		// initialise all entries to have these flags
 {
-UINT32 EntryID;
-UINT32 fBlockID;
-UINT32 SetFlags;
+uint32_t EntryID;
+uint32_t fBlockID;
+uint32_t SetFlags;
 tsSfxEntry *pSfxEntry;
 if(m_pEntriesBlock == NULL || m_pEntriesBlock->NumEntries < 1)
 	return;
-SetFlags = (UINT32)Flags << 8;
+SetFlags = (uint32_t)Flags << 8;
 pSfxEntry = m_pEntriesBlock->Entries;
 SerialiseBaseFlags();
 for(EntryID = 0; EntryID < m_pEntriesBlock->NumEntries; EntryID++,pSfxEntry++)
@@ -2102,9 +2102,9 @@ return;
 
 
 int
-CSfxArray::GetIdentName(UINT32 EntryID,int MaxLen,char *pszSeqIdent)
+CSfxArray::GetIdentName(uint32_t EntryID,int MaxLen,char *pszSeqIdent)
 {
-if(m_pEntriesBlock == NULL || EntryID < 1 || (UINT32)EntryID > m_pEntriesBlock->NumEntries)
+if(m_pEntriesBlock == NULL || EntryID < 1 || (uint32_t)EntryID > m_pEntriesBlock->NumEntries)
 	return(eBSFerrEntry);
 strncpy(pszSeqIdent,(const char *)m_pEntriesBlock->Entries[EntryID-1].szSeqName,MaxLen);
 pszSeqIdent[MaxLen-1] = '\0';
@@ -2114,7 +2114,7 @@ return(eBSFSuccess);
 int		// returns identifer for specified sequence name
 CSfxArray::GetIdent(char *pszSeqIdent)
 {
-UINT32 Idx;
+uint32_t Idx;
 if(m_pEntriesBlock == NULL || m_pEntriesBlock->NumEntries < 1)
 	return(eBSFerrEntry);
 for(Idx = 0; Idx < m_pEntriesBlock->NumEntries; Idx++)
@@ -2133,22 +2133,22 @@ if(m_pEntriesBlock == NULL)
 return(m_pEntriesBlock->NumEntries);
 }
 
-UINT32
-CSfxArray::GetSeqLen(UINT32 EntryID)
+uint32_t
+CSfxArray::GetSeqLen(uint32_t EntryID)
 {
 tsSfxEntry *pEntry;
-if(m_pEntriesBlock == NULL || EntryID < 1 || (UINT32)EntryID > m_pEntriesBlock->NumEntries)
+if(m_pEntriesBlock == NULL || EntryID < 1 || (uint32_t)EntryID > m_pEntriesBlock->NumEntries)
 	return(0);
 pEntry = &m_pEntriesBlock->Entries[EntryID-1];
 return(pEntry->SeqLen);
 }
 
 // returns total length of all sequences
-UINT64
+uint64_t
 CSfxArray::GetTotSeqsLen(void)
 {
-UINT64 Idx;
-UINT64 TotLen;
+uint64_t Idx;
+uint64_t TotLen;
 tsSfxEntry *pEntry;
 if(m_pEntriesBlock == NULL || !m_pEntriesBlock->NumEntries)
 	return((size_t)eBSFerrEntry);
@@ -2160,11 +2160,11 @@ return(TotLen);
 }
 
 // returns minimum length of any sequence in currently loaded entries block
-UINT32 
+uint32_t 
 CSfxArray::GetMinSeqLen(void)							
 {
-UINT64 Idx;
-UINT32 MinLen;
+uint64_t Idx;
+uint32_t MinLen;
 tsSfxEntry *pEntry;
 if(m_pEntriesBlock == NULL || !m_pEntriesBlock->NumEntries)
 	return(eBSFerrEntry);
@@ -2177,11 +2177,11 @@ return(MinLen);
 }
 
 // returns maximum length of any sequence in currently loaded entries block
-UINT32 
+uint32_t 
 CSfxArray::GetMaxSeqLen(void)							
 {
-UINT64 Idx;
-UINT32 MaxLen;
+uint64_t Idx;
+uint32_t MaxLen;
 tsSfxEntry *pEntry;
 if(m_pEntriesBlock == NULL || !m_pEntriesBlock->NumEntries)
 	return(eBSFerrEntry);
@@ -2233,14 +2233,14 @@ __sync_val_compare_and_swap(&m_CASSeqFlags,1,0);
 }
 
 int 
-CSfxArray::GetBaseFlags(UINT32 EntryID,		// identifies sequence containing loci flags to be returned - flags returned are in bits 0..3
-				UINT32 Loci)				// offset within sequence of base flags to return
+CSfxArray::GetBaseFlags(uint32_t EntryID,		// identifies sequence containing loci flags to be returned - flags returned are in bits 0..3
+				uint32_t Loci)				// offset within sequence of base flags to return
 {
 int Rslt;
 int Flags;
 tsSfxEntry *pEntry;
 etSeqBase *pSeq;
-if(m_pEntriesBlock == NULL || EntryID < 1 || (UINT32)EntryID > m_pEntriesBlock->NumEntries || m_bColorspace)
+if(m_pEntriesBlock == NULL || EntryID < 1 || (uint32_t)EntryID > m_pEntriesBlock->NumEntries || m_bColorspace)
 	return(eBSFerrEntry);
 pEntry = &m_pEntriesBlock->Entries[EntryID-1];
 
@@ -2260,8 +2260,8 @@ return((Flags >> 4) & 0x0f);
 }
 
 int									// NOTE: returns original flags (EntryID flags in bits 3..0) immediately prior to the set set/reset
-CSfxArray::SetBaseFlags(UINT32 EntryID,	// identifies sequence containing loci flags to be set
-				UINT32 Loci,				// offset within sequence of flags to set
+CSfxArray::SetBaseFlags(uint32_t EntryID,	// identifies sequence containing loci flags to be set
+				uint32_t Loci,				// offset within sequence of flags to set
 	            int SetFlgs,			// set flags in bits 0..3
 				int ResetFlgs)			// reset flags in bits 0..3
 {
@@ -2270,7 +2270,7 @@ int Flags;
 int PriorFlags;
 tsSfxEntry *pEntry;
 etSeqBase *pSeq;
-if(m_pEntriesBlock == NULL || EntryID < 1 || (UINT32)EntryID > m_pEntriesBlock->NumEntries || m_bColorspace)
+if(m_pEntriesBlock == NULL || EntryID < 1 || (uint32_t)EntryID > m_pEntriesBlock->NumEntries || m_bColorspace)
 	return(eBSFerrEntry);
 pEntry = &m_pEntriesBlock->Entries[EntryID-1];
 
@@ -2301,9 +2301,9 @@ return((PriorFlags >> 4) & 0x0f);
 
 int									// NOTE: returns original flags (EntryID1 flags in bits 3..0 and EntryID2 in bits 7..4) immediately prior to the set set/reset
 CSfxArray::SetBaseFlags(int EntryID1,	// identifies 1st sequence containing loci flags to be set
-				UINT32 Loci1,			// offset within sequence of flags to set
+				uint32_t Loci1,			// offset within sequence of flags to set
 				int EntryID2,			// identifies 2nd sequence containing loci flags to be set
-				UINT32 Loci2,			// offset within sequence of flags to set
+				uint32_t Loci2,			// offset within sequence of flags to set
 	            int SetFlgs,			// set flags in bits 0..3
 				int ResetFlgs)			// reset flags in bits 0..3
 {
@@ -2316,7 +2316,7 @@ tsSfxEntry *pEntry2;
 etSeqBase *pSeq1;
 etSeqBase *pSeq2;
 
-if(m_pEntriesBlock == NULL || EntryID1 < 1 || (UINT32)EntryID1 > m_pEntriesBlock->NumEntries || EntryID2 < 1 || (UINT32)EntryID2 > m_pEntriesBlock->NumEntries|| m_bColorspace)
+if(m_pEntriesBlock == NULL || EntryID1 < 1 || (uint32_t)EntryID1 > m_pEntriesBlock->NumEntries || EntryID2 < 1 || (uint32_t)EntryID2 > m_pEntriesBlock->NumEntries|| m_bColorspace)
 	return(eBSFerrEntry);
 
 
@@ -2364,12 +2364,12 @@ return(PriorFlags1);
 // Base is returned in bits 0..3
 int
 CSfxArray::GetBase(int EntryID,			// identifies sequence containing base to be returned
-				UINT32 Loci)					// offset within sequence of base to return
+				uint32_t Loci)					// offset within sequence of base to return
 {
 int Rslt;
 tsSfxEntry *pEntry;
 etSeqBase *pSeq;
-if(m_pEntriesBlock == NULL || EntryID < 1 || (UINT32)EntryID > m_pEntriesBlock->NumEntries)
+if(m_pEntriesBlock == NULL || EntryID < 1 || (uint32_t)EntryID > m_pEntriesBlock->NumEntries)
 	return(eBSFerrEntry);
 pEntry = &m_pEntriesBlock->Entries[EntryID-1];
 
@@ -2391,14 +2391,14 @@ return(pSeq[Loci] & 0x0f);
 // GetSeq
 // Returns a copy of the requested subsequence into pRetSeq from the
 // sequence at EntryID starting at offset Loci and of maximal length Len
-UINT32					// returned sequence length (may be shorter than that requested) or 0 if errors
-CSfxArray::GetSeq(int EntryID,UINT32 Loci,etSeqBase *pRetSeq,UINT32 Len)
+uint32_t					// returned sequence length (may be shorter than that requested) or 0 if errors
+CSfxArray::GetSeq(int EntryID,uint32_t Loci,etSeqBase *pRetSeq,uint32_t Len)
 {
 int Rslt;
-UINT32 RetLen;
+uint32_t RetLen;
 tsSfxEntry *pEntry;
 etSeqBase *pSeq;
-if(m_pEntriesBlock == NULL || EntryID < 1 || (UINT32)EntryID > m_pEntriesBlock->NumEntries)
+if(m_pEntriesBlock == NULL || EntryID < 1 || (uint32_t)EntryID > m_pEntriesBlock->NumEntries)
 	return(0);
 pEntry = &m_pEntriesBlock->Entries[EntryID-1];
 
@@ -2425,12 +2425,12 @@ return(RetLen);
 // GetPtrSeq
 // Returns a ptr to the sequence at EntryID starting at offset Loci
 etSeqBase *
-CSfxArray::GetPtrSeq(int EntryID,UINT32 Loci)
+CSfxArray::GetPtrSeq(int EntryID,uint32_t Loci)
 {
 int Rslt;
 tsSfxEntry *pEntry;
 etSeqBase *pSeq;
-if(m_pEntriesBlock == NULL || EntryID < 1 || (UINT32)EntryID > m_pEntriesBlock->NumEntries)
+if(m_pEntriesBlock == NULL || EntryID < 1 || (uint32_t)EntryID > m_pEntriesBlock->NumEntries)
 	return(NULL);
 pEntry = &m_pEntriesBlock->Entries[EntryID-1];
 if(Loci >= pEntry->SeqLen)	// requested start offset must be less or equal than the end of sequence
@@ -2448,14 +2448,14 @@ return(&pSeq[Loci]);
 // GetColorspaceSeq
 // Returns a copy of the requested subsequence in color space into pRetSeq from the
 // sequence at EntryID starting at offset Loci and of length Len
-UINT32			// returned sequence length (may be shorter than that requested) or 0 if errors
-CSfxArray::GetColorspaceSeq(int EntryID,UINT32 Loci,etSeqBase *pRetSeq,UINT32 Len)
+uint32_t			// returned sequence length (may be shorter than that requested) or 0 if errors
+CSfxArray::GetColorspaceSeq(int EntryID,uint32_t Loci,etSeqBase *pRetSeq,uint32_t Len)
 {
-UINT32 Rslt;
-UINT32 RetLen;
+uint32_t Rslt;
+uint32_t RetLen;
 tsSfxEntry *pEntry;
 etSeqBase *pSeq;
-if(m_pEntriesBlock == NULL || EntryID < 1 || (UINT32)EntryID > m_pEntriesBlock->NumEntries || !m_bColorspace)
+if(m_pEntriesBlock == NULL || EntryID < 1 || (uint32_t)EntryID > m_pEntriesBlock->NumEntries || !m_bColorspace)
 	return(0);
 pEntry = &m_pEntriesBlock->Entries[EntryID-1];
 if(Loci >= pEntry->SeqLen)	// requested start offset must be less or equal than the end of sequence
@@ -2482,8 +2482,8 @@ CSfxArray::ExactMatchLen(etSeqBase *pProbe,		// determine exactly matching lengt
 							int MaxMatchLen)		// for up to this length
 {
 int MatchLen;
-UINT8 El1;
-UINT8 El2;
+uint8_t El1;
+uint8_t El2;
 if(pProbe == NULL || pTarg == NULL || MaxMatchLen == 0)
 	return(0);
 for(MatchLen=0; MatchLen < MaxMatchLen; MatchLen++)
@@ -2507,8 +2507,8 @@ int
 CSfxArray::CmpProbeTarg(etSeqBase *pEl1,etSeqBase *pEl2,int Len)
 {
 int Psn;
-UINT8 El1;
-UINT8 El2;
+uint8_t El1;
+uint8_t El2;
 for(Psn=0; Psn < Len; Psn++)
 	{
 	El2 = *pEl2++ & 0x0f;
@@ -2531,8 +2531,8 @@ int
 CSfxArray::BSCmpProbeTarg(etSeqBase *pEl1,etSeqBase *pEl2,int Len)
 {
 int Psn;
-UINT8 El1;
-UINT8 El2;
+uint8_t El1;
+uint8_t El2;
 for(Psn=0; Psn < Len; Psn++)
 	{
 	El1 = *pEl1++ & 0x0f;
@@ -2605,15 +2605,15 @@ return(eBaseT);
 // Maps the chunk hit loci to the relevant sequence entry
 // If many entries expected then this mapping would be a good candidate for optimisation!
 tsSfxEntry *
-CSfxArray::MapChunkHit2Entry(UINT64 ChunkOfs)
+CSfxArray::MapChunkHit2Entry(uint64_t ChunkOfs)
 {
 
-UINT32 CurBlockID;
+uint32_t CurBlockID;
 
 CurBlockID = m_pSfxBlock->BlockID;
 
 tsSfxEntry *pProbe;
-INT64 Lo,Mid,Hi;	// search limits
+int64_t Lo,Mid,Hi;	// search limits
 
 Lo = 0;
 Hi = m_pEntriesBlock->NumEntries-1;
@@ -2655,14 +2655,14 @@ return(NULL);
 const int cMaxBisProbeLen = 8196;						// max allowed bisulfate probe sequence length
 
 // Bisulfite entry point
-INT64						// returned match index or 0 if no matches or errors
+int64_t						// returned match index or 0 if no matches or errors
 CSfxArray::BSIterateExacts(etSeqBase *pProbeSeq,		// probe
- 						 UINT32 ProbeLen,			// probe length
-						 INT64 PrevHitIdx,		// 0 if starting new sequence, otherwise set to return value of previous successful iteration return
- 						 UINT32 *pTargEntryID,	// if match then where to return suffix entry (chromosome) matched on
-						 UINT32 *pHitLoci)		// if match then where to return loci
+ 						 uint32_t ProbeLen,			// probe length
+						 int64_t PrevHitIdx,		// 0 if starting new sequence, otherwise set to return value of previous successful iteration return
+ 						 uint32_t *pTargEntryID,	// if match then where to return suffix entry (chromosome) matched on
+						 uint32_t *pHitLoci)		// if match then where to return loci
 {
-INT64 HitIdx;
+int64_t HitIdx;
 int Idx;
 tsSfxEntry *pEntry;
 etSeqBase BisBase;
@@ -2733,17 +2733,17 @@ int													// < 0 if errors, 0 if no processing required by thread, 1 if *p
 CSfxArray::GenKMerCultThreadRange(int KMerLen,	// processing K-Mers of this length
 					  int ThreadInst,				// starting and range required for this thread instance
 					  int NumThreads,				// total number of threads which will be used for generating cultivar K-Mers
-					  INT64 StartSfxIdx,			// given starting suffix index (0..N) for the thread instance
-					  INT64 *pEndSfxIdx)			// returned end suffix (inclusive) index to be processed by this thread
+					  int64_t StartSfxIdx,			// given starting suffix index (0..N) for the thread instance
+					  int64_t *pEndSfxIdx)			// returned end suffix (inclusive) index to be processed by this thread
 {
 int Ofs;
-INT64 TargPsn1;
-INT64 TargPsn2;
+int64_t TargPsn1;
+int64_t TargPsn2;
 etSeqBase *pEl1;
 etSeqBase *pEl2;
-INT64 NumSfxEls;
-INT64 PutativeRange;
-INT64 PutativeEndSfxEl;
+int64_t NumSfxEls;
+int64_t PutativeRange;
+int64_t PutativeEndSfxEl;
 void *pSfxArray;
 etSeqBase *pTarg;
 
@@ -2800,10 +2800,10 @@ return(0);	// nothing for this thread to process
 }
 
 
-INT64						// < 0 if errors, otherwise the total number of identified K-Mers over both strands (could be more than reported if MinCultivars > 1
+int64_t						// < 0 if errors, otherwise the total number of identified K-Mers over both strands (could be more than reported if MinCultivars > 1
 CSfxArray::GenKMerCultsCnts(bool bSenseOnly,			// true if sense strand only processing, default is to process both sense and antisense
-							INT64 StartSfxIdx,			// starting suffix index
-							INT64 EndSfxIdx,			// finish processing at this suffix index, inclusive - if 0 then process all remaining
+							int64_t StartSfxIdx,			// starting suffix index
+							int64_t EndSfxIdx,			// finish processing at this suffix index, inclusive - if 0 then process all remaining
 							int PrefixKMerLen,			// report on K-Mers having this prefix sequence length
 						    int SuffixKMerLen,			// and allow for the K-mers containing suffixes of this length (can be 0) 
 							int MinCultivars,			// only report if K-Mers present in at least this many different cultivars (0 if must be present in all cultivars)
@@ -2813,30 +2813,30 @@ CSfxArray::GenKMerCultsCnts(bool bSenseOnly,			// true if sense strand only proc
 {
 int Rslt;
 tsKMerCultsCnts KMerCultsCnts;					// accepted prefix sequence counts
-INT64 NumSfxEntries;
-INT64 NumSfxEls;
-INT64 NumKMersLocated;
+int64_t NumSfxEntries;
+int64_t NumSfxEls;
+int64_t NumKMersLocated;
 int TargSeqLen;
 int CultivarIdx;
-INT64 TargPsn1;
-INT64 TargPsn2;
-INT64 ConcatSeqLen;
+int64_t TargPsn1;
+int64_t TargPsn2;
+int64_t ConcatSeqLen;
 tsSfxEntry *pEntry1;
 tsSfxEntry *pEntry2;
 etSeqBase *pEl1;
 etSeqBase *pEl2;
 int Ofs;
-INT64 HomoSfxIdx;
-INT64 TargHomoPsn;
+int64_t HomoSfxIdx;
+int64_t TargHomoPsn;
 etSeqBase *pElPrefix;
 tsSfxEntry *pHomoEntry;
 int CultivarsHomozygotic[cMaxCultivars];
 int NumCultivarsHomozygotic;
 etSeqBase AntisenseKMer[cTotCultivarKMerLen+1];
-UINT32 HitEntryID;
-UINT32 HitLoci;
-INT64 PrevHitIdx;
-INT64 CurHitIdx;
+uint32_t HitEntryID;
+uint32_t HitLoci;
+int64_t PrevHitIdx;
+int64_t CurHitIdx;
 
 etSeqBase *pTarg;			// target sequence
 void *pSfxArray;			// target sequence suffix array
@@ -2858,16 +2858,16 @@ if(m_pSfxBlock == NULL)
 if(m_pSfxBlock->NumEntries > cMaxCultivars)
 	return(-1);
 
-if((UINT32)MinCultivars > m_pSfxBlock->NumEntries)
+if((uint32_t)MinCultivars > m_pSfxBlock->NumEntries)
 	return(-1);
 
 if(MinCultivars == 0)
 	MinCultivars = m_pSfxBlock->NumEntries;
 
-if(StartSfxIdx > (INT64)m_pSfxBlock->ConcatSeqLen)
+if(StartSfxIdx > (int64_t)m_pSfxBlock->ConcatSeqLen)
 	return(-1);
 
-if(EndSfxIdx == 0 || EndSfxIdx >= (INT64)m_pSfxBlock->ConcatSeqLen)
+if(EndSfxIdx == 0 || EndSfxIdx >= (int64_t)m_pSfxBlock->ConcatSeqLen)
 	EndSfxIdx = m_pSfxBlock->ConcatSeqLen - 1;
 
 pTarg = (etSeqBase *)&m_pSfxBlock->SeqSuffix[0];
@@ -3047,7 +3047,7 @@ do {
 			AntisenseKMerCultsCnts(PrefixKMerLen,SuffixKMerLen,&KMerCultsCnts);
 
 		// if number of cultivars in which K-Mers with identical sequences discovered is more than minimum required then report back to caller 
-		if(KMerCultsCnts.NumCultivars >= (UINT32)MinCultivars)
+		if(KMerCultsCnts.NumCultivars >= (uint32_t)MinCultivars)
 			{
 			Rslt = (*pCallback)(pThis,&KMerCultsCnts);
 			if(Rslt < 0)
@@ -3067,7 +3067,7 @@ if(KMerCultsCnts.NumCultivars)
 		AntisenseKMerCultsCnts(PrefixKMerLen,SuffixKMerLen,&KMerCultsCnts);
 
 	// if number of cultivars in which K-Mers with identical sequences discovered is more than minimum required then report back to caller 
-	if(KMerCultsCnts.NumCultivars >= (UINT32)MinCultivars)
+	if(KMerCultsCnts.NumCultivars >= (uint32_t)MinCultivars)
 		{
 		Rslt = (*pCallback)(pThis,&KMerCultsCnts);
 		if(Rslt < 0)
@@ -3077,21 +3077,21 @@ if(KMerCultsCnts.NumCultivars)
 return(NumKMersLocated);
 }
 
-INT64																// returned number of antisense K-Mers identified
+int64_t																// returned number of antisense K-Mers identified
 CSfxArray::AntisenseKMerCultsCnts(int PrefixKMerLen,				// report on K-Mers having this prefix sequence length
 						    int SuffixKMerLen,					// and allow for the K-mers containing suffixes of this length (can be 0) 
 						   tsKMerCultsCnts *pKMerCultsCnts)		// update these cultivar counts
 {
 int Ofs;
 etSeqBase *pSeq;
-UINT32 HitEntryID;
-UINT32 HitLoci;
-INT64 TargPsn;
+uint32_t HitEntryID;
+uint32_t HitLoci;
+int64_t TargPsn;
 etSeqBase *pTarg;			// target sequence
 void *pSfxArray;			// target sequence suffix array
-INT64 PrevHitIdx;
-INT64 CurHitIdx;
-INT64 NumAntisenseKMers;
+int64_t PrevHitIdx;
+int64_t CurHitIdx;
+int64_t NumAntisenseKMers;
 
 etSeqBase AntisensePrefix[cTotCultivarKMerLen+1];
 
@@ -3131,27 +3131,27 @@ while((CurHitIdx = IterateExacts(AntisensePrefix,PrefixKMerLen,PrevHitIdx,&HitEn
 return(NumAntisenseKMers);
 }
 
-INT64						// returned number of cultivar sequences
+int64_t						// returned number of cultivar sequences
 CSfxArray::LocateMultiCultivarMarkers(int PrefixKMerLen,	// prefix K-mer length
 						   int SuffixKMerLen,			// suffix K-mer length
 						   int NumCultivars,			// number of cultivars in pCultivars
-						   UINT32 *pEntryIDs,			// sequences of interest will be on these entries
+						   uint32_t *pEntryIDs,			// sequences of interest will be on these entries
 						   void *pThis,					// callers class instance
-						   int (* pCallback)(void *pThis,UINT32 EntryID,etSeqBase *pSeq)) // callback on cultivar marker sequences
+						   int (* pCallback)(void *pThis,uint32_t EntryID,etSeqBase *pSeq)) // callback on cultivar marker sequences
 {
-UINT32 CultivarFlags[cMaxCultivars];
-INT64 NumSfxEntries;
-INT64 NumSfxEls;
-INT64 SfxElsIdx1;
-INT64 SfxElsIdx2;
+uint32_t CultivarFlags[cMaxCultivars];
+int64_t NumSfxEntries;
+int64_t NumSfxEls;
+int64_t SfxElsIdx1;
+int64_t SfxElsIdx2;
 int TargSeqLen;
-INT64 MarkSfxElsIdx;
+int64_t MarkSfxElsIdx;
 int CultivarIdx;
 int NumCultivarsPrefixed;
-INT64 TargPsn1;
-INT64 TargPsn2;
-INT64 NxtTargPsn;
-INT64 ConcatSeqLen;
+int64_t TargPsn1;
+int64_t TargPsn2;
+int64_t NxtTargPsn;
+int64_t ConcatSeqLen;
 tsSfxEntry *pEntry1;
 tsSfxEntry *pEntry2;
 tsSfxEntry *pProvisionalEntry;
@@ -3304,24 +3304,24 @@ return(0);		// no more hits
 }
 
 
-INT64 
+int64_t 
 CSfxArray::IterateExacts(etSeqBase *pProbeSeq,	// probe
- 						 UINT32 ProbeLen,			// probe length
-						 INT64 PrevHitIdx,			// 0 if starting new sequence, otherwise set to return value of previous successful iteration return
- 						 UINT32 *pTargEntryID,		// if match then where to return suffix entry (chromosome) matched on
-						 UINT32 *pHitLoci,			// if match then where to return loci
-						 UINT32 MaxExtdLen,			// attempt to extend exact match of ProbeLen out to MaxExtdLen and report extended match length in *pHitExtdLen
+ 						 uint32_t ProbeLen,			// probe length
+						 int64_t PrevHitIdx,			// 0 if starting new sequence, otherwise set to return value of previous successful iteration return
+ 						 uint32_t *pTargEntryID,		// if match then where to return suffix entry (chromosome) matched on
+						 uint32_t *pHitLoci,			// if match then where to return loci
+						 uint32_t MaxExtdLen,			// attempt to extend exact match of ProbeLen out to MaxExtdLen and report extended match length in *pHitExtdLen
 						int *pHitExtdLen)			// was able to extend core out to this length
 {
 int Cmp;
-INT64 TargPsn;
+int64_t TargPsn;
 tsSfxEntry *pEntry;
 etSeqBase *pEl1;
 etSeqBase *pEl2;
 
 etSeqBase *pTarg;			// target sequence
 void *pSfxArray;			// target sequence suffix array
-INT64 SfxLen;				// number of suffixs in pSfxArray
+int64_t SfxLen;				// number of suffixs in pSfxArray
 
 if(MaxExtdLen == 0 || pHitExtdLen == NULL)
 	return(IterateExacts(pProbeSeq,ProbeLen,PrevHitIdx,pTargEntryID,pHitLoci));
@@ -3331,7 +3331,7 @@ if(MaxExtdLen == 0 || pHitExtdLen == NULL)
 *pHitExtdLen = 0;
 
 // ensure suffix loaded for iteration and prev hit was not the last!
-if(m_pSfxBlock == NULL || (UINT64)PrevHitIdx >= m_pSfxBlock->ConcatSeqLen)
+if(m_pSfxBlock == NULL || (uint64_t)PrevHitIdx >= m_pSfxBlock->ConcatSeqLen)
 	return(0);
 
 pTarg = (etSeqBase *)&m_pSfxBlock->SeqSuffix[0];
@@ -3350,7 +3350,7 @@ if(!PrevHitIdx)
 	*pHitExtdLen = ExactMatchLen(pEl1,pEl2,MaxExtdLen);
 	pEntry = MapChunkHit2Entry(SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,TargPsn));
 	*pTargEntryID = pEntry->EntryID;
-	*pHitLoci = (UINT32)(SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,TargPsn) - pEntry->StartOfs);
+	*pHitLoci = (uint32_t)(SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,TargPsn) - pEntry->StartOfs);
 	return(TargPsn + 1);
 	}
 
@@ -3367,7 +3367,7 @@ if(!Cmp)
 	*pHitExtdLen = ExactMatchLen(pEl1,pEl2,MaxExtdLen);
 	pEntry = MapChunkHit2Entry(SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,PrevHitIdx));
 	*pTargEntryID = pEntry->EntryID;
-	*pHitLoci = (UINT32)(SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,PrevHitIdx) - pEntry->StartOfs);
+	*pHitLoci = (uint32_t)(SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,PrevHitIdx) - pEntry->StartOfs);
 	return(PrevHitIdx+1);
 	}
 
@@ -3377,24 +3377,24 @@ return(0);		// no more hits
 }
 
 
-INT64						// returned hit index (1..n) or 0 if no hits
+int64_t						// returned hit index (1..n) or 0 if no hits
 CSfxArray::IterateExacts(etSeqBase *pProbeSeq,// probe
- 						 UINT32 ProbeLen,		// probe length
-						 INT64 PrevHitIdx,		// 0 if starting new sequence, otherwise set to return value of previous successful iteration return
- 						 UINT32 *pTargEntryID,	// if match then where to return suffix entry (chromosome) matched on
-						 UINT32 *pHitLoci,		// if match then where to return loci
-						 UINT32 *pTargSeqLen,	// optionally update with the matched target sequence length
+ 						 uint32_t ProbeLen,		// probe length
+						 int64_t PrevHitIdx,		// 0 if starting new sequence, otherwise set to return value of previous successful iteration return
+ 						 uint32_t *pTargEntryID,	// if match then where to return suffix entry (chromosome) matched on
+						 uint32_t *pHitLoci,		// if match then where to return loci
+						 uint32_t *pTargSeqLen,	// optionally update with the matched target sequence length
 						 etSeqBase **ppTargSeq) // optionally update with ptr to start of the target sequence, exact match will have started at &ppTargSeq[*pHitLoci]
 {
 int Cmp;
-INT64 TargPsn;
+int64_t TargPsn;
 tsSfxEntry *pEntry;
 etSeqBase *pEl1;
 etSeqBase *pEl2;
 
 etSeqBase *pTarg;			// target sequence
 void *pSfxArray;			// target sequence suffix array
-INT64 SfxLen;				// number of suffixs in pSfxArray
+int64_t SfxLen;				// number of suffixs in pSfxArray
 
 
 *pHitLoci = 0;
@@ -3406,7 +3406,7 @@ if(ppTargSeq != NULL)
 	*ppTargSeq = NULL;
 
 // ensure suffix loaded for iteration and prev hit was not the last!
-if(m_pSfxBlock == NULL || (UINT64)PrevHitIdx >= m_pSfxBlock->ConcatSeqLen)
+if(m_pSfxBlock == NULL || (uint64_t)PrevHitIdx >= m_pSfxBlock->ConcatSeqLen)
 	return(0);
 
 pTarg = (etSeqBase *)&m_pSfxBlock->SeqSuffix[0];
@@ -3421,7 +3421,7 @@ if(!PrevHitIdx)
 	TargPsn -= 1;
 	pEntry = MapChunkHit2Entry(SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,TargPsn));
 	*pTargEntryID = pEntry->EntryID;
-	*pHitLoci = (UINT32)(SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,TargPsn) - pEntry->StartOfs);
+	*pHitLoci = (uint32_t)(SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,TargPsn) - pEntry->StartOfs);
 	
 	if(pTargSeqLen != NULL)
 		*pTargSeqLen = pEntry->SeqLen;
@@ -3443,7 +3443,7 @@ if(!Cmp)
 	{
 	pEntry = MapChunkHit2Entry(SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,PrevHitIdx));
 	*pTargEntryID = pEntry->EntryID;
-	*pHitLoci = (UINT32)(SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,PrevHitIdx) - pEntry->StartOfs);
+	*pHitLoci = (uint32_t)(SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,PrevHitIdx) - pEntry->StartOfs);
 
 	if(pTargSeqLen != NULL)
 		*pTargSeqLen = pEntry->SeqLen;
@@ -3456,28 +3456,28 @@ if(!Cmp)
 return(0);		// no more hits
 }
 
-INT64						// returned hit index (1..n) or 0 if no hits
+int64_t						// returned hit index (1..n) or 0 if no hits
 CSfxArray::IterateExactsRange(etSeqBase *pProbeSeq,	// probe sequence
-				UINT32 ProbeLen,		// probe length
-				INT64 PrevHitIdx,		// 0 if starting new sequence, otherwise set to return value of previous successful iteration return
-				UINT32 TargEntryID,		// accepted hits must be onto this target suffix entry (chromosome)
-				UINT32 StartLoci,		// accepted hit loci must be in the range StartLoci ... EndLoci inclusive
-				UINT32 EndLoci,			// accepted hit loci must be in the range StartLoci ... EndLoci inclusive
-				UINT32 *pHitLoci,		// if match then where to return loci
-				UINT32 *pTargSeqLen,	// optionally update with the matched target sequence length
+				uint32_t ProbeLen,		// probe length
+				int64_t PrevHitIdx,		// 0 if starting new sequence, otherwise set to return value of previous successful iteration return
+				uint32_t TargEntryID,		// accepted hits must be onto this target suffix entry (chromosome)
+				uint32_t StartLoci,		// accepted hit loci must be in the range StartLoci ... EndLoci inclusive
+				uint32_t EndLoci,			// accepted hit loci must be in the range StartLoci ... EndLoci inclusive
+				uint32_t *pHitLoci,		// if match then where to return loci
+				uint32_t *pTargSeqLen,	// optionally update with the matched target sequence length
 				etSeqBase **ppTargSeq)	// optionally update with ptr to start of the target sequence, exact match will have started at &ppTargSeq[*pHitLoci]
 {
 	int Cmp;
 
-	INT64 TargPsn;
-	UINT32 HitLoci;
+	int64_t TargPsn;
+	uint32_t HitLoci;
 	tsSfxEntry *pEntry;
 	etSeqBase *pEl1;
 	etSeqBase *pEl2;
 
 	etSeqBase *pTarg;			// target sequence
 	void *pSfxArray;			// target sequence suffix array
-	INT64 SfxLen;				// number of suffixs in pSfxArray
+	int64_t SfxLen;				// number of suffixs in pSfxArray
 	*pHitLoci = 0;
 
 	if (pTargSeqLen != NULL)
@@ -3489,7 +3489,7 @@ CSfxArray::IterateExactsRange(etSeqBase *pProbeSeq,	// probe sequence
 		return(0);
 
 	// ensure suffix loaded for iteration and prev hit was not the last!
-	if (m_pSfxBlock == NULL || (UINT64)PrevHitIdx >= m_pSfxBlock->ConcatSeqLen)
+	if (m_pSfxBlock == NULL || (uint64_t)PrevHitIdx >= m_pSfxBlock->ConcatSeqLen)
 		return(0);
 
 	pTarg = (etSeqBase *)&m_pSfxBlock->SeqSuffix[0];
@@ -3505,7 +3505,7 @@ CSfxArray::IterateExactsRange(etSeqBase *pProbeSeq,	// probe sequence
 		pEntry = MapChunkHit2Entry(SfxOfsToLoci(m_pSfxBlock->SfxElSize, pSfxArray, TargPsn));
 		if(pEntry->EntryID == TargEntryID)
 			{
-			HitLoci = (UINT32)(SfxOfsToLoci(m_pSfxBlock->SfxElSize, pSfxArray, TargPsn) - pEntry->StartOfs);
+			HitLoci = (uint32_t)(SfxOfsToLoci(m_pSfxBlock->SfxElSize, pSfxArray, TargPsn) - pEntry->StartOfs);
 			if(HitLoci >= StartLoci && HitLoci <= EndLoci)
 				{
 				*pHitLoci = HitLoci;
@@ -3533,7 +3533,7 @@ do {
 		pEntry = MapChunkHit2Entry(SfxOfsToLoci(m_pSfxBlock->SfxElSize, pSfxArray, PrevHitIdx));
 		if (pEntry->EntryID == TargEntryID)
 			{
-			HitLoci = (UINT32)(SfxOfsToLoci(m_pSfxBlock->SfxElSize, pSfxArray, PrevHitIdx) - pEntry->StartOfs);
+			HitLoci = (uint32_t)(SfxOfsToLoci(m_pSfxBlock->SfxElSize, pSfxArray, PrevHitIdx) - pEntry->StartOfs);
 			if (HitLoci >= StartLoci && HitLoci <= EndLoci)
 				{
 				*pHitLoci = HitLoci;
@@ -3553,7 +3553,7 @@ return(0);		// no more hits
 
 
 int											// number of target sequences which were prequalified
-CSfxArray::PreQualTargs(UINT32 ProbeEntryID,	// probe sequence entry identifier used to determine if a self hit to be sloughed
+CSfxArray::PreQualTargs(uint32_t ProbeEntryID,	// probe sequence entry identifier used to determine if a self hit to be sloughed
 			int ProbeSeqLen,				// probe sequence length
 			etSeqBase *pProbeSeq,			// prequalify with cores from this probe sequence
 			int QualCoreLen,				// prequalifying core lengths
@@ -3572,11 +3572,11 @@ int ProbeOfs;
 int LastProbeOfs;
 etSeqBase *pCoreSeq;
 etSeqBase *pTargSeq;
-UINT32 TargSeqLen;
-INT64 PrevHitIdx;
-INT64 NxtHitIdx;
-UINT32 TargEntryID;
-UINT32 HitLoci;
+uint32_t TargSeqLen;
+int64_t PrevHitIdx;
+int64_t NxtHitIdx;
+uint32_t TargEntryID;
+uint32_t HitLoci;
 tsQualTarg *pQualTarg;
 tsQualTarg *pFiltCntQualHits;
 
@@ -3607,7 +3607,7 @@ for(ProbeOfs = 0; ProbeOfs < LastProbeOfs; ProbeOfs+=DeltaCoreOfs, pCoreSeq+=Del
 		PrevHitIdx = NxtHitIdx;
 		if(ProbeEntryID == TargEntryID)
 			continue;
-		if((UINT32)TargLenDiffBp > 0 && ((TargSeqLen > (ProbeSeqLen + (UINT32)TargLenDiffBp)) || (TargSeqLen < (ProbeSeqLen - (UINT32)TargLenDiffBp))))
+		if((uint32_t)TargLenDiffBp > 0 && ((TargSeqLen > (ProbeSeqLen + (uint32_t)TargLenDiffBp)) || (TargSeqLen < (ProbeSeqLen - (uint32_t)TargLenDiffBp))))
 			continue;
 
 	   TargScoreLen = min(150, TargSeqLen - HitLoci); // attempting to quick SW score over up to 150bp with a minimum of 100bp, this range including the QualCoreLen exactly matching core
@@ -3797,9 +3797,9 @@ CSfxArray::QuickScoreOverlap(int SeqLen,	// both probe and target are of this mi
 	int Ofs;
 	int Idx;
 	int MaxBases2Cmp;
-	UINT32 Targ16Bases;
-	UINT32 Targ4Bases;
-	UINT32 Probe4Bases;
+	uint32_t Targ16Bases;
+	uint32_t Targ4Bases;
+	uint32_t Probe4Bases;
 
 	if (SeqLen < 16 || pProbe == NULL || pTarg == NULL)
 		return(0);
@@ -3853,16 +3853,16 @@ return((Matches * 100) / SeqLen);
 }
 
 
-INT64						// returned hit idex (1..n) or 0 if no hits
+int64_t						// returned hit idex (1..n) or 0 if no hits
 CSfxArray::IteratePacBio(etSeqBase *pProbeSeq,				// probe sequence
- 									UINT32 ProbeLen,			// probe sequence length
- 									 UINT32 SeedCoreLen,		// using this seed core length
-									 UINT32 SloughEntryID,		// if > 0 then hits to this entry (normally would be the probe sequence entry identifier) are to be sloughed
-									 UINT32 MinTargLen,			// accepted hit target sequences must be at least this length
-									 UINT32 MaxTargLen,			// if > 0 then accepted hit target sequences must be no longer than this length
-									 INT64 PrevHitIdx,			// 0 if starting new sequence, otherwise set to return value of previous successful iteration return
- 									 UINT32 *pTargEntryID,		// if match then where to return suffix entry (chromosome) matched on
-									 UINT32 *pHitLoci,			// if match then where to return loci
+ 									uint32_t ProbeLen,			// probe sequence length
+ 									 uint32_t SeedCoreLen,		// using this seed core length
+									 uint32_t SloughEntryID,		// if > 0 then hits to this entry (normally would be the probe sequence entry identifier) are to be sloughed
+									 uint32_t MinTargLen,			// accepted hit target sequences must be at least this length
+									 uint32_t MaxTargLen,			// if > 0 then accepted hit target sequences must be no longer than this length
+									 int64_t PrevHitIdx,			// 0 if starting new sequence, otherwise set to return value of previous successful iteration return
+ 									 uint32_t *pTargEntryID,		// if match then where to return suffix entry (chromosome) matched on
+									 uint32_t *pHitLoci,			// if match then where to return loci
 									  int NumPreQuals,			// number of pre-qualified sequences in pQualTargs
 									tsQualTarg *pQualTargs,		// holds prequalified target sequence identifiers
 									 int PacBioMinKmersExtn)	// accepting as putative overlap if extension matches at least this many cPacBiokExtnKMerLen (currently 4bp)
@@ -3871,11 +3871,11 @@ int Cmp;
 bool bFirst;
 tsSfxEntry *pEntry;
 
-UINT32 HitLoci;
+uint32_t HitLoci;
 etSeqBase *pTarg;			// target sequence
 void *pSfxArray;			// target sequence suffix array
-INT64 SfxLen;				// number of suffixs in pSfxArray
-INT64 TargLoci;
+int64_t SfxLen;				// number of suffixs in pSfxArray
+int64_t TargLoci;
 int TargKMerLen;
 
 int PreQualIdx;
@@ -3888,7 +3888,7 @@ int OverlapIdentity;
 int QAnchorIdx;
 int QuickScore;
 
-UINT32 AcceptExactExtdCoreLen = ((cMaxPacBioSeedCoreLen+1)/2); // if core can be simply extended out to AcceptExactExtdCoreLen with exact matching then immediately accept; will be 50bp as cMaxPacBioSeedCoreLen is currently 100bp
+uint32_t AcceptExactExtdCoreLen = ((cMaxPacBioSeedCoreLen+1)/2); // if core can be simply extended out to AcceptExactExtdCoreLen with exact matching then immediately accept; will be 50bp as cMaxPacBioSeedCoreLen is currently 100bp
 
 etSeqBase *pEl2;
 
@@ -3901,12 +3901,12 @@ etSeqBase *pEl2;
 
 // ensure suffix loaded for iteration and prev hit was not the last!
 // also require that the probe length must be at least 100 + SeedCoreLen so matching subseqs can be explored
-if(SeedCoreLen < cMinPacBioSeedCoreLen || SeedCoreLen > cMaxPacBioSeedCoreLen || ProbeLen < SeedCoreLen || m_pSfxBlock == NULL || (UINT64)PrevHitIdx >= m_pSfxBlock->ConcatSeqLen)
+if(SeedCoreLen < cMinPacBioSeedCoreLen || SeedCoreLen > cMaxPacBioSeedCoreLen || ProbeLen < SeedCoreLen || m_pSfxBlock == NULL || (uint64_t)PrevHitIdx >= m_pSfxBlock->ConcatSeqLen)
 	return(0);
 
 if(SeedCoreLen >= AcceptExactExtdCoreLen)	// if looking with seed cores of at least 50bp (cMaxPacBioSeedCoreLen currently is 100bp)  then will not bother to seed extend. Alignments should be reasonably high confidence.
 	{
-	INT64 NxtHitIdx;
+	int64_t NxtHitIdx;
 	while((NxtHitIdx = IterateExacts(pProbeSeq, SeedCoreLen, PrevHitIdx, pTargEntryID,	pHitLoci)) > 0)
 		{
 		if(SloughEntryID != 0 && SloughEntryID == *pTargEntryID)
@@ -3985,7 +3985,7 @@ if(!PrevHitIdx)	// if locate first exact match using SeedCoreLen
 			bFirst = true;
 		if(bFirst)
 			{
-			HitLoci = (UINT32)(TargLoci - pEntry->StartOfs);
+			HitLoci = (uint32_t)(TargLoci - pEntry->StartOfs);
 			pEl2 = &pTarg[TargLoci];
 			}
 		}
@@ -4028,7 +4028,7 @@ while(1)
 				}
 			}
 
-		HitLoci = (UINT32)(TargLoci - pEntry->StartOfs);
+		HitLoci = (uint32_t)(TargLoci - pEntry->StartOfs);
 		}
 
 	if(pEntry->SeqLen < (HitLoci + cPacBioSeedCoreExtn + 10) || MinTargLen > pEntry->SeqLen || (MaxTargLen > 0 && MaxTargLen < pEntry->SeqLen))
@@ -4049,7 +4049,7 @@ while(1)
 		if((*pQAnchor & 0x07) != (*pTAnchor & 0x07))
 			break;
 		}
-	if((UINT32)MatchBaseLen < AcceptExactExtdCoreLen)			// no need to try extending if exactly matching extended core is at least cMaxPacBioSeedExtn (currently 50bp)
+	if((uint32_t)MatchBaseLen < AcceptExactExtdCoreLen)			// no need to try extending if exactly matching extended core is at least cMaxPacBioSeedExtn (currently 50bp)
 		{
 		QuickScore = QuickScoreOverlap(cPacBioSeedCoreExtn - MatchBaseLen,pQAnchor,pTAnchor);  // QuickScore is a count of the number of bases covered by exactly matching, non-overlapping, 4-mers between probe and target in the extension 
 	//		QuickScore = QuickScoreOverlap(min(10,MatchBaseLen),cPacBioSeedCoreExtn - MatchBaseLen,pQAnchor,pTAnchor);
@@ -4075,7 +4075,7 @@ return(0);		// no more hits
 
 int										// number (upto Lim) of non-canonical bases in pSeq 
 CSfxArray::NumNonCanonicals(int Lim, // process for at most this many non-canonical bases
-					UINT32 SeqLen,		// pSeq is of this max length
+					uint32_t SeqLen,		// pSeq is of this max length
 					etSeqBase *pSeq)	// pSeq to process for count of non-canonical
 {
 etSeqBase Base;
@@ -4108,19 +4108,19 @@ CSfxArray::LocateSfxHammings(int RHamm,				// restricted hammings limit
 						 int KMerLen,					// hammings for k-mers of this length
 						 int SampleNth,					// sample every Nth k-mer
 						 int SrcSeqLen,					// generate hammings over sequence of this length
-						 UINT32 MinCoreDepth,		// initially explore cores to at least this depth and only continue exploring if depth would be no more than MaxCoreDepth
-						 UINT32 MaxCoreDepth,		// explore cores to at most this depth
-						 UINT32 EntryID,  				// KMer sequences are to be from this suffix entry
-						 UINT32 EntryLoci,				// and starting at this loci
+						 uint32_t MinCoreDepth,		// initially explore cores to at least this depth and only continue exploring if depth would be no more than MaxCoreDepth
+						 uint32_t MaxCoreDepth,		// explore cores to at most this depth
+						 uint32_t EntryID,  				// KMer sequences are to be from this suffix entry
+						 uint32_t EntryLoci,				// and starting at this loci
 				 		 int IntraInterBoth,	    // 0: hammings over both intra (same sequence as probe K-mer drawn from) and inter (different sequences to that from which probe K-mer drawn), 1: Intra only, 2: Inter only
-						 UINT8 *pHammings,				// returned hammings
+						 uint8_t *pHammings,				// returned hammings
 						 int NumAllocdIdentNodes,		// memory has been allocated by caller for holding upto this many tsIdentNodes
 						 tsIdentNode *pAllocsIdentNodes) // memory allocated by caller for holding tsIdentNodes
 {
 etSeqBase *pSrcSeq;			// hamming k-mers from this sequence
 int Rslt;
 int Ofs;
-UINT32 EntryLen;
+uint32_t EntryLen;
 int Idx;
 etSeqBase *pN;
 etSeqBase *pHSrcSeq;
@@ -4135,7 +4135,7 @@ int LowestHamming;
 if(EntryID == 0 || RHamm < 1 || KMerLen < 10 || KMerLen > 500 || SrcSeqLen < KMerLen || pHammings == NULL)
 	return(eBSFerrInternal);
 EntryLen = GetSeqLen(EntryID);
-if(EntryLen == 0 || ((EntryLen - EntryLoci) < (UINT32)SrcSeqLen))
+if(EntryLen == 0 || ((EntryLen - EntryLoci) < (uint32_t)SrcSeqLen))
 	return(eBSFerrInternal);
 pSrcSeq = GetPtrSeq(EntryID,EntryLoci);
 if(pSrcSeq == NULL)
@@ -4228,13 +4228,13 @@ CSfxArray::LocateHammings(int RHamm,					// restricted hammings limit
 						 int KMerLen,					// hammings for k-mers of this length
 						 int SampleNth,					// sample every Nth k-mer
 						 int SrcSeqLen,					// sequence containing k-mers is of this length
-						 UINT32 MinCoreDepth,		// initially explore cores to at least this depth and only continue exploring if depth would be no more than MaxCoreDepth
-						 UINT32 MaxCoreDepth,		// explore cores to at most this depth
+						 uint32_t MinCoreDepth,		// initially explore cores to at least this depth and only continue exploring if depth would be no more than MaxCoreDepth
+						 uint32_t MaxCoreDepth,		// explore cores to at most this depth
 						 etSeqBase *pSrcSeq,			// hamming k-mers from this sequence
-						 UINT32 SeqEntry,  				// sequence was from this suffix entry (0 if probe not from same assembly)
-						 UINT32 SeqLoci,				// and starting at this loci
+						 uint32_t SeqEntry,  				// sequence was from this suffix entry (0 if probe not from same assembly)
+						 uint32_t SeqLoci,				// and starting at this loci
 				 		int IntraInterBoth,	    // 0: hammings over both intra (same sequence as probe K-mer drawn from) and inter (different sequences to that from which probe K-mer drawn), 1: Intra only, 2: Inter only
-						 UINT8 *pHammings,				// returned hammings
+						 uint8_t *pHammings,				// returned hammings
 						 int NumAllocdIdentNodes,		// memory has been allocated by caller for holding upto this many tsIdentNodes
 						 tsIdentNode *pAllocsIdentNodes) // memory allocated by caller for holding tsIdentNodes
 {
@@ -4337,55 +4337,55 @@ return(Rslt < 0 ? Rslt : 0);
 int						// < 0 if errors, otherwise minimum hamming of probe to target
 CSfxArray::LocateHamming(int RHammMin,				// process for Hammings of at least this minimum
 						 int RHammMax,					// process for Hammings upto this limit
-						 UINT32 MinCoreDepth,			// initially explore cores to at least this depth and only continue exploring if depth would be no more than MaxCoreDepth
-						 UINT32 MaxCoreDepth,			// explore cores to at most this depth
+						 uint32_t MinCoreDepth,			// initially explore cores to at least this depth and only continue exploring if depth would be no more than MaxCoreDepth
+						 uint32_t MaxCoreDepth,			// explore cores to at most this depth
                          bool bSAHammings,				// if true then hammings on both sense and antisense required
 						 etSeqBase *pProbeSeq,			// probe sequence
-						 UINT32 ProbeLen,				// probe length
- 						 UINT32 ProbeEntry,  			// probe was from this suffix entry (0 if probe not from same assembly)
-						 UINT32 ProbeLoci,				// and starting at this loci
+						 uint32_t ProbeLen,				// probe length
+ 						 uint32_t ProbeEntry,  			// probe was from this suffix entry (0 if probe not from same assembly)
+						 uint32_t ProbeLoci,				// and starting at this loci
 				 		 int IntraInterBoth,	    // 0: hammings over both intra (same sequence as probe K-mer drawn from) and inter (different sequences to that from which probe K-mer drawn), 1: Intra only, 2: Inter only
 						 int NumAllocdIdentNodes,		// memory has been allocated by caller for holding upto this many tsIdentNodes
 						 tsIdentNode *pAllocsIdentNodes) // memory allocated by caller for holding tsIdentNodes
 {
-UINT8 RevCplSeq1Kbp[0x03ff];
+uint8_t RevCplSeq1Kbp[0x03ff];
 
-UINT8 *pRevCplSeq;
+uint8_t *pRevCplSeq;
 
 bool bDoAntisense;
 int CurProbeSegOfs;
 int CurProbeSegLen;
 int CoreLen;
 int SegIdx;
-UINT32 IterCnt;
+uint32_t IterCnt;
 int CurHamming;
 int MaxSegIdx;
 
 etSeqBase *pProbeBase;
 etSeqBase *pTargBase;
 
-INT64 TargIdx;
+int64_t TargIdx;
 
 int CurSubCnt;
 int PatIdx;
-INT64 TargSeqLeftIdx;
-UINT32 ProbeSeqLeftIdx;
+int64_t TargSeqLeftIdx;
+uint32_t ProbeSeqLeftIdx;
 int TargMatchLen;
-INT64 PutativeTargLoci;
+int64_t PutativeTargLoci;
 
-UINT8 ProbeBase;
-UINT8 TargBase;
+uint8_t ProbeBase;
+uint8_t TargBase;
 
-UINT32 HitLoci;
+uint32_t HitLoci;
 tsSfxEntry *pEntry;
 int Cmp;
 
-INT64 LastTargIdx;
-UINT32 NumCopies;
+int64_t LastTargIdx;
+uint32_t NumCopies;
 
 etSeqBase *pTarg;			// target sequence
 void *pSfxArray;			// target sequence suffix array
-INT64 SfxLen;				// number of suffixs in pSfxArray
+int64_t SfxLen;				// number of suffixs in pSfxArray
 
 
 // ensure suffix loaded for iteration!
@@ -4399,7 +4399,7 @@ if(bSAHammings)
 	{
 	if(ProbeLen >= sizeof(RevCplSeq1Kbp))
 		{
-		if((pRevCplSeq = (UINT8 *)malloc(ProbeLen+1))==NULL)
+		if((pRevCplSeq = (uint8_t *)malloc(ProbeLen+1))==NULL)
 			return(eBSFerrMem);
 		}
 	else
@@ -4410,8 +4410,8 @@ else
 if(RHammMin == 0)
 	{
 	// first try for a hamming of 0! Could strike it lucky!
-	INT64 PrevHitIdx = 0;
-	UINT32 TargEntryID;
+	int64_t PrevHitIdx = 0;
+	uint32_t TargEntryID;
 	while((PrevHitIdx = IterateExacts(pProbeSeq,ProbeLen,PrevHitIdx,&TargEntryID,&HitLoci)) > 0)
 		{
 		if(ProbeEntry == TargEntryID && ProbeLoci == HitLoci)  // not interested in self hits!
@@ -4480,14 +4480,14 @@ do
 			{
 			if(IterCnt++) {				// if iterating subsequent (to LocateFirstExact) targets
 				// ensure not about to iterate past end of suffix array!
-				if((TargIdx + 1) >= (INT64)m_pSfxBlock->ConcatSeqLen || (SfxOfsToLoci((INT32)m_pSfxBlock->SfxElSize,pSfxArray,TargIdx+1) + CoreLen) > (INT64)m_pSfxBlock->ConcatSeqLen)
+				if((TargIdx + 1) >= (int64_t)m_pSfxBlock->ConcatSeqLen || (SfxOfsToLoci((int32_t)m_pSfxBlock->SfxElSize,pSfxArray,TargIdx+1) + CoreLen) > (int64_t)m_pSfxBlock->ConcatSeqLen)
 					break;
 
 				if(IterCnt == MinCoreDepth  && !NumCopies)
 					{
 					// check how many more exact copies there are of the current probe subsequence, if too many then don't bother exploring these
 					LastTargIdx = LocateLastExact(&pProbeSeq[CurProbeSegOfs],CoreLen,pTarg,m_pSfxBlock->SfxElSize,pSfxArray,0,TargIdx-1,SfxLen-1);
-					NumCopies = LastTargIdx > 0 ? (UINT32)(1 + LastTargIdx - TargIdx) : 0;
+					NumCopies = LastTargIdx > 0 ? (uint32_t)(1 + LastTargIdx - TargIdx) : 0;
 					if(MaxCoreDepth && NumCopies > MaxCoreDepth)		// only checking at the MinCoreDepth iteration allows a little slack
 						break;										// try next core segment
 					}
@@ -4496,8 +4496,8 @@ do
 				pProbeBase = &pProbeSeq[CurProbeSegOfs];
 					{
 					int Ofs;
-					UINT8 El1;
-					UINT8 El2;
+					uint8_t El1;
+					uint8_t El2;
 					etSeqBase *pEl1= pProbeBase;
 					etSeqBase *pEl2 = pTargBase;
 					Cmp = 0;
@@ -4529,7 +4529,7 @@ do
 				}
 
 
-			if(SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,TargIdx) < (UINT32)CurProbeSegOfs)
+			if(SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,TargIdx) < (uint32_t)CurProbeSegOfs)
 				continue;
 
 			TargMatchLen = ProbeLen;
@@ -4538,7 +4538,7 @@ do
 			PutativeTargLoci = TargSeqLeftIdx;
 
 			// ensure comparisons are within start/end range of target sequence/assembly
-			if(!TargMatchLen || ((UINT64)TargSeqLeftIdx + (UINT32)TargMatchLen) > m_pSfxBlock->ConcatSeqLen)
+			if(!TargMatchLen || ((uint64_t)TargSeqLeftIdx + (uint32_t)TargMatchLen) > m_pSfxBlock->ConcatSeqLen)
 				continue;
 
 			// ensure this target segment not already processed as an extension of a previous segment
@@ -4587,7 +4587,7 @@ do
 
 				if(ProbeEntry == pEntry->EntryID)
 					{
-					HitLoci = (UINT32)(TargSeqLeftIdx - pEntry->StartOfs);
+					HitLoci = (uint32_t)(TargSeqLeftIdx - pEntry->StartOfs);
 					if(ProbeLoci == HitLoci)
 						continue;
 					}
@@ -4635,10 +4635,10 @@ CSfxArray::LocateApproxUniques(int AccumReadHits,		// how many reads have alread
 						 etSeqBase *pProbeSeq,			// probe
  						 etSeqBase *pPatternSeq,		// contains pattern to match with, etBaseN represents wildcard bases to match against any in the target
 														// will be updated on return with etBaseN's changed to actual subsitution bases  - NULL if all bases can be wildcarded
-						 UINT32 ProbeLen,				// probe, and also pattern, length
+						 uint32_t ProbeLen,				// probe, and also pattern, length
 						 int ExpMismatches,				// expected wildcard matches
- 						 UINT32 *pTargEntryID,			// if unique match then where to return suffix entry (chromosome) matched on
-						 UINT32 *pHitLoci,				// if unique match then where to return loci
+ 						 uint32_t *pTargEntryID,			// if unique match then where to return suffix entry (chromosome) matched on
+						 uint32_t *pHitLoci,				// if unique match then where to return loci
 						 int CurMaxIter)				// max allowed iterations per subsegmented sequence when matching that subsegment
 {
 int CurProbeSegOfs;
@@ -4650,27 +4650,27 @@ etSeqBase *pProbeBase;
 etSeqBase *pPatternBase;
 etSeqBase *pTargBase;
 
-INT64 TargIdx;
-INT64 LastTargIdx;
-UINT32 NumCopies;
+int64_t TargIdx;
+int64_t LastTargIdx;
+uint32_t NumCopies;
 
 int CurSubCnt;
 int PatIdx;
-INT64 TargSeqLeftIdx;
+int64_t TargSeqLeftIdx;
 int ProbeSeqLeftIdx;
 int TargMatchLen;
-INT64 PutativeTargLoci;
+int64_t PutativeTargLoci;
 int CurInstances;
 
 etSeqBase BisBase;
-UINT8 ProbeBase;
-UINT8 TargBase;
+uint8_t ProbeBase;
+uint8_t TargBase;
 
 int Cmp;
 
 etSeqBase *pTarg;			// target sequence
 void *pSfxArray;			// target sequence suffix array
-INT64 SfxLen;				// number of suffixs in pSfxArray
+int64_t SfxLen;				// number of suffixs in pSfxArray
 tsSfxEntry *pEntry;
 *pHitLoci = 0;
 *pTargEntryID = 0;
@@ -4700,15 +4700,15 @@ for(SegIdx = 0; SegIdx <= ExpMismatches; SegIdx++,CurProbeSegOfs += CurProbeSegL
 		{
 		if(IterCnt++) {				// if iterating subsequent (to LocateFirstExact) targets
 			// ensure not about to iterate past end of suffix array!
-			if((TargIdx + 1) >= (INT64)m_pSfxBlock->ConcatSeqLen || (SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,TargIdx+1) + CurProbeSegLen) >  (INT64)m_pSfxBlock->ConcatSeqLen)
+			if((TargIdx + 1) >= (int64_t)m_pSfxBlock->ConcatSeqLen || (SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,TargIdx+1) + CurProbeSegLen) >  (int64_t)m_pSfxBlock->ConcatSeqLen)
 				break;
 
 			if(IterCnt == 100 && !NumCopies)
 				{
 				// check how many more exact copies there are of the current probe subsequence, if too many then don't bother exploring these
 				LastTargIdx = LocateLastExact(&pProbeSeq[CurProbeSegOfs],CurProbeSegLen,pTarg,m_pSfxBlock->SfxElSize,pSfxArray,0,TargIdx-1,SfxLen-1);
-				NumCopies = LastTargIdx > 0 ? (UINT32)(1 + LastTargIdx - TargIdx) : 0;
-				if(CurMaxIter && NumCopies > (UINT32)CurMaxIter)		// only checking at the 100th iteration allows a little slack
+				NumCopies = LastTargIdx > 0 ? (uint32_t)(1 + LastTargIdx - TargIdx) : 0;
+				if(CurMaxIter && NumCopies > (uint32_t)CurMaxIter)		// only checking at the 100th iteration allows a little slack
 					break;										// try next core segment
 				}
 
@@ -4806,7 +4806,7 @@ for(SegIdx = 0; SegIdx <= ExpMismatches; SegIdx++,CurProbeSegOfs += CurProbeSegL
 			if(pEntry == NULL)	// should never happen!
 				continue;
 			*pTargEntryID = pEntry->EntryID;
-			*pHitLoci = (UINT32)(PutativeTargLoci - pEntry->StartOfs);
+			*pHitLoci = (uint32_t)(PutativeTargLoci - pEntry->StartOfs);
 			}
 		}
 	if(CurInstances > 1)
@@ -4823,9 +4823,9 @@ CSfxArray::LocateAllNearMatches(int MaxTotMM,			// max number of mismatches allo
 						 int MaxNumCoreSlides,			// max number of times to slide core on each strand
 						 int MaxMatches,				// if more than 0 and encountering more matches than this limit then return match count -1
  					 	 int NumEntries,				// number of entries in pEntryMatch
-						 UINT32 *pEntryMatches,			// return number of matches to each entry in this array
-						 UINT32 ProbeEntry,				// probe was from this entry
-						 UINT32 ProbeOfs,				// starting at this offset
+						 uint32_t *pEntryMatches,			// return number of matches to each entry in this array
+						 uint32_t ProbeEntry,				// probe was from this entry
+						 uint32_t ProbeOfs,				// starting at this offset
 						 int ProbeLen,					// probe length
 						 etSeqBase *pProbeSeq,			// probe
 						 int CurMaxIter,				// max allowed iterations per subsegmented sequence when matching that subsegment
@@ -4840,7 +4840,7 @@ int TotalHitInstances;			// total number of matches
 etSeqBase *pProbeBase;
 etSeqBase *pTargBase;
 char CurStrand;
-INT64 TargIdx;
+int64_t TargIdx;
 
 tsIdentNode *pHashArray[cHashEntries+1];		// hash array holding ptrs to identifier nodes
 tsIdentNode *pIdentNodes = pAllocsIdentNodes;	// identifier nodes
@@ -4848,23 +4848,23 @@ tsIdentNode *pCurIdentNode;
 tsIdentNode *pNewIdentNode;
 int CurNumIdentNodes;
 int Hash;
-UINT32 HitLoci;
-UINT32 TargSeqID;
-UINT32 NumTargSeqProc;
+uint32_t HitLoci;
+uint32_t TargSeqID;
+uint32_t NumTargSeqProc;
 
 bool bFirstIter;				// set false after the first subsequence core returned by LocateFirstExact has been processed
 
-UINT32 PatIdx;
-INT64 TargSeqLeftIdx;
-UINT32 ProbeSeqLeftIdx;
+uint32_t PatIdx;
+int64_t TargSeqLeftIdx;
+uint32_t ProbeSeqLeftIdx;
 int TargMatchLen;
 
-INT64 LastTargIdx;
-UINT32 NumCopies;
+int64_t LastTargIdx;
+uint32_t NumCopies;
 
 etSeqBase BisBase;
-UINT8 ProbeBase;
-UINT8 TargBase;
+uint8_t ProbeBase;
+uint8_t TargBase;
 
 int Cmp;
 int CurNumCoreSlides;
@@ -4873,7 +4873,7 @@ tsHitLoci *pCurHit;
 
 etSeqBase *pTarg;			// target sequence
 void *pSfxArray;			// target sequence suffix array
-INT64 SfxLen;				// number of suffixs in pSfxArray
+int64_t SfxLen;				// number of suffixs in pSfxArray
 tsSfxEntry *pEntry;
 BisBase=eBaseN;
 
@@ -4890,7 +4890,7 @@ CurStrand = '+';			// initially treat probe as not reverse complemented, e.g. '+
 
 // counts of matches to each suffix array entry are being recorded so initialise these counts to be 0
 if(pEntryMatches != NULL && NumEntries >= 1)
-	memset(pEntryMatches,0,sizeof(UINT32) * NumEntries);
+	memset(pEntryMatches,0,sizeof(uint32_t) * NumEntries);
 
 NumTargSeqProc = 0;
 CurNumIdentNodes = 0;
@@ -4931,15 +4931,15 @@ do
 			if(!bFirstIter) {
 
 				// ensure not about to iterate past end of suffix array!
-				if((TargIdx + 1) >= (INT64)m_pSfxBlock->ConcatSeqLen || (SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,TargIdx+1) + CoreLen) >  (INT64)m_pSfxBlock->ConcatSeqLen)
+				if((TargIdx + 1) >= (int64_t)m_pSfxBlock->ConcatSeqLen || (SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,TargIdx+1) + CoreLen) >  (int64_t)m_pSfxBlock->ConcatSeqLen)
 					break;
 
 				if(IterCnt == 100 && !NumCopies)
 					{
 					// check how many more exact copies there are of the current probe subsequence, if too many then don't bother exploring these
 					LastTargIdx = LocateLastExact(&pProbeSeq[CurCoreSegOfs],CoreLen,pTarg,m_pSfxBlock->SfxElSize,pSfxArray,0,TargIdx-1,SfxLen-1);
-					NumCopies = LastTargIdx > 0 ? (UINT32)(1 + LastTargIdx - TargIdx) : 0;
-					if(CurMaxIter && NumCopies > (UINT32)CurMaxIter)		// only checking at the 100th iteration allows a little slack
+					NumCopies = LastTargIdx > 0 ? (uint32_t)(1 + LastTargIdx - TargIdx) : 0;
+					if(CurMaxIter && NumCopies > (uint32_t)CurMaxIter)		// only checking at the 100th iteration allows a little slack
 						break;										// try next core segment
 					}
 
@@ -4952,8 +4952,8 @@ do
 				else
 					{
 					int Ofs;
-					UINT8 El1;
-					UINT8 El2;
+					uint8_t El1;
+					uint8_t El2;
 					etSeqBase *pEl1= pProbeBase;
 					etSeqBase *pEl2 = pTargBase;
 					Cmp = 0;
@@ -4985,7 +4985,7 @@ do
 				}
 
 			bFirstIter = false;
-			if(SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,TargIdx) < (UINT32)CurCoreSegOfs)
+			if(SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,TargIdx) < (uint32_t)CurCoreSegOfs)
 				continue;
 
 			TargMatchLen = ProbeLen;
@@ -4993,11 +4993,11 @@ do
 			ProbeSeqLeftIdx = 0;
 
 			// ensure comparisons are still within start/end range of target sequence/assembly
-			if(!TargMatchLen || (TargSeqLeftIdx + TargMatchLen) > (INT64)m_pSfxBlock->ConcatSeqLen)
+			if(!TargMatchLen || (TargSeqLeftIdx + TargMatchLen) > (int64_t)m_pSfxBlock->ConcatSeqLen)
 				continue;
 
 			// check if target already processed
-			TargSeqID = (UINT32)(1 + SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,TargIdx) - (UINT32)CurCoreSegOfs);
+			TargSeqID = (uint32_t)(1 + SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,TargIdx) - (uint32_t)CurCoreSegOfs);
 			Hash = (TargSeqID & cHashEntries);
 			if((pCurIdentNode = pHashArray[Hash])==NULL)
 				{
@@ -5026,7 +5026,7 @@ do
 				CurMMCnt = 0;
 				CoreMMCnt = 0;
 				bool bPairMM = false;
-				for(PatIdx = 0; PatIdx < (UINT32)TargMatchLen; PatIdx++,pTargBase++,pProbeBase++)
+				for(PatIdx = 0; PatIdx < (uint32_t)TargMatchLen; PatIdx++,pTargBase++,pProbeBase++)
 					{
 					TargBase = *pTargBase & 0x0f;
 					ProbeBase = *pProbeBase & 0x0f;
@@ -5048,7 +5048,7 @@ do
 
 				if(ProbeEntry == pEntry->EntryID)
 					{
-					HitLoci = (UINT32)(TargSeqLeftIdx - pEntry->StartOfs);
+					HitLoci = (uint32_t)(TargSeqLeftIdx - pEntry->StartOfs);
 					if(ProbeOfs == HitLoci)
 						continue;
 					// not a self match, so subsequence not unique to this sfx entry
@@ -5066,7 +5066,7 @@ do
 					}
 
 				// have accepted this match so record which entry the match was on
-				if(pEntry !=NULL && pEntry->EntryID <= (UINT32)NumEntries)
+				if(pEntry !=NULL && pEntry->EntryID <= (uint32_t)NumEntries)
 					pEntryMatches[pEntry->EntryID-1] += 1;
 				TotalHitInstances += 1;
 				}
@@ -5095,10 +5095,10 @@ CSfxArray::MatchesOtherChroms( int ProbeChromID,	// probe is from this chrom
 				    int ProbeLen,		// probe sequence is this length
 					etSeqBase *pProbe)	// check for matches from this probe sequence
 {
-INT64 PrevHitIdx;
-INT64 NxtHitIdx;
-UINT32 TargHitID;
-UINT32 TargHitLoci;
+int64_t PrevHitIdx;
+int64_t NxtHitIdx;
+uint32_t TargHitID;
+uint32_t TargHitLoci;
 int CoreLen;
 int CurCoreSegOfs;
 int NumMM;
@@ -5107,7 +5107,7 @@ etSeqBase *pStartCoreBase;
 etSeqBase *pHitCoreSeq;
 etSeqBase *pTarg;			// target sequence
 void *pSfxArray;			// target sequence suffix array
-INT64 SfxLen;				// number of suffixs in pSfxArray
+int64_t SfxLen;				// number of suffixs in pSfxArray
 tsSfxEntry *pEntry;
 
 pTarg = (etSeqBase *)&m_pSfxBlock->SeqSuffix[0];
@@ -5130,11 +5130,11 @@ for(CurCoreSegOfs = 0; CurCoreSegOfs < (ProbeLen - CoreLen); CurCoreSegOfs += Co
 		PrevHitIdx = NxtHitIdx;
 		if(TargHitID == ProbeChromID)			// only interested in hits onto other chroms
 			continue;
-		if(TargHitLoci < (UINT32)CurCoreSegOfs)					// must be able to extend core left
+		if(TargHitLoci < (uint32_t)CurCoreSegOfs)					// must be able to extend core left
 			continue;
 
 		pEntry = &m_pEntriesBlock->Entries[TargHitID-1];
-		if((TargHitLoci + (UINT32)ProbeLen - (UINT32)CurCoreSegOfs) > pEntry->SeqLen)					// must be able to extend core right
+		if((TargHitLoci + (uint32_t)ProbeLen - (uint32_t)CurCoreSegOfs) > pEntry->SeqLen)					// must be able to extend core right
 			continue;
 
 		// check flanks and total number of missmatches, if <= MaxTotMM then return as having matched at least one other chrom
@@ -5167,10 +5167,10 @@ CSfxArray::MatchesOtherChroms(int NumProbeIDs, // number of chroms in pProbeChro
 int ProbeIdx;
 int *pProbeID;
 
-INT64 PrevHitIdx;
-INT64 NxtHitIdx;
-UINT32 TargHitID;
-UINT32 TargHitLoci;
+int64_t PrevHitIdx;
+int64_t NxtHitIdx;
+uint32_t TargHitID;
+uint32_t TargHitLoci;
 int CoreLen;
 int CurCoreSegOfs;
 int NumMM;
@@ -5179,7 +5179,7 @@ etSeqBase *pStartCoreBase;
 etSeqBase *pHitCoreSeq;
 etSeqBase *pTarg;			// target sequence
 void *pSfxArray;			// target sequence suffix array
-INT64 SfxLen;				// number of suffixs in pSfxArray
+int64_t SfxLen;				// number of suffixs in pSfxArray
 tsSfxEntry *pEntry;
 
 pTarg = (etSeqBase *)&m_pSfxBlock->SeqSuffix[0];
@@ -5207,11 +5207,11 @@ for(CurCoreSegOfs = 0; CurCoreSegOfs < (ProbeLen - CoreLen); CurCoreSegOfs += Co
 		if(ProbeIdx < NumProbeIDs)
 			continue;
 
-		if(TargHitLoci < (UINT32)CurCoreSegOfs)					// must be able to extend core left
+		if(TargHitLoci < (uint32_t)CurCoreSegOfs)					// must be able to extend core left
 			continue;
 
 		pEntry = &m_pEntriesBlock->Entries[TargHitID-1];
-		if((TargHitLoci + (UINT32)ProbeLen - (UINT32)CurCoreSegOfs) > pEntry->SeqLen)					// must be able to extend core right
+		if((TargHitLoci + (uint32_t)ProbeLen - (uint32_t)CurCoreSegOfs) > pEntry->SeqLen)					// must be able to extend core right
 			continue;
 
 		// check flanks and total number of missmatches, if <= MaxTotMM then return as having matched at least one other chrom
@@ -5238,7 +5238,7 @@ return(0);
 // Utilises a sliding core
 // Locates cores containing at most CoreMismatches
 int						// < 0 if errors, 0 if no alignmentse, 1 if at least one alignment
-CSfxArray::IfAnyAlignments(UINT32 ReadID,					// identifies this read
+CSfxArray::IfAnyAlignments(uint32_t ReadID,					// identifies this read
 								int MaxTotMM,			        // max number of mismatches allowed
 								int CoreLen,					// core window length
 								int CoreDelta,					// core window offset increment (1..n)
@@ -5260,7 +5260,7 @@ int LowHitInstances;			// number of hit instances thus far for hits with LowMMCn
 etSeqBase *pProbeBase;
 etSeqBase *pTargBase;
 char CurStrand;
-INT64 TargIdx;
+int64_t TargIdx;
 
 tsIdentNode *pHashArray[cHashEntries + 1];		// hash array holding ptrs to identifier nodes
 tsIdentNode *pIdentNodes = pAllocsIdentNodes;	// identifier nodes
@@ -5269,22 +5269,22 @@ tsIdentNode *pNewIdentNode;
 int CurNumIdentNodes;
 int Hash;
 
-UINT32 TargSeqID;
-UINT32 NumTargSeqProc;
+uint32_t TargSeqID;
+uint32_t NumTargSeqProc;
 
 bool bFirstIter;				// set false after the first subsequence core returned by LocateFirstExact has been processed
 
-INT64 LastTargIdx;
-UINT32 NumCopies;
+int64_t LastTargIdx;
+uint32_t NumCopies;
 
-UINT32 PatIdx;
-INT64 TargSeqLeftIdx;
-INT64 ProbeSeqLeftIdx;
+uint32_t PatIdx;
+int64_t TargSeqLeftIdx;
+int64_t ProbeSeqLeftIdx;
 int TargMatchLen;
 
 etSeqBase BisBase;
-UINT8 ProbeBase;
-UINT8 TargBase;
+uint8_t ProbeBase;
+uint8_t TargBase;
 
 int Cmp;
 int CurNumCoreSlides;
@@ -5293,7 +5293,7 @@ tsHitLoci *pCurHit;
 
 etSeqBase *pTarg;			// target sequence
 void *pSfxArray;			// target sequence suffix array
-INT64 SfxLen;				// number of suffixs in pSfxArray
+int64_t SfxLen;				// number of suffixs in pSfxArray
 BisBase = eBaseN;
 
 // ensure suffix array block loaded for iteration!
@@ -5363,15 +5363,15 @@ do
 				{
 
 					// ensure not about to iterate past end of suffix array!
-				if ((TargIdx + 1) >= (INT64)m_pSfxBlock->ConcatSeqLen || (SfxOfsToLoci(m_pSfxBlock->SfxElSize, pSfxArray, TargIdx + 1) + CoreLen) >(INT64)m_pSfxBlock->ConcatSeqLen)
+				if ((TargIdx + 1) >= (int64_t)m_pSfxBlock->ConcatSeqLen || (SfxOfsToLoci(m_pSfxBlock->SfxElSize, pSfxArray, TargIdx + 1) + CoreLen) >(int64_t)m_pSfxBlock->ConcatSeqLen)
 					break;
 
 				if (IterCnt == 100 && !NumCopies)
 					{
 						// check how many more exact copies there are of the current probe subsequence, if too many then don't bother exploring these
 					LastTargIdx = LocateLastExact(&pProbeSeq[CurCoreSegOfs], CoreLen, pTarg, m_pSfxBlock->SfxElSize, pSfxArray, 0, TargIdx - 1, SfxLen - 1);
-					NumCopies = LastTargIdx > 0 ? (UINT32)(1 + LastTargIdx - TargIdx) : 0;
-					if (CurMaxIter && NumCopies > (UINT32)CurMaxIter)		// only checking at the 100th iteration allows a little slack
+					NumCopies = LastTargIdx > 0 ? (uint32_t)(1 + LastTargIdx - TargIdx) : 0;
+					if (CurMaxIter && NumCopies > (uint32_t)CurMaxIter)		// only checking at the 100th iteration allows a little slack
 						break;										// try next core segment
 					}
 
@@ -5383,8 +5383,8 @@ do
 				else
 				{
 					int Ofs;
-					UINT8 El1;
-					UINT8 El2;
+					uint8_t El1;
+					uint8_t El2;
 					etSeqBase *pEl1 = pProbeBase;
 					etSeqBase *pEl2 = pTargBase;
 					Cmp = 0;
@@ -5416,7 +5416,7 @@ do
 				}
 
 			bFirstIter = false;
-			if (SfxOfsToLoci(m_pSfxBlock->SfxElSize, pSfxArray, TargIdx) < (UINT32)CurCoreSegOfs)
+			if (SfxOfsToLoci(m_pSfxBlock->SfxElSize, pSfxArray, TargIdx) < (uint32_t)CurCoreSegOfs)
 				continue;
 
 			TargMatchLen = ProbeLen;
@@ -5424,11 +5424,11 @@ do
 			ProbeSeqLeftIdx = 0;
 
 			// ensure comparisons are still within start/end range of target sequence/assembly
-			if (!TargMatchLen || ((UINT64)TargSeqLeftIdx + (UINT32)TargMatchLen) > m_pSfxBlock->ConcatSeqLen)
+			if (!TargMatchLen || ((uint64_t)TargSeqLeftIdx + (uint32_t)TargMatchLen) > m_pSfxBlock->ConcatSeqLen)
 				continue;
 
 				// check if target already processed
-			TargSeqID = (UINT32)(1 + SfxOfsToLoci(m_pSfxBlock->SfxElSize, pSfxArray, TargIdx) - (UINT32)CurCoreSegOfs);
+			TargSeqID = (uint32_t)(1 + SfxOfsToLoci(m_pSfxBlock->SfxElSize, pSfxArray, TargIdx) - (uint32_t)CurCoreSegOfs);
 			Hash = (TargSeqID & cHashEntries);
 			if ((pCurIdentNode = pHashArray[Hash]) == NULL)
 				{
@@ -5461,7 +5461,7 @@ do
 					bool bPairMM = false;
 					if (m_bBisulfite)
 						BisBase = GetBisBase(TargMatchLen, pTargBase, pProbeBase);
-					for (PatIdx = 0; PatIdx < (UINT32)TargMatchLen; PatIdx++, pTargBase++, pProbeBase++)
+					for (PatIdx = 0; PatIdx < (uint32_t)TargMatchLen; PatIdx++, pTargBase++, pProbeBase++)
 					{
 						TargBase = *pTargBase & 0x0f;
 						ProbeBase = *pProbeBase & 0x0f;
@@ -5472,7 +5472,7 @@ do
 						{
 							if (!bPairMM && TargBase != ProbeBase)
 							{
-								if (PatIdx < ((UINT32)TargMatchLen - 1))
+								if (PatIdx < ((uint32_t)TargMatchLen - 1))
 								{
 									if ((pTargBase[1] & 0x0f) == (pProbeBase[1] & 0x0f))
 									{
@@ -5557,26 +5557,26 @@ return(eHRnone);				// no putative hits
 
 
 int											// if < eBSFSuccess then errors, 0 if unable to adaptively trim, >= MinTrimLen if able to adaptively trim
-CSfxArray::AdaptiveTrim(UINT32 SeqLen,					// untrimmed probe and target sequence are both this bp long
+CSfxArray::AdaptiveTrim(uint32_t SeqLen,					// untrimmed probe and target sequence are both this bp long
 			etSeqBase *pProbeSeq,			// end trimming this probe sequence
 			etSeqBase *pTargSeq,			// when aligned against this target sequence
-			UINT32 MinTrimLen,				// accepted trimmed probe sequence must be at least this minimum length
-			UINT32 MaxMM,					// and contain at most this many mismatches proportional to a 100bp trimmed sequence match
-			UINT32 MinFlankMatches,			// 5' and 3' flanks of trimmed probe must start/end with at least this many exactly matching bases
-			UINT32 *pTrimSeqLen,			// trimmed probe is this length
-			UINT32 *pTrimStart,				// accepted trimmed probe has this many bp trimmed from start (5') of probe
-			UINT32 *pTrimEnd,				// accepted trimmed probe has this many bp trimmed from end (3') of probe
-			UINT32 *pTrimMMs)				// after trimming there are this many mismatches in the trimmed probe
+			uint32_t MinTrimLen,				// accepted trimmed probe sequence must be at least this minimum length
+			uint32_t MaxMM,					// and contain at most this many mismatches proportional to a 100bp trimmed sequence match
+			uint32_t MinFlankMatches,			// 5' and 3' flanks of trimmed probe must start/end with at least this many exactly matching bases
+			uint32_t *pTrimSeqLen,			// trimmed probe is this length
+			uint32_t *pTrimStart,				// accepted trimmed probe has this many bp trimmed from start (5') of probe
+			uint32_t *pTrimEnd,				// accepted trimmed probe has this many bp trimmed from end (3') of probe
+			uint32_t *pTrimMMs)				// after trimming there are this many mismatches in the trimmed probe
 {
-UINT32 Ofs;
-UINT32 NumRegions;
-UINT32 NumRegionsMinExact;
-UINT32 CurRegionIdx;
-UINT32 CurStartRegionIdx;
-UINT32 FirstStartRegionIdx;
-UINT32 LastStartRegionIdx;
-UINT32 FirstEndRegionIdx;
-UINT32 LastEndRegionIdx;
+uint32_t Ofs;
+uint32_t NumRegions;
+uint32_t NumRegionsMinExact;
+uint32_t CurRegionIdx;
+uint32_t CurStartRegionIdx;
+uint32_t FirstStartRegionIdx;
+uint32_t LastStartRegionIdx;
+uint32_t FirstEndRegionIdx;
+uint32_t LastEndRegionIdx;
 tsATRegion ATRegions[cMaxATSeqLen];
 tsATRegion *pCurATRegion;
 tsATRegion *pCurStartATRegion;
@@ -5610,7 +5610,7 @@ NumRegions = 0;
 pCurATRegion = NULL;
 bCurMM = false;
 NumRegionsMinExact = 0;
-UINT32 NumExactInRegions = 0;
+uint32_t NumExactInRegions = 0;
 for(Ofs=0; Ofs < SeqLen; Ofs+=1, pProbeBase+=1, pTargBase+=1)
 	{
 	bCurMM = (*pProbeBase & 0x0f) == (*pTargBase & 0x0f) ? false : true;
@@ -5654,7 +5654,7 @@ for(CurRegionIdx = 0; CurRegionIdx < NumRegions; CurRegionIdx++,pCurATRegion++)
 			}
 		else
 			pCurATRegion->flgTrim5 = 0;
-		if(pCurATRegion->RegionOfs + pCurATRegion->RegionLen >= (UINT16)MinTrimLen)
+		if(pCurATRegion->RegionOfs + pCurATRegion->RegionLen >= (uint16_t)MinTrimLen)
 			{
 			pCurATRegion->flgTrim3 = 1;
 			LastEndRegionIdx = CurRegionIdx+1;
@@ -5675,14 +5675,14 @@ if(FirstStartRegionIdx == 0 || FirstEndRegionIdx == 0)
 	return(0);
 
 // iterate over each putative starting region and maximally extend that region into ending regions providing that number of mismatches would be accepted
-UINT32 CurTrimmedSeqLen;
-UINT32 CurTrimmedSeqMM;
-UINT32 CurTrimmedRegionIdx;
+uint32_t CurTrimmedSeqLen;
+uint32_t CurTrimmedSeqMM;
+uint32_t CurTrimmedRegionIdx;
 
-UINT32 BestTrimmedSeqLen;
-UINT32 BestTrimmedSeqMM;
-UINT32 BestTrimStart;
-UINT32 BestTrimEnd;
+uint32_t BestTrimmedSeqLen;
+uint32_t BestTrimmedSeqMM;
+uint32_t BestTrimStart;
+uint32_t BestTrimEnd;
 
 BestTrimmedSeqLen = 0;
 BestTrimmedSeqMM = 0;
@@ -5768,8 +5768,8 @@ return(0);
 // If m_bBisulfite is set true then matches using bisulfite rules
 //
 int						// < 0 if errors, 0 if no matches or change, 1 if mumber of matches accepted, 2 MMDelta criteria not met, 3 too many match instances
-CSfxArray::LocateCoreMultiples(UINT32 ExtdProcFlags,	// flags indicating if lower levels need to do any form of extended processing with this specific read...
-						 UINT32 ReadID,					// identifies this read
+CSfxArray::LocateCoreMultiples(uint32_t ExtdProcFlags,	// flags indicating if lower levels need to do any form of extended processing with this specific read...
+						 uint32_t ReadID,					// identifies this read
 						 int MinChimericLen,			// minimum chimeric length as a percentage (0 to disable, otherwise 50..99) of probe sequence
 						 int MaxTotMM,			        // max number of mismatches allowed
 						 int CoreLen,					// core window length
@@ -5798,13 +5798,13 @@ int LowHitInstances;			// number of hit instances thus far for hits with LowMMCn
 etSeqBase *pProbeBase;
 etSeqBase *pTargBase;
 char CurStrand;
-INT64 TargIdx;
+int64_t TargIdx;
 
-UINT32 MinProbeChimericLen;
+uint32_t MinProbeChimericLen;
 char BestChimericStrand;
 int BestChimericLen;
-UINT16 BestTrim5Flank;
-UINT16 BestTrim3Flank;
+uint16_t BestTrim5Flank;
+uint16_t BestTrim3Flank;
 int BestMaxChimericMMs;
 
 tsIdentNode *pHashArray[cHashEntries+1];		// hash array holding ptrs to identifier nodes
@@ -5814,19 +5814,19 @@ tsIdentNode *pNewIdentNode;
 int CurNumIdentNodes;
 int Hash;
 
-UINT32 TargSeqID;
-UINT32 NumTargSeqProc;
+uint32_t TargSeqID;
+uint32_t NumTargSeqProc;
 
 bool bFirstIter;				// set false after the first subsequence core returned by LocateFirstExact has been processed
 
-UINT32 PatIdx;
-INT64 TargSeqLeftIdx;
-INT64 ProbeSeqLeftIdx;
+uint32_t PatIdx;
+int64_t TargSeqLeftIdx;
+int64_t ProbeSeqLeftIdx;
 int TargMatchLen;
 
 etSeqBase BisBase;
-UINT8 ProbeBase;
-UINT8 TargBase;
+uint8_t ProbeBase;
+uint8_t TargBase;
 
 int Cmp;
 int CurNumCoreSlides;
@@ -5835,7 +5835,7 @@ tsHitLoci *pCurHit;
 
 etSeqBase *pTarg;			// target sequence
 void *pSfxArray;			// target sequence suffix array
-INT64 SfxLen;				// number of suffixs in pSfxArray
+int64_t SfxLen;				// number of suffixs in pSfxArray
 tsSfxEntry *pEntry;
 BisBase=eBaseN;
 
@@ -5941,7 +5941,7 @@ do
 			if(!bFirstIter) {
 
 				// ensure not about to iterate past end of suffix array!
-				if((TargIdx + 1) >= (INT64)m_pSfxBlock->ConcatSeqLen || (SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,TargIdx+1) + CoreLen) >  (INT64)m_pSfxBlock->ConcatSeqLen)
+				if((TargIdx + 1) >= (int64_t)m_pSfxBlock->ConcatSeqLen || (SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,TargIdx+1) + CoreLen) >  (int64_t)m_pSfxBlock->ConcatSeqLen)
 					break;
 
 				// check that this new putative core is still matching
@@ -5952,8 +5952,8 @@ do
 				else
 					{
 					int Ofs;
-					UINT8 El1;
-					UINT8 El2;
+					uint8_t El1;
+					uint8_t El2;
 					etSeqBase *pEl1= pProbeBase;
 					etSeqBase *pEl2 = pTargBase;
 					Cmp = 0;
@@ -5985,7 +5985,7 @@ do
 				}
 
 			bFirstIter = false;
-			if(SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,TargIdx) < (UINT32)CurCoreSegOfs)
+			if(SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,TargIdx) < (uint32_t)CurCoreSegOfs)
 				continue;
 
 			TargMatchLen = ProbeLen;
@@ -5995,11 +5995,11 @@ do
 			pEntry = MapChunkHit2Entry(TargSeqLeftIdx);
 
 			// ensure comparisons are still within start/end range of target sequence/assembly
-			if(pEntry == NULL || !TargMatchLen || ((UINT64)TargSeqLeftIdx + (UINT32)TargMatchLen - 1) > pEntry->EndOfs)
+			if(pEntry == NULL || !TargMatchLen || ((uint64_t)TargSeqLeftIdx + (uint32_t)TargMatchLen - 1) > pEntry->EndOfs)
 				continue;
 
 			// check if target already processed
-			TargSeqID = (UINT32)(1 + SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,TargIdx) - (UINT32)CurCoreSegOfs);
+			TargSeqID = (uint32_t)(1 + SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,TargIdx) - (uint32_t)CurCoreSegOfs);
 			Hash = (TargSeqID & cHashEntries);
 			if((pCurIdentNode = pHashArray[Hash])==NULL)
 				{
@@ -6041,8 +6041,8 @@ do
 				int CurChimericLen;
 				int MaxChimericMMs;
 				int MaxChimericLen;
-				UINT16 Trim5Flank;
-				UINT16 Trim3Flank;
+				uint16_t Trim5Flank;
+				uint16_t Trim3Flank;
 
 
 				pTargSubSeq = pTargBase;
@@ -6053,10 +6053,10 @@ do
 				bInMatches = false;
 
 				int AdaptiveTrimRslt;
-				UINT32 TrimmedSeqLen;
-				UINT32 TrimmedLeftFlankLen;
-				UINT32 TrimmedRightFlankLen;
-				UINT32 TrimmedMM;
+				uint32_t TrimmedSeqLen;
+				uint32_t TrimmedLeftFlankLen;
+				uint32_t TrimmedRightFlankLen;
+				uint32_t TrimmedMM;
 				AdaptiveTrimRslt = AdaptiveTrim(TargMatchLen,pProbeSeq,&pTarg[TargSeqLeftIdx],MinProbeChimericLen,MaxTotMM,3,&TrimmedSeqLen,&TrimmedLeftFlankLen,&TrimmedRightFlankLen,&TrimmedMM);
 				MaxChimericLen = TrimmedSeqLen; 				
 				MaxChimericMMs = TrimmedMM;
@@ -6102,7 +6102,7 @@ do
 						pCurHit->Seg[0].TrimRight = Trim5Flank;
 						}
 					pCurHit->Seg[0].ChromID = pEntry->EntryID;
-					pCurHit->Seg[0].MatchLoci = (UINT32)(TargSeqLeftIdx - pEntry->StartOfs);
+					pCurHit->Seg[0].MatchLoci = (uint32_t)(TargSeqLeftIdx - pEntry->StartOfs);
 					pCurHit->Seg[0].MatchLen = ProbeLen;
 					pCurHit->Seg[0].Mismatches = MaxChimericMMs;
 					pCurHit->Seg[0].TrimMismatches = MaxChimericMMs;
@@ -6134,7 +6134,7 @@ do
 								pCurHit->Seg[0].TrimRight = Trim5Flank;
 								}
 							pCurHit->Seg[0].ChromID = pEntry->EntryID;
-							pCurHit->Seg[0].MatchLoci = (UINT32)(TargSeqLeftIdx - pEntry->StartOfs);
+							pCurHit->Seg[0].MatchLoci = (uint32_t)(TargSeqLeftIdx - pEntry->StartOfs);
 							pCurHit->Seg[0].MatchLen = ProbeLen;
 							pCurHit->Seg[0].Mismatches = MaxChimericMMs;
 							pCurHit->Seg[0].TrimMismatches = MaxChimericMMs;
@@ -6160,7 +6160,7 @@ do
 				if(m_bBisulfite)
 					BisBase = GetBisBase(TargMatchLen,pTargBase,pProbeBase);
 
-				for(PatIdx = 0; PatIdx < (UINT32)TargMatchLen; PatIdx++,pTargBase++,pProbeBase++)
+				for(PatIdx = 0; PatIdx < (uint32_t)TargMatchLen; PatIdx++,pTargBase++,pProbeBase++)
 					{
 					TargBase = *pTargBase & 0x0f;
 					ProbeBase = *pProbeBase & 0x0f;
@@ -6171,7 +6171,7 @@ do
 						{
 						if(!bPairMM && TargBase != ProbeBase)
 							{
-							if(PatIdx < ((UINT32)TargMatchLen-1))
+							if(PatIdx < ((uint32_t)TargMatchLen-1))
 								{
 								if((pTargBase[1] & 0x0f) == (pProbeBase[1] & 0x0f))
 									{
@@ -6239,7 +6239,7 @@ do
 					memset(pCurHit->Seg,0,sizeof(pCurHit->Seg));
 					pCurHit->Seg[0].Strand = CurStrand;
 					pCurHit->Seg[0].ChromID = pEntry->EntryID;
-					pCurHit->Seg[0].MatchLoci = (UINT32)(TargSeqLeftIdx - pEntry->StartOfs);
+					pCurHit->Seg[0].MatchLoci = (uint32_t)(TargSeqLeftIdx - pEntry->StartOfs);
 					pCurHit->Seg[0].MatchLen = ProbeLen;
 					pCurHit->Seg[0].Mismatches = CurMMCnt;
 					pCurHit->Seg[0].TrimMismatches = CurMMCnt;
@@ -6261,7 +6261,7 @@ do
 							memset(pCurHit->Seg,0,sizeof(pCurHit->Seg));
 							pCurHit->Seg[0].Strand = CurStrand;
 							pCurHit->Seg[0].ChromID = pEntry->EntryID;
-							pCurHit->Seg[0].MatchLoci = (UINT32)(TargSeqLeftIdx - pEntry->StartOfs);
+							pCurHit->Seg[0].MatchLoci = (uint32_t)(TargSeqLeftIdx - pEntry->StartOfs);
 							pCurHit->Seg[0].MatchLen = ProbeLen;
 							pCurHit->Seg[0].Mismatches = CurMMCnt;
 							pCurHit->Seg[0].TrimMismatches = CurMMCnt;
@@ -6359,7 +6359,7 @@ m_OccKMerLen = KMerLen;
 m_AllocOccKMerClasMem = (size_t)0x01 << ((KMerLen-1) * 2);
 
 #ifdef _WIN32
-m_pOccKMerClas = (UINT8 *) malloc(m_AllocOccKMerClasMem);
+m_pOccKMerClas = (uint8_t *) malloc(m_AllocOccKMerClasMem);
 if(m_pOccKMerClas==NULL)
 	{
 	AddErrMsg("CSfxArray::InitOverOccKMers","unable to allocate %llu bytes for over occurring KMers",m_AllocOccKMerClasMem);
@@ -6369,7 +6369,7 @@ if(m_pOccKMerClas==NULL)
 	}
 #else
 // gnu malloc is still in the 32bit world and seems to have issues if more than 2GB allocation
-m_pOccKMerClas = (UINT8 *)mmap(NULL,m_AllocOccKMerClasMem, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+m_pOccKMerClas = (uint8_t *)mmap(NULL,m_AllocOccKMerClasMem, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pOccKMerClas == MAP_FAILED)
 	{
 	AddErrMsg("CSfxArray::InitOverOccKMers","unable to allocate %llu bytes for over occurring KMers",m_AllocOccKMerClasMem);
@@ -6392,7 +6392,7 @@ etSeqBase *pBase;
 size_t PackedSeqIdx;
 int ClasShf;
 int OccKMerClas;
-UINT32 NumCopies;
+uint32_t NumCopies;
 int Idx;
 
 if(KMerLen > cMaxKmerLen || m_pOccKMerClas == NULL || KMerLen != m_OccKMerLen)		// NOTE - now classifying both over or none occurrences of all K-mers even if KMerLen > cMaxKmerLen
@@ -6431,7 +6431,7 @@ else
 // NOTE: no serialisation of access to m_pOccKMerClas required as access is at the byte level with overwriting 2 bits only
 // If another thread accesses the same byte then there may be a conflict but this may very occasionally result in two threads
 // independently regenerating the same classification if that Kmer not previously classified
-UINT8 Tmp = m_pOccKMerClas[PackedSeqIdx] & ~(0x03 << ClasShf);
+uint8_t Tmp = m_pOccKMerClas[PackedSeqIdx] & ~(0x03 << ClasShf);
 Tmp |= (OccKMerClas << ClasShf); 
 m_pOccKMerClas[PackedSeqIdx] = Tmp;
 return(OccKMerClas - 1);
@@ -6439,12 +6439,12 @@ return(OccKMerClas - 1);
 
 
 int 
-CSfxArray::InitKMerCountDists(UINT32 MaxKMerCnts,		// // max KMer target count + 1 to allow for K-mers with 0 counts, range will be 0..MakKMerCnts-1 inclusive
-	UINT32 *pKMerCntDist)						// record count distributions into this array sized MaxKMerCnts
+CSfxArray::InitKMerCountDists(uint32_t MaxKMerCnts,		// // max KMer target count + 1 to allow for K-mers with 0 counts, range will be 0..MakKMerCnts-1 inclusive
+	uint32_t *pKMerCntDist)						// record count distributions into this array sized MaxKMerCnts
 {
 m_MaxKMerCnts = MaxKMerCnts;
 m_pKMerCntDist = pKMerCntDist;
-memset(pKMerCntDist,0,sizeof(UINT32) * MaxKMerCnts);
+memset(pKMerCntDist,0,sizeof(uint32_t) * MaxKMerCnts);
 return(eBSFSuccess);
 }
 
@@ -6453,48 +6453,48 @@ return(eBSFSuccess);
 // LocateQuerySeqs
 // Utilises a sliding core
 int						// < 0 if errors, 0 if no matches or change, 1 if mumber of matches accepted, 2 MMDelta criteria not met, 3 too many match instances
-CSfxArray::LocateQuerySeqs(UINT32 QuerySeqID,			// identifies this query sequence
+CSfxArray::LocateQuerySeqs(uint32_t QuerySeqID,			// identifies this query sequence
 	etSeqBase* pProbeSeq,			// probe
-	UINT32 ProbeLen,				// probe length
-	UINT32 CoreLen,				// core window length
-	UINT32 CoreDelta,				// core window offset increment (1..n)
+	uint32_t ProbeLen,				// probe length
+	uint32_t CoreLen,				// core window length
+	uint32_t CoreDelta,				// core window offset increment (1..n)
 	eALStrand Align2Strand,		// align to this strand
-	UINT32 MaxHits,				// (IN) process for at most this number of hits
+	uint32_t MaxHits,				// (IN) process for at most this number of hits
 	tsQueryAlignNodes* pHits,		// where to return hits (at most MaxHits)
-	UINT32 CurMaxIter,				// max allowed iterations per subsegmented sequence when matching that subsegment
+	uint32_t CurMaxIter,				// max allowed iterations per subsegmented sequence when matching that subsegment
 	int BaseMatchPts,				// award this many points for matching bases when extending 5' and 3' flanks
 	int BaseMismatchPts)			// penalise this many points for mismatching bases when extending 5' and 3' flanks
 
 {
-	UINT32 CurCoreSegOfs;				// current core segment relative start
-	UINT32 IterCnt;					// count iterator for current segment target matches
-	UINT32 NumMatches;					// number of hit instances thus far
+	uint32_t CurCoreSegOfs;				// current core segment relative start
+	uint32_t IterCnt;					// count iterator for current segment target matches
+	uint32_t NumMatches;					// number of hit instances thus far
 	char CurStrand;
-	INT64 TargIdx;
-	UINT32 NumCopies;
-	INT64 TargSeqLeftIdx;
+	int64_t TargIdx;
+	uint32_t NumCopies;
+	int64_t TargSeqLeftIdx;
 
-	UINT32 TargSeqID;
-	UINT32 TargSeqLoci;
-	UINT32 CurNumCoreSlides;
-	UINT32 CurCoreDelta;
+	uint32_t TargSeqID;
+	uint32_t TargSeqLoci;
+	uint32_t CurNumCoreSlides;
+	uint32_t CurCoreDelta;
 	tsQueryAlignNodes* pCurHit;
 	tsQueryAlignNodes* pPrevHit;
-	UINT32 SeqIdx;
-	UINT32 Flank3Len;
-	UINT8 TargBase;
-	UINT32 Flank5Len;
-	UINT8 ProbeBase;
+	uint32_t SeqIdx;
+	uint32_t Flank3Len;
+	uint8_t TargBase;
+	uint32_t Flank5Len;
+	uint8_t ProbeBase;
 	etSeqBase* pProbeBase;
 	etSeqBase* pTargBase;
-	UINT32 RptTargIdx;
+	uint32_t RptTargIdx;
 
-	UINT32 TargHash[256];		// matched target identifiers and match sense are hashed: bit 0 == sense, bits 1..7 low order 0..6 of target identifier
-	UINT32 HashIdx;
+	uint32_t TargHash[256];		// matched target identifiers and match sense are hashed: bit 0 == sense, bits 1..7 low order 0..6 of target identifier
+	uint32_t HashIdx;
 
 	etSeqBase* pTarg;			// target sequence
 	void* pSfxArray;			// target sequence suffix array
-	INT64 SfxLen;				// number of suffixs in pSfxArray
+	int64_t SfxLen;				// number of suffixs in pSfxArray
 	tsSfxEntry* pEntry;
 
 	// ensure suffix array block loaded for iteration!
@@ -6526,7 +6526,7 @@ CSfxArray::LocateQuerySeqs(UINT32 QuerySeqID,			// identifies this query sequenc
 		CurCoreDelta = CoreDelta;
 		CurNumCoreSlides = 0;
 		for (CurCoreSegOfs = 0;
-			CurCoreSegOfs < (UINT32)(ProbeLen - CoreLen);
+			CurCoreSegOfs < (uint32_t)(ProbeLen - CoreLen);
 			CurNumCoreSlides += 1,
 			CurCoreSegOfs += CurCoreDelta)
 		{
@@ -6552,7 +6552,7 @@ CSfxArray::LocateQuerySeqs(UINT32 QuerySeqID,			// identifies this query sequenc
 			}
 			if (NumCopies == 0 || NumCopies >= CurMaxIter || TargIdx == 0)	// if too many exact matches for this core then hopefully there will be a manageable number of matches on the next core
 				continue;
-			UINT64 LastTargIdx = TargIdx + NumCopies - 1;
+			uint64_t LastTargIdx = TargIdx + NumCopies - 1;
 
 			TargIdx -= 1;
 			IterCnt = 0;
@@ -6561,7 +6561,7 @@ CSfxArray::LocateQuerySeqs(UINT32 QuerySeqID,			// identifies this query sequenc
 				TargSeqLeftIdx = SfxOfsToLoci(m_pSfxBlock->SfxElSize, pSfxArray, TargIdx++);
 				pEntry = MapChunkHit2Entry(TargSeqLeftIdx);
 				TargSeqID = pEntry->EntryID;
-				TargSeqLoci = (UINT32)(TargSeqLeftIdx - pEntry->StartOfs);
+				TargSeqLoci = (uint32_t)(TargSeqLeftIdx - pEntry->StartOfs);
 				HashIdx = (TargSeqID & 0x07f) << 1 | (CurStrand == '+' ? 0 : 1);
 
 				// have a putative core, check if this core overlaps with an already discovered core extension on to the same targeted sequence
@@ -6646,7 +6646,7 @@ CSfxArray::LocateQuerySeqs(UINT32 QuerySeqID,			// identifies this query sequenc
 
 				pTargBase = &pTarg[TargSeqLeftIdx + CoreLen];
 				pProbeBase = &pProbeSeq[CurCoreSegOfs + CoreLen];
-				for (SeqIdx = CurCoreSegOfs + (UINT32)CoreLen, RptTargIdx = TargSeqLoci + (UINT32)CoreLen; SeqIdx < ProbeLen && RptTargIdx < pEntry->SeqLen; SeqIdx++, RptTargIdx++, pTargBase++, pProbeBase++)
+				for (SeqIdx = CurCoreSegOfs + (uint32_t)CoreLen, RptTargIdx = TargSeqLoci + (uint32_t)CoreLen; SeqIdx < ProbeLen && RptTargIdx < pEntry->SeqLen; SeqIdx++, RptTargIdx++, pTargBase++, pProbeBase++)
 				{
 					TargBase = *pTargBase & 0x07;
 					ProbeBase = *pProbeBase & 0x07;
@@ -6680,7 +6680,7 @@ CSfxArray::LocateQuerySeqs(UINT32 QuerySeqID,			// identifies this query sequenc
 				pCurHit->AlignNodeID = NumMatches;
 				pCurHit->QueryID = QuerySeqID;
 				pCurHit->QueryStartOfs = CurCoreSegOfs - Flank5Len;
-				pCurHit->TargSeqLoci = (UINT32)(TargSeqLoci - Flank5Len);
+				pCurHit->TargSeqLoci = (uint32_t)(TargSeqLoci - Flank5Len);
 				pCurHit->AlignLen = Flank5Len + CoreLen + Flank3Len;
 				pCurHit->NumMismatches = Num5MMs + Num3MMs;
 				pCurHit->FlgStrand = CurStrand == '+' ? 0 : 1;
@@ -6800,7 +6800,7 @@ CSfxArray::LocateQuerySeqs(UINT32 QuerySeqID,			// identifies this query sequenc
 // Locate, at most MaxHits, alignments having no more than MaxTotMM mismatches, additional matches are sloughed
 // 
 int						// < 0 if errors, 0 if no matches, 1..MaxHits, or MaxHits+1 if additional matches have been sloughed
-CSfxArray::LocateBestMatches(UINT32 ReadID,			// identifies this read
+CSfxArray::LocateBestMatches(uint32_t ReadID,			// identifies this read
 						 int MaxTotMM,			        // return matches having at most this number of mismatches
 						 int CoreLen,					// core window length
 						 int CoreDelta,					// core window offset increment (1..n)
@@ -6823,7 +6823,7 @@ int LowHitInstances;			// number of hit instances thus far for hits with LowMMCn
 etSeqBase *pProbeBase;
 etSeqBase *pTargBase;
 char CurStrand;
-INT64 TargIdx;
+int64_t TargIdx;
 
 tsIdentNode *pHashArray[cHashEntries+1];		// hash array holding ptrs to identifier nodes
 tsIdentNode *pIdentNodes = pAllocsIdentNodes;	// identifier nodes
@@ -6832,22 +6832,22 @@ tsIdentNode *pNewIdentNode;
 int CurNumIdentNodes;
 int Hash;
 
-UINT32 TargSeqID;
-UINT32 NumTargSeqProc;
+uint32_t TargSeqID;
+uint32_t NumTargSeqProc;
 
 bool bFirstIter;				// set false after the first subsequence core returned by LocateFirstExact has been processed
 
-INT64 LastTargIdx;
-UINT32 NumCopies;
+int64_t LastTargIdx;
+uint32_t NumCopies;
 
-UINT32 PatIdx;
-INT64 TargSeqLeftIdx;
-INT64 ProbeSeqLeftIdx;
+uint32_t PatIdx;
+int64_t TargSeqLeftIdx;
+int64_t ProbeSeqLeftIdx;
 int TargMatchLen;
 
 etSeqBase BisBase;
-UINT8 ProbeBase;
-UINT8 TargBase;
+uint8_t ProbeBase;
+uint8_t TargBase;
 
 int Cmp;
 int CurNumCoreSlides;
@@ -6858,7 +6858,7 @@ bool bMatchesSloughed;
 
 etSeqBase *pTarg;			// target sequence
 void *pSfxArray;			// target sequence suffix array
-INT64 SfxLen;				// number of suffixs in pSfxArray
+int64_t SfxLen;				// number of suffixs in pSfxArray
 tsSfxEntry *pEntry;
 BisBase=eBaseN;
 
@@ -6926,15 +6926,15 @@ do
 			if(!bFirstIter) {
 
 				// ensure not about to iterate past end of suffix array!
-				if((TargIdx + 1) >= (INT64)m_pSfxBlock->ConcatSeqLen || (SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,TargIdx+1) + CoreLen) >  (INT64)m_pSfxBlock->ConcatSeqLen)
+				if((TargIdx + 1) >= (int64_t)m_pSfxBlock->ConcatSeqLen || (SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,TargIdx+1) + CoreLen) >  (int64_t)m_pSfxBlock->ConcatSeqLen)
 					break;
 
 				if(IterCnt == 100 && !NumCopies)
 					{
 					// check how many more exact copies there are of the current probe subsequence, if too many then don't bother exploring these
 					LastTargIdx = LocateLastExact(&pProbeSeq[CurCoreSegOfs],CoreLen,pTarg,m_pSfxBlock->SfxElSize,pSfxArray,0,TargIdx-1,SfxLen-1);
-					NumCopies = LastTargIdx > 0 ? (UINT32)(1 + LastTargIdx - TargIdx) : 0;
-					if(CurMaxIter && NumCopies > (UINT32)CurMaxIter)		// only checking at the 100th iteration allows a little slack
+					NumCopies = LastTargIdx > 0 ? (uint32_t)(1 + LastTargIdx - TargIdx) : 0;
+					if(CurMaxIter && NumCopies > (uint32_t)CurMaxIter)		// only checking at the 100th iteration allows a little slack
 						break;										// try next core segment
 					}
 
@@ -6946,8 +6946,8 @@ do
 				else
 					{
 					int Ofs;
-					UINT8 El1;
-					UINT8 El2;
+					uint8_t El1;
+					uint8_t El2;
 					etSeqBase *pEl1= pProbeBase;
 					etSeqBase *pEl2 = pTargBase;
 					Cmp = 0;
@@ -6979,7 +6979,7 @@ do
 				}
 
 			bFirstIter = false;
-			if(SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,TargIdx) < (UINT32)CurCoreSegOfs)
+			if(SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,TargIdx) < (uint32_t)CurCoreSegOfs)
 				continue;
 
 			TargMatchLen = ProbeLen;
@@ -6987,11 +6987,11 @@ do
 			ProbeSeqLeftIdx = 0;
 
 			// ensure comparisons are still within start/end range of target sequence/assembly
-			if(!TargMatchLen || ((UINT64)TargSeqLeftIdx + (UINT32)TargMatchLen) > m_pSfxBlock->ConcatSeqLen)
+			if(!TargMatchLen || ((uint64_t)TargSeqLeftIdx + (uint32_t)TargMatchLen) > m_pSfxBlock->ConcatSeqLen)
 				continue;
 
 			// check if target already processed
-			TargSeqID = (UINT32)(1 + SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,TargIdx) - (UINT32)CurCoreSegOfs);
+			TargSeqID = (uint32_t)(1 + SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,TargIdx) - (uint32_t)CurCoreSegOfs);
 			Hash = (TargSeqID & cHashEntries);
 			if((pCurIdentNode = pHashArray[Hash])==NULL)
 				{
@@ -7024,7 +7024,7 @@ do
 				bool bPairMM = false;
 				if(m_bBisulfite)
 					BisBase = GetBisBase(TargMatchLen,pTargBase,pProbeBase);
-				for(PatIdx = 0; PatIdx < (UINT32)TargMatchLen; PatIdx++,pTargBase++,pProbeBase++)
+				for(PatIdx = 0; PatIdx < (uint32_t)TargMatchLen; PatIdx++,pTargBase++,pProbeBase++)
 					{
 					TargBase = *pTargBase & 0x0f;
 					ProbeBase = *pProbeBase & 0x0f;
@@ -7035,7 +7035,7 @@ do
 						{
 						if(!bPairMM && TargBase != ProbeBase)
 							{
-							if(PatIdx < ((UINT32)TargMatchLen-1))
+							if(PatIdx < ((uint32_t)TargMatchLen-1))
 								{
 								if((pTargBase[1] & 0x0f) == (pProbeBase[1] & 0x0f))
 									{
@@ -7119,7 +7119,7 @@ do
 					memset(pCurHit->Seg,0,sizeof(pCurHit->Seg));
 					pCurHit->Seg[0].Strand = CurStrand;
 					pCurHit->Seg[0].ChromID = pEntry->EntryID;
-					pCurHit->Seg[0].MatchLoci = (UINT32)(TargSeqLeftIdx - pEntry->StartOfs);
+					pCurHit->Seg[0].MatchLoci = (uint32_t)(TargSeqLeftIdx - pEntry->StartOfs);
 					pCurHit->Seg[0].MatchLen = ProbeLen;
 					pCurHit->Seg[0].Mismatches = CurMMCnt;
 					pCurHit->Seg[0].TrimMismatches = CurMMCnt;
@@ -7168,8 +7168,8 @@ return(bMatchesSloughed ? LowHitInstances+1 : LowHitInstances);		// accepted hit
 }
 
 int						// < 0 if errors, eHRnone if no matches or too many, eHRhits if mumber of matches accepted
-CSfxArray::LocateSpliceJuncts(UINT32 ExtdProcFlags,			// flags indicating if lower levels need to do any form of extended processing with this specific read...
-						 UINT32 ReadID,					// identifies this read
+CSfxArray::LocateSpliceJuncts(uint32_t ExtdProcFlags,			// flags indicating if lower levels need to do any form of extended processing with this specific read...
+						 uint32_t ReadID,					// identifies this read
 						 int MaxSpliceJunctLen,		// junction has to be no longer than this length
 						 int MaxTotMM,					// max number of mismatches allowed
 						 int CoreLen,					// core window length
@@ -7192,19 +7192,19 @@ int IterCnt;					// count iterator for current segment target matches
 etSeqBase *pProbeBase;
 etSeqBase *pTargBase;
 char CurStrand;
-INT64 TargIdx;
+int64_t TargIdx;
 
-UINT32 NumTargSeqProc;
+uint32_t NumTargSeqProc;
 
 bool bFirstIter;				// set false after the first subsequence core returned by LocateFirstExact has been processed
 
 
-INT64 TargSeqLeftIdx;
-INT64 ProbeSeqLeftIdx;
+int64_t TargSeqLeftIdx;
+int64_t ProbeSeqLeftIdx;
 int TargMatchLen;
 
 int SpliceJunctLenLimit;
-UINT32 NumCopies;
+uint32_t NumCopies;
 
 etSeqBase BisBase;
 
@@ -7220,7 +7220,7 @@ tsHitLoci *pCurHit;
 tsSfxEntry *pEntry;
 etSeqBase *pTarg;			// target sequence
 void *pSfxArray;			// target sequence suffix array
-INT64 SfxLen;				// number of suffixs in pSfxArray
+int64_t SfxLen;				// number of suffixs in pSfxArray
 BisBase=eBaseN;
 
 // ensure suffix array block loaded for iteration!
@@ -7283,7 +7283,7 @@ do
 			if(!bFirstIter) {
 
 				// ensure not about to iterate past end of suffix array!
-				if((TargIdx + 1) >= (INT64)m_pSfxBlock->ConcatSeqLen || (SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,TargIdx+1) + (Phase == 0 ? ProbeLen : CoreLen)) >=  (INT64)m_pSfxBlock->ConcatSeqLen)
+				if((TargIdx + 1) >= (int64_t)m_pSfxBlock->ConcatSeqLen || (SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,TargIdx+1) + (Phase == 0 ? ProbeLen : CoreLen)) >=  (int64_t)m_pSfxBlock->ConcatSeqLen)
 					break;
 
 				// check that this new putative core is still matching
@@ -7294,8 +7294,8 @@ do
 				else
 					{
 					int Ofs;
-					UINT8 El1;
-					UINT8 El2;
+					uint8_t El1;
+					uint8_t El2;
 					etSeqBase *pEl1= pProbeBase;
 					etSeqBase *pEl2 = pTargBase;
 					Cmp = 0;
@@ -7328,7 +7328,7 @@ do
 
 			bFirstIter = false;
 
-			if(SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,TargIdx) < (UINT32)CurCoreSegOfs)
+			if(SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,TargIdx) < (uint32_t)CurCoreSegOfs)
 				continue;
 
 			TargMatchLen = ProbeLen;
@@ -7336,13 +7336,13 @@ do
 			ProbeSeqLeftIdx = 0;
 
 			// ensure comparisons are still within start/end range of target sequence/assembly
-			if((TargSeqLeftIdx + ProbeLen) >= (INT64)m_pSfxBlock->ConcatSeqLen)
+			if((TargSeqLeftIdx + ProbeLen) >= (int64_t)m_pSfxBlock->ConcatSeqLen)
 				continue;
 
 			pEntry = MapChunkHit2Entry(SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,TargIdx));
 			if(pEntry == NULL)
 				continue;
-			if(TargSeqLeftIdx < (INT64)pEntry->StartOfs || ((TargSeqLeftIdx +  ProbeLen) > (INT64)pEntry->EndOfs))
+			if(TargSeqLeftIdx < (int64_t)pEntry->StartOfs || ((TargSeqLeftIdx +  ProbeLen) > (int64_t)pEntry->EndOfs))
 				continue;
 
 			NumTargSeqProc += 1;
@@ -7389,9 +7389,9 @@ do
 				}
 
 			// explore for a splice junction to the left if matched on core at 3' end of probe (phase 1)
-			if(Phase == 1 && (TargSeqLeftIdx >= (UINT32)(CurCoreSegOfs + cMinJunctSegLen)))
+			if(Phase == 1 && (TargSeqLeftIdx >= (uint32_t)(CurCoreSegOfs + cMinJunctSegLen)))
 				{
-				SpliceJunctLenLimit = (int)min(TargSeqLeftIdx, (UINT32)MaxSpliceJunctLen);
+				SpliceJunctLenLimit = (int)min(TargSeqLeftIdx, (uint32_t)MaxSpliceJunctLen);
 				if(SpliceJunctLenLimit >= (cMinJunctAlignSep + cMinJunctSegLen))
 					{
 					SpliceJunctLenLimit -= cMinJunctSegLen;
@@ -7486,8 +7486,8 @@ return(BestScoreInstances <= MaxHits ? eHRhits : eHRnone);
 }
 
 int						// < 0 if errors, eHRnone if none or too many matches or change, eHRhits if mumber of matches accepted
-CSfxArray::LocateInDels(UINT32 ExtdProcFlags,			// flags indicating if lower levels need to do any form of extended processing with this specific read...
-						 UINT32 ReadID,					// identifies this read
+CSfxArray::LocateInDels(uint32_t ExtdProcFlags,			// flags indicating if lower levels need to do any form of extended processing with this specific read...
+						 uint32_t ReadID,					// identifies this read
 						 int microInDelLen,			// microInDel length maximum
 						 int MaxTotMM,					// max number of mismatches allowed
 						 int CoreLen,					// core window length
@@ -7510,15 +7510,15 @@ int IterCnt;					// count iterator for current segment target matches
 etSeqBase *pProbeBase;
 etSeqBase *pTargBase;
 char CurStrand;
-INT64 TargIdx;
-UINT32 NumCopies;
+int64_t TargIdx;
+uint32_t NumCopies;
 
-UINT32 NumTargSeqProc;
+uint32_t NumTargSeqProc;
 
 bool bFirstIter;				// set false after the first subsequence core returned by LocateFirstExact has been processed
 
-INT64 TargSeqLeftIdx;
-UINT32 ProbeSeqLeftIdx;
+int64_t TargSeqLeftIdx;
+uint32_t ProbeSeqLeftIdx;
 int TargMatchLen;
 
 etSeqBase BisBase;
@@ -7534,7 +7534,7 @@ tsHitLoci *pCurHit;
 tsSfxEntry *pEntry;
 etSeqBase *pTarg;			// target sequence
 void *pSfxArray;			// target sequence suffix array
-INT64 SfxLen;				// number of suffixs in pSfxArray
+int64_t SfxLen;				// number of suffixs in pSfxArray
 BisBase=eBaseN;
 
 // ensure suffix array block loaded for iteration!
@@ -7595,7 +7595,7 @@ do
 			if(!bFirstIter) {
 
 				// ensure not about to iterate past end of suffix array!
-				if((TargIdx + 1) >= (INT64)m_pSfxBlock->ConcatSeqLen || (SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,TargIdx+1) + CoreLen) >  (INT64)m_pSfxBlock->ConcatSeqLen)
+				if((TargIdx + 1) >= (int64_t)m_pSfxBlock->ConcatSeqLen || (SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,TargIdx+1) + CoreLen) >  (int64_t)m_pSfxBlock->ConcatSeqLen)
 					break;
 
 				// check that this new putative core is still matching
@@ -7606,8 +7606,8 @@ do
 				else
 					{
 					int Ofs;
-					UINT8 El1;
-					UINT8 El2;
+					uint8_t El1;
+					uint8_t El2;
 					etSeqBase *pEl1= pProbeBase;
 					etSeqBase *pEl2 = pTargBase;
 					Cmp = 0;
@@ -7639,7 +7639,7 @@ do
 				}
 
 			bFirstIter = false;
-			if(SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,TargIdx) < (UINT32)CurCoreSegOfs)
+			if(SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,TargIdx) < (uint32_t)CurCoreSegOfs)
 				continue;
 
 			TargMatchLen = ProbeLen;
@@ -7648,11 +7648,11 @@ do
 			pEntry = MapChunkHit2Entry(SfxOfsToLoci(m_pSfxBlock->SfxElSize,pSfxArray,TargIdx));
 			if(pEntry == NULL)
 				continue;
-			if(TargSeqLeftIdx < (INT64)pEntry->StartOfs || ((TargSeqLeftIdx +  ProbeLen - 1) > (INT64)pEntry->EndOfs))
+			if(TargSeqLeftIdx < (int64_t)pEntry->StartOfs || ((TargSeqLeftIdx +  ProbeLen - 1) > (int64_t)pEntry->EndOfs))
 				continue;
 
 			// ensure comparisons are still within start/end range of target sequence/assembly
-			if((TargSeqLeftIdx + ProbeLen) > (INT64)m_pSfxBlock->ConcatSeqLen)
+			if((TargSeqLeftIdx + ProbeLen) > (int64_t)m_pSfxBlock->ConcatSeqLen)
 				continue;
 
 			NumTargSeqProc += 1;
@@ -7798,8 +7798,8 @@ return(BestScoreInstances <= MaxHits ? eHRhits : eHRnone);
 // AlignReads
 // Multiphase align reads
 int														// < 0 if errors, 0 if no matches or change, 1 if mumber of matches accepted, 2 MMDelta criteria not met, 3 too many match instances
-CSfxArray::AlignReads(UINT32 ExtdProcFlags,			// flags indicating if lower levels need to do any form of extended processing with this specific read...
-						 UINT32 ReadID,					// identifies this read
+CSfxArray::AlignReads(uint32_t ExtdProcFlags,			// flags indicating if lower levels need to do any form of extended processing with this specific read...
+						 uint32_t ReadID,					// identifies this read
 						 int MinChimericLen,			// minimum chimeric length as a percentage (0 to disable, otherwise 15..99) of probe sequence
 						 int MaxTotMM,					// max number of mismatches allowed
 						 int CoreLen,					// core window length
@@ -7897,26 +7897,26 @@ return(0);
 
 
 
-INT64			// index+1 in pSfxArray of first exactly matching probe or 0 if no match
+int64_t			// index+1 in pSfxArray of first exactly matching probe or 0 if no match
 CSfxArray::LocateFirstExact(etSeqBase *pProbe,  // pts to probe sequence
 				  int ProbeLen,					// probe length to exactly match over
 				  etSeqBase *pTarg,				// target sequence
 				  int SfxElSize,				// size in bytes of suffix element - expected to be either 4 or 5
 				  void *pSfxArray,				// target sequence suffix array
-				  INT64 TargStart,				// position in pTarg (0..n) corresponding to start of suffix array
-				  INT64 SfxLo,					// low index in pSfxArray
-				  INT64 SfxHi,					// high index in pSfxArray
+				  int64_t TargStart,				// position in pTarg (0..n) corresponding to start of suffix array
+				  int64_t SfxLo,					// low index in pSfxArray
+				  int64_t SfxHi,					// high index in pSfxArray
 				  bool bIgnoreKMerCores)	     // true to bypass checking for CoreKMers starts
 {
 etSeqBase *pEl1;
 etSeqBase *pEl2;
-UINT8 El1;
-UINT8 El2;
+uint8_t El1;
+uint8_t El2;
 
 int CmpRslt;
 int Ofs;
-INT64 Mark;
-INT64 TargPsn;
+int64_t Mark;
+int64_t TargPsn;
 
 if(!bIgnoreKMerCores && ProbeLen == m_CoreKMerLen && m_pCoreKMers != NULL)
 	{
@@ -7927,7 +7927,7 @@ if(!bIgnoreKMerCores && ProbeLen == m_CoreKMerLen && m_pCoreKMers != NULL)
 
 do {
 	pEl1 = pProbe;
-	TargPsn = ((INT64)SfxLo + SfxHi) / 2L;
+	TargPsn = ((int64_t)SfxLo + SfxHi) / 2L;
 	pEl2 = &pTarg[SfxOfsToLoci(SfxElSize,pSfxArray,TargPsn + TargStart)];
 	if(m_bBisulfite)
 		CmpRslt = BSCmpProbeTarg(pEl1,pEl2,ProbeLen);
@@ -7969,7 +7969,7 @@ do {
 					return(Mark+1);
 				SfxHi = TargPsn - 1;
 				}
-			TargPsn = ((INT64)SfxLo + SfxHi) / 2L;
+			TargPsn = ((int64_t)SfxLo + SfxHi) / 2L;
 			pEl2 = &pTarg[SfxOfsToLoci(SfxElSize,pSfxArray,TargPsn + TargStart)];
 			if(m_bBisulfite)
 				CmpRslt = BSCmpProbeTarg(pEl1,pEl2,ProbeLen);
@@ -8026,7 +8026,7 @@ CSfxArray::InitialiseCoreKMers(int KMerLen)			// initialise for KMer cores of th
 {
 etSeqBase *pCurKMer;
 void *pSfxArray;			// target sequence suffix array
-INT64 SfxLen;				// number of suffixs in pSfxArray
+int64_t SfxLen;				// number of suffixs in pSfxArray
 
 // ensure suffix array block loaded for iteration!
 if (m_pSfxBlock == NULL || m_pSfxBlock->ConcatSeqLen == 0)
@@ -8082,22 +8082,22 @@ ReleaseBaseFlags();
 return(eBSFSuccess);
 }
 
-UINT32			// number of exactly matching KMers up to specified MaxToMatch inclusive, or 0 if no match, MaxToMatch+1 if more than MaxToMatch Kmers
-CSfxArray::NumExactKMers(UINT32 MaxToMatch,	// if 0 then no limit on matches, otherwise match up to this number of instances and if more then return MaxToMatch+1 
+uint32_t			// number of exactly matching KMers up to specified MaxToMatch inclusive, or 0 if no match, MaxToMatch+1 if more than MaxToMatch Kmers
+CSfxArray::NumExactKMers(uint32_t MaxToMatch,	// if 0 then no limit on matches, otherwise match up to this number of instances and if more then return MaxToMatch+1 
 					int KMerLen,				// KMer length to exactly match over
 					etSeqBase *pKMerSeq,		// pts to KMer sequence
-					INT64 *pFirstTargIdx)		// optionally pts to returned first target index
+					int64_t *pFirstTargIdx)		// optionally pts to returned first target index
 {
-UINT32 NumCopies;
+uint32_t NumCopies;
 int Idx;
 int64_t KMerCoreIdx;
 int SfxElSize;
 etSeqBase *pTarg;
 void *pSfxArray;
-INT64 SfxLen;
-INT64 FirstTargIdx;
-INT64 LastTargIdx;
-INT64 LimitTargIdx;
+int64_t SfxLen;
+int64_t FirstTargIdx;
+int64_t LastTargIdx;
+int64_t LimitTargIdx;
 
 if(pFirstTargIdx != NULL)
 	*pFirstTargIdx = 0;
@@ -8175,39 +8175,39 @@ if(KMerCoreIdx != -1)
 	}
 
 if(MaxToMatch > 0)
-	LimitTargIdx = min(SfxLen-1,(INT64)((UINT64)FirstTargIdx + MaxToMatch + 1));
+	LimitTargIdx = min(SfxLen-1,(int64_t)((uint64_t)FirstTargIdx + MaxToMatch + 1));
 else
 	LimitTargIdx = SfxLen-1;
 LastTargIdx = LocateLastExact(pKMerSeq,KMerLen,pTarg,m_pSfxBlock->SfxElSize,pSfxArray,0,FirstTargIdx - 1,LimitTargIdx,true);
-NumCopies = LastTargIdx > 0 ? (UINT32)(1 + LastTargIdx - FirstTargIdx) : 0;
+NumCopies = LastTargIdx > 0 ? (uint32_t)(1 + LastTargIdx - FirstTargIdx) : 0;
 
 if(MaxToMatch > 0 && NumCopies > MaxToMatch)
 	NumCopies = MaxToMatch+1;
 return(NumCopies);
 }
 
-INT64			// index+1 in pSfxArray of last exactly matching probe or 0 if no match
+int64_t			// index+1 in pSfxArray of last exactly matching probe or 0 if no match
 CSfxArray::LocateLastExact(etSeqBase *pProbe, // pts to probe sequence
 				  int ProbeLen,					// probe length to exactly match over
 				  etSeqBase *pTarg,				// target sequence
 				  int SfxElSize,				// size in bytes of suffix element - expected to be either 4 or 5
 				  void *pSfxArray,				// target sequence suffix array
-				  INT64 TargStart,				// position in pTarg (0..n) corresponding to start of suffix array
-				  INT64 SfxLo,					// low index in pSfxArray
-				  INT64 SfxHi,					// high index in pSfxArray
+				  int64_t TargStart,				// position in pTarg (0..n) corresponding to start of suffix array
+				  int64_t SfxLo,					// low index in pSfxArray
+				  int64_t SfxHi,					// high index in pSfxArray
 				  bool bIgnoreKMerCores)	     // true to bypass checking for CoreKMers starts
 {
 etSeqBase *pEl1;
 etSeqBase *pEl2;
-UINT8 El1;
-UINT8 El2;
+uint8_t El1;
+uint8_t El2;
 
 int CmpRslt;
 int Ofs;
-INT64 Mark;
-INT64 TargPsn;
-INT64 SfxHiMax = SfxHi;
-INT64 SfxLoMax = SfxLo;
+int64_t Mark;
+int64_t TargPsn;
+int64_t SfxHiMax = SfxHi;
+int64_t SfxLoMax = SfxLo;
 
 if (!bIgnoreKMerCores && ProbeLen == m_CoreKMerLen && m_pCoreKMers != NULL)
 	{
@@ -8220,7 +8220,7 @@ if (!bIgnoreKMerCores && ProbeLen == m_CoreKMerLen && m_pCoreKMers != NULL)
 
 do {
 	pEl1 = pProbe;
-	TargPsn = ((INT64)SfxLo + SfxHi) / 2L;
+	TargPsn = ((int64_t)SfxLo + SfxHi) / 2L;
 	pEl2 = &pTarg[SfxOfsToLoci(SfxElSize,pSfxArray,TargPsn + TargStart)];
 	if(m_bBisulfite)
 		CmpRslt = BSCmpProbeTarg(pEl1,pEl2,ProbeLen);
@@ -8262,7 +8262,7 @@ do {
 					return(Mark+1);
 				SfxLo = TargPsn + 1;
 				}
-			TargPsn = ((INT64)SfxLo + SfxHi) / 2L;
+			TargPsn = ((int64_t)SfxLo + SfxHi) / 2L;
 			pEl2 = &pTarg[SfxOfsToLoci(SfxElSize,pSfxArray,TargPsn + TargStart)];
 			if(m_bBisulfite)
 				CmpRslt = BSCmpProbeTarg(pEl1,pEl2,ProbeLen);
@@ -8363,7 +8363,7 @@ if(m_CurNumAlignOpCodes)
 }
 
 bool
-CAlignOpCode::Init(int Len,UINT8 *pOpCodes)
+CAlignOpCode::Init(int Len,uint8_t *pOpCodes)
 {
 if(Len > cMaxAlignOpcodesLen)
 	return(false);
@@ -8373,7 +8373,7 @@ return(true);
 }
 
 bool
-CAlignOpCode::Append(int Len,UINT8 *pOpCodes)
+CAlignOpCode::Append(int Len,uint8_t *pOpCodes)
 {
 if((m_CurNumAlignOpCodes + Len) > cMaxAlignOpcodesLen)
 	return(false);
@@ -8396,7 +8396,7 @@ return(true);
 bool
 CAlignOpCode::TruncNthMM(int NthMM)
 {
-UINT8 *pAlignOpCodes;
+uint8_t *pAlignOpCodes;
 int Ofs;
 if(m_CurNumAlignOpCodes == 0 || !NthMM)
 	return(false);
@@ -8419,7 +8419,7 @@ return(false);
 bool
 CAlignOpCode::AppendNthMM(int NthMM,CAlignOpCode &AppendFrom)
 {
-UINT8 *pAlignOpCodes;
+uint8_t *pAlignOpCodes;
 int Ofs;
 if(m_CurNumAlignOpCodes == 0 || !NthMM)
 	return(false);
@@ -8442,11 +8442,11 @@ return(false);
 }
 
 eAlignOPcodes										// opcode popped, or eAOPempty if opcodes empty
-CAlignOpCode::PopAlignOpCode(UINT32 *pCounts)		// opcode's associated count or value
+CAlignOpCode::PopAlignOpCode(uint32_t *pCounts)		// opcode's associated count or value
 {
-UINT8 *pAlignOpCodes;
-UINT8 Val;
-UINT32 Counts;
+uint8_t *pAlignOpCodes;
+uint8_t Val;
+uint32_t Counts;
 *pCounts = 0;
 if(!m_CurNumAlignOpCodes)
 	return(eAOPempty);
@@ -8467,10 +8467,10 @@ return((eAlignOPcodes)Val);
 
 bool										// false if no room to push requested opcode, otherwise true
 CAlignOpCode::PushAlignOpCode(eAlignOPcodes OpCode,	// opcode to push
-				UINT32 Counts)			// opcode associated count or value
+				uint32_t Counts)			// opcode associated count or value
 {
-UINT8 *pAlignOpCodes;
-UINT32 Len;
+uint8_t *pAlignOpCodes;
+uint32_t Len;
 int RemainDepth;
 RemainDepth = m_MaxAlignOpCodes - m_CurNumAlignOpCodes;
 if(!RemainDepth)
@@ -8480,8 +8480,8 @@ switch(OpCode) {
 	case eAOPMismatch:				// probe base does not match target sequence base, probe base is in next byte bits 0..3 and targ sequence base is in bits 4..7
 		if(RemainDepth < 2)			// need at least 2
 			return(false);
-		*pAlignOpCodes++ = (UINT8)OpCode;
-		*pAlignOpCodes++ = (UINT8)(Counts & 0x07f);
+		*pAlignOpCodes++ = (uint8_t)OpCode;
+		*pAlignOpCodes++ = (uint8_t)(Counts & 0x07f);
 		m_CurNumAlignOpCodes += 2;
 		break;
 	case eAOPMatch:					// probe bases exactly matches target sequence bases for length specified in following byte(s)
@@ -8496,11 +8496,11 @@ switch(OpCode) {
 			}
 		if(RemainDepth < 1)			// need at least another 1 for opcode
 			return(false);
-		*pAlignOpCodes++ = (UINT8)OpCode;
+		*pAlignOpCodes++ = (uint8_t)OpCode;
 		m_CurNumAlignOpCodes += 1;
 		while(Counts > 0)
 			{
-			*pAlignOpCodes++ = (UINT8)(Counts & 0x07f);
+			*pAlignOpCodes++ = (uint8_t)(Counts & 0x07f);
 			Counts >>= 7;
 			m_CurNumAlignOpCodes += 1;
 			}
@@ -8533,9 +8533,9 @@ return(PushAlignOpCode(eAOPMismatch,((RefBase & 0x07) << 3) | (ProbeBase & 0x07)
 int									// -1 if errors, 0 if no match, 1 if mismatches only, 2 InDel and insertion into probe, 3 InDel and deletion from probe
 CSfxArray::AlignPairedRead(bool b3primeExtend,	// if false extend towards 5' of targeted chrom, if true extend towards 3' of targeted chrom
 			bool bAntisense,		// if false extend with read sense, if true extend with read RevCpl'd (antisense)
-			UINT32 ChromID,		  // accepted aligned read was on this chromosome
-			UINT32 StartLoci,	  // accepted aligned read started at this loci
-			UINT32 EndLoci,		  // and ending at this loci
+			uint32_t ChromID,		  // accepted aligned read was on this chromosome
+			uint32_t StartLoci,	  // accepted aligned read started at this loci
+			uint32_t EndLoci,		  // and ending at this loci
 			int MinDistance,	  // expecting partner to align at least this distance away from accepted aligned read (inclusive of read lengths)
 			int MaxDistance,	  // but no more than this distance away (inclusive of read length)
 			int MaxAllowedMM,	  // any accepted alignment can have at most this many mismatches
@@ -8554,18 +8554,18 @@ int LowestNumMM;
 int LowestMMcnt;
 int TargLoci;
 int AlignLoci;
-UINT32 PutChromLen;
+uint32_t PutChromLen;
 etSeqBase *pPutChromSeq;
-UINT32 PutHitLoci;
-UINT32 PutCoreOfs;
-INT64 PutHitIdx;
-INT64 NxtPutHitIdx;
-UINT32 StartPutTargLoci;
-UINT32 EndPutTargLoci;
+uint32_t PutHitLoci;
+uint32_t PutCoreOfs;
+int64_t PutHitIdx;
+int64_t NxtPutHitIdx;
+uint32_t StartPutTargLoci;
+uint32_t EndPutTargLoci;
 
-UINT32 MinPutLen;
+uint32_t MinPutLen;
 
-UINT32 TargSeqLen;
+uint32_t TargSeqLen;
 etSeqBase ReadSeq[cMaxReadLen+1];
 
 memset(pAlign,0,sizeof(tsHitLoci));
@@ -8578,13 +8578,13 @@ if((TargSeqLen = GetSeqLen(ChromID)) == 0)
 if(b3primeExtend)
 	{
 	TargLoci = StartLoci;
-	if((UINT32)(TargLoci + MinDistance) > TargSeqLen)
+	if((uint32_t)(TargLoci + MinDistance) > TargSeqLen)
 		return(0);
 	}
 else
 	{
 	TargLoci = EndLoci;
-	if(TargLoci < MinDistance || (UINT32)TargLoci >= TargSeqLen)
+	if(TargLoci < MinDistance || (uint32_t)TargLoci >= TargSeqLen)
 		return(0);
 	}
 
@@ -8618,28 +8618,28 @@ else
 if (b3primeExtend)
 	{
 	StartPutTargLoci = TargLoci + MinDistance;
-	if((StartPutTargLoci + (UINT32)MinPutLen) >= TargSeqLen)
+	if((StartPutTargLoci + (uint32_t)MinPutLen) >= TargSeqLen)
 		return(0);
-	EndPutTargLoci = (UINT32)(TargLoci + MaxDistance);
+	EndPutTargLoci = (uint32_t)(TargLoci + MaxDistance);
 	}
 else
 	{
-	if(EndLoci < (UINT32)MaxDistance)
+	if(EndLoci < (uint32_t)MaxDistance)
 		StartPutTargLoci = 0;
 	else
-		StartPutTargLoci = EndLoci - (UINT32)MaxDistance;
+		StartPutTargLoci = EndLoci - (uint32_t)MaxDistance;
 	EndPutTargLoci = EndLoci - MinDistance;
 	}
 int Rslt;
-UINT32 TrimSeqLen;
-UINT32 Trim5Flank;
-UINT32 Trim3Flank;
-UINT32 MaxChimericMMs;
+uint32_t TrimSeqLen;
+uint32_t Trim5Flank;
+uint32_t Trim3Flank;
+uint32_t MaxChimericMMs;
 
-UINT32 PrevBestMaxChimericMMs = MaxAllowedMM + 1;
+uint32_t PrevBestMaxChimericMMs = MaxAllowedMM + 1;
 if((EndPutTargLoci - StartPutTargLoci) >= 1000)		// if a relatively large insert size (likely with WGS RNA alignments) then use suffix array to locate exactly match cores which can serve as loci for adaptive trimming the read against
 	{
-	for(PutCoreOfs = 0; ((int)PutCoreOfs + CoreLen) <= ReadLen; PutCoreOfs += (UINT32)CoreDelta)
+	for(PutCoreOfs = 0; ((int)PutCoreOfs + CoreLen) <= ReadLen; PutCoreOfs += (uint32_t)CoreDelta)
 		{
 		PutHitIdx = 0;
 		NxtPutHitIdx = 0;
@@ -8672,7 +8672,7 @@ if((EndPutTargLoci - StartPutTargLoci) >= 1000)		// if a relatively large insert
 					}
 				 pAlign->Seg[0].ChromID = ChromID;
 				 pAlign->Seg[0].ReadOfs = 0;
-				 pAlign->Seg[0].MatchLoci = (UINT32)(PutHitLoci - PutCoreOfs);
+				 pAlign->Seg[0].MatchLoci = (uint32_t)(PutHitLoci - PutCoreOfs);
 				 pAlign->Seg[0].MatchLen = ReadLen;
 				 pAlign->Seg[0].Mismatches = MaxChimericMMs;
 				 pAlign->Seg[0].TrimMismatches = MaxChimericMMs;
@@ -8716,7 +8716,7 @@ else  // else if relatively small maximum insert size ( < 1000bp ) as is likely 
 			}
 		}
 	}
-return(PrevBestMaxChimericMMs <= (UINT32)MaxAllowedMM ? 1 : 0);
+return(PrevBestMaxChimericMMs <= (uint32_t)MaxAllowedMM ? 1 : 0);
 }
 
 
@@ -8727,31 +8727,31 @@ CSfxArray::ExploreSpliceRight(char CurStrand,					// aligning on this strand
 			int CoreLen,			// core length used
  		   int ProbeLen,			// length of probe excluding any eBaseEOS
 		   etSeqBase *pProbe,		// pts to 5' start of probe sequence
-		   INT64 TargOfs,			// pTarg corresponds to this suffix offset
-		   INT64 TargLen,			// max length of target to be explored
+		   int64_t TargOfs,			// pTarg corresponds to this suffix offset
+		   int64_t TargLen,			// max length of target to be explored
 		   etSeqBase *pTarg,		// pts to target sequence
 		   tsHitLoci *pHit)			// where to return hit loci
 {
-UINT32 CurScore;					// current score for putative splice being explored
+uint32_t CurScore;					// current score for putative splice being explored
 
 tsHitLoci CurSplice;				// current splice junction loci
 
-UINT32 Idx;
+uint32_t Idx;
 etSeqBase *pP,*pT;
 etSeqBase *pCurP;
 
 etSeqBase ProbeBase,TargBase;
 int CurNumMismatches;
 
-UINT32 MaxSegLen;
+uint32_t MaxSegLen;
 
-UINT32 TmpTargLen;
+uint32_t TmpTargLen;
 int CurMismatches;
 int CurSpliceSeqLen;
 etSeqBase Donor[2];
 etSeqBase Accept[2];
 
-INT64 TargSeqLen;
+int64_t TargSeqLen;
 
 int ProbeMMOfss[cMaxPutInDelOfss];			// offsets of all mismatches in probe which may need to be explored as putative InDel starts
 int MMIdx;									// current index into ProbeMMOfss
@@ -8773,7 +8773,7 @@ pT = pTarg + CoreLen;
 
 CurNumMismatches = 0;
 
-for(Idx = CoreLen; Idx < (UINT32)ProbeLen && CurNumMismatches <= max(MaxTotMM,cMaxJunctAlignMM * 5); Idx++,pT+=1,pP+=1)
+for(Idx = CoreLen; Idx < (uint32_t)ProbeLen && CurNumMismatches <= max(MaxTotMM,cMaxJunctAlignMM * 5); Idx++,pT+=1,pP+=1)
 	{
 	ProbeBase = *pP & 0x07;
 	TargBase = *pT & 0x07;
@@ -8819,7 +8819,7 @@ int TargSegHash;
 // explore putative junctions and if so then choose the highest scoring junction as the one to report
 // look right on target and ensure that start of any potential right splice segment will be on same chrom...
 pT = &pTarg[ProbeMMOfss[TotMM-1]];
-for(Idx = 0; Idx < (UINT32)(cMinJunctAlignSep+cMinJunctSegLen); Idx++,pT+=1)
+for(Idx = 0; Idx < (uint32_t)(cMinJunctAlignSep+cMinJunctSegLen); Idx++,pT+=1)
 	{
 	if((*pT & 0x07) > eBaseN)
 		return(0);
@@ -8876,7 +8876,7 @@ for(MMIdx = 0; MMIdx <= TotMM && cMinJunctSegLen	< (ProbeLen - ProbeMMOfss[MMIdx
 		TargSegHash -= (*pTStart & 0x07);
 		pT = pTStart;
 		pP = pCurP;
-		TmpTargLen = (UINT32)(TargSeqLen - (TargOfs + ProbeMMOfss[MMIdx] + CurSpliceSeqLen + 1));
+		TmpTargLen = (uint32_t)(TargSeqLen - (TargOfs + ProbeMMOfss[MMIdx] + CurSpliceSeqLen + 1));
 		if(TmpTargLen < MaxSegLen)
 			break;
 
@@ -8978,15 +8978,15 @@ CSfxArray::ExploreSpliceLeft(char CurStrand,					// aligning on this strand
 			int CoreLen,			// core length used
  		   int ProbeLen,			// length of probe excluding any eBaseEOS
 		   etSeqBase *pProbe,		// pts to 5' start of probe sequence
-		   INT64 TargOfs,			// pTarg corresponds to this suffix offset
-		   INT64 TargLen,			// max length of target to be explored
+		   int64_t TargOfs,			// pTarg corresponds to this suffix offset
+		   int64_t TargLen,			// max length of target to be explored
 		   etSeqBase *pTarg,		// pts to target sequence, 5' 1st base if bRight, 3' last base if !bRight
 		   tsHitLoci *pHit)			// where to return hit loci
 {
-UINT32 CurScore;					// current score for putative InDel being explored
+uint32_t CurScore;					// current score for putative InDel being explored
 tsHitLoci CurSplice;				// current splice loci
 
-UINT32 Idx;
+uint32_t Idx;
 etSeqBase *pP,*pT;
 etSeqBase *pCurP;
 
@@ -8994,14 +8994,14 @@ etSeqBase ProbeBase,TargBase;
 int CurNumMismatches;
 
 
-UINT32 TmpTargLen;
+uint32_t TmpTargLen;
 int CurMismatches;
 int CurSpliceSeqLen;
 etSeqBase Donor[2];
 etSeqBase Accept[2];
 
-INT64 TargSeqLen;
-UINT32 MaxSegLen;
+int64_t TargSeqLen;
+uint32_t MaxSegLen;
 
 int ProbeMMOfss[cMaxPutInDelOfss];			// offsets of all mismatches in probe which may need to be explored as putative InDel starts
 int MMIdx;									// current index into ProbeMMOfss
@@ -9009,7 +9009,7 @@ int TotMM;									// total mismatches to be explored as putative InDels
 
 memset(pHit,0,sizeof(tsHitLoci));
 
-if(TargOfs < (UINT32)(cMinJunctAlignSep + cMinJunctSegLen))
+if(TargOfs < (uint32_t)(cMinJunctAlignSep + cMinJunctSegLen))
 	return(0);
 
 memset(&CurSplice,0,sizeof(tsHitLoci));
@@ -9027,7 +9027,7 @@ pT = pTarg - CoreLen;
 
 // count mismatches and record where these are, if too many mismatches then will explore for an InDel starting at each mismatch
 CurNumMismatches = 0;
-for(Idx = CoreLen; Idx < (UINT32)ProbeLen && CurNumMismatches <= max(MaxTotMM,cMaxJunctAlignMM * 5); Idx++,pT-=1,pP-=1)
+for(Idx = CoreLen; Idx < (uint32_t)ProbeLen && CurNumMismatches <= max(MaxTotMM,cMaxJunctAlignMM * 5); Idx++,pT-=1,pP-=1)
 	{
 	ProbeBase = *pP & 0x07;
 	TargBase = *pT & 0x07;
@@ -9073,7 +9073,7 @@ int TargSegHash;
 
 // look left on target and ensure that start of any potential splice segment will be on same chrom...
 pT = &pTarg[-1 * ProbeMMOfss[TotMM]];
-for(Idx = 0; Idx < (UINT32)(cMinJunctAlignSep+cMinJunctSegLen); Idx++,pT-=1)
+for(Idx = 0; Idx < (uint32_t)(cMinJunctAlignSep+cMinJunctSegLen); Idx++,pT-=1)
 	{
 	if((*pT & 0x07) > eBaseN)
 		return(0);
@@ -9129,7 +9129,7 @@ for(MMIdx = 0; MMIdx <= TotMM && cMinJunctSegLen	< (ProbeLen - ProbeMMOfss[MMIdx
 		pP = pCurP;
 
 
-		TmpTargLen = (UINT32)(TargOfs - (CurSpliceSeqLen));
+		TmpTargLen = (uint32_t)(TargOfs - (CurSpliceSeqLen));
 		if(TmpTargLen < 1)
 			break;
 
@@ -9227,15 +9227,15 @@ return(3);
 // the read are scored with the lowest scored InDel chosen. Currently scoring is 2 for a mismatch, 10 for starting an InDel and 1 for InDel extension per base extended.
 //
 int									// -1 if errors, 0 if no match, 1 if mismatches only, 2 InDel and insertion into probe, 3 InDel and deletion from probe
-CSfxArray::ExploreInDelMatchRight(UINT32 ExtdProcFlags, // flags indicating if lower levels need to do any form of extended processing with this specific read...
-						 UINT32 ReadID,					  // identifies this read
+CSfxArray::ExploreInDelMatchRight(uint32_t ExtdProcFlags, // flags indicating if lower levels need to do any form of extended processing with this specific read...
+						 uint32_t ReadID,					  // identifies this read
 						 char CurStrand,					// aligning on this strand
 			int microInDelLen,		   		// microInDel can be upto (inclusive) this length
 			int MaxTotMM,			// can be at most this many mismatches in total
  		   int ProbeLen,			// length of probe excluding any eBaseEOS
 		   etSeqBase *pProbe,		// pts to 5' start of probe sequence
 		   tsSfxEntry *pEntry,		// target at TargSeqLeftIdx is in this sfx entry
-		   INT64 TargOfs,			// pTarg corresponds to this suffix offset
+		   int64_t TargOfs,			// pTarg corresponds to this suffix offset
 		   etSeqBase *pTarg,		// pts to target sequence
 		   tsHitLoci *pHit)			// where to return hit loci
 {
@@ -9244,27 +9244,27 @@ int CurScore;						// current score for putative InDel being explored
 tsHitLoci CurInsert;				// current insert loci
 tsHitLoci CurDelete;				// current delete loci
 
-UINT32 Idx;
+uint32_t Idx;
 etSeqBase *pP,*pT;
 etSeqBase ProbeBase,TargBase;
 int CurNumMismatches;
 
-UINT32 TmpProbeLen;
-UINT32 TmpTargLen;
+uint32_t TmpProbeLen;
+uint32_t TmpTargLen;
 int CurInDelMismatches;
 int CurInDelLen;
 
-UINT32 TargSeqLen;
+uint32_t TargSeqLen;
 
 int ProbeMMOfss[cMaxPutInDelOfss];			// offsets of all mismatches in probe which may need to be explored as putative InDel starts
 int MMIdx;									// current index into ProbeMMOfss
 int TotMM;									// total mismatches to be explored as putative InDels
 
 memset(pHit,0,sizeof(tsHitLoci));
-if(TargOfs < (INT64)pEntry->StartOfs || ((TargOfs + ProbeLen - 1) > (INT64)pEntry->EndOfs))
+if(TargOfs < (int64_t)pEntry->StartOfs || ((TargOfs + ProbeLen - 1) > (int64_t)pEntry->EndOfs))
 	return(0);
 
-TargSeqLen = (UINT32)(pEntry->SeqLen -  (TargOfs - pEntry->StartOfs));
+TargSeqLen = (uint32_t)(pEntry->SeqLen -  (TargOfs - pEntry->StartOfs));
 
 memset(&CurInsert,0,sizeof(tsHitLoci));
 memset(&CurDelete,0,sizeof(tsHitLoci));
@@ -9277,7 +9277,7 @@ pT = pTarg;
 
 // count mismatches and record where these are, if too many mismatches then will explore for an InDel starting at each mismatch
 CurNumMismatches = 0;
-for(Idx = 0; Idx < (UINT32)ProbeLen && CurNumMismatches <= max(MaxTotMM,cMaxMMExploreInDel); Idx++,pT+=1,pP+=1)
+for(Idx = 0; Idx < (uint32_t)ProbeLen && CurNumMismatches <= max(MaxTotMM,cMaxMMExploreInDel); Idx++,pT+=1,pP+=1)
 	{
 	ProbeBase = *pP & 0x07;
 	TargBase = *pT & 0x07;
@@ -9344,7 +9344,7 @@ for(MMIdx = 0; MMIdx <= TotMM && cMinInDelSeqLen	< (ProbeLen - ProbeMMOfss[MMIdx
 
 			CurInDelMismatches += 1;
 			CurScore -= cScoreMismatch;
-			if(TmpProbeLen < (UINT32)(cMinInDelSeqLen * CurInDelMismatches))
+			if(TmpProbeLen < (uint32_t)(cMinInDelSeqLen * CurInDelMismatches))
 				break;
 			}
 	    if(Idx != TmpProbeLen)
@@ -9403,7 +9403,7 @@ for(MMIdx = 0; MMIdx <= TotMM && cMinInDelSeqLen	< (ProbeLen - ProbeMMOfss[MMIdx
 
 			CurInDelMismatches += 1;
 			CurScore -= cScoreMismatch;
-			if(TmpProbeLen < (UINT32)(cMinInDelSeqLen * CurInDelMismatches))
+			if(TmpProbeLen < (uint32_t)(cMinInDelSeqLen * CurInDelMismatches))
 				break;
 			}
 	    if(Idx != TmpProbeLen)
@@ -9456,15 +9456,15 @@ return(2);
 // the read are scored with the lowest scored InDel chosen. Currently scoring is 2 for a mismatch, 10 for starting an InDel and 1 for InDel extension per base extended.
 //
 int									// -1 if errors, 0 if no match, 1 if mismatches only, 2 InDel and insertion into probe, 3 InDel and deletion from probe
-CSfxArray::ExploreInDelMatchLeft(UINT32 ExtdProcFlags,			// flags indicating if lower levels need to do any form of extended processing with this specific read...
-						 UINT32 ReadID,		// identifies this read
+CSfxArray::ExploreInDelMatchLeft(uint32_t ExtdProcFlags,			// flags indicating if lower levels need to do any form of extended processing with this specific read...
+						 uint32_t ReadID,		// identifies this read
 						 char CurStrand,	// aligning on this strand
 			int microInDelLen,		   		// microInDel can be upto (inclusive) this length
 			int MaxTotMM,			// can be at most this many mismatches in total
  		   int ProbeLen,			// length of probe excluding any eBaseEOS
 		   etSeqBase *pProbe,		// pts to 5' start of probe sequence
 		   tsSfxEntry *pEntry,		// target at TargSeqLeftIdx is in this sfx entry
-		   INT64 TargOfs,			// pTarg corresponds to this suffix offset
+		   int64_t TargOfs,			// pTarg corresponds to this suffix offset
 		   etSeqBase *pTarg,		// pts to target sequence
 		   tsHitLoci *pHit)			// where to return hit loci
 {
@@ -9478,22 +9478,22 @@ etSeqBase *pP,*pT;
 etSeqBase ProbeBase,TargBase;
 int CurNumMismatches;
 
-UINT32 TmpProbeLen;
+uint32_t TmpProbeLen;
 int CurInDelMismatches;
 int CurInDelLen;
 
-UINT32 TargSeqLen;
+uint32_t TargSeqLen;
 
 int ProbeMMOfss[cMaxPutInDelOfss];			// offsets of all mismatches in probe which may need to be explored as putative InDel starts
 int MMIdx;									// current index into ProbeMMOfss
 int TotMM;									// total mismatches to be explored as putative InDels
 
 memset(pHit,0,sizeof(tsHitLoci));
-if(TargOfs < (INT64)pEntry->StartOfs || ((TargOfs + ProbeLen - 1) > (INT64)pEntry->EndOfs))
+if(TargOfs < (int64_t)pEntry->StartOfs || ((TargOfs + ProbeLen - 1) > (int64_t)pEntry->EndOfs))
 	return(0);
 
 
-TargSeqLen = (UINT32)((TargOfs - pEntry->StartOfs) + ProbeLen);
+TargSeqLen = (uint32_t)((TargOfs - pEntry->StartOfs) + ProbeLen);
 
 memset(&CurInsert,0,sizeof(tsHitLoci));
 memset(&CurDelete,0,sizeof(tsHitLoci));
@@ -9578,7 +9578,7 @@ for(MMIdx = 0; MMIdx <= TotMM && cMinInDelSeqLen	< ProbeMMOfss[MMIdx]; MMIdx++)
 			CurInDelMismatches += 1;
 			CurScore -= cScoreMismatch;
 
-			if(TmpProbeLen < (UINT32)(cMinInDelSeqLen * CurInDelMismatches))
+			if(TmpProbeLen < (uint32_t)(cMinInDelSeqLen * CurInDelMismatches))
 				break;
 			}
 
@@ -9590,7 +9590,7 @@ for(MMIdx = 0; MMIdx <= TotMM && cMinInDelSeqLen	< ProbeMMOfss[MMIdx]; MMIdx++)
 			{
 			memset(CurInsert.Seg,0,sizeof(CurInsert.Seg));
 			CurInsert.Seg[0].MatchLen = TmpProbeLen;
-			CurInsert.Seg[0].MatchLoci =	(UINT32)(TargOfs + CurInDelLen);		// target suffix, not chrom loci
+			CurInsert.Seg[0].MatchLoci =	(uint32_t)(TargOfs + CurInDelLen);		// target suffix, not chrom loci
 			CurInsert.Seg[0].Mismatches = CurInDelMismatches;
 			CurInsert.Seg[0].TrimMismatches = CurInDelMismatches;
 			CurInsert.Seg[0].Strand = CurStrand;
@@ -9628,7 +9628,7 @@ for(MMIdx = 0; MMIdx <= TotMM && cMinInDelSeqLen	< ProbeMMOfss[MMIdx]; MMIdx++)
 
 		if(TmpProbeLen < cMinInDelSeqLen)
 			break;
-		if((UINT32)CurInDelLen > TargOfs)
+		if((uint32_t)CurInDelLen > TargOfs)
 			break;
 
 		CurInDelMismatches = 0;
@@ -9644,7 +9644,7 @@ for(MMIdx = 0; MMIdx <= TotMM && cMinInDelSeqLen	< ProbeMMOfss[MMIdx]; MMIdx++)
 
 			CurInDelMismatches += 1;
 			CurScore -= cScoreMismatch;
-			if(TmpProbeLen < (UINT32)(cMinInDelSeqLen * CurInDelMismatches))
+			if(TmpProbeLen < (uint32_t)(cMinInDelSeqLen * CurInDelMismatches))
 				break;
 			}
 	    if(Idx != TmpProbeLen)
@@ -9655,7 +9655,7 @@ for(MMIdx = 0; MMIdx <= TotMM && cMinInDelSeqLen	< ProbeMMOfss[MMIdx]; MMIdx++)
 			{
 			memset(CurDelete.Seg,0,sizeof(CurDelete.Seg));
 			CurDelete.Seg[0].MatchLen = TmpProbeLen;
-			CurDelete.Seg[0].MatchLoci =	(UINT32)(TargOfs - CurInDelLen);		// target suffix, not chrom loci
+			CurDelete.Seg[0].MatchLoci =	(uint32_t)(TargOfs - CurInDelLen);		// target suffix, not chrom loci
 			CurDelete.Seg[0].Mismatches = CurInDelMismatches;
 			CurDelete.Seg[0].Strand = CurStrand;
 
@@ -9689,12 +9689,12 @@ return(2);
 
 
 int
-ValidateSort32(UINT32 SeqLen,etSeqBase *pSeq,UINT32 *pArray)
+ValidateSort32(uint32_t SeqLen,etSeqBase *pSeq,uint32_t *pArray)
 {
 etSeqBase *pSeq1;
 etSeqBase *pSeq2;
-UINT32 Ofs;
-UINT32 Idx;
+uint32_t Ofs;
+uint32_t Idx;
 for(Idx = 0; Idx < (SeqLen-1); Idx++)
 	{
 	pSeq1 = &pSeq[*pArray++];
@@ -9712,12 +9712,12 @@ return(0);
 }
 
 int
-ValidateSort64(INT64 SeqLen,etSeqBase *pSeq,INT64 *pArray)
+ValidateSort64(int64_t SeqLen,etSeqBase *pSeq,int64_t *pArray)
 {
 etSeqBase *pSeq1;
 etSeqBase *pSeq2;
-UINT32 Ofs;
-INT64 Idx;
+uint32_t Ofs;
+int64_t Idx;
 for(Idx = 0; Idx < (SeqLen-1); Idx++)
 	{
 	pSeq1 = &pSeq[*pArray++];
@@ -9735,32 +9735,32 @@ return(0);
 }
 
 int
-CSfxArray::QSortSeq(INT64 SeqLen,		// total concatenated sequence length
+CSfxArray::QSortSeq(int64_t SeqLen,		// total concatenated sequence length
 						etSeqBase *pSeq,	// pts to start of concatenated sequences
 						int SfxElSize,		// suffix element size (will be either 4 or 5)
 						void *pArray)		// allocated to hold suffix elements
 {
-INT64 Idx;
+int64_t Idx;
 gpSeq = pSeq;
 
 switch(SfxElSize) {
 	case 4:	// 4 bytes per element
 			{
-			UINT32 *pIdx = (UINT32 *)pArray;
-			gpSfxArray = (UINT8 *)pIdx;
+			uint32_t *pIdx = (uint32_t *)pArray;
+			gpSfxArray = (uint8_t *)pIdx;
 			for(Idx = 0; Idx < SeqLen; Idx++, pIdx++)
-				*pIdx = (UINT32)Idx;
+				*pIdx = (uint32_t)Idx;
 			m_MTqsort.qsort(gpSfxArray,SeqLen,4,QSortSeqCmp32);
 			}
 		break;
 	case 5:		// 5 bytes per element
 			{
-			UINT8 *pIdx = (UINT8 *)pArray;
+			uint8_t *pIdx = (uint8_t *)pArray;
 			gpSfxArray = pIdx;
 			gpSeq = pSeq;
 			for(Idx = 0; Idx < SeqLen; Idx++, pIdx++)
 				{
-				*(UINT32 *)pIdx = Idx & 0x0ffffffff;
+				*(uint32_t *)pIdx = Idx & 0x0ffffffff;
 				pIdx += 4;
 				*pIdx = (Idx >> 32) & 0x00ff;
 				}
@@ -9783,8 +9783,8 @@ etSeqBase b1;
 etSeqBase b2;
 int MaxCmpLen;
 
-pSeq1 = &gpSeq[*(UINT32 *)p1];
-pSeq2 = &gpSeq[*(UINT32 *)p2];
+pSeq1 = &gpSeq[*(uint32_t *)p1];
+pSeq2 = &gpSeq[*(uint32_t *)p2];
 
 // compare seqs for at most gMaxBaseCmpLen bases
 MaxCmpLen = gMaxBaseCmpLen + 10;		// allow an additional 10bp extension as a small safety margin in case user miscalculated comparison K-mer sizes!
@@ -9802,18 +9802,18 @@ static int QSortSeqCmp40(const void *p1,const void *p2)
 {
 etSeqBase *pSeq1;
 etSeqBase *pSeq2;
-UINT8 *pP;
-INT64 Ofs1;
-INT64 Ofs2;
+uint8_t *pP;
+int64_t Ofs1;
+int64_t Ofs2;
 etSeqBase b1;
 etSeqBase b2;
 int MaxCmpLen;
-pP = (UINT8 *)p1;
-Ofs1 = (INT64)*(UINT32 *)pP;
-Ofs1 |= ((INT64)pP[4] << 32);
-pP = (UINT8 *)p2;
-Ofs2 = (INT64)*(UINT32 *)pP;
-Ofs2 |= ((INT64)pP[4] << 32);
+pP = (uint8_t *)p1;
+Ofs1 = (int64_t)*(uint32_t *)pP;
+Ofs1 |= ((int64_t)pP[4] << 32);
+pP = (uint8_t *)p2;
+Ofs2 = (int64_t)*(uint32_t *)pP;
+Ofs2 |= ((int64_t)pP[4] << 32);
 
 pSeq1 = &gpSeq[Ofs1];
 pSeq2 = &gpSeq[Ofs2];

@@ -92,7 +92,7 @@ m_NumCentroids = 0;
 if(m_pCentroidParams == NULL)
 	{
 	// allocate for 7-mer even if 1-mer processed
-	m_pCentroidParams = (tsCentroidParam *) new unsigned char[cCentroidParamAllocSize];
+	m_pCentroidParams = (tsCentroidParam *) new uint8_t[cCentroidParamAllocSize];
 	if(m_pCentroidParams == NULL)
 		{
 		AddErrMsg("CCentroid::LoadCentroidParams","Unable to allocate memory to hold centroid parameters");
@@ -208,7 +208,7 @@ m_NumCentroids = 0;
 if(m_pTransMatrices == NULL)
 	{
 	// allocate for 7-mer even if 1-mer processed
-	m_pTransMatrices = (tsTransProbMatrix *) new unsigned char[cTransMatixAllocSize];
+	m_pTransMatrices = (tsTransProbMatrix *) new uint8_t[cTransMatixAllocSize];
 	if(m_pTransMatrices == NULL)
 		{
 		AddErrMsg("CCentroid::LoadTransMatrices","Unable to allocate memory to hold transistion probabilities matrices");
@@ -480,7 +480,7 @@ if(pOligo != NULL)
 	else
 		{
 		pCentroid = &m_pCentroidParams[Idx];
-		return(*(int *)(((unsigned char *)pCentroid)+ParamOfs));
+		return(*(int *)(((uint8_t *)pCentroid)+ParamOfs));
 		}
 	}
 return(UndefBaseValue);
@@ -512,7 +512,7 @@ double LimHi;
 int ExLoci;
 int *pRandIdxs;		// will be initialised to a list of indexes into pSeq
 int NumMutated;		// total count of all bases which were mutated
-INT64 Now;		// used if random generator seeds not specified
+int64_t Now;		// used if random generator seeds not specified
 
 #ifndef _WIN32
 struct timeval TimeNow;
@@ -770,7 +770,7 @@ if(pszSeq == NULL || Region < eFRIntergenic || Region >= eFRDnstream ||
    pToRetA == NULL || pToRetC == NULL || pToRetG == NULL || pToRetT == NULL)
 	return(eBSFerrParams);
  
-pSeq = new unsigned char[SeqLen];
+pSeq = new uint8_t[SeqLen];
 CSeqTrans::MapAscii2Sense(pszSeq,SeqLen,pSeq);
 Rslt = StationarySeqProbs(Region,pSeq,SeqLen,Period,pToRetA,pToRetC,pToRetG,pToRetT);
 delete pSeq;

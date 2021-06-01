@@ -173,10 +173,10 @@ if(m_pszPSLLineBuff != NULL)
 if(m_pAlignmentSummaries != NULL)
 	{
 #ifdef _WIN32
-	free((UINT8 *)m_pAlignmentSummaries);
+	free((uint8_t *)m_pAlignmentSummaries);
 #else
 	if(m_pAlignmentSummaries != MAP_FAILED)
-		munmap((UINT8 *)m_pAlignmentSummaries,m_allocAlignmentSummariesSize);
+		munmap((uint8_t *)m_pAlignmentSummaries,m_allocAlignmentSummariesSize);
 #endif
 	}
 }
@@ -306,10 +306,10 @@ for(TblIdx = 0; TblIdx < 4; TblIdx++,pStms++)
 if(m_pAlignmentSummaries != NULL)
 	{
 #ifdef _WIN32
-	free((UINT8 *)m_pAlignmentSummaries);
+	free((uint8_t *)m_pAlignmentSummaries);
 #else
 	if(m_pAlignmentSummaries != MAP_FAILED)
-		munmap((UINT8 *)m_pAlignmentSummaries,m_allocAlignmentSummariesSize);
+		munmap((uint8_t *)m_pAlignmentSummaries,m_allocAlignmentSummariesSize);
 #endif
 	}
 m_pAlignmentSummaries = NULL;
@@ -324,7 +324,7 @@ memreq = ((size_t)cAllocAlignSummaryInsts * (sizeof(tsAlignSummary) + (size_t)cM
 m_pAlignmentSummaries = (tsAlignSummary *) malloc(memreq);	// initial and perhaps the only allocation
 if(m_pAlignmentSummaries == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"CreateDatabase: Memory allocation of %lld bytes for alignment summary instances failed - %s",(INT64)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"CreateDatabase: Memory allocation of %lld bytes for alignment summary instances failed - %s",(int64_t)memreq,strerror(errno));
 	sqlite3_close_v2(m_pDB);
 	sqlite3_shutdown();
 	m_pDB = NULL;
@@ -335,7 +335,7 @@ if(m_pAlignmentSummaries == NULL)
 	m_pAlignmentSummaries = (tsAlignSummary *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pAlignmentSummaries == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"CreateDatabase: Memory allocation of %lld bytes for alignment summary instances failed - %s",(INT64)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"CreateDatabase: Memory allocation of %lld bytes for alignment summary instances failed - %s",(int64_t)memreq,strerror(errno));
 		m_pAlignmentSummaries = NULL;
 		sqlite3_close_v2(m_pDB);
 		sqlite3_shutdown();
@@ -375,10 +375,10 @@ if(m_pDB != NULL)
 if(m_pAlignmentSummaries != NULL)
 	{
 #ifdef _WIN32
-	free((UINT8 *)m_pAlignmentSummaries);
+	free((uint8_t *)m_pAlignmentSummaries);
 #else
 	if(m_pAlignmentSummaries != MAP_FAILED)
-		munmap((UINT8 *)m_pAlignmentSummaries,m_allocAlignmentSummariesSize);
+		munmap((uint8_t *)m_pAlignmentSummaries,m_allocAlignmentSummariesSize);
 #endif
 	}
 m_pAlignmentSummaries = NULL;
@@ -498,18 +498,18 @@ ExprID = (int)sqlite3_last_insert_rowid(m_pDB);
 return(ExprID);
 }
 
-INT32			// 20bit instance hash over the combination of parameterisation values passed into this function; if < 0 then hashing error  
-CSQLitePSL::GenSummaryInstanceHash(INT32 ExprID,		// alignment summary is for alignment in this experiment
+int32_t			// 20bit instance hash over the combination of parameterisation values passed into this function; if < 0 then hashing error  
+CSQLitePSL::GenSummaryInstanceHash(int32_t ExprID,		// alignment summary is for alignment in this experiment
 						bool bIsQuery,	// false if SeqName is for a target sequence, true if for a query sequence
 						char *pszSeqName,	// NULL terminated sequence name
-						UINT32  SeqLen)	// query or target sequence length
+						uint32_t  SeqLen)	// query or target sequence length
 {
-INT32 Hash;
+int32_t Hash;
 char SeqNameChr;
 if(ExprID < 0 || pszSeqName == NULL || pszSeqName[0] == '\0' || SeqLen == 0)
 	return(-1);
 
-Hash = ((INT32)SeqLen + ExprID) ^ (bIsQuery ? 0x05 : 0x09);
+Hash = ((int32_t)SeqLen + ExprID) ^ (bIsQuery ? 0x05 : 0x09);
 Hash &= 0x0fffff;
 while((SeqNameChr = tolower(*pszSeqName++)) != '\0')
 	{
@@ -523,16 +523,16 @@ return(Hash & 0x0fffff);
 // LocateAlignSummary locates, or creates if not already existing, a summary instance for specified parameters
 // Note that the returned alignment instance will be unique for the parameterisation combination
 tsAlignSummary *
-CSQLitePSL::LocateAlignSummary(INT32 ExprID,	// alignment summary is for alignment in this experiment
+CSQLitePSL::LocateAlignSummary(int32_t ExprID,	// alignment summary is for alignment in this experiment
 						bool bIsQuery,			// false if SeqName is for a target sequence, true if for a query sequence
 						char *pszSeqName,		// locate pre-existing, or allocate new if not pre-existing, alignment summary for bIsQuery type
-						UINT32  SeqLen)			// query or target sequence length
+						uint32_t  SeqLen)			// query or target sequence length
 {
 int SeqNameLen;
 tsAlignSummary *pAlignSummary;
-INT64 AlignSummaryInstancesOfs;
-INT64 NxtHashedSummaryInstOfs;
-INT32 Hash;
+int64_t AlignSummaryInstancesOfs;
+int64_t NxtHashedSummaryInstOfs;
+int32_t Hash;
 Hash = GenSummaryInstanceHash(ExprID,bIsQuery,pszSeqName,SeqLen);
 if(Hash < 0 || Hash > 0x0fffff)
 	return(NULL);
@@ -542,7 +542,7 @@ if(AlignSummaryInstancesOfs > 0)		// will be 0 if no summary instance previously
 	{
 	NxtHashedSummaryInstOfs = AlignSummaryInstancesOfs;
 	do {
-		pAlignSummary = (tsAlignSummary *)((UINT8 *)m_pAlignmentSummaries + NxtHashedSummaryInstOfs-1);
+		pAlignSummary = (tsAlignSummary *)((uint8_t *)m_pAlignmentSummaries + NxtHashedSummaryInstOfs-1);
 		if(pAlignSummary->ExprID == ExprID && (bool)pAlignSummary->FlgIsQuery == bIsQuery && pAlignSummary->SeqLen == SeqLen && pAlignSummary->SeqNameLen == SeqNameLen &&  !strcmp(pszSeqName,(char *)pAlignSummary->SeqName))
 			return(pAlignSummary);
 		}
@@ -551,7 +551,7 @@ if(AlignSummaryInstancesOfs > 0)		// will be 0 if no summary instance previously
 	}
 
 // couldn't locate existing summary instance, allocate and initialise new instance
-pAlignSummary = (tsAlignSummary *)((UINT8 *)m_pAlignmentSummaries + m_UsedAlignmentSummariesSize);
+pAlignSummary = (tsAlignSummary *)((uint8_t *)m_pAlignmentSummaries + m_UsedAlignmentSummariesSize);
 memset(pAlignSummary,0,sizeof(tsAlignSummary));
 pAlignSummary->ExprID = ExprID;
 pAlignSummary->FlgIsQuery = bIsQuery ? 1 : 0;
@@ -560,7 +560,7 @@ pAlignSummary->SeqNameLen = SeqNameLen;
 pAlignSummary->NumAlignments = 0;
 pAlignSummary->SeqLen = SeqLen;
 strcpy((char *)pAlignSummary->SeqName,pszSeqName);
-pAlignSummary->AlignSummarySize = (UINT16)(sizeof(tsAlignSummary) + SeqNameLen);
+pAlignSummary->AlignSummarySize = (uint16_t)(sizeof(tsAlignSummary) + SeqNameLen);
 pAlignSummary->NxtHashedSummaryInstOfs = AlignSummaryInstancesOfs;
 m_AlignSummaryInstancesOfs[Hash] = m_UsedAlignmentSummariesSize + 1;
 m_UsedAlignmentSummariesSize += pAlignSummary->AlignSummarySize;
@@ -573,9 +573,9 @@ return(pAlignSummary);
 int
 CSQLitePSL::AddAlignSummary(int ExprID,	// alignment summary is for this experiment
 				char *pszQName,			// query sequence name, NULL or '\0' if unknown
-				UINT32  QSize,			// query sequence size, 0 if unknown
+				uint32_t  QSize,			// query sequence size, 0 if unknown
 				char *pszTName,			// target sequence name, NULL or '\0' if unknown
-				UINT32  TSize)			// target sequence size
+				uint32_t  TSize)			// target sequence size
 {
 tsAlignSummary *pAQuery;
 tsAlignSummary *pATarg;
@@ -586,15 +586,15 @@ if((m_allocAlignmentSummariesSize - m_UsedAlignmentSummariesSize) < (2 * (sizeof
 	{
 	size_t memreq = m_allocAlignmentSummariesSize + (cAllocAlignSummaryInsts * (sizeof(tsAlignSummary) + (size_t)(cMaxPSLSeqNameLen)));
  #ifdef _WIN32
-	m_pAlignmentSummaries = (tsAlignSummary *) realloc((UINT8 *)m_pAlignmentSummaries,memreq);
+	m_pAlignmentSummaries = (tsAlignSummary *) realloc((uint8_t *)m_pAlignmentSummaries,memreq);
 #else
-	m_pAlignmentSummaries = (tsAlignSummary *)mremap((UINT8 *)m_pAlignmentSummaries,m_allocAlignmentSummariesSize,memreq,MREMAP_MAYMOVE);
+	m_pAlignmentSummaries = (tsAlignSummary *)mremap((uint8_t *)m_pAlignmentSummaries,m_allocAlignmentSummariesSize,memreq,MREMAP_MAYMOVE);
 	if(m_pAlignmentSummaries == MAP_FAILED)
 		m_pAlignmentSummaries = NULL;
 #endif
 	if(m_pAlignmentSummaries == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddAlignSummary: Memory reallocation to %lld bytes for alignment summary instances failed - %s",(INT64)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddAlignSummary: Memory reallocation to %lld bytes for alignment summary instances failed - %s",(int64_t)memreq,strerror(errno));
 		return(eBSFerrMem);
 		}
 	m_allocAlignmentSummariesSize = memreq;
@@ -622,7 +622,7 @@ return(eBSFSuccess);
 int
 CSQLitePSL::AddSummaryInstances2SQLite(void)
 {
-UINT32 Idx;
+uint32_t Idx;
 int sqlite_error;
 tsStmSQL *pStm;
 tsAlignSummary *pCurSummary;
@@ -673,7 +673,7 @@ for(Idx = 0; Idx < m_NumAlignSummaries; Idx++)
 		return(eBSFerrInternal);
 		}
 	sqlite3_reset(pStm->pPrepInsert);
-	pCurSummary = (tsAlignSummary *)((UINT8 *)pCurSummary + pCurSummary->AlignSummarySize);
+	pCurSummary = (tsAlignSummary *)((uint8_t *)pCurSummary + pCurSummary->AlignSummarySize);
 	}
 return(m_NumAlignSummaries);
 }
@@ -1220,7 +1220,7 @@ m_szPSLinFile[_MAX_PATH - 1] = '\0';
 
 if(m_pInBuffer == NULL)
 	{
-	if((m_pInBuffer = new UINT8 [cMaxInBuffSize]) == NULL)
+	if((m_pInBuffer = new uint8_t [cMaxInBuffSize]) == NULL)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessPSLFile: Unable to allocate %d chars buffering for input PSL file - %s", cMaxInBuffSize,m_szPSLinFile);
 		return(eBSFerrMem);
@@ -1230,7 +1230,7 @@ if(m_pInBuffer == NULL)
 
 if(m_pszPSLLineBuff == NULL)
 	{
-	if((m_pszPSLLineBuff = new UINT8 [cMaxLenPSLline]) == NULL)
+	if((m_pszPSLLineBuff = new uint8_t [cMaxLenPSLline]) == NULL)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessPSLFile: Unable to allocate %d chars buffering for input PSL lines from file - %s", cMaxLenPSLline,m_szPSLinFile);
 		delete m_pInBuffer;

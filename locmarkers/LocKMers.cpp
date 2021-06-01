@@ -242,8 +242,8 @@ int SeqLen;
 int BlockSeqLen;
 int NumUnprocessed;
 tsPartialCultivar *pPartialCultivar;
-UINT8 *pDstBase;
-UINT8 *pSrcBase;
+uint8_t *pDstBase;
+uint8_t *pSrcBase;
 
 // only bother filling if sequence buffer getting lower than 3 * cBlockReqSize bases
 if(!m_bAllEntrySeqsLoaded && (m_CurPartialCultivarID == 0 || m_CurPartialCultivarID > m_NumPartialCultivars))
@@ -280,8 +280,8 @@ do {
 	SeqLen = m_pSfxArray->GetSeq(pPartialCultivar->EntryID,m_CurPartialCultivarOfs,&m_pBlockSeqBuff[m_BlockSeqBuffLen],(m_AllocBlockSeqBuffSize - 10) - m_BlockSeqBuffLen);
 	if(SeqLen > 0)			// loaded any sequence?
 		{
-		m_CurPartialCultivarOfs += (UINT32)SeqLen;
-		m_BlockSeqBuffLen += (UINT32)SeqLen;
+		m_CurPartialCultivarOfs += (uint32_t)SeqLen;
+		m_BlockSeqBuffLen += (uint32_t)SeqLen;
 		if(m_CurPartialCultivarOfs >= pPartialCultivar->EntryLen)		// need to next load from another partial cultivar?
 			{
 			m_pBlockSeqBuff[m_BlockSeqBuffLen++] = eBaseEOS;			// ensure current buffered sequence is terminated
@@ -331,16 +331,16 @@ m_NxtBlockSeqBuffOfs = 0;
 return(m_BlockSeqBuffLen);
 }
 
-static UINT32 m_NumRetBlocks = 0;
+static uint32_t m_NumRetBlocks = 0;
 
 int										    // returned block of concatenated sequences total length
 CLocKMers::GetBlockSeqs(int MaxLength,		//  maximum total block length to return
-						UINT8 *pBlockSeqs)	// copy block of sequences into this buffer
+						uint8_t *pBlockSeqs)	// copy block of sequences into this buffer
 {
 int MaxAvailBlockSize;
-UINT8 *pSrcBase;
-UINT8 *pDstBase;
-UINT8 CurBase;
+uint8_t *pSrcBase;
+uint8_t *pDstBase;
+uint8_t CurBase;
 int CurRetLen;
 int EOSRetLen;	
 
@@ -466,13 +466,13 @@ return(false);
 
 
 
-UINT32												// returns number of accepted cultivar specific extended K-mers
-CLocKMers::GetKMerProcProgress(UINT32 *pNumBlocks,	// number of blocks processed
-					INT64 *pNumKMers,				// these blocks contain this number of K-mers
-					UINT32 *pNumPutativeKMers,		// putatively - before check for Hamming - there are this number of unique K-mers mapping to target cultivar
-					UINT32 *pNumAcceptedKMers)		// after Hamming check this number of K-mers have been accepted
+uint32_t												// returns number of accepted cultivar specific extended K-mers
+CLocKMers::GetKMerProcProgress(uint32_t *pNumBlocks,	// number of blocks processed
+					int64_t *pNumKMers,				// these blocks contain this number of K-mers
+					uint32_t *pNumPutativeKMers,		// putatively - before check for Hamming - there are this number of unique K-mers mapping to target cultivar
+					uint32_t *pNumAcceptedKMers)		// after Hamming check this number of K-mers have been accepted
 {
-UINT32 NumAcceptedExtdKMers;
+uint32_t NumAcceptedExtdKMers;
 AcquireLock(true);
 if(pNumBlocks != NULL)
 	*pNumBlocks = m_NumBlocks;
@@ -501,11 +501,11 @@ CLocKMers::LocKMers(etPMode PMode,		// processing mode - currently unused, defau
 {
 int Rslt;
 int Idx;
-UINT32 NumBlocks;
-INT64 NumKMers;
-UINT32 NumPutativeKMers;
-UINT32 NumAcceptedKMers;
-UINT32 NumAcceptedExtdKMers;
+uint32_t NumBlocks;
+int64_t NumKMers;
+uint32_t NumPutativeKMers;
+uint32_t NumAcceptedKMers;
+uint32_t NumAcceptedExtdKMers;
 tsPartialCultivar *pPartialCultivar;
 
 Reset();
@@ -553,7 +553,7 @@ if(NumPartialCultivars > 1)
 	}
 
 // allocate buffers
-if((m_pMarkerBuff = new UINT8 [cMarkerSeqBuffSize])==NULL)
+if((m_pMarkerBuff = new uint8_t [cMarkerSeqBuffSize])==NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Unable to allocate (%d bytes) for marker buffering",cMarkerSeqBuffSize);
 	Reset();
@@ -561,15 +561,15 @@ if((m_pMarkerBuff = new UINT8 [cMarkerSeqBuffSize])==NULL)
 	}
 m_AllocMarkerBuffSize = cMarkerSeqBuffSize;
 
-if((m_pMarkerLenDist = new UINT32 [cMaxExtKMerLen])==NULL)
+if((m_pMarkerLenDist = new uint32_t [cMaxExtKMerLen])==NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Unable to allocate (%d bytes) for marker length distributions",sizeof(UINT32) * cMaxExtKMerLen);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Unable to allocate (%d bytes) for marker length distributions",sizeof(uint32_t) * cMaxExtKMerLen);
 	Reset();
 	return(eBSFerrMem);
 	}
 
 
-if((m_pBlockSeqBuff = new UINT8 [cConcatSeqBuffSize])==NULL)
+if((m_pBlockSeqBuff = new uint8_t [cConcatSeqBuffSize])==NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Unable to allocate (%d bytes) for sequence buffering",cConcatSeqBuffSize);
 	Reset();
@@ -710,7 +710,7 @@ if(m_bKMerReads)
 		}
 	}
 
-memset(m_pMarkerLenDist,0,sizeof(UINT32) * cMaxExtKMerLen);
+memset(m_pMarkerLenDist,0,sizeof(uint32_t) * cMaxExtKMerLen);
 m_bInitSeqBuffering = true;
 
 tsKMerThreadPars WorkerThreads[cMaxWorkerThreads];			// allow for max possible user configured number of threads
@@ -722,7 +722,7 @@ for(ThreadIdx = 0; ThreadIdx < m_NumThreads; ThreadIdx++)
 	{
 	WorkerThreads[ThreadIdx].ThreadIdx = ThreadIdx + 1;
 	WorkerThreads[ThreadIdx].pThis = this;
-	WorkerThreads[ThreadIdx].pBlockSeqs = new UINT8 [cBlockReqSize];
+	WorkerThreads[ThreadIdx].pBlockSeqs = new uint8_t [cBlockReqSize];
 	WorkerThreads[ThreadIdx].AllocBlockSeqsSize = cBlockReqSize;
 
 #ifdef _WIN32
@@ -807,11 +807,11 @@ if(m_bKMerReads)
 	bool bMarkerRead;
 	int CultID;
 	tsPartialCultivar *pCult;
-	UINT8 *pSeq;
-	UINT8 *pMarkStart;
-	UINT8 SeqBase;
-	UINT32 Loci;
-	UINT32 ReadLen;
+	uint8_t *pSeq;
+	uint8_t *pMarkStart;
+	uint8_t SeqBase;
+	uint32_t Loci;
+	uint32_t ReadLen;
 
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Writing reads containing markers to '%s'",m_szMarkerReadsFile);
 	m_MarkerID = 0;
@@ -819,13 +819,13 @@ if(m_bKMerReads)
 	m_MinMarkerLen = 0;
 	m_MaxMarkerLen = 0;
 
-	memset(m_pMarkerLenDist,0,sizeof(UINT32) * cMaxExtKMerLen);
+	memset(m_pMarkerLenDist,0,sizeof(uint32_t) * cMaxExtKMerLen);
 	pCult = m_PartialCultivars;
 	for(CultID = 1; CultID <= m_NumPartialCultivars; CultID++,pCult++)
 		{
 		bMarkerRead = false;
 		ReadLen = 0;
-		pSeq = (UINT8 *)m_pSfxArray->GetPtrSeq(pCult->EntryID,0);
+		pSeq = (uint8_t *)m_pSfxArray->GetPtrSeq(pCult->EntryID,0);
 		pMarkStart = pSeq;
 		for(Loci = 0; Loci < pCult->EntryLen; Loci++)
 			{
@@ -901,11 +901,11 @@ int							// marking reads containing the identified marker, both sense and anti
 CLocKMers::MarkContainingReads(int MarkKMerLen,						// marker is of this length
 							   etSeqBase *pMarkStartKMerBase)		// marker sequence	
 {
-UINT8 RevCplKMerSeq[cMaxKMerLen+1];
-INT64 PrevHitIdx;
-INT64 NxtHitIdx;
-UINT32 TargHitID;
-UINT32 TargHitLoci;
+uint8_t RevCplKMerSeq[cMaxKMerLen+1];
+int64_t PrevHitIdx;
+int64_t NxtHitIdx;
+uint32_t TargHitID;
+uint32_t TargHitLoci;
 
 memcpy(RevCplKMerSeq,pMarkStartKMerBase,MarkKMerLen);
 CSeqTrans::ReverseComplement(MarkKMerLen,RevCplKMerSeq);
@@ -932,7 +932,7 @@ return(eBSFSuccess);
 int
 CLocKMers::LocateSpeciesUniqueKMers(tsKMerThreadPars *pPars)
 {
-UINT8 RevCplKMer[cMaxKMerLen+1];			// to hold reverse compliment of current K-mer being processed
+uint8_t RevCplKMer[cMaxKMerLen+1];			// to hold reverse compliment of current K-mer being processed
 
 int SubSeqsLen;
 int StartIdx;
@@ -940,18 +940,18 @@ int	MarkStartIdx;
 etSeqBase *pMarkStartKMerBase;
 int	MarkKMerLen;
 int CurSeqLen;
-INT64 PrevHitIdx;
-INT64 NxtHitIdx;
-INT64 RcplHitIdx;
-UINT32 TargHitID;
-UINT32 TargHitLoci;
-UINT32 RcplTargHitID;
-UINT32 RcplTargHitLoci;
-UINT32 NumBlocks;
-INT64 NumKMers;
-UINT32 NumPutativeKMers;
-UINT32 NumAcceptedKMers;
-UINT32 NumAcceptedExtdKMers;
+int64_t PrevHitIdx;
+int64_t NxtHitIdx;
+int64_t RcplHitIdx;
+uint32_t TargHitID;
+uint32_t TargHitLoci;
+uint32_t RcplTargHitID;
+uint32_t RcplTargHitLoci;
+uint32_t NumBlocks;
+int64_t NumKMers;
+uint32_t NumPutativeKMers;
+uint32_t NumAcceptedKMers;
+uint32_t NumAcceptedExtdKMers;
 int MatchesOthers;
 
 etSeqBase *pStartKMerBase;

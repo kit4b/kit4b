@@ -454,7 +454,7 @@ if((Rslt=m_pSfxArray->SetTargBlock(1))<0)
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Genome assembly suffix array loaded");
 // from the total sequence length then determine the core length to use
 // the autodetermined core length is that length such that on average there would be expected less than one copy of the core sequence in a random sequence of same length as targeted genome
-UINT64 TotSeqsLen = m_pSfxArray->GetTotSeqsLen();
+uint64_t TotSeqsLen = m_pSfxArray->GetTotSeqsLen();
 
 if(CoreLen == 0)
 	{
@@ -1289,7 +1289,7 @@ uint32_t TargPathStartOfsPE2;
 uint32_t TargPathEndOfsPE2;
 uint32_t TargSeqLenPE2;
 
-INT64 DeltaPathStarts;
+int64_t DeltaPathStarts;
 uint32_t CombinedScore;
 
 uint32_t NoHeadNodes;
@@ -1390,7 +1390,7 @@ while((Rslt = DequeueQuerySeq(cMaxBlitzQuerySeqIdentLen + 1, &SeqIDPE1, szQueryS
 							// select that pair which are shortest distance apart and having maximal combined scores
 							// very rough pairing used because one or both of the ends may only be partially aligned and so true start/ends are unknown
 							TargPathStartOfsPE2 = pHeadNodePE2->TargSeqLoci;
-							DeltaPathStarts = abs((INT64)(UINT64)TargPathStartOfsPE2 - (INT64)(UINT64)TargPathStartOfsPE1);
+							DeltaPathStarts = abs((int64_t)(uint64_t)TargPathStartOfsPE2 - (int64_t)(uint64_t)TargPathStartOfsPE1);
 							if(DeltaPathStarts > m_MaxInsertLen + 100)
 								continue;
 							if((uint32_t)DeltaPathStarts > BestDeltaPathStart)
@@ -3433,8 +3433,8 @@ CBlitz::ProcLoadQuerySeqsFile(tsLoadQuerySeqsThreadPars *pPars)
 {
 CFasta Fasta;
 CFasta FastaPE2;
-unsigned char *pSeqBuff;
-unsigned char *pMskBase;
+uint8_t *pSeqBuff;
+uint8_t *pMskBase;
 uint32_t MskIdx;
 size_t BuffOfs;
 size_t AllocdBuffSize;
@@ -3468,7 +3468,7 @@ if((Rslt=Fasta.Open(m_pszInputFile,true))!=eBSFSuccess)
 
 // note malloc is used as can then simply realloc to expand as may later be required
 AllocdBuffSize = (size_t)cAllocBlitzQuerySeqLen;
-if((pSeqBuff = (unsigned char *)malloc(AllocdBuffSize)) == NULL)
+if((pSeqBuff = (uint8_t *)malloc(AllocdBuffSize)) == NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcLoadQuerySeqsFile:- Unable to allocate memory (%u bytes) for sequence buffer",(uint32_t)cAllocBlitzQuerySeqLen);
 	Fasta.Close();
@@ -3558,8 +3558,8 @@ while((Rslt = SeqLen = Fasta.ReadSequence(&pSeqBuff[BuffOfs],(int)min(AvailBuffS
 	if(AvailBuffSize < (size_t)(cAllocBlitzQuerySeqLen / 2))
 		{
 		size_t NewSize = (size_t)cAllocBlitzQuerySeqLen + AllocdBuffSize;
-		unsigned char *pTmp;
-		if((pTmp = (unsigned char *)realloc(pSeqBuff,NewSize))==NULL)
+		uint8_t *pTmp;
+		if((pTmp = (uint8_t *)realloc(pSeqBuff,NewSize))==NULL)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcLoadQuerySeqsFile:- Unable to reallocate memory (%u bytes) for sequence buffer",(uint32_t)NewSize);
 			Rslt = eBSFerrMem;

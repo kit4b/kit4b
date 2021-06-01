@@ -555,10 +555,10 @@ m_pBioSeqFile = NULL;
 
 
 LenSCF = (double)TotLen/(double)INT_MAX;
-m_GenomeScaledLen = TotLen >= (INT64)INT_MAX ? (long)(TotLen * LenSCF) : (long)TotLen;
+m_GenomeScaledLen = TotLen >= (int64_t)INT_MAX ? (long)(TotLen * LenSCF) : (long)TotLen;
 pChromSeq = &m_pChromSeqs[0];
 for(ChromID = 0; ChromID < m_NumChromSeqs; ChromID++,pChromSeq++)
-	pChromSeq->ScaledLen = TotLen >= (INT64)INT_MAX ? (int)(pChromSeq->Len * LenSCF) : pChromSeq->Len;
+	pChromSeq->ScaledLen = TotLen >= (int64_t)INT_MAX ? (int)(pChromSeq->Len * LenSCF) : pChromSeq->Len;
 return(eBSFSuccess);
 }
 

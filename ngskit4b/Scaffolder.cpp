@@ -798,8 +798,8 @@ CScaffolder::ScaffoldAssemble(bool bSenseStrandOnly,			// sequences from sense s
 int Rslt;
 int EstNumCtgs;
 int SeqWrdBytes;
-INT64 CumulativeMemory;
-UINT32 CumulativeSequences;
+int64_t CumulativeMemory;
+uint32_t CumulativeSequences;
 
 Reset(false);
 SetPMode(0);
@@ -913,19 +913,19 @@ CScaffolder::GenScaffoldedContigs(int PMode,	//  processing mode: 0 - output sin
 {
 int Rslt;
 int Subs1Kbp;
-UINT32 CurTotNumPEs;	// total number of paired ends
+uint32_t CurTotNumPEs;	// total number of paired ends
 int CurPE1MinLen;		// returned PE1 min length
 int CurPE1MeanLen;		// returned PE1 mean length
 int CurPE1MaxLen;		// returned PE1 max length
 int CurPE2MinLen;		// returned PE2 min length
 int CurPE2MeanLen;		// returned PE2 mean length
 int CurPE2MaxLen;		// returned PE2 max length
-UINT32 CurTotNumSEs;	// total number of single ends
+uint32_t CurTotNumSEs;	// total number of single ends
 int CurSEMinLen;		// returned SE min length
 int CurSEMeanLen;		// returned SE mean length
 int CurSEMaxLen;		// returned SE max length
 
-UINT32 RemovedPEs;
+uint32_t RemovedPEs;
 
 m_MinReqPESepDist = MinPEInsertSize;
 m_MaxReqPESepDist = MaxPEInsertSize;
@@ -1051,7 +1051,7 @@ if(TotContained)
 	RemoveMarkedSeqs(cFlgContainRemove);
 
 
-UINT32 CurTotNumPEs;
+uint32_t CurTotNumPEs;
 GetSeqLenDist(&CurTotNumPEs);	// also updates min, mean, max lengths for PE1, PE2 and SEs counts
 
 
@@ -1068,7 +1068,7 @@ int							// all vertices marked as requiring revcpl to make sequences sense con
 CScaffolder::IdentifyNonSenseSeqs(void)
 {
 int TotNumNonSense;
-UINT32 CurSeqVertexIdx;
+uint32_t CurSeqVertexIdx;
 tsSeqVertex *pCurSeqVertex;
 
 if(m_pSeqVertices == NULL || m_NumSeqVertices < 1)	
@@ -1091,16 +1091,16 @@ return(TotNumNonSense);
 teBSFrsltCodes
 CScaffolder::GenerateScaffoldGraph(void)		// generates scaffold graph over all edges (PE end overlaps) + vertices (SE)
 {
-UINT64 ToIdx;
-UINT64 FromIdx;
+uint64_t ToIdx;
+uint64_t FromIdx;
 tsSeqEdge *pToEdge;
 tsSeqEdge *pFromEdge;
 
 tSeqID CurToSeqID;
 tSeqID SeqID;
 
-UINT32 SeqFlgs;
-UINT32 SeqLen;
+uint32_t SeqFlgs;
+uint32_t SeqLen;
 
 tsSeqVertex SEVertex;
 tVertID SeqVertID;
@@ -1110,7 +1110,7 @@ int NumRemovePEs;
 int NumRemoveEdges;
 bool bRemovePE;
 tSeqID PE1SeqID;
-UINT32 PE1Flags;
+uint32_t PE1Flags;
 tsSeqEdge *pPE1Edge;
 tEdgeID PE1EdgeID;
 int NumPE1Edges;
@@ -1316,11 +1316,11 @@ while((pCurSeq = IterSeqHeaders(pCurSeq,	// iterate to next sequence following t
 m_MTqsort.qsort(m_pSeqVertices,m_NumSeqVertices,sizeof(tsSeqVertex),SortVerticesSeqID);
 
 // now check for inconsistent vertices predecessor and successor linkages
-UINT32 VertIdx;
+uint32_t VertIdx;
 
 tSeqID TmpSeqID;
-UINT16 TmpCnts;
-UINT16 TmpScore;
+uint16_t TmpCnts;
+uint16_t TmpScore;
 tsSeqVertex *pVertex;
 tsSeqVertex *pPredVertex;
 tsSeqVertex *pCurVertex;
@@ -1514,8 +1514,8 @@ int LineLen;
 int BaseIdx;
 int NIdx;
 char *pszAsciiBases;
-UINT32 VertIdx;
-UINT32 NumScaffCtgs;
+uint32_t VertIdx;
+uint32_t NumScaffCtgs;
 tSeqID CurPredID;
 tSeqID CurSuccID;
 tsSeqVertex *pVertex;
@@ -1722,9 +1722,9 @@ int ThreadIdx;
 int NumThreads;
 tSeqID CurStartSeqID;
 
-UINT32 CurNumProcessed;
-UINT32 PrevNumProcessed = 0;
-UINT32 NumOverlapped = 0;
+uint32_t CurNumProcessed;
+uint32_t PrevNumProcessed = 0;
+uint32_t NumOverlapped = 0;
 
 gDiagnostics.DiagOut(eDLDiag,gszProcName,"Starting sequence edge build ...");
 
@@ -1799,11 +1799,11 @@ for(ThreadIdx = 1; ThreadIdx <= NumThreads; ThreadIdx++,pCurThread++)
 	pCurThread->MaxMateSeqWrds = 0;
 	pCurThread->AllocMateSeqLen = 0;
 
-	pCurThread->pProbeSeqWrds = new UINT8 [pCurThread->AllocProbeSeqLen];
+	pCurThread->pProbeSeqWrds = new uint8_t [pCurThread->AllocProbeSeqLen];
 	pCurThread->pMateSeqWrds = NULL;
 	if(CurPhase > 0)
 		{
-		pCurThread->pRevCplProbeSeqWrds = new UINT8 [pCurThread->AllocProbeSeqLen];
+		pCurThread->pRevCplProbeSeqWrds = new uint8_t [pCurThread->AllocProbeSeqLen];
 		pCurThread->pRevCplMateSeqWrds = NULL;
 		}
 	else
@@ -1840,7 +1840,7 @@ for(ThreadIdx = 0; ThreadIdx < NumThreads; ThreadIdx++,pCurThread++)
 		{
 		AcquireLock(false);
 		CurNumProcessed = m_NextProcSeqID;
-		NumOverlapped = (UINT32)m_Sequences.NumOverlapping;
+		NumOverlapped = (uint32_t)m_Sequences.NumOverlapping;
 		ReleaseLock(false);
 		if(CurNumProcessed > PrevNumProcessed)
 			gDiagnostics.DiagOut(eDLInfo,gszProcName,"Progress: %u sequences processed with %u edges",CurNumProcessed,NumOverlapped);
@@ -1865,9 +1865,9 @@ for(ThreadIdx = 0; ThreadIdx < NumThreads; ThreadIdx++,pCurThread++)
 		}
 #endif
 	if(pCurThread->pProbeSeqWrds != NULL)
-		delete (UINT8 *)pCurThread->pProbeSeqWrds;
+		delete (uint8_t *)pCurThread->pProbeSeqWrds;
 	if(pCurThread->pRevCplProbeSeqWrds != NULL)
-		delete (UINT8 *)pCurThread->pRevCplProbeSeqWrds;
+		delete (uint8_t *)pCurThread->pRevCplProbeSeqWrds;
 	}
 
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Completed: %u sequences processed with %u edges",m_Sequences.NumProcessed,m_Sequences.NumOverlapping);
@@ -1895,9 +1895,9 @@ int ThreadIdx;
 int NumThreads;
 tSeqID CurStartSeqID;
 
-UINT32 CurNumProcessed;
-UINT32 PrevNumProcessed = 0;
-UINT32 NumOverlapped = 0;
+uint32_t CurNumProcessed;
+uint32_t PrevNumProcessed = 0;
+uint32_t NumOverlapped = 0;
 
 NumThreads = m_NumThreads;
 
@@ -1972,12 +1972,12 @@ for(ThreadIdx = 1; ThreadIdx <= NumThreads; ThreadIdx++,pCurThread++)
 	pCurThread->MaxMateSeqWrds = cMaxOvrlapSeqWrds;
 	pCurThread->AllocMateSeqLen = pCurThread->MaxMateSeqWrds * sizeof(tSeqWrd4);
 
-	pCurThread->pProbeSeqWrds = new UINT8 [pCurThread->AllocProbeSeqLen];
-	pCurThread->pMateSeqWrds = new UINT8 [pCurThread->AllocMateSeqLen];
+	pCurThread->pProbeSeqWrds = new uint8_t [pCurThread->AllocProbeSeqLen];
+	pCurThread->pMateSeqWrds = new uint8_t [pCurThread->AllocMateSeqLen];
 	if(CurPhase > 0)
 		{
-		pCurThread->pRevCplProbeSeqWrds = new UINT8 [pCurThread->AllocProbeSeqLen];
-		pCurThread->pRevCplMateSeqWrds = new UINT8 [pCurThread->AllocMateSeqLen];
+		pCurThread->pRevCplProbeSeqWrds = new uint8_t [pCurThread->AllocProbeSeqLen];
+		pCurThread->pRevCplMateSeqWrds = new uint8_t [pCurThread->AllocMateSeqLen];
 		}
 	else
 		{
@@ -2014,7 +2014,7 @@ for(ThreadIdx = 0; ThreadIdx < NumThreads; ThreadIdx++,pCurThread++)
 		{
 		AcquireLock(false);
 		CurNumProcessed = m_NextProcSeqID;
-		NumOverlapped = (UINT32)m_Sequences.NumOverlapping;
+		NumOverlapped = (uint32_t)m_Sequences.NumOverlapping;
 		ReleaseLock(false);
 		if(CurNumProcessed > PrevNumProcessed)
 			gDiagnostics.DiagOut(eDLInfo,gszProcName,"Progress: %u sequences processed",CurNumProcessed);
@@ -2039,13 +2039,13 @@ for(ThreadIdx = 0; ThreadIdx < NumThreads; ThreadIdx++,pCurThread++)
 		}
 #endif
 	if(pCurThread->pProbeSeqWrds != NULL)
-		delete (UINT8 *)pCurThread->pProbeSeqWrds;
+		delete (uint8_t *)pCurThread->pProbeSeqWrds;
 	if(pCurThread->pRevCplProbeSeqWrds != NULL)
-		delete (UINT8 *)pCurThread->pRevCplProbeSeqWrds;
+		delete (uint8_t *)pCurThread->pRevCplProbeSeqWrds;
 	if(pCurThread->pMateSeqWrds != NULL)
-		delete (UINT8 *)pCurThread->pMateSeqWrds;
+		delete (uint8_t *)pCurThread->pMateSeqWrds;
 	if(pCurThread->pRevCplMateSeqWrds != NULL)
-		delete (UINT8 *)pCurThread->pRevCplMateSeqWrds;
+		delete (uint8_t *)pCurThread->pRevCplMateSeqWrds;
 	}
 
 if(pThreadParams)
@@ -2071,14 +2071,14 @@ int TooMAnyWarnings;
 tSeqID SeqID;
 
 tSeqID ProbeSeqID;
-UINT32 ProbeLen;
-UINT32 ProbeFlags;
+uint32_t ProbeLen;
+uint32_t ProbeFlags;
 tSeqWrd4 *pProbeHdr;
 tSeqWrd4 *pProbeSeqWrds;
 
 tSeqID MateSeqID;
-UINT32 MateLen;
-UINT32 MateFlags;
+uint32_t MateLen;
+uint32_t MateFlags;
 tSeqWrd4 *pMateHdr;
 tSeqWrd4 *pMateSeqWrds;
 
@@ -2093,17 +2093,17 @@ bool bProbeContainsTarget;
 int MateTargOfs;
 bool bPE2Match;
 bool bContained;
-UINT32 NumProcessed;
-UINT32 NumContained;
+uint32_t NumProcessed;
+uint32_t NumContained;
 
-UINT64 SfxWrdIdx;
+uint64_t SfxWrdIdx;
 
 
-UINT32 PrevProbeLen;
+uint32_t PrevProbeLen;
 
 tSeqID CurTargSeqID;
-UINT32 CurTargSeqLen;
-UINT32 TargFlags;
+uint32_t CurTargSeqLen;
+uint32_t TargFlags;
 tSeqWrd4 *pHit;
 tSeqWrd4 *pCurTargStartSeqWrd;
 int TargSubs;
@@ -2232,7 +2232,7 @@ while(GetSeqProcRange(&StartingSeqID,&EndingSeqID,cMaxMultiSeqFlags) > 0)
 							pPars->pProbeSeqWrds,				// pts to probes flank subsequence
 							MinOvrlp,							// probe length (in bases, not tSeqWrd4's) required to minimally exactly match over
 							m_Sequences.pSeqs2Assemb,			// target sequence
-							(UINT8 *)m_Sequences.pSuffixArray,	// target sequence suffix array
+							(uint8_t *)m_Sequences.pSuffixArray,	// target sequence suffix array
 							0,									// low index in pSfxArray
 							m_Sequences.NumSuffixEls-1);		// high index in pSfxArray
 
@@ -2250,7 +2250,7 @@ while(GetSeqProcRange(&StartingSeqID,&EndingSeqID,cMaxMultiSeqFlags) > 0)
 					break;
 
 				// which target was hit and what length is it?
-				pCurTargStartSeqWrd = (tSeqWrd4 *)GetSeqHeader(pHit,&CurTargSeqID,NULL,&TargFlags,(UINT32 *)&CurTargSeqLen,false);
+				pCurTargStartSeqWrd = (tSeqWrd4 *)GetSeqHeader(pHit,&CurTargSeqID,NULL,&TargFlags,(uint32_t *)&CurTargSeqLen,false);
 
 				// can't accept self hits
 				if(CurTargSeqID == ProbeSeqID)				// if self hit then not interested, try for another target sequence
@@ -2283,7 +2283,7 @@ while(GetSeqProcRange(&StartingSeqID,&EndingSeqID,cMaxMultiSeqFlags) > 0)
 					MinPutMateOfs = 0;
 				MinPutMateOfs += PutMatchOfs;
 					
-				if(((UINT32)MinPutMateOfs +  MateLen) > CurTargSeqLen)
+				if(((uint32_t)MinPutMateOfs +  MateLen) > CurTargSeqLen)
 					continue;
 
 				MaxPutMateOfs = PutMatchOfs + pPars->MaxReqPESepDist - (int)MateLen;
@@ -2331,20 +2331,20 @@ tSeqID EndingSeqID;
 int TooMAnyWarnings;
 tSeqID SeqID;
 tSeqID ProbeSeqID;
-UINT32 ProbeLen;
-UINT32 ProbeFlags;
+uint32_t ProbeLen;
+uint32_t ProbeFlags;
 tSeqWrd4 *pProbeHdr;
 tSeqWrd4 *pProbeSeqWrds;
 
-UINT32 MateSeqID;
+uint32_t MateSeqID;
 
-UINT32 NumProcessed;
+uint32_t NumProcessed;
 
-UINT32 NumOverlapping;
-UINT32 NumOverlapped;
+uint32_t NumOverlapping;
+uint32_t NumOverlapped;
 
-UINT64 SfxWrdIdx;
-UINT32 PrevProbeLen;
+uint64_t SfxWrdIdx;
+uint32_t PrevProbeLen;
 
 int PutMatchOfs;
 int PutMatchLen;
@@ -2359,8 +2359,8 @@ bool bProbeContainsTarget;
 
 
 tSeqID CurTargSeqID;
-UINT32 CurTargSeqLen;
-UINT32 TargFlags;
+uint32_t CurTargSeqLen;
+uint32_t TargFlags;
 tSeqWrd4 *pHit;
 tSeqWrd4 *pCurTargStartSeqWrd;
 int TargSubs;
@@ -2369,7 +2369,7 @@ tsSeqEdge *pProvAcceptedEdge;
 tsSeqEdge ProvAcceptedEdges[cMaxOverlapsProbeTarg];
 int ProvIdx;
 int NumProvAcceptedEges;
-UINT32 NumAdd2Graph;
+uint32_t NumAdd2Graph;
 
 gDiagnostics.DiagOut(eDLDebug,gszProcName,"Thread %d startup for overlap identification...",pPars->ThreadIdx);
 
@@ -2459,7 +2459,7 @@ while(GetSeqProcRange(&StartingSeqID,&EndingSeqID,cMaxMultiSeqFlags) > 0)
 							pPars->pProbeSeqWrds,				// pts to probes flank subsequence
 							MinOvrlp,							// probe length (in bases, not tSeqWrd4's) required to minimally exactly match over
 							m_Sequences.pSeqs2Assemb,			// target sequence
-							(UINT8 *)m_Sequences.pSuffixArray,	// target sequence suffix array
+							(uint8_t *)m_Sequences.pSuffixArray,	// target sequence suffix array
 							0,									// low index in pSfxArray
 							m_Sequences.NumSuffixEls-1);		// high index in pSfxArray
 
@@ -2477,7 +2477,7 @@ while(GetSeqProcRange(&StartingSeqID,&EndingSeqID,cMaxMultiSeqFlags) > 0)
 					break;
 
 				// which target was hit and what length is it?
-				pCurTargStartSeqWrd = (tSeqWrd4 *)GetSeqHeader(pHit,&CurTargSeqID,NULL,&TargFlags,(UINT32 *)&CurTargSeqLen,false);
+				pCurTargStartSeqWrd = (tSeqWrd4 *)GetSeqHeader(pHit,&CurTargSeqID,NULL,&TargFlags,(uint32_t *)&CurTargSeqLen,false);
 
 				// can't accept self hits
 				if(CurTargSeqID == ProbeSeqID)				// if self hit then not interested, try for another target sequence
@@ -2503,22 +2503,22 @@ while(GetSeqProcRange(&StartingSeqID,&EndingSeqID,cMaxMultiSeqFlags) > 0)
 					{
 					if(ProbeFlags & cFlgSeqPE2)
 						{
-						if(((UINT32)PutMatchOfs + ProbeLen) > (UINT32)pPars->MaxReqPESepDist)		// needs to have overlapped within the maximum PE insert size
+						if(((uint32_t)PutMatchOfs + ProbeLen) > (uint32_t)pPars->MaxReqPESepDist)		// needs to have overlapped within the maximum PE insert size
 							continue;
 						}
 					else
-						if((CurTargSeqLen - (UINT32)PutMatchOfs) > (UINT32)pPars->MaxReqPESepDist)		// needs to have overlapped within the maximum PE insert size
+						if((CurTargSeqLen - (uint32_t)PutMatchOfs) > (uint32_t)pPars->MaxReqPESepDist)		// needs to have overlapped within the maximum PE insert size
 							continue;
 					}
 				else						// antisense onto sense, PE1 needs to be within MaxReqPESepDist of 5' SE and PE2 within MaxReqPESepDist of 3' SE                          
 					{
 					if(ProbeFlags & cFlgSeqPE2)
 						{
-						if((CurTargSeqLen - (UINT32)PutMatchOfs) > (UINT32)pPars->MaxReqPESepDist)		// needs to have overlapped within the maximum PE insert size
+						if((CurTargSeqLen - (uint32_t)PutMatchOfs) > (uint32_t)pPars->MaxReqPESepDist)		// needs to have overlapped within the maximum PE insert size
 							continue;
 						}
 					else
-						if(((UINT32)PutMatchOfs + ProbeLen) > (UINT32)pPars->MaxReqPESepDist)		// needs to have overlapped within the maximum PE insert size
+						if(((uint32_t)PutMatchOfs + ProbeLen) > (uint32_t)pPars->MaxReqPESepDist)		// needs to have overlapped within the maximum PE insert size
 							continue;
 					}
 
@@ -2647,7 +2647,7 @@ else
 	{
 	if(((m_NumSeqEdges + 10) * sizeof(tsSeqEdge)) >= m_AllocMemSeqEdges)
 		{
-		size_t	memreq = (size_t)((m_AllocMemSeqEdges * 150) / (UINT64)100);	// increase current allocation by 50%
+		size_t	memreq = (size_t)((m_AllocMemSeqEdges * 150) / (uint64_t)100);	// increase current allocation by 50%
 #ifdef _WIN32
 		pSeqEdge = (tsSeqEdge *)realloc(m_pSeqEdges,memreq);
 #else
@@ -2663,7 +2663,7 @@ else
 			}
 
 		m_pSeqEdges = pSeqEdge;
-		m_AllocMemSeqEdges = (UINT64)memreq;
+		m_AllocMemSeqEdges = (uint64_t)memreq;
 		}
 	}
 
@@ -2708,7 +2708,7 @@ else
 	{
 	if((m_NumSeqVertices * sizeof(tsSeqVertex)) >= m_AllocMemSeqVertices)
 		{
-		size_t	memreq = (size_t)((m_AllocMemSeqVertices * 125) / (UINT64)100);	// increase current allocation by 25%
+		size_t	memreq = (size_t)((m_AllocMemSeqVertices * 125) / (uint64_t)100);	// increase current allocation by 25%
 #ifdef _WIN32
 		pSeqVertex = (tsSeqVertex *)realloc(m_pSeqVertices,memreq);
 #else
@@ -2724,7 +2724,7 @@ else
 			}
 
 		m_pSeqVertices = pSeqVertex;
-		m_AllocMemSeqVertices = (UINT64)memreq;
+		m_AllocMemSeqVertices = (uint64_t)memreq;
 		}
 	}
 
@@ -2739,7 +2739,7 @@ return(pSeqVertex->SeqVertID);
 tSeqID			// 0 if no sequence identifier after FromSeqID, otherwise the next ordered edge FromSeqID 
 CScaffolder::IterateNextFromSeqID(tSeqID FromSeqID)						// 0 to start from 1st
 {
-UINT64 EdgeIdx;
+uint64_t EdgeIdx;
 tsSeqEdge *pEdge;
 if(m_NumSeqEdges == 0 || m_pSeqEdges == NULL)
 	return(0);
@@ -2761,7 +2761,7 @@ return(0);
 tSeqID			// 0 if no sequence identifier after ToSeqID, otherwise the next ordered edge ToSeqID 
 CScaffolder::IterateNextToSeqID(tSeqID ToSeqID)	// 0 to start from 1st
 {
-UINT64 SeqIdx;
+uint64_t SeqIdx;
 tsSeqEdge *pEdge;
 if(m_NumSeqEdges == 0 || m_pSeqEdges == NULL || m_ppToSeqEdges == NULL)
 	return(0);
@@ -2787,7 +2787,7 @@ tsSeqEdge *			// NULL if unable to locate any with matching FromSeqID
 CScaffolder::IterateEdgeFromSeqID(tSeqID FromSeqID,	// iterate over sequence edges with matching FromSeqID
 								  tEdgeID *pEdgeId)	// set *pSeqIdx to 0 to return 1st sequence edge, returns index to use on next iteration of IterateEdgeFromSeqID()
 {
-UINT64 EdgeIdx;
+uint64_t EdgeIdx;
 tsSeqEdge *pEdge;
 if(m_NumSeqEdges == 0 || m_pSeqEdges == NULL || FromSeqID < m_LowestEdgeFromSeqID || FromSeqID > m_HighestEdgeFromSeqID)
 	return(NULL);
@@ -3155,10 +3155,10 @@ CScaffolder::LocateFirstEdgeFromSeqID(tSeqID FromSeqID)	// find lowest ordered m
 {
 tsSeqEdge *pEl2;
 int CmpRslt;
-INT64 Mark;
-INT64 TargPsn;
-INT64 NodeLo = 0;
-INT64 NodeHi = m_NumSeqEdges-1;
+int64_t Mark;
+int64_t TargPsn;
+int64_t NodeLo = 0;
+int64_t NodeHi = m_NumSeqEdges-1;
 if(m_NumSeqEdges == 0 || m_pSeqEdges == NULL)
 	return(0);
 
@@ -3187,7 +3187,7 @@ do {
 					return(Mark+1);
 				NodeHi = TargPsn - 1;
 				}	
-			TargPsn = ((UINT64)NodeLo + NodeHi) / 2L;
+			TargPsn = ((uint64_t)NodeLo + NodeHi) / 2L;
 
 			pEl2 = &m_pSeqEdges[TargPsn];
 			if(FromSeqID > pEl2->ProbeSeqID)
@@ -3224,10 +3224,10 @@ CScaffolder::LocateFirstEdgeToSeqID(tSeqID ToSeqID)	// find lowest ordered match
 {
 tsSeqEdge *pEl2;
 int CmpRslt;
-INT64 Mark;
-INT64 TargPsn;
-INT64 NodeLo = 0;
-INT64 NodeHi = m_NumSeqEdges-1;
+int64_t Mark;
+int64_t TargPsn;
+int64_t NodeLo = 0;
+int64_t NodeHi = m_NumSeqEdges-1;
 if(m_NumSeqEdges == 0 || m_pSeqEdges == NULL || m_ppToSeqEdges == NULL)
 	return(0);
 
@@ -3257,7 +3257,7 @@ do {
 					return(Mark+1);
 				NodeHi = TargPsn - 1;
 				}	
-			TargPsn = ((UINT64)NodeLo + NodeHi) / 2L;
+			TargPsn = ((uint64_t)NodeLo + NodeHi) / 2L;
 
 			pEl2 = m_ppToSeqEdges[TargPsn];
 			if(ToSeqID > pEl2->TargetSeqID)
@@ -3295,9 +3295,9 @@ CScaffolder::LocateVerticesSeqID(tSeqID SeqID)	// find vertex with this SeqID
 {
 tsSeqVertex *pEl2;
 int CmpRslt;
-INT64 TargPsn;
-INT64 NodeLo = 0;
-INT64 NodeHi = m_NumSeqVertices-1;
+int64_t TargPsn;
+int64_t NodeLo = 0;
+int64_t NodeHi = m_NumSeqVertices-1;
 if(m_NumSeqVertices == 0 || m_pSeqVertices == NULL)
 	return(0);
 

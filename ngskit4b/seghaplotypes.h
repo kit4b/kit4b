@@ -207,8 +207,8 @@ class CSegHaplotypes
 		AddReadset(char* pszReadset); // associate unique identifier with this readset name
 
 	size_t 
-		AddSNPSite( UINT32 TargSeqID,	// alignments were to this sequence - could be a chrom/contig/transcript
-			  UINT32 TargLoci,			// loci within target sequence at which SNP for parents were observed
+		AddSNPSite( uint32_t TargSeqID,	// alignments were to this sequence - could be a chrom/contig/transcript
+			  uint32_t TargLoci,			// loci within target sequence at which SNP for parents were observed
 			  etSeqBase P1Base,			// parent 1 base
 			  etSeqBase P2Base,			// parent 2 base
 			  etSeqBase P3Base,			// parent 3 base

@@ -21,8 +21,8 @@ const size_t cInitAllocKMerSeqInsts = 10000000;						// initially allocate to ho
 const size_t cReallocKMerSeqInsts = (cInitAllocKMerSeqInsts/2);		// then extend as may be required by this many instances
 const size_t cMaxKMerSeqInsts = 0xfffffff0;							// subject to available memory, can process at most this many unique KMer sequence instances
 
-const UINT32 cKMerSeqHashMask =    0x0fffff;						// hashing mask (cMaxKMerSeqHashArrayEntries - 1)
-const UINT32 cMaxKMerSeqHashArrayEntries = (cKMerSeqHashMask + 1);  // alloc hash array to hold this many entries, must be at least 1 + maximal sized sized hash
+const uint32_t cKMerSeqHashMask =    0x0fffff;						// hashing mask (cMaxKMerSeqHashArrayEntries - 1)
+const uint32_t cMaxKMerSeqHashArrayEntries = (cKMerSeqHashMask + 1);  // alloc hash array to hold this many entries, must be at least 1 + maximal sized sized hash
 
 const size_t cWorkThreadStackSize = (1024*1024*2);					// working threads (can be multiple) stack size
 
@@ -63,27 +63,27 @@ typedef struct TAG_sThreadIdentDuplicatePars {
 	bool bDedupeIndependent;		// if paired end preprocessing then treat as if single ended when deuping
 	tSeqID StartingSeqID;			// process starting with this sequence identifier (0 to start with 1st)
 	tSeqID EndingSeqID;				// process finishing with this sequence identifier (0 to finish with last)
-	UINT32 AllocMemProbeSubSeq;		// memory allocated to pProbeSubSeq
+	uint32_t AllocMemProbeSubSeq;		// memory allocated to pProbeSubSeq
 	void *pProbeSubSeq;				// to hold subsequence of packed probe sequence as used when exploring overlaps with other sequences
-	UINT32 AllocMemPE1SeqWrds;		// memory allocated to pPE1SeqWrds
+	uint32_t AllocMemPE1SeqWrds;		// memory allocated to pPE1SeqWrds
 	void *pPE1SeqWrds;				// used to hold PE1 packed SeqWrds when reverse complementing
-	UINT32 AllocMemPE2SeqWrds;		// memory allocated to pPE2SeqWrds
+	uint32_t AllocMemPE2SeqWrds;		// memory allocated to pPE2SeqWrds
 	void *pPE2SeqWrds;				// used to hold PE1 packed SeqWrds when reverse complementing
-	UINT32 NumProcessed;			// number processed
-	UINT32 NumDuplicates;			// of which this number are duplicates
-	UINT32 MaxDuplicates;			// highest number of duplicates encountered by this thread
-	UINT32 NumPE1Overlapping;		// number of PE1 sequences which overlapped other sequences
-	UINT32 NumPE2Overlapping;		// number of PE2 sequences which overlapped other sequences
-	UINT32 NumDupInstances[cMaxDupInstances+1]; // to hold duplicate instances counts
+	uint32_t NumProcessed;			// number processed
+	uint32_t NumDuplicates;			// of which this number are duplicates
+	uint32_t MaxDuplicates;			// highest number of duplicates encountered by this thread
+	uint32_t NumPE1Overlapping;		// number of PE1 sequences which overlapped other sequences
+	uint32_t NumPE2Overlapping;		// number of PE2 sequences which overlapped other sequences
+	uint32_t NumDupInstances[cMaxDupInstances+1]; // to hold duplicate instances counts
 
 } tsThreadIdentDuplicatePars;
 
 
 typedef struct TAG_sKMerSeqInst {
-	UINT32 NxtSeq;				// offset (multiply by m_KMerSeqInstSize ) into m_pKMerSeqs[] at which next KMer sequence with same hash starts or 0 if no same hashed KMer 
-	UINT32 NumInstances;		// number of instances of this KMer
-	UINT8 Flags:8;				// to hold sundry flags
-	UINT8 PackedSeqs[1];		// to contain the packed m_KMerSeqLen sequence, packed at 4 bases per byte 
+	uint32_t NxtSeq;				// offset (multiply by m_KMerSeqInstSize ) into m_pKMerSeqs[] at which next KMer sequence with same hash starts or 0 if no same hashed KMer 
+	uint32_t NumInstances;		// number of instances of this KMer
+	uint8_t Flags:8;				// to hold sundry flags
+	uint8_t PackedSeqs[1];		// to contain the packed m_KMerSeqLen sequence, packed at 4 bases per byte 
 	} tsKMerSeqInst;
 
 typedef struct TAG_sThreadKmerDistPars {
@@ -98,7 +98,7 @@ typedef struct TAG_sThreadKmerDistPars {
 #endif
 	int Rslt;						// returned result code
 	int KMerLen;					// KMer length
-	INT64 TotNumReads;				// total number of reads processed by this thread
+	int64_t TotNumReads;				// total number of reads processed by this thread
 } tsThreadKmerDistPars;
 
 
@@ -123,14 +123,14 @@ typedef struct TAG_sThreadIdentOverlapPars {
 	int OverlapSense;				// 0 sense overlaps sense, 1 antisense overlaps sense, 2 sense overlaps antisense
 	tSeqID StartingSeqID;			// process starting with this sequence identifier (0 to start with 1st)
 	tSeqID EndingSeqID;				// process finishing with this sequence identifier (0 to finish with last)
-	UINT32 AllocMemOverlapSeq;		// memory allocated to pOverlapSeq and pOverlapFlankSeq
+	uint32_t AllocMemOverlapSeq;		// memory allocated to pOverlapSeq and pOverlapFlankSeq
 	void *pOverlapSeq;				// to hold a copy of packed probe sequence as used (may have been revcpl) when exploring overlaps with other sequences
 	void *pOverlapFlankSeq;			// to hold subsequence (flank sequence) of pOverlapSeq
-	UINT32 NumProcessed;			// number processed
-	UINT32 NumOverlapping;			// number of sequences which overlapped other sequences
-	UINT32 NumOverlapped;			// number of sequences determined as being overlapped
-	UINT16 FlgOverlapping;			// use this flag as marker for sequences which overlap at least one other sequence 
-	UINT16 FlgOverlapped;			// use this flag as marker for sequences which are overlapped by at least one other sequence 
+	uint32_t NumProcessed;			// number processed
+	uint32_t NumOverlapping;			// number of sequences which overlapped other sequences
+	uint32_t NumOverlapped;			// number of sequences determined as being overlapped
+	uint16_t FlgOverlapping;			// use this flag as marker for sequences which overlap at least one other sequence 
+	uint16_t FlgOverlapped;			// use this flag as marker for sequences which are overlapped by at least one other sequence 
 } tsThreadIdentOverlapPars;
 
 #pragma pack()
@@ -147,10 +147,10 @@ class CArtefactReduce : public CKit4bdna
 	int m_KMerSeqLen;				// current KMer sequence length
 	int m_KMerSeqInstSize;			// size of a complete tsKMerSeqInst containing m_KMerSeqLen bases
 	int m_NumKMerSeqHashes;			// number of hashes currently used in m_pKMerSeqHashes
-	UINT32 *m_pKMerSeqHashes;		// array, indexed by hashes over KMerSeq sequences, holding offsets (mult by m_KMerSeqInstSize) into packed m_pKMerSeqs at which KMer sequence instance starts 
+	uint32_t *m_pKMerSeqHashes;		// array, indexed by hashes over KMerSeq sequences, holding offsets (mult by m_KMerSeqInstSize) into packed m_pKMerSeqs at which KMer sequence instance starts 
 
-	UINT32 m_UsedKMerSeqInsts;		// this many KMer tsKMerSeqInst instances have been used 
-	UINT32 m_AllocdKMerSeqInsts;	// allocation was for this many KMer tsKMerSeqInst instances
+	uint32_t m_UsedKMerSeqInsts;		// this many KMer tsKMerSeqInst instances have been used 
+	uint32_t m_AllocdKMerSeqInsts;	// allocation was for this many KMer tsKMerSeqInst instances
 	size_t m_AllocdKMerSeqInstsMem;	// allocation was for this size
 	tsKMerSeqInst *m_pKMerSeqs;		// allocated to hold tsKMerSeqInst instances
 

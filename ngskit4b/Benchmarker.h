@@ -111,8 +111,8 @@ class CBenchmark {
 	char m_szResultsFile[_MAX_PATH];	// benchmarking m2 results appended to this CSV file
 	char m_szExperimentDescr[cMaxDatasetSpeciesChrom + 1];	// experiment descriptor by which benchmarking results can be identified in szResultsFile
 
-	INT64 m_GenomeLen;				// total genome length including concatenators
-	INT32 m_GenomeScaledLen;		// sum of all chrom scaled lengths, will always be less than INT_MAX
+	int64_t m_GenomeLen;				// total genome length including concatenators
+	int32_t m_GenomeScaledLen;		// sum of all chrom scaled lengths, will always be less than INT_MAX
 	int m_NumChromSeqs;				// number of chromosomes loaded
 	tsBMChromSeq *m_pChromSeqs;		// pts to chromseqs array
 
@@ -147,7 +147,7 @@ class CBenchmark {
 	uint32_t m_ScoredReads;			// number of aligned simulation which were scored
 
 	uint32_t m_NumGroundTruthReads;		// loaded this many ground truths loaded from simulated reads
-	INT64 m_TotGroundTruthReadBases;	// total number of sequence bases in loaded ground truth reads
+	int64_t m_TotGroundTruthReadBases;	// total number of sequence bases in loaded ground truth reads
 	size_t m_UsedGroundTruthsMem;	// loaded ground truths are using this sized memory
 	size_t m_AllocdGroundTruthsMem;	// allocated this size memory to hold observed error profiles
 	uint8_t *m_pGroundTruths;		// allocated to hold ground truths loaded from simulated reads

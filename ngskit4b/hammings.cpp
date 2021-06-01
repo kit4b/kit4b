@@ -65,10 +65,10 @@ typedef struct TAG_sThreadParams {
 	int ThreadID;		// uniquely (1..N) identifies this set of thread processing parameters
 	bool bWatsonOnly;	// true if watson strand only (no crick revcpl processing)
 	int SampleN;		// sample (process) every N sweep instance
-	UINT32 SSofs;		// start processing with this relative (to first) subsequence (1..m_NumSubSeqs-1)
-	UINT32 SeqDelta;	// process every SeqDelta subsequences
-	UINT32 NumSeqs;	    // process, at most, this number of subsequences
-	UINT64 HamDistOfs;  // offset into m_HamDist at which the edit distances for this processing instance are to be written
+	uint32_t SSofs;		// start processing with this relative (to first) subsequence (1..m_NumSubSeqs-1)
+	uint32_t SeqDelta;	// process every SeqDelta subsequences
+	uint32_t NumSeqs;	    // process, at most, this number of subsequences
+	uint64_t HamDistOfs;  // offset into m_HamDist at which the edit distances for this processing instance are to be written
 	int State;		    // processing state: 0 if waiting to be processed, 1 if currently being processed, 2 if processing completed
 } tsThreadParams;
 #pragma pack()
@@ -77,18 +77,18 @@ typedef struct TAG_sThreadParams {
 // Hamming specific structures
 const int cMaxHHammingChroms = 1000;		// can handle at most this many chromosomes with hammings
 typedef struct TAG_sHHamChrom {
-	UINT32 ChromID;						// uniquely identifies this chromosome
-	UINT8  szChrom[cMaxDatasetSpeciesChrom];	// chrom name
-	UINT32 NumEls;						// number of subsequences with hammings on this chrom
-	UINT16 Dists[1];					// array, in ascending loci order, of hamming distances
+	uint32_t ChromID;						// uniquely identifies this chromosome
+	uint8_t  szChrom[cMaxDatasetSpeciesChrom];	// chrom name
+	uint32_t NumEls;						// number of subsequences with hammings on this chrom
+	uint16_t Dists[1];					// array, in ascending loci order, of hamming distances
 } tsHHamChrom;
 
 typedef struct TAG_sHHamHdr {
-	UINT8 Magic[4];		        // magic chars 'bham' to identify this file as a biosequence file containing hamming edit distances
-	UINT32 Version;				// structure version
-	INT32 Len;					// file length, also allocation size required when loading hammings into memory
-	UINT16 NumChroms;		    // number of chromosomes with Hammings
-	UINT32 ChromOfs[cMaxHHammingChroms];	// offsets to each chromosomes respective tsHHamChrom
+	uint8_t Magic[4];		        // magic chars 'bham' to identify this file as a biosequence file containing hamming edit distances
+	uint32_t Version;				// structure version
+	int32_t Len;					// file length, also allocation size required when loading hammings into memory
+	uint16_t NumChroms;		    // number of chromosomes with Hammings
+	uint32_t ChromOfs[cMaxHHammingChroms];	// offsets to each chromosomes respective tsHHamChrom
 } tsHHamHdr;
 
 const int cAllocHamDist = sizeof(tsHHamHdr) + sizeof(tsHHamChrom) + 10000000; // allocate for hamming distances in this sized chunks
@@ -131,8 +131,8 @@ Process(etPMode PMode,			// processing mode
 		etSensitivity Sensitivity, // restricted hamming processing sensitivity
 		etResFormat ResFormat,	// restricted Hamming output file format
 		int RHamm,			    // if > 0 then restricted hammings limit
-		UINT32 SweepStart,		// start processing from this sweep instance (1..GenomeLen) or if distributed processing then the total number of nodes
-		UINT32 SweepEnd,		// finish processing at this sweep instance (0 for all remaining or SweepStart..GenomeLen) or if distributed processing then the node instance
+		uint32_t SweepStart,		// start processing from this sweep instance (1..GenomeLen) or if distributed processing then the total number of nodes
+		uint32_t SweepEnd,		// finish processing at this sweep instance (0 for all remaining or SweepStart..GenomeLen) or if distributed processing then the node instance
 		int SeqLen,				// Hamming for these length sequences
 		int SampleN,			// sample (process) every N sweep instance (or if restricted Hammings then every Nth K-mer) 
 		int IntraInterBoth,	    // 0: hammings over both intra (same sequence as probe K-mer drawn from) and inter (different sequences to that from which probe K-mer drawn), 1: Intra only, 2: Inter only
@@ -142,17 +142,17 @@ Process(etPMode PMode,			// processing mode
 		char *pszHammingFile);	// writeout Hamming edit distances into this file
 
 int LoadGenome(char *pszBioSeqFile); // load genome from this file
-void GHamDistWatson(UINT16 *pHDs,		// where to return Hamming differentials for each subsequence
+void GHamDistWatson(uint16_t *pHDs,		// where to return Hamming differentials for each subsequence
 			  int SubSeqLen,	// generate Hammings edit distances for subsequences of this length
-			  UINT32 SSofs,		// offset between subsequences for current pass
-			  UINT8 *pGenomeSeq, // genome sequence (concatenated chrom seqs, separated by eBaseEOSs) with final chrom terminated by eBaseEOG, not eBaseEOS
-			  UINT32 GenomeLen);	 // total genome length including chrom eBaseEOS markers, but exluding start/end eBaseEOG markers
+			  uint32_t SSofs,		// offset between subsequences for current pass
+			  uint8_t *pGenomeSeq, // genome sequence (concatenated chrom seqs, separated by eBaseEOSs) with final chrom terminated by eBaseEOG, not eBaseEOS
+			  uint32_t GenomeLen);	 // total genome length including chrom eBaseEOS markers, but exluding start/end eBaseEOG markers
 
-void GHamDistCrick(UINT16 *pHDs,		// where to return Hamming differentials for each subsequence
+void GHamDistCrick(uint16_t *pHDs,		// where to return Hamming differentials for each subsequence
 			  int SubSeqLen,	// generate Hammings edit distances for subsequences of this length
-			  UINT32 SSofs,		// offset between subsequences for current pass
-			  UINT8 *pGenomeSeq, // genome sequence (concatenated chrom seqs, separated by eBaseEOSs) with final chrom terminated by eBaseEOG, not eBaseEOS
-			  UINT32 GenomeLen);	 // total genome length including chrom eBaseEOS markers, but exluding start/end eBaseEOG markers
+			  uint32_t SSofs,		// offset between subsequences for current pass
+			  uint8_t *pGenomeSeq, // genome sequence (concatenated chrom seqs, separated by eBaseEOSs) with final chrom terminated by eBaseEOG, not eBaseEOS
+			  uint32_t GenomeLen);	 // total genome length including chrom eBaseEOS markers, but exluding start/end eBaseEOG markers
 
 // use to return the processing parameters for use by calling thread instance
 tsThreadParams *					// returns NULL if no more processing parameters available
@@ -663,7 +663,7 @@ if (!argerrors)
 	SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
 #endif
 	gStopWatch.Start();
-	Rslt = Process(PMode,szFounderPrefix,bWatsonOnly,Sensitivity,ResFormat,RHamm,(UINT32)SweepStart,(UINT32)SweepEnd,SeqLen,SampleN,IntraInterBoth,NumThreads,szInFile,szInSeqFile,szOutFile);
+	Rslt = Process(PMode,szFounderPrefix,bWatsonOnly,Sensitivity,ResFormat,RHamm,(uint32_t)SweepStart,(uint32_t)SweepEnd,SeqLen,SampleN,IntraInterBoth,NumThreads,szInFile,szInSeqFile,szOutFile);
 	gStopWatch.Stop();
 	Rslt = Rslt >=0 ? 0 : 1;
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Exit code: %d Total processing time: %s",Rslt,gStopWatch.Read());
@@ -684,10 +684,10 @@ typedef struct TAG_sGChrom {
 	int ChromSeqID;			// m_pChromSeqs[ChromSeqID-1] of this tsChromSeq instance
 	int ChromID;
 	char szChromName[cMaxDatasetSpeciesChrom];
-	UINT32 Len;				// actual length of this chromosome
-	UINT32 SeqOfs;			// offset in m_pGenomeSeq[] at which this chromosome sequence starts
+	uint32_t Len;				// actual length of this chromosome
+	uint32_t SeqOfs;			// offset in m_pGenomeSeq[] at which this chromosome sequence starts
 	etSeqBase *pSeq;		// pts to start of this chromosome sequence in m_pGenomeSeq
-	UINT32 NumSubSeqs;		// number of subsequences of length m_SeqLen on this chromosome
+	uint32_t NumSubSeqs;		// number of subsequences of length m_SeqLen on this chromosome
 } tsGChrom;
 
 #ifdef _WIN32
@@ -699,7 +699,7 @@ void *ThreadedGHamDist(void * pThreadPars);
 #endif
 
 etPMode m_PMode;				// processing mode
-UINT32 m_SubSeqLen;				// subsequence lengths over which to calc Hamming edit distances
+uint32_t m_SubSeqLen;				// subsequence lengths over which to calc Hamming edit distances
 int m_NumProcThreads;			// actual number of processing threads
 int m_hOutFile;					// output results file handle
 char *m_pszOutFile;				// output file name
@@ -709,12 +709,12 @@ CBioSeqFile *m_pBioSeqFile;		// genome assembly
 char m_szSpecies[cMaxDatasetSpeciesChrom+1];		// species (title) as retrieved from bioseqfile
 int m_NumGChroms;				// number of chromosomes loaded
 tsGChrom *m_pGChroms;			// pts to gchrom array
-UINT8 *m_pGenomeSeq;			// allocated to hold concatenated (starts with eBaseEOG marker) chromosome sequences terminated by final eBaseEOG
-INT64 m_AllocGenomeSeq;			// allocation size for m_pGenomeSeq
-UINT32 m_GenomeLen;				// total genome length including separator markers but excluding inital and final eBaseEOG
-UINT16 *m_pHamDist;				// allocated to hold Hamming edit distances (expected to be m_NumProcThreads * (m_GenomeLen-2)), start/final eBaseEOG have no hammings
-INT64 m_AllocHamDist;			// allocation size for m_pHamDist
-UINT32 m_NumSubSeqs;			// total number of actual Hamming subsequences in genome
+uint8_t *m_pGenomeSeq;			// allocated to hold concatenated (starts with eBaseEOG marker) chromosome sequences terminated by final eBaseEOG
+int64_t m_AllocGenomeSeq;			// allocation size for m_pGenomeSeq
+uint32_t m_GenomeLen;				// total genome length including separator markers but excluding inital and final eBaseEOG
+uint16_t *m_pHamDist;				// allocated to hold Hamming edit distances (expected to be m_NumProcThreads * (m_GenomeLen-2)), start/final eBaseEOG have no hammings
+int64_t m_AllocHamDist;			// allocation size for m_pHamDist
+uint32_t m_NumSubSeqs;			// total number of actual Hamming subsequences in genome
 
 double m_PercentComplete;		// proportion of all hammings generated
 
@@ -734,7 +734,7 @@ int m_RHamm;						// if > 0 then restricted hammings limit
 int m_SampleN;						// sample (process) every N sweep instance (or if restricted Hammings then every Nth K-mer) 
 int m_KMerLen;						// Hammings for these K-mer length sequences
 bool m_bWatsonOnly;					// true if watson strand only processing
-UINT8 *m_pRHammings;				// to hold restricted hammings
+uint8_t *m_pRHammings;				// to hold restricted hammings
 size_t m_TotAllocHammings;			// memory allocation size for holding restricted hammings
 
 CSfxArray *m_pSfxArray; // suffix array holds genome of interest
@@ -889,8 +889,8 @@ tsWorkerThreads *pPars = (tsWorkerThreads *)pThreadPars; // makes it easier not 
 
 // iterate over thread processing parameter sets until processing completed for this thread
 tsThreadParams *pParams;
-UINT32 Seq;
-UINT32 Idx;
+uint32_t Seq;
+uint32_t Idx;
 double PercentComplete;
 while((pParams = ThreadedIterParams())!=NULL)
 	{
@@ -905,7 +905,7 @@ while((pParams = ThreadedIterParams())!=NULL)
 			}
 		if(!(Idx % 10))
 			{
-			PercentComplete = (double)((UINT64)Idx*100)/pParams->NumSeqs;
+			PercentComplete = (double)((uint64_t)Idx*100)/pParams->NumSeqs;
 #ifdef _WIN32
 			WaitForSingleObject(m_hMtxThreadParams,INFINITE);
 #else
@@ -986,7 +986,7 @@ if(HamHdr.NumChroms < 1)
 	return(eBSFerrNoEntries);
 	}
 
-if((m_pPregenHamHdr = (tsHHamHdr *)new UINT8 [HamHdr.Len])==NULL)
+if((m_pPregenHamHdr = (tsHHamHdr *)new uint8_t [HamHdr.Len])==NULL)
 	{
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Unable to allocate memory (%d bytes) for holding Hamming distances loaded from - %s",HamHdr.Len,pszHammings);
 	close(hHamFile);
@@ -994,7 +994,7 @@ if((m_pPregenHamHdr = (tsHHamHdr *)new UINT8 [HamHdr.Len])==NULL)
 	return(eBSFerrMem);
 	}
 memcpy(m_pPregenHamHdr,&HamHdr,sizeof(tsHHamHdr));
-if(read(hHamFile,(UINT8 *)m_pPregenHamHdr+sizeof(tsHHamHdr),HamHdr.Len-sizeof(tsHHamHdr))!=HamHdr.Len-sizeof(tsHHamHdr))
+if(read(hHamFile,(uint8_t *)m_pPregenHamHdr+sizeof(tsHHamHdr),HamHdr.Len-sizeof(tsHHamHdr))!=HamHdr.Len-sizeof(tsHHamHdr))
 	{
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Unable to read all Hamming edit distances from - %s",pszHammings);
 	close(hHamFile);
@@ -1013,7 +1013,7 @@ TransHammingsCSV(char *pszHamFile,char *pszOutFile)
 {
 int Rslt;
 int ChromIdx;
-UINT32 Loci;
+uint32_t Loci;
 tsHHamChrom *pCurChrom;
 char szBuff[32000];
 int BuffOfs;
@@ -1047,7 +1047,7 @@ if(m_hOutFile < 0)
 BuffOfs = sprintf(szBuff,"\"Chrom\",\"Loci\",\"Hamming\"\n");
 for(ChromIdx = 0; ChromIdx < m_pPregenHamHdr->NumChroms; ChromIdx++)
 	{
-	pCurChrom = (tsHHamChrom *)((UINT8 *)m_pPregenHamHdr + m_pPregenHamHdr->ChromOfs[ChromIdx]);
+	pCurChrom = (tsHHamChrom *)((uint8_t *)m_pPregenHamHdr + m_pPregenHamHdr->ChromOfs[ChromIdx]);
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Transforming chrom: '%s' with %d Hammings",pCurChrom->szChrom,pCurChrom->NumEls);
 	for(Loci = 0; Loci < pCurChrom->NumEls; Loci++)
 		{
@@ -1431,7 +1431,7 @@ while((Rslt=pHammings->NextLine()) > 0)
 			}
 		m_pHamHdr->ChromOfs[m_pHamHdr->NumChroms] = m_pHamHdr->Len;
 		m_pHamHdr->Len += sizeof(tsHHamChrom) - 1;
-		pCurHamChrom = (tsHHamChrom *)((UINT8 *)m_pHamHdr + m_pHamHdr->ChromOfs[m_pHamHdr->NumChroms++]);
+		pCurHamChrom = (tsHHamChrom *)((uint8_t *)m_pHamHdr + m_pHamHdr->ChromOfs[m_pHamHdr->NumChroms++]);
 		pCurHamChrom->NumEls = 0;
 		pCurHamChrom->ChromID = m_pHamHdr->NumChroms;
 		strcpy((char *)pCurHamChrom->szChrom,pszChrom);
@@ -1449,7 +1449,7 @@ while((Rslt=pHammings->NextLine()) > 0)
 			}
 		m_pHamHdr = pTmpHdr;
 		AllocLen += cAllocHamDist;
-		pCurHamChrom = (tsHHamChrom *)((UINT8 *)m_pHamHdr + m_pHamHdr->ChromOfs[m_pHamHdr->NumChroms-1]);
+		pCurHamChrom = (tsHHamChrom *)((uint8_t *)m_pHamHdr + m_pHamHdr->ChromOfs[m_pHamHdr->NumChroms-1]);
 		}
 
 	// check that the hamming loci are monotonically ascending
@@ -1515,8 +1515,8 @@ return(eBSFSuccess);
 
 // EstL
 // Estimate Lx from genome length, number of nodes and current node instance
-UINT32
-EstL(UINT32 GenomeLen,int NodeInst,int NumNodes)
+uint32_t
+EstL(uint32_t GenomeLen,int NodeInst,int NumNodes)
 {
 if(NodeInst < 1)
 	return(0);
@@ -1534,36 +1534,36 @@ if(L2 > GenomeLen)
 	L2 = GenomeLen;
 do {
 	L2Est = L2;
-	ActWork = ((UINT64)GenomeLen * L2Est) + (L2Est * L2Est)/2;
+	ActWork = ((uint64_t)GenomeLen * L2Est) + (L2Est * L2Est)/2;
 	double WrkRatio = TargWork/ActWork;
 	L2 = ((L2Est * TargWork)/ActWork);
 	}
-while(abs((long)(((INT64)L2Est - (INT64)L2))) > 1);
-return((UINT32)L2Est);
+while(abs((long)(((int64_t)L2Est - (int64_t)L2))) > 1);
+return((uint32_t)L2Est);
 }
 
 // following are the structures used for restricted hamming processing
 #pragma pack(1)
 typedef struct TAG_sHammProcState {
-	UINT32 NumEntryIDs;		// number of entry identifiers
-	UINT32 CurEntryID;		// current entry for which hammings are being generated
-	UINT32 CurEntryLen;		// total length of this entries sequence
-	UINT32 CurSeqOfs;		// last sequence was processed starting at this chrom offset
-	UINT32 CurSeqLen;		// length of sequence which was last processed
-	UINT32 NxtSeqOfs;		// start next hamming generation from this offset
+	uint32_t NumEntryIDs;		// number of entry identifiers
+	uint32_t CurEntryID;		// current entry for which hammings are being generated
+	uint32_t CurEntryLen;		// total length of this entries sequence
+	uint32_t CurSeqOfs;		// last sequence was processed starting at this chrom offset
+	uint32_t CurSeqLen;		// length of sequence which was last processed
+	uint32_t NxtSeqOfs;		// start next hamming generation from this offset
 	bool bWatsonOnly;		// true if watson (sense) strand only processing
 	int RHamm;				// restricted hammings limit
-	UINT32 MinCoreDepth;	// initially explore cores to at least this depth and only continue exploring if depth would be no more than MaxCoreDepth
-	UINT32 MaxCoreDepth;	// explore cores to at most this depth
-	UINT32 KMerLen;			// Hammings for these KMer length sequences
-	UINT32 SampleN;			// sample (process) every Nth K-mer 
-	UINT32 MaxHammSeqLen;	// generate hammings over this maximal length sequence
+	uint32_t MinCoreDepth;	// initially explore cores to at least this depth and only continue exploring if depth would be no more than MaxCoreDepth
+	uint32_t MaxCoreDepth;	// explore cores to at most this depth
+	uint32_t KMerLen;			// Hammings for these KMer length sequences
+	uint32_t SampleN;			// sample (process) every Nth K-mer 
+	uint32_t MaxHammSeqLen;	// generate hammings over this maximal length sequence
 	bool bProcSepKMers;		// true if kmer sequences are separate from suffix array sequences
 	etSeqBase *pSeq;		// if separate kmer sequences then pts to start of sequence
-	UINT32 EntryHammOfs;	// offset into pHammings of where current entry hammings to be written
-	UINT8 *pHammings;		// pts to start of returned hammings for all entries
-	UINT32 ApproxNumChroms; // approximate number of chromosomes for which hammings have beein generated by all threads
-	INT64 ApproxNumHammings; // approximate total number of hammings generated by all threads
+	uint32_t EntryHammOfs;	// offset into pHammings of where current entry hammings to be written
+	uint8_t *pHammings;		// pts to start of returned hammings for all entries
+	uint32_t ApproxNumChroms; // approximate number of chromosomes for which hammings have beein generated by all threads
+	int64_t ApproxNumHammings; // approximate total number of hammings generated by all threads
 	} tsHammProcState;
 
 // restricted hamming processing threads
@@ -1577,14 +1577,14 @@ typedef struct TAG_RHThread {
 #endif
 	int NumIdentNodes;		// number of ident nodes allocd for use by this thread
 	tsIdentNode *pIdentNodes;	// thread to use these nodes
-	UINT32 State;			// processing state
+	uint32_t State;			// processing state
 	tsHammProcState *pHammState; // current hamming processing state common to all threads
-	UINT32 CurHammSeqLen;		// current length of sequence being processed by this thread
-	UINT32 EntryID;			// if using suffix array sequences then the entry identifer
-	UINT32 SeqOfs;			// if using suffix array sequences then the sequence offset
-	UINT8 *pSeq;			// if separate kmer sequences then pts to start of sequence
+	uint32_t CurHammSeqLen;		// current length of sequence being processed by this thread
+	uint32_t EntryID;			// if using suffix array sequences then the entry identifer
+	uint32_t SeqOfs;			// if using suffix array sequences then the sequence offset
+	uint8_t *pSeq;			// if separate kmer sequences then pts to start of sequence
 	int IntraInterBoth;	    // 0: hammings over both intra (same sequence as probe K-mer drawn from) and inter (different sequences to that from which probe K-mer drawn), 1: Intra only, 2: Inter only
-	UINT8 *pHammings;		// Hammings returned
+	uint8_t *pHammings;		// Hammings returned
 } tsRHThread;
 
 #pragma pack()
@@ -1598,7 +1598,7 @@ void *RestrictedHammingThread(void * pThreadPars)
 {
 int Rslt;
 bool bCompleted;
-UINT8 *pHammings;
+uint8_t *pHammings;
 tsHammProcState *pHammState;
 tsGChrom *pChrom;
 tsRHThread *pPars = (tsRHThread *)pThreadPars;
@@ -1671,7 +1671,7 @@ do {
 	else
 		bCompleted = true;
 	if(!bCompleted && pHammState->CurEntryLen >= pHammState->KMerLen)
-		pHammState->ApproxNumHammings += (INT64)(1 + pPars->CurHammSeqLen - pHammState->KMerLen);
+		pHammState->ApproxNumHammings += (int64_t)(1 + pPars->CurHammSeqLen - pHammState->KMerLen);
 
 #ifdef _WIN32
 	ReleaseMutex(m_hMtxThreadParams);
@@ -1716,17 +1716,17 @@ ReportRestrictedHammingsCSV(char *pszFounderPrefix, // reporting hammings for th
 {
 char *pszBuffer;
 int BuffOfs;
-UINT32 CurLoci;
+uint32_t CurLoci;
 int ChromID;
 tsGChrom *pChrom;
-UINT8 *pRHammings;
+uint8_t *pRHammings;
 int NumEntries;
 int ChromLen;
 char szChromName[100];
 int CurHammingLen;
 int CurHamming;
 int CurHammingLoci;
-UINT32 RHammingsOfs;
+uint32_t RHammingsOfs;
 int PrefixLen;
 char szPrefix[cMaxSHLenPrefix + 3];		// allowing for 2 terminating chars plus '\0'
 
@@ -1811,7 +1811,7 @@ for(ChromID = 0; ChromID < NumEntries; ChromID++)
 	CurHammingLen = 0;
 	CurHamming = *pRHammings;
 	CurHammingLoci = 0;
-	for(CurLoci = 1; CurLoci <= (UINT32)(ChromLen - KMerLen); CurLoci++,pRHammings++)
+	for(CurLoci = 1; CurLoci <= (uint32_t)(ChromLen - KMerLen); CurLoci++,pRHammings++)
 		{
 		if(*pRHammings == CurHamming)
 			{
@@ -1861,17 +1861,17 @@ ReportRestrictedHammingsBed(char *pszFounderPrefix, // reporting hammings for th
 {
 char szBuffer[16000];
 int BuffOfs;
-UINT32 CurLoci;
+uint32_t CurLoci;
 int ChromID;
 tsGChrom *pChrom;
-UINT8 *pRHammings;
+uint8_t *pRHammings;
 int NumEntries;
 int ChromLen;
 char szChromName[100];
 int CurHammingLen;
 int CurHamming;
 int CurHammingLoci;
-UINT32 RHammingsOfs;
+uint32_t RHammingsOfs;
 
 int PrefixLen;
 char szPrefix[cMaxSHLenPrefix + 3];		// allowing for 2 terminating chars plus '\0'
@@ -1947,7 +1947,7 @@ for(ChromID = 0; ChromID < NumEntries; ChromID++)
 	CurHammingLen = 1;
 	CurHamming = *pRHammings;
 	CurHammingLoci = 0;
-	for(CurLoci = 1; CurLoci <= (UINT32)(ChromLen - KMerLen); CurLoci++,pRHammings++)
+	for(CurLoci = 1; CurLoci <= (uint32_t)(ChromLen - KMerLen); CurLoci++,pRHammings++)
 		{
 		if(*pRHammings == CurHamming)
 			{
@@ -1995,14 +1995,14 @@ ReportRestrictedHammingsWiggle(char *pszFounderPrefix, // reporting hammings for
 {
 char szBuffer[16000];
 int BuffOfs;
-UINT32 CurLoci;
+uint32_t CurLoci;
 int ChromID;
 tsGChrom *pChrom;
-UINT8 *pRHammings;
+uint8_t *pRHammings;
 int NumEntries;
 int ChromLen;
 char szChromName[100];
-UINT32 RHammingsOfs;
+uint32_t RHammingsOfs;
 int PrefixLen;
 char szPrefix[cMaxSHLenPrefix + 3];		// allowing for 2 terminating chars plus '\0'
 
@@ -2082,7 +2082,7 @@ for(ChromID = 0; ChromID < NumEntries; ChromID++)
 	uint32_t SpanStart = 0;
 	uint8_t CurHammings = *pRHammings;
 
-	for(CurLoci = 0; CurLoci <= (UINT32)(ChromLen - KMerLen); CurLoci++,pRHammings++)
+	for(CurLoci = 0; CurLoci <= (uint32_t)(ChromLen - KMerLen); CurLoci++,pRHammings++)
 		{
 		if(*pRHammings != CurHammings) // will always match on 1st iteration over loci for current chrom
 			{
@@ -2134,8 +2134,8 @@ GenRestrictedHammings(char *pszFounderPrefix,	// filtering on this founder prefi
 {
 int Rslt;
 bool bProcSepKMers;
-UINT32 Len;
-INT64 TotLen;
+uint32_t Len;
+int64_t TotLen;
 int ChromID;
 int ChromIdx;
 tsGChrom *pChrom;
@@ -2246,19 +2246,19 @@ if(bProcSepKMers)
 	m_AllocGenomeSeq = m_GenomeLen;
 	#ifdef _WIN32
 	// use malloc instead of new() because of gnu new()/malloc issues - helps portability
-	m_pGenomeSeq = (UINT8 *) malloc((size_t)m_AllocGenomeSeq);
+	m_pGenomeSeq = (uint8_t *) malloc((size_t)m_AllocGenomeSeq);
 	if(m_pGenomeSeq == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadGenome: Memory allocation of %lld bytes failed",(INT64)m_AllocGenomeSeq);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadGenome: Memory allocation of %lld bytes failed",(int64_t)m_AllocGenomeSeq);
 		Reset(false);
 		return(eBSFerrMem);
 		}
 	#else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations so use mmap
-	m_pGenomeSeq = (UINT8 *)mmap(NULL,(size_t)m_AllocGenomeSeq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+	m_pGenomeSeq = (uint8_t *)mmap(NULL,(size_t)m_AllocGenomeSeq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pGenomeSeq == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadGenome: Memory allocation of %lld bytes through mmap()  failed",(INT64)m_AllocGenomeSeq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadGenome: Memory allocation of %lld bytes through mmap()  failed",(int64_t)m_AllocGenomeSeq,strerror(errno));
 		m_pGenomeSeq = NULL;
 		Reset(false);
 		return(eBSFerrMem);
@@ -2299,11 +2299,11 @@ if(bProcSepKMers)
 			pChrom->NumSubSeqs = 0;
 			continue;
 			}
-		pChrom->NumSubSeqs = (UINT32)ChromLen;
-		m_NumSubSeqs += (UINT32)ChromLen;
+		pChrom->NumSubSeqs = (uint32_t)ChromLen;
+		m_NumSubSeqs += (uint32_t)ChromLen;
 		}
 		gDiagnostics.DiagOut(eDLInfo,gszProcName,"Targeted suffix genome has %d sequences containing %llu total nucleotides, %u sequences of at least K-mer length %d",
-														m_NumGChroms,(UINT64)m_TotAllocHammings,m_NumSubSeqs,m_SubSeqLen);
+														m_NumGChroms,(uint64_t)m_TotAllocHammings,m_NumSubSeqs,m_SubSeqLen);
 
 
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Genome containing %llu total nucleotides loaded with %u subsequences of K-mer length %d...",m_TotAllocHammings,m_NumSubSeqs,m_SubSeqLen);
@@ -2312,7 +2312,7 @@ else
 	{
 	// determine the total number of subsequences over which Hammings are required
 	int EntryID;
-	UINT32 ChromLen;
+	uint32_t ChromLen;
 	int NumEntries = m_pSfxArray->GetNumEntries();
 	m_NumSubSeqs = 0;
 	m_TotAllocHammings = 0;
@@ -2323,29 +2323,29 @@ else
 		ChromLen -= (m_SubSeqLen-1);
 		if(ChromLen < 1)					// don't bother with chromosome too short to contain a subseq
 			continue;
-		m_NumSubSeqs += (UINT32)ChromLen;
+		m_NumSubSeqs += (uint32_t)ChromLen;
 		}
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Targeted suffix genome has %d sequences containing %llu total nucleotides, %u sequences of at least K-mer length %d",
-														NumEntries,(UINT64)m_TotAllocHammings,m_NumSubSeqs,m_SubSeqLen);
+														NumEntries,(uint64_t)m_TotAllocHammings,m_NumSubSeqs,m_SubSeqLen);
 	}
 
 m_pRHammings = NULL;
 
 #ifdef _WIN32
 	// use malloc instead of new() because of gnu new()/malloc issues - helps portability
-m_pRHammings = (UINT8 *) malloc((size_t)m_TotAllocHammings);
+m_pRHammings = (uint8_t *) malloc((size_t)m_TotAllocHammings);
 if(m_pRHammings == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadGenome: Memory allocation of %llu bytes failed",(INT64)m_TotAllocHammings);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadGenome: Memory allocation of %llu bytes failed",(int64_t)m_TotAllocHammings);
 	Reset(false);
 	return(eBSFerrMem);
 	}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations so use mmap
-m_pRHammings = (UINT8 *)mmap(NULL,(size_t)m_TotAllocHammings, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+m_pRHammings = (uint8_t *)mmap(NULL,(size_t)m_TotAllocHammings, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pRHammings == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadGenome: Memory allocation of %llu bytes through mmap()  failed",(INT64)m_TotAllocHammings,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadGenome: Memory allocation of %llu bytes through mmap()  failed",(int64_t)m_TotAllocHammings,strerror(errno));
 	m_pRHammings = NULL;
 	Reset(false);
 	return(eBSFerrMem);
@@ -2425,10 +2425,10 @@ for(ThreadIdx = 0; ThreadIdx < m_NumProcThreads; ThreadIdx++,pThreadParam++,pWor
 	}
 
 // wait for all threads to have completed
-UINT32 ApproxNumChroms;
-INT64 ApproxNumHammings;
-UINT32 PrevApproxNumChroms = 0;
-INT64 PrevApproxNumHammings = 0;
+uint32_t ApproxNumChroms;
+int64_t ApproxNumHammings;
+uint32_t PrevApproxNumChroms = 0;
+int64_t PrevApproxNumHammings = 0;
 
 // allow threads 10 seconds to startup
 #ifdef _WIN32
@@ -2498,13 +2498,13 @@ ApproxNumHammings = HammProcState.ApproxNumHammings;
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Progress: %llu K-mers processed from %d sequences",ApproxNumHammings,ApproxNumChroms);
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Completed restricted hammings generation...");
 
-UINT32 CurLoci;
+uint32_t CurLoci;
 //tsGChrom *pChrom;
-UINT8 *pRHammings;
-UINT32 SeqIdx;
+uint8_t *pRHammings;
+uint32_t SeqIdx;
 int NumEntries;
-UINT32 ChromLen;
-UINT32 RHammingsOfs;
+uint32_t ChromLen;
+uint32_t RHammingsOfs;
 
 if(pszHammingFile != NULL && pszHammingFile[0] != '\0')
 	{
@@ -2532,7 +2532,7 @@ if(pszHammingFile != NULL && pszHammingFile[0] != '\0')
 		}
 	}
 
-UINT64 CntHist[256];
+uint64_t CntHist[256];
 memset(CntHist,0,sizeof(CntHist));
 
 CurLoci = 0;
@@ -2543,8 +2543,8 @@ else
 	NumEntries = m_pSfxArray->GetNumEntries();
 
 RHammingsOfs = 0;
-UINT32 NumSampled = 0;
-UINT32 NumUnsampled = 0;
+uint32_t NumSampled = 0;
+uint32_t NumUnsampled = 0;
 for(ChromID = 0; ChromID < NumEntries; ChromID++)
 	{
 	CurLoci = 0;
@@ -2557,10 +2557,10 @@ for(ChromID = 0; ChromID < NumEntries; ChromID++)
 		ChromLen = m_pSfxArray->GetSeqLen(ChromID+1);
 	pRHammings = &m_pRHammings[RHammingsOfs];
 	RHammingsOfs += ChromLen;
-	if(ChromLen < (UINT32)KMerLen)
+	if(ChromLen < (uint32_t)KMerLen)
 		continue;
 
-	for(CurLoci = 0; CurLoci <= (UINT32)(ChromLen - (UINT32)KMerLen); CurLoci++,pRHammings++)
+	for(CurLoci = 0; CurLoci <= (uint32_t)(ChromLen - (uint32_t)KMerLen); CurLoci++,pRHammings++)
 		{
 		if(*pRHammings < 0x7f)
 			{
@@ -2583,7 +2583,7 @@ else
 if(SampleN > 1)
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Sampled %u K-mers, did not sample %u",NumSampled,NumUnsampled);
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Distribution:\nEditDist,Freq,Proportion");
-for(SeqIdx = 0; SeqIdx <= (UINT32)(RHamm+1); SeqIdx++)
+for(SeqIdx = 0; SeqIdx <= (uint32_t)(RHamm+1); SeqIdx++)
 	gDiagnostics.DiagOutMsgOnly(eDLInfo,"%d%c,%llu,%1.3f",SeqIdx,SeqIdx == RHamm+1 ? '+' : ' ',CntHist[SeqIdx],(CntHist[SeqIdx]*100.0f)/NumSampled);
 
 Reset(true);
@@ -2602,8 +2602,8 @@ Process(etPMode PMode,			// processing mode
 		etSensitivity Sensitivity, // restricted hamming processing sensitivity
 		etResFormat ResFormat,	// restricted Hamming output file format
 		int RHamm,			    // if > 0 then restricted hammings limit
-		UINT32 SweepStart,		// start processing from this sweep instance (1..GenomeLen) or if distributed processing then the total number of nodes
-		UINT32 SweepEnd,		// finish processing at this sweep instance (0 for all remaining or SweepStart..GenomeLen) or if distributed processing then the node instance
+		uint32_t SweepStart,		// start processing from this sweep instance (1..GenomeLen) or if distributed processing then the total number of nodes
+		uint32_t SweepEnd,		// finish processing at this sweep instance (0 for all remaining or SweepStart..GenomeLen) or if distributed processing then the node instance
 		int SeqLen,				// Hamming for this length sequences
 		int SampleN,			// sample (process) every N sweep instance (or if restricted Hammings then every Nth K-mer)
 		int IntraInterBoth,	    // 0: hammings over both intra (same sequence as probe K-mer drawn from) and inter (different sequences to that from which probe K-mer drawn), 1: Intra only, 2: Inter only
@@ -2613,8 +2613,8 @@ Process(etPMode PMode,			// processing mode
 		char *pszHammingFile)	// write Hamming edit distances into this file
 {
 int Rslt;
-UINT32 SSeqStart;
-UINT32 SSeqEnd;
+uint32_t SSeqStart;
+uint32_t SSeqEnd;
 
 Init();
 
@@ -2659,8 +2659,8 @@ if((Rslt=LoadGenome(pszGenomeFile))!=eBSFSuccess)
 
 if(PMode == ePMdist)
 	{
-	UINT32 L1;
-	UINT32 L2;
+	uint32_t L1;
+	uint32_t L2;
 	if(!bWatsonOnly)
 		{
 		L1 = EstL(m_GenomeLen,SweepEnd,SweepStart);
@@ -2668,14 +2668,14 @@ if(PMode == ePMdist)
 		}
 	else
 		{
-		UINT64 Area = ((UINT64)m_GenomeLen * (UINT64)m_GenomeLen)/2;
-		L1 = (UINT32)sqrt((2.0f * SweepEnd * Area)/SweepStart);
-		L2 = (UINT32)sqrt((2.0f * (SweepEnd - 1) * Area)/SweepStart) - 1;
+		uint64_t Area = ((uint64_t)m_GenomeLen * (uint64_t)m_GenomeLen)/2;
+		L1 = (uint32_t)sqrt((2.0f * SweepEnd * Area)/SweepStart);
+		L2 = (uint32_t)sqrt((2.0f * (SweepEnd - 1) * Area)/SweepStart) - 1;
 		}
 	SSeqStart = m_GenomeLen - L1;
 	SSeqEnd = m_GenomeLen - L2;
 	// adjust SweepStart (down) and SweepEnd (up) to allow for the presence of interchromosome EOS markers and rounding errors
-	if(SSeqStart > (UINT32)(2 * m_NumGChroms))
+	if(SSeqStart > (uint32_t)(2 * m_NumGChroms))
 		SSeqStart -= (2 * m_NumGChroms);
 	else
 		SSeqStart = 0;
@@ -2709,7 +2709,7 @@ else	// single node processing
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Node sweep start is %u, and sweep end is %u",SSeqStart,SSeqEnd);
 
 // adjust m_NumProcThreads so as to ensure each processing thread has at least 1 sweep to process
-m_NumProcThreads = (int)min(1 + SSeqEnd - SSeqStart,(UINT32)m_NumProcThreads);
+m_NumProcThreads = (int)min(1 + SSeqEnd - SSeqStart,(uint32_t)m_NumProcThreads);
 
 if(pszHammingFile != NULL && pszHammingFile[0] != '\0')
 	{
@@ -2738,10 +2738,10 @@ if(pszHammingFile != NULL && pszHammingFile[0] != '\0')
 
 m_PercentComplete = 0.0;
 tsThreadParams *pThreadParam;
-UINT32 BeginSeq;
-UINT32 EndSeq;
-UINT64 HamDistOfs;
-UINT32 NumSubSeqs;
+uint32_t BeginSeq;
+uint32_t EndSeq;
+uint64_t HamDistOfs;
+uint32_t NumSubSeqs;
 int ThreadIdx;
 HamDistOfs = 0;
 pThreadParam = m_pThreadParams;
@@ -2848,16 +2848,16 @@ gDiagnostics.DiagOut(eDLInfo,gszProcName,"Progress: %1.2f%% completed",m_Percent
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Merging Hamming edit distances...");
 
 int Idx;
-UINT32 SeqIdx;
-UINT16 *pHamDist1;
-UINT16 *pHamDist2;
+uint32_t SeqIdx;
+uint16_t *pHamDist1;
+uint16_t *pHamDist2;
 
 if(m_NumProcThreads > 1)
 	{
 	for(Idx=1; Idx < m_NumProcThreads; Idx++)
 		{
 		pHamDist1 = m_pHamDist;
-		pHamDist2 = &m_pHamDist[(INT64)Idx * (m_GenomeLen-2)];		// no hammings for initial and final eBaseEOG markers)
+		pHamDist2 = &m_pHamDist[(int64_t)Idx * (m_GenomeLen-2)];		// no hammings for initial and final eBaseEOG markers)
 		for(SeqIdx = 0; SeqIdx < (m_GenomeLen-2); SeqIdx++,pHamDist1++,pHamDist2++)
 			{
 			if(*pHamDist2 < *pHamDist1)
@@ -2868,7 +2868,7 @@ if(m_NumProcThreads > 1)
 
 char szBuffer[16000];
 int BuffOfs;
-UINT32 CurLoci;
+uint32_t CurLoci;
 tsGChrom *pChrom;
 
 if(pszHammingFile != NULL && pszHammingFile[0] != '\0')
@@ -2958,7 +2958,7 @@ for(SeqIdx = 0; SeqIdx < (m_GenomeLen-2); SeqIdx++,pHamDist1++,CurLoci++)
 	CntHist[*pHamDist1] += 1;
 	}
 
-for(SeqIdx = 0; SeqIdx < (UINT32)min(66,m_SubSeqLen); SeqIdx++)
+for(SeqIdx = 0; SeqIdx < (uint32_t)min(66,m_SubSeqLen); SeqIdx++)
 	gDiagnostics.DiagOutMsgOnly(eDLInfo,"%d,%d,%1.3f",SeqIdx,CntHist[SeqIdx],(CntHist[SeqIdx]*100.0f)/m_NumSubSeqs);
 
 Reset(true);
@@ -2983,13 +2983,13 @@ LoadGenome(char *pszBioSeqFile) // load genome from this file which must be as a
 {
 int Rslt;
 int Len;
-INT64 TotLen;
+int64_t TotLen;
 int ChromID;
 int ChromIdx;
 tsGChrom *pChrom;
 etSeqBase *pSeq;
 etSeqBase *pGseq;
-UINT16 *pHamDist;
+uint16_t *pHamDist;
 
 
 if((m_pBioSeqFile = new CBioSeqFile) == NULL)
@@ -3038,19 +3038,19 @@ while((ChromID = m_pBioSeqFile->Next(ChromID)) > 0) {
 m_AllocGenomeSeq = m_GenomeLen;
 #ifdef _WIN32
 // use malloc instead of new() because of gnu new()/malloc issues - helps portability
-m_pGenomeSeq = (UINT8 *) malloc((size_t)m_AllocGenomeSeq);
+m_pGenomeSeq = (uint8_t *) malloc((size_t)m_AllocGenomeSeq);
 if(m_pGenomeSeq == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadGenome: Memory allocation of %lld bytes failed",(INT64)m_AllocGenomeSeq);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadGenome: Memory allocation of %lld bytes failed",(int64_t)m_AllocGenomeSeq);
 	Reset(false);
 	return(eBSFerrMem);
 	}
 #else
 // gnu malloc is still in the 32bit world and can't handle more than 2GB allocations so use mmap
-m_pGenomeSeq = (UINT8 *)mmap(NULL,(size_t)m_AllocGenomeSeq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+m_pGenomeSeq = (uint8_t *)mmap(NULL,(size_t)m_AllocGenomeSeq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pGenomeSeq == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadGenome: Memory allocation of %lld bytes through mmap()  failed",(INT64)m_AllocGenomeSeq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadGenome: Memory allocation of %lld bytes through mmap()  failed",(int64_t)m_AllocGenomeSeq,strerror(errno));
 	m_pGenomeSeq = NULL;
 	Reset(false);
 	return(eBSFerrMem);
@@ -3089,28 +3089,28 @@ for(ChromIdx = 0; ChromIdx < m_NumGChroms; ChromIdx++, pChrom++)
 		pChrom->NumSubSeqs = 0;
 		continue;
 		}
-	pChrom->NumSubSeqs = (UINT32)ChromLen;
+	pChrom->NumSubSeqs = (uint32_t)ChromLen;
 	m_NumSubSeqs += ChromLen;
 	}
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Genome containing %llu total nucleotides loaded with %u subsequences of length %d...",TotLen,m_NumSubSeqs,m_SubSeqLen);
 
 // now allocate and initialise the Hamming edit distance array
 // note that each processing thread will have it's own region of the array so that serialisation of r/w's is not required
-m_AllocHamDist = ((INT64)(m_GenomeLen-2) * m_NumProcThreads * sizeof(UINT16)); // no hammings for start/end eBaseEOGs
+m_AllocHamDist = ((int64_t)(m_GenomeLen-2) * m_NumProcThreads * sizeof(uint16_t)); // no hammings for start/end eBaseEOGs
 #ifdef _WIN32
-m_pHamDist = (UINT16 *) malloc((size_t)m_AllocHamDist);
+m_pHamDist = (uint16_t *) malloc((size_t)m_AllocHamDist);
 if(m_pHamDist == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadGenome: Memory allocation of %lld bytes failed",(INT64)m_AllocHamDist);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadGenome: Memory allocation of %lld bytes failed",(int64_t)m_AllocHamDist);
 	Reset(false);
 	return(eBSFerrMem);
 	}
 #else
 // gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-m_pHamDist = (UINT16 *)mmap(NULL,(size_t)m_AllocHamDist, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+m_pHamDist = (uint16_t *)mmap(NULL,(size_t)m_AllocHamDist, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pHamDist == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadGenome: Memory allocation of %lld bytes through mmap()  failed",(INT64)m_AllocHamDist,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadGenome: Memory allocation of %lld bytes through mmap()  failed",(int64_t)m_AllocHamDist,strerror(errno));
 	m_pHamDist = NULL;
 	Reset(false);
 	return(eBSFerrMem);
@@ -3118,7 +3118,7 @@ if(m_pHamDist == MAP_FAILED)
 #endif
 
 pHamDist = m_pHamDist;
-for(Len = 0; Len < (m_AllocHamDist / sizeof(UINT16)); Len++)
+for(Len = 0; Len < (m_AllocHamDist / sizeof(uint16_t)); Len++)
 	*pHamDist++ = m_SubSeqLen + 1;
 
 if((m_pThreadParams = new tsThreadParams [m_NumProcThreads]) == NULL)
@@ -3170,7 +3170,7 @@ return(NULL);
 }
 
 // lookup table for quick base complementation
-UINT8 MapCpl[] = { eBaseT,		// MapCpl[etBaseA] --> etBaseT
+uint8_t MapCpl[] = { eBaseT,		// MapCpl[etBaseA] --> etBaseT
 					eBaseG,		// MapCpl[etBaseC] --> etBaseG
 					eBaseC,		// MapCpl[etBaseG] --> etBaseC
 					eBaseA,		// MapCpl[etBaseT] --> etBaseA
@@ -3180,31 +3180,31 @@ UINT8 MapCpl[] = { eBaseT,		// MapCpl[etBaseA] --> etBaseT
 					eBaseEOS };	// MapCpl[eBaseEOS] --> eBaseEOS
 
 // Watson strand only compares only
-void GHamDistWatson(UINT16* pHDs,// where to return Hamming differentials for each subsequence 
+void GHamDistWatson(uint16_t* pHDs,// where to return Hamming differentials for each subsequence 
 	int SubSeqLen,	// generate Hammings edit distances for subsequences of this length
-	UINT32 SSofs,		// offset between subsequences for current pass
-	UINT8* pGenomeSeq, // genome sequence (concatenated chrom seqs, separated by eBaseEOSs) with final chrom terminated by eBaseEOG, not eBaseEOS
-	UINT32 GenomeLen)	 // total genome length including chrom eBaseEOS markers, but exluding start/end eBaseEOG markers
+	uint32_t SSofs,		// offset between subsequences for current pass
+	uint8_t* pGenomeSeq, // genome sequence (concatenated chrom seqs, separated by eBaseEOSs) with final chrom terminated by eBaseEOG, not eBaseEOS
+	uint32_t GenomeLen)	 // total genome length including chrom eBaseEOS markers, but exluding start/end eBaseEOG markers
 {
 	int Idx;
 
-	UINT16 PPHD;		// current Hamming for +/+ subsequence edit distances
-	UINT8 SS1B;		// subsequence 1 5' first base, plus strand
-	UINT8 SS2B;		// subsequence 2 5' first base, plus strand
+	uint16_t PPHD;		// current Hamming for +/+ subsequence edit distances
+	uint8_t SS1B;		// subsequence 1 5' first base, plus strand
+	uint8_t SS2B;		// subsequence 2 5' first base, plus strand
 
-	UINT8 SE1B;		// subsequence 1 3' last base, plus strand
-	UINT8 SE2B;		// subsequence 2 3' last base, plus strand
+	uint8_t SE1B;		// subsequence 1 3' last base, plus strand
+	uint8_t SE2B;		// subsequence 2 3' last base, plus strand
 
-	UINT8* pSS1;	// pts to 5' start of current subsequence1 on plus strand
-	UINT8* pSS2;	// pts to 5' start of current subsequence2  on plus strand
+	uint8_t* pSS1;	// pts to 5' start of current subsequence1 on plus strand
+	uint8_t* pSS2;	// pts to 5' start of current subsequence2  on plus strand
 
-	UINT8* pSE1;	// pts to 3' end of current subsequence1 on plus strand
-	UINT8* pSE2;	// pts to 3' end of current subsequence2  on plus strand
+	uint8_t* pSE1;	// pts to 3' end of current subsequence1 on plus strand
+	uint8_t* pSE2;	// pts to 3' end of current subsequence2  on plus strand
 
-	UINT16* pHSS1;  // pts to current minimum Huffman distance for subsequence starting at pSS1
-	UINT16* pHSS2;  // pts to current minimum Huffman distance for subsequence starting at pSS2
+	uint16_t* pHSS1;  // pts to current minimum Huffman distance for subsequence starting at pSS1
+	uint16_t* pHSS2;  // pts to current minimum Huffman distance for subsequence starting at pSS2
 
-	UINT16 PPEOScnt;  // if > 0 then do not update minimum Hammings on plus strand as current subsequence contains at least one eBaseEOS
+	uint16_t PPEOScnt;  // if > 0 then do not update minimum Hammings on plus strand as current subsequence contains at least one eBaseEOS
 
 	pHSS1 = pHDs;
 	pHSS2 = &pHDs[SSofs];
@@ -3298,31 +3298,31 @@ DumpPairA(int SubSeqLen, int Seq1Idx, int Seq2Idx, etSeqBase* pSeq1, etSeqBase* 
 
 // this version uses the sliding window approach
 void
-GHamDistCrick(UINT16* pHDs,		// where to return Hamming differentials for each subsequence 
+GHamDistCrick(uint16_t* pHDs,		// where to return Hamming differentials for each subsequence 
 	int SubSeqLen,	// generate Hammings edit distances for subsequences of this length
-	UINT32 SSofs,		// offset between subsequences for current pass
-	UINT8* pGenomeSeq, // genome sequence (concatenated chrom seqs, separated by eBaseEOSs) with final chrom terminated by eBaseEOG, not eBaseEOS
-	UINT32 GenomeLen)	 // total genome length including chrom eBaseEOS markers, but exluding start/end eBaseEOG markers
+	uint32_t SSofs,		// offset between subsequences for current pass
+	uint8_t* pGenomeSeq, // genome sequence (concatenated chrom seqs, separated by eBaseEOSs) with final chrom terminated by eBaseEOG, not eBaseEOS
+	uint32_t GenomeLen)	 // total genome length including chrom eBaseEOS markers, but exluding start/end eBaseEOG markers
 {
 	int Idx;
 
-	UINT16 PPHD;	// current Hamming for +/- subsequence edit distances
-	UINT8 SS1B;		// subsequence 1 5' first base, plus strand
-	UINT8 SS2B;		// subsequence 2 5' first base, minus strand
+	uint16_t PPHD;	// current Hamming for +/- subsequence edit distances
+	uint8_t SS1B;		// subsequence 1 5' first base, plus strand
+	uint8_t SS2B;		// subsequence 2 5' first base, minus strand
 
-	UINT8 SE1B;		// subsequence 1 3' last base, plus strand
-	UINT8 SE2B;		// subsequence 2 3' last base, minus strand
+	uint8_t SE1B;		// subsequence 1 3' last base, plus strand
+	uint8_t SE2B;		// subsequence 2 3' last base, minus strand
 
-	UINT8* pSS1;	// pts to 5' start of current subsequence1 on plus strand
-	UINT8* pSS2;	// pts to 5' start of current subsequence2  on minus strand
+	uint8_t* pSS1;	// pts to 5' start of current subsequence1 on plus strand
+	uint8_t* pSS2;	// pts to 5' start of current subsequence2  on minus strand
 
-	UINT8* pSE1;	// pts to 3' end of current subsequence1 on plus strand
-	UINT8* pSE2;	// pts to 3' end of current subsequence2  on minus strand
+	uint8_t* pSE1;	// pts to 3' end of current subsequence1 on plus strand
+	uint8_t* pSE2;	// pts to 3' end of current subsequence2  on minus strand
 
-	UINT16* pHSS1;  // pts to current minimum Huffman distance for subsequence starting at pSS1
-	UINT16* pHSS2;  // pts to current minimum Huffman distance for subsequence starting at pSS2
+	uint16_t* pHSS1;  // pts to current minimum Huffman distance for subsequence starting at pSS1
+	uint16_t* pHSS2;  // pts to current minimum Huffman distance for subsequence starting at pSS2
 
-	UINT16 PPEOScnt;  // if > 0 then do not update minimum Hammings on plus/minus strand as current subsequence contains at least one eBaseEOS
+	uint16_t PPEOScnt;  // if > 0 then do not update minimum Hammings on plus/minus strand as current subsequence contains at least one eBaseEOS
 
 	pHSS1 = pHDs;
 	pHSS2 = &pHDs[GenomeLen - SSofs - SubSeqLen];

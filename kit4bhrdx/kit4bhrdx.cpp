@@ -418,9 +418,9 @@ pHomozyReduce->Reset(false);
 pHomozyReduce->SetCtgDescr(pszCtgDescr);
 
 #ifdef CHECKXFORMID
-UINT64 XFormID;
-UINT32 Idy;
-UINT32 FormID;
+uint64_t XFormID;
+uint32_t Idy;
+uint32_t FormID;
 for(Idy = 0; Idy < 0x80000000; Idy++)
 	{
 	XFormID = pHomozyReduce->IDtoXForm(Idy);

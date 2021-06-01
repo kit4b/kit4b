@@ -71,8 +71,8 @@ const int cSummaryTargCoreHitCnts = 20000;				 // summary core hit counts on at 
 
 const int cChkOverlapGapLen = 20;						 // if gap between probe cores with at least one match > this threshold then set core probe offset at which to check for core extension (set 0 to disable core extensions)
 
-const UINT32 cMaxValidID = 0xffffff00;      // treat any vertex, edge, subgraph or sequence identifier over this value as a processing error identifier which is to be cast as teBSFrsltCodes for actual error 
-typedef UINT32 tVertID;						// vertice identifiers are 32bits with identifiers > cMaxValidID used as processing error indicator, cast to teBSFrsltCodes for actual error
-typedef UINT32 tEdgeID;						// edges identifiers are 32bits with identifiers > cMaxValidID used as processing error indicator, cast to teBSFrsltCodes for actual error
-typedef UINT32 tSeqID;						// sequence identifiers are 32bits with identifiers > cMaxValidID used as processing error indicator, cast to teBSFrsltCodes for actual error
-typedef UINT32 tComponentID;			    // to contain disconnected subgraph identifiers with identifiers > cMaxValidID used as processing error indicator, cast to teBSFrsltCodes for actual error
+const uint32_t cMaxValidID = 0xffffff00;      // treat any vertex, edge, subgraph or sequence identifier over this value as a processing error identifier which is to be cast as teBSFrsltCodes for actual error 
+typedef uint32_t tVertID;						// vertice identifiers are 32bits with identifiers > cMaxValidID used as processing error indicator, cast to teBSFrsltCodes for actual error
+typedef uint32_t tEdgeID;						// edges identifiers are 32bits with identifiers > cMaxValidID used as processing error indicator, cast to teBSFrsltCodes for actual error
+typedef uint32_t tSeqID;						// sequence identifiers are 32bits with identifiers > cMaxValidID used as processing error indicator, cast to teBSFrsltCodes for actual error
+typedef uint32_t tComponentID;			    // to contain disconnected subgraph identifiers with identifiers > cMaxValidID used as processing error indicator, cast to teBSFrsltCodes for actual error

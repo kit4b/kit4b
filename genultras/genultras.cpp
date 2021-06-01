@@ -1474,7 +1474,7 @@ for(Idx=0;Idx < NumExcludeChroms;Idx++)
 ProcParams.MaxSeqAlignLen = cMAtotMaxSeqAlignLen/NumSpecies;
 for(Idx = 0; Idx < NumSpecies; Idx++)
 	{
-	if((ProcParams.pSeqs[Idx] = new unsigned char [ProcParams.MaxSeqAlignLen])==NULL)
+	if((ProcParams.pSeqs[Idx] = new uint8_t [ProcParams.MaxSeqAlignLen])==NULL)
 		{
 	    CloseBedfiles(&ProcParams);
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory (%d bytes) for holding species sequences",ProcParams.MaxSeqAlignLen);

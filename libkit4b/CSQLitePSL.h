@@ -49,15 +49,15 @@ typedef struct TAG_sStmsSQL {
 #pragma pack(1)
 
 typedef struct TAG_sAlignSummary {
-		UINT16 AlignSummarySize;	// size of this alignment summary instance
-		INT32 ExprID;				// alignment summary was from this experiment
-		INT32 HashSummaryInst;		// hash for this summary instance
-		UINT64 NxtHashedSummaryInstOfs;   // offset+1 of next alignment summary instance with same hash, 0 if last instance with same HashSummaryInst
-		UINT8 FlgIsQuery:1;			// 0 if summary for target, 1 if summary for query
-		UINT32 SeqLen;				// query or target sequence is this length
-		UINT32 NumAlignments;		// if target then total number of alignments to this target, if query then total number of alignments from this query
-		UINT8 SeqNameLen;				// length of '/0' terminated sequence name
-		UINT8 SeqName[1];			// lower cased query or target sequence name, extended out to actual length+1 of sequence name
+		uint16_t AlignSummarySize;	// size of this alignment summary instance
+		int32_t ExprID;				// alignment summary was from this experiment
+		int32_t HashSummaryInst;		// hash for this summary instance
+		uint64_t NxtHashedSummaryInstOfs;   // offset+1 of next alignment summary instance with same hash, 0 if last instance with same HashSummaryInst
+		uint8_t FlgIsQuery:1;			// 0 if summary for target, 1 if summary for query
+		uint32_t SeqLen;				// query or target sequence is this length
+		uint32_t NumAlignments;		// if target then total number of alignments to this target, if query then total number of alignments from this query
+		uint8_t SeqNameLen;				// length of '/0' terminated sequence name
+		uint8_t SeqName[1];			// lower cased query or target sequence name, extended out to actual length+1 of sequence name
 	} tsAlignSummary;
 
 #pragma pack()
@@ -66,13 +66,13 @@ class CSQLitePSL
 {
 	char m_szPSLinFile[_MAX_PATH];  // processing this input PSL file
 	int m_hPSLinFile;				// opened file handle for psl files
-	UINT8 *m_pInBuffer;				// mem allocd to buffer chars being read from psl
+	uint8_t *m_pInBuffer;				// mem allocd to buffer chars being read from psl
 	size_t m_AllocdInBuffer;		// m_pInBuffer allocated to hold at most this many chars
 	int m_NumInBuffer;				// num of chars currently in pInBuffer
 	int m_InBuffIdx;				// index of next char to read from pInBuffer[]
 	int m_PushedBack;				// last pushed back char (only 1 level of pushback supported!)
 
-	UINT8 *m_pszPSLLineBuff;		// allocd PSL line buffer
+	uint8_t *m_pszPSLLineBuff;		// allocd PSL line buffer
 	size_t m_AllocdPSLLineBuffer;	// m_pszPSLLineBuff allocated to hold at most this many chars
 	int m_CurLineLen;				// current line length in pszLineBuff
 
@@ -84,11 +84,11 @@ class CSQLitePSL
 	int m_NumBlatHitsParsed;		// number of blat hits parsed
 	int m_NumBlatHitsAccepted;		// number of blat hits accepted
 
-	UINT32 m_NumAlignSummaries;				// current number of alignment summaries in m_pAlignmentSummaries
+	uint32_t m_NumAlignSummaries;				// current number of alignment summaries in m_pAlignmentSummaries
 	size_t m_UsedAlignmentSummariesSize;	// m_NumAlignSummaries is using this much of the current allocation m_pAlignmentSummaries size
 	size_t m_allocAlignmentSummariesSize;	// current allocation m_pAlignmentSummaries size
 	tsAlignSummary *m_pAlignmentSummaries;  // allocated to hold alignment summaries
-	INT64 m_AlignSummaryInstancesOfs[0x100000]; // offsets into m_pAlignmentSummaries[] for first instance of an alignment summary instance having same 20bit hash, 0 if no instance exists with same hash  
+	int64_t m_AlignSummaryInstancesOfs[0x100000]; // offsets into m_pAlignmentSummaries[] for first instance of an alignment summary instance having same 20bit hash, 0 if no instance exists with same hash  
 
 
 
@@ -107,16 +107,16 @@ class CSQLitePSL
 
 	int ProcessPSL(int ExprID);
 
-	INT32			// 20bit instance hash over the combination of parameterisation values passed into this function; if < 0 then hashing error 
-		GenSummaryInstanceHash(INT32 ExprID,// alignment summary is for alignment in this experiment
+	int32_t			// 20bit instance hash over the combination of parameterisation values passed into this function; if < 0 then hashing error 
+		GenSummaryInstanceHash(int32_t ExprID,// alignment summary is for alignment in this experiment
 						bool bIsQuery,		// false if SeqName is for a target sequence, true if for a query sequence
 						char *pszSeqName,	// NULL terminated sequence name
-						UINT32  SeqLen);	// query or target sequence length
+						uint32_t  SeqLen);	// query or target sequence length
 
-	tsAlignSummary *LocateAlignSummary(INT32 ExprID,		// alignment summary is for alignment in this experiment
+	tsAlignSummary *LocateAlignSummary(int32_t ExprID,		// alignment summary is for alignment in this experiment
 						bool bIsQuery,	// false if SeqName is for a target sequence, true if for a query sequence
 						char *pszSeqName,	// locate pre-existing, or allocate new if not pre-existing, alignment summary for bIsQuery type
-						UINT32  SeqLen);	// query or target sequence length
+						uint32_t  SeqLen);	// query or target sequence length
 
 	int AddSummaryInstances2SQLite(void);  // add all summary instances to SQLite
 
@@ -154,11 +154,11 @@ public:
 		CloseDatabase(bool bNoIndexes = false);
 
 	int
-		AddAlignSummary(INT32 ExprID,		// alignment summary is for alignment in this experiment
+		AddAlignSummary(int32_t ExprID,		// alignment summary is for alignment in this experiment
 				char *pszQName,				// query sequence name, NULL or '\0' if unknown
-				UINT32  QSize,				// query sequence size, 0 if unknown
+				uint32_t  QSize,				// query sequence size, 0 if unknown
 				char *pszTName,				// target sequence name, NULL or '\0' if unknown
-				UINT32  TSize);				// target sequence size
+				uint32_t  TSize);				// target sequence size
 
 	int											// errors if < eBSFSuccess else alignment identifier
 		AddAlignment(int ExprID,			// alignment was in this experiment

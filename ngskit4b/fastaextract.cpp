@@ -415,7 +415,7 @@ int m_hFEOutFile;	// file handle for opened multifasta output file
 
 size_t m_SeqBuffLen;		// number of bases currently buffered in m_pSeqBuff
 size_t m_AllocdSeqBuffMem;  // size of memory currently allocated to m_pSeqBuff
-UINT8 *m_pSeqBuff;			// buffers sequences as read from file
+uint8_t *m_pSeqBuff;			// buffers sequences as read from file
 
 int m_NumExtractDescrs;		// number of extract descriptors
 #ifdef _WIN32
@@ -485,7 +485,7 @@ if(m_pSeqBuff == NULL)
 	m_pSeqBuff = (etSeqBase *) malloc(SeqLen);	// initial and perhaps the only allocation
 	if(m_pSeqBuff == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocSeqBuff: Memory allocation of %lld bytes - %s",(INT64)SeqLen,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocSeqBuff: Memory allocation of %lld bytes - %s",(int64_t)SeqLen,strerror(errno));
 		return(NULL);
 		}
 #else
@@ -493,7 +493,7 @@ if(m_pSeqBuff == NULL)
 	m_pSeqBuff = (etSeqBase *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pSeqBuff == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocSeqBuff: Memory allocation of %lld bytes through mmap()  failed - %s",(INT64)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocSeqBuff: Memory allocation of %lld bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
 		m_pSeqBuff = NULL;
 		return(NULL);
 		}
@@ -511,7 +511,7 @@ else
 #endif
 	if(pTmp == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocSeqBuff: Memory re-allocation to %lld bytes - %s",(INT64)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocSeqBuff: Memory re-allocation to %lld bytes - %s",(int64_t)memreq,strerror(errno));
 		return(NULL);
 		}
 	m_pSeqBuff = pTmp;
@@ -630,7 +630,7 @@ char Chr;
 int LineLen;
 int BuffIdx;
 int SeqIdx;
-UINT8 szOutBuff[0x07fff];
+uint8_t szOutBuff[0x07fff];
 
 switch(XSense) {
 	case 0:		// original sense

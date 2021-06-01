@@ -88,52 +88,52 @@ typedef struct TAG_sGeneGOitem {
 } tsGeneGOitem;
 
 typedef union uIntPtr {
-	INT32 Idx;
-	INT64 Pad64;				// simply to ensure that ptr can be either 32 or 64bit so sizeof(tuGOIntPtr) is constant
+	int32_t Idx;
+	int64_t Pad64;				// simply to ensure that ptr can be either 32 or 64bit so sizeof(tuGOIntPtr) is constant
 	void *ptr;
 	} tuIntPtr;
 
 typedef struct TAG_sGOGene {
 	tuIntPtr Name;					// gene name
 	tGeneID GeneID;					// unique identifier for this gene or transcriptional loci
-	INT32 NumGOAssoc;				// number of associated GO terms
-	INT32 GOAssocIdx;				// index at which first GOAssoc (tsGOAssoc) for this gene starts
-	UINT8 Type;						// etGOobjType
+	int32_t NumGOAssoc;				// number of associated GO terms
+	int32_t GOAssocIdx;				// index at which first GOAssoc (tsGOAssoc) for this gene starts
+	uint8_t Type;						// etGOobjType
 	} tsGOGene;
 
 typedef struct TAG_sGOAssoc {
 	tGeneID GeneID;					// associated with which gene
-	INT32 IdentIdx;					// index at which associated GO:term identifier starts
-	UINT16 Evidence;				// eGOEvidence
-	UINT8 Qual;						// etGOQual
-	UINT8 Aspect;					// etGOaspect
+	int32_t IdentIdx;					// index at which associated GO:term identifier starts
+	uint16_t Evidence;				// eGOEvidence
+	uint8_t Qual;						// etGOQual
+	uint8_t Aspect;					// etGOaspect
 	} tsGOAssoc;
 #pragma pack()
 
 #pragma pack(8)
 typedef struct TAG_sGOAssocFileHdr {
-	unsigned char Magic[4];			// magic chars to identify this file as a biosequence file
-	UINT64 FileLen;					// current file length
-	INT64 GOGenesOfs;				// file offset to genes
-	INT64 GOAssocsOfs;				// file offset to associations
-	INT64 GeneIdentsOfs;			// file offset to gene identifiers
-	INT64 GOIdentsOfs;				// file offset to GO identifiers
+	uint8_t Magic[4];			// magic chars to identify this file as a biosequence file
+	uint64_t FileLen;					// current file length
+	int64_t GOGenesOfs;				// file offset to genes
+	int64_t GOAssocsOfs;				// file offset to associations
+	int64_t GeneIdentsOfs;			// file offset to gene identifiers
+	int64_t GOIdentsOfs;				// file offset to GO identifiers
 
-	UINT32 Type;					// GOAssoc file type 
-	UINT32 Version;					// header version, incremented if structure changes with later releases
-	UINT32 SizeOfHdr;				// total size of this header
+	uint32_t Type;					// GOAssoc file type 
+	uint32_t Version;					// header version, incremented if structure changes with later releases
+	uint32_t SizeOfHdr;				// total size of this header
 
-	INT32 GOGenesCnt;				// number of genes
-	INT32 GOGenesSize;				// size (bytes) genes
+	int32_t GOGenesCnt;				// number of genes
+	int32_t GOGenesSize;				// size (bytes) genes
 
-	INT32 GOAssocsCnt;				// number of associations
-	INT32 GOAssocsSize;				// size (bytes) associations
+	int32_t GOAssocsCnt;				// number of associations
+	int32_t GOAssocsSize;				// size (bytes) associations
 
-	INT32 GeneIdentsCnt;			// number of gene identifiers
-	INT32 GeneIdentsSize;			// size (bytes) gene identifiers
+	int32_t GeneIdentsCnt;			// number of gene identifiers
+	int32_t GeneIdentsSize;			// size (bytes) gene identifiers
 	
-	INT32 GOIdentsCnt;				// number of GO identifiers
-	INT32 GOIdentsSize;				// size (bytes) GO identifiers
+	int32_t GOIdentsCnt;				// number of GO identifiers
+	int32_t GOIdentsSize;				// size (bytes) GO identifiers
 
 	char szDescription[cMBSFFileDescrLen];// describes contents of file
 	char szTitle[cMBSFShortFileDescrLen];	// short title by which this file can be distingished from other files in dropdown lists etc
@@ -211,7 +211,7 @@ class CGOAssocs : protected CEndian, public CErrorCodes
 	int ParseUCSC(char *pszUCSCGoAssoc,char *pszGeneFilters = NULL);	// UCSC file to parse
 	int ParseGFF(char* pszGFFfile, char* pszGeneFilters = NULL);		// GFF file to parse
 	teBSFrsltCodes LoadAssociations(void);
-	teBSFrsltCodes ReadDisk(INT64 DiskOfs,int Len,void *pTo);
+	teBSFrsltCodes ReadDisk(int64_t DiskOfs,int Len,void *pTo);
 	int	ParseNxtField(char *pszLine,				// parse start
 						 bool bReqValue,			// value is mandatory
 						 int MaxLen,				// max allowed ret value

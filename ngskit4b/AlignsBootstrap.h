@@ -23,8 +23,8 @@ const int cMaxBootstraps = 10000;		// max allowed query bootstrap iterations
 const int cDfltIterTargs = 1000;		// default allowed target bootstrap iterations
 const int cMaxIterTargs = 10000;		// max allowed target bootstrap iterations
 
-const UINT32 cDfltBootstrappingAttempts = 1000;	// default is to allow this many bootstrapping attempts at generating a sample set before returning an error 
-const UINT32 cDfltSamplingAttempts = 10000;		// default is to allow this many sampling attempts before starting a new bootstrapping attempt
+const uint32_t cDfltBootstrappingAttempts = 1000;	// default is to allow this many bootstrapping attempts at generating a sample set before returning an error 
+const uint32_t cDfltSamplingAttempts = 10000;		// default is to allow this many sampling attempts before starting a new bootstrapping attempt
 
 const int cMaxAssembSeqLen = 0x5fffffff;	// accepting individual assembly sequences if no longer than this length
 
@@ -55,43 +55,43 @@ typedef enum {
 
 typedef struct TAG_sSeqDescr {
 	ePMBSSeqSrc SeqSrc;     // descriptor source - 0: query seqs, 1: target sequences, 2: query assembly, 3: target assembly
-	UINT32 SeqBlockID;		// descriptor is for this sequence block
-	UINT8 DescrLen;			// descriptor has been truncated to this length including terminator
-	UINT8 Descr[1];			// \0 terminated descriptor
+	uint32_t SeqBlockID;		// descriptor is for this sequence block
+	uint8_t DescrLen;			// descriptor has been truncated to this length including terminator
+	uint8_t Descr[1];			// \0 terminated descriptor
 	} tsSeqDescr;
 
 typedef struct TAG_sSeqBlock {
 	ePMBSSeqSrc SeqSrc;     // sequence source - 0: query seqs, 1: target sequences, 2: query assembly, 3: target assembly
-	UINT32 SeqBlockID;		// uniquely identifies this sequence block
-	UINT64 DescrOfs;		// offset in m_pszDescr of descriptor for this sequence block
-	UINT32 SeqLen;			// sequence is this length
-	UINT32 NumQueryHits;	// number of query hits
-	INT64 SmplSeqOfs;		// offset in  pSeqs at which sequence starts 
-	INT64 PopSeqOfs;		// sampled sequence starts at this offset in population pSeqs, -1 if unknown
+	uint32_t SeqBlockID;		// uniquely identifies this sequence block
+	uint64_t DescrOfs;		// offset in m_pszDescr of descriptor for this sequence block
+	uint32_t SeqLen;			// sequence is this length
+	uint32_t NumQueryHits;	// number of query hits
+	int64_t SmplSeqOfs;		// offset in  pSeqs at which sequence starts 
+	int64_t PopSeqOfs;		// sampled sequence starts at this offset in population pSeqs, -1 if unknown
 	} tsSeqBlock; 
 
 typedef struct TAG_sSeqAllocs {
 	ePMBSSeqSrc SeqSrc;					// sequence source - 0: query seqs, 1: target sequences, 2: query assembly, 3: target assembly
-	UINT32 NumSeqs;						// number of sequences loaded into m_pSeqs
+	uint32_t NumSeqs;						// number of sequences loaded into m_pSeqs
 	size_t UsedSeqsSize;				// m_pSeqs used size
 	size_t AllocdSeqsSize;				// m_pSeqs allocation size
 	etSeqBase *pSeqs;					// concatenated sequences from which to bootstrap sample
-	UINT32 UsedSeqBlocks;				// number of used blocks
+	uint32_t UsedSeqBlocks;				// number of used blocks
 	size_t UsedSeqBlocksSize;			// number of sequence blocks currently allocated
 	size_t SeqBlocksAllocSize;			// m_pSeqBlocks allocation size
 	tsSeqBlock *pSeqBlocks;				// sequence blocks containing sequence lengths, descriptors, and where each sequence starts in m_pSeqs
-	UINT32 NumSeqDescrs;				// number of sequence descriptors in m_pSeqDescrs
+	uint32_t NumSeqDescrs;				// number of sequence descriptors in m_pSeqDescrs
 	size_t UsedSeqDescrsSize;			// sequence descriptors used size
 	size_t AllocdSeqDescrsSize;		// m_pSeqs allocation size	
 	tsSeqDescr *pSeqDescrs;			// allocated to hold all sequence descriptors as parsed from multifasta file
 	} tsSeqAllocs;
 
 typedef struct TAG_sQueryHit {
-	UINT8 flgHit:1;					// set if hit discovered
-	UINT8 flgAntisense:1;			// set if reported hit was with antisense query sequence
-	UINT8 MMCnt;					// hit was with this many mismatches
-	UINT32 TargIdx;					// query hit was to this target
-	UINT32 TargOfs;					// query hit starts at this target offset
+	uint8_t flgHit:1;					// set if hit discovered
+	uint8_t flgAntisense:1;			// set if reported hit was with antisense query sequence
+	uint8_t MMCnt;					// hit was with this many mismatches
+	uint32_t TargIdx;					// query hit was to this target
+	uint32_t TargOfs;					// query hit starts at this target offset
 	} tsQueryHit;
 
 typedef struct TAG_sWorkerInstance {
@@ -99,15 +99,15 @@ typedef struct TAG_sWorkerInstance {
 	void *pThis;					// will be initialised to pt to class instance
 #ifdef _WIN32
 	HANDLE threadHandle;			// handle as returned by _beginthreadex()
-	UINT32 threadID;				// identifier as set by _beginthreadex()
+	uint32_t threadID;				// identifier as set by _beginthreadex()
 #else
 	int threadRslt;					// result as returned by pthread_create ()
 	pthread_t threadID;				// identifier as set by pthread_create ()
 #endif
-	UINT32 AlignReqID;				// alignment request last processed by this thread; alignments only performed when AlignReqID != m_AlignReqID
+	uint32_t AlignReqID;				// alignment request last processed by this thread; alignments only performed when AlignReqID != m_AlignReqID
 	int Rslt;						// processing result
-	UINT32 StartQuerySeqIdx;		// thread instance to process alignments starting with this query sequence
-	UINT32 EndQuerySeqIdx;			// through to this query sequence inclusive
+	uint32_t StartQuerySeqIdx;		// thread instance to process alignments starting with this query sequence
+	uint32_t EndQuerySeqIdx;			// through to this query sequence inclusive
 } tsWorkerInstance;
 
 #pragma pack()
@@ -135,15 +135,15 @@ class CAlignsBootstrap
 	tsWorkerInstance m_WorkerInstances[cMaxWorkerThreads];	// to hold all worker instance thread parameters
 
 #ifdef WIN32
-	alignas(4) volatile UINT32  m_NumWorkerInsts;				// number of worker instance threads actually started
-	alignas(4) volatile UINT32 m_AlignReqID;					// bootstrap sampleset identifier, incremented if new sampleset available to be aligned
-	alignas(4) volatile UINT32 m_CompletedWorkerInsts;			// number of worker instance threads completed current bootstrap alignments
-	alignas(4) volatile UINT32 m_TermAllThreads;                // will be set to 1 if all worker threads are to terminate
+	alignas(4) volatile uint32_t  m_NumWorkerInsts;				// number of worker instance threads actually started
+	alignas(4) volatile uint32_t m_AlignReqID;					// bootstrap sampleset identifier, incremented if new sampleset available to be aligned
+	alignas(4) volatile uint32_t m_CompletedWorkerInsts;			// number of worker instance threads completed current bootstrap alignments
+	alignas(4) volatile uint32_t m_TermAllThreads;                // will be set to 1 if all worker threads are to terminate
 #else
-	__attribute__((aligned(4))) volatile UINT32  m_NumWorkerInsts;				// number of worker instance threads actually started
-	__attribute__((aligned(4))) volatile UINT32 m_AlignReqID;			// bootstrap sampleset identifier, incremented if new sampleset available to be aligned
-	__attribute__((aligned(4))) volatile UINT32 m_CompletedWorkerInsts;			// number of worker instance threads completed current bootstrap alignments
-	__attribute__((aligned(4))) volatile UINT32 m_TermAllThreads;                  // will be set to 1 if all worker threads are to terminate
+	__attribute__((aligned(4))) volatile uint32_t  m_NumWorkerInsts;				// number of worker instance threads actually started
+	__attribute__((aligned(4))) volatile uint32_t m_AlignReqID;			// bootstrap sampleset identifier, incremented if new sampleset available to be aligned
+	__attribute__((aligned(4))) volatile uint32_t m_CompletedWorkerInsts;			// number of worker instance threads completed current bootstrap alignments
+	__attribute__((aligned(4))) volatile uint32_t m_TermAllThreads;                  // will be set to 1 if all worker threads are to terminate
 #endif
 
 	CRandomMersenne *m_pRandomMersenne;		// used for generating random numbers larger than RAND_MAX (32767)
@@ -173,27 +173,27 @@ class CAlignsBootstrap
 	int
 	AddSeq(ePMBSSeqSrc SeqSrc,     // descriptor source - 0: query seqs, 1: target sequences, 2: query assembly, 3: target assembly
 			 char *pszDescr,		// sequence descriptor
-			 UINT32 SeqLen,			// sequence is this length
-			 UINT8 *pSeqBuff);		// sequence
+			 uint32_t SeqLen,			// sequence is this length
+			 uint8_t *pSeqBuff);		// sequence
 
-	INT64		// returned random number will be at most 60bits (2^60)
-		GenRand60(INT64 Limit);	// generate random number between 0 and Limit inclusive where Limit is <= 2^60
+	int64_t		// returned random number will be at most 60bits (2^60)
+		GenRand60(int64_t Limit);	// generate random number between 0 and Limit inclusive where Limit is <= 2^60
 
-	int GenBootstrap(UINT32 BootstrapAttempts = cDfltBootstrappingAttempts, // allow at most this many attempts at bootstrapping a set of samples before returning error
-					UINT32 SampleAttempts = cDfltSamplingAttempts, // allow at most this many attempts at randomly locating a sample before restarting the bootstrap
+	int GenBootstrap(uint32_t BootstrapAttempts = cDfltBootstrappingAttempts, // allow at most this many attempts at bootstrapping a set of samples before returning error
+					uint32_t SampleAttempts = cDfltSamplingAttempts, // allow at most this many attempts at randomly locating a sample before restarting the bootstrap
 					bool bTargs = false,   // false: generate bootstrap sampling from query assembly sequences, true: bootstrap sampling from target assembling sequences
 					bool bWithoutReplacement = false, // false: sampling with replacement, true: sampling without replacement (currently not implemented)
 					bool bNonOverlapping = false);	   // false: samples may be overlapping, true: samples must be non-overlapping (currently not implemented)
 
 	int	// index, -1 if no matches, at which Query matched onto target with at most MaxSubs
 		AlignQueriesToTargs(bool bSenseOnly,			// true if to align sense only, default is to align both sense and antisense
-						UINT32 StartQuerySeqIdx,		// alignments starting with this query sequence
-						UINT32 EndQuerySeqIdx,			// through to this query sequence inclusive
+						uint32_t StartQuerySeqIdx,		// alignments starting with this query sequence
+						uint32_t EndQuerySeqIdx,			// through to this query sequence inclusive
 						int MaxSubs);				// accepting at most this percentage of bases of query length to be mismatches
 
 	// initialise and start pool of worker threads
-	int		StartWorkerThreads(UINT32 NumThreads,		// there are this many threads in pool
-					UINT32 NumQuerySeqs);	// which will be processing a total of this many query sequences
+	int		StartWorkerThreads(uint32_t NumThreads,		// there are this many threads in pool
+					uint32_t NumQuerySeqs);	// which will be processing a total of this many query sequences
 
 	bool	// true if any worker threads in pool to start alignments, false if no worker threads 
 			StartAlignments(void);			// signal worker pool of threads that there is a new bootstrap set to be aligned
@@ -201,7 +201,7 @@ class CAlignsBootstrap
 	bool	// true if pool of worker threads completed current bootstrap set within WaitSecs, false if at least thread still processing	
 			WaitAlignments(int WaitSecs=60);	// allow at most this many seconds for pool of worker threads to complete aligning current bootstrap set
 
-	int		TerminateWorkerThreads(int WaitSecs = 120);				// alow at most this many seconds before force terminating threads
+	int		TerminateWorkerThreads(int WaitSecs = 120);				// allow at most this many seconds before force terminating threads
 
 
 

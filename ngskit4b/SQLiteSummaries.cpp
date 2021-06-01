@@ -1826,7 +1826,7 @@ CSQLiteSummaries::AddResultXY(int ExprID,	// identifier returned by StartExperim
 						 int ValueXSize,				// result value is of this byte length
 						 const char *pszResultXName,	// result X name
 						 void *pResultXValue,			// result X value
- 						 teSQLliteSummParamTypes ParamYType,	// result value Y type
+						 teSQLliteSummParamTypes ParamYType,	// result value Y type
 						 int ValueYSize,				// result value is of this byte length
 						 const char *pszResultYName,	// result Y name
 						 void *pResultYValue)			// result Y value
@@ -2041,24 +2041,32 @@ switch(ParamType) {
 			strcpy(szBuff,"False");
 		break;
 	case ePTInt32:					// signed int32
-		if(ValueSize != sizeof(INT32))
+		if(ValueSize != sizeof(int32_t))
 			return(eBSFerrCvrtType);
-		sprintf(szBuff,"%d",*(INT32 *)pValue);
+		sprintf(szBuff,"%d",*(int32_t *)pValue);
 		break;
 	case ePTUint32:					// unsigned int32
-		if(ValueSize != sizeof(UINT32))
+		if(ValueSize != sizeof(uint32_t))
 			return(eBSFerrCvrtType);
-		sprintf(szBuff,"%u",*(UINT32 *)pValue);
+		sprintf(szBuff,"%u",*(uint32_t *)pValue);
 		break;
 	case ePTInt64:					// signed int64
-		if(ValueSize != sizeof(INT64))
+		if(ValueSize != sizeof(int64_t))
 			return(eBSFerrCvrtType);
-		sprintf(szBuff,"%lld",*(INT64 *)pValue);
+#ifdef _WIN32
+		sprintf(szBuff,"%lld",*(int64_t *)pValue);
+#else
+		sprintf(szBuff,"%ld",*(int64_t *)pValue);
+#endif
 		break;
 	case ePTUint64:					// unsigned int64
-		if(ValueSize != sizeof(UINT64))
+		if(ValueSize != sizeof(uint64_t))
 			return(eBSFerrCvrtType);
-		sprintf(szBuff,"%llu",*(UINT64 *)pValue);
+#ifdef _WIN32
+		sprintf(szBuff,"%llu",*(uint64_t *)pValue);
+#else
+		sprintf(szBuff,"%lu",*(uint64_t *)pValue);
+#endif
 		break;
 	case ePTDouble:					// double
 		if(ValueSize != sizeof(double))

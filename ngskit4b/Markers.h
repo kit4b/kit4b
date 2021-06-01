@@ -35,43 +35,43 @@ const double cMinBaseThres = 0.50;  // and species base must be at least this pr
 const double cDfltLSER = 0.02;			// if local sequencing error rate is unknown then use this default
 const double cFloorLSER = 0.001;		// use a floor to prevent divide by 0 errors whilst processing
 
-const UINT16 cFlgSNPcnts = 0x01;		// alignment base counts parsed from SNP file
-const UINT16 cFlgImputCnts = 0x02;      // alignment base counts imputed from coverage and assumed to be the target reference base
-const UINT16 cFlgAlignCnts = 0x04;		// alignment base counts imputed from alignment sequences
+const uint16_t cFlgSNPcnts = 0x01;		// alignment base counts parsed from SNP file
+const uint16_t cFlgImputCnts = 0x02;      // alignment base counts imputed from coverage and assumed to be the target reference base
+const uint16_t cFlgAlignCnts = 0x04;		// alignment base counts imputed from alignment sequences
 
 
 #pragma pack(1)
 typedef struct TAG_sAlignLoci {
-	INT64 AlignID;				// uniquely identifies this alignment instance (1..N)
-	UINT16 TargSpeciesID;		// identifies aligned to cultivar or species
-	UINT32 TargSeqID;			// identifies aligned to sequence - could be a chrom/contig/transcript
-	UINT32 TargLoci;			// loci within SeqID at which SNPs observed
-	UINT8 TargRefBase;			// loci is this reference base
-	UINT16 ProbeSpeciesID;		// identifies cultivar or species with sequences aligning to TargSpecies
-	UINT8 FiltLowTotBases:1;	// 1 if this alignment has fewer TotBases than reporting threshold
-	UINT16 NumSpeciesWithCnts;	// number of species at this loci which have TotBases >= reporting threshold
-	UINT32 TotBases;			// sum of base counts in ProbeBaseCnts
-	UINT8 CultSpecBase;			// cultivar specific base allowing identification of this cultivar
+	int64_t AlignID;				// uniquely identifies this alignment instance (1..N)
+	uint16_t TargSpeciesID;		// identifies aligned to cultivar or species
+	uint32_t TargSeqID;			// identifies aligned to sequence - could be a chrom/contig/transcript
+	uint32_t TargLoci;			// loci within SeqID at which SNPs observed
+	uint8_t TargRefBase;			// loci is this reference base
+	uint16_t ProbeSpeciesID;		// identifies cultivar or species with sequences aligning to TargSpecies
+	uint8_t FiltLowTotBases:1;	// 1 if this alignment has fewer TotBases than reporting threshold
+	uint16_t NumSpeciesWithCnts;	// number of species at this loci which have TotBases >= reporting threshold
+	uint32_t TotBases;			// sum of base counts in ProbeBaseCnts
+	uint8_t CultSpecBase;			// cultivar specific base allowing identification of this cultivar
 	double LSER;				// Cultivar local sequencing error rate
-	UINT16 Flags;				// any loci associated flags
-	UINT32 ProbeBaseCnts[5];	// indexed by A,C,G,T,N : number instances probe base aligned to TargRefBase 
+	uint16_t Flags;				// any loci associated flags
+	uint32_t ProbeBaseCnts[5];	// indexed by A,C,G,T,N : number instances probe base aligned to TargRefBase 
 } tsAlignLoci;
 
 const int cAllocAlignLoci = 100000000;	// initially allocate to hold this many alignments
 const int cReAllocAlignPerc = 120;	    // if required to realloc then proportionally realloc by this percentage
 
 typedef struct TAG_sSNPSSpecies {
-	UINT16 SpeciesID;	// uniquely identifies this species instance
-	UINT8 szSpecies[cMaxLenName+1];	// species name (allow for trailing '\0' terminator)
-	UINT8 IsRefSpecies:1;	// set if this is a reference or target species, reset if a probe species
+	uint16_t SpeciesID;	// uniquely identifies this species instance
+	uint8_t szSpecies[cMaxLenName+1];	// species name (allow for trailing '\0' terminator)
+	uint8_t IsRefSpecies:1;	// set if this is a reference or target species, reset if a probe species
 } tsSNPSSpecies;
 
 
 typedef struct TAG_sSeqName {
-	UINT32 SeqID;			// uniquely identifies this sequence name (1..N)
-	UINT8 Len;				// length of this tsSeqName instance 
-	UINT64 NxtSeqOfs;		// offset into m_pAllocSeqNames at which next sequence with same name hash starts
-	UINT8 szSeqName[1];		// sequence name including terminating '\0'
+	uint32_t SeqID;			// uniquely identifies this sequence name (1..N)
+	uint8_t Len;				// length of this tsSeqName instance 
+	uint64_t NxtSeqOfs;		// offset into m_pAllocSeqNames at which next sequence with same name hash starts
+	uint8_t szSeqName[1];		// sequence name including terminating '\0'
 } tsSeqName;
 const size_t cAllocSeqNames = 5000000;	// allocate to incrementally hold this many sequence names
 const size_t cAllocMemSeqNames = (sizeof(tsSeqName) + cMaxLenName) * cAllocSeqNames; // allocate in this sized increments memory (m_pAllocSeqNames) for holding sequence names
@@ -81,27 +81,27 @@ const size_t cAllocMinDiffSeqNames = (sizeof(tsSeqName) + cMaxLenName) * 100; //
 class CMarkers
 {
 	tsSNPSSpecies *m_pCurSpecies;			// currently processed species
-	UINT16 m_NumSpecies;						// current number of species in m_Species (also includes the reference species)
-	UINT16 m_RefSpeciesID;						// identifier for species identified as being the reference species
+	uint16_t m_NumSpecies;						// current number of species in m_Species (also includes the reference species)
+	uint16_t m_RefSpeciesID;						// identifier for species identified as being the reference species
 	tsSNPSSpecies m_Species[cMaxMarkerSpecies+1];	// array of currently known species/cultivars - 1 additional to account for reference species (m_Species[0])
 
-	UINT32 m_NumSeqNames;			// currently there are this many sequence names
-	UINT64 m_UsedMemSeqNames;		// memory currently used for sequence names
-	UINT64 m_AllocMemSeqNames;		// memory allocated for sequence names
+	uint32_t m_NumSeqNames;			// currently there are this many sequence names
+	uint64_t m_UsedMemSeqNames;		// memory currently used for sequence names
+	uint64_t m_AllocMemSeqNames;		// memory allocated for sequence names
 	tsSeqName *m_pAllocSeqNames;	// allocated to hold sequence names
 
-	UINT64  m_AllocMemSeqNameIDsOfs;	// memory allocated for sequence m_pSeqNameIDsOfs
-	UINT64 *m_pAllocSeqNameIDsOfs;		// allocated to hold sequence identifiers to sequence offsets in m_pAllocSeqNames
+	uint64_t  m_AllocMemSeqNameIDsOfs;	// memory allocated for sequence m_pSeqNameIDsOfs
+	uint64_t *m_pAllocSeqNameIDsOfs;		// allocated to hold sequence identifiers to sequence offsets in m_pAllocSeqNames
 
-	UINT32 m_UsedNameHashArray;			// currently using this number of entries in the SeqNameHashArray
-	UINT64 *m_pSeqNameHashArray;		// allocated to hold offsets into m_pAllocSeqNames for sequence name hashes
+	uint32_t m_UsedNameHashArray;			// currently using this number of entries in the SeqNameHashArray
+	uint64_t *m_pSeqNameHashArray;		// allocated to hold offsets into m_pAllocSeqNames for sequence name hashes
 
-	UINT8 m_szCurSeqName[cMaxLenName+1];	// holds last processed sequence name
-	UINT32 m_CurSeqNameID;				// and it's corresponding identifer
+	uint8_t m_szCurSeqName[cMaxLenName+1];	// holds last processed sequence name
+	uint32_t m_CurSeqNameID;				// and it's corresponding identifer
 
-	INT64 m_NumSSNPLoci;				// number of loci hold SNPs called in SNP files
-	INT64 m_UsedAlignLoci;				// currently using this many alignment loci
-	INT64 m_AllocAlignLoci;				// allocated to hold this many alignment loci
+	int64_t m_NumSSNPLoci;				// number of loci hold SNPs called in SNP files
+	int64_t m_UsedAlignLoci;				// currently using this many alignment loci
+	int64_t m_AllocAlignLoci;				// allocated to hold this many alignment loci
 	size_t m_AllocMemAlignLoci;			// allocation memory size
 	tsAlignLoci *m_pAllocAlignLoci;		// allocated to hold alignment loci 
 
@@ -117,18 +117,18 @@ class CMarkers
 
 	int m_NumThreads;					// max number of threads
 
-	INT64 AddLoci(UINT16 TargSpeciesID,		// reads were aligned to this cultivar or species
-				UINT32 TargSeqID,		// alignments to this sequence - could be a chrom/contig/transcript - from pszSpecies
-				UINT32 TargLoci,			// loci within target sequence at which SNPs observed
+	int64_t AddLoci(uint16_t TargSpeciesID,		// reads were aligned to this cultivar or species
+				uint32_t TargSeqID,		// alignments to this sequence - could be a chrom/contig/transcript - from pszSpecies
+				uint32_t TargLoci,			// loci within target sequence at which SNPs observed
 				etSeqBase TargRefBase,	// loci has this reference base
-				UINT16 ProbeSpeciesID,	// reads were aligned from this cultivar or species
-				UINT32 ProbeCntA,		// number instances probe base A aligned to TargRefBase 
-				UINT32 ProbeCntC,		// number instances probe base C aligned to TargRefBase
-				UINT32 ProbeCntG,		// number instances probe base G aligned to TargRefBase
-				UINT32 ProbeCntT,		// number instances probe base T aligned to TargRefBase
-				UINT32 ProbeCntN,		// number instances probe base N aligned to TargRefBase
+				uint16_t ProbeSpeciesID,	// reads were aligned from this cultivar or species
+				uint32_t ProbeCntA,		// number instances probe base A aligned to TargRefBase 
+				uint32_t ProbeCntC,		// number instances probe base C aligned to TargRefBase
+				uint32_t ProbeCntG,		// number instances probe base G aligned to TargRefBase
+				uint32_t ProbeCntT,		// number instances probe base T aligned to TargRefBase
+				uint32_t ProbeCntN,		// number instances probe base N aligned to TargRefBase
 				double LSER,			// local sequencing error rate
-				UINT16 Flags);			// any loci associated flags
+				uint16_t Flags);			// any loci associated flags
 
 
 	bool m_bMutexesCreated;			// will be set true if synchronisation mutexes have been created
@@ -163,7 +163,7 @@ public:
 
 	int Init(int NumThreads = 1); //Initialise resources for specified number of threads; currently not actually multithreaded but may be in future
 
-	INT64		// qsorts alignment loci by TargSeqID,TargLoci,ProbeSpeciesID ascending
+	int64_t		// qsorts alignment loci by TargSeqID,TargLoci,ProbeSpeciesID ascending
 		SortTargSeqLociSpecies(void);
 
 	int 
@@ -174,7 +174,7 @@ public:
 					  char *pszProbeSpecies, // this species reads were aligned to the reference species from which SNPs were called 
 					  char *pszSNPFile);	// SNP file to parse and load
 
-	INT64 
+	int64_t 
 		AddImputedAlignments(int MinBases,		// must be at least this number of reads covering the SNP loci
 					  char *pszRefSpecies,		// this is the reference species 
 					char *pszProbeSpecies,		// this species reads were aligned to the reference species from which SNPs were called 
@@ -184,43 +184,43 @@ public:
 					int EstNumSeqs = 0,			// estimated number of sequences (0 if no estimate)
 					int EstSeqLen = 0);			// estimated mean sequence length (0 if no estimate)		
 
-	INT64	// Add simulated alignments for when no actual alignments were available, just SNP calls
+	int64_t	// Add simulated alignments for when no actual alignments were available, just SNP calls
 		AddSimulatedAlignments(int MinBases,			// using this as the simulated number of reads covering the SNP loci
 					 char *pszRefSpecies,				// this is the reference species 
 					char *pszProbeSpecies);				// this species reads were aligned to the reference species from which SNPs were called
 
-	UINT16									// returned species identifer (1..cMaxSpecies)
+	uint16_t									// returned species identifer (1..cMaxSpecies)
 		AddSpecies(char *pszSpecies,bool IsRefSpecies = false);	// cultivar or species
 
 	char *								// returned species name corresponding to SpeciesID
-		SpeciesIDtoName(UINT16 SpeciesID); // species identifier
+		SpeciesIDtoName(uint16_t SpeciesID); // species identifier
 
-	UINT16 NameToSpeciesID(char *pszSpecies); // returned species identifier for specified name, returns 0 if name not previously added with AddSpecies)
+	uint16_t NameToSpeciesID(char *pszSpecies); // returned species identifier for specified name, returns 0 if name not previously added with AddSpecies)
 
 	bool								// true if a reference or target species
-		IsRefSpecies(UINT16 SpeciesID);	// species to test
+		IsRefSpecies(uint16_t SpeciesID);	// species to test
 
-	UINT32								// returned sequence identifier (1..cMaxSeqID)
+	uint32_t								// returned sequence identifier (1..cMaxSeqID)
 		AddTargSeq(char *pszSeqName);	// sequence name - could be chrom, contig, transcript name
 
-	UINT32 NameToSeqID(char *pszSeqName); // returned sequence identifier for specified name, returns 0 if name not previously added with AddTargSeq)
+	uint32_t NameToSeqID(char *pszSeqName); // returned sequence identifier for specified name, returns 0 if name not previously added with AddTargSeq)
 
 	char *								// returned sequence name
-		SeqIDtoName(UINT32 SeqID);		// sequence identifier for which name is to be returned
+		SeqIDtoName(uint32_t SeqID);		// sequence identifier for which name is to be returned
 
-	int PreAllocEstSNPs(INT64 EstNumSNPS);	// preallocate memory for this many estimated SNP loci
+	int PreAllocEstSNPs(int64_t EstNumSNPS);	// preallocate memory for this many estimated SNP loci
 	int PreAllocImputedSNPs(int NumbIsolates);	// when all known SNPs have been loaded then can allocate for additional imputed SNPs using number of isolates
 
-	INT64 AddLoci(char *pszTargSpecies,	// reads were aligned to this cultivar or species
+	int64_t AddLoci(char *pszTargSpecies,	// reads were aligned to this cultivar or species
 				char *pszTargSeq,		// alignments to this sequence - could be a chrom/contig/transcript - from pszSpecies
-				UINT32 TargLoci,		// loci within target sequence at which SNPs observed
+				uint32_t TargLoci,		// loci within target sequence at which SNPs observed
 				etSeqBase TargRefBase,	// loci has this reference base
 				char *pszProbeSpecies,	// reads were aligned from this cultivar or species
-				UINT32 ProbeCntA,		// number instances probe base A aligned to TargRefBase 
-				UINT32 ProbeCntC,		// number instances probe base C aligned to TargRefBase
-				UINT32 ProbeCntG,		// number instances probe base G aligned to TargRefBase
-				UINT32 ProbeCntT,		// number instances probe base T aligned to TargRefBase
-				UINT32 ProbeCntN,		// number instances probe base N aligned to TargRefBase
+				uint32_t ProbeCntA,		// number instances probe base A aligned to TargRefBase 
+				uint32_t ProbeCntC,		// number instances probe base C aligned to TargRefBase
+				uint32_t ProbeCntG,		// number instances probe base G aligned to TargRefBase
+				uint32_t ProbeCntT,		// number instances probe base T aligned to TargRefBase
+				uint32_t ProbeCntN,		// number instances probe base N aligned to TargRefBase
 				double LSER);			// local sequencing error rate
 
 	int IdentSpeciesSpec(int AltMaxCnt,	// max count allowed for base being processed in any other species, 0 if no limit
@@ -229,9 +229,9 @@ public:
 						int MinSpeciesWithCnts = 0,			// must be at least this number of species with base counts more than MinSpeciesTotCntThres - 0 if no limit 
 						int MinSpeciesTotCntThres = 0);		// individual species must have at least this number of total bases at SNP loci - 0 if no threshold
 
-	INT64 NumAlignLoci(void);					// returns current number of alignment/SNP loci
+	int64_t NumAlignLoci(void);					// returns current number of alignment/SNP loci
 
-	INT64											// number of markers reported
+	int64_t											// number of markers reported
 		Report(char *pszRefGenome,			    // reference genome assembly against which other species were aligned
 			int NumRelGenomes,					// number of relative genome names
 			char *pszRelGenomes[],				// relative genome names

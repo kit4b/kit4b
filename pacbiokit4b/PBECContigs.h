@@ -40,48 +40,48 @@ typedef enum TAG_ePBPMode {								// processing mode
 #pragma pack(1)
 
 typedef struct TAG_sPBECCKMerOfs {					// no KMer in antisense strand if both MinOfs and MaxOfs are 0
-	UINT32 MinOfs;										// at least one antisense KMer is located between this minimum and
-	UINT32 MaxOfs;                                      // and this maximum offset (sub 1) in the antisense sequence
+	uint32_t MinOfs;										// at least one antisense KMer is located between this minimum and
+	uint32_t MaxOfs;                                      // and this maximum offset (sub 1) in the antisense sequence
 } tsPBECCKMerOfs;
 
 // seed core hits 
 typedef struct TAG_sPBECCCoreHit {
-	UINT32 ProbeNodeID;				// core hit was from this probe  node 
-	UINT32 TargNodeID;				// hit was onto this target  node
-	UINT32 ProbeOfs;                // hit was from this probe offset
-	UINT32 TargOfs;					// onto this target offset
-	UINT32 HitLen;					// hit was of this length
-	UINT32 WinHits;					// number of core hits onto target relative to this core which are within a window of probelen
-	UINT8 flgRevCpl:1;				// 1 if core sequence was revcpl'd before matching
-	UINT8 flgMulti:1;				// 1 if core sequence was target multiloci and this instance to not be further processed
-	UINT8 flgClustered:1;			// 1 if core hit identified as part of a cluster of hits
+	uint32_t ProbeNodeID;				// core hit was from this probe  node 
+	uint32_t TargNodeID;				// hit was onto this target  node
+	uint32_t ProbeOfs;                // hit was from this probe offset
+	uint32_t TargOfs;					// onto this target offset
+	uint32_t HitLen;					// hit was of this length
+	uint32_t WinHits;					// number of core hits onto target relative to this core which are within a window of probelen
+	uint8_t flgRevCpl:1;				// 1 if core sequence was revcpl'd before matching
+	uint8_t flgMulti:1;				// 1 if core sequence was target multiloci and this instance to not be further processed
+	uint8_t flgClustered:1;			// 1 if core hit identified as part of a cluster of hits
 	} tsPBECCCoreHit;
 
 typedef struct TAG_sPBECCScaffNode {
-	UINT32 NodeID;					// uniquely identifies this node
-	UINT32 VertexID;				// assembly graph vertex identifier
-	UINT32 EntryID;					// suffix array entry identifier for indexed sequence
-	UINT32 RefSeqID;				// consensus class identifier for this sequence
-	UINT32 SeqLen;					// length in bp of this scaffolding node sequence
-	UINT8 flgCurProc:1;			// sequence is currently being processed
-	UINT8 flgContained:1;			// sequence is fully contained within at least one other sequence
-	UINT8 flgContains:1;			// sequence fully contains at least one other sequence
-	UINT8 flgUnderlength:1;        // sequence is under length
-	UINT8 flgHCseq:1;				// loaded as a high confidence (non-PacBio) sequence
+	uint32_t NodeID;					// uniquely identifies this node
+	uint32_t VertexID;				// assembly graph vertex identifier
+	uint32_t EntryID;					// suffix array entry identifier for indexed sequence
+	uint32_t RefSeqID;				// consensus class identifier for this sequence
+	uint32_t SeqLen;					// length in bp of this scaffolding node sequence
+	uint8_t flgCurProc:1;			// sequence is currently being processed
+	uint8_t flgContained:1;			// sequence is fully contained within at least one other sequence
+	uint8_t flgContains:1;			// sequence fully contains at least one other sequence
+	uint8_t flgUnderlength:1;        // sequence is under length
+	uint8_t flgHCseq:1;				// loaded as a high confidence (non-PacBio) sequence
 } tsPBECCScaffNode;
 
 typedef struct TAG_sPBECCCoreHitCnts {
-	UINT32 TargNodeID;				// node identifier for hit target sequence	
-	UINT32	STargStartOfs;			// lowest target offset for any sense hit from probe
-	UINT32	STargEndOfs;			// highest target offset for any sense hit from probe
-	UINT32	ATargStartOfs;			// lowest target offset for any antisense hit from probe
-	UINT32	ATargEndOfs;			// highest target offset for any antisense hit from probe
-	UINT32	SProbeStartOfs;			// lowest probe offset for any sense hit onto target
-	UINT32	SProbeEndOfs;			// highest probe offset for any sense hit onto target
-	UINT32	AProbeStartOfs;			// lowest probe offset for any antisense hit onto target
-	UINT32	AProbeEndOfs;			// highest probe offset for any antisense hit onto target
-	UINT32 NumSHits;				// number of hits onto target sequence from sense probe
-	UINT32 NumAHits;				// number of hits onto target sequence from antisense probe
+	uint32_t TargNodeID;				// node identifier for hit target sequence	
+	uint32_t	STargStartOfs;			// lowest target offset for any sense hit from probe
+	uint32_t	STargEndOfs;			// highest target offset for any sense hit from probe
+	uint32_t	ATargStartOfs;			// lowest target offset for any antisense hit from probe
+	uint32_t	ATargEndOfs;			// highest target offset for any antisense hit from probe
+	uint32_t	SProbeStartOfs;			// lowest probe offset for any sense hit onto target
+	uint32_t	SProbeEndOfs;			// highest probe offset for any sense hit onto target
+	uint32_t	AProbeStartOfs;			// lowest probe offset for any antisense hit onto target
+	uint32_t	AProbeEndOfs;			// highest probe offset for any antisense hit onto target
+	uint32_t NumSHits;				// number of hits onto target sequence from sense probe
+	uint32_t NumAHits;				// number of hits onto target sequence from antisense probe
 } sPBECCCoreHitCnts;
 
 typedef struct TAG_sThreadPBECContigs {
@@ -89,7 +89,7 @@ typedef struct TAG_sThreadPBECContigs {
 	void *pThis;					// will be initialised to pt to class instance
 #ifdef _WIN32
 	HANDLE threadHandle;			// handle as returned by _beginthreadex()
-	UINT32 threadID;				// identifier as set by _beginthreadex()
+	uint32_t threadID;				// identifier as set by _beginthreadex()
 #else
 	int threadRslt;					// result as returned by pthread_create ()
 	pthread_t threadID;				// identifier as set by pthread_create ()
@@ -103,36 +103,36 @@ typedef struct TAG_sThreadPBECContigs {
 	bool bSelfHits;					// if true then processing for self hits with objective of detecting retained hairpins
 
 	bool bRevCpl;					// true if probe sequence is to be revcpl when looking for overlaps
-	UINT32 MaxSeedCoreDepth;		// only further extend a seed core if there are no more than this number of matching cores in all targeted sequences
-	UINT32 DeltaCoreOfs;			// offset core windows of coreSeqLen along the probe sequence when checking for overlaps 
-	UINT32 CoreSeqLen;				// putative overlaps are explored if there are cores of at least this length in any putative overlap
-	UINT32 MinNumCores;				// and if the putative overlap contains at least this many cores
-	UINT32 MaxAcceptHitsPerSeedCore; // limit accepted hits per seed core to no more this many
-	UINT32 MinPBSeqLen;				// only process PacBio sequences which are at least this length
+	uint32_t MaxSeedCoreDepth;		// only further extend a seed core if there are no more than this number of matching cores in all targeted sequences
+	uint32_t DeltaCoreOfs;			// offset core windows of coreSeqLen along the probe sequence when checking for overlaps 
+	uint32_t CoreSeqLen;				// putative overlaps are explored if there are cores of at least this length in any putative overlap
+	uint32_t MinNumCores;				// and if the putative overlap contains at least this many cores
+	uint32_t MaxAcceptHitsPerSeedCore; // limit accepted hits per seed core to no more this many
+	uint32_t MinPBSeqLen;				// only process PacBio sequences which are at least this length
 
-	UINT32 NumTargCoreHitCnts;		// current number of summary target core hit counts in TargCoreHitCnts
+	uint32_t NumTargCoreHitCnts;		// current number of summary target core hit counts in TargCoreHitCnts
 	sPBECCCoreHitCnts TargCoreHitCnts[cSummaryTargCoreHitCnts+1]; // top targets by core hit counts
-	UINT32 NumCoreHits;				// currently this many core hits in m_pCoreHits
-	UINT32 AllocdCoreHits;				// m_pCoreHits currently allocated to hold at most this many core hits
+	uint32_t NumCoreHits;				// currently this many core hits in m_pCoreHits
+	uint32_t AllocdCoreHits;				// m_pCoreHits currently allocated to hold at most this many core hits
 	size_t AllocdCoreHitsSize;		// m_pCoreHits current allocation size
 	tsPBECCCoreHit *pCoreHits;			// allocated to hold all core hits	
 
-	UINT32 AllocdProbeSeqSize;		// current allocation size for buffered probe sequence in pProbeSeq 	
+	uint32_t AllocdProbeSeqSize;		// current allocation size for buffered probe sequence in pProbeSeq 	
 	etSeqBase *pProbeSeq;			// allocated to hold the current probe sequence
 
-	UINT32 AllocdTargSeqSize;		// current allocation size for buffered target sequence in pTargSeq 	
+	uint32_t AllocdTargSeqSize;		// current allocation size for buffered target sequence in pTargSeq 	
 	etSeqBase *pTargSeq;			// allocated to hold the current target sequence
 
-	UINT32 AlignErrMem;				// number of times alignments failed because of memory allocation errors
-	UINT32 AlignExcessLen;			// number of times alignments failed because length of probe * target was excessive
+	uint32_t AlignErrMem;				// number of times alignments failed because of memory allocation errors
+	uint32_t AlignExcessLen;			// number of times alignments failed because length of probe * target was excessive
 } tsThreadPBECContigs;
 
 #ifdef USETHISCODE
-	UINT32 ErrCorBuffIdx;			// index into m_szErrCorLineBuff at which to next copy a corrected sequence
-	UINT32 AllocdErrCorLineBuff;	// allocation size for m_pszErrCorLineBuff
+	uint32_t ErrCorBuffIdx;			// index into m_szErrCorLineBuff at which to next copy a corrected sequence
+	uint32_t AllocdErrCorLineBuff;	// allocation size for m_pszErrCorLineBuff
 	char *pszErrCorLineBuff;		// allocated buffering for error corrected and scored sequences
-	UINT32 MultiAlignBuffIdx;		// index into m_pszMultiAlignLineBuff at which to write next multialignment
-	UINT32 AllocdMultiAlignLineBuff;// allocation size for m_pszMultiAlignLineBuff
+	uint32_t MultiAlignBuffIdx;		// index into m_pszMultiAlignLineBuff at which to write next multialignment
+	uint32_t AllocdMultiAlignLineBuff;// allocation size for m_pszMultiAlignLineBuff
 	char *pszMultiAlignLineBuff;	// allocated buffering for multialignments
 #endif
 
@@ -143,28 +143,28 @@ class CPBECContigs
 {
 	etPBPMode m_PMode;						// processing mode
 
-	UINT32 m_DeltaCoreOfs;					// offset by this many bp the core windows of coreSeqLen along the probe sequence when checking for overlaps
-	UINT32 m_MaxSeedCoreDepth;				// only further process a seed core if there are no more than this number of matching cores in all targeted sequences
+	uint32_t m_DeltaCoreOfs;					// offset by this many bp the core windows of coreSeqLen along the probe sequence when checking for overlaps
+	uint32_t m_MaxSeedCoreDepth;				// only further process a seed core if there are no more than this number of matching cores in all targeted sequences
 
-	UINT32 m_MinSeedCoreLen;				// use seed cores of this length when identifying putative overlapping scaffold sequences
-	UINT32 m_MinNumSeedCores;				// require at least this many seed cores between overlapping scaffold sequences
+	uint32_t m_MinSeedCoreLen;				// use seed cores of this length when identifying putative overlapping scaffold sequences
+	uint32_t m_MinNumSeedCores;				// require at least this many seed cores between overlapping scaffold sequences
 
 	int m_SWMatchScore;						// SW score for matching bases (0..100)
 	int m_SWMismatchPenalty;				// SW mismatch penalty (-100..0)
 	int m_SWGapOpenPenalty;					// SW gap opening penalty (-100..0)
 	int m_SWGapExtnPenalty;					// SW gap extension penalty (-100..0)
 	int m_SWProgExtnPenaltyLen;				// only apply gap extension penalty if gap at least this length (1..63) - use if aligning PacBio
-	UINT32 m_MaxArtefactDev;				// classify overlaps as artefactual if sliding window of 1Kbp over any overlap deviates by more than this percentage from the overlap mean
+	uint32_t m_MaxArtefactDev;				// classify overlaps as artefactual if sliding window of 1Kbp over any overlap deviates by more than this percentage from the overlap mean
 	
-	UINT32 m_NumOverlapProcessed;			// number of PacBio reads processed for overlapping other PacBio reads
-	UINT32 m_ProvOverlapping;               // number of high confidence sequences overlapping onto at least one contig to be error corrected
-	UINT32 m_ProvContained;					// number of high confidence sequences provisionally totally contained within at least one contig to be error corrected
-	UINT32 m_ProvArtefact;					// number of high confidence sequences provisionally only partially, likely an alignment artefact, contained within at least one contig to be error corrected
-	UINT32 m_ProvSWchecked;					// number of times SW used to identify overlaps
+	uint32_t m_NumOverlapProcessed;			// number of PacBio reads processed for overlapping other PacBio reads
+	uint32_t m_ProvOverlapping;               // number of high confidence sequences overlapping onto at least one contig to be error corrected
+	uint32_t m_ProvContained;					// number of high confidence sequences provisionally totally contained within at least one contig to be error corrected
+	uint32_t m_ProvArtefact;					// number of high confidence sequences provisionally only partially, likely an alignment artefact, contained within at least one contig to be error corrected
+	uint32_t m_ProvSWchecked;					// number of times SW used to identify overlaps
 
-	UINT32 m_OverlapFloat;					// allow up to this much float on overlaps to account for the PacBio error profile
-	UINT32 m_MinContigLen;					// individual contigs must be of at least this length
-	UINT32 m_MinHCSeqLen;					// only accepting hiconfidence sequences of at least this length (defaults to 1Kbp)
+	uint32_t m_OverlapFloat;					// allow up to this much float on overlaps to account for the PacBio error profile
+	uint32_t m_MinContigLen;					// individual contigs must be of at least this length
+	uint32_t m_MinHCSeqLen;					// only accepting hiconfidence sequences of at least this length (defaults to 1Kbp)
 
 	char m_szContigFile[_MAX_PATH];			// input contigs file
 	char m_szHiConfFile[_MAX_PATH];			// input hiconfidence sequences file		
@@ -182,15 +182,15 @@ class CPBECContigs
 
 	int m_NumThreads;							// maximum number of worker threads to use
 
-	UINT32 m_MaxTargSeqLen;						// max length of any targeted contig sequence to be error corrected
-	UINT32 m_NumPBScaffNodes;					// m_pPBScaffNodes currently holds many contig nodes to be error corrected
-	UINT32 m_AllocdPBScaffNodes;				// m_pPBScaffNodes allocated to hold this many contig nodes
+	uint32_t m_MaxTargSeqLen;						// max length of any targeted contig sequence to be error corrected
+	uint32_t m_NumPBScaffNodes;					// m_pPBScaffNodes currently holds many contig nodes to be error corrected
+	uint32_t m_AllocdPBScaffNodes;				// m_pPBScaffNodes allocated to hold this many contig nodes
 	tsPBECCScaffNode *m_pPBScaffNodes;				// allocated to hold contig nodes
-	UINT32 *m_pMapEntryID2NodeIDs;				// used to map from suffix array entry identifiers to the corresponding contig node identifier
+	uint32_t *m_pMapEntryID2NodeIDs;				// used to map from suffix array entry identifiers to the corresponding contig node identifier
 	CSfxArray *m_pSfxArray;					// contigs to error correct are indexed in this suffix array
 
-	UINT32 m_NumHiConfSeqs;						// m_pSeqStore currently holds many hi confidence sequences to be used for error correcting
-    UINT32 m_MaxHiConfSeqLen;					// max length of any high confidence sequence
+	uint32_t m_NumHiConfSeqs;						// m_pSeqStore currently holds many hi confidence sequences to be used for error correcting
+    uint32_t m_MaxHiConfSeqLen;					// max length of any high confidence sequence
 	CSeqStore  *m_pSeqStore;					// high confidence sequences used for errror correcting are loaded into this sequence store
 
 	CMAConsensus *m_pMAConsensus;               // class to call consensus bases in contigs
@@ -198,7 +198,7 @@ class CPBECContigs
 	void Init(void);							// initialise state to that immediately following construction
 	void Reset(bool bSync);						// reset state, if bSync true then fsync before closing output file handles
 
-	INT64 EstSumSeqLens(int NumTargFiles,char **pszTargFiles);		// guestimate and return total sequence length by simply summing the lengths of each file - likely to grossly over estimate
+	int64_t EstSumSeqLens(int NumTargFiles,char **pszTargFiles);		// guestimate and return total sequence length by simply summing the lengths of each file - likely to grossly over estimate
 
 	int LoadSeqs(int MinSeqLen,int NumTargFiles,
 				char **pszTargFiles,			// parse, and index sequences in this file into memory resident suffix array; file expected to contain either fasta or fastq sequences
@@ -212,22 +212,22 @@ class CPBECContigs
 
 	int InitiateECContigs(int NumECThreads);	// initiate contig error correction using this many threads
 
-	int IdentifyCoreHits(UINT32 HiConfSeqID,	// identify all overlaps of this probe sequence HiConfSeqID onto target sequences
-				UINT32 MinTargLen,				// accepted target hit sequences must be at least this length
-				UINT32 MaxTargLen,				// and if > 0 then accepted targets no longer than this length
+	int IdentifyCoreHits(uint32_t HiConfSeqID,	// identify all overlaps of this probe sequence HiConfSeqID onto target sequences
+				uint32_t MinTargLen,				// accepted target hit sequences must be at least this length
+				uint32_t MaxTargLen,				// and if > 0 then accepted targets no longer than this length
 				tsThreadPBECContigs *pPars);		// thread specific
 
 	int					// returns 0 if core overlapped (uses a non-exhaustive search) a previously added core, index 1..N of just added core hit or -1 if errors
-		AddCoreHit(UINT32 HiConfSeqID,			// core hit was from this probe  
+		AddCoreHit(uint32_t HiConfSeqID,			// core hit was from this probe  
 			   bool bRevCpl,					// true if core sequence was revcpl'd before matching
-			   UINT32 ProbeOfs,                 // hit started at this probe offset
-			   UINT32 TargNodeID,               // probe core matched onto this target scaffold node
-			   UINT32 TargOfs,                  // probe core matched starting at this target loci
-			   UINT32 HitLen,					// hit was of this length
+			   uint32_t ProbeOfs,                 // hit started at this probe offset
+			   uint32_t TargNodeID,               // probe core matched onto this target scaffold node
+			   uint32_t TargOfs,                  // probe core matched starting at this target loci
+			   uint32_t HitLen,					// hit was of this length
                tsThreadPBECContigs *pPars);		// thread specific
 
-	UINT32										// returned tsPBScaffNode node identifier
-		MapEntryID2NodeID(UINT32 EntryID);		// suffix array entry identifier
+	uint32_t										// returned tsPBScaffNode node identifier
+		MapEntryID2NodeID(uint32_t EntryID);		// suffix array entry identifier
 
 	CMTqsort m_mtqsort;				// muti-threaded qsort
 

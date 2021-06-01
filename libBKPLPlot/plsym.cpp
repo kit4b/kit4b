@@ -1374,7 +1374,7 @@ void
 plfntld( PLINT fnt )
 {
 	bool bUseEmbedded;				// will be set true if loading from a embedded font
-	unsigned char *pEmbeddedFont;
+	uint8_t *pEmbeddedFont;
     static PLINT charset;
     int        bffrleng;
     PDFstrm      *pdfs;
@@ -2110,7 +2110,7 @@ c_plsfont( PLINT family, PLINT style, PLINT weight )
         if ( family > PL_FCI_SYMBOL )
             plwarn( "plsfont: Value for family is out of range" );
         else
-            plP_hex2fci( (unsigned char) family, PL_FCI_FAMILY, &fci );
+            plP_hex2fci( (uint8_t) family, PL_FCI_FAMILY, &fci );
     }
 
     if ( style >= 0 )
@@ -2119,7 +2119,7 @@ c_plsfont( PLINT family, PLINT style, PLINT weight )
         if ( style > PL_FCI_OBLIQUE )
             plwarn( "plsfont: Value for style is out of range" );
         else
-            plP_hex2fci( (unsigned char) style, PL_FCI_STYLE, &fci );
+            plP_hex2fci( (uint8_t) style, PL_FCI_STYLE, &fci );
     }
 
     if ( weight >= 0 )
@@ -2128,7 +2128,7 @@ c_plsfont( PLINT family, PLINT style, PLINT weight )
         if ( weight > PL_FCI_BOLD )
             plwarn( "plsfont: Value for weight is out of range" );
         else
-            plP_hex2fci( (unsigned char) weight, PL_FCI_WEIGHT, &fci );
+            plP_hex2fci( (uint8_t) weight, PL_FCI_WEIGHT, &fci );
     }
 
     plsfci( fci );
@@ -2145,7 +2145,7 @@ void
 c_plgfont( PLINT *p_family, PLINT *p_style, PLINT *p_weight )
 {
     PLUNICODE     fci;
-    unsigned char val;
+    uint8_t val;
 
     plgfci( &fci );
 

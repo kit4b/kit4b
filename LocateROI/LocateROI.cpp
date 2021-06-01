@@ -24,8 +24,8 @@
 const int cMaxNumAssocFiles = 20;			// alllow for at most this many feature association files 
 
 const int cChromSeqReAlloc = 5000000;	// realloc chrom sequence size
-const UINT32 cMaxAccumCnt= 0x07ffffff;  // truncate accumulated counts to be at most this value
-const UINT32 cRetainCnt  = 0x08000000;  // accumulated counts >= this value are counts marked as being to be retained
+const uint32_t cMaxAccumCnt= 0x07ffffff;  // truncate accumulated counts to be at most this value
+const uint32_t cRetainCnt  = 0x08000000;  // accumulated counts >= this value are counts marked as being to be retained
 
 const int cMinMedianCov  = 1;			// minimum user specified region median coverage
 const int cDfltMedianCov = 2;			// default minimum region median coverage
@@ -156,7 +156,7 @@ typedef struct TAG_sChromCnts {
 	int AllocCovCnts;							// allocated to hold cnts for this sized chromosome
 	int StartOfs;								// pCovCnts[offset] of first coverage cnt
 	int EndOfs;									// pCovCnts[offset] of last coverage cnt
-	UINT32 *pCovCnts;							// coverage counts
+	uint32_t *pCovCnts;							// coverage counts
 } tsChromCnts;
 
 
@@ -165,7 +165,7 @@ int m_NumOfROIs;					// current total number of ROIs in m_pROIs
 int m_AllocNumROIs;					// m_pROIs has been allocated to hold at most this number of ROIs
 size_t	m_AllocNumROIsMem;			// actual memory size allocated
 tsROI *m_pROIs;						// allocated to hold all ROIs
-UINT32 m_NumAcceptedReads;			// total number of accepted reads or element loci
+uint32_t m_NumAcceptedReads;			// total number of accepted reads or element loci
 
 tsChromCnts m_ChromCnts[cMaxChromCov];
 int m_NumChromsCov = 0;		
@@ -627,7 +627,7 @@ if(m_NumChromsCov > 0)
 			free(m_ChromCnts[ChromIdx].pCovCnts);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
 #else
 			if(m_ChromCnts[ChromIdx].pCovCnts != MAP_FAILED)
-				munmap(m_ChromCnts[ChromIdx].pCovCnts,m_ChromCnts[ChromIdx].AllocCovCnts * sizeof(UINT32));
+				munmap(m_ChromCnts[ChromIdx].pCovCnts,m_ChromCnts[ChromIdx].AllocCovCnts * sizeof(uint32_t));
 #endif
 			m_ChromCnts[ChromIdx].pCovCnts = NULL;
 			}
@@ -673,7 +673,7 @@ BuildReadCoverage(char *pszChrom,		// coverage is onto this chrom
 tsChromCnts *pChrom;
 int ChromIdx;
 int AllocCovCnts;
-UINT32 *pCovCnts;
+uint32_t *pCovCnts;
 size_t ReallocTo;
 
 if(pszChrom == NULL || pszChrom[0] == '\0')
@@ -722,21 +722,21 @@ if(ChromIdx == m_NumChromsCov)	// if a new or first chrom
 	pChrom->StartOfs = StartOfs;
 	pChrom->EndOfs = EndOfs;
 	AllocCovCnts = EndOfs + cAllocCovCnts;
-	ReallocTo =  AllocCovCnts * sizeof(UINT32);
+	ReallocTo =  AllocCovCnts * sizeof(uint32_t);
 #ifdef _WIN32
-	pChrom->pCovCnts = (UINT32 *) malloc(ReallocTo);	// initial and perhaps the only allocation
+	pChrom->pCovCnts = (uint32_t *) malloc(ReallocTo);	// initial and perhaps the only allocation
 	if(pChrom->pCovCnts == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"BuildReadCoverage: Memory allocation of %lld bytes - %s",(INT64)ReallocTo,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"BuildReadCoverage: Memory allocation of %lld bytes - %s",(int64_t)ReallocTo,strerror(errno));
 		Reset();
 		return(eBSFerrMem);
 		}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-	pChrom->pCovCnts = (UINT32 *)mmap(NULL,ReallocTo, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+	pChrom->pCovCnts = (uint32_t *)mmap(NULL,ReallocTo, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(pChrom->pCovCnts == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"BuildReadCoverage: Memory allocation of %lld bytes through mmap()  failed - %s",(INT64)ReallocTo,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"BuildReadCoverage: Memory allocation of %lld bytes through mmap()  failed - %s",(int64_t)ReallocTo,strerror(errno));
 		pChrom->pCovCnts = NULL;
 		Reset();
 		return(eBSFerrMem);
@@ -751,11 +751,11 @@ if(ChromIdx == m_NumChromsCov)	// if a new or first chrom
 if(EndOfs >= pChrom->AllocCovCnts)
 	{
 	AllocCovCnts = EndOfs + cAllocCovCnts;
-	ReallocTo = AllocCovCnts * sizeof(UINT32);
+	ReallocTo = AllocCovCnts * sizeof(uint32_t);
 #ifdef _WIN32
-	pCovCnts = (UINT32 *) realloc(pChrom->pCovCnts,ReallocTo);
+	pCovCnts = (uint32_t *) realloc(pChrom->pCovCnts,ReallocTo);
 #else
-	pCovCnts = (UINT32 *)mremap(pChrom->pCovCnts,pChrom->AllocCovCnts * sizeof(UINT32),ReallocTo,MREMAP_MAYMOVE);
+	pCovCnts = (uint32_t *)mremap(pChrom->pCovCnts,pChrom->AllocCovCnts * sizeof(uint32_t),ReallocTo,MREMAP_MAYMOVE);
 	if(pCovCnts == MAP_FAILED)
 		pCovCnts = NULL;
 #endif
@@ -766,7 +766,7 @@ if(EndOfs >= pChrom->AllocCovCnts)
 		return(eBSFerrMem);
 		}
 	pChrom->pCovCnts = pCovCnts;
-	memset(&pChrom->pCovCnts[pChrom->AllocCovCnts],0,(AllocCovCnts - pChrom->AllocCovCnts) * sizeof(UINT32));
+	memset(&pChrom->pCovCnts[pChrom->AllocCovCnts],0,(AllocCovCnts - pChrom->AllocCovCnts) * sizeof(uint32_t));
 	pChrom->AllocCovCnts = AllocCovCnts;
 	}
 
@@ -779,8 +779,8 @@ pCovCnts = &pChrom->pCovCnts[StartOfs];
 while(StartOfs++ <= EndOfs)
 	{
 	// clamp accumulated cnts to be no greater than cMaxAccumCnt
-	if((cMaxAccumCnt - *pCovCnts) > (UINT32)Cnt)
-		*pCovCnts += (UINT32)Cnt;
+	if((cMaxAccumCnt - *pCovCnts) > (uint32_t)Cnt)
+		*pCovCnts += (uint32_t)Cnt;
 	else
 		*pCovCnts = cMaxAccumCnt;
 	pCovCnts += 1;
@@ -803,7 +803,7 @@ RetainReadCoverage(char *pszChrom,		// filtering is onto this chrom
 {
 tsChromCnts *pChrom;
 int ChromIdx;
-UINT32 *pCovCnts;
+uint32_t *pCovCnts;
 
 if(pszChrom == NULL || pszChrom[0] == '\0')
 	{
@@ -861,9 +861,9 @@ IdentROI(etFMode FMode,					// output in this format to m_hRsltsFile
 {
 tsROI *pROI;
 tsChromCnts *pChrom;
-UINT32 *pCnts;
+uint32_t *pCnts;
 int Cnts;
-UINT32 SumCnts;
+uint32_t SumCnts;
 int ChromIdx;
 int SeqIdx;
 int StartOfRegion;
@@ -873,7 +873,7 @@ int NumMedCnts;
 int SubRegionLen;
 int TotRegionLen;
 int NumRegions;
-UINT64 TotGenomeCnts;
+uint64_t TotGenomeCnts;
 double GenomeCntsPerM;
 size_t memreq;
 
@@ -886,7 +886,7 @@ if(m_pROIs == NULL)		// should be the case but who knows :-)
 	m_pROIs = (tsROI *) malloc(memreq);	// initial allocation
 	if(m_pROIs == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"IdentROI: Memory allocation of %lld bytes - %s",(INT64)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"IdentROI: Memory allocation of %lld bytes - %s",(int64_t)memreq,strerror(errno));
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -895,7 +895,7 @@ if(m_pROIs == NULL)		// should be the case but who knows :-)
 	m_pROIs = (tsROI *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pROIs == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"IdentROI: Memory allocation of %lld bytes through mmap()  failed - %s",(INT64)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"IdentROI: Memory allocation of %lld bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
 		m_pROIs = NULL;
 		Reset();
 		return(eBSFerrMem);

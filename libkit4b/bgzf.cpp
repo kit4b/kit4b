@@ -1,7 +1,7 @@
 /* The MIT License
 
    Copyright (c) 2008 Broad Institute / Massachusetts Institute of Technology
-                 2011 Attractive Chaos <attractor@live.co.uk>
+				 2011 Attractive Chaos <attractor@live.co.uk>
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -81,30 +81,30 @@ typedef FILE *_bgzf_file_t;
  | 31|139|  8|  4|              0|  0|255|      6| 66| 67|      2|BLK_LEN|
  +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+
 */
-static const UINT8 g_magic[19] = "\037\213\010\4\0\0\0\0\0\377\6\0\102\103\2\0\0\0";
+static const uint8_t g_magic[19] = "\037\213\010\4\0\0\0\0\0\377\6\0\102\103\2\0\0\0";
 
 #ifdef BGZF_CACHE
 typedef struct {
 	int size;
-	UINT8 *block;
-	INT64 end_offset;
+	uint8_t *block;
+	int64_t end_offset;
 } cache_t;
 #include "khash.h"
 KHASH_MAP_INIT_INT64(cache, cache_t)
 #endif
 
-static inline void packInt16(UINT8 *buffer, UINT16 value)
+static inline void packInt16(uint8_t *buffer, uint16_t value)
 {
-buffer[0] = (UINT8)(value & 0x0ff);
-buffer[1] = (UINT8)((value >> 8) & 0x0ff);
+buffer[0] = (uint8_t)(value & 0x0ff);
+buffer[1] = (uint8_t)((value >> 8) & 0x0ff);
 }
 
-static inline int unpackInt16(const UINT8 *buffer)
+static inline int unpackInt16(const uint8_t *buffer)
 {
 return buffer[0] | buffer[1] << 8;
 }
 
-static inline void packInt32(UINT8 *buffer, UINT32 value)
+static inline void packInt32(uint8_t *buffer, uint32_t value)
 {
 buffer[0] = value;
 buffer[1] = value >> 8;
@@ -194,9 +194,9 @@ BGZF *bgzf_dopen(int fd, const char *mode)
 
 static int bgzf_compress(void *_dst, int *dlen, void *src, int slen, int level)
 {
-UINT32 crc;
+uint32_t crc;
 z_stream zs;
-UINT8 *dst = (UINT8*)_dst;
+uint8_t *dst = (uint8_t*)_dst;
 
 // compress the body
 zs.zalloc = NULL; zs.zfree = NULL;
@@ -216,8 +216,8 @@ memcpy(dst, g_magic, BLOCK_HEADER_LENGTH); // the last two bytes are a place hol
 packInt16(&dst[16], *dlen - 1); // write the compressed length; -1 to fit 2 bytes
 // write the footer
 crc = crc32(crc32(0L, (const Bytef *)NULL, 0L), (const Bytef *)src, slen);
-packInt32((UINT8*)&dst[*dlen - 8], crc);
-packInt32((UINT8*)&dst[*dlen - 4], slen);
+packInt32((uint8_t*)&dst[*dlen - 8], crc);
+packInt32((uint8_t*)&dst[*dlen - 4], slen);
 return 0;
 }
 
@@ -264,13 +264,13 @@ if (inflateEnd(&zs) != Z_OK)
 return zs.total_out;
 }
 
-static int check_header(const UINT8 *header)
+static int check_header(const uint8_t *header)
 {
 return (header[0] == 31 && header[1] == 139 && 
 			header[2] == 8 && (header[3] & 4) != 0
-			&& unpackInt16((UINT8*)&header[10]) == 6
+			&& unpackInt16((uint8_t*)&header[10]) == 6
 			&& header[12] == 'B' && header[13] == 'C'
-			&& unpackInt16((UINT8*)&header[14]) == 2);
+			&& unpackInt16((uint8_t*)&header[14]) == 2);
 }
 
 #ifdef BGZF_CACHE
@@ -284,7 +284,7 @@ static void free_cache(BGZF *fp)
 	kh_destroy(cache, h);
 }
 
-static int load_block_from_cache(BGZF *fp, INT64 block_address)
+static int load_block_from_cache(BGZF *fp, int64_t block_address)
 {
 	khint_t k;
 	cache_t *p;
@@ -328,15 +328,15 @@ static void cache_block(BGZF *fp, int size)
 }
 #else
 static void free_cache(BGZF *fp) {}
-static int load_block_from_cache(BGZF *fp, INT64 block_address) {return 0;}
+static int load_block_from_cache(BGZF *fp, int64_t block_address) {return 0;}
 static void cache_block(BGZF *fp, int size) {}
 #endif
 
 int bgzf_read_block(BGZF *fp)
 {
-UINT8 header[BLOCK_HEADER_LENGTH], *compressed_block;
+uint8_t header[BLOCK_HEADER_LENGTH], *compressed_block;
 size_t count, size = 0, block_length, remaining;
-INT64 block_address;
+int64_t block_address;
 block_address = _bgzf_tell((_bgzf_file_t)fp->fp);
 if (fp->cache_size && load_block_from_cache(fp, block_address)) 
 	return 0;
@@ -352,8 +352,8 @@ if (count != sizeof(header) || !check_header(header))
 	return -1;
 	}
 size = count;
-block_length = unpackInt16((UINT8*)&header[16]) + 1; // +1 because when writing this number, we used "-1"
-compressed_block = (UINT8*)fp->compressed_block;
+block_length = unpackInt16((uint8_t*)&header[16]) + 1; // +1 because when writing this number, we used "-1"
+compressed_block = (uint8_t*)fp->compressed_block;
 memcpy(compressed_block, header, BLOCK_HEADER_LENGTH);
 remaining = block_length - BLOCK_HEADER_LENGTH;
 count = _bgzf_read((FILE *)fp->fp, &compressed_block[BLOCK_HEADER_LENGTH], remaining);
@@ -372,14 +372,14 @@ size_t bgzf_read(BGZF *fp, void *data, size_t length)
 {
 int MaxEOFmarkers = 2;
 size_t bytes_read = 0;
-UINT8 *output = (UINT8 *)data;
+uint8_t *output = (uint8_t *)data;
 if (length <= 0) 
 	return 0;
 assert(fp->is_write == 0);
 while (bytes_read < length)
 	{
 	int copy_length, available = fp->block_length - fp->block_offset;
-	UINT8 *buffer;
+	uint8_t *buffer;
 
 	if (available <= 0) 
 		{
@@ -398,7 +398,7 @@ while (bytes_read < length)
 			break;
 		}
 	copy_length = (int)(length - bytes_read < (size_t)available ? length - bytes_read : (size_t)available);
-	buffer = (UINT8 *)fp->uncompressed_block;
+	buffer = (uint8_t *)fp->uncompressed_block;
 	memcpy(output, buffer + fp->block_offset, copy_length);
 	fp->block_offset += copy_length;
 	output += copy_length;
@@ -444,12 +444,12 @@ return -1;
 size_t 
 bgzf_write(BGZF *fp, const void *data, size_t length)
 {
-const UINT8 *input = (const UINT8*)data;
+const uint8_t *input = (const uint8_t*)data;
 size_t block_length = BGZF_BLOCK_SIZE, bytes_written = 0;
 assert(fp->is_write);
 while (bytes_written < length) 
 	{
-	UINT8* buffer = (UINT8*)fp->uncompressed_block;
+	uint8_t* buffer = (uint8_t*)fp->uncompressed_block;
 	size_t copy_length = block_length - (size_t)fp->block_offset < length - bytes_written ? block_length - (size_t)fp->block_offset : length - bytes_written;
 	memcpy(buffer + fp->block_offset, input, copy_length);
 	fp->block_offset += (int)copy_length;
@@ -498,9 +498,9 @@ if (fp)
 
 int bgzf_check_EOF(BGZF *fp)
 {
-static UINT8 magic[29] = "\037\213\010\4\0\0\0\0\0\377\6\0\102\103\2\0\033\0\3\0\0\0\0\0\0\0\0\0";
-UINT8 buf[28];
-INT64 offset;
+static uint8_t magic[29] = "\037\213\010\4\0\0\0\0\0\377\6\0\102\103\2\0\033\0\3\0\0\0\0\0\0\0\0\0";
+uint8_t buf[28];
+int64_t offset;
 offset = _bgzf_tell((_bgzf_file_t)fp->fp);
 if (_bgzf_seek((FILE *)fp->fp, -28, SEEK_END) < 0) 
 	return 0;
@@ -510,10 +510,10 @@ _bgzf_seek((FILE *)fp->fp, offset, SEEK_SET);
 return (memcmp(magic, buf, 28) == 0)? 1 : 0;
 }
 
-INT64 bgzf_seek(BGZF* fp, INT64 pos, int where)
+int64_t bgzf_seek(BGZF* fp, int64_t pos, int where)
 {
 int block_offset;
-INT64 block_address;
+int64_t block_address;
 
 if (fp->is_write || where != SEEK_SET) 
 	{
@@ -537,7 +537,7 @@ return 0;
 
 int bgzf_is_bgzf(const char *fn)
 {
-UINT8 buf[16];
+uint8_t buf[16];
 size_t n;
 _bgzf_file_t fp;
 if ((fp = _bgzf_open(fn, "r")) == 0) 
@@ -559,12 +559,12 @@ if (fp->block_offset >= fp->block_length)
 	if (fp->block_length == 0) 
 		return -1; /* end-of-file */
 	}
-c = ((unsigned char*)fp->uncompressed_block)[fp->block_offset++];
+c = ((uint8_t*)fp->uncompressed_block)[fp->block_offset++];
 if (fp->block_offset == fp->block_length) 
 	{
-    fp->block_address = _bgzf_tell((_bgzf_file_t)fp->fp);
-    fp->block_offset = 0;
-    fp->block_length = 0;
+	fp->block_address = _bgzf_tell((_bgzf_file_t)fp->fp);
+	fp->block_offset = 0;
+	fp->block_length = 0;
 	}
 return c;
 }
@@ -576,7 +576,7 @@ return c;
 int bgzf_getline(BGZF *fp, int delim, kstring_t *str)
 {
 int l, state = 0;
-unsigned char *buf = (unsigned char*)fp->uncompressed_block;
+uint8_t *buf = (uint8_t*)fp->uncompressed_block;
 str->l = 0;
 do {
 	if (fp->block_offset >= fp->block_length) 

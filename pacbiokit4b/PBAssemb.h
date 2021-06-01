@@ -30,23 +30,23 @@ typedef enum TAG_ePBPMode {
 
 // identified overlap between probe and target sequence
 typedef struct TAG_sPBAOverlaps {
-	UINT8 flgAntisense:1;           // probe sequence was reverse complemented
-	UINT32 ProbeEntryID;            // probe sequence suffix array identifier
-	UINT32 TargEntryID;				// overlap from probe was onto this target suffix array identifier
-	UINT32 ProbeStartOfs;           // overlap starts at this probe offset
-	UINT32 TargStartOfs;            // overlap starts at this target offset
-	UINT32 ProbeOverlapLen;         // probe overlap is of this length
-	UINT32 TargOverlapLen;			// target overlap is of this length
+	uint8_t flgAntisense:1;           // probe sequence was reverse complemented
+	uint32_t ProbeEntryID;            // probe sequence suffix array identifier
+	uint32_t TargEntryID;				// overlap from probe was onto this target suffix array identifier
+	uint32_t ProbeStartOfs;           // overlap starts at this probe offset
+	uint32_t TargStartOfs;            // overlap starts at this target offset
+	uint32_t ProbeOverlapLen;         // probe overlap is of this length
+	uint32_t TargOverlapLen;			// target overlap is of this length
 } sPBAOverlaps;
 
 typedef struct TAG_sPBAScaffNode {
-	UINT32 NodeID;					// uniquely identifies this node
-	UINT32 VertexID;				// assembly graph vertex identifier
-	UINT32 EntryID;					// suffix array entry identifier for indexed sequence
-	UINT32 SeqLen;					// length in bp of this scaffolding node sequence
-	UINT8 flgCurProc:1;				// sequence is currently being processed
-	UINT8 flgContained:1;			// sequence is fully contained within another sequence
-	UINT8 flgUnderlength:1;			// sequence is under length
+	uint32_t NodeID;					// uniquely identifies this node
+	uint32_t VertexID;				// assembly graph vertex identifier
+	uint32_t EntryID;					// suffix array entry identifier for indexed sequence
+	uint32_t SeqLen;					// length in bp of this scaffolding node sequence
+	uint8_t flgCurProc:1;				// sequence is currently being processed
+	uint8_t flgContained:1;			// sequence is fully contained within another sequence
+	uint8_t flgUnderlength:1;			// sequence is under length
 } tsPBAScaffNode;
 
 #pragma pack()
@@ -56,16 +56,16 @@ class CPBAssemb
 {
 	etPBPMode m_PMode;						// processing mode
 
-	UINT32 m_NumOverlapProcessed;			// number of PacBio reads processed for overlapping other PacBio reads
-	UINT32 m_ProvOverlapping;               // number of PacBio reads overlapping at least one other PacBio read
-	UINT32 m_ProvOverlapped;				// number of PacBio reads provisionally overlapped, could be containing, another PacBio read
-	UINT32 m_ProvContained;					// number of PacBio reads provisionally contained within another PacBio read
-	UINT32 m_ProvArtefact;					// number of PacBio reads provisionally only partially, likely an alignment artefact, contained within another PacBio read
-	UINT32 m_ProvSWchecked;					// number of times SW used to identify overlaps
+	uint32_t m_NumOverlapProcessed;			// number of PacBio reads processed for overlapping other PacBio reads
+	uint32_t m_ProvOverlapping;               // number of PacBio reads overlapping at least one other PacBio read
+	uint32_t m_ProvOverlapped;				// number of PacBio reads provisionally overlapped, could be containing, another PacBio read
+	uint32_t m_ProvContained;					// number of PacBio reads provisionally contained within another PacBio read
+	uint32_t m_ProvArtefact;					// number of PacBio reads provisionally only partially, likely an alignment artefact, contained within another PacBio read
+	uint32_t m_ProvSWchecked;					// number of times SW used to identify overlaps
 
-	UINT32 m_OverlapFloat;					// allow up to this much float on overlaps to account for the PacBio error profile
-	UINT32 m_MinScaffSeqLen;				// individual target scaffold sequences must be of at least this length (defaults to 5Kbp)
-	UINT32 m_MinScaffOverlap;				// pairs of targeted scaffold sequences must overlap by at least this many bp to be considered for merging into a longer scaffold sequence (defaults to 5Kbp) 
+	uint32_t m_OverlapFloat;					// allow up to this much float on overlaps to account for the PacBio error profile
+	uint32_t m_MinScaffSeqLen;				// individual target scaffold sequences must be of at least this length (defaults to 5Kbp)
+	uint32_t m_MinScaffOverlap;				// pairs of targeted scaffold sequences must overlap by at least this many bp to be considered for merging into a longer scaffold sequence (defaults to 5Kbp) 
 
 	int m_ScaffScoreExact;					// scaffolding uses a scoring system on overlaps which is independent of the scoring used when error correcting
 	int m_ScaffScoreMismatch;				// expecting relatively few mismatches in error reduced scaffolding sequence overlaps
@@ -73,13 +73,13 @@ class CPBAssemb
 	int m_ScaffScoreGapExtn;				// expecting very few gap extensions in error reduced scaffolding sequence overlaps
 	int m_MinScaffScoreThres;				// accepted overlaps must be at least this minimum score per Kbp overlap
 
-	UINT32 m_NumRejectedMinScaffOverlap;	// this number of overlaps rejected because overlap is less than m_MinScaffOverlap
-	UINT32 m_NumRejectedScoreThres;			// this number of overlaps rejected as being below m_MinScaffScoreThres threshold
-	UINT32 m_NumRejectContained;			// this number of overlaps rejected because the overlap was classified as contained
-	UINT32 m_NumRejectAntisense;            // this number of overlaps rejected because the overlap was sense/antisense and only sense/sense overlaps are being accepted
-	UINT32 m_NumRejectArtefact;				// this number of overlaps rejected because the overlap was classified as being an artefact
-	UINT32 m_NumRejectedMinSeqLen;			// this number of overlaps rejected because either the probe or target sequence was under length
-	UINT32 m_NumAcceptedOverlaps;			// this number of overlaps accepted for scaffolding
+	uint32_t m_NumRejectedMinScaffOverlap;	// this number of overlaps rejected because overlap is less than m_MinScaffOverlap
+	uint32_t m_NumRejectedScoreThres;			// this number of overlaps rejected as being below m_MinScaffScoreThres threshold
+	uint32_t m_NumRejectContained;			// this number of overlaps rejected because the overlap was classified as contained
+	uint32_t m_NumRejectAntisense;            // this number of overlaps rejected because the overlap was sense/antisense and only sense/sense overlaps are being accepted
+	uint32_t m_NumRejectArtefact;				// this number of overlaps rejected because the overlap was classified as being an artefact
+	uint32_t m_NumRejectedMinSeqLen;			// this number of overlaps rejected because either the probe or target sequence was under length
+	uint32_t m_NumAcceptedOverlaps;			// this number of overlaps accepted for scaffolding
 
 	bool m_bAcceptOrphanSeqs;				// if true then report also report sequences which have no overlap with any other sequence
 	bool m_bSenseOnlyOvlps;					// if false then both sense/sense and sense/antisense overlaps will be accepted and processed, otherwise sense/sense only overlaps accepted and processed
@@ -91,10 +91,10 @@ class CPBAssemb
 
 	int m_NumThreads;							// maximum number of worker threads to use
 
-	UINT32 m_NumPBScaffNodes;					// m_pPBScaffNodes currently holds many scaffolding nodes
-	UINT32 m_AllocdPBScaffNodes;				// m_pPBScaffNodes allocated to hold this many scaffolding nodes
+	uint32_t m_NumPBScaffNodes;					// m_pPBScaffNodes currently holds many scaffolding nodes
+	uint32_t m_AllocdPBScaffNodes;				// m_pPBScaffNodes allocated to hold this many scaffolding nodes
 	tsPBAScaffNode *m_pPBScaffNodes;				// allocated to hold scaffolding nodes
-	UINT32 *m_pMapEntryID2NodeIDs;				// used to map from suffix array entry identifiers to the corresponding scaffolding node identifier
+	uint32_t *m_pMapEntryID2NodeIDs;				// used to map from suffix array entry identifiers to the corresponding scaffolding node identifier
 
 	CSeqStore *m_pSeqStore;						// sequence store
 
@@ -112,8 +112,8 @@ class CPBAssemb
 	int ProcessFastaFile(int MinSeqLen,			// only accept for indexing sequences of at least this length
 				char *pszFile);					// file containing sequences
 
-	UINT32										// returned tsPBScaffNode node identifier
-		MapEntryID2NodeID(UINT32 EntryID);		// suffix array entry identifier
+	uint32_t										// returned tsPBScaffNode node identifier
+		MapEntryID2NodeID(uint32_t EntryID);		// suffix array entry identifier
 
 	CMTqsort m_mtqsort;				// muti-threaded qsort
 
@@ -154,7 +154,7 @@ public:
 	    char *pszOutFile,			// where to write merged scaffolded sequences
 		int NumThreads);				// maximum number of worker threads to use
 
-	UINT32   //  returns number of overlaps loaded and accepted, if > cMaxValidID then cast to teBSFrsltCodes for actual error 
+	uint32_t   //  returns number of overlaps loaded and accepted, if > cMaxValidID then cast to teBSFrsltCodes for actual error 
 		LoadPacBioOvlps(char *pszPacBioOvlps,			// parse and load pregenerated PacBio sequence overlap loci CSV file 
 						bool bValidateOnly = false,		// true if parse and validate only
 						bool bSenseOnlyOvlps = false);				// if false then both sense/sense and sense/antisense overlaps will be accepted and processed, otherwise sense/sense only overlaps accepted and processed

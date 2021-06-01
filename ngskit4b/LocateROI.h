@@ -17,8 +17,8 @@ Please contact Dr Stuart Stephen < stuartjs@g3web.com > if you have any question
 const int cMaxNumAssocFiles = 20;			// alllow for at most this many feature association files 
 
 const int cChromSeqReAlloc = 5000000;	// realloc chrom sequence size
-const UINT32 cMaxAccumCnt= 0x07ffffff;  // truncate accumulated counts to be at most this value
-const UINT32 cRetainCnt  = 0x08000000;  // accumulated counts >= this value are counts marked as being to be retained
+const uint32_t cMaxAccumCnt= 0x07ffffff;  // truncate accumulated counts to be at most this value
+const uint32_t cRetainCnt  = 0x08000000;  // accumulated counts >= this value are counts marked as being to be retained
 
 const size_t cROIAlloc = 10000;		// incrementally allocate for this many ROIs
 
@@ -82,7 +82,7 @@ typedef struct TAG_sChromCnts {
 	int AllocCovCnts;							// allocated to hold cnts for this sized chromosome
 	int StartOfs;								// pCovCnts[offset] of first coverage cnt
 	int EndOfs;									// pCovCnts[offset] of last coverage cnt
-	UINT32 *pCovCnts;							// coverage counts
+	uint32_t *pCovCnts;							// coverage counts
 } tsChromCnts;
 
 
@@ -115,7 +115,7 @@ class CLocateROI
 	int m_AllocNumROIs;					// m_pROIs has been allocated to hold at most this number of ROIs
 	size_t	m_AllocNumROIsMem;			// actual memory size allocated
 	tsROI *m_pROIs;						// allocated to hold all ROIs
-	UINT32 m_NumAcceptedReads;			// total number of accepted reads or element loci
+	uint32_t m_NumAcceptedReads;			// total number of accepted reads or element loci
 
 	tsChromCnts m_ChromCnts[cMaxChromCov];
 	int m_NumChromsCov;		

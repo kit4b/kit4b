@@ -93,12 +93,12 @@ const int cMaxConstrainedChroms = 64;   // at most this many chroms can have loc
 const int cMaxConstrainedLoci = (cMaxConstrainedChroms * 100); // allow an average of 100 constraints per constrained chrom
 
 // following constants are very empirical, relate to determination of multimatch read loci association, and need to be fine tuned..
-const UINT16 cUniqueClustFlg = 0x08000;	// used to flag read as being clustered to reads which are uniquely aligned
+const uint16_t cUniqueClustFlg = 0x08000;	// used to flag read as being clustered to reads which are uniquely aligned
 const int cClustMultiOverLap = 10;		// to be clustered, reads must overlap by at least this number of bp 
 const int cClustUniqueScore = 5;		// unique reads given this score if in current cluster window
 const int cClustMultiScore = 1;			// multimatch read loci given this score if in current cluster window
 const int cClustScaleFact = 10;			// scores are scaled down by this factor
-const UINT32 cMHminScore = 50;			// any putative multimatch alignment score must be at least this to be accepted as the alignment for that read
+const uint32_t cMHminScore = 50;			// any putative multimatch alignment score must be at least this to be accepted as the alignment for that read
 
 const int cMaxMLPEmatches = 10;			// allowing for at most this many PE multiloci when attemping to match pairs 
 
@@ -119,6 +119,13 @@ const int cDfltRelSiteStartOfs = -4;		// default relative octamer start site off
 const int cMaxSitePrefOfs = 100;			// allow octamer starts to be at most this away from read start sites 
 
 const int cNumOctamers = 0x010000;			// number of different octamers (4^8) in m_OctSitePrefs[]
+
+const double cScorePBA3MinProp = 0.75;		// score PBA as 3 if allele proportion of all counts is >= this threshold and coverage is >= 5
+const double cScorePBA2MinProp = 0.35;		// score PBA as 2 if allele proportion of all counts is >= this threshold and coverage is >= 5
+const double cScorePBA1MinProp = 0.20;		// score PBA as 1 if allele proportion of all counts is >= this threshold and coverage is >= 5
+// when coverage is less than 5 and thus confidence in alleles is reduced then scores are reduced
+const double cScorePBA2MinLCProp = 0.70;		// score PBA as 2 if allele proportion of all counts is >= this threshold and coverage is < 5
+const double cScorePBA1MinLCProp = 0.30;		// score PBA as 1 if allele proportion of all counts is >= this threshold and coverage is < 5
 
 #pragma pack(1)
 
@@ -162,69 +169,69 @@ typedef enum eHLalign {
 } teHLalign;
 
 typedef struct TAG_sQScoreDist {
-	UINT32 Subs;				// count of aligner induced substitutions
-	UINT32 QInsts;				// count of instances of this Phred quality score
+	uint32_t Subs;				// count of aligner induced substitutions
+	uint32_t QInsts;				// count of instances of this Phred quality score
 } tsQScoreDist;
 
 
 // a specific read may align to multiple loci and each of these aligned to loci may be fragmented due to InDels
 // 
 typedef struct TAG_sReadAlignLoci {
-	UINT32 ReadHitIdx;			// read aligning
-	UINT32 NxtReadAlign;		// next alignment for same read
-	UINT16  FlagHL:2;			// how read hit loci was choosen (see enum eHLalign) 
-	UINT16  FlagMH:1;			// set if this hit is part of a multihit read, reset if a unique read hit
-	UINT16  FlagMHA:1;			// set if this hit is provisionally accepted as the alignment to report
-	UINT16  FlagSegs:1;			// set if this hit has been segmented into 2 hit loci - e.g. contains an InDel or splice junctions
-	UINT16  FlagTR:1;			// set if this hit has been end trimmed
-	UINT16 ReadOfs;				// alignment starts at this read sequence offset
-	UINT8 Strand;				// alignment to this strand
-	UINT32 ChromID;				// suffix entry (chromosome) matched on
-	UINT32 MatchLoci;			// original match loci
-	UINT16 MatchLen;			// original match length
-	UINT8 Mismatches;			// original number of mismatches
-	UINT16 TrimLeft;			// left flank trimming removes this many bases
-	UINT16 TrimRight;			// right flank trimming removes this many bases
-	UINT8 TrimMismatches;		// after trimming there are this many mismatches
+	uint32_t ReadHitIdx;			// read aligning
+	uint32_t NxtReadAlign;		// next alignment for same read
+	uint16_t  FlagHL:2;			// how read hit loci was choosen (see enum eHLalign) 
+	uint16_t  FlagMH:1;			// set if this hit is part of a multihit read, reset if a unique read hit
+	uint16_t  FlagMHA:1;			// set if this hit is provisionally accepted as the alignment to report
+	uint16_t  FlagSegs:1;			// set if this hit has been segmented into 2 hit loci - e.g. contains an InDel or splice junctions
+	uint16_t  FlagTR:1;			// set if this hit has been end trimmed
+	uint16_t ReadOfs;				// alignment starts at this read sequence offset
+	uint8_t Strand;				// alignment to this strand
+	uint32_t ChromID;				// suffix entry (chromosome) matched on
+	uint32_t MatchLoci;			// original match loci
+	uint16_t MatchLen;			// original match length
+	uint8_t Mismatches;			// original number of mismatches
+	uint16_t TrimLeft;			// left flank trimming removes this many bases
+	uint16_t TrimRight;			// right flank trimming removes this many bases
+	uint8_t TrimMismatches;		// after trimming there are this many mismatches
 } tsReadAlignLoci;
 
 // reads may have a loci to which they align, if multiple loci then multiple instances of tsHitLoci for each alignment
 typedef struct TAG_sReadHitLoci {
 	tsHitLoci Hit;				// hits can contain 2 aligned segments so as to accommodate InDel or splice junctions
-	UINT8  FlagHL:2;			// how read hit loci was choosen (see enum eHLalign) 
-	UINT8  FlagMH:1;			// set if this hit is part of a multihit read, reset if a unique read hit
-	UINT8  FlagMHA:1;			// set if this hit is provisionally accepted as the alignment to report
-	UINT8  FlagSegs:1;			// set if this hit has been segmented into 2 hit loci - e.g. contains an InDel or splice junctions
-	UINT8  FlagTR:1;			// set if this hit has been end trimmed
+	uint8_t  FlagHL:2;			// how read hit loci was choosen (see enum eHLalign) 
+	uint8_t  FlagMH:1;			// set if this hit is part of a multihit read, reset if a unique read hit
+	uint8_t  FlagMHA:1;			// set if this hit is provisionally accepted as the alignment to report
+	uint8_t  FlagSegs:1;			// set if this hit has been segmented into 2 hit loci - e.g. contains an InDel or splice junctions
+	uint8_t  FlagTR:1;			// set if this hit has been end trimmed
 } tsReadHitLoci;
 
 // read hit loci, descriptor, sequence, quality
 typedef struct TAG_sReadHit {
-	UINT32 PrevSizeOf;			// size of the previously loaded tsReadHit - allows easy referencing of partner pairs
-	UINT32 ReadHitIdx;			// current read hit index + 1 for this read
-	UINT32 ReadID;				// read identifier from the preprocessed read (tsRawReadV5)
-	UINT32 PairReadID;			// this read's paired raw read identifier (0 if not a paired read) bit31 reset if 5' fwd read, bit31 set if 3' read of pair
-	UINT32 NumReads;			// number of source reads merged into this read
-	UINT8 DescrLen;				// descriptor length
-	UINT16 ReadLen;				// read length of sequence packed into Read following the descriptor
-	INT16  LowHitInstances;		// number of hit target loci instances at LowMMCnt mismatches
-	INT8   LowMMCnt;			// lowest number of mismatches for this read thus far
-	INT8   NxtLowMMCnt;			// next lowest number of mismatches for this read thus far
-	INT16  NumHits;				// number of target hits for this read, currently limited to be at most 1
-	UINT8  NAR:6;				// if not eNARAccepted then reason (etNAR) for this read not being accepted as being aligned
-	UINT8  FlgPEAligned:1;      // PE read accepted as PE alignment
+	uint32_t PrevSizeOf;			// size of the previously loaded tsReadHit - allows easy referencing of partner pairs
+	uint32_t ReadHitIdx;			// current read hit index + 1 for this read
+	uint32_t ReadID;				// read identifier from the preprocessed read (tsRawReadV5)
+	uint32_t PairReadID;			// this read's paired raw read identifier (0 if not a paired read) bit31 reset if 5' fwd read, bit31 set if 3' read of pair
+	uint32_t NumReads;			// number of source reads merged into this read
+	uint8_t DescrLen;				// descriptor length
+	uint16_t ReadLen;				// read length of sequence packed into Read following the descriptor
+	int16_t  LowHitInstances;		// number of hit target loci instances at LowMMCnt mismatches
+	int8_t   LowMMCnt;			// lowest number of mismatches for this read thus far
+	int8_t   NxtLowMMCnt;			// next lowest number of mismatches for this read thus far
+	int16_t  NumHits;				// number of target hits for this read, currently limited to be at most 1
+	uint8_t  NAR:6;				// if not eNARAccepted then reason (etNAR) for this read not being accepted as being aligned
+	uint8_t  FlgPEAligned:1;      // PE read accepted as PE alignment
 	tsReadHitLoci HitLoci;		// this is currently the best hit for this read
-	UINT8  SiteIdx;				// read has been characterised into this index into m_OctSitePrefs[]
-	UINT8  Read[1];				// packed read descriptor, sequence and quality values for this read
+	uint8_t  SiteIdx;				// read has been characterised into this index into m_OctSitePrefs[]
+	uint8_t  Read[1];				// packed read descriptor, sequence and quality values for this read
 	} tsReadHit;
 
 // alignments can be filtered if they are to a target sequence containing loci which are defined by the user as being base constrained
 // reads which align to a constrained target loci are checked against the constraint and treated as unaligned if not meeting the constaint 
 typedef struct TAG_sConstraintLoci {
-	UINT32 ChromID;				// constraint applies to this target chrom/transcript
-	UINT32 StartLoci;			// starting from this loci inclusive
-	UINT32 EndLoci;				// to this loci inclusive
-	UINT8  Constraint;			// constraint - must be a combination of one of the following bit mapped bases A: 0x01, C: 0x02:, G: 0x04, T: 0x08, target base: 0x10
+	uint32_t ChromID;				// constraint applies to this target chrom/transcript
+	uint32_t StartLoci;			// starting from this loci inclusive
+	uint32_t EndLoci;				// to this loci inclusive
+	uint8_t  Constraint;			// constraint - must be a combination of one of the following bit mapped bases A: 0x01, C: 0x02:, G: 0x04, T: 0x08, target base: 0x10
 } tsConstraintLoci;
 
 // processing modes
@@ -249,13 +256,10 @@ typedef enum TAG_eMLMode {
 
 // output format modes
 typedef enum TAG_eFMode {
-	eFMdefault,					// default is for CSV match loci only
-	eFMmatch,					// CSV loci + match sequence
-	eFMread,					// CSV loci + read sequence
-	eFMreadmatch,				// CSV loci + read + match sequence
-	eFMbed,						// UCSC BED format
-	eFMsam,						// SAM toolset format
+	eFMsam,						// the default is SAM toolset format
 	eFMsamAll,					// SAM toolset format, includes all reads even if not accepted as aligned
+	eFMbed,						// UCSC BED format
+	eFMPBA,						// Packed Base Alleles - used when haplotype calling
 	eFMplaceholder				// used to set the enumeration range
 	} etFMode;
 
@@ -295,9 +299,9 @@ typedef enum TAG_eReadsSortMode {
 
 typedef struct TAG_sSNPcnts {
 	etSeqBase RefBase;	// reference base
-	UINT32 NumRefBases;		// counts of reference base in reads covering this loci
-	UINT32 NumNonRefBases;	// total count of non-reference bases in reads covering this loci
-	UINT32 NonRefBaseCnts[5]; // counts of non-reference bases a,c,g,t,n covering this loci
+	uint32_t NumRefBases;		// counts of reference base in reads covering this loci
+	uint32_t NumNonRefBases;	// total count of non-reference bases in reads covering this loci
+	uint32_t NonRefBaseCnts[5]; // counts of non-reference bases a,c,g,t,n covering this loci
 	} tsSNPcnts;
 
 typedef struct TAG_sAdjacentSNPs {
@@ -308,51 +312,51 @@ typedef struct TAG_sAdjacentSNPs {
 	} tsAdjacentSNPs;
 
 typedef struct TAG_sChromSNPs {
-	UINT32 ChromID;		// uniquely identifies this chromosome
-	UINT32 ChromLen;	// this chromosome length
+	uint32_t ChromID;		// uniquely identifies this chromosome
+	uint32_t ChromLen;	// this chromosome length
 	tsAdjacentSNPs AdjacentSNPs[2]; // allowing for both DiSNPs and TriSNPs
 	tsReadHit *pFirstReadHit; // 1st read on chromosome which was accepted for SNP processing
 	tsReadHit *pLastReadHit; // last read on chromosome which was accepted for SNP processing
-	UINT32 AllocChromLen; // cnts can be for a chromosome of at most this length
-	INT64 TotMatch;	// total number of aligned read bases which exactly matched corresponding chrom sequence bases
-	INT64 TotMismatch;	// total number of aligned read bases which mismatched corresponding chrom sequence base
-	UINT32 MeanReadLen;  // mean length of all reads used for identifying putative SNPs, determines max separation used for Di/TriSNP counts
-	UINT32 NumReads;     // number of reads used for identifying putative SNPs from which MeanReadLen was calculated 
-	UINT64 TotReadLen;	 // total length, in bp, of all reads used for identifying putative SNPs from which MeanReadLen was calculated
+	uint32_t AllocChromLen; // cnts can be for a chromosome of at most this length
+	int64_t TotMatch;	// total number of aligned read bases which exactly matched corresponding chrom sequence bases
+	int64_t TotMismatch;	// total number of aligned read bases which mismatched corresponding chrom sequence base
+	uint32_t MeanReadLen;  // mean length of all reads used for identifying putative SNPs, determines max separation used for Di/TriSNP counts
+	uint32_t NumReads;     // number of reads used for identifying putative SNPs from which MeanReadLen was calculated 
+	uint64_t TotReadLen;	 // total length, in bp, of all reads used for identifying putative SNPs from which MeanReadLen was calculated
 	tsSNPcnts Cnts[1]; // will be allocated to hold base cnts at each loci in this chromosome
 	} tsChromSNPs;
 
 typedef struct TAG_sSegJuncts {
 	tsReadHit *pRead;	// read containing this RNA-seq splice or microInDel junction
-	UINT32 Cnt;			// number of reads sharing this splice junction or microInDel junction
-	UINT32 ChromID;		// junction is on this chrom
-	UINT32 Starts;		// junction starts
-	UINT32 Ends;		// junction ends
+	uint32_t Cnt;			// number of reads sharing this splice junction or microInDel junction
+	uint32_t ChromID;		// junction is on this chrom
+	uint32_t Starts;		// junction starts
+	uint32_t Ends;		// junction ends
 	} tsSegJuncts;
 
 
 typedef struct TAG_sLociPValues {
-	UINT32 Loci;		// putative SNP at this loci
+	uint32_t Loci;		// putative SNP at this loci
 	double PValue;      // having this PValue
-	UINT32 Rank;		// and this ordered rank
+	uint32_t Rank;		// and this ordered rank
 	double LocalBkGndSubRate; // local background substitution rate
-	UINT32 LocalReads;  // total number of aligned bases within the local background
-	UINT32 LocalSubs;	// total number local aligner induced substitutions within the local background
+	uint32_t LocalReads;  // total number of aligned bases within the local background
+	uint32_t LocalSubs;	// total number local aligner induced substitutions within the local background
 	tsSNPcnts SNPcnts;	// counts of each base a,c,g,t,n at this loci
-	UINT32 NumReads;	// number of reads aligned at this loci
-	UINT32 NumSubs;		// number of aligner induced substitutions at this loci
-	UINT32 MarkerID;	// generated marker sequence will have this identifier as '>Marker<MarkerID>'
-	UINT32 NumPolymorphicSites; // number of polymorphic sites within the marker sequence
+	uint32_t NumReads;	// number of reads aligned at this loci
+	uint32_t NumSubs;		// number of aligner induced substitutions at this loci
+	uint32_t MarkerID;	// generated marker sequence will have this identifier as '>Marker<MarkerID>'
+	uint32_t NumPolymorphicSites; // number of polymorphic sites within the marker sequence
 	int32_t FrameShiftedRefCodons[3]; // reference sequence codons at each frame shift (-1 if no reference sequence codon in a frame shift)
 	int32_t FrameShiftedCodons[3][64]; // counts of read sequence codons at each frame shift
 } tsLociPValues;
 
 typedef struct TAG_sSNPCentroid {
-	UINT32 CentroidID;		// uniquely identifies this centroid sequence
-	UINT32 NumInsts;		// number of instances of this centroid sequence (qualified by having at least min number of reads covering)
+	uint32_t CentroidID;		// uniquely identifies this centroid sequence
+	uint32_t NumInsts;		// number of instances of this centroid sequence (qualified by having at least min number of reads covering)
 	int NumSNPs;			// number of SNPs identified centroid to this sequence
-	UINT32 RefBaseCnt;		// counts of reference bases covering SNP
-	UINT32 NonRefBaseCnts[5]; // counts of each non-reference bases covering SNP
+	uint32_t RefBaseCnt;		// counts of reference bases covering SNP
+	uint32_t NonRefBaseCnts[5]; // counts of each non-reference bases covering SNP
 } tsSNPCentroid;
 
 #pragma pack()
@@ -391,7 +395,7 @@ typedef struct TAG_sThreadMatchPars {
 	int ChimericHits;				// returned number of hits which were chimeric
 	int NumReadsProc;				// returned number of reads processed by this thread instance
 	int OutBuffIdx;					// index at which to write next formated hit into szOutBuff
-	UINT8 *pszOutBuff;				// used to buffer multiple hit formated output records prior to writing to disk
+	uint8_t *pszOutBuff;				// used to buffer multiple hit formated output records prior to writing to disk
 	bool bForceNewAlignment;		// if true then forced alignment even if sequence matches previous sequence
 	int MaxIter;					// max k-mer depth to be explored
 	int MatchLen;					// current read match length
@@ -403,13 +407,13 @@ typedef struct TAG_sThreadMatchPars {
 	etSeqBase Sequence[cMaxFastQSeqLen + 1];	// to hold sequence (sans quality scores) for current read
 	etSeqBase PrevSequence[cMaxFastQSeqLen + 1];	// to hold sequence (sans quality scores) for previous read
 	int NumSloughedNs;					// number of reads sloughed due to excessive number of indeterminant bases
-	UINT32 NumNonAligned;				// number of reads for which no alignment was discovered
-	UINT32 NumAcceptedAsAligned;		// number of reads accepted as being aligned
-	UINT32 NumLociAligned;				// number of loci aligned which have been reported
-	UINT32 NumNotAcceptedDelta;			// number of reads aligned but not accepted because of insufficient hamming
-	UINT32 NumAcceptedHitInsts;			// number of reads aligned which were accepted even though there were too many instances
-	UINT32 TotAcceptedAsUniqueAligned;  // number of reads aligned which were uniquely aligned
-	UINT32 TotAcceptedAsMultiAligned;   // number of reads accepted as aligned which aligned to multiple loci
+	uint32_t NumNonAligned;				// number of reads for which no alignment was discovered
+	uint32_t NumAcceptedAsAligned;		// number of reads accepted as being aligned
+	uint32_t NumLociAligned;				// number of loci aligned which have been reported
+	uint32_t NumNotAcceptedDelta;			// number of reads aligned but not accepted because of insufficient hamming
+	uint32_t NumAcceptedHitInsts;			// number of reads aligned which were accepted even though there were too many instances
+	uint32_t TotAcceptedAsUniqueAligned;  // number of reads aligned which were uniquely aligned
+	uint32_t TotAcceptedAsMultiAligned;   // number of reads accepted as aligned which aligned to multiple loci
 	int ReadsHitIdx;					// index of current read in ReadsHitBlock.pReadsHits[]
 	bool bIsPE2;						// true if read being processed is PE2, false if SE or PE1
 	tsReadHit* pPrevReadHit;			// previous to current read
@@ -444,7 +448,7 @@ typedef struct TAG_sLoadReadsThreadPars {
 	int threadRslt;					// result as returned by pthread_create ()
 	pthread_t threadID;				// identifier as set by pthread_create ()
 #endif
-	UINT32 SampleNthRawRead;		// sample every Nth raw read (or read pair) for processing (1..10000)
+	uint32_t SampleNthRawRead;		// sample every Nth raw read (or read pair) for processing (1..10000)
 	int *pRslt;						// write intermediate result codes to this location
 	int Rslt;						// returned result code
 } tsLoadReadsThreadPars;
@@ -470,8 +474,8 @@ typedef struct TAG_sPEThreadPars {
 
 	// input parameters
 	etPEproc PEproc; // paired reads alignment processing mode
-	UINT32 StartPairIdx;	// start pair processing from this pair in m_ppReadHitsIdx
-	UINT32 NumPairsToProcess;	// process this number of pairs
+	uint32_t StartPairIdx;	// start pair processing from this pair in m_ppReadHitsIdx
+	uint32_t NumPairsToProcess;	// process this number of pairs
 	int MinEditDist; // accepted alignments must be at least this Hamming away from other putative alignments
 	int PairMinLen;  // only accept paired reads with a combined sequence length of at least this
 	int PairMaxLen;  // only accept paired reads with a combined sequence length of no more than this
@@ -494,7 +498,7 @@ typedef struct TAG_sPEThreadPars {
 
 // SOLiDmap
 // Used for mapping from base to colorspace and the reverse
-static UINT8 SOLiDmap[5][5] = {
+static uint8_t SOLiDmap[5][5] = {
 	{0,1,2,3,4},	// a
 	{1,0,3,2,4},	// c
 	{2,3,0,1,4},    // g
@@ -512,8 +516,8 @@ typedef struct TAG_sOctSitePrefs {
 
 class CKAligner
 {
-
-	CMTqsort m_mtqsort;				// muti-threaded qsort
+	bool m_bPackedBaseAlleles;		// if true then processing is for packed base alleles only, no SNP calling
+	CMTqsort m_mtqsort;				// multi-threaded qsort
 
 	CContaminants *m_pContaminants; // for use when trimming reads containing contaminants
 
@@ -524,25 +528,29 @@ class CKAligner
 	bool m_bAllReadsLoaded;			// set true when all reads have been parsed and loaded
 	teBSFrsltCodes m_LoadReadsRslt;	// set with exit code from background reads load thread, read after checking if m_bAllReadsLoaded has been set
 	size_t m_DataBuffOfs;			// offset at which to read in next read
-	UINT32 m_NumDescrReads;			// number of reads thus far parsed
+	uint32_t m_NumDescrReads;			// number of reads thus far parsed
 
 	tsReadHit *m_pReadHits;			// memory allocated to hold reads, reads are written contiguously into this memory
 									// caution: m_pReadHits is allocated/freed with malloc/realloc/free or mmap/mremap/munmap
 	size_t m_AllocdReadHitsMem;		// how many bytes of memory  for reads have been allocated
 	size_t m_UsedReadHitsMem;		// how many bytes of allocated reads memory is currently used
-	UINT32 m_NumReadsLoaded;		// m_pReadHits contains this many reads
-	UINT32 m_OrigNumReadsLoaded;	// if multiloci read alignments being treated as if each was a separate read then this is a copy of m_NumReadsLoaded prior to overwriting with the multiloci read count 
-	UINT32 m_FinalReadID;			// final read identifier loaded as a preprocessed read (tsProcRead)
-	UINT32 m_PrevSizeOf;			// size (UINT8's) of the previously loaded tsReadHit - allows easy referencing of partner pairs
+	uint32_t m_NumReadsLoaded;		// m_pReadHits contains this many reads
+	uint32_t m_OrigNumReadsLoaded;	// if multiloci read alignments being treated as if each was a separate read then this is a copy of m_NumReadsLoaded prior to overwriting with the multiloci read count 
+	uint32_t m_FinalReadID;			// final read identifier loaded as a preprocessed read (tsProcRead)
+	uint32_t m_PrevSizeOf;			// size (uint8_t's) of the previously loaded tsReadHit - allows easy referencing of partner pairs
 
 	tsReadHit **m_ppReadHitsIdx;	// memory allocated to hold array of ptrs to read hits in m_pReadHits - usually sorted by some critera
-	UINT32 m_AllocdReadHitsIdx;		// how many elements for m_pReadHitsIdx have been allocated
+	uint32_t m_AllocdReadHitsIdx;		// how many elements for m_pReadHitsIdx have been allocated
 	etReadsSortMode	m_CurReadsSortMode;	// sort mode last used on m_ppReadHitsIdx
 
 	size_t m_AllocLociPValuesMem;   // total memory currently allocated to m_pLociPValues
-	UINT32 m_NumLociPValues;		// current number of LociPValues
+	uint32_t m_NumLociPValues;		// current number of LociPValues
 	tsLociPValues *m_pLociPValues; // allocated to hold putative SNP loci and their associated PValues
 	double m_QValue;				// QValue used in
+
+	size_t m_AllocPackedBaseAllelesMem;   // total memory currently allocated to m_pPackedBaseAlleles
+	uint32_t m_NumPackedBaseAlleles;		// current number of loci base classifications
+	uint8_t *m_pPackedBaseAlleles;		// allocated to hold loci base classifications
 
 	etMLMode m_MLMode;				// how to process multiloci matching reads
 	bool m_bClampMaxMLmatches;		// normally if too many multiloci hits for a read that read is not accepted as aligned; if m_bAcceptAllMultihits true then these reads are accepted as aligned
@@ -552,33 +560,33 @@ class CKAligner
 	int m_SMscore;					// score for uniquely matched reads in clustering window
 	int m_MMscore;					// score for multimatched matched reads in clustering window
 	tsReadHit *m_pMultiHits;		// holds multihit loci instances
-	UINT32 m_AllocdMultiHits;		// how many elements for m_pMultiHits have been allocated
+	uint32_t m_AllocdMultiHits;		// how many elements for m_pMultiHits have been allocated
 	size_t m_AllocdMultiHitsMem;	// how much memory for m_pMultiHits has been allocated
-	UINT32 m_NumMultiHits;			// number of multihit loci elements currently used
-	UINT32 m_NumUniqueMultiHits;	// number of multihit reads which were initially mapped to a single loci
-	UINT32 m_NumProvMultiAligned;	// number of reads provisionally with more than one aligned to loci
-	UINT32 m_NARAccepted;			// number of reads being reported as accepted aligned
+	uint32_t m_NumMultiHits;			// number of multihit loci elements currently used
+	uint32_t m_NumUniqueMultiHits;	// number of multihit reads which were initially mapped to a single loci
+	uint32_t m_NumProvMultiAligned;	// number of reads provisionally with more than one aligned to loci
+	uint32_t m_NARAccepted;			// number of reads being reported as accepted aligned
 
-	UINT32 m_NumMultiAll;				// number of alignments in m_pMultiAll
+	uint32_t m_NumMultiAll;				// number of alignments in m_pMultiAll
 	size_t m_NxtMultiAllOfs;			// offset in m_pMultiSAM at which to append next alignment
 	size_t m_AllocMultiAllMem;			// current allocation size 			
 	tsReadHit *m_pMultiAll;				// allocated memory for holding multiloci alignments which are all to be reported
 
-	UINT32 m_NumSloughedNs;			// number of reads which were not aligned because they contained excessive number of indeterminate bases
-	UINT32 m_TotNonAligned;			// number of reads for which no alignment was discovered
-	UINT32 m_TotAcceptedAsAligned;	// number of reads accepted as being aligned
-	UINT32 m_TotAcceptedAsUniqueAligned;  // number of reads accepted as aligned which were uniquely aligned
-	UINT32 m_TotAcceptedAsMultiAligned;   // number of reads accepted as aligned which aligned to multiple loci
+	uint32_t m_NumSloughedNs;			// number of reads which were not aligned because they contained excessive number of indeterminate bases
+	uint32_t m_TotNonAligned;			// number of reads for which no alignment was discovered
+	uint32_t m_TotAcceptedAsAligned;	// number of reads accepted as being aligned
+	uint32_t m_TotAcceptedAsUniqueAligned;  // number of reads accepted as aligned which were uniquely aligned
+	uint32_t m_TotAcceptedAsMultiAligned;   // number of reads accepted as aligned which aligned to multiple loci
 
 
-	UINT32 m_TotAcceptedHitInsts;	// number of reads aligned and accepted (included in m_TotAcceptedAsAligned) even though there were more than m_MaxMLmatches instances
-	UINT32 m_TotLociAligned;		// number of loci aligned which have been reported
-	UINT32 m_TotNotAcceptedDelta;	// number of reads aligned but not accepted because of insufficient hamming
+	uint32_t m_TotAcceptedHitInsts;	// number of reads aligned and accepted (included in m_TotAcceptedAsAligned) even though there were more than m_MaxMLmatches instances
+	uint32_t m_TotLociAligned;		// number of loci aligned which have been reported
+	uint32_t m_TotNotAcceptedDelta;	// number of reads aligned but not accepted because of insufficient hamming
 
-	UINT32 m_SampleNthRawRead;		// sample every Nth raw read (or read pair) for processing (1..10000)
-	UINT32 m_MaxReadsLen;			// longest read processed
-	UINT32 m_MinReadsLen;			// shortest read processed
-	UINT32 m_AvReadsLen;			// average length read processed
+	uint32_t m_SampleNthRawRead;		// sample every Nth raw read (or read pair) for processing (1..10000)
+	uint32_t m_MaxReadsLen;			// longest read processed
+	uint32_t m_MinReadsLen;			// shortest read processed
+	uint32_t m_AvReadsLen;			// average length read processed
 
 	int m_ThreadCoredApproxRslt;    // normally >= 0, but will be set < 0 if any errors by threads within the threaded cored approximate alignment processing
 
@@ -590,7 +598,7 @@ class CKAligner
 	tBSFEntryID m_PrevSAMTargEntry; // used to determine when generating SAM output if the target chrom has already been loaded
 	char m_szSAMTargChromName[128];	// holds previously loaded SAM chrom
 
-	UINT64 m_BlockTotSeqLen;		// total sequence length in currently loaded suffix block
+	uint64_t m_BlockTotSeqLen;		// total sequence length in currently loaded suffix block
 	int	m_MinCoreLen;				// minimum core length allowed
 	int m_MaxNumSlides;				// limit on number of times core window can be moved or slide to right over read per 100bp of read length
 
@@ -598,7 +606,7 @@ class CKAligner
 
 
 	int m_NumConstrainedChroms;		// number of chroms having at least one constraint
-	UINT32 m_ConstrainedChromIDs[cMaxConstrainedChroms];    // chromosomes having at least one loci base constraint 
+	uint32_t m_ConstrainedChromIDs[cMaxConstrainedChroms];    // chromosomes having at least one loci base constraint 
 
 	int m_NumConstraintLoci;		// number of constrained alignment loci in m_pConstraintLoci[]
 	tsConstraintLoci *m_pConstraintLoci; // allocated to hold any read alignment loci constraints
@@ -630,6 +638,7 @@ class CKAligner
 	int m_hDiSNPfile;       // file handle used if DiSNPs are being processed
 	int m_hTriSNPfile;       // file handle used if TriSNPs are being processed
 	int m_hCoverageSegmentsfile; // file handle used if coverage segments are being processed
+	int m_hPackedBaseAllelesFile;	 // file handle used when loci base classification binary file is being generated
 	int m_hSNPCentsfile;	// file handle used if SNP centroids are being processed
 
 	gzFile m_gzOutFile;			// results output when compressing the output as gzip
@@ -638,8 +647,9 @@ class CKAligner
 	gzFile m_gzNoneAlignFile;	// optional output none-alignable when compressing the output as gzip
 	gzFile m_gzMultiAlignFile;	// optional output multialigned reads when compressing the output as gzip
 	gzFile m_gzSNPfile;			// when compressing the output as gzip used if SNPs are being processed
-	gzFile m_gzSNPCentsfile;	// fwhen compressing the output as gzip if SNP centroids are being processed
+	gzFile m_gzSNPCentsfile;	// ``when compressing the output as gzip if SNP centroids are being processed
 
+	char m_szExperimentName[_MAX_PATH];		// labels this experiment
 	char m_szCoverageSegmentsFile[_MAX_PATH]; // coverage segments to this file
 	char m_szDiSNPFile[_MAX_PATH];		// DiSNP results to this file
 	char m_szTriSNPFile[_MAX_PATH];		// TriSNP results to this file
@@ -686,8 +696,8 @@ class CKAligner
 	tsChromSNPs *m_pChromSNPs;		// allocated for use in SNP processing
 	int m_TotNumSNPs;				// total number of SNPs discovered
 	
-	INT64 m_LociBasesCovered;		// total number of targeted loci (bases) covered by aligned reads when SNP processing - could be used for to determine fold coverage
-	INT64 m_LociBasesCoverage;		// total number of read bases covering aligned to loci bases 
+	int64_t m_LociBasesCovered;		// total number of targeted loci (bases) covered by aligned reads when SNP processing - could be used for to determine fold coverage
+	int64_t m_LociBasesCoverage;		// total number of read bases covering aligned to loci bases 
 
 	int m_szLineBuffIdx;			// offset into m_pszLineBuff at which to next write
 	char *m_pszLineBuff;			// allocated to hold output line buffering
@@ -734,7 +744,7 @@ class CKAligner
 
 	tsHitLoci *m_pAllocsMultiHitLoci; // allocated to hold all multihit loci for all threads
 	char *m_pszTrackTitle;			// track title if output format is UCSC BED
-	UINT8 *m_pAllocsMultiHitBuff;	  // allocated to hold per thread buffered output when processing all multihit loci
+	uint8_t *m_pAllocsMultiHitBuff;	  // allocated to hold per thread buffered output when processing all multihit loci
 
 	int m_NumIncludeChroms;				// number of RE include chroms
 	int m_NumExcludeChroms;				// number of RE exclude chroms
@@ -747,7 +757,7 @@ class CKAligner
 	regex_t m_ExcludeChromsRE[cMaxExcludeChroms];
 	#endif
 
-	UINT32 m_NumReadsProc;		// number of reads thus far processed - note this is total reads handed out to processing threads
+	uint32_t m_NumReadsProc;		// number of reads thus far processed - note this is total reads handed out to processing threads
 								// and should be treated as a guide only
 	size_t m_NxtReadProcOfs;	// byte offset into m_pReadHits of next read to be processed
 
@@ -761,11 +771,11 @@ class CKAligner
 	bool m_bMutexesCreated;		// will be set true if synchronisation mutexes have been created
 
 	unsigned long m_ProcessingStartSecs;	
-	UINT8 m_TermBackgoundThreads; // if non-zero then all background threads are to immediately terminate processing
+	uint8_t m_TermBackgoundThreads; // if non-zero then all background threads are to immediately terminate processing
 
 	int m_ThreadLoadReadsRslt;
 
-	UINT32 m_CurClusterFrom;
+	uint32_t m_CurClusterFrom;
 
 	static sNAR m_NARdesc[eNARundefined];	// NAR deescriptive text
 
@@ -797,7 +807,7 @@ class CKAligner
 	int							// length written
 		AppendUInt(char *pszBuff,	// write to this buffer
 		  char LeadSep,		// if > '\0' then prefix with this separator (usually ',' or '\t')
-		  UINT32 Value,
+		  uint32_t Value,
 		  char TrailSep);	// if > '\0' then suffix with this separator (usually ',' or '\t' or '\n')
 
 
@@ -815,18 +825,18 @@ class CKAligner
 #endif
 
 
-	static UINT32 AdjStartLoci(tsSegLoci *pSeg);
-	static UINT32 AdjEndLoci(tsSegLoci *pSeg);
-	static UINT32 AdjHitLen(tsSegLoci *pSeg);
-	static UINT32 AdjAlignStartLoci(tsHitLoci *pHit);
-	static UINT32 AdjAlignEndLoci(tsHitLoci *pHit);
-	static UINT32 AdjAlignHitLen(tsHitLoci *pHit);
+	static uint32_t AdjStartLoci(tsSegLoci *pSeg);
+	static uint32_t AdjEndLoci(tsSegLoci *pSeg);
+	static uint32_t AdjHitLen(tsSegLoci *pSeg);
+	static uint32_t AdjAlignStartLoci(tsHitLoci *pHit);
+	static uint32_t AdjAlignEndLoci(tsHitLoci *pHit);
+	static uint32_t AdjAlignHitLen(tsHitLoci *pHit);
 	static int AdjAlignMismatches(tsHitLoci *pHit);
 
 // NOTE: will only return SNP bases, e.g. aligned read sequence must not contain microInDel or span splice junctions
 	static eSeqBase AdjAlignSNPBase(tsReadHit *pReadHit,	// aligned read
-		   UINT32 ChromID,			// read expected to have aligned to this chromosome
-			UINT32 Loci);            // base to be returned is at this alignment loci, base will be complemented if antisense alignment
+		   uint32_t ChromID,			// read expected to have aligned to this chromosome
+			uint32_t Loci);            // base to be returned is at this alignment loci, base will be complemented if antisense alignment
 
 	int ReportChimerics(char *pszChimericSeqFile = NULL);			// report chimerically trimmed read sequences to file pszChimericSeqFile
 
@@ -845,14 +855,14 @@ class CKAligner
 	int	RemoveOrphanMicroInDels(int microInDelLen);	// remove any unsupported orphan microInDels
 
 	bool					// true if chrom is accepted, false if chrom not accepted
-		AcceptThisChromID(UINT32 ChromID);
+		AcceptThisChromID(uint32_t ChromID);
 
 	bool				  // true if read alignment meets any loci base constraints
 		AcceptLociConstraints(tsReadHit *pReadHit);   // read alignment to check
 
 	int								// -1: base not meeting constraints, 0: chromID has no constraints, 1: ChromID constrained but base accepted
-		AcceptBaseConstraint(UINT32 ChromID,	  // base aligned to this chrom/sequence
-								  UINT32 Loci,		  // aligned to this loci
+		AcceptBaseConstraint(uint32_t ChromID,	  // base aligned to this chrom/sequence
+								  uint32_t Loci,		  // aligned to this loci
 								  etSeqBase Base);	  // base in read
 	int						// number of alignments violating a loci base constraint
 		IdentifyConstraintViolations(bool bPEread); // true if processing for PE's, false if processing for SE
@@ -869,12 +879,12 @@ class CKAligner
 		PEInsertSize(int PairMinLen,	// only accept paired reads with a combined sequence length of at least this
 			 int PairMaxLen,			// only accept paired reads with a combined sequence length of no more than this
 			 bool bPairStrand,			// accept paired ends if on same strand		
-			 UINT8 PE1Strand,			// PE1 aligned on to this strand
-			 UINT32 PE1StartLoci,		// PE read starts at this loci
-			 UINT32 PE1EndLoci,			// PE1 read ends at this loci
-			 UINT8 PE2Strand,			// PE2 aligned on to this strand
-			 UINT32 PE2StartLoci,		// PE2 read starts at this loci
-			 UINT32 PE2EndLoci);		// PE2 read ends at this loci
+			 uint8_t PE1Strand,			// PE1 aligned on to this strand
+			 uint32_t PE1StartLoci,		// PE read starts at this loci
+			 uint32_t PE1EndLoci,			// PE1 read ends at this loci
+			 uint8_t PE2Strand,			// PE2 aligned on to this strand
+			 uint32_t PE2StartLoci,		// PE2 read starts at this loci
+			 uint32_t PE2EndLoci);		// PE2 read ends at this loci
 
 	int ProcessPairedEnds(etPEproc PEproc, // paired reads alignment processing mode
 				  int MinEditDist, // accepted alignments must be at least this Hamming away from other putative alignments
@@ -886,9 +896,9 @@ class CKAligner
 	int ReportAlignStats(void);		// report basic alignment statistics
 
 	
-	UINT32							// Median insert length
-		MedianInsertLen(UINT32 NumInserts,				// number of insert lengths in pInsertLens
-				UINT32 *pInsertLens);		// insert lengths
+	uint32_t							// Median insert length
+		MedianInsertLen(uint32_t NumInserts,				// number of insert lengths in pInsertLens
+				uint32_t *pInsertLens);		// insert lengths
 	int ReportPEInsertLenDist(void);  // Report PE insert length distributions for each transcript or assembly contig/sequence
 
 	int WriteSubDist(tsReadHit *pReadHit);
@@ -910,7 +920,7 @@ class CKAligner
 	int BAMreg2bin(int beg, int end);
 
 	// calculate the list of bins that may overlap with region [beg,end) (zero-based)
-	int BAMreg2bins(int beg, int end, UINT16 *plist);
+	int BAMreg2bins(int beg, int end, uint16_t *plist);
 
 	int				// normally NumHits, but will be actual number of hits if unable to accept any loci hit because of chromosome filtering
 		WriteHitLoci(tsThreadMatchPars *pThreadPars,tsReadHit *pReadHit,int NumHits,tsHitLoci *pHits);
@@ -920,8 +930,8 @@ class CKAligner
 
 	char *Octamer2Txt(int Octamer);		 // Report on site octamer site preferencing distribution
 
-	int OutputSNPs(void);
-	int ProcessSNPs(void);
+	int OutputSNPs(void);	// if true then processing is for packed base alleles, no SNP calling
+	int ProcessSNPs(void);	// if true then processing is for packed base alleles, no SNP calling
 
 	int ProcessSiteProbabilites(int RelSiteStartOfs); // offset the site octamer by this relative start offset (read start base == 0)
 	int WriteSitePrefs(void);
@@ -953,18 +963,18 @@ class CKAligner
 
 	int AddEntry(bool bPEProcessing,	// true if entries are from a PE dataset, false if SE dataset
 			bool bIsPairRead,		// true if this is the paired read PE2
-		 UINT32 PairReadID,		// identifies partner of this read if paired read processing
-		 UINT8 FileID,			// identifies file from which this read was parsed
+		 uint32_t PairReadID,		// identifies partner of this read if paired read processing
+		 uint8_t FileID,			// identifies file from which this read was parsed
 		 int DescrLen,			// length of following descriptor
 		 char *pszReadDescr,	// copy of descriptor, used to pair reads with matching descriptors
 		 int ReadLen,			// length of following read
-		 UINT8 *pszReadBuff);	// packed read + phred score
+		 uint8_t *pszReadBuff);	// packed read + phred score
 
 
 	double										// returned prob of read being error free
 		GenProbErrFreeRead(int QSSchema,		// guestimated scoring schema - 0: no scoring, 1: Solexa, 2: Illumina 1.3+, 3: Illumina 1.5+, 4: Illumina 1.8+ or could be Sanger  
 				   int ReadLen,					// read length
-				   UINT8 *pQScores);			// Phred quality scores over the read
+				   uint8_t *pQScores);			// Phred quality scores over the read
 
 
 	teBSFrsltCodes LoadRawReads(bool bIsPairReads,				// true if paired end processing - PE1 reads in pszPE1File and PE2 reads in pszPE2File
@@ -984,9 +994,9 @@ class CKAligner
 	int LocateCoredApprox(int MinEditDist,	// any matches must have at least this edit distance to the next best match
 		int MaxSubs);						// maximum number of substitutions allowed per 100bp of actual read length
 
-	tsReadHit *LocateRead(UINT32 ReadID);	 // Locate read with requested ReadID
+	tsReadHit *LocateRead(uint32_t ReadID);	 // Locate read with requested ReadID
 
-	int AddMHitReads(UINT32 NumHits,		// number of multimatches loci in pHits
+	int AddMHitReads(uint32_t NumHits,		// number of multimatches loci in pHits
 		tsReadHit *pHits);					// pts to array of hit loci
 
 	int SortReadHits(etReadsSortMode SortMode,		// sort mode required
@@ -995,8 +1005,8 @@ class CKAligner
 
 	void ResetThreadedIterReads(void);		 // must be called by master thread prior to worker threads calling ThreadedIterReads()
 
-	UINT32		// Returns the number of reads thus far loaded and processed for alignment
-		ApproxNumReadsProcessed(UINT32 *pNumProcessed,UINT32 *pNumLoaded);
+	uint32_t		// Returns the number of reads thus far loaded and processed for alignment
+		ApproxNumReadsProcessed(uint32_t *pNumProcessed,uint32_t *pNumLoaded);
 
 	tsReadHit *IterReads(tsReadHit *pCurReadHit);			// to start from first read then pass in NULL as pCurReadHit
 	tsReadHit *IterSortedReads(tsReadHit *pCurReadHit);		// iterate over sorted reads, to start from first read then pass in NULL as pCurReadHit
@@ -1007,16 +1017,16 @@ class CKAligner
 						int EndLoci);				// this ending loci
 
 	tsReadHit*				// returned lowest sorted read which overlaps ChromID.Loci, NULL if non overlaps
-		Locate1stReadOverlapLoci(UINT32 ChromID,				// loci is on this chromosome
+		Locate1stReadOverlapLoci(uint32_t ChromID,				// loci is on this chromosome
 											int Loci);					// returned read is lowest sorted read which overlaps this loci
 
 	tsReadHit*													// located read, or NULL if unable to locate any more reads overlapping loci
-		IterReadsOverlapLoci(UINT32 ChromID,				// loci is on this chromosome
+		IterReadsOverlapLoci(uint32_t ChromID,				// loci is on this chromosome
 									 int Loci,			        // returned reads are required to overlap this loci
 									 tsReadHit* pPrevRead);		// any previously returned read which overlapped loci 
 
 	int
-		FrameShiftCodons(UINT32 ChromID,					// SNP loci is on this chromosome
+		FrameShiftCodons(uint32_t ChromID,					// SNP loci is on this chromosome
 									int Loci,				// returned codons are frame shifted relative to this loci
 									int *pCodons);	// where to return cnts of frame shifted codons (set of codon counts [3][64])
 									
@@ -1036,8 +1046,8 @@ class CKAligner
 
 	int RunClusteringThreads(int NumThreads);
 	int										// returns 0 if finished clustering or cnt of multihits to be processed by this thread
-		GetClusterStartEnd(UINT32 *pMatchFrom,			// cluster from this inclusive index
-					UINT32 *pMatchUntil);		// until this inclusive index
+		GetClusterStartEnd(uint32_t *pMatchFrom,			// cluster from this inclusive index
+					uint32_t *pMatchUntil);		// until this inclusive index
 
 
 	static int SortReadIDs(const void *arg1, const void *arg2);
@@ -1073,9 +1083,11 @@ public:
 	CKAligner(void);
 	~CKAligner(void);
 
+	// aligner entry point from front ends - e.g. KAlignerCL ('kalign') or KHAlignerCL ('khalign') 
 	int
 		Align(etPMode PMode,					// processing mode
-				UINT32 SampleNthRawRead,		// sample every Nth raw read for processing (1..N)
+				char *pszExperimentName,		// labels this experiment
+				uint32_t SampleNthRawRead,		// sample every Nth raw read for processing (1..N)
 				etFQMethod Quality,				// quality scoring for fastq sequence files
 				bool bSOLiD,					// if true then processing in colorspace
 				bool bBisulfite,				// if true then process for bisulfite methylation patterning
@@ -1105,8 +1117,8 @@ public:
 				int MaxSubs,					// maximum number of substitutions allowed per 100bp of actual read length
 				int Trim5,						// trim this number of bases from 5' end of reads when loading the reads
 				int Trim3,						// trim this number of bases from 3' end of reads when loading the reads
-				int MinAcceptReadLen,					// only accepting reads for alignment if at least this length after any end trimming
-				int MaxAcceptReadLen,					// only accepting reads for alignment if no longer than this length after any end trimming
+				int MinAcceptReadLen,			// only accepting reads for alignment if at least this length after any end trimming
+				int MaxAcceptReadLen,			// only accepting reads for alignment if no longer than this length after any end trimming
 				int MinFlankExacts,				// trim matched reads on 5' and 3' flanks until at least this number of exactly matching bases in flanks
 				int PCRPrimerCorrect,			// initially align with MaxSubs+PCRPrimerCorrect subs allowed but then correct substitutions in 5' 12bp until overall sub rate within MaxSubs
 				int MaxRptSAMSeqsThres,			// report all SAM chroms or sequences if number of reference chroms <= this limit (defaults to 10000)
@@ -1124,7 +1136,7 @@ public:
 				char *pszOutFile,				// where to write alignments
 				char *pszSNPFile,				// Output SNPs (CSV format) to this file (default is to output file name with '.snp' appended)
 				char *pszMarkerFile,			// Output markers to this file
-				char *pszSNPCentroidFile,		// Output SNP centorids (CSV format) to this file (default is for no centroid processing)
+				char *pszSNPCentroidFile,		// Output SNP centroids (CSV format) to this file (default is for no centroid processing)
 				char *pszSfxFile,				// target as suffix array
 				char *pszStatsFile,				// aligner induced substitutions stats file
 				char *pszMultiAlignFile,		// file to contain reads which are aligned to multiple locations

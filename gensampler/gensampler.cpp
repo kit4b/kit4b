@@ -447,7 +447,7 @@ char *pszSpecies;
 char *pszChrom;
 char szSpecies[64];
 char szCurChrom[64];
-INT64 Now;
+int64_t Now;
 int RandSeed;
 int NumFields;
 int CoreID;
@@ -543,7 +543,7 @@ if((hRsltsFile = open(pszOutputFile, O_RDWR | O_CREAT | O_TRUNC, S_IREAD | S_IWR
 QueryPerformanceCounter((LARGE_INTEGER *)&Now);
 #else
 struct tms Times;
-Now = (INT64)times(&Times);
+Now = (int64_t)times(&Times);
 #endif
 RandSeed = (int)(Now & 0x07fffffff);
 CRandomMersenne RandBase(RandSeed);
@@ -603,7 +603,7 @@ while((Rslt=pCSV->NextLine()) > 0)	// onto next line containing fields
 		{
 		if(pSeqBuffer != NULL)
 			delete pSeqBuffer;
-		if((pSeqBuffer = new unsigned char [SeqLen + cAllocSeqLen])==NULL)
+		if((pSeqBuffer = new uint8_t [SeqLen + cAllocSeqLen])==NULL)
 			break;
 		AllocSeqLen = SeqLen + cAllocSeqLen;
 		}

@@ -7,22 +7,22 @@ const int cContigSeqChunk = 0x0fffff;	// alloc for holding contig sequence chunk
 const int cContigSeqAlloc = cContigSeqChunk * 50;	// alloc to hold contig sequences in this byte sized increments
 
 typedef struct TAG_sContigEntry {
-	UINT32 ContigID;					// uniquely identifes this contig
+	uint32_t ContigID;					// uniquely identifes this contig
 	char szDescr[cMaxContigDescrLen];	// full contig descriptor line
 	char szContig[cMaxDatasetSpeciesChrom];	 // parsed out contig identifier
-	UINT32 ContigLen;		// length of this contig
-	UINT32 ContigSeqOfs;	// offset in m_pContigSeqs at which this contig sequence starts
+	uint32_t ContigLen;		// length of this contig
+	uint32_t ContigSeqOfs;	// offset in m_pContigSeqs at which this contig sequence starts
 	} tsContigEntry;
 
 class CContigs
 {
-	UINT8 *m_pContigChunk;				// used to buffer contig sequence chunks
+	uint8_t *m_pContigChunk;				// used to buffer contig sequence chunks
 	size_t m_ContigSeqsOfs;				// offset in m_pContigSeqs at which to next write
 	size_t m_AllocdContigSeqMem;		// total memory allocated to m_pContigSeqs 
-	UINT8 *m_pContigSeqs;				// allocated to hold concatenated contig sequences
+	uint8_t *m_pContigSeqs;				// allocated to hold concatenated contig sequences
 
-	UINT32 m_NumContigEntries;			// number of contig entries
-	UINT32 m_AllocContigEntries;		// this many contig entries have been allocated
+	uint32_t m_NumContigEntries;			// number of contig entries
+	uint32_t m_AllocContigEntries;		// this many contig entries have been allocated
 	size_t m_AllocContigEntriesMem;	    // total memory allocated for contig entries
 	tsContigEntry *m_pContigEntries;	// allocated to hold contig entries
 
@@ -37,7 +37,7 @@ public:
 
 	teBSFrsltCodes LoadContigs(char *pszFile);		// process for contigs from this (can be wildcarded) file(s)
 	tsContigEntry *LocateContig(char *pszContig);   // returns specified contig 
-	UINT8 *LocateSeq(char *pszCompID,UINT32 Start); // returns ptr to sequence
+	uint8_t *LocateSeq(char *pszCompID,uint32_t Start); // returns ptr to sequence
 
 
 };

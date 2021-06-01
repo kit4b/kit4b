@@ -42,18 +42,18 @@ typedef enum eBEDRegion {
 // Hamming specific structures
 const int cMaxHammingChroms = 200;	// can handle at most this many chromosomes with hammings
 typedef struct TAG_sHamChrom {
-	UINT32 ChromID;					// uniquely identifies this chromosome
-	UINT8  szChrom[cMaxDatasetSpeciesChrom];	// chrom name
-	UINT32 NumEls;					// number of subsequences with hammings on this chrom
-	UINT8 Dists[1];					// array, in ascending loci order, of hamming distances
+	uint32_t ChromID;					// uniquely identifies this chromosome
+	uint8_t  szChrom[cMaxDatasetSpeciesChrom];	// chrom name
+	uint32_t NumEls;					// number of subsequences with hammings on this chrom
+	uint8_t Dists[1];					// array, in ascending loci order, of hamming distances
 } tsHamChrom;
 
 typedef struct TAG_sHamHdr {
-	UINT8 Magic[4];		        // magic chars 'bham' to identify this file as a biosequence file containing hamming edit distances
-	UINT32 Version;				// structure version 
-	INT32 Len;					// file length, also allocation size required when loading hammings into memory
-	UINT16 NumChroms;		    // number of chromosomes with Hammings
-	UINT32 ChromOfs[cMaxHammingChroms];	// offsets to each chromosomes respective tsHamChrom
+	uint8_t Magic[4];		        // magic chars 'bham' to identify this file as a biosequence file containing hamming edit distances
+	uint32_t Version;				// structure version 
+	int32_t Len;					// file length, also allocation size required when loading hammings into memory
+	uint16_t NumChroms;		    // number of chromosomes with Hammings
+	uint32_t ChromOfs[cMaxHammingChroms];	// offsets to each chromosomes respective tsHamChrom
 } tsHamHdr;
 
 #pragma pack()
@@ -101,7 +101,7 @@ typedef struct TAG_sChromCnts {
 	int AllocCovCnts;							// allocated to hold cnts for this sized chromosome
 	int StartOfs;								// pCovCnts[offset] of first coverage cnt
 	int EndOfs;									// pCovCnts[offset] of last coverage cnt
-	UINT16 *pCovCnts;							// coverage counts
+	uint16_t *pCovCnts;							// coverage counts
 } tsChromCnts;
 
 tsChromCnts m_ChromCnts[cMaxChromCov];
@@ -491,7 +491,7 @@ if(m_NumChromsCov > 0)
 			free(m_ChromCnts[ChromIdx].pCovCnts);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
 #else
 			if(m_ChromCnts[ChromIdx].pCovCnts != MAP_FAILED)
-				munmap(m_ChromCnts[ChromIdx].pCovCnts,m_ChromCnts[ChromIdx].AllocCovCnts * sizeof(UINT16));
+				munmap(m_ChromCnts[ChromIdx].pCovCnts,m_ChromCnts[ChromIdx].AllocCovCnts * sizeof(uint16_t));
 #endif
 			m_ChromCnts[ChromIdx].pCovCnts = NULL;
 			}
@@ -584,7 +584,7 @@ if(HamHdr.NumChroms < 1)
 	return(eBSFerrNoEntries);
 	}
 
-if((m_pHamHdr = (tsHamHdr *)new UINT8 [HamHdr.Len])==NULL)
+if((m_pHamHdr = (tsHamHdr *)new uint8_t [HamHdr.Len])==NULL)
 	{
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Unable to allocate memory (%d bytes) for holding Hamming distances loaded from - %s",HamHdr.Len,pszHammings);
 	close(hHamFile);
@@ -592,7 +592,7 @@ if((m_pHamHdr = (tsHamHdr *)new UINT8 [HamHdr.Len])==NULL)
 	return(eBSFerrMem);
 	}
 memcpy(m_pHamHdr,&HamHdr,sizeof(tsHamHdr));
-if(read(hHamFile,(UINT8 *)m_pHamHdr+sizeof(tsHamHdr),HamHdr.Len-sizeof(tsHamHdr))!=HamHdr.Len-sizeof(tsHamHdr))
+if(read(hHamFile,(uint8_t *)m_pHamHdr+sizeof(tsHamHdr),HamHdr.Len-sizeof(tsHamHdr))!=HamHdr.Len-sizeof(tsHamHdr))
 	{
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Unable to read all Hamming edit distances from - %s",pszHammings);
 	close(hHamFile);
@@ -603,7 +603,7 @@ close(hHamFile);
 int ChromIdx;
 for(ChromIdx = 0; ChromIdx < m_pHamHdr->NumChroms; ChromIdx++)
 	{
-	m_pCurHamChrom = (tsHamChrom *)((UINT8 *)m_pHamHdr + m_pHamHdr->ChromOfs[ChromIdx]);
+	m_pCurHamChrom = (tsHamChrom *)((uint8_t *)m_pHamHdr + m_pHamHdr->ChromOfs[ChromIdx]);
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"chrom '%s' loaded with %d Hammings",m_pCurHamChrom->szChrom,m_pCurHamChrom->NumEls);
 	}
 m_pCurHamChrom = NULL;
@@ -611,7 +611,7 @@ return(eBSFSuccess);
 }
 
 int						// returned Hamming distance, 0 if no hammings loaded, -1 if not located
-LocateHamming(char *pszChrom,UINT32 Loci)
+LocateHamming(char *pszChrom,uint32_t Loci)
 {
 int ChromIdx;
 if(m_pHamHdr == NULL)
@@ -620,7 +620,7 @@ if(m_pCurHamChrom == NULL || stricmp((char *)m_pCurHamChrom->szChrom,pszChrom))
 	{
 	for(ChromIdx = 0; ChromIdx < m_pHamHdr->NumChroms; ChromIdx++)
 		{
-		m_pCurHamChrom = (tsHamChrom *)((UINT8 *)m_pHamHdr + m_pHamHdr->ChromOfs[ChromIdx]);
+		m_pCurHamChrom = (tsHamChrom *)((uint8_t *)m_pHamHdr + m_pHamHdr->ChromOfs[ChromIdx]);
 		if(!stricmp((char *)m_pCurHamChrom->szChrom,pszChrom))
 			break;
 		}
@@ -661,7 +661,7 @@ int ChromIdx;
 int HammingDist;
 for(ChromIdx = 0; ChromIdx < m_pHamHdr->NumChroms; ChromIdx++)
 	{
-	m_pCurHamChrom = (tsHamChrom *)((UINT8 *)m_pHamHdr + m_pHamHdr->ChromOfs[ChromIdx]);
+	m_pCurHamChrom = (tsHamChrom *)((uint8_t *)m_pHamHdr + m_pHamHdr->ChromOfs[ChromIdx]);
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Processing chromosome: '%s'",m_pCurHamChrom->szChrom);
 	BuffIdx += sprintf(&szLineBuff[BuffIdx],"fixedStep chrom=%s start=%d step=1\n",m_pCurHamChrom->szChrom,1);
 	CUtility::RetryWrites(m_hRsltsFile,szLineBuff,BuffIdx);
@@ -885,7 +885,7 @@ BuildReadCoverage(char *pszChrom,		// coverage is onto this chrom
 tsChromCnts *pChrom;
 int ChromIdx;
 int AllocCovCnts;
-UINT16 *pCovCnts;
+uint16_t *pCovCnts;
 size_t ReallocTo;
 
 if(pszChrom == NULL || pszChrom[0] == '\0')
@@ -934,21 +934,21 @@ if(ChromIdx == m_NumChromsCov)	// if a new or first chrom
 	pChrom->StartOfs = StartOfs;
 	pChrom->EndOfs = EndOfs;
 	AllocCovCnts = EndOfs + cAllocCovCnts;
-	ReallocTo =  AllocCovCnts * sizeof(UINT16);
+	ReallocTo =  AllocCovCnts * sizeof(uint16_t);
 #ifdef _WIN32
-	pChrom->pCovCnts = (UINT16 *) malloc(ReallocTo);	// initial and perhaps the only allocation
+	pChrom->pCovCnts = (uint16_t *) malloc(ReallocTo);	// initial and perhaps the only allocation
 	if(pChrom->pCovCnts == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"BuildReadCoverage: Memory allocation of %lld bytes - %s",(INT64)ReallocTo,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"BuildReadCoverage: Memory allocation of %lld bytes - %s",(int64_t)ReallocTo,strerror(errno));
 		Reset();
 		return(eBSFerrMem);
 		}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-	pChrom->pCovCnts = (UINT16 *)mmap(NULL,ReallocTo, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+	pChrom->pCovCnts = (uint16_t *)mmap(NULL,ReallocTo, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(pChrom->pCovCnts == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"BuildReadCoverage: Memory allocation of %lld bytes through mmap()  failed - %s",(INT64)ReallocTo,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"BuildReadCoverage: Memory allocation of %lld bytes through mmap()  failed - %s",(int64_t)ReallocTo,strerror(errno));
 		pChrom->pCovCnts = NULL;
 		Reset();
 		return(eBSFerrMem);
@@ -963,11 +963,11 @@ if(ChromIdx == m_NumChromsCov)	// if a new or first chrom
 if(EndOfs >= pChrom->AllocCovCnts)
 	{
 	AllocCovCnts = EndOfs + cAllocCovCnts;
-	ReallocTo = AllocCovCnts * sizeof(UINT16);
+	ReallocTo = AllocCovCnts * sizeof(uint16_t);
 #ifdef _WIN32
-	pCovCnts = (UINT16 *) realloc(pChrom->pCovCnts,ReallocTo);
+	pCovCnts = (uint16_t *) realloc(pChrom->pCovCnts,ReallocTo);
 #else
-	pCovCnts = (UINT16 *)mremap(pChrom->pCovCnts,pChrom->AllocCovCnts * sizeof(UINT16),ReallocTo,MREMAP_MAYMOVE);
+	pCovCnts = (uint16_t *)mremap(pChrom->pCovCnts,pChrom->AllocCovCnts * sizeof(uint16_t),ReallocTo,MREMAP_MAYMOVE);
 	if(pCovCnts == MAP_FAILED)
 		pCovCnts = NULL;
 #endif
@@ -978,7 +978,7 @@ if(EndOfs >= pChrom->AllocCovCnts)
 		return(eBSFerrMem);
 		}
 	pChrom->pCovCnts = pCovCnts;
-	memset(&pChrom->pCovCnts[pChrom->AllocCovCnts],0,(AllocCovCnts - pChrom->AllocCovCnts) * sizeof(UINT16));
+	memset(&pChrom->pCovCnts[pChrom->AllocCovCnts],0,(AllocCovCnts - pChrom->AllocCovCnts) * sizeof(uint16_t));
 	pChrom->AllocCovCnts = AllocCovCnts;
 	}
 
@@ -1007,7 +1007,7 @@ WriteReadsWig(char *pszSrcFile)
 int BuffIdx;
 char szLineBuff[8096];
 tsChromCnts *pChrom;
-UINT16 *pCnts;
+uint16_t *pCnts;
 int ChromIdx;
 int SeqIdx;
 bool bStartRegion;

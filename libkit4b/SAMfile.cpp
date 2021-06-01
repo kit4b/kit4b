@@ -409,7 +409,7 @@ if(m_SAMFileType == eSFTSAM || m_SAMFileType == eSFTSAMgz)
 else
 	m_AllocBAMSize = cAllocBAMSize;
 
-if((m_pBAM = (UINT8 *)malloc(m_AllocBAMSize))==NULL)
+if((m_pBAM = (uint8_t *)malloc(m_AllocBAMSize))==NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Create: unable to alloc memory for bufferingr");
 	Reset();
@@ -516,27 +516,27 @@ pTxt[2] = '\0';
 return(pStart);
 }
 
-UINT32										// returns estimated number of sequences in SAM or BAM file
+uint32_t										// returns estimated number of sequences in SAM or BAM file
 CSAMfile::EstSizes(char *pszFile,			// SAM or BAM file path+name to estimate sizes
-			  INT64 *pFileSize,				// file is this size on disk
-			  INT32 *pEstMaxDescrLen,		// with estimated maximum descriptor length
-			  INT32 *pEstMeanDescrLen,		// estimated mean descriptor length
-			  INT32 *pEstMaxSeqLen,			// and estimated maximum sequence length
-			  INT32 *pEstMeanSeqLen,		// estimated mean sequence length
-			  INT32 *pEstScoreSchema)		// currently will always return 0: no scoring 
+			  int64_t *pFileSize,				// file is this size on disk
+			  int32_t *pEstMaxDescrLen,		// with estimated maximum descriptor length
+			  int32_t *pEstMeanDescrLen,		// estimated mean descriptor length
+			  int32_t *pEstMaxSeqLen,			// and estimated maximum sequence length
+			  int32_t *pEstMeanSeqLen,		// estimated mean sequence length
+			  int32_t *pEstScoreSchema)		// currently will always return 0: no scoring 
 {
 int Rslt;
 int NumSeqs;
-UINT32 EstTotSeqs;
-INT64 SumDescrLens;
-INT64 SumSeqLens;
+uint32_t EstTotSeqs;
+int64_t SumDescrLens;
+int64_t SumSeqLens;
 int MaxDescrLen;
 int MinDescrLen;
 int MaxSeqLen;
 int MinSeqLen;
 int MeanDescrLen;
 int MeanSeqLen;
-INT64 FileSize;
+int64_t FileSize;
 
 NumSeqs = 0;
 SumDescrLens = 0;
@@ -568,7 +568,7 @@ if(!_stat64(pszFile,&st))
 struct stat64 st;
 if(!stat64(pszFile,&st))
 #endif
-	FileSize = (INT64)st.st_size;
+	FileSize = (int64_t)st.st_size;
 else
 	FileSize = 0;
 
@@ -638,9 +638,9 @@ if(pEstMeanSeqLen != NULL)
 // guestimate is that the header section will be 2% of the filesize, and that descriptor + sequences are about 75% of each alignment line
 
 if(NumSeqs < 100000)
-	EstTotSeqs = (UINT32)NumSeqs;
+	EstTotSeqs = (uint32_t)NumSeqs;
 else
-	EstTotSeqs = (UINT32)((((UINT64)FileSize * 98) / 100)  / (UINT64)(((MeanDescrLen + MeanSeqLen) * 3) / 2));
+	EstTotSeqs = (uint32_t)((((uint64_t)FileSize * 98) / 100)  / (uint64_t)(((MeanDescrLen + MeanSeqLen) * 3) / 2));
 
 return(EstTotSeqs);
 }
@@ -745,11 +745,11 @@ delete pSeqBases;
 return(LineLen);
 }
 
-UINT32
+uint32_t
 CSAMfile::GenNameHash(char *pszRefSeqName) // reference sequence name to generate a 32bit hash over
 {
-UINT32 Hash;
-UINT32 TopBits;
+uint32_t Hash;
+uint32_t TopBits;
 char Chr;
 Hash = 0;
 while((Chr=*pszRefSeqName++) != '\0')
@@ -769,7 +769,7 @@ CSAMfile::LocateRefSeqID(char *pszRefSeqName) // reference sequence name to loca
 {
 int Idx;
 int NameLen;
-UINT32 Hash;
+uint32_t Hash;
 
 tsRefSeq *pRefSeq; 
 if(pszRefSeqName == NULL || pszRefSeqName[0] == '\0' || m_pRefSeqs == NULL || m_NumBAMSeqNames < 1)
@@ -817,7 +817,7 @@ for(Idx = 0; Idx < (int)m_NumBAMSeqNames; Idx++)
 		m_pLocateRefSeqHist[0] = pRefSeq;
 		return(pRefSeq->SeqID);
 		}
-	pRefSeq = (tsRefSeq *)((UINT8 *)pRefSeq + pRefSeq->SeqNameLen + sizeof(tsRefSeq));
+	pRefSeq = (tsRefSeq *)((uint8_t *)pRefSeq + pRefSeq->SeqNameLen + sizeof(tsRefSeq));
 	}
 return(0);
 }
@@ -905,9 +905,9 @@ if(NumEls != 9)
 
 strncpy(pBAMalign->read_name,szDescriptor,sizeof(pBAMalign->read_name));	// szDescriptor as read name
 pBAMalign->read_name[sizeof(pBAMalign->read_name)-1] = '\0';
-pBAMalign->NumReadNameBytes = (INT32)strlen(pBAMalign->read_name) + 1;
+pBAMalign->NumReadNameBytes = (int32_t)strlen(pBAMalign->read_name) + 1;
 
-pBAMalign->flag_nc = (UINT32)(Flags & 0x0ffff) << 16;						// flags
+pBAMalign->flag_nc = (uint32_t)(Flags & 0x0ffff) << 16;						// flags
 
 if(pBEDremapper != NULL)
 	{
@@ -1025,7 +1025,7 @@ if(*pCigar != '*')
 			default:				// unsupported!
 				return(eBSFerrParse);
 			}
-		pBAMalign->cigar[CigarIdx++] = (UINT32)CigarOPlen << 4 | CigarOP;
+		pBAMalign->cigar[CigarIdx++] = (uint32_t)CigarOPlen << 4 | CigarOP;
 		pBAMalign->end += CigarOPlen;
 		if(CigarIdx > cMaxBAMCigarOps)
 			return(eBSFerrParse);
@@ -1035,7 +1035,7 @@ if(*pCigar != '*')
 	pBAMalign->end -= 1;
 	}
 pBAMalign->flag_nc |= CigarIdx;
-pBAMalign->NumCigarBytes = max(CigarIdx,1) * sizeof(UINT32);
+pBAMalign->NumCigarBytes = max(CigarIdx,1) * sizeof(uint32_t);
 
 pszSeq = &pszSAMline[LineRemainIdx];
 
@@ -1043,14 +1043,14 @@ char szSeq[cMaxReadLen+1];
 char szQScore[cMaxReadLen+1];
 
 sscanf(&pszSAMline[LineRemainIdx],"%s\t%s\t%n",szSeq,szQScore,&LineRemainIdx);
-pBAMalign->l_seq = (INT32)strlen(szSeq);
+pBAMalign->l_seq = (int32_t)strlen(szSeq);
 
 if(szQScore[0] == '*')		// if there were no associated quality scores
 	memset(pBAMalign->qual,0x0ff,pBAMalign->l_seq);
 else
 	strcpy((char *)pBAMalign->qual,szQScore);
 
-UINT8 Byte;
+uint8_t Byte;
 int Ofs;
 
 char Base;
@@ -1163,18 +1163,18 @@ char Char;
 int LenRead;
 int LenRemaining;
 int NxtLineLen;
-UINT32 StartInBamIdx;	// m_pBAM[] at which current alignment entry starts 
-UINT32 block_size;		// Length of the remainder of this alignment record (includes any auxiliary data)
-INT32 refID;			// Reference sequence ID,  -1 <= refID < n_ref; -1 for a read without a mapping position
-INT32 pos;				// 0-based leftmost coordinate (= POS - 1) 
-UINT32 bin_mq_nl;		// bin<<16|MAPQ<<8|l_read_name ; bin is computed by the reg2bin(); l_read_name is the length of read name below (= length(QNAME) + 1).
-UINT32 flag_nc;			// FLAG<<16|n_cigar_op; n_cigar_op is the number of operations in CIGAR
-INT32 l_seq;			// Length of SEQ
-INT32 next_refID;		// Ref-ID of the next segment (-1 <= mate_refID < n_ref)
-INT32 next_pos;			// 0-based leftmost pos of the next segment (= PNEXT - 1)
-INT32 tlen;				// Template length (= TLEN)
+uint32_t StartInBamIdx;	// m_pBAM[] at which current alignment entry starts 
+uint32_t block_size;		// Length of the remainder of this alignment record (includes any auxiliary data)
+int32_t refID;			// Reference sequence ID,  -1 <= refID < n_ref; -1 for a read without a mapping position
+int32_t pos;				// 0-based leftmost coordinate (= POS - 1) 
+uint32_t bin_mq_nl;		// bin<<16|MAPQ<<8|l_read_name ; bin is computed by the reg2bin(); l_read_name is the length of read name below (= length(QNAME) + 1).
+uint32_t flag_nc;			// FLAG<<16|n_cigar_op; n_cigar_op is the number of operations in CIGAR
+int32_t l_seq;			// Length of SEQ
+int32_t next_refID;		// Ref-ID of the next segment (-1 <= mate_refID < n_ref)
+int32_t next_pos;			// 0-based leftmost pos of the next segment (= PNEXT - 1)
+int32_t tlen;				// Template length (= TLEN)
 char szReadName[cMaxDescrIDLen+1];	// read_name  | char[l_read name] | NULL terminated (QNAME plus a tailing `\0')
-UINT32 cigar;			// CIGAR: op_len<<4|op. `MIDNSHP=X'!`012345678'
+uint32_t cigar;			// CIGAR: op_len<<4|op. `MIDNSHP=X'!`012345678'
 int CigarOpLen;			// current CIGAR op len
 char CigarOp;			// current CIGAR op
 int CigarLen;			// cuurent length of constructed szCigar
@@ -1314,8 +1314,8 @@ else  // reading from BAM
 			{
 			if((m_CurRefSeqsLen + 1000) > m_AllocRefSeqsSize)	// ensure sufficent memory allocated to hold this new reference sequence
 				{
-				UINT8 *pTmp;
-				pTmp = (UINT8 *)realloc(m_pRefSeqs,m_AllocRefSeqsSize + cAllocRefSeqSize);
+				uint8_t *pTmp;
+				pTmp = (uint8_t *)realloc(m_pRefSeqs,m_AllocRefSeqsSize + cAllocRefSeqSize);
 				if(pTmp == NULL)
 					{
 					gDiagnostics.DiagOut(eDLFatal,gszProcName,"GetNxtSAMline: unable to realloc memory for reference sequence names");
@@ -1326,7 +1326,7 @@ else  // reading from BAM
 				m_AllocRefSeqsSize += cAllocRefSeqSize;
 				}
 			m_NumRefSeqNames += 1;
-			m_pCurRefSeq = (tsRefSeq *)((UINT8 *)m_pRefSeqs + m_CurRefSeqsLen);
+			m_pCurRefSeq = (tsRefSeq *)((uint8_t *)m_pRefSeqs + m_CurRefSeqsLen);
 			m_pCurRefSeq->SeqID = m_NumRefSeqNames;
 			m_pCurRefSeq->SeqNameLen = -1 + *(int *)&m_pBAM[m_CurInBAMIdx];
 			m_CurInBAMIdx += 4;
@@ -1348,10 +1348,10 @@ else  // reading from BAM
 			m_CurRefSeqNameID = 1;
 			}
 
-		block_size = *(UINT32 *)&m_pBAM[m_CurInBAMIdx];
+		block_size = *(uint32_t *)&m_pBAM[m_CurInBAMIdx];
 		m_CurInBAMIdx += 4;
 		m_TotInBAMProc += 4;
-		StartInBamIdx = (UINT32)m_CurInBAMIdx;
+		StartInBamIdx = (uint32_t)m_CurInBAMIdx;
 		refID = *(int *)&m_pBAM[m_CurInBAMIdx];			// -1 if unaligned
 		m_CurInBAMIdx += 4;
 
@@ -1361,7 +1361,7 @@ else  // reading from BAM
 			{
 			while(m_CurRefSeqNameID < m_NumBAMSeqNames && refID != m_pCurRefSeq->SeqID-1)
 				{
-				m_pCurRefSeq = (tsRefSeq *)((UINT8 *)m_pCurRefSeq + m_pCurRefSeq->SeqNameLen + sizeof(tsRefSeq));
+				m_pCurRefSeq = (tsRefSeq *)((uint8_t *)m_pCurRefSeq + m_pCurRefSeq->SeqNameLen + sizeof(tsRefSeq));
 				m_CurRefSeqNameID += 1;
 				}
 			if(refID != m_pCurRefSeq->SeqID-1)
@@ -1394,7 +1394,7 @@ else  // reading from BAM
 					{
 					if(next_refID == pNxtRefSeq->SeqID - 1)
 						break;
-					pNxtRefSeq = (tsRefSeq *)((UINT8 *)pNxtRefSeq + pNxtRefSeq->SeqNameLen + sizeof(tsRefSeq));
+					pNxtRefSeq = (tsRefSeq *)((uint8_t *)pNxtRefSeq + pNxtRefSeq->SeqNameLen + sizeof(tsRefSeq));
 					}
 				if(Idx == m_NumBAMSeqNames)
 					{
@@ -1424,9 +1424,9 @@ else  // reading from BAM
 		else                                            // was aligned so build a CIGAR 
 			{
 			CigarLen = 0;
-			for(UINT32 CigarIdx = 0; CigarIdx < (flag_nc & 0x00ff); CigarIdx++)
+			for(uint32_t CigarIdx = 0; CigarIdx < (flag_nc & 0x00ff); CigarIdx++)
 				{
-				cigar = *(UINT32 *)&m_pBAM[m_CurInBAMIdx];
+				cigar = *(uint32_t *)&m_pBAM[m_CurInBAMIdx];
 				m_CurInBAMIdx += 4;
 				CigarOp = m_CigarOpsMap[cigar  & 0x00f];
 				CigarOpLen = (cigar >> 4) & 0x0fffffff;
@@ -1537,7 +1537,7 @@ if(SAMType == eSFTSAM || SAMType == eSFTSAMgz)
 else
 	m_AllocBAMSize = cAllocBAMSize;
 
-if((m_pBAM = (UINT8 *)malloc(m_AllocBAMSize))==NULL)
+if((m_pBAM = (uint8_t *)malloc(m_AllocBAMSize))==NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Create: unable to alloc memory for bufferingr");
 	Reset();
@@ -1547,7 +1547,7 @@ if((m_pBAM = (UINT8 *)malloc(m_AllocBAMSize))==NULL)
 // if also BAI or CSI output then make initial mem allocations
 if(SAMType >= eSFTBAM_BAI)
 	{
-	if((m_pBAI = (UINT8 *)malloc(cAllocBAISize))==NULL)
+	if((m_pBAI = (uint8_t *)malloc(cAllocBAISize))==NULL)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Create: unable to alloc memory for BAI");
 		Reset();
@@ -1604,10 +1604,10 @@ if(SAMType >= eSFTBAM)
 		return(eBSFerrMem);
 		}
 	m_hOutSAMfile = -1;
-	m_pBAM[0] = (UINT8)'B';
-	m_pBAM[1] = (UINT8)'A';
-	m_pBAM[2] = (UINT8)'M';
-	m_pBAM[3] = (UINT8)0x01;
+	m_pBAM[0] = (uint8_t)'B';
+	m_pBAM[1] = (uint8_t)'A';
+	m_pBAM[2] = (uint8_t)'M';
+	m_pBAM[3] = (uint8_t)0x01;
 	m_CurBAMLen = 8;				// the length of header text will be written into m_pBAM[4] when known
 	}
 
@@ -1621,11 +1621,11 @@ return(eBSFSuccess);
 int					// returns current number of reference sequence names
 CSAMfile::AddRefSeq(char *pszSpecies,	// sequence from this species
 				  char *pszSeqName,		// sequence name
-				  UINT32 SeqLen)		// sequence is of this length
+				  uint32_t SeqLen)		// sequence is of this length
 {
 tsRefSeq *pRefSeq;
 
-if(m_SAMFileType >= eSFTBAM_BAI && (size_t)(UINT64)SeqLen > cMaxCSIRefSeqLen)
+if(m_SAMFileType >= eSFTBAM_BAI && (size_t)(uint64_t)SeqLen > cMaxCSIRefSeqLen)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddREfSeq: Reference sequence '%s':'%s' of length %d is longer than max allowed %s index offset of %lld",
 								pszSpecies,pszSeqName,SeqLen,
@@ -1637,8 +1637,8 @@ if(m_SAMFileType >= eSFTBAM_BAI && (size_t)(UINT64)SeqLen > cMaxCSIRefSeqLen)
 
 if((m_CurBAMLen + 1000) > m_AllocBAMSize)	// ensure sufficient memory allocated to hold this new reference sequence
 	{
-	UINT8 *pTmp;
-	pTmp = (UINT8 *)realloc(m_pBAM,m_AllocBAMSize + cAllocBAMSize);
+	uint8_t *pTmp;
+	pTmp = (uint8_t *)realloc(m_pBAM,m_AllocBAMSize + cAllocBAMSize);
 	if(pTmp == NULL)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Create: unable to realloc memory for reference sequence names");
@@ -1651,8 +1651,8 @@ if((m_CurBAMLen + 1000) > m_AllocBAMSize)	// ensure sufficient memory allocated 
 
 if((m_CurRefSeqsLen + 1000) > m_AllocRefSeqsSize)	// ensure sufficent memory allocated to hold this new reference sequence
 	{
-	UINT8 *pTmp;
-	pTmp = (UINT8 *)realloc(m_pRefSeqs,m_AllocRefSeqsSize + cAllocRefSeqSize);
+	uint8_t *pTmp;
+	pTmp = (uint8_t *)realloc(m_pRefSeqs,m_AllocRefSeqsSize + cAllocRefSeqSize);
 	if(pTmp == NULL)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Create: unable to realloc memory for reference sequence names");
@@ -1670,7 +1670,7 @@ else
 m_NumBAMSeqNames += 1;
 
 m_NumRefSeqNames += 1;
-pRefSeq = (tsRefSeq *)((UINT8 *)m_pRefSeqs + m_CurRefSeqsLen);
+pRefSeq = (tsRefSeq *)((uint8_t *)m_pRefSeqs + m_CurRefSeqsLen);
 pRefSeq->SeqID = m_NumRefSeqNames;
 pRefSeq->Hash = GenNameHash(pszSeqName);
 pRefSeq->SeqLen = SeqLen;
@@ -1686,10 +1686,10 @@ return(m_NumBAMSeqNames);
 int 
 CSAMfile::StartAlignments(void)
 {
-UINT8 *pBAM;
+uint8_t *pBAM;
 tsRefSeq *pRefSeq;
 size_t BGZFWritten;
-UINT32 SeqNameID;
+uint32_t SeqNameID;
 
 if(m_SAMFileType >= eSFTBAM_BAI)
 	{
@@ -1718,9 +1718,9 @@ if(m_SAMFileType >= eSFTBAM_BAI)
 if(m_SAMFileType >= eSFTBAM_BAI)
 	{
 	m_MaxIdxRefSeqLen = m_SAMFileType == eSFTBAM_BAI ? cMaxSAIRefSeqLen : cMaxCSIRefSeqLen;
-	m_Alloc16KOfsVirtAddrsSize = ((m_MaxIdxRefSeqLen + 1) * sizeof(UINT64)) / (size_t)0x3fff;
+	m_Alloc16KOfsVirtAddrsSize = ((m_MaxIdxRefSeqLen + 1) * sizeof(uint64_t)) / (size_t)0x3fff;
 	
-	if((m_p16KOfsVirtAddrs = (UINT64 *)malloc(m_Alloc16KOfsVirtAddrsSize))==NULL)
+	if((m_p16KOfsVirtAddrs = (uint64_t *)malloc(m_Alloc16KOfsVirtAddrsSize))==NULL)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"StartAlignments: unable to alloc %lld memory for BAI or CSI 16kb linear virtual offsets",m_Alloc16KOfsVirtAddrsSize);
 		Reset();
@@ -1748,10 +1748,10 @@ if(m_SAMFileType == eSFTBAM_BAI)
 		Reset();
 		return(eBSFerrCreateFile);
 		}
-	m_pBAI[0] = (UINT8)'B';
-	m_pBAI[1] = (UINT8)'A';
-	m_pBAI[2] = (UINT8)'I';
-	m_pBAI[3] = (UINT8)0x01;
+	m_pBAI[0] = (uint8_t)'B';
+	m_pBAI[1] = (uint8_t)'A';
+	m_pBAI[2] = (uint8_t)'I';
+	m_pBAI[3] = (uint8_t)0x01;
 	m_CurBAILen = 4;
 	}
 else
@@ -1786,10 +1786,10 @@ else
 			return(eBSFerrMem);
 			}
 		m_hOutBAIfile = -1;
-		m_pBAI[0] = (UINT8)'C';
-		m_pBAI[1] = (UINT8)'S';
-		m_pBAI[2] = (UINT8)'I';
-		m_pBAI[3] = (UINT8)0x01;
+		m_pBAI[0] = (uint8_t)'C';
+		m_pBAI[1] = (uint8_t)'S';
+		m_pBAI[2] = (uint8_t)'I';
+		m_pBAI[3] = (uint8_t)0x01;
 		m_CurBAILen = 4;
 		}
 
@@ -1797,16 +1797,16 @@ else
 if(m_SAMFileType >= eSFTBAM)
 	{
 	m_CurBAMLen += sprintf((char *)&m_pBAM[m_CurBAMLen],"\n@PG\tID:%s\tVN:%s\n",gszProcName,m_szVer); 
-	*(UINT32 *)&m_pBAM[4] = (UINT32)(m_CurBAMLen - 8);
-	*(UINT32 *)&m_pBAM[m_CurBAMLen] = m_NumRefSeqNames;
+	*(uint32_t *)&m_pBAM[4] = (uint32_t)(m_CurBAMLen - 8);
+	*(uint32_t *)&m_pBAM[m_CurBAMLen] = m_NumRefSeqNames;
 	m_CurBAMLen += 4;
 	pRefSeq = m_pRefSeqs;
 	for(SeqNameID = 0; SeqNameID < m_NumRefSeqNames; SeqNameID++)
 		{
 		if((m_CurBAMLen + 1000) > m_AllocBAMSize)	// ensure sufficent memory allocated to hold this new reference sequence
 			{
-			UINT8 *pTmp;
-			pTmp = (UINT8 *)realloc(m_pBAM,m_AllocBAMSize + cAllocBAMSize);
+			uint8_t *pTmp;
+			pTmp = (uint8_t *)realloc(m_pBAM,m_AllocBAMSize + cAllocBAMSize);
 			if(pTmp == NULL)
 				{
 				gDiagnostics.DiagOut(eDLFatal,gszProcName,"StartAlignments: unable to realloc memory for reference sequence names");
@@ -1818,13 +1818,13 @@ if(m_SAMFileType >= eSFTBAM)
 			}
 
 		pBAM = &m_pBAM[m_CurBAMLen];
-		*(UINT32 *)pBAM = pRefSeq->SeqNameLen + 1;
+		*(uint32_t *)pBAM = pRefSeq->SeqNameLen + 1;
 		pBAM += 4;
 		strcpy((char *)pBAM,pRefSeq->szSeqName);
 		pBAM += pRefSeq->SeqNameLen + 1;
-		*(UINT32 *)pBAM = pRefSeq->SeqLen;
+		*(uint32_t *)pBAM = pRefSeq->SeqLen;
 		m_CurBAMLen += 8 + pRefSeq->SeqNameLen + 1;
-		pRefSeq = (tsRefSeq *)((INT8 *)pRefSeq + sizeof(tsRefSeq) + pRefSeq->SeqNameLen);
+		pRefSeq = (tsRefSeq *)((int8_t *)pRefSeq + sizeof(tsRefSeq) + pRefSeq->SeqNameLen);
 		}
 	pBAM = &m_pBAM[m_CurBAMLen];
 	if((BGZFWritten = (int)bgzf_write(m_pBGZF,m_pBAM,m_CurBAMLen))==-1)
@@ -1838,20 +1838,20 @@ if(m_SAMFileType >= eSFTBAM)
 	if(m_SAMFileType == eSFTBAM_BAI)
 		{
 		m_NumBAISeqNames = m_NumRefSeqNames;
-		*(UINT32 *)&m_pBAI[m_CurBAILen] = m_NumBAISeqNames;
+		*(uint32_t *)&m_pBAI[m_CurBAILen] = m_NumBAISeqNames;
 		m_CurBAILen += 4;
 		}
 	else
 		if(m_SAMFileType == eSFTBAM_CSI)
 			{
-			*(UINT32 *)&m_pBAI[m_CurBAILen] = m_CSI_min_shift;
+			*(uint32_t *)&m_pBAI[m_CurBAILen] = m_CSI_min_shift;
 			m_CurBAILen += 4;
-			*(UINT32 *)&m_pBAI[m_CurBAILen] = m_CSI_depth;
+			*(uint32_t *)&m_pBAI[m_CurBAILen] = m_CSI_depth;
 			m_CurBAILen += 4;
-			*(UINT32 *)&m_pBAI[m_CurBAILen] = 0;
+			*(uint32_t *)&m_pBAI[m_CurBAILen] = 0;
 			m_CurBAILen += 4;
 			m_NumBAISeqNames = m_NumRefSeqNames;
-			*(UINT32 *)&m_pBAI[m_CurBAILen] = m_NumBAISeqNames;
+			*(uint32_t *)&m_pBAI[m_CurBAILen] = m_NumBAISeqNames;
 			m_CurBAILen += 4;
 			}
 	}
@@ -1872,30 +1872,30 @@ return(m_NumBAMSeqNames);
 }
 
 // BAM index
-// UINT8 magic[4];    // "BAI\1"
-// UINT32 n_rf;       // number of reference sequences following
-//    UINT32 n_bin;   // number of distinct bins for current reference sequence
-//        UINT32 bin; // distinct bin
-//        UINT32 chunks; // number of chunks following
-//            UINT64 chumk_beg;		// virtual file offset at which chunk starts
-//            UINT64 chumk_end;		// virtual file offset at which chunk ends
-//    UINT32 n_intv;  // number of 16kb intervals for linear index
-//        UINT64 ioffset;   // virtual file offset of first alignment in interval
+// uint8_t magic[4];    // "BAI\1"
+// uint32_t n_rf;       // number of reference sequences following
+//    uint32_t n_bin;   // number of distinct bins for current reference sequence
+//        uint32_t bin; // distinct bin
+//        uint32_t chunks; // number of chunks following
+//            uint64_t chumk_beg;		// virtual file offset at which chunk starts
+//            uint64_t chumk_end;		// virtual file offset at which chunk ends
+//    uint32_t n_intv;  // number of 16kb intervals for linear index
+//        uint64_t ioffset;   // virtual file offset of first alignment in interval
 
 
 // CSI index
-// UINT8 magic[4];    // "CSI\1"
-// UINT32 min_shift;  // # bits for minimum interval - defaults to 14 which is same as used in the BAI indexes
-// UINT32 depth;      // R-tree depth - defaults to 5 which is same as used in the BAI indexes
-// UINT32 l_aux;      // auxilary data - not currently used so defaults to 0
-// UINT8  aux[l_aux]; // not currently required as no auxilary data used
-// UINT32 n_rf;       // number of reference sequences following, same as in BAI
-//    UINT32 n_bin;   // number of distinct bins for current reference sequence
-//        UINT32 bin; // distinct bin
-//        UINT64 loffset;   // virtual file offset of first overlapping record for bin
-//        UINT32 chunks; // number of chunks following
-//            UINT64 chumk_beg;		// virtual file offset at which chunk starts
-//            UINT64 chumk_end;		// virtual file offset at which chunk ends
+// uint8_t magic[4];    // "CSI\1"
+// uint32_t min_shift;  // # bits for minimum interval - defaults to 14 which is same as used in the BAI indexes
+// uint32_t depth;      // R-tree depth - defaults to 5 which is same as used in the BAI indexes
+// uint32_t l_aux;      // auxilary data - not currently used so defaults to 0
+// uint8_t  aux[l_aux]; // not currently required as no auxilary data used
+// uint32_t n_rf;       // number of reference sequences following, same as in BAI
+//    uint32_t n_bin;   // number of distinct bins for current reference sequence
+//        uint32_t bin; // distinct bin
+//        uint64_t loffset;   // virtual file offset of first overlapping record for bin
+//        uint32_t chunks; // number of chunks following
+//            uint64_t chumk_beg;		// virtual file offset at which chunk starts
+//            uint64_t chumk_end;		// virtual file offset at which chunk ends
 
 int									// write index to disk, returns number of bytes written, can be 0 if none attempted to be written, < 0 if errors
 CSAMfile::WriteIdxToDisk(void)	
@@ -1935,7 +1935,7 @@ CSAMfile::UpdateSAIIndex(bool bFinal)	// true if this is the final index update
 int Rslt;
 int BinIdx;
 int ChunkIdx;
-UINT32 *pSAI;
+uint32_t *pSAI;
 tsBAIbin *pBAIbin;
 tsBAIChunk *pBAIChunks;
 
@@ -1946,7 +1946,7 @@ if((m_CurBAILen + 1000) > m_AllocBAISize)
 	m_CurBAILen = 0;
 	}
 
-pSAI = (UINT32 *)&m_pBAI[m_CurBAILen];
+pSAI = (uint32_t *)&m_pBAI[m_CurBAILen];
 
 *pSAI++ = m_NumBinsWithChunks; // n_bin
 m_CurBAILen += 4;
@@ -1963,7 +1963,7 @@ if(m_NumBinsWithChunks > 0)
 			pBAIChunks = &m_pBAIChunks[pBAIbin->FirstChunk];
 			if(m_SAMFileType == eSFTBAM_CSI)
 				{
-				*(UINT64 *)pSAI = pBAIbin->StartVA;
+				*(uint64_t *)pSAI = pBAIbin->StartVA;
 				pSAI += 2;
 				m_CurBAILen += 8;
 				}
@@ -1971,9 +1971,9 @@ if(m_NumBinsWithChunks > 0)
 			m_CurBAILen += 4;
 			for(ChunkIdx =0;ChunkIdx < (int)pBAIbin->NumChunks;ChunkIdx++)
 				{
-				*(UINT64 *)pSAI = pBAIChunks->StartVA;
+				*(uint64_t *)pSAI = pBAIChunks->StartVA;
 				pSAI += 2;
-				*(UINT64 *)pSAI = pBAIChunks->EndVA;
+				*(uint64_t *)pSAI = pBAIChunks->EndVA;
 				pSAI += 2;
 				m_CurBAILen += 16;
 				pBAIChunks = &m_pBAIChunks[pBAIChunks->NextChunk];
@@ -1983,26 +1983,26 @@ if(m_NumBinsWithChunks > 0)
 					if((Rslt = WriteIdxToDisk()) < eBSFSuccess)
 						return(Rslt);
 					m_CurBAILen = 0;
-					pSAI = (UINT32 *)m_pBAI; 
+					pSAI = (uint32_t *)m_pBAI; 
 					}
 				}
 			}
 		}
 
-	if((m_CurBAILen + 1000 + (m_NumOf16Kbps * sizeof(UINT64))) > m_AllocBAISize)
+	if((m_CurBAILen + 1000 + (m_NumOf16Kbps * sizeof(uint64_t))) > m_AllocBAISize)
 		{
 		if((Rslt = WriteIdxToDisk()) < eBSFSuccess)
 			return(Rslt);
 		m_CurBAILen = 0;
-		pSAI = (UINT32 *)m_pBAI; 
+		pSAI = (uint32_t *)m_pBAI; 
 		}
 	if(m_SAMFileType == eSFTBAM_BAI)
 		{
 		*pSAI++ = m_NumOf16Kbps;
 		m_CurBAILen += 4;
-		memcpy(pSAI,m_p16KOfsVirtAddrs,m_NumOf16Kbps * sizeof(UINT64));
+		memcpy(pSAI,m_p16KOfsVirtAddrs,m_NumOf16Kbps * sizeof(uint64_t));
 		pSAI += m_NumOf16Kbps * 2;
-		m_CurBAILen += m_NumOf16Kbps * sizeof(UINT64);
+		m_CurBAILen += m_NumOf16Kbps * sizeof(uint64_t);
 		}
 	}
 else     // no alignments to this sequence
@@ -2022,10 +2022,10 @@ return(eBSFSuccess);
 }
 
 int
-CSAMfile::AddChunk(UINT64 StartVA,		// start alignment BAM record is at this virtual address
-				UINT32 Start,			// chunk starts at this loci
-				UINT64 EndVA,			// chunk alignment BAM record ends at this virtual address
-				UINT32 End)				// chunk ends at this loci
+CSAMfile::AddChunk(uint64_t StartVA,		// start alignment BAM record is at this virtual address
+				uint32_t Start,			// chunk starts at this loci
+				uint64_t EndVA,			// chunk alignment BAM record ends at this virtual address
+				uint32_t End)				// chunk ends at this loci
 {
 int Bin;
 int KOfs;
@@ -2134,7 +2134,7 @@ return 0;
 
 /* calculate the list of bins that may overlap with region [beg,end) (zero-based) */
 #define MAX_BIN (((1<<18)-1)/7)
-int CSAMfile::BAIreg2bins(int beg, int end, UINT16 *plist)
+int CSAMfile::BAIreg2bins(int beg, int end, uint16_t *plist)
 {
 int i = 0, k;
 --end;
@@ -2150,8 +2150,8 @@ return i;
 
 // following BAM bin functions are copied from the specification at http://samtools.sourceforge.net/CSIv1.pdf
 /* calculate bin given an alignment covering [beg,end) (zero-based, half-close-half-open) */
-int CSAMfile::CSIreg2bin(INT64 beg,     // begins at inclusive of start 
-			INT64 end,					// ends at 
+int CSAMfile::CSIreg2bin(int64_t beg,     // begins at inclusive of start 
+			int64_t end,					// ends at 
 			 int min_shift,				// # bits for minimum interval - defaults to 14 which is same as used in the BAI indexes
 			 int depth)					// R-tree depth - defaults to 5 which is same as used in the BAI indexes
 {
@@ -2163,8 +2163,8 @@ return 0;
 }
 
 /* calculate the list of bins that may overlap with region [beg,end) (zero-based) */
-int CSAMfile::CSIreg2bins(INT64 beg,		// begins at inclusive of start 
-			INT64 end,						// ends at 
+int CSAMfile::CSIreg2bins(int64_t beg,		// begins at inclusive of start 
+			int64_t end,						// ends at 
 			int min_shift,					// # bits for minimum interval - defaults to 14 which is same as used in the BAI indexes
 			int depth,						// depth (R-tree levels) from the maximum targeted sequence length
 			int *bins)						// where to retun bins
@@ -2180,12 +2180,12 @@ return n;
 }
 
 /* calulate depth (R-tree levels) from the maximum targeted sequence length */
-int CSAMfile::CSIDepth(INT64 MaxSeqLen,			// max sequence length for any alignment ending at 
+int CSAMfile::CSIDepth(int64_t MaxSeqLen,			// max sequence length for any alignment ending at 
 			 int min_shift)						// # bits for minimum interval - defaults to 14 which is same as used in the BAI indexes
 {
-INT64 s;
+int64_t s;
 int n_lvls;
-for (n_lvls = 0, s = (INT64)((INT64)1 << min_shift); MaxSeqLen > s; ++n_lvls, s <<= (INT64)3);
+for (n_lvls = 0, s = (int64_t)((int64_t)1 << min_shift); MaxSeqLen > s; ++n_lvls, s <<= (int64_t)3);
 return(n_lvls);
 }
 
@@ -2196,10 +2196,10 @@ CSAMfile::AddAlignment(tsBAMalign *pBAMalign,   // alignment to report
 {
 int Rslt;
 int BGZFWritten;
-UINT8 AlignBlock[10000];		// hold a single alignment!
-UINT8 *pAlignBlock;
-UINT64 CurStartVirtAddress;
-UINT64 CurEndVirtAddress;
+uint8_t AlignBlock[10000];		// hold a single alignment!
+uint8_t *pAlignBlock;
+uint64_t CurStartVirtAddress;
+uint64_t CurEndVirtAddress;
 
 if(m_SAMFileType == eSFTSAM || m_SAMFileType == eSFTSAMgz)
 	{
@@ -2221,7 +2221,7 @@ if(m_SAMFileType == eSFTSAM || m_SAMFileType == eSFTSAMgz)
 		*(char *)&m_pBAM[m_CurBAMLen] = '*';
 	else
 		{
-		for(UINT32 CigarIdx = 0; CigarIdx < (pBAMalign->flag_nc & 0x00ff); CigarIdx++)
+		for(uint32_t CigarIdx = 0; CigarIdx < (pBAMalign->flag_nc & 0x00ff); CigarIdx++)
 			{
 			CigarOp = m_CigarOpsMap[pBAMalign->cigar[CigarIdx]  & 0x00f];
 			OpLen = (pBAMalign->cigar[CigarIdx] >> 4) & 0x0fffffff;
@@ -2257,7 +2257,7 @@ if(m_SAMFileType == eSFTSAM || m_SAMFileType == eSFTSAMgz)
 		// YU:Z:<reason> where reason is the NAR enumeration as text
 		int Idx;
 		int Ofs;
-		UINT8 *pVal;
+		uint8_t *pVal;
 		tsBAMauxData *pAuxData;
 		pAuxData = pBAMalign->auxData;
 		for(Idx = 0; Idx < pBAMalign->NumAux; Idx++,pAuxData++)
@@ -2273,7 +2273,7 @@ if(m_SAMFileType == eSFTSAM || m_SAMFileType == eSFTSAMgz)
 						case 'c': 
 							for(Ofs = 0; Ofs < pAuxData->NumVals; Ofs++,pVal++)
 								{
-								m_CurBAMLen += sprintf((char *)&m_pBAM[m_CurBAMLen],"%1d",*(INT8 *)pVal);
+								m_CurBAMLen += sprintf((char *)&m_pBAM[m_CurBAMLen],"%1d",*(int8_t *)pVal);
 								if(Ofs < (pAuxData->NumVals - 1))
 									m_pBAM[m_CurBAMLen++] = ',';
 								}
@@ -2281,7 +2281,7 @@ if(m_SAMFileType == eSFTSAM || m_SAMFileType == eSFTSAMgz)
 						case 'C':
 							for(Ofs = 0; Ofs < pAuxData->NumVals; Ofs++,pVal++)
 								{
-								m_CurBAMLen += sprintf((char *)&m_pBAM[m_CurBAMLen],"%1u",*(UINT8 *)pVal);
+								m_CurBAMLen += sprintf((char *)&m_pBAM[m_CurBAMLen],"%1u",*(uint8_t *)pVal);
 								if(Ofs < (pAuxData->NumVals - 1))
 									m_pBAM[m_CurBAMLen++] = ',';
 								}
@@ -2289,7 +2289,7 @@ if(m_SAMFileType == eSFTSAM || m_SAMFileType == eSFTSAMgz)
 						case 's':
 							for(Ofs = 0; Ofs < pAuxData->NumVals; Ofs++,pVal+=2)
 								{
-								m_CurBAMLen += sprintf((char *)&m_pBAM[m_CurBAMLen],"%1d",*(INT16 *)pVal);
+								m_CurBAMLen += sprintf((char *)&m_pBAM[m_CurBAMLen],"%1d",*(int16_t *)pVal);
 								if(Ofs < (pAuxData->NumVals - 1))
 									m_pBAM[m_CurBAMLen++] = ',';
 								}
@@ -2297,7 +2297,7 @@ if(m_SAMFileType == eSFTSAM || m_SAMFileType == eSFTSAMgz)
 						case 'S':
 							for(Ofs = 0; Ofs < pAuxData->NumVals; Ofs++,pVal+=2)
 								{
-								m_CurBAMLen += sprintf((char *)&m_pBAM[m_CurBAMLen],"%1u",*(UINT16 *)pVal);
+								m_CurBAMLen += sprintf((char *)&m_pBAM[m_CurBAMLen],"%1u",*(uint16_t *)pVal);
 								if(Ofs < (pAuxData->NumVals - 1))
 									m_pBAM[m_CurBAMLen++] = ',';
 								}
@@ -2305,7 +2305,7 @@ if(m_SAMFileType == eSFTSAM || m_SAMFileType == eSFTSAMgz)
 						case 'i':
 							for(Ofs = 0; Ofs < pAuxData->NumVals; Ofs++,pVal+=4)
 								{
-								m_CurBAMLen += sprintf((char *)&m_pBAM[m_CurBAMLen],"%1d",*(INT32 *)pVal);
+								m_CurBAMLen += sprintf((char *)&m_pBAM[m_CurBAMLen],"%1d",*(int32_t *)pVal);
 								if(Ofs < (pAuxData->NumVals - 1))
 									m_pBAM[m_CurBAMLen++] = ',';
 								}
@@ -2313,7 +2313,7 @@ if(m_SAMFileType == eSFTSAM || m_SAMFileType == eSFTSAMgz)
 						case 'I':
 							for(Ofs = 0; Ofs < pAuxData->NumVals; Ofs++,pVal+=4)
 								{
-								m_CurBAMLen += sprintf((char *)&m_pBAM[m_CurBAMLen],"%1u",*(UINT32 *)pVal);
+								m_CurBAMLen += sprintf((char *)&m_pBAM[m_CurBAMLen],"%1u",*(uint32_t *)pVal);
 								if(Ofs < (pAuxData->NumVals - 1))
 									m_pBAM[m_CurBAMLen++] = ',';
 								}
@@ -2329,7 +2329,7 @@ if(m_SAMFileType == eSFTSAM || m_SAMFileType == eSFTSAMgz)
 						default:
 							for(Ofs = 0; Ofs < pAuxData->NumVals; Ofs++,pVal++)
 								{
-								m_CurBAMLen += sprintf((char *)&m_pBAM[m_CurBAMLen],"%1d",*(INT8 *)pVal);
+								m_CurBAMLen += sprintf((char *)&m_pBAM[m_CurBAMLen],"%1d",*(int8_t *)pVal);
 								if(Ofs < (pAuxData->NumVals - 1))
 									m_pBAM[m_CurBAMLen++] = ',';
 								}
@@ -2339,7 +2339,7 @@ if(m_SAMFileType == eSFTSAM || m_SAMFileType == eSFTSAMgz)
 				case 'H':					// type is a hex array
 					for(Ofs = 0; Ofs < pAuxData->NumVals; Ofs++,pVal++)
 						{
-						m_CurBAMLen += sprintf((char *)&m_pBAM[m_CurBAMLen],"0x%2x",*(UINT8 *)pVal);
+						m_CurBAMLen += sprintf((char *)&m_pBAM[m_CurBAMLen],"0x%2x",*(uint8_t *)pVal);
 						if(Ofs < (pAuxData->NumVals - 1))
 							m_pBAM[m_CurBAMLen++] = ',';
 						}
@@ -2352,23 +2352,23 @@ if(m_SAMFileType == eSFTSAM || m_SAMFileType == eSFTSAMgz)
 					break;
 
 				
-				case 'i':					// INT32
-					m_CurBAMLen += sprintf((char *)&m_pBAM[m_CurBAMLen],"\t%.2s:i:%d",pAuxData->tag,*(INT32 *)pAuxData->value);
+				case 'i':					// int32_t
+					m_CurBAMLen += sprintf((char *)&m_pBAM[m_CurBAMLen],"\t%.2s:i:%d",pAuxData->tag,*(int32_t *)pAuxData->value);
 					break;
-				case 'I':					// UINT32
-					m_CurBAMLen += sprintf((char *)&m_pBAM[m_CurBAMLen],"\t%.2s:i:%u",pAuxData->tag,*(UINT32 *)pAuxData->value);
+				case 'I':					// uint32_t
+					m_CurBAMLen += sprintf((char *)&m_pBAM[m_CurBAMLen],"\t%.2s:i:%u",pAuxData->tag,*(uint32_t *)pAuxData->value);
 					break;
-				case 's':					// INT16
-					m_CurBAMLen += sprintf((char *)&m_pBAM[m_CurBAMLen],"\t%.2s:i:%d",pAuxData->tag,*(INT16 *)pAuxData->value);
+				case 's':					// int16_t
+					m_CurBAMLen += sprintf((char *)&m_pBAM[m_CurBAMLen],"\t%.2s:i:%d",pAuxData->tag,*(int16_t *)pAuxData->value);
 					break;
-				case 'S':					// UINT16
-					m_CurBAMLen += sprintf((char *)&m_pBAM[m_CurBAMLen],"\t%.2s:i:%u",pAuxData->tag,*(UINT16 *)pAuxData->value);
+				case 'S':					// uint16_t
+					m_CurBAMLen += sprintf((char *)&m_pBAM[m_CurBAMLen],"\t%.2s:i:%u",pAuxData->tag,*(uint16_t *)pAuxData->value);
 					break;
-				case 'c':					// INT8
-					m_CurBAMLen += sprintf((char *)&m_pBAM[m_CurBAMLen],"\t%.2s:i:%d",pAuxData->tag,*(INT8 *)pAuxData->value);
+				case 'c':					// int8_t
+					m_CurBAMLen += sprintf((char *)&m_pBAM[m_CurBAMLen],"\t%.2s:i:%d",pAuxData->tag,*(int8_t *)pAuxData->value);
 					break;
-				case 'C':					// UINT8
-					m_CurBAMLen += sprintf((char *)&m_pBAM[m_CurBAMLen],"\t%.2s:i:%u",pAuxData->tag,*(UINT8 *)pAuxData->value);
+				case 'C':					// uint8_t
+					m_CurBAMLen += sprintf((char *)&m_pBAM[m_CurBAMLen],"\t%.2s:i:%u",pAuxData->tag,*(uint8_t *)pAuxData->value);
 					break;
 				}
 			}
@@ -2402,7 +2402,7 @@ else   // BAM processing
 
 				if(m_NumOf16Kbps)
 					{
-					memset(m_p16KOfsVirtAddrs,0,m_NumOf16Kbps * sizeof(UINT64));
+					memset(m_p16KOfsVirtAddrs,0,m_NumOf16Kbps * sizeof(uint64_t));
 					m_NumOf16Kbps = 0;
 					}
 				m_NumBinsWithChunks = 0;
@@ -2433,7 +2433,7 @@ else   // BAM processing
 					}
 				m_NumBinsWithChunks = 0;
 				}
-			m_pCurRefSeq = (tsRefSeq *)((UINT8 *)m_pCurRefSeq + m_pCurRefSeq->SeqNameLen + sizeof(tsRefSeq));
+			m_pCurRefSeq = (tsRefSeq *)((uint8_t *)m_pCurRefSeq + m_pCurRefSeq->SeqNameLen + sizeof(tsRefSeq));
 			}
 		pBAMalign->refID = m_pCurRefSeq->SeqID - 1;
 		}
@@ -2441,21 +2441,21 @@ else   // BAM processing
 		pBAMalign->refID = -1;
 
 	pAlignBlock = &AlignBlock[4];
-	*(UINT32 *)pAlignBlock = pBAMalign->refID;
+	*(uint32_t *)pAlignBlock = pBAMalign->refID;
 	pAlignBlock += 4;
-	*(UINT32 *)pAlignBlock = pBAMalign->pos;
+	*(uint32_t *)pAlignBlock = pBAMalign->pos;
 	pAlignBlock += 4;
-	*(UINT32 *)pAlignBlock =pBAMalign->bin_mq_nl;
+	*(uint32_t *)pAlignBlock =pBAMalign->bin_mq_nl;
 	pAlignBlock += 4;
-	*(UINT32 *)pAlignBlock =pBAMalign->flag_nc;
+	*(uint32_t *)pAlignBlock =pBAMalign->flag_nc;
 	pAlignBlock += 4;
-	*(UINT32 *)pAlignBlock =pBAMalign->l_seq;
+	*(uint32_t *)pAlignBlock =pBAMalign->l_seq;
 	pAlignBlock += 4;
-	*(UINT32 *)pAlignBlock = pBAMalign->next_refID == -1 ? -1 : pBAMalign->refID;
+	*(uint32_t *)pAlignBlock = pBAMalign->next_refID == -1 ? -1 : pBAMalign->refID;
 	pAlignBlock += 4;
-	*(UINT32 *)pAlignBlock =pBAMalign->next_pos;
+	*(uint32_t *)pAlignBlock =pBAMalign->next_pos;
 	pAlignBlock += 4;
-	*(UINT32 *)pAlignBlock =pBAMalign->tlen;
+	*(uint32_t *)pAlignBlock =pBAMalign->tlen;
 	pAlignBlock += 4;
 
 	memcpy(pAlignBlock,pBAMalign->read_name,pBAMalign->NumReadNameBytes);
@@ -2469,7 +2469,7 @@ else   // BAM processing
 	pAlignBlock += pBAMalign->l_seq;
 
 	// optional alignment tag(s) processing
-	UINT32 AuxDataLen;
+	uint32_t AuxDataLen;
 	AuxDataLen = 0;
 	if(pBAMalign->NumAux > 0)
 		{
@@ -2478,14 +2478,14 @@ else   // BAM processing
 		//	YU:Z:NVA - the read had no valid alignments (NVA)
 		int Idx;
 		int Ofs;
-		UINT8 *pVal;
+		uint8_t *pVal;
 		tsBAMauxData *pAuxData;
 		pAuxData = pBAMalign->auxData;
 		for(Idx = 0; Idx < pBAMalign->NumAux; Idx++,pAuxData++)
 			{
 			*pAlignBlock++ = pAuxData->tag[0];
 			*pAlignBlock++ = pAuxData->tag[1];
-			if(pAuxData->val_type == 'H')      // type is actually hex array - the SAM/BAM specification doesn't cover how hex arrays are to be formated when generating BAM so treating as if BYTE UINT8 array!
+			if(pAuxData->val_type == 'H')      // type is actually hex array - the SAM/BAM specification doesn't cover how hex arrays are to be formated when generating BAM so treating as if BYTE uint8_t array!
 				*pAlignBlock++ = 'B';
 			else
 				*pAlignBlock++ = pAuxData->val_type;
@@ -2507,21 +2507,21 @@ else   // BAM processing
 						case 'c': 
 							for(Ofs = 0; Ofs < pAuxData->NumVals; Ofs++,pVal++)
 								{
-								*pAlignBlock++ = *(INT8 *)pVal;
+								*pAlignBlock++ = *(int8_t *)pVal;
 								AuxDataLen += 1;
 								}
 							break;
 						case 'C':
 							for(Ofs = 0; Ofs < pAuxData->NumVals; Ofs++,pVal++)
 								{
-								*pAlignBlock++ = *(UINT8 *)pVal;
+								*pAlignBlock++ = *(uint8_t *)pVal;
 								AuxDataLen += 1;
 								}
 							break;
 						case 's':
 							for(Ofs = 0; Ofs < pAuxData->NumVals; Ofs++,pVal+=2)
 								{
-								*(INT16 *)pAlignBlock = *(INT16 *)pVal;
+								*(int16_t *)pAlignBlock = *(int16_t *)pVal;
 								pAlignBlock += 2;
 								AuxDataLen += 2;
 								}
@@ -2529,7 +2529,7 @@ else   // BAM processing
 						case 'S':
 							for(Ofs = 0; Ofs < pAuxData->NumVals; Ofs++,pVal+=2)
 								{
-								*(UINT16 *)pAlignBlock = *(UINT16 *)pVal;
+								*(uint16_t *)pAlignBlock = *(uint16_t *)pVal;
 								pAlignBlock += 2;
 								AuxDataLen += 2;
 								}
@@ -2537,7 +2537,7 @@ else   // BAM processing
 						case 'i':
 							for(Ofs = 0; Ofs < pAuxData->NumVals; Ofs++,pVal+=4)
 								{
-								*(INT32 *)pAlignBlock = *(INT32 *)pVal;
+								*(int32_t *)pAlignBlock = *(int32_t *)pVal;
 								pAlignBlock += 4;
 								AuxDataLen += 4;
 								}
@@ -2545,7 +2545,7 @@ else   // BAM processing
 						case 'I':
 							for(Ofs = 0; Ofs < pAuxData->NumVals; Ofs++,pVal+=4)
 								{
-								*(UINT32 *)pAlignBlock = *(UINT32 *)pVal;
+								*(uint32_t *)pAlignBlock = *(uint32_t *)pVal;
 								pAlignBlock += 4;
 								AuxDataLen += 4;
 								}
@@ -2561,20 +2561,20 @@ else   // BAM processing
 						default:
 							for(Ofs = 0; Ofs < pAuxData->NumVals; Ofs++,pVal++)
 								{
-								*pAlignBlock++ = *(INT8 *)pVal;
+								*pAlignBlock++ = *(int8_t *)pVal;
 								AuxDataLen += 1;
 								}
 							break;						
 						}
 
-				case 'H':					// type is hex array - the SAM/BAM specification doesn't cover how hex arrays are to be formated when generating BAM so treating as if UINT8 array!
+				case 'H':					// type is hex array - the SAM/BAM specification doesn't cover how hex arrays are to be formated when generating BAM so treating as if uint8_t array!
 					*pAlignBlock++ = 'C';
 					*(int *)pAlignBlock = pAuxData->NumVals;
 					pAlignBlock += 4;
 					AuxDataLen += 5;
 					for(Ofs = 0; Ofs < pAuxData->NumVals; Ofs++,pVal++)
 						{
-						*pAlignBlock++ = *(INT8 *)pVal;
+						*pAlignBlock++ = *(int8_t *)pVal;
 						AuxDataLen += 1;
 						}
 					break;
@@ -2593,47 +2593,47 @@ else   // BAM processing
 					AuxDataLen += sizeof(float);
 					break;
 
-				case 'i':					// INT32
-					*(INT32 *)pAlignBlock = *(INT32 *)pAuxData->value;
-					pAlignBlock += sizeof(INT32);
-					AuxDataLen += sizeof(INT32);
+				case 'i':					// int32_t
+					*(int32_t *)pAlignBlock = *(int32_t *)pAuxData->value;
+					pAlignBlock += sizeof(int32_t);
+					AuxDataLen += sizeof(int32_t);
 					break;
-				case 'I':					// UINT32
-					*(UINT32 *)pAlignBlock = *(UINT32 *)pAuxData->value;
-					pAlignBlock += sizeof(UINT32);
-					AuxDataLen += sizeof(UINT32);
+				case 'I':					// uint32_t
+					*(uint32_t *)pAlignBlock = *(uint32_t *)pAuxData->value;
+					pAlignBlock += sizeof(uint32_t);
+					AuxDataLen += sizeof(uint32_t);
 					break;
-				case 's':					// INT16
-					*(INT16 *)pAlignBlock = *(INT16 *)pAuxData->value;
-					pAlignBlock += sizeof(INT16);
-					AuxDataLen += sizeof(INT16);
+				case 's':					// int16_t
+					*(int16_t *)pAlignBlock = *(int16_t *)pAuxData->value;
+					pAlignBlock += sizeof(int16_t);
+					AuxDataLen += sizeof(int16_t);
 					break;
-				case 'S':					// UINT16
-					*(UINT16 *)pAlignBlock = *(UINT16 *)pAuxData->value;
-					pAlignBlock += sizeof(UINT16);
-					AuxDataLen += sizeof(UINT16);
+				case 'S':					// uint16_t
+					*(uint16_t *)pAlignBlock = *(uint16_t *)pAuxData->value;
+					pAlignBlock += sizeof(uint16_t);
+					AuxDataLen += sizeof(uint16_t);
 					break;
-				case 'c':					// INT8
-					*(INT8 *)pAlignBlock = *(INT8 *)pAuxData->value;
-					pAlignBlock += sizeof(INT8);
-					AuxDataLen += sizeof(INT8);
+				case 'c':					// int8_t
+					*(int8_t *)pAlignBlock = *(int8_t *)pAuxData->value;
+					pAlignBlock += sizeof(int8_t);
+					AuxDataLen += sizeof(int8_t);
 					break;
-				case 'C':					// UINT8
-					*(UINT8 *)pAlignBlock = *(UINT8 *)pAuxData->value;
-					pAlignBlock += sizeof(UINT8);
-					AuxDataLen += sizeof(UINT8);
+				case 'C':					// uint8_t
+					*(uint8_t *)pAlignBlock = *(uint8_t *)pAuxData->value;
+					pAlignBlock += sizeof(uint8_t);
+					AuxDataLen += sizeof(uint8_t);
 					break;
 				}
 			}
 		}
 
-	UINT32 AlignBlockSize = 8 * sizeof(UINT32) + AuxDataLen + pBAMalign->NumReadNameBytes + pBAMalign->NumCigarBytes + pBAMalign->NumSeqBytes + pBAMalign->l_seq;
-	*(UINT32 *)&AlignBlock[0] = (UINT32)(pAlignBlock - &AlignBlock[0]) - 4;
+	uint32_t AlignBlockSize = 8 * sizeof(uint32_t) + AuxDataLen + pBAMalign->NumReadNameBytes + pBAMalign->NumCigarBytes + pBAMalign->NumSeqBytes + pBAMalign->l_seq;
+	*(uint32_t *)&AlignBlock[0] = (uint32_t)(pAlignBlock - &AlignBlock[0]) - 4;
 
 	if(m_SAMFileType >= eSFTBAM_BAI && pBAMalign->refID >= 0)
 		CurStartVirtAddress = bgzf_tell(m_pBGZF);
 
-	BGZFWritten = (int)bgzf_write(m_pBGZF,AlignBlock,AlignBlockSize + sizeof(UINT32));
+	BGZFWritten = (int)bgzf_write(m_pBGZF,AlignBlock,AlignBlockSize + sizeof(uint32_t));
 	if(m_SAMFileType >= eSFTBAM_BAI && bLastAligned && pBAMalign->refID >= 0)
 		bgzf_flush(m_pBGZF);
 

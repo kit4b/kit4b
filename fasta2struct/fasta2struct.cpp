@@ -260,23 +260,23 @@ if(argerrors >= 0)
 
 /* special case: '--help' takes precedence over error reporting */
 if (help->count > 0)
-        {
+		{
 		printf("\n%s fasta2struct, Version %s\nOptions ---\n", gszProcName,kit4bversion);
-        arg_print_syntax(stdout,argtable,"\n");
-        arg_print_glossary(stdout,argtable,"  %-25s %s\n");
+		arg_print_syntax(stdout,argtable,"\n");
+		arg_print_glossary(stdout,argtable,"  %-25s %s\n");
 		printf("\nNote: Parameters can be entered into a parameter file, one parameter per line.");
 		printf("\n      To invoke this parameter file then precede its name with '@'");
 		printf("\n      e.g. %s @myparams.txt\n",gszProcName);
 		printf("\nPlease report any issues regarding usage of %s to https://github.com/kit4b/kit4b/issues\n\n",gszProcName);
 		exit(1);
-        }
+		}
 
-    /* special case: '--version' takes precedence error reporting */
+	/* special case: '--version' takes precedence error reporting */
 if (version->count > 0)
-        {
+		{
 		printf("\n%s Version %s\n",gszProcName,kit4bversion);
 		exit(1);
-        }
+		}
 
 if (!argerrors)
 	{
@@ -427,7 +427,7 @@ if (!argerrors)
 				printf("\nError: number of nucleotides '-n%d' must be at least 2",iNumNucs);
 				exit(1);
 				}
-    
+	
 	if(StructParams->count)
 		strcpy(szStructParamsFile,StructParams->filename[0]);
 	else
@@ -935,8 +935,8 @@ return(Mean);
 // Process multifasta file containing sequences for conformational analysis
 // 
 typedef struct TAG_sHamDists {
-	UINT32 Hamming;				// reads in this distribution are at least this Hamming away from any other sampled read
-	UINT32 NumInsts;			// number of read instances with this Hamming to any other sampled read
+	uint32_t Hamming;				// reads in this distribution are at least this Hamming away from any other sampled read
+	uint32_t NumInsts;			// number of read instances with this Hamming to any other sampled read
 	double GCprop;				// GC content
 	double ConfMeans[eSSNumStatParams];	// conformational means
 } tsHamDists;
@@ -991,7 +991,7 @@ for(Idx = 0; Idx < 101; Idx++)
 strncpy(m_szRsltsFile,pszResultsFile,_MAX_PATH);
 m_szRsltsFile[_MAX_PATH-1] = '\0';
 
-if((m_pSeq = new unsigned char [cMaxProcSeqLen+10])==NULL)
+if((m_pSeq = new uint8_t [cMaxProcSeqLen+10])==NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,"ProcessFastaStruct","Unable to allocate memory to hold sequence of length %d",cMaxProcSeqLen+1);
 	return(eBSFerrMem);
@@ -1233,7 +1233,7 @@ while((Rslt = SeqLen = m_pFasta->ReadSequence(m_pSeq,cMaxProcSeqLen + 10)) > eBS
 			if((Rslt = m_pTwister->GetSequenceConformation((teOctStructStats)Conf,	// process for this conformational parameter
 							  0,								// initial starting offset (0..n) in pSeq
 							  NumSteps,			                // number of steps (0 for all) to process starting at pSeq[iStartPsn]|pSeq[iStartPsn+1]
-  							  SeqLen,							// number of nucleotides
+							  SeqLen,							// number of nucleotides
 							  m_pSeq,							// sequence to be processed
 							  m_pConfValues))!=eBSFSuccess)		// where to return conformational values
 					{
@@ -1246,7 +1246,7 @@ while((Rslt = SeqLen = m_pFasta->ReadSequence(m_pSeq,cMaxProcSeqLen + 10)) > eBS
 				if(m_pConfValues[Step] <  -100000000)		     // treat extreme values as not a value...
 					m_pConfValues[Step] = 0;
 				FreqBin = (Step * cNumMedFreqBins);
-				FreqBin +=  (int)(((INT64)(m_pConfValues[Step] - m_ConfRange[Conf].Min) * cNumMedFreqBins) / m_ConfRange[Conf].Range);
+				FreqBin +=  (int)(((int64_t)(m_pConfValues[Step] - m_ConfRange[Conf].Min) * cNumMedFreqBins) / m_ConfRange[Conf].Range);
 				m_ConfRange[Conf].pStepFreqs[FreqBin] += 1;
 				}
 			}
@@ -1288,7 +1288,7 @@ while((Rslt = SeqLen = m_pFasta->ReadSequence(m_pSeq,cMaxProcSeqLen + 10)) > eBS
 			if((Rslt = m_pTwister->GetSequenceConformation((teOctStructStats)Conf,	// process for this conformational parameter
 							  0,								// initial starting offset (0..n) in pSeq
 							  NumSteps,			                // number of steps (0 for all) to process starting at pSeq[iStartPsn]|pSeq[iStartPsn+1]
-  							  SeqLen,							// number of nucleotides
+							  SeqLen,							// number of nucleotides
 							  m_pSeq,							// sequence to be processed
 							  m_pConfValues))!=eBSFSuccess)		// where to return conformational values
 					{
@@ -1369,7 +1369,7 @@ while((Rslt = SeqLen = m_pFasta->ReadSequence(m_pSeq,cMaxProcSeqLen + 10)) > eBS
 	if((Rslt = m_pTwister->GetSequenceConformation(ConfP,	// process for this conformational parameter
 						  0,								// initial starting offset (0..n) in pSeq
 						  NumSteps,			                // number of steps (0 for all) to process starting at pSeq[iStartPsn]|pSeq[iStartPsn+1]
-  						  SeqLen,							// number of nucleotides
+						  SeqLen,							// number of nucleotides
 						  m_pSeq,							// sequence to be processed
 						  m_pConfValues))!=eBSFSuccess)		// where to return conformational values
 				{
@@ -1402,7 +1402,7 @@ while((Rslt = SeqLen = m_pFasta->ReadSequence(m_pSeq,cMaxProcSeqLen + 10)) > eBS
 if(PMode == ePMHamm)
 	{
 	tsHamDists *pHamDists;
-	UINT32 NumInsts;
+	uint32_t NumInsts;
 
 	const char *pszConfDescr;
 
@@ -1499,7 +1499,7 @@ if(PMode != ePMfastaconf  && PMode != ePMHamm)
 	// a) apply any trimming if TrimPercentile > 0
 	if(TrimPercentile > 0)
 		{
-		int ToTrim = (int)(((INT64)EntryID * TrimPercentile)/200);
+		int ToTrim = (int)(((int64_t)EntryID * TrimPercentile)/200);
 		int AccumCnts;
 		int AccumResidual;
 		// first trim the bottom percentile
@@ -2082,7 +2082,7 @@ for(CurPermuteMode = 0; CurPermuteMode <= (int)RMode; CurPermuteMode++)
 				m_pConfValues = NULL;
 				}
 			AllocdSeqBuffLen = SeqLen + SeqLen/10; // alloc more than actually required, next sequence may not then need to be realloc'd
-			m_pSeq = new unsigned char [AllocdSeqBuffLen];
+			m_pSeq = new uint8_t [AllocdSeqBuffLen];
 			if(m_pSeq == NULL)
 				{
 				gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory (%d bytes) for holding chromosome sequence",AllocdSeqBuffLen);
@@ -2175,7 +2175,7 @@ for(CurPermuteMode = 0; CurPermuteMode <= (int)RMode; CurPermuteMode++)
 				ShowComposition((char *)"mono-permuted",SeqLen,m_pSeq);	// record after purmutation overall composition stats
 				break;
 			case eRMdi:				// permute dimers
-				Shuffle.SeqDPShuffle(SeqLen,(unsigned char *)m_pSeq,(unsigned char *)m_pSeq);
+				Shuffle.SeqDPShuffle(SeqLen,(uint8_t *)m_pSeq,(uint8_t *)m_pSeq);
 				ShowComposition((char *)"di-permuted",SeqLen,m_pSeq);	// record after purmutation overall composition stats
 				break;
 			}
@@ -2183,7 +2183,7 @@ for(CurPermuteMode = 0; CurPermuteMode <= (int)RMode; CurPermuteMode++)
 		if((Rslt = m_pTwister->GetSequenceConformation((teOctStructStats)ConfParam,	// process for this conformational parameter
 							  0,						// initial starting offset (0..n) in pSeq
 							  0,						// number of steps (0 for all) to process starting at pSeq[iStartPsn]|pSeq[iStartPsn+1]
-  							  SeqLen,					// total length of sequence
+							  SeqLen,					// total length of sequence
 							  m_pSeq,					// sequence to be processed
 							  m_pConfValues))!=eBSFSuccess) // where to return step conformational values
 					{
@@ -2239,9 +2239,9 @@ for(CurPermuteMode = 0; CurPermuteMode <= (int)RMode; CurPermuteMode++)
 
 		// end of current chromosome, calc mean, variance and stddev for that current chromosome
 		int IterX;
-		float Mean = 0.0f;
-		float Variance = 0.0f;
-		float StdDev = 0.0f;
+		double Mean = 0.0f;
+		double Variance = 0.0f;
+		double StdDev = 0.0f;
 		for(IterX = 0; IterX < WindIdx; IterX++)
 			Mean += m_pRiseSums[IterX] / StepsPerWin;
 		Mean /= WindIdx * 10000.0f;
@@ -2342,7 +2342,7 @@ for(CurPermuteMode = 0; CurPermuteMode <= (int)RMode; CurPermuteMode++)
 
 
 if(BuffOfs)
-    CUtility::RetryWrites(m_hRslts,szBuff,BuffOfs);
+	CUtility::RetryWrites(m_hRslts,szBuff,BuffOfs);
 
 Reset();
 return(Rslt);

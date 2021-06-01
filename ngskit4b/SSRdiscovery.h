@@ -41,8 +41,8 @@ typedef enum eRptSSRsFromat {
 
 #pragma pack(1)
 typedef struct TAG_sKMerDist {
-	UINT32 Cnt;							// number of occurances of SSR with this repeating K-mer element
-	UINT32 TandemRpts[1];				// number of tandem repeats (extended to user specified max repeats)
+	uint32_t Cnt;							// number of occurances of SSR with this repeating K-mer element
+	uint32_t TandemRpts[1];				// number of tandem repeats (extended to user specified max repeats)
 	} tsKMerDist;
 #pragma pack()
 
@@ -58,7 +58,7 @@ class CSSRDiscovery
 
 	size_t m_SeqBuffLen;		// number of bases currently buffered in m_pSeqBuff
 	size_t m_AllocdSeqBuffMem;  // size of memory currently allocated to m_pSeqBuff
-	UINT8 *m_pSeqBuff;			// buffers sequences as read from file
+	uint8_t *m_pSeqBuff;			// buffers sequences as read from file
 
 	int m_MinRepElLen;			// identify repeating elements of this minimum length
 	int m_MaxRepElLen;			// ranging upto this maximum length
@@ -66,10 +66,10 @@ class CSSRDiscovery
 	int m_MaxTandemRpts;		// maximum number of repeats
 	int m_SSRFlankLen;			// SSR flanking lengths
 
-	UINT32 m_TotNumAcceptedSSRs;	// total number of SSRs accepted
-	UINT32 m_TotNumExcessiveTandemSSRs;    // total number of putative SSRs not accepted because m_MaxTandemRpts
+	uint32_t m_TotNumAcceptedSSRs;	// total number of SSRs accepted
+	uint32_t m_TotNumExcessiveTandemSSRs;    // total number of putative SSRs not accepted because m_MaxTandemRpts
 
-	UINT32 m_TotNumAcceptedKmerSSRs[cMaxRepElLen+1];
+	uint32_t m_TotNumAcceptedKmerSSRs[cMaxRepElLen+1];
 
 	int m_KMerFreqLen;				// if > 0 then counting this length KMer
 	int m_NumKMers;					// number of KMers
@@ -82,37 +82,37 @@ class CSSRDiscovery
 
 	int Report(int RepElLen,			// identified SSR contains repeat elements of this length
 			   int NumTandemEls,		// each repeat element is repeated this many times
-			   INT64 SSRStartOfs,		// repeat element starts at this offset within the targeted sequence
+			   int64_t SSRStartOfs,		// repeat element starts at this offset within the targeted sequence
 				char *pszDescr,			// descriptor for the targeted sequence
 				char *pszInFile,		// sequence parsed from this file
-			   INT64 TargSeqLen,		// targeted sequence is this length
+			   int64_t TargSeqLen,		// targeted sequence is this length
 			   etSeqBase *pTargSeq);	// targeted sequence within which the SSR has been located
 
 	int
 		ReportCSV(int RepElLen,			// identified SSR contains repeat elements of this length
 			int NumTandemEls,			// each repeat element is repeated this many times
-			INT64 SSRStartOfs,			// repeat element starts at this offset within the targeted sequence
+			int64_t SSRStartOfs,			// repeat element starts at this offset within the targeted sequence
 			char *pszDescr,				// descriptor for the targeted sequence
 			char *pszInFile,			// sequence parsed from this file
-			INT64 TargSeqLen,			// targeted sequence is this length
+			int64_t TargSeqLen,			// targeted sequence is this length
 			etSeqBase *pTargSeq);		// targeted sequence within which the SSR has been located
 
 	int
 		ReportBED(int RepElLen,			// identified SSR contains repeat elements of this length
 			int NumTandemEls,			// each repeat element is repeated this many times
-			INT64 SSRStartOfs,			// repeat element starts at this offset within the targeted sequence
+			int64_t SSRStartOfs,			// repeat element starts at this offset within the targeted sequence
 			char *pszDescr,				// descriptor for the targeted sequence
 			char *pszInFile,			// sequence parsed from this file
-			INT64 TargSeqLen,			// targeted sequence is this length
+			int64_t TargSeqLen,			// targeted sequence is this length
 			etSeqBase *pTargSeq);		// targeted sequence within which the SSR has been located
 
 	int
 		ReportSAM(int RepElLen,			// identified SSR contains repeat elements of this length
 			int NumTandemEls,			// each repeat element is repeated this many times
-			INT64 SSRStartOfs,			// repeat element starts at this offset within the targeted sequence
+			int64_t SSRStartOfs,			// repeat element starts at this offset within the targeted sequence
 			char *pszDescr,				// descriptor for the targeted sequence
 			char *pszInFile,			// sequence parsed from this file
-			INT64 TargSeqLen,			// targeted sequence is this length
+			int64_t TargSeqLen,			// targeted sequence is this length
 			etSeqBase *pTargSeq);		// targeted sequence within which the SSR has been located
 
 	int	ReportKMers(char *pszKMerFreqFile);	// report SSR repeating element K-mer frequencies to this file
@@ -123,7 +123,7 @@ class CSSRDiscovery
 		IdentifySSRs(
 			 char *pszDescr,			// descriptor for the targeted sequence
 			 char *pszInFile,			// sequence parsed from this file
-			 INT64 TargSeqLen,			// sequence length of targeted sequence within which to search for SSRs
+			 int64_t TargSeqLen,			// sequence length of targeted sequence within which to search for SSRs
 			 etSeqBase *pTargSeq);		// identify SSRs in this targeted sequence
 
 	etSeqBase *AllocSeqBuff(size_t SeqLen);	// allocate for at least this sequence length

@@ -29,7 +29,7 @@ Original 'BioKanga' copyright notice has been retained and immediately follows t
 #include <sys/resource.h>
 #endif
 
-UINT16			// generated 16bit hash over the lowercased chromosome name; hashes as 0 if pszName == null or is empty
+uint16_t			// generated 16bit hash over the lowercased chromosome name; hashes as 0 if pszName == null or is empty
 CUtility::GenHash16(char *pszName)	// name will be lowercased whilst hashing
 {
 int Hash;
@@ -47,7 +47,7 @@ while(Chr = *pszName++)
 	}
 if(Hash == 0)			// 0 reserved as an error indicator so force hash to be 19937
 	Hash = 19937;
-return((UINT16)(Hash & 0x0ffff));
+return((uint16_t)(Hash & 0x0ffff));
 }
 
 int						// // generated 24bit hash over the lowercased chromosome name; hashes as 0 if pszName == null or is empty
@@ -84,11 +84,11 @@ gzFile gz;
 BGZF* pInBGZF;
 int BuffLen;
 int BuffIdx;
-UINT8 Buffer[cFileClassifyBuffLen];
-UINT8 *pBuff;
+uint8_t Buffer[cFileClassifyBuffLen];
+uint8_t *pBuff;
 bool bStartNL;
 bool bSkipEOL;
-UINT8 Chr;
+uint8_t Chr;
 int NumLines;
 int FieldCnt;
 int TabCnt;
@@ -319,7 +319,7 @@ CUtility::SafeWrite_gz(gzFile pgzFile,void *pBuff,size_t Max2Write)
 {
 int Written;
 int BuffLen;
-UINT8 *pByte = (UINT8 *)pBuff;
+uint8_t *pByte = (uint8_t *)pBuff;
 Written = 0;
 while(Written >= 0 && Max2Write > 0)
 	{
@@ -347,7 +347,7 @@ CUtility::RetryWrites(int hOutFile,void *pBuff,size_t Max2Write,
 int Secs2Write;
 int Written;
 int BuffLen;
-UINT8 *pByte = (UINT8 *)pBuff;
+uint8_t *pByte = (uint8_t *)pBuff;
 Written = 0;
 Secs2Write = 0;
 while(Written >= 0 && Max2Write > 0)
@@ -405,7 +405,7 @@ static char szResourceLimits[500];
 struct rlimit RLimit;
 Ofs = 0;
 NumberOfProcessors = sysconf(_SC_NPROCESSORS_ONLN);
-PhysMemGB = (int)(((((UINT64)sysconf(_SC_PHYS_PAGES) * (UINT64)sysconf(_SC_PAGESIZE)) + 0x01fffffff)) / ((UINT64)0x03fffffff));
+PhysMemGB = (int)(((((uint64_t)sysconf(_SC_PHYS_PAGES) * (uint64_t)sysconf(_SC_PAGESIZE)) + 0x01fffffff)) / ((uint64_t)0x03fffffff));
 
 Ofs = sprintf(szResourceLimits,"cores: %d physmem: %d (GB) ", NumberOfProcessors, PhysMemGB);
 
@@ -1127,7 +1127,7 @@ return((int)strlen(pszRetSuffixedName));
 }
 
 void 
-CUtility::SleepMillisecs(UINT32 milliseconds) // cross-platform sleep function
+CUtility::SleepMillisecs(uint32_t milliseconds) // cross-platform sleep function
 {
 #ifdef WIN32
 	Sleep(milliseconds);

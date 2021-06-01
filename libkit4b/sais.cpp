@@ -46,11 +46,11 @@
 #include "sais.h"
 
 
-#define chr(i) (cs == sizeof(int) ? ((const int *)T)[i]:((const unsigned char *)T)[i])
+#define chr(i) (cs == sizeof(int) ? ((const int *)T)[i]:((const uint8_t *)T)[i])
 
 /* find the start or end of each bucket */
 void
-CSAIS::getCounts(const unsigned char *T, int *C, int n, int k, int cs) {
+CSAIS::getCounts(const uint8_t *T, int *C, int n, int k, int cs) {
 #ifdef _OPENMP
   int *D;
   int i, j, p, sum, first, last;
@@ -89,7 +89,7 @@ CSAIS::getBuckets(const int *C, int *B, int k, int end) {
 
 /* compute SA and BWT */
 void
-CSAIS::induceSA(const unsigned char *T, int *SA, int *C, int *B, int n, int k, int cs) {
+CSAIS::induceSA(const uint8_t *T, int *SA, int *C, int *B, int n, int k, int cs) {
   int *b, i, j;
   int c0, c1;
   /* compute SAl */
@@ -129,7 +129,7 @@ CSAIS::induceSA(const unsigned char *T, int *SA, int *C, int *B, int n, int k, i
 }
 
 int
-CSAIS::computeBWT(const unsigned char *T, int *SA, int *C, int *B, int n, int k, int cs) {
+CSAIS::computeBWT(const uint8_t *T, int *SA, int *C, int *B, int n, int k, int cs) {
   int *b, i, j, pidx = -1;
   int c0, c1;
   /* compute SAl */
@@ -178,7 +178,7 @@ CSAIS::computeBWT(const unsigned char *T, int *SA, int *C, int *B, int n, int k,
 /* find the suffix array SA of T[0..n-1] in {0..k-1}^n
    use a working space (excluding T and SA) of at most 2n+O(1) for a constant alphabet */
 int
-CSAIS::sais_main(const unsigned char *T, int *SA, int fs, int n, int k, int cs, int isbwt) {
+CSAIS::sais_main(const uint8_t *T, int *SA, int fs, int n, int k, int cs, int isbwt) {
   int *C, *B, *RA;
   int i, j, c, m, p, q, plen, qlen, name, pidx = 0;
   int c0, c1;
@@ -259,7 +259,7 @@ CSAIS::sais_main(const unsigned char *T, int *SA, int fs, int n, int k, int cs, 
     for(i = m + (n >> 1) - 1, j = m - 1; m <= i; --i) {
       if(SA[i] != 0) { RA[j--] = SA[i] - 1; }
     }
-    if(sais_main((unsigned char *)RA, SA, fs + n - m * 2, m, name, sizeof(int), 0) != 0) { return -2; }
+    if(sais_main((uint8_t *)RA, SA, fs + n - m * 2, m, name, sizeof(int), 0) != 0) { return -2; }
     for(i = n - 2, j = m - 1, c = 0, c1 = chr(n - 1); 0 <= i; --i, c1 = c0) {
       if((c0 = chr(i)) < (c1 + c)) { c = 1; }
       else if(c != 0) { RA[j--] = i + 1, c = 0; } /* get p1 */
@@ -299,29 +299,29 @@ CSAIS::sais_main(const unsigned char *T, int *SA, int fs, int n, int k, int cs, 
 }
 
 int
-CSAIS::sais(const unsigned char *T, int *SA, int n) {
+CSAIS::sais(const uint8_t *T, int *SA, int n) {
   if((T == NULL) || (SA == NULL) || (n < 0)) { return -1; }
   if(n <= 1) { if(n == 1) { SA[0] = 0; } return 0; }
-  return sais_main(T, SA, 0, n, 256, sizeof(unsigned char), 0);
+  return sais_main(T, SA, 0, n, 256, sizeof(uint8_t), 0);
 }
 
 int
 CSAIS::sais_int(const int *T, int *SA, int n, int k) {
   if((T == NULL) || (SA == NULL) || (n < 0) || (k <= 0)) { return -1; }
   if(n <= 1) { if(n == 1) { SA[0] = 0; } return 0; }
-  return sais_main((const unsigned char *)T, SA, 0, n, k, sizeof(int), 0);
+  return sais_main((const uint8_t *)T, SA, 0, n, k, sizeof(int), 0);
 }
 
 int
-CSAIS::sais_bwt(const unsigned char *T, unsigned char *U, int *A, int n) {
+CSAIS::sais_bwt(const uint8_t *T, uint8_t *U, int *A, int n) {
   int i, pidx;
   if((T == NULL) || (U == NULL) || (A == NULL) || (n < 0)) { return -1; }
   if(n <= 1) { if(n == 1) { U[0] = T[0]; } return n; }
-  pidx = sais_main(T, A, 0, n, 256, sizeof(unsigned char), 1);
+  pidx = sais_main(T, A, 0, n, 256, sizeof(uint8_t), 1);
   if(pidx < 0) { return pidx; }
   U[0] = T[n - 1];
-  for(i = 0; i < pidx; ++i) { U[i + 1] = (unsigned char)A[i]; }
-  for(i += 1; i < n; ++i) { U[i] = (unsigned char)A[i]; }
+  for(i = 0; i < pidx; ++i) { U[i + 1] = (uint8_t)A[i]; }
+  for(i += 1; i < n; ++i) { U[i] = (uint8_t)A[i]; }
   pidx += 1;
   return pidx;
 }
@@ -331,7 +331,7 @@ CSAIS::sais_int_bwt(const int *T, int *U, int *A, int n, int k) {
   int i, pidx;
   if((T == NULL) || (U == NULL) || (A == NULL) || (n < 0)) { return -1; }
   if(n <= 1) { if(n == 1) { U[0] = T[0]; } return n; }
-  pidx = sais_main((const unsigned char *)T, A, 0, n, k, sizeof(int), 1);
+  pidx = sais_main((const uint8_t *)T, A, 0, n, k, sizeof(int), 1);
   if(pidx < 0) { return pidx; }
   U[0] = T[n - 1];
   for(i = 0; i < pidx; ++i) { U[i + 1] = A[i]; }

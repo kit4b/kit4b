@@ -33,7 +33,7 @@ Process(bool bTargDeps,				// true if process only if any independent src files 
 		char **ppszIncludeFiles,// biobed files containing regions to include - default is to exclude none
 		int NumExcludeFiles,	// number of exclude region files
 		char **ppszExcludeFiles,// biobed file containing regions to exclude - default is to include all
- 		char *pszUniqueSpeciesSeqs, // ignore alignment block if these species sequences are not unique
+		char *pszUniqueSpeciesSeqs, // ignore alignment block if these species sequences are not unique
 		int WindowSize,			// sampling window size
 		int NumCoreSpecies,		// number of core species to be in alignment
 		int MinAlignSpecies,	// minimum number of species required in an alignment (includes core species)
@@ -693,7 +693,7 @@ if (!argerrors)
 					pszIncludeFiles,	// biobed files containing regions to include - default is to exclude none
 					NumExcludeFiles,	// number of exclude region files
 					pszExcludeFiles,	// biobed file containing regions to exclude - default is to include all
- 					szUniqueSpeciesSeqs, // ignore alignment blocks if these species sequences are not unique
+					szUniqueSpeciesSeqs, // ignore alignment blocks if these species sequences are not unique
 					iWindowSize,		// sampling window size
 					iNumCoreSpecies,	// number of core species to be in alignment
 					iMinAlignSpecies,	// minimum number of species to be in alignment
@@ -1123,13 +1123,13 @@ pProcParams->NxtOutputOffset = pProcParams->WindowSize;
 
 while(CurBlockID >= 0 && ((CurBlockID =						// returned blockid to next start loading from
 	LoadContiguousBlocks(RefSpeciesID,	// reference species identifier
- 			   CurBlockID,			// which block to initially start loading from
+			   CurBlockID,			// which block to initially start loading from
 			   &bLoaded,			// returned indicator as to if any loaded blocks meet processing requirements
 			   &RefChromID,			// returned reference chromosome identifier 
 			   &RefStrand,			// returned reference strand
 			   &RefAlignLen,		// returned alignment (incl InDels) length
-   			   &RefChromOfs,		// returned alignment start offset
-   			   SpeciesIDs,			// input - species of interest identifier array
+			   &RefChromOfs,		// returned alignment start offset
+			   SpeciesIDs,			// input - species of interest identifier array
 			   pAlignments,
 			   pProcParams)) > 0 || (CurBlockID == eBSFerrAlignBlk && RefAlignLen > 0)))
 	{
@@ -1195,13 +1195,13 @@ return(eBSFSuccess);
 
 int										// returned blockid to next start loading from
 LoadContiguousBlocks(int RefSpeciesID,	// reference species identifier
- 			   int  BlockID,			// which block to initially start loading from
+			   int  BlockID,			// which block to initially start loading from
 			   bool *pbLoaded,			// returned indicator as to if any loaded blocks meet processing requirements
 			   int *pRefChromID,		// returned reference chromosome identifier 
 			   char *pRefStrand,		// returned reference strand
 			   int *pRefAlignLen,		// returned alignment (incl InDels) length
-   			   int *pRefChromOfs,		// returned alignment start offset
-   			   int *pSpeciesIDs,		// input - species of interest identifier array
+			   int *pRefChromOfs,		// returned alignment start offset
+			   int *pSpeciesIDs,		// input - species of interest identifier array
 			   CMAlignFile *pAlignments,
 			   tsProcParams *pProcParams)
 {
@@ -1829,7 +1829,7 @@ Process(bool bTargDeps,				// true if process only if any independent src files 
 		char **ppszIncludeFiles,	// biobed files containing regions to include - default is to exclude none
 		int NumExcludeFiles,	// number of exclude region files
 		char **ppszExcludeFiles,	// biobed file containing regions to exclude - default is to include all
- 		char *pszUniqueSpeciesSeqs, // ignore alignment block if these species sequences are not unique
+		char *pszUniqueSpeciesSeqs, // ignore alignment block if these species sequences are not unique
 		int WindowSize,			// sampling window size
 		int NumCoreSpecies,		// number of core species to be in alignment
 		int MinAlignSpecies,	// minimum number of species required in an alignment (includes core species)
@@ -2089,10 +2089,10 @@ for(Idx=0;Idx < NumExcludeChroms;Idx++)
 ProcParams.MaxSeqAlignLen = cMAtotMaxSeqAlignLen/ProcParams.NumSpeciesList;
 for(Idx = 0; Idx < ProcParams.NumSpeciesList; Idx++)
 	{
-	if((ProcParams.pSeqs[Idx] = new unsigned char [ProcParams.MaxSeqAlignLen])==NULL)
+	if((ProcParams.pSeqs[Idx] = new uint8_t [ProcParams.MaxSeqAlignLen])==NULL)
 		{
 		delete pCntStepCnts;
-	    CloseBedfiles(&ProcParams);
+		CloseBedfiles(&ProcParams);
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory (%d bytes) for holding species sequences",ProcParams.MaxSeqAlignLen);
 		return(eBSFerrMem);
 		}
@@ -2106,7 +2106,7 @@ if((ProcParams.hRsltsFile = open(pszOutputFile,O_RDWR | O_CREAT |O_TRUNC, S_IREA
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create %s - %s",pszOutputFile,strerror(errno));
 	delete pCntStepCnts;
-    CloseBedfiles(&ProcParams);
+	CloseBedfiles(&ProcParams);
 	return(eBSFerrCreateFile);
 	}
 
@@ -2168,7 +2168,7 @@ bool
 ProcessAlignment(int RefChromID,		// reference chromosome
 				 int ChromOfs,			// chromosome offset (0..n) at which this subsequence started
 				 int SeqIdx,			// index (0..n) into pProcParms->pSeqs[] which alignment subsequence starts	
- 				 int SubSeqLen,			// subsequence length
+				 int SubSeqLen,			// subsequence length
 				 tsProcParams *pProcParams)
 {
 int NxtSeqIdx;
@@ -2280,7 +2280,7 @@ for(HypercoreLen = 0; HypercoreLen < MaxLen ; HypercoreLen++, WinIdx++)
 		if(VBase == eBaseInDel)
 				VIndels++;
 		if(VBase == eBaseInDel || VBase == eBaseN || // treat InDels and indeterminate bases as if mismatches
-		    RefBase != VBase)			   // any bases which don't match the reference base are mismatches
+			RefBase != VBase)			   // any bases which don't match the reference base are mismatches
 			VMismatches++;
 		}
 
@@ -2358,7 +2358,7 @@ if(HypercoreLen==MaxLen)// if core was terminated because subsequence ended then
 
 // RefHyperCoreLen holds the reference species hypercore length excluding any InDels on the ref species sequence
 if(MaxUltraCoreLen < pProcParams->MinUltraLen || 
-    RefHyperCoreLen < pProcParams->MinHyperLen)	// if less than required then return where to start next core from
+	RefHyperCoreLen < pProcParams->MinHyperLen)	// if less than required then return where to start next core from
 	return(NxtSeqIdx);
 
 ChromOfsEnd = ChromOfs+RefHyperCoreLen-1;	// determine reference chromosomal offset at which sequence ends
@@ -2652,9 +2652,9 @@ int Idx;
 int Steps;
 int Len;
 int *pStep;
-INT64 Total;
-INT64 SumRefBases;
-INT64 SumRelBases;
+int64_t Total;
+int64_t SumRefBases;
+int64_t SumRelBases;
 
 if(bOutputHdrFirst)
 	{
@@ -2683,9 +2683,9 @@ for(Idx = 0; Idx < 4; Idx++,pStep += pProcParams->Regions)
 			break;
 		}
 #ifdef _WIN32
-	Len = sprintf(szLineBuff,"\n\"%s\",%I64d",pszClass[Idx],Total);
-#else
 	Len = sprintf(szLineBuff,"\n\"%s\",%lld",pszClass[Idx],Total);
+#else
+	Len = sprintf(szLineBuff,"\n\"%s\",%ld",pszClass[Idx],Total);
 #endif
 	if(pProcParams->Regions > 1)
 		{
@@ -2701,16 +2701,16 @@ for(Idx = 0; Idx < 2; Idx++)
 	switch(Idx) {	// reference sequence
 		case 0:
 #ifdef _WIN32
-			Len=sprintf(szLineBuff,"\n\"RefBases\",%I64d",SumRefBases);
-#else
 			Len=sprintf(szLineBuff,"\n\"RefBases\",%lld",SumRefBases);
+#else
+			Len=sprintf(szLineBuff,"\n\"RefBases\",%ld",SumRefBases);
 #endif
 			break;
 		case 1:		// relative sequence
 #ifdef _WIN32
-			Len=sprintf(szLineBuff,"\n\"RelBases\",%I64d",SumRelBases);
-#else
 			Len=sprintf(szLineBuff,"\n\"RelBases\",%lld",SumRelBases);
+#else
+			Len=sprintf(szLineBuff,"\n\"RelBases\",%ld",SumRelBases);
 #endif
 			break;
 		}
@@ -2732,9 +2732,9 @@ for(Idx = 0; Idx < 2; Idx++)
 					break;
 				}
 #ifdef _WIN32
-			Len += sprintf(&szLineBuff[Len],",%I64d",SumRefBases);
-#else
 			Len += sprintf(&szLineBuff[Len],",%lld",SumRefBases);
+#else
+			Len += sprintf(&szLineBuff[Len],",%ld",SumRefBases);
 #endif
 			}
 		}

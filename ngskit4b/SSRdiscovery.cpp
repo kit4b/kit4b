@@ -124,7 +124,7 @@ struct arg_end *end = arg_end(200);
 
 void *argtable[] = {help,version,FileLogLevel,LogFile,
 					summrslts,experimentname,experimentdescr,
-	                mode,minrepellen, maxrepellen, mintandemrpts, maxtandemrpts, flanklen, inputfiles, kmerfreq, outfile,
+					mode,minrepellen, maxrepellen, mintandemrpts, maxtandemrpts, flanklen, inputfiles, kmerfreq, outfile,
 					end};
 char **pAllArgs;
 int argerrors;
@@ -134,23 +134,23 @@ if(argerrors >= 0)
 
 /* special case: '--help' takes precedence over error reporting */
 if (help->count > 0)
-        {
+		{
 		printf("\n%s %s %s, Version %s\nOptions ---\n", gszProcName,gpszSubProcess->pszName,gpszSubProcess->pszFullDescr,kit4bversion);
-        arg_print_syntax(stdout,argtable,"\n");
-        arg_print_glossary(stdout,argtable,"  %-25s %s\n");
+		arg_print_syntax(stdout,argtable,"\n");
+		arg_print_glossary(stdout,argtable,"  %-25s %s\n");
 		printf("\nNote: Parameters can be entered into a parameter file, one parameter per line.");
 		printf("\n      To invoke this parameter file then precede its name with '@'");
 		printf("\n      e.g. %s %s @myparams.txt\n",gszProcName,gpszSubProcess->pszName);
 		printf("\nPlease report any issues regarding usage of %s at https://github.com/kit4b/issues\n\n",gszProcName);
 		return(1);
-        }
+		}
 
-    /* special case: '--version' takes precedence error reporting */
+	/* special case: '--version' takes precedence error reporting */
 if (version->count > 0)
-        {
+		{
 		printf("\n%s %s Version %s\n",gszProcName,gpszSubProcess->pszName,kit4bversion);
 		return(1);
-        }
+		}
 
 if (!argerrors)
 	{
@@ -380,7 +380,7 @@ if (!argerrors)
 		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,sizeof(MaxTandemRpts),"maxtandemrpts",&MaxTandemRpts);
 		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,sizeof(SSRFlankLen),"flanklen",&SSRFlankLen);
 
-	    ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,sizeof(NumInputFiles),"NumInputFiles",&NumInputFiles);
+		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,sizeof(NumInputFiles),"NumInputFiles",&NumInputFiles);
 		for(Idx=0; Idx < NumInputFiles; Idx++)
 			ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTText,(int)strlen(pszInputFiles[Idx]),"in",pszInputFiles[Idx]);
 
@@ -566,7 +566,7 @@ if(m_pSeqBuff == NULL)
 	m_pSeqBuff = (etSeqBase *) malloc(SeqLen);	// initial and perhaps the only allocation
 	if(m_pSeqBuff == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocSeqBuff: Memory allocation of %lld bytes - %s",(INT64)SeqLen,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocSeqBuff: Memory allocation of %lld bytes - %s",(int64_t)SeqLen,strerror(errno));
 		return(NULL);
 		}
 #else
@@ -574,7 +574,7 @@ if(m_pSeqBuff == NULL)
 	m_pSeqBuff = (etSeqBase *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pSeqBuff == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocSeqBuff: Memory allocation of %lld bytes through mmap()  failed - %s",(INT64)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocSeqBuff: Memory allocation of %lld bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
 		m_pSeqBuff = NULL;
 		return(NULL);
 		}
@@ -592,7 +592,7 @@ else
 #endif
 	if(pTmp == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocSeqBuff: Memory re-allocation to %lld bytes - %s",(INT64)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocSeqBuff: Memory re-allocation to %lld bytes - %s",(int64_t)memreq,strerror(errno));
 		return(NULL);
 		}
 	m_pSeqBuff = pTmp;
@@ -609,7 +609,7 @@ CSSRDiscovery::ProcessBioseqFile(char *pszFile)
 CBioSeqFile BioSeqFile;
 char szSource[cBSFSourceSize];
 char szDescription[cBSFDescriptionSize];
-UINT32 SeqLen;
+uint32_t SeqLen;
 int Rslt;
 tBSFEntryID CurEntryID;
 
@@ -667,7 +667,7 @@ CFasta Fasta;
 size_t AvailBuffSize;
 char szName[cBSFSourceSize];
 char szDescription[cBSFDescriptionSize];
-UINT32 SeqLen;
+uint32_t SeqLen;
 int Descrlen;
 bool bFirstEntry;
 bool bEntryCreated;
@@ -761,17 +761,17 @@ return(Rslt);
 int
 CSSRDiscovery::ReportCSV(int RepElLen,	// identified SSR contains repeat elements of this length
 	   int NumTandemEls,			// each repeat element is repeated this many times
-	   INT64 SSRStartOfs,			// repeat element starts at this offset within the targeted sequence
-	    char *pszDescr,				// descriptor for the targeted sequence
+	   int64_t SSRStartOfs,			// repeat element starts at this offset within the targeted sequence
+		char *pszDescr,				// descriptor for the targeted sequence
 		char *pszInFile,			// sequence parsed from this file
-	   INT64 TargSeqLen,			// targeted sequence is this length
+	   int64_t TargSeqLen,			// targeted sequence is this length
 	   etSeqBase *pTargSeq)			// targeted sequence within which the SSR has been located
 {
 static bool bFirst = true;
 int Flank5Len;
-INT64 Flank5Ofs;
+int64_t Flank5Ofs;
 int Flank3Len;
-INT64 Flank3Ofs;
+int64_t Flank3Ofs;
 
 if(SSRStartOfs < m_SSRFlankLen)
 	{
@@ -802,7 +802,11 @@ if(m_IdxRptSSRs > (cMaxAllocRptSSRs - 2000))
 	m_IdxRptSSRs = 0;
 	}
 
+#ifdef _WIN32
 m_IdxRptSSRs += sprintf(&m_pszRptSSRsBuff[m_IdxRptSSRs],"%d,\"SSRs\",\"N/A\",\"%s\",%lld,%lld,%lld,%d,%lld,\"+\",%d,%d,\"",m_TotNumAcceptedSSRs,
+#else
+m_IdxRptSSRs += sprintf(&m_pszRptSSRsBuff[m_IdxRptSSRs],"%d,\"SSRs\",\"N/A\",\"%s\",%ld,%ld,%ld,%d,%ld,\"+\",%d,%d,\"",m_TotNumAcceptedSSRs,
+#endif
 						pszDescr,Flank5Ofs,SSRStartOfs,SSRStartOfs+(RepElLen*NumTandemEls)-1,RepElLen*NumTandemEls,Flank3Ofs + Flank3Len - 1,RepElLen,NumTandemEls);
 
 if(Flank5Len > 0)
@@ -825,10 +829,10 @@ return(m_IdxRptSSRs);
 int
 CSSRDiscovery::ReportBED(int RepElLen,	// identified SSR contains repeat elements of this length
 	   int NumTandemEls,			// each repeat element is repeated this many times
-	   INT64 SSRStartOfs,			// repeat element starts at this offset within the targeted sequence
-	    char *pszDescr,				// descriptor for the targeted sequence
+	   int64_t SSRStartOfs,			// repeat element starts at this offset within the targeted sequence
+		char *pszDescr,				// descriptor for the targeted sequence
 		char *pszInFile,			// sequence parsed from this file
-	   INT64 TargSeqLen,			// targeted sequence is this length
+	   int64_t TargSeqLen,			// targeted sequence is this length
 	   etSeqBase *pTargSeq)			// targeted sequence within which the SSR has been located
 {
 return(0);
@@ -837,10 +841,10 @@ return(0);
 int
 CSSRDiscovery::ReportSAM(int RepElLen,	// identified SSR contains repeat elements of this length
 	   int NumTandemEls,			// each repeat element is repeated this many times
-	   INT64 SSRStartOfs,			// repeat element starts at this offset within the targeted sequence
-	    char *pszDescr,				// descriptor for the targeted sequence
+	   int64_t SSRStartOfs,			// repeat element starts at this offset within the targeted sequence
+		char *pszDescr,				// descriptor for the targeted sequence
 		char *pszInFile,			// sequence parsed from this file
-	   INT64 TargSeqLen,			// targeted sequence is this length
+	   int64_t TargSeqLen,			// targeted sequence is this length
 	   etSeqBase *pTargSeq)			// targeted sequence within which the SSR has been located
 {
 return(0);
@@ -850,10 +854,10 @@ return(0);
 int
 CSSRDiscovery::Report(int RepElLen,	// identified SSR contains repeat elements of this length
 	   int NumTandemEls,			// each repeat element is repeated this many times
-	   INT64 SSRStartOfs,			// repeat element starts at this offset within the targeted sequence
-	    char *pszDescr,				// descriptor for the targeted sequence
+	   int64_t SSRStartOfs,			// repeat element starts at this offset within the targeted sequence
+		char *pszDescr,				// descriptor for the targeted sequence
 		char *pszInFile,			// sequence parsed from this file
-	   INT64 TargSeqLen,			// targeted sequence is this length
+	   int64_t TargSeqLen,			// targeted sequence is this length
 	   etSeqBase *pTargSeq)			// targeted sequence within which the SSR has been located
 {
 int Rslt;
@@ -875,11 +879,11 @@ return(Rslt);
 }
 
 
-UINT16
+uint16_t
 GenSeqHash16(int SeqLen,	// hash this length sequence
 			etSeqBase *pSeq) // sequence to hash
 {
-UINT32 Hash;
+uint32_t Hash;
 int Idx;
 
 Hash = 19937;			// circular prime as hash seed
@@ -905,7 +909,7 @@ CSSRDiscovery::CntKMer(int KMerLen,	 // count this KMer
 					etSeqBase *pSeq) // sequence 
 {
 int Idx;
-UINT32 FreqIdx;
+uint32_t FreqIdx;
 tsKMerDist *pKMerDist;
 
 if(m_pKMerDist == NULL || KMerLen != m_KMerFreqLen)
@@ -918,7 +922,7 @@ for(Idx = 0; Idx < KMerLen; Idx++)
 	FreqIdx |= 0x03 & *pSeq++;
 	}
 
-pKMerDist = (tsKMerDist *)((UINT8 *)m_pKMerDist + (m_SizeOfKMerDist * FreqIdx));
+pKMerDist = (tsKMerDist *)((uint8_t *)m_pKMerDist + (m_SizeOfKMerDist * FreqIdx));
 
 pKMerDist->Cnt += 1;
 pKMerDist->TandemRpts[Rpts - m_MinTandemRpts] += 1;
@@ -929,14 +933,14 @@ return(pKMerDist->Cnt);
 int
 CSSRDiscovery::IdentifySSRs(char *pszDescr,	// descriptor for the targeted sequence
 			 char *pszInFile,			// sequence parsed from this file
-			 INT64 TargSeqLen,			// sequence length of targeted sequence within which to search for SSRs
+			 int64_t TargSeqLen,			// sequence length of targeted sequence within which to search for SSRs
 			 etSeqBase *pTargSeq)		// identify SSRs in this targeted sequence
 {
 bool bSlough;
 etSeqBase BaseA;
 etSeqBase BaseB;
-INT64 Ofs;
-INT64 SSRStartOfs;
+int64_t Ofs;
+int64_t SSRStartOfs;
 int RepElLen;
 int RepElOfs;
 int NumTandemEls;
@@ -1060,7 +1064,7 @@ CSSRDiscovery::ReportKMers(char *pszKMerFreqFile)	// report SSR repeating elemen
 {
 int Idx;
 tsKMerDist *pFreqDist;
-UINT32 SeqIdx;
+uint32_t SeqIdx;
 char Base;
 int Idy;
 int Rpts;
@@ -1107,7 +1111,7 @@ if(m_hOutKMerFreqFile != -1 && m_KMerFreqLen != 0)
 			CUtility::RetryWrites(m_hOutKMerFreqFile,szBuff,BuffIdx);
 			BuffIdx = 0;
 			}
-		pFreqDist = (tsKMerDist *)((UINT8 *)pFreqDist + m_SizeOfKMerDist);
+		pFreqDist = (tsKMerDist *)((uint8_t *)pFreqDist + m_SizeOfKMerDist);
 		}
 	if(BuffIdx > 0)
 		CUtility::RetryWrites(m_hOutKMerFreqFile,szBuff,BuffIdx);
@@ -1151,8 +1155,8 @@ CSSRDiscovery::Process(int PMode,			// procesisng mode - currently unused..
 {
 int Rslt;
 int Idx;
-UINT32 TotNumAcceptedSSRs;
-UINT32 TotNumExcessiveTandemSSRs;
+uint32_t TotNumAcceptedSSRs;
+uint32_t TotNumExcessiveTandemSSRs;
 
 char *pszInFile;
 CSimpleGlob glob(SG_GLOB_FULLSORT);
@@ -1178,7 +1182,7 @@ if(pszKMerFreqFile != NULL && pszKMerFreqFile[0] != '\0' &&
 	{
 	size_t memreq;
 	int Power2 = MinRepElLen;
-	m_SizeOfKMerDist = (int)(sizeof(tsKMerDist) + (sizeof(UINT32) * (MaxTandemRpts - MinTandemRpts)));
+	m_SizeOfKMerDist = (int)(sizeof(tsKMerDist) + (sizeof(uint32_t) * (MaxTandemRpts - MinTandemRpts)));
 	m_NumKMers = 1;
 	while(Power2--)
 		m_NumKMers <<= 2;
@@ -1187,7 +1191,7 @@ if(pszKMerFreqFile != NULL && pszKMerFreqFile[0] != '\0' &&
 	m_pKMerDist = (tsKMerDist *) malloc(memreq);	// initial and only allocation
 	if(m_pKMerDist == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes - %s",(INT64)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes - %s",(int64_t)memreq,strerror(errno));
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -1196,7 +1200,7 @@ if(pszKMerFreqFile != NULL && pszKMerFreqFile[0] != '\0' &&
 	m_pKMerDist = (tsKMerDist *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pKMerDist == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes through mmap()  failed - %s",(INT64)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
 		m_pKMerDist = NULL;
 		Reset();
 		return(eBSFerrMem);

@@ -378,15 +378,15 @@ if (!argerrors)
 		{
 		int ParamID;
 		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTText,(int)strlen(szLogFile),"log",szLogFile);
-		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,sizeof(INT32),"mode",&PMode);
+		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,sizeof(int32_t),"mode",&PMode);
 		
-		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,sizeof(INT32),"minlen",&iMinLength);
-		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,sizeof(INT32),"maxlen",&iMaxLength);
+		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,sizeof(int32_t),"minlen",&iMinLength);
+		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,sizeof(int32_t),"maxlen",&iMaxLength);
 
-		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,sizeof(INT32),"numbins",&numbins);
-		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,sizeof(INT32),"bindelta",&bindelta);
+		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,sizeof(int32_t),"numbins",&numbins);
+		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,sizeof(int32_t),"bindelta",&bindelta);
 
-		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,sizeof(INT32),"NumInputFiles",&NumInputFiles);
+		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,sizeof(int32_t),"NumInputFiles",&NumInputFiles);
 		for(Idx = 0; Idx < NumInputFiles; Idx++)
 			ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTText,(int)strlen(pszInFastaFile[Idx]),"in",pszInFastaFile[Idx]);
 		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTText,(int)strlen(szRsltsFile),"out",szRsltsFile);
@@ -735,20 +735,20 @@ Reset();
 if(Mode == ePMKMerDist)
 	{
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Allocating memory for N-Mer count distributions...");
-	if((m_pDimerCnts = new UINT32 [5*5*cMaxFastQSeqLen])==NULL)
+	if((m_pDimerCnts = new uint32_t [5*5*cMaxFastQSeqLen])==NULL)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory for dimer counts",strerror(errno));
 		return(eBSFerrMem);
 		}
 	
-	if((m_pTrimerCnts = new UINT32 [5*5*5*cMaxFastQSeqLen])==NULL)
+	if((m_pTrimerCnts = new uint32_t [5*5*5*cMaxFastQSeqLen])==NULL)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory for trimer counts",strerror(errno));
 		Reset();
 		return(eBSFerrMem);
 		}
 
-	if((m_pTetramerCnts = new UINT32 [5*5*5*5*cMaxFastQSeqLen])==NULL)
+	if((m_pTetramerCnts = new uint32_t [5*5*5*5*cMaxFastQSeqLen])==NULL)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory for tetramer counts",strerror(errno));
 		Reset();
@@ -756,14 +756,14 @@ if(Mode == ePMKMerDist)
 		}
 
 	memset(m_BaseCnts,0,sizeof(m_BaseCnts));
-	memset(m_pDimerCnts,0,sizeof(UINT32) * 5*5*cMaxFastQSeqLen);
-	memset(m_pTrimerCnts,0,sizeof(UINT32) * 5*5*5*cMaxFastQSeqLen);
-	memset(m_pTetramerCnts,0,sizeof(UINT32) * 5*5*5*5*cMaxFastQSeqLen);
+	memset(m_pDimerCnts,0,sizeof(uint32_t) * 5*5*cMaxFastQSeqLen);
+	memset(m_pTrimerCnts,0,sizeof(uint32_t) * 5*5*5*cMaxFastQSeqLen);
+	memset(m_pTetramerCnts,0,sizeof(uint32_t) * 5*5*5*5*cMaxFastQSeqLen);
 	memset(m_SeqNsCnts,0,sizeof(m_SeqNsCnts));
 	memset(m_DistBaseCnts,0,sizeof(m_DistBaseCnts));
 	}
 
-if((m_pSeq = new UINT8 [MaxLength+10])==NULL)	// allows to check if sequence has been loaded which is longer than MaxLength
+if((m_pSeq = new uint8_t [MaxLength+10])==NULL)	// allows to check if sequence has been loaded which is longer than MaxLength
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory to hold sequence of length %d",MaxLength);
 	Reset();
@@ -831,10 +831,10 @@ for(Idx = 0; Idx < NumInputFiles; Idx++)
 
 if(Mode == ePMdefault)
 	{
-	INT64 NxLens[11];	// to hold contig lengths for all Nx where Nx varies from 10 to 100 in increments of N10
-	INT64 SumCtgLens;
-	INT64 NxSum;
-	INT64 *pNxLens;
+	int64_t NxLens[11];	// to hold contig lengths for all Nx where Nx varies from 10 to 100 in increments of N10
+	int64_t SumCtgLens;
+	int64_t NxSum;
+	int64_t *pNxLens;
 	int CtgLenIdx;
 	int CtgNxIdx;
 	int NumCtgs;
@@ -889,13 +889,13 @@ if(Mode == ePMdefault)
 				}
 			}
 
-		if((m_pBins = new UINT32 [NumBins+1])==NULL)
+		if((m_pBins = new uint32_t [NumBins+1])==NULL)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenContigs: Memory allocation for %d bins failed - %s",NumBins,strerror(errno));
 			Reset();
 			return(eBSFerrMem);
 			}
-		memset(m_pBins,0,sizeof(UINT32) * (NumBins+1));
+		memset(m_pBins,0,sizeof(uint32_t) * (NumBins+1));
 		}
 	else
 		m_pBins = NULL;
@@ -941,7 +941,7 @@ if(Mode == ePMdefault)
 		}
 
 	m_MTqsort.SetMaxThreads(4);
-	m_MTqsort.qsort(m_pContigLengths,(UINT64)m_NumContigLens,sizeof(int),SortByContigLen);
+	m_MTqsort.qsort(m_pContigLengths,(uint64_t)m_NumContigLens,sizeof(int),SortByContigLen);
 
 
 	pNxLens = NxLens;

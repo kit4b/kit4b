@@ -29,40 +29,40 @@ typedef enum TAG_eCSVFormat {
 #pragma pack(1)
 
 typedef struct TAG_sHyperElement {
-	UINT8 ElTypeID;		// element type
-	UINT8 RefSpeciesID;	// reference species identifier
-	UINT8 RelSpeciesID;	// relative species list identifier or 0 if none
-	UINT8 Features;
-	INT32 ChromID;
-	INT32 ElID;					// unique element identifier: m_pElements[ElID-1] 
-	INT32 SrcID;				// identifier as parsed from source CSV file
-	INT32 StartLoci;			// start loci normalised to on '+' strand
-	INT32 Len;					// length
-	UINT8 PlusStrand:1;			// 0 ==  '-', 1 == '+'
+	uint8_t ElTypeID;		// element type
+	uint8_t RefSpeciesID;	// reference species identifier
+	uint8_t RelSpeciesID;	// relative species list identifier or 0 if none
+	uint8_t Features;
+	int32_t ChromID;
+	int32_t ElID;					// unique element identifier: m_pElements[ElID-1] 
+	int32_t SrcID;				// identifier as parsed from source CSV file
+	int32_t StartLoci;			// start loci normalised to on '+' strand
+	int32_t Len;					// length
+	uint8_t PlusStrand:1;			// 0 ==  '-', 1 == '+'
 								// elements may be split (microInDel or splice junction spanning?) identified as they share the same SrcID
-	UINT8 SplitElement:1;// this is a split element member
-	UINT8 SplitFirst:1;// first member (lowest start loci)
-	UINT8 SplitLast:1; // last member (highest start loci) 
-	UINT8 NumSNPBases:3;		// number of alternative SNP bases called - used when generating SNP marker sequences
-	UINT8 SNPBases;			// SNP bases if present are packed 4 per byte with 2 bits per base and bits 0..1 containing the first
+	uint8_t SplitElement:1;// this is a split element member
+	uint8_t SplitFirst:1;// first member (lowest start loci)
+	uint8_t SplitLast:1; // last member (highest start loci) 
+	uint8_t NumSNPBases:3;		// number of alternative SNP bases called - used when generating SNP marker sequences
+	uint8_t SNPBases;			// SNP bases if present are packed 4 per byte with 2 bits per base and bits 0..1 containing the first
 	 
-	UINT32 SplitOrder;	// 0 if 1st split element through to N-1 for the last element, ordered by ascending start loci
+	uint32_t SplitOrder;	// 0 if 1st split element through to N-1 for the last element, ordered by ascending start loci
 	 
-    INT32 RelScale;			// relative scaling factor for this read
+    int32_t RelScale;			// relative scaling factor for this read
 	size_t SeqBasesOfs;     // offset+1 in m_pSeqBases[] at which associated sequence starts; sequences will always be sense orientated; 0 if no associated sequence
 } tsHyperElement;
 
 typedef struct TAG_sHyperChrom {
-	INT32  ChromID;			// uniquely identifies chromosome
-	UINT16 Hash;				// hash on chromosome name - GenHash()
-	UINT32 NxtHashChromIdx;				// index - 1 in m_pChroms of next chrom with same hashed szChromName
+	int32_t  ChromID;			// uniquely identifies chromosome
+	uint16_t Hash;				// hash on chromosome name - GenHash()
+	uint32_t NxtHashChromIdx;				// index - 1 in m_pChroms of next chrom with same hashed szChromName
 	char szChromName[cMaxDatasetSpeciesChrom];	// chromosome name
 } tsHyperChrom;
 
 typedef struct TAG_sItemName {
-	UINT8  NameID;				// uniquely identifies this name
-	UINT16 Hash;				// hash on name - GenHash()
-	UINT8 szName[cMaxGeneNameLen];	// name
+	uint8_t  NameID;				// uniquely identifies this name
+	uint16_t Hash;				// hash on name - GenHash()
+	uint8_t szName[cMaxGeneNameLen];	// name
 } tsItemName;
 
 #pragma pack()
@@ -82,14 +82,14 @@ class CHyperEls  : public CErrorCodes
 	int m_NumSeqs;				// total number of sequences in m_pSeqBases
 	size_t m_MemUsedSeqBases;	// mem currently used for m_pSeqBases
 	size_t m_MemAllocSeqBases;	// mem allocd for m_pSeqBases
-	UINT8 *m_pSeqBases;		    // alloc'd to hold any element associated sequence bases which are packed 2 bases per byte
+	uint8_t *m_pSeqBases;		    // alloc'd to hold any element associated sequence bases which are packed 2 bases per byte
 
 	int m_MRAChromID;			// most recently accessed chromosome identifier
 	int m_NumChromsAllocd;
 	int m_NumChroms;
 	size_t m_MemAllocChroms;	// mem alloc'd for m_pChroms  
 	tsHyperChrom *m_pChroms;
-	UINT64 *m_pChromHashes;		// used to hold indexes into m_pChroms
+	uint64_t *m_pChromHashes;		// used to hold indexes into m_pChroms
 
 	int m_MRAElTypeID;		// most recently accessed element type identifier
 	int m_NumElTypes;
@@ -157,7 +157,7 @@ public:
 
 	int Locate(int ChromID,int StartLoci,int Len, int MinOverlap,int nTh=1,int *pOverlapStartLoci=NULL,int *pOverlapLen=NULL);
 	int LocateNumOverlapping(int ChromID,int StartLoci,int Len = 1, int MinOverlap = 1);
-	int LocateLociBaseCnts(int ChromID,int StartLoci,UINT32 *pCntA, UINT32 *pCntC,UINT32 *pCntG,UINT32 *pCntT,UINT32 *pCntN); // returns counts of all bases aligning to specified chrom+loci
+	int LocateLociBaseCnts(int ChromID,int StartLoci,uint32_t *pCntA, uint32_t *pCntC,uint32_t *pCntG,uint32_t *pCntT,uint32_t *pCntN); // returns counts of all bases aligning to specified chrom+loci
 
 	
 	tsHyperElement *							// Use to iterate through elements on specified chrom, returning ptr to element instance
@@ -171,9 +171,9 @@ public:
 					int *pElLoci,				// element is at this loci on the chrom
 					int *pElLen);				// and is this length
 
-	char *GetType(unsigned char ElTypeID);			// get element type
-	char *GetRelSpecies(unsigned char RelSpeciesID);		// get relative species
-	char *GetRefSpecies(unsigned char RefSpeciesID);		// get reference species
+	char *GetType(uint8_t ElTypeID);			// get element type
+	char *GetRelSpecies(uint8_t RelSpeciesID);		// get relative species
+	char *GetRefSpecies(uint8_t RefSpeciesID);		// get reference species
 
 	int NumElsFiltLen(void);	// returns number of elements filtered out because of length
 	int NumElsParsed(void);		// returns number of elements parsed before filtering

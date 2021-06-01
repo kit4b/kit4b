@@ -291,15 +291,15 @@ return(eBSFSuccess);
 int									// returned enqueued query identifier
 CPacBioUtility::EnqueueQuerySeq(char *pszQueryIdent,    // query identifier parsed from fasta descriptor
 			int QuerySeqLen,		// query sequence length
-			UINT8 *pQuerySeq)       // query sequence
+			uint8_t *pQuerySeq)       // query sequence
 {
 int Idx;
 int SeqID;
-UINT8 *pSeq;
+uint8_t *pSeq;
 tsPBQuerySeq*psQuery;
 if(m_TermBackgoundThreads != 0)	// need to immediately self-terminate?
 	return(0);
-if((pSeq = new UINT8 [QuerySeqLen]) == NULL)
+if((pSeq = new uint8_t [QuerySeqLen]) == NULL)
 	return(eBSFerrMem);
 memcpy(pSeq,pQuerySeq,QuerySeqLen);
 
@@ -333,7 +333,7 @@ ReleaseLock(true);
 return(SeqID);
 }
 
-UINT8 *												// returned dequeued sequence, caller is responsible for deleting memory allocated to hold the returned sequence (delete pRetSeq;)
+uint8_t *												// returned dequeued sequence, caller is responsible for deleting memory allocated to hold the returned sequence (delete pRetSeq;)
 CPacBioUtility::DequeueQuerySeq(int WaitSecs,		// if no sequences available to be dequeued then wait at most this many seconds for a sequence to become available
 			int MaxLenQueryIdent,			// maximum length query identifier
 			int *pSeqID,					// returned sequence identifier
@@ -341,7 +341,7 @@ CPacBioUtility::DequeueQuerySeq(int WaitSecs,		// if no sequences available to b
 			int *pQuerySeqLen)				// where to return query sequence length
 {
 bool bAllQuerySeqsLoaded;
-UINT8 *pSeq;
+uint8_t *pSeq;
 tsPBQuerySeq*psQuery;
 
 // any sequences available to be dequeued?
@@ -381,15 +381,15 @@ int
 CPacBioUtility::ProcLoadReadsFile(tsLoadPBQuerySeqsThreadPars *pPars)
 {
 CFasta Fasta;
-unsigned char *pSeqBuff;
-unsigned char *pMskBase;
-UINT32 MskIdx;
+uint8_t *pSeqBuff;
+uint8_t *pMskBase;
+uint32_t MskIdx;
 size_t BuffOfs;
 size_t AllocdBuffSize;
 size_t AvailBuffSize;
 char szName[cBSFSourceSize];
 char szDescription[cBSFDescriptionSize];
-UINT32 SeqLen;
+uint32_t SeqLen;
 int Descrlen;
 bool bFirstEntry;
 bool bEntryCreated;
@@ -447,9 +447,9 @@ for(FileIdx = 0; FileIdx < m_NumInputFiles; FileIdx++)
 
 		// note malloc is used as can then simply realloc to expand as may later be required
 		AllocdBuffSize = (size_t)cAllocPBQuerySeqLen;
-		if((pSeqBuff = (unsigned char *)malloc(AllocdBuffSize)) == NULL)
+		if((pSeqBuff = (uint8_t *)malloc(AllocdBuffSize)) == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcLoadReadsFile:- Unable to allocate memory (%u bytes) for sequence buffer",(UINT32)cAllocPBQuerySeqLen);
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcLoadReadsFile:- Unable to allocate memory (%u bytes) for sequence buffer",(uint32_t)cAllocPBQuerySeqLen);
 			Fasta.Close();
 			*pRslt = eBSFerrMem;
 			AcquireLock(true);
@@ -532,10 +532,10 @@ for(FileIdx = 0; FileIdx < m_NumInputFiles; FileIdx++)
 			if(AvailBuffSize < (size_t)(cAllocPBQuerySeqLen / 2))
 				{
 				size_t NewSize = (size_t)cAllocPBQuerySeqLen + AllocdBuffSize;
-				unsigned char *pTmp;
-				if((pTmp = (unsigned char *)realloc(pSeqBuff,NewSize))==NULL)
+				uint8_t *pTmp;
+				if((pTmp = (uint8_t *)realloc(pSeqBuff,NewSize))==NULL)
 					{
-					gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcLoadReadsFile:- Unable to reallocate memory (%u bytes) for sequence buffer",(UINT32)NewSize);
+					gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcLoadReadsFile:- Unable to reallocate memory (%u bytes) for sequence buffer",(uint32_t)NewSize);
 					Rslt = eBSFerrMem;
 					break;
 					}
@@ -634,13 +634,13 @@ CPacBioUtility::ReduceHomopolymers(int InSeqLen,	// number of bases in sequence
 					   etSeqBase *pInSeq,			// sequence which may contain homopolymers
 					   int TruncLen)				// homopolymers longer than this length (min 12) to be truncated at this length
 {
-UINT8 *pHomoBase;
-UINT8 *pDelHomoBase;
-UINT8 HomoBase;
-UINT8 CurHomoBase;
-UINT32 TotHomoLen;
-UINT32 HomoIdx;
-UINT32 StartHomoIdx;
+uint8_t *pHomoBase;
+uint8_t *pDelHomoBase;
+uint8_t HomoBase;
+uint8_t CurHomoBase;
+uint32_t TotHomoLen;
+uint32_t HomoIdx;
+uint32_t StartHomoIdx;
 bool bHomoRuns;
 if(TruncLen < 12)
 	return(InSeqLen);
@@ -650,7 +650,7 @@ TotHomoLen = 0;
 StartHomoIdx = 0;
 bHomoRuns = false;
 pHomoBase = pInSeq;
-for(HomoIdx = 0; HomoIdx < (UINT32)InSeqLen; HomoIdx++,pHomoBase++)
+for(HomoIdx = 0; HomoIdx < (uint32_t)InSeqLen; HomoIdx++,pHomoBase++)
 	{
 	HomoBase = *pHomoBase & 0x03;
 	if(TotHomoLen == 0)
@@ -668,7 +668,7 @@ for(HomoIdx = 0; HomoIdx < (UINT32)InSeqLen; HomoIdx++,pHomoBase++)
 			if(TotHomoLen >= 12)				// requiring an initial seed K-mer of at least 12 bases before accepting as possibly a homopolymer
 				{
 				// although not matching the current homopolymer base if the next three bases would match then accept as still being part of the homopolymer
-				if((HomoIdx + 4) < (UINT32)InSeqLen)
+				if((HomoIdx + 4) < (uint32_t)InSeqLen)
 					{ 
 					if(((pHomoBase[1] & 0x03) == CurHomoBase) && ((pHomoBase[2] & 0x03) == CurHomoBase) && ((pHomoBase[3] & 0x03) == CurHomoBase))
 						{
@@ -677,7 +677,7 @@ for(HomoIdx = 0; HomoIdx < (UINT32)InSeqLen; HomoIdx++,pHomoBase++)
 						}
 					}
 
-				if(TotHomoLen >= (UINT32)TruncLen)				// accepting as homopolymer if at least m_FiltMinHomoLen long
+				if(TotHomoLen >= (uint32_t)TruncLen)				// accepting as homopolymer if at least m_FiltMinHomoLen long
 					{
 					pDelHomoBase = &pInSeq[StartHomoIdx+6];	// retaining the first 6 bases as these started the homopolymer run
 					TotHomoLen -= 6;							// and retaining the last 6 bases as these terminated the homopolymer run
@@ -692,7 +692,7 @@ for(HomoIdx = 0; HomoIdx < (UINT32)InSeqLen; HomoIdx++,pHomoBase++)
 		}
  	}
 
-if(TotHomoLen >= (UINT32)TruncLen)			// accepting as homopolymer if at least m_FiltMinHomoLen long
+if(TotHomoLen >= (uint32_t)TruncLen)			// accepting as homopolymer if at least m_FiltMinHomoLen long
 	{
 	pDelHomoBase = &pInSeq[StartHomoIdx+6];	// retaining the first 5 bases as these started the homopolymer run
 	TotHomoLen -= 6;					    // and retaining the last 5 bases as these terminated the homopolymer run
@@ -705,7 +705,7 @@ if(bHomoRuns)
 	{
 	TotHomoLen = 0;
 	pDelHomoBase = pHomoBase = pInSeq;
-	for(HomoIdx = 0; HomoIdx < (UINT32)InSeqLen; HomoIdx++,pHomoBase++)
+	for(HomoIdx = 0; HomoIdx < (uint32_t)InSeqLen; HomoIdx++,pHomoBase++)
 		{
 		HomoBase = *pHomoBase & 0x07;
 		if(HomoBase == eBaseInDel)
@@ -888,9 +888,9 @@ return(NumSMRTBells);
 
 
 typedef struct TAG_sSWQScore {
-	INT32 PathScore;		// accumulated path score
-	UINT32 RunLen;			// current run length of Class type
-	UINT32 RunClass;		// run length class; 0:exact match, 1: mismatches, 2: insertions into the target, 3: deletions from the target		
+	int32_t PathScore;		// accumulated path score
+	uint32_t RunLen;			// current run length of Class type
+	uint32_t RunClass;		// run length class; 0:exact match, 1: mismatches, 2: insertions into the target, 3: deletions from the target		
 } tsSWQScore;
 
 int								// number of target hits returned

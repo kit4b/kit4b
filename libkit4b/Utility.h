@@ -46,7 +46,7 @@ public:
 	static char *ReduceWhitespace(char *pszText);
 	static char *CleanText(char* pText); // inplace cleans potentially troublesome chars from text by replacing these chars with a single space char
 
-	static UINT16			// generated 16bit hash over the lowercased chromosome name; hashes as 0 if pszName == null or is empty
+	static uint16_t			// generated 16bit hash over the lowercased chromosome name; hashes as 0 if pszName == null or is empty
 		GenHash16(char *pszName);	// name will be lowercased whilst hashing
 
 	static int						// generated 24bit hash over the lowercased chromosome name; hashes as 0 if pszName == null or is empty
@@ -115,7 +115,7 @@ public:
 						int MaxLen,				// max length to copy
 						char *pszTarg1,char *pszTarg2, ...); // var number of source files, use NULL or empty (pszSource[0] == '\0') to terminate
 
-	static void SleepMillisecs(UINT32 milliseconds); // cross-platform sleep function
+	static void SleepMillisecs(uint32_t milliseconds); // cross-platform sleep function
 
 
 };

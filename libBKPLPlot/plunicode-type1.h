@@ -30,7 +30,7 @@
 typedef struct
 {
     PLUNICODE     Unicode;
-    unsigned char Type1;
+    uint8_t Type1;
 } Unicode_to_Type1_table;
 
 // The following table values have been updated to be consistent

@@ -2,8 +2,8 @@
 
 #include "BKScommon.h"
 
-const UINT32 cServiceProviderVersion = 1;			// service provider is at this version
-const UINT32 cMaxServiceProviderInsts = cMaxServiceInsts;	    // limited to support a maximum of this many service instances
+const uint32_t cServiceProviderVersion = 1;			// service provider is at this version
+const uint32_t cMaxServiceProviderInsts = cMaxServiceInsts;	    // limited to support a maximum of this many service instances
 // when negotiating with potential service requesters then minimal buffer tx/rx buffer sizes are allocated
 const int cMinTxRxBuffSize = (cMaxServiceTypes * sizeof(tsServiceDetail)) + sizeof(tsBKSReqServices) * 3;	// always allocate at least this sized TxdBuff/RxdBuffs - ensures negotiation frames fit!
 
@@ -27,65 +27,65 @@ typedef enum TAG_eBKSPProvState
 #pragma pack(1)
 typedef struct TAG_sTxdRxd
 {
-	UINT32 SessionID;			// uniquely identifying this session between service requester and provider, requester specified
-	UINT16 flgSelMonExcept : 1; // socket to be monitored for exceptions
-	UINT16 flgSelMonRead : 1;	// socket to be monitored for received data available to be read
-	UINT16 flgSelMonWrite : 1; // socket to be monitored for write completed
-	UINT16 flgKeepAliveReq: 1; // set if a keepalive is to be sent
-	UINT16 flgRxCplt : 1;	// set when complete frame received 	
-	UINT16 flgTxCplt : 1;	// set when complete frame sent
-	UINT16 flgErr : 1;       // set on any unrecoverable error
-	UINT16 flgErrReason : 4;	// holds reason for socket level error flag set
+	uint32_t SessionID;			// uniquely identifying this session between service requester and provider, requester specified
+	uint16_t flgSelMonExcept : 1; // socket to be monitored for exceptions
+	uint16_t flgSelMonRead : 1;	// socket to be monitored for received data available to be read
+	uint16_t flgSelMonWrite : 1; // socket to be monitored for write completed
+	uint16_t flgKeepAliveReq: 1; // set if a keepalive is to be sent
+	uint16_t flgRxCplt : 1;	// set when complete frame received 	
+	uint16_t flgTxCplt : 1;	// set when complete frame sent
+	uint16_t flgErr : 1;       // set on any unrecoverable error
+	uint16_t flgErrReason : 4;	// holds reason for socket level error flag set
 	socket_t  Socket;		// assumed connected socket
 	time_t PacRxdAtSecs;	// the time at which a frame was last received, used for determining if session still active
 	time_t PacTxdAtSecs;	// the time at which a frame was last sent, used for keep alive generation
 
-	UINT8 RxdRxFrameID;		// RxFrameID of last received frame - will be 0 if no frame yet received by session peer
-	UINT8 RxdTxFrameID;		// TxFrameID of last received frame - will be 0 if no frame yet received from session peer
-	UINT8 TxFrameID;		// FrameID of next frame to send, will wraparound back to 1 when incremented past 0x07f 
-	UINT32 TotRxd;			// pRcvBuff contains this total number of received bytes
-	UINT32 CurPacRxd;		// number of bytes in currently received packet
-	UINT32 TotTxd;			// total number of bytes in pTxdBuff to be sent
-	UINT32 CurTxd;			// number of bytes currently sent from pTxdBuff
-	UINT32 AllocdRxdBuff;	// pRxdBuff allocated to hold at most this many received bytes
-	UINT32 AllocdTxdBuff;	// pTxdBuff allocated to hold at most this many bytes
-	UINT8 *pRxdBuff;		// receiving data into this buffer
-	UINT8 *pTxdBuff;		// sending data from this buffer
+	uint8_t RxdRxFrameID;		// RxFrameID of last received frame - will be 0 if no frame yet received by session peer
+	uint8_t RxdTxFrameID;		// TxFrameID of last received frame - will be 0 if no frame yet received from session peer
+	uint8_t TxFrameID;		// FrameID of next frame to send, will wraparound back to 1 when incremented past 0x07f 
+	uint32_t TotRxd;			// pRcvBuff contains this total number of received bytes
+	uint32_t CurPacRxd;		// number of bytes in currently received packet
+	uint32_t TotTxd;			// total number of bytes in pTxdBuff to be sent
+	uint32_t CurTxd;			// number of bytes currently sent from pTxdBuff
+	uint32_t AllocdRxdBuff;	// pRxdBuff allocated to hold at most this many received bytes
+	uint32_t AllocdTxdBuff;	// pTxdBuff allocated to hold at most this many bytes
+	uint8_t *pRxdBuff;		// receiving data into this buffer
+	uint8_t *pTxdBuff;		// sending data from this buffer
     SOCKADDR_STORAGE  IPaddress;	// remote IP address + port of endpoint service provider (IPv4 or IPv6)
 } tsTxdRxd;
 
 typedef struct TAG_sReqResp {
-	INT64 JobIDEx;						// request identifier as received from server for this request instance
-	UINT64 ClassInstanceID;				// class instance referenced
-	UINT32 ClassMethodID;				// identifies class method
-	UINT32 InstanceID;					// service instance specific identifier
-	UINT32 InstanceIDEx;				// combination of both the InstanceID (in bits 0..9) and ......
-	UINT32 flgReqAvail : 1;				// this service instance is available for processing 
-	UINT32 flgProc: 1;					// this service instance is currently being processed
-	UINT32 flgCpltd: 1;					// service processing has completed and resultset can be sent back to service requester
-	UINT32 JobRslt;						// completion result
-	UINT32 ParamSize;					// instance specific parameter size
-	UINT32 InDataSize;					// instance specific input data size
-	UINT32 OutDataSize;					// instance specific result data size
-	UINT8 Data[1];						// when service requested then parameters followed by input data, if service response then response result data
+	int64_t JobIDEx;						// request identifier as received from server for this request instance
+	uint64_t ClassInstanceID;				// class instance referenced
+	uint32_t ClassMethodID;				// identifies class method
+	uint32_t InstanceID;					// service instance specific identifier
+	uint32_t InstanceIDEx;				// combination of both the InstanceID (in bits 0..9) and ......
+	uint32_t flgReqAvail : 1;				// this service instance is available for processing 
+	uint32_t flgProc: 1;					// this service instance is currently being processed
+	uint32_t flgCpltd: 1;					// service processing has completed and resultset can be sent back to service requester
+	uint32_t JobRslt;						// completion result
+	uint32_t ParamSize;					// instance specific parameter size
+	uint32_t InDataSize;					// instance specific input data size
+	uint32_t OutDataSize;					// instance specific result data size
+	uint8_t Data[1];						// when service requested then parameters followed by input data, if service response then response result data
 } tsReqResp;
 
 typedef struct TAG_sBKSRegSessionEx
 {
-	UINT8 BKSPType;						// session is providing this teBKSType service
-	UINT8 BKSPState;					// session is currently in this teBKSPProvState registration state 
-	UINT32 NumInstances;				// session can process at most this many service instances
-	UINT32 MaxReqPayloadSize;			// request payloads from the service requester, including framing, can be up to this size (UINT8s),
-	UINT32 MaxRespPayloadSize;			// response payloads from the service provider to requester, including framing, can be up to this  size (UINT8s)
-	UINT32 ReqRespInstSize;				// each service instance requires this much memory
-	UINT32 KeepaliveSecs;				// expecting packet activity from endpoint with periodicity of no more than this number of seconds
-	UINT32 InstancesBusy;				// currently this many requests being serviced in this session (total of instances ready to be processed, being processed, and processing has completed)
-	UINT32 InstancesReqAvail;			// current number of requests ready to be processed
-	UINT32 InstancesProc;				// current number of requests currently being processed
-	UINT32 InstancesCpltd;				// current number of instances completed processing and ready for resultsets to be sent back to requester
-	UINT32 TotNumRequests;				// total number of requests processed by this service provider in the current session
-	UINT32 AllocdReqResp;				// allocation size for pReqResp
-	UINT8 *pReqResp;					// allocation for NumInstances of requests and associated responses (tsReqResp's)
+	uint8_t BKSPType;						// session is providing this teBKSType service
+	uint8_t BKSPState;					// session is currently in this teBKSPProvState registration state 
+	uint32_t NumInstances;				// session can process at most this many service instances
+	uint32_t MaxReqPayloadSize;			// request payloads from the service requester, including framing, can be up to this size (UINT8s),
+	uint32_t MaxRespPayloadSize;			// response payloads from the service provider to requester, including framing, can be up to this  size (UINT8s)
+	uint32_t ReqRespInstSize;				// each service instance requires this much memory
+	uint32_t KeepaliveSecs;				// expecting packet activity from endpoint with periodicity of no more than this number of seconds
+	uint32_t InstancesBusy;				// currently this many requests being serviced in this session (total of instances ready to be processed, being processed, and processing has completed)
+	uint32_t InstancesReqAvail;			// current number of requests ready to be processed
+	uint32_t InstancesProc;				// current number of requests currently being processed
+	uint32_t InstancesCpltd;				// current number of instances completed processing and ready for resultsets to be sent back to requester
+	uint32_t TotNumRequests;				// total number of requests processed by this service provider in the current session
+	uint32_t AllocdReqResp;				// allocation size for pReqResp
+	uint8_t *pReqResp;					// allocation for NumInstances of requests and associated responses (tsReqResp's)
 	tsTxdRxd TxdRxd;					// holding low level send/receive buffers + connected socket
 } tsBKSRegSessionEx;
 
@@ -93,24 +93,24 @@ typedef struct TAG_sBKSRegSessionEx
 typedef struct TAG_sBKSType
 {
 	teBKSPType BKSPType;					// registering this service type
-	UINT32 ProviderVersion;					// service provider version 
-	UINT32 MaxServiceInsts;					// limited to support a maximum of this many service instances
-	UINT32 MaxQuerySeqLen;					// accepting query sequences up to this length
-	UINT32 MaxTargSeqLen;					// accepting target sequences up to this length
-	UINT32 MaxReqPayloadSize;				// request payloads from the service requester, including framing, can be up to this size (UINT8s),
-	UINT32 MaxRespPayloadSize;				// response payloads from the service provider to requester, including framing, can be up to this  size (UINT8s)
+	uint32_t ProviderVersion;					// service provider version 
+	uint32_t MaxServiceInsts;					// limited to support a maximum of this many service instances
+	uint32_t MaxQuerySeqLen;					// accepting query sequences up to this length
+	uint32_t MaxTargSeqLen;					// accepting target sequences up to this length
+	uint32_t MaxReqPayloadSize;				// request payloads from the service requester, including framing, can be up to this size (UINT8s),
+	uint32_t MaxRespPayloadSize;				// response payloads from the service provider to requester, including framing, can be up to this  size (UINT8s)
 
 	double ScalePayload;					// ScaledPayload = (MaxReqPayloadSize + MaxTargSeqLen) * ScalePayload
 	double ScaleTargLen;					// ScaledTargLen = MaxTargSeqLen * ScaleTargLen
 	double ScaleQueryLen;					// ScaledQueryLen = MaxTargSeqLen * ScaleQueryLen
 	double ScaleScaledTargQuery;			// ScaledScaledTargQuery = (ScaledTargLen * ScaledQueryLen) * ScaleScaledTargQuery;
 	double AvailResources;					// OfferedInstances = AvailResources / (ScaledScaledTargQuery + ScalePayload);
-	UINT32(*pfnCostNumInstances)(teBKSPType BKSPType,			// costing function for determining number of service instances to offer for this service type
-										UINT32 MaxServiceInsts,			// limited to support a maximum of this many service instances
-										UINT32 MaxQuerySeqLen,			// accepted query sequences can be up to this length
-										UINT32 MaxTargSeqLen,			// accepted target sequences can be up to this length
-										UINT32 MaxReqPayloadSize,		// request payloads from the service requester, including framing, can be up to this size (UINT8s),
-										UINT32 MaxRespPayloadSize,		// response payloads from the service provider to requester, including framing, can be up to this  size (UINT8s)
+	uint32_t(*pfnCostNumInstances)(teBKSPType BKSPType,			// costing function for determining number of service instances to offer for this service type
+										uint32_t MaxServiceInsts,			// limited to support a maximum of this many service instances
+										uint32_t MaxQuerySeqLen,			// accepted query sequences can be up to this length
+										uint32_t MaxTargSeqLen,			// accepted target sequences can be up to this length
+										uint32_t MaxReqPayloadSize,		// request payloads from the service requester, including framing, can be up to this size (UINT8s),
+										uint32_t MaxRespPayloadSize,		// response payloads from the service provider to requester, including framing, can be up to this  size (UINT8s)
 										double ScalePayload,			// ScaledPayload = (MaxReqPayloadSize + MaxTargSeqLen) * ScalePayload
 										double ScaleTargLen,			// ScaledTargLen = MaxTargSeqLen * ScaleTargLen
 										double ScaleQueryLen,			// ScaledQueryLen = MaxTargSeqLen * ScaleQueryLen
@@ -123,20 +123,20 @@ typedef struct TAG_sWorkerInstance {
 	void *pThis;					// will be initialised to pt to class instance
 #ifdef _WIN32
 	HANDLE threadHandle;			// handle as returned by _beginthreadex()
-	UINT32 threadID;				// identifier as set by _beginthreadex()
+	uint32_t threadID;				// identifier as set by _beginthreadex()
 #else
 	int threadRslt;					// result as returned by pthread_create ()
 	pthread_t threadID;				// identifier as set by pthread_create ()
 #endif
 	int Rslt;						// processing result
-	UINT8 *pReqData;				// malloc'd (cMaxReqDataSize) to hold request data
-	UINT8 *pParamData;              // malloc'd (cMaxReqParamSize) to hold any paramertisations
-	UINT8 *pRespData;               // malloc'd (cMaxRespDataSize) to hold response data
+	uint8_t *pReqData;				// malloc'd (cMaxReqDataSize) to hold request data
+	uint8_t *pParamData;              // malloc'd (cMaxReqParamSize) to hold any paramertisations
+	uint8_t *pRespData;               // malloc'd (cMaxRespDataSize) to hold response data
 	char *pszBuffer;                // malloc'd )(cMaxMFABuffSize) to hold any textual alignment sequences
 } tsWorkerInstance;
 
 typedef struct TAG_sClassInstance {
-	UINT64 ClassInstanceID;				// monotonically incremented 
+	uint64_t ClassInstanceID;				// monotonically incremented 
 	time_t LastAccessed;				// when this class instance was last accessed, used to expire unused class instances
 	CSSW *pClass;						// if non-null then pts to instantiated class instance	
 	} tsClassInstance;
@@ -153,28 +153,28 @@ class CBKSProvider
 	bool m_bCreatedMutexes;								// set true after serialisation locks/mutexes initialised
 	bool m_bTermConnectionReq;							// connection termination has been requested and is either being progressed or termination has completed
 	bool m_bNotifiedReqs;								// set TRUE if control message has been sent to control socket 2
-	UINT32 m_NumInitTypes;								// number of service types initialised in m_BKSTypes[]
+	uint32_t m_NumInitTypes;								// number of service types initialised in m_BKSTypes[]
 	tsBKSType m_BKSTypes[eBKSPTPlaceHolder - 1];		// entry for each potentially supported service type indexed by Type-1
 
 	tsBKSRegSessionEx m_BKSConnection;							// server connection
 
-	UINT32 m_ReqNumWorkerInsts;							// number of worker instance threads to start
+	uint32_t m_ReqNumWorkerInsts;							// number of worker instance threads to start
 #ifdef WIN32
-	alignas(4) volatile UINT32 m_NumPendCpltd;			// count of threads waiting to gain lock in JobResponse() to notify job completed response 
-	alignas(4) volatile UINT32  m_NumWorkerInsts;				// number of worker instance threads actually started
-	alignas(4) volatile UINT32  m_NumSWAlignReqs;				// number of SW alignments requested
-	alignas(4) volatile UINT32 m_TermAllThreads;                // will be set to 1 if all worker threads are to terminate
+	alignas(4) volatile uint32_t m_NumPendCpltd;			// count of threads waiting to gain lock in JobResponse() to notify job completed response 
+	alignas(4) volatile uint32_t  m_NumWorkerInsts;				// number of worker instance threads actually started
+	alignas(4) volatile uint32_t  m_NumSWAlignReqs;				// number of SW alignments requested
+	alignas(4) volatile uint32_t m_TermAllThreads;                // will be set to 1 if all worker threads are to terminate
 #else
-	__attribute__((aligned(4))) volatile UINT32 m_NumPendCpltd;			// count of threads waiting to gain lock in JobResponse() to notify job completed response 
-	__attribute__((aligned(4))) volatile UINT32  m_NumWorkerInsts;				// number of worker instance threads actually started
-	__attribute__((aligned(4)))  volatile UINT32  m_NumSWAlignReqs;				// number of SW alignments requested
-	__attribute__((aligned(4))) volatile UINT32 m_TermAllThreads;                  // will be set to 1 if all worker threads are to terminate
+	__attribute__((aligned(4))) volatile uint32_t m_NumPendCpltd;			// count of threads waiting to gain lock in JobResponse() to notify job completed response 
+	__attribute__((aligned(4))) volatile uint32_t  m_NumWorkerInsts;				// number of worker instance threads actually started
+	__attribute__((aligned(4)))  volatile uint32_t  m_NumSWAlignReqs;				// number of SW alignments requested
+	__attribute__((aligned(4))) volatile uint32_t m_TermAllThreads;                  // will be set to 1 if all worker threads are to terminate
 #endif
 	tsWorkerInstance m_WorkerInstances[cMaxServiceInsts];	// to hold all worker instance thread parameters
 
-	UINT32 m_MaxClassInsts;									// at most this many class instances can be instantiated
-	UINT32 m_NumClassInsts;									// currently this many class instances have been instantiated in m_ClassInstances[];
-	UINT64 m_HiClassInstanceID;								// highest class instance identifier thus far allocated							
+	uint32_t m_MaxClassInsts;									// at most this many class instances can be instantiated
+	uint32_t m_NumClassInsts;									// currently this many class instances have been instantiated in m_ClassInstances[];
+	uint64_t m_HiClassInstanceID;								// highest class instance identifier thus far allocated							
 	tsClassInstance m_ClassInstances[cMaxClassInsts];		// all possible class instances
 
 	tsTxdRxd m_Ctrl[2];									// Ctrl[0] written to by threads needing to signal select() processing thread, select() processing thread monitors m_Ctrl[1]
@@ -227,13 +227,13 @@ class CBKSProvider
 	bool RxData(tsTxdRxd *pRxd);
 	bool TxData(tsTxdRxd *pTxd);
 
-	bool NotifyCtrl(UINT8 Msg = 0);			// notify via control sockets that, default, there is at least 1 response available to be sent to service requester
+	bool NotifyCtrl(uint8_t Msg = 0);			// notify via control sockets that, default, there is at least 1 response available to be sent to service requester
 	bool SendCtrlMsg(int Len,				// number of control message bytes to send ptd at by pCtrlMsg, can be 0
-								UINT8 *pCtrlMsg);	// pCtrlMsg pts to control message bytes
+								uint8_t *pCtrlMsg);	// pCtrlMsg pts to control message bytes
 	int								// received message is this length, 0 if no outstanding messages, < 0 if errors
 			RcvCtrl(int BuffLen,			// available buffer into which the control message can be copied 
-		UINT8 *pBuff);			// copy control message into this buffer
-	bool ProcessCtrlMsg(int MsgLen,UINT8 *pMsg);			// process a message received by control socket m_Ctrl[1] - note: currently these messages are simply discarded
+		uint8_t *pBuff);			// copy control message into this buffer
+	bool ProcessCtrlMsg(int MsgLen,uint8_t *pMsg);			// process a message received by control socket m_Ctrl[1] - note: currently these messages are simply discarded
 
 	bool ShutdownConnection(socket_t *pSocket);
 
@@ -252,20 +252,20 @@ class CBKSProvider
 						int MaxClassInsts,		// max number of class instances supported (may differ from MaxServInsts)
 						int MaxServMemGB);		// max allocatable memory available for all service instances
 
-	int StartWorkerThreads(UINT32 NumInstances,	// this number of worker threads required
-						   UINT8 BKSPType);		// workers are providing this service type
+	int StartWorkerThreads(uint32_t NumInstances,	// this number of worker threads required
+						   uint8_t BKSPType);		// workers are providing this service type
 
 	int TerminateWorkerThreads(void);			// terminate all worker threads
 
 	int											// marshaled parameter required this many bytes
-		MarshalResp(UINT8 *pInto,				// marshal into this list
+		MarshalResp(uint8_t *pInto,				// marshal into this list
 				teRMIParamType Type,				// parameter type
 				void *pValue,					// parameter value
-				UINT32 ValLen);					// length of parameter ptd to by pValue, only used if parameter type is pUint8
+				uint32_t ValLen);					// length of parameter ptd to by pValue, only used if parameter type is pUint8
 
 	int
-		UnmarshalReq(UINT32 DataLen,
-					UINT8 *pFrom,		// unmarshal from this marshalled parameter list
+		UnmarshalReq(uint32_t DataLen,
+					uint8_t *pFrom,		// unmarshal from this marshalled parameter list
 					void *pValue);
 
 public:
@@ -276,23 +276,23 @@ public:
 
 	int					// returns total number of registered service types or teBSFrsltCodes error code if any parameterisation errors or already registered type
 		RegServiceType(teBKSPType BKSPType = eBKSPTSmithWaterman,			// registering this service type
-					   UINT32 ProviderVersion = cServiceProviderVersion,	// service provider version 
-					   UINT32 MaxServiceInsts = cMaxServiceProviderInsts,	// limited to support a maximum of this many service instances
-					   UINT32 MaxQuerySeqLen = cMaxSWQuerySeqLen,			// accepted query sequences can be up to this length
-					   UINT32 MaxTargSeqLen = cMaxSWTargSeqLen,				// accepted target sequences can be up to this length
-					   UINT32 MaxReqPayloadSize = cMaxSWReqPayloadSize,		// request payloads from the service requester, including framing, can be up to this size (UINT8s),
-					   UINT32 MaxRespPayloadSize = cMaxSWRespPayloadSize,	// response payloads from the service provider to requester, including framing, can be up to this  size (UINT8s)
+					   uint32_t ProviderVersion = cServiceProviderVersion,	// service provider version 
+					   uint32_t MaxServiceInsts = cMaxServiceProviderInsts,	// limited to support a maximum of this many service instances
+					   uint32_t MaxQuerySeqLen = cMaxSWQuerySeqLen,			// accepted query sequences can be up to this length
+					   uint32_t MaxTargSeqLen = cMaxSWTargSeqLen,				// accepted target sequences can be up to this length
+					   uint32_t MaxReqPayloadSize = cMaxSWReqPayloadSize,		// request payloads from the service requester, including framing, can be up to this size (UINT8s),
+					   uint32_t MaxRespPayloadSize = cMaxSWRespPayloadSize,	// response payloads from the service provider to requester, including framing, can be up to this  size (UINT8s)
 						double ScalePayload = 1.0,					// ScaledPayload = (MaxReqPayloadSize + MaxTargSeqLen) * ScalePayload
 						double ScaleTargLen = 1.0,					// ScaledTargLen = MaxTargSeqLen * ScaleTargLen
 						double ScaleQueryLen = 1.0,					// ScaledQueryLen = MaxTargSeqLen * ScaleQueryLen
 						double ScaleScaledTargQuery = 0.05,			// ScaledScaledTargQuery = (ScaledTargLen * ScaledQueryLen) * ScaleScaledTargQuery;
 						double AvailResources = 256000000000.0,				// OfferedInstances = AvailResources / (ScaledScaledTargQuery + ScalePayload);
-					   UINT32  (*pfnCostNumInstances)(teBKSPType BKSPType,				// determine number of service instances to offer for this service type
-													  UINT32 MaxServiceInsts,			// limited to support a maximum of this many service instances
-													  UINT32 MaxQuerySeqLen,			// accepted query sequences can be up to this length
-													  UINT32 MaxTargSeqLen,			// accepted target sequences can be up to this length
-													  UINT32 MaxReqPayloadSize,		// request payloads from the service requester, including framing, can be up to this size (UINT8s),
-													  UINT32 MaxRespPayloadSize,		// response payloads from the service provider to requester, including framing, can be up to this  size (UINT8s)
+					   uint32_t  (*pfnCostNumInstances)(teBKSPType BKSPType,				// determine number of service instances to offer for this service type
+													  uint32_t MaxServiceInsts,			// limited to support a maximum of this many service instances
+													  uint32_t MaxQuerySeqLen,			// accepted query sequences can be up to this length
+													  uint32_t MaxTargSeqLen,			// accepted target sequences can be up to this length
+													  uint32_t MaxReqPayloadSize,		// request payloads from the service requester, including framing, can be up to this size (UINT8s),
+													  uint32_t MaxRespPayloadSize,		// response payloads from the service provider to requester, including framing, can be up to this  size (UINT8s)
 													  double ScalePayload,					// ScaledPayload = (MaxReqPayloadSize + MaxTargSeqLen) * ScalePayload
 													  double ScaleTargLen,					// ScaledTargLen = MaxTargSeqLen * ScaleTargLen
 													  double ScaleQueryLen,				// ScaledQueryLen = MaxTargSeqLen * ScaleQueryLen
@@ -311,26 +311,26 @@ public:
 
 
 	int			// 0 no service request job available, 1 job details are being returned, -1 job is available but MaxParamSize < required, -2 job available but MaxRequestData < required, -3 if session being terminated
-			GetJobToProcess(UINT32 *pInstanceID,		// service instance identifier, the JobResponse() must use this identifier
-						UINT64 *pClassInstanceID,	// returned class instance to apply job to
-						UINT32 *pClassMethodID,		// returned class method to apply on class instance
-					    UINT32 *pMaxParamsSize,		// on input, max sized parameter block accepted, on return then the actual size of the parameter block
-						UINT8 *pParams,				// returned parameter block
-						UINT32 *pMaxRequestData,	// on input the max sized request data block accepted, on return the actual size of the request data block
-						UINT8 *pRequestData);		// returned request data block
+			GetJobToProcess(uint32_t *pInstanceID,		// service instance identifier, the JobResponse() must use this identifier
+						uint64_t *pClassInstanceID,	// returned class instance to apply job to
+						uint32_t *pClassMethodID,		// returned class method to apply on class instance
+					    uint32_t *pMaxParamsSize,		// on input, max sized parameter block accepted, on return then the actual size of the parameter block
+						uint8_t *pParams,				// returned parameter block
+						uint32_t *pMaxRequestData,	// on input the max sized request data block accepted, on return the actual size of the request data block
+						uint8_t *pRequestData);		// returned request data block
 
 
 	int			// 0 if response accepted, -1 if job does not exist or parameterisation errors, -3 if session terminating 
-			JobResponse(INT32 InstanceID,			// service instance identifier returned by GetJobToProcess
-					UINT64 ClassInstanceID,		// response is for this class instance
-				    UINT32 ProcRslt,			// service request processing result
-					UINT32 ResponseSize,		// response data block size
-					UINT8 *pResponseData);		// response data
+			JobResponse(int32_t InstanceID,			// service instance identifier returned by GetJobToProcess
+					uint64_t ClassInstanceID,		// response is for this class instance
+				    uint32_t ProcRslt,			// service request processing result
+					uint32_t ResponseSize,		// response data block size
+					uint8_t *pResponseData);		// response data
 
 
-	tsClassInstance *LocateClassInstance(UINT64 ClassInstanceID);
+	tsClassInstance *LocateClassInstance(uint64_t ClassInstanceID);
 	tsClassInstance *AllocClassInstance(void); // allocate a new tsClassInstance and initialise with ClassInstanceID 
-	bool FreeClassInstance(UINT64 ClassInstanceID); // free a previously allocated class instance
+	bool FreeClassInstance(uint64_t ClassInstanceID); // free a previously allocated class instance
 
 };
 

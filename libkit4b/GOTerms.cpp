@@ -578,7 +578,7 @@ if(!m_FileHdr.GOTermcnt)	// any terms in file to load?
 // allocate all memory up front before loading from file
 if(m_FileHdr.GOIDcnt)
 	{
-	if((m_pGOIDs = (tsGOID *)new unsigned char [m_FileHdr.GOIDSize])==NULL)
+	if((m_pGOIDs = (tsGOID *)new uint8_t [m_FileHdr.GOIDSize])==NULL)
 		return(eBSFerrMem);
 	}
 m_GOIDcnt =	m_FileHdr.GOIDcnt;
@@ -587,7 +587,7 @@ m_AllocdGOIDs = m_FileHdr.GOIDSize;
 
 if(m_FileHdr.GOTagValcnt)
 	{
-	if((m_pGOTagVals = (tsGOTagVal *)new unsigned char [m_FileHdr.GOTagValSize])==NULL)
+	if((m_pGOTagVals = (tsGOTagVal *)new uint8_t [m_FileHdr.GOTagValSize])==NULL)
 		{
 		ClearTerms();
 		return(eBSFerrMem);
@@ -598,7 +598,7 @@ m_NxtGOTagValOfs = m_FileHdr.GOTagValSize;
 m_AllocdGOTagVals = m_FileHdr.GOTagValSize;
 if(m_FileHdr.ChildGOIDscnt)
 	{
-	if((m_pGOChildIDs = (int *)new unsigned char [m_FileHdr.ChildGOIDsSize])==NULL)
+	if((m_pGOChildIDs = (int *)new uint8_t [m_FileHdr.ChildGOIDsSize])==NULL)
 		{
 		ClearTerms();
 		return(eBSFerrMem);
@@ -611,7 +611,7 @@ m_AllocdGOChildIDs = m_FileHdr.ChildGOIDscnt;
 
 if(m_FileHdr.ParentGOIDscnt)
 	{
-	if((m_pGOParentIDs = (int *)new unsigned char [m_FileHdr.ParentGOIDsSize])==NULL)
+	if((m_pGOParentIDs = (int *)new uint8_t [m_FileHdr.ParentGOIDsSize])==NULL)
 		{
 		ClearTerms();
 		return(eBSFerrMem);
@@ -624,7 +624,7 @@ m_AllocdGOParentIDs = m_FileHdr.ParentGOIDscnt;
 
 if(m_FileHdr.AltGOIDscnt)
 	{
-	if((m_pAltGOIDs = (int *)new unsigned char [m_FileHdr.AltGOIDsSize])==NULL)
+	if((m_pAltGOIDs = (int *)new uint8_t [m_FileHdr.AltGOIDsSize])==NULL)
 		{
 		ClearTerms();
 		return(eBSFerrMem);
@@ -636,7 +636,7 @@ m_AllocdAltGOIDs = m_FileHdr.AltGOIDscnt;
 
 if(m_FileHdr.GOTermcnt)
 	{
-	if((m_pGOTerms = (tsGOTerm *)new unsigned char [m_FileHdr.GOTermSize])==NULL)
+	if((m_pGOTerms = (tsGOTerm *)new uint8_t [m_FileHdr.GOTermSize])==NULL)
 		{
 		ClearTerms();
 		return(eBSFerrMem);
@@ -660,7 +660,7 @@ if(m_pGOIDs != NULL)
 	if(Rslt == eBSFSuccess && m_bIsBigEndian)
 		{
 		tsGOID *pGOID = m_pGOIDs;
-		UINT8 *pByte = (UINT8 *)pGOID;
+		uint8_t *pByte = (uint8_t *)pGOID;
 		for(Idx = 0; Idx < m_GOIDcnt; Idx++)
 			{
 			pByte += pGOID->Len + sizeof(tsGOID);
@@ -676,7 +676,7 @@ if(Rslt == eBSFSuccess && m_pGOTagVals != NULL)
 	if(Rslt == eBSFSuccess && m_bIsBigEndian)
 		{
 		tsGOTagVal *pGOTagVal = m_pGOTagVals;
-		UINT8 *pByte = (UINT8 *)pGOTagVal;
+		uint8_t *pByte = (uint8_t *)pGOTagVal;
 		for(Idx = 0; Idx < m_GOTagValcnt; Idx++)
 			{
 			pByte += pGOTagVal->Len + sizeof(tsGOTagVal);
@@ -691,7 +691,7 @@ if(Rslt == eBSFSuccess && m_pGOChildIDs != NULL)
 	Rslt = ReadDisk(m_FileHdr.ChildGOIDsOfs,m_FileHdr.ChildGOIDsSize,m_pGOChildIDs);
 	if(Rslt == eBSFSuccess && m_bIsBigEndian)
 		{
-		INT32 *pGOChildID = m_pGOChildIDs;
+		int32_t *pGOChildID = m_pGOChildIDs;
 		for(Idx = 0; Idx < m_ChildGOIDscnt; Idx++,pGOChildID++)
 			*pGOChildID = SwapUI32Endians(*pGOChildID);
 		}
@@ -702,7 +702,7 @@ if(Rslt == eBSFSuccess && m_pGOParentIDs != NULL)
 	Rslt = ReadDisk(m_FileHdr.ParentGOIDsOfs,m_FileHdr.ParentGOIDsSize,m_pGOParentIDs);
 	if(Rslt == eBSFSuccess && m_bIsBigEndian)
 		{
-		INT32 *pGOParentID = m_pGOParentIDs;
+		int32_t *pGOParentID = m_pGOParentIDs;
 		for(Idx = 0; Idx < m_ParentGOIDscnt; Idx++,pGOParentID++)
 			*pGOParentID = SwapUI32Endians(*pGOParentID);
 		}
@@ -713,7 +713,7 @@ if(Rslt == eBSFSuccess && m_pAltGOIDs != NULL)
 	Rslt = ReadDisk(m_FileHdr.AltGOIDsOfs,m_FileHdr.AltGOIDsSize,m_pAltGOIDs);
 	if(Rslt == eBSFSuccess && m_bIsBigEndian)
 		{
-		INT32 *pAltGOIDs = m_pAltGOIDs;
+		int32_t *pAltGOIDs = m_pAltGOIDs;
 		for(Idx = 0; Idx < m_AltGOIDscnt; Idx++,pAltGOIDs++)
 			*pAltGOIDs = SwapUI32Endians(*pAltGOIDs);
 		}
@@ -755,7 +755,7 @@ return(Rslt);
 // ReadDisk
 // Reads block of size 'Len' from disk starting at 'DiskOfs' into preallocated memory at 'pTo'
 teBSFrsltCodes
-CGOTerms::ReadDisk(INT64 DiskOfs,int Len,void *pTo)
+CGOTerms::ReadDisk(int64_t DiskOfs,int Len,void *pTo)
 {
 if(_lseeki64(m_hFile,DiskOfs,SEEK_SET)!=DiskOfs)
 	{
@@ -812,7 +812,7 @@ if(m_hFile != -1 && m_bCreate)		// if file opened for write because creating..
 		if(m_bIsBigEndian)
 			{
 			tsGOID *pGOID = m_pGOIDs;
-			UINT8 *pByte = (UINT8 *)pGOID;
+			uint8_t *pByte = (uint8_t *)pGOID;
 			for(Idx = 0; Idx < m_GOIDcnt; Idx++)
 				{
 				pByte += pGOID->Len + sizeof(tsGOID);
@@ -840,7 +840,7 @@ if(m_hFile != -1 && m_bCreate)		// if file opened for write because creating..
 		if(m_bIsBigEndian)
 			{
 			tsGOTagVal *pGOTagVal = m_pGOTagVals;
-			UINT8 *pByte = (UINT8 *)pGOTagVal;
+			uint8_t *pByte = (uint8_t *)pGOTagVal;
 			for(Idx = 0; Idx < m_GOTagValcnt; Idx++)
 				{
 				pByte += pGOTagVal->Len + sizeof(tsGOTagVal);
@@ -868,7 +868,7 @@ if(m_hFile != -1 && m_bCreate)		// if file opened for write because creating..
 
 		if(m_bIsBigEndian)
 			{
-			INT32 *pGOChildID = m_pGOChildIDs;
+			int32_t *pGOChildID = m_pGOChildIDs;
 			for(Idx = 0; Idx < m_ChildGOIDscnt; Idx++,pGOChildID++)
 				*pGOChildID = SwapUI32Endians(*pGOChildID);
 			}
@@ -890,7 +890,7 @@ if(m_hFile != -1 && m_bCreate)		// if file opened for write because creating..
 
 		if(m_bIsBigEndian)
 			{
-			INT32 *pGOParentID = m_pGOParentIDs;
+			int32_t *pGOParentID = m_pGOParentIDs;
 			for(Idx = 0; Idx < m_ParentGOIDscnt; Idx++,pGOParentID++)
 				*pGOParentID = SwapUI32Endians(*pGOParentID);
 			}
@@ -913,7 +913,7 @@ if(m_hFile != -1 && m_bCreate)		// if file opened for write because creating..
 
 		if(m_bIsBigEndian)
 			{
-			INT32 *pAltGOIDs = m_pAltGOIDs;
+			int32_t *pAltGOIDs = m_pAltGOIDs;
 			for(Idx = 0; Idx < m_AltGOIDscnt; Idx++,pAltGOIDs++)
 				*pAltGOIDs = SwapUI32Endians(*pAltGOIDs);
 			}
@@ -1406,7 +1406,7 @@ int
 CGOTerms::GetGOID(char *pszGOID)
 {
 unsigned short Len;
-UINT16 Hash;
+uint16_t Hash;
 tsGOID *pID;
 if(pszGOID == NULL || *pszGOID == '\0')
 	return(eBSFerrParams);
@@ -1433,8 +1433,8 @@ return(eBSFerrGOID);	// couldn't locate
 int
 CGOTerms::AddGOID(char *pszGOID)
 {
-UINT16 Hash;
-unsigned char *pTmp;
+uint16_t Hash;
+uint8_t *pTmp;
 tsGOID *pID;
 unsigned short Len;
 int GOIDofs;
@@ -1468,7 +1468,7 @@ if(m_pGOIDs == NULL || (m_NxtGOIDofs + (int)Len + (int)sizeof(tsGOID)) >= m_Allo
 		}
 	else
 		Mem2Alloc = m_AllocdGOIDs + cAllocGOIDs;
-	pTmp = new unsigned char[Mem2Alloc];
+	pTmp = new uint8_t[Mem2Alloc];
 	if(pTmp == NULL)
 		return(eBSFerrMem);
 
@@ -1516,7 +1516,7 @@ int
 CGOTerms::LocateGOTagVal(teStanzaTags Tag,char *pszVal)
 {
 unsigned short Len;
-UINT16 Hash;
+uint16_t Hash;
 tsGOTagVal *pTagVal;
 
 if(pszVal == NULL || *pszVal == '\0')
@@ -1545,8 +1545,8 @@ return(eBSFerrGOTagVal);	// couldn't locate
 int 
 CGOTerms::AddGOTagVal(teStanzaTags Tag,char *pszVal)
 {
-UINT16 Hash;
-unsigned char *pTmp;
+uint16_t Hash;
+uint8_t *pTmp;
 tsGOTagVal *pTagVal;
 unsigned short Len;
 int GOTagValOfs;
@@ -1579,7 +1579,7 @@ if(m_pGOTagVals == NULL || (m_NxtGOTagValOfs + (int)Len + (int)sizeof(tsGOTagVal
 		}
 	else
 		Mem2Alloc = m_AllocdGOTagVals + cAllocGOTagVals;
-	pTmp = new unsigned char[Mem2Alloc];
+	pTmp = new uint8_t[Mem2Alloc];
 	if(pTmp == NULL)
 		return(eBSFerrMem);
 
@@ -2488,7 +2488,7 @@ m_CurUpdateSeq = 0;
 unsigned int
 CGOTerms::ClampCount(unsigned int Count,unsigned int Increment)
 {
-if(((INT64)Count + Increment) > cClampCountVal)
+if(((int64_t)Count + Increment) > cClampCountVal)
 	return(cClampCountVal);
 return(Count + Increment);
 }

@@ -158,14 +158,14 @@ int CurMinPEMergeOverlap;	// if probe PE1 and probe PE2 being considered for mer
 int	CurMinPETotSeqLen2SE;	// cuurent minimum total of PE1 and PE2 end sequence lengths
 int	CurMinPESeqLen2SE;      // current minimum of either PE1 or PE2 end sequence lengths
 
-UINT32 CurTotNumPEs;	// total number of paired ends
+uint32_t CurTotNumPEs;	// total number of paired ends
 int CurPE1MinLen;		// returned PE1 min length
 int CurPE1MeanLen;		// returned PE1 mean length
 int CurPE1MaxLen;		// returned PE1 max length
 int CurPE2MinLen;		// returned PE2 min length
 int CurPE2MeanLen;		// returned PE2 mean length
 int CurPE2MaxLen;		// returned PE2 max length
-UINT32 CurTotNumSEs;	// total number of single ends
+uint32_t CurTotNumSEs;	// total number of single ends
 int CurSEMinLen;		// returned SE min length
 int CurSEMeanLen;		// returned SE mean length
 int CurSEMaxLen;		// returned SE max length
@@ -181,8 +181,8 @@ bool bAtMinThres;		// set true when processing with minimal thresholds
 bool bAtInterThres;		// set true when processing with intermediate thresholds
 int RemainingThresSteps;  // remaining threhold reduction steps		
 
-UINT32 PrevNumPartialSeqs2Assemb;
-UINT32 PrevNumSeqs2Assemb;
+uint32_t PrevNumPartialSeqs2Assemb;
+uint32_t PrevNumSeqs2Assemb;
 
 m_bSenseStrandOnly = bSenseStrandOnly;		// sequences from sense strand specific
 m_bSingleEnded = bSingleEnded;				// treat all sequences as being single ended even if loaded as paired ends
@@ -545,12 +545,12 @@ CdeNovoAssemb::CombinePartialsWithUnmerged(bool bTrim15bp,						// if true then 
 									int TrimPE2SE)								// trim overlength non-overlapping PEs both 5' and 3' ends by this many bases before treating as SE
 {
 tSeqID SeqID;
-UINT16 *pSeqFlags;
-UINT16 SeqFlags;
+uint16_t *pSeqFlags;
+uint16_t SeqFlags;
 tSeqWrd4 *pPE1SeqWrd;
-UINT32 PE1SeqLen;
+uint32_t PE1SeqLen;
 tSeqWrd4 *pPE2SeqWrd;
-UINT32 PE2SeqLen;
+uint32_t PE2SeqLen;
 tSeqWrd4 *pSeqWrd;
 tSeqWrd4 *pSeqWrds;
 tSeqWrd4 *pPackSeq;
@@ -568,7 +568,7 @@ int TrimSeqLen;
 int TrimNumSeqWrds;
 tSeqWrd4 *pTrimSeqWrd;
 
-INT64 PartialSeqsLen;
+int64_t PartialSeqsLen;
 
 // if at least one partial then need to iterate over all sequences and add those which have not been flagged as (cFlgAsmbSeed | cFlgAsmbExtn | cFlgAsmbCplt) to
 // the partial sequences ready for the next merge pass
@@ -607,7 +607,7 @@ if(m_NumPartialSeqs2Assemb)	// almost certainly there will be at least one but b
 			}
 
 		// add to partials ready for next merge pass
-		if((PartialSeqsLen = SavePartialSeqs(PE1SeqLen,pPE1SeqWrd,PE2SeqLen,pPE2SeqWrd)) < (INT64)0)
+		if((PartialSeqsLen = SavePartialSeqs(PE1SeqLen,pPE1SeqWrd,PE2SeqLen,pPE2SeqWrd)) < (int64_t)0)
 			return((int)PartialSeqsLen);
 		}
 
@@ -647,7 +647,7 @@ if(m_NumPartialSeqs2Assemb)	// almost certainly there will be at least one but b
 		// The function caller can force all PEs to be converted into SEs by simply setting MinPETotSeqLen2SE to 1
 		if((SeqFlags & cFlgSeqPE) && !(SeqFlags & cFlgSeqPE2))	// if PE1 then check if lengths for PE1 and/or PE2 are such that should be reclassified as being SE
 			{
-			UINT16 SeqFlagsPE2;
+			uint16_t SeqFlagsPE2;
 			tSeqWrd4 SeqLenPE2;
 			NumSeqWrds = (SeqLen + 14) / 15;
 			SeqLenPE2 = pSeqWrd[NumSeqWrds];
@@ -763,7 +763,7 @@ if((memreq * 2) < m_Sequences.AllocMemSeqs2Assemb)
 		}
 
 	m_Sequences.pSeqs2Assemb = pAllocd;
-	m_Sequences.AllocMemSeqs2Assemb = (UINT64)memreq;
+	m_Sequences.AllocMemSeqs2Assemb = (uint64_t)memreq;
 	}
 
 memreq =  m_Sequences.AllocMemSeqs2Assemb;	
@@ -784,7 +784,7 @@ if(memreq < m_AllocdPartialSeqs2Assemb)
 		}
 
 	m_pPartialSeqs2Assemb = pAllocd;
-	m_AllocdPartialSeqs2Assemb = (UINT64)memreq;
+	m_AllocdPartialSeqs2Assemb = (uint64_t)memreq;
 	}
 return(eBSFSuccess);
 }
@@ -823,7 +823,7 @@ if(NumThreads > cMaxWorkerThreads)					// clamp number of threads
 m_Sequences.NumProcessed = 0;	
 memset(m_ThreadSeqBlocks,0,sizeof(m_ThreadSeqBlocks));
 m_NxtSeqs2BlockAlloc = 1;		// allocate next thread sequence block starting with this sequence
-m_SeqsPerThreadBlk = max(cMinSeqsThreadBlock,(m_Sequences.NumSeqs2Assemb + m_NumThreads - 1) / ((UINT32)m_NumThreads * 1000));	// nominal number of sequences per thread processing block
+m_SeqsPerThreadBlk = max(cMinSeqsThreadBlock,(m_Sequences.NumSeqs2Assemb + m_NumThreads - 1) / ((uint32_t)m_NumThreads * 1000));	// nominal number of sequences per thread processing block
 return(m_SeqsPerThreadBlk);
 }
 
@@ -832,13 +832,13 @@ return(m_SeqsPerThreadBlk);
 // Identifers returned are for both PE1 and PE2, or for SE/contig 
 int				// 0 if all returned, 1 if PE1 only, 2 if both PE1 and PE2
 CdeNovoAssemb::GetSeqProc(tSeqID *pPE1SeqID,	// returned SE or PE1 sequence identifier
-					  UINT32 *pPE1SeqFlags, // SE or PE1 flags
+					  uint32_t *pPE1SeqFlags, // SE or PE1 flags
 					  tSeqID *pPE2SeqID,	// if PE then PE2 sequence identifier
-					  UINT32 *pPE2SeqFlags, // if PE then PE2 flags
+					  uint32_t *pPE2SeqFlags, // if PE then PE2 flags
 					  int ThreadIdx)		// uniquely identifies calling thread, 1..NumThreads
 {
 tsSeqBlock *pSeqBlock;
-UINT16 *pFlags;
+uint16_t *pFlags;
 int PE1Flags;
 int PE2Flags;
 bool bTermPass;
@@ -975,14 +975,14 @@ tsThreadOverlapExtendPars *pCurThread;
 int ThreadIdx;
 int NumThreads;
 tSeqID CurStartSeqID;
-UINT32 CurSeqAllocIdx;
+uint32_t CurSeqAllocIdx;
 
 double OverlapRate[3];
 
-UINT32 CurNumProcessed = 0;
-UINT32 PrevNumProcessed = 0;
-UINT32 PrevNumOverlapped = 0;
-UINT32 NumOverlapped = 0;
+uint32_t CurNumProcessed = 0;
+uint32_t PrevNumProcessed = 0;
+uint32_t PrevNumOverlapped = 0;
+uint32_t NumOverlapped = 0;
 
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Starting overlap sequence extensions ...");
 
@@ -1239,10 +1239,10 @@ CdeNovoAssemb::MergeWithInDel(int MaxInDelLen,		// can accept an InDel of at mos
 			tSeqWrd4 *pSeq2,		// pts to sequence2
 			etSeqBase *pMerged)     // if sequence1 and sequence2 can be merged then copy merged sequence into this buffer
 {
-UINT8 Seq1Bases[cMaxMergeWithInDelSeqLen+1];				// seq1 is unpacked into this buffer
-UINT8 Seq2Bases[cMaxMergeWithInDelSeqLen+1];				// seq2 is unpacked into this buffer
-UINT8 *pSeq1Base;
-UINT8 *pSeq2Base;
+uint8_t Seq1Bases[cMaxMergeWithInDelSeqLen+1];				// seq1 is unpacked into this buffer
+uint8_t Seq2Bases[cMaxMergeWithInDelSeqLen+1];				// seq2 is unpacked into this buffer
+uint8_t *pSeq1Base;
+uint8_t *pSeq2Base;
 if(Seq1Len > cMaxMergeWithInDelSeqLen || Seq2Len > cMaxMergeWithInDelSeqLen)
 	return(-1);
 if(MaxInDelLen < 0 || MaxInDelLen > cMaxMergeInDelLen)
@@ -1345,23 +1345,23 @@ int NumAcceptedOvl;
 int NumExtdProbes;
 
 tSeqID PE1ProbeSeqID;
-UINT32 PE1ProbeSeqFlags;
-UINT32 PE1ProbeSeqLen;
+uint32_t PE1ProbeSeqFlags;
+uint32_t PE1ProbeSeqLen;
 tSeqWrd4 *pPE1ProbeStartSeqWrd;
 
 tSeqID PE2ProbeSeqID;
-UINT32 PE2ProbeSeqFlags;	
-UINT32 PE2ProbeSeqLen;
+uint32_t PE2ProbeSeqFlags;	
+uint32_t PE2ProbeSeqLen;
 tSeqWrd4 *pPE2ProbeStartSeqWrd;
 
 int OverlapRslt;
 
-UINT32 NumProcessed;
+uint32_t NumProcessed;
 
-UINT32 NumOverlapped;
-UINT32 NumContained;
-UINT32 TotNumPEOverlaps;
-UINT32 TotNumAccepted;
+uint32_t NumOverlapped;
+uint32_t NumContained;
+uint32_t TotNumPEOverlaps;
+uint32_t TotNumAccepted;
 
 int DiagLevel = gDiagnostics.GetFileDiagLevel();
 
@@ -1442,9 +1442,9 @@ while((NumSeqsToProc = GetSeqProc(&PE1ProbeSeqID,&PE1ProbeSeqFlags,&PE2ProbeSeqI
 
 	// don't bother with probes which are smaller than the minimum required overlap; with luck other longer seed sequences will overlap these
     // also if PE probes have been significantly extended but still won't overlap PE1 onto PE2 then don't let these extend further
-	if(PE1ProbeSeqLen < (UINT32)pPars->ProbeMinReqOverlap ||		
+	if(PE1ProbeSeqLen < (uint32_t)pPars->ProbeMinReqOverlap ||		
 		(PE2ProbeSeqID != 0 && 
-			((PE2ProbeSeqLen < (UINT32)pPars->ProbeMinReqOverlap) || ((PE1ProbeSeqLen + PE2ProbeSeqLen) > cMaxPEExtndLen))))
+			((PE2ProbeSeqLen < (uint32_t)pPars->ProbeMinReqOverlap) || ((PE1ProbeSeqLen + PE2ProbeSeqLen) > cMaxPEExtndLen))))
 		{
 		AcquireSerialiseSeqFlags();
 		m_Sequences.pSeqFlags[PE1ProbeSeqID-1] &= ~(cFlgAsmbSeed | cFlgAsmbExtn | cFlgAsmbCplt);
@@ -1613,9 +1613,9 @@ while((NumSeqsToProc = GetSeqProc(&PE1ProbeSeqID,&PE1ProbeSeqFlags,&PE2ProbeSeqI
 			// save probe sequences ready for next merge phase
 	if(NumAcceptedOvl > 0)
 		{
-		INT64 PartialSeqsLen;
+		int64_t PartialSeqsLen;
 		PartialSeqsLen = SavePartialSeqs(pPars->PE1ProbeSeqLen,(tSeqWrd4 *)pPars->pPE1Seq,pPars->PE2ProbeSeqLen,pPars->PE2ProbeSeqLen == 0 ? NULL : (tSeqWrd4 *)pPars->pPE2Seq);
-		if(PartialSeqsLen < (INT64)0)
+		if(PartialSeqsLen < (int64_t)0)
 			return((int)PartialSeqsLen);		// errors
 		}
 	}
@@ -1642,12 +1642,12 @@ typedef struct TAG_sPrevPutTarg {
 int				// returns 0: no merges, 1: merge but no extension, 2: merge with extension
 CdeNovoAssemb::MergeOverlaps(tsThreadOverlapExtendPars *pPars)
 {
-UINT64 SfxWrdIdx;
+uint64_t SfxWrdIdx;
 tSeqWrd4 *pHit;
 tSeqWrd4 *pCurProbeSeq;
 tSeqWrd4 *pCurTargStartSeqWrd;
 int CurProbeSeqLen;
-UINT16 CurProbeSeqFlags;
+uint16_t CurProbeSeqFlags;
 tSeqID CurProbeSeqID;
 
 tSeqID ProcSeqIDs[cSeqIDCacheEntries + 1];
@@ -1664,13 +1664,13 @@ int SecOverlapLen;
 int CurTargSeqLen;
 
 tSeqID PE1TargSeqID;
-UINT16 PE1TargSeqFlags;
+uint16_t PE1TargSeqFlags;
 int PE1TargSeqLen;
 int PE1TargSeq5SubOfs;
 void *pPE1TargStartSeqWrd;
 
 tSeqID PE2TargSeqID;
-UINT16 PE2TargSeqFlags;	
+uint16_t PE2TargSeqFlags;	
 int PE2TargSeqLen;
 int PE2TargSeq5SubOfs;
 void *pPE2TargStartSeqWrd;
@@ -1684,7 +1684,7 @@ int LeftFlankLen;
 int ProbeTargOverlap;
 
 tSeqWrd4 CurTargSeqID;
-UINT16 CurTargSeqFlags;
+uint16_t CurTargSeqFlags;
 
 int CmpRslt;
 int SubOfs;
@@ -1696,7 +1696,7 @@ bool bPE1OverlapsTarg = false;
 
 int MergedLen;
 int DeltaPE1PE2;
-UINT32 NumAcceptedOvl;
+uint32_t NumAcceptedOvl;
 
 CurProbeSeqLen = pPars->PE1ProbeSeqLen;
 CurProbeSeqFlags = pPars->PE1ProbeSeqFlags;
@@ -1744,7 +1744,7 @@ for(SubOfs = 0; SubOfs <= (int)(CurProbeSeqLen - pPars->ProbeMinReqOverlap); Sub
 					PrefixSeq,							// pts to probes flank subsequence
 					MinOvrlp,							// probe length (in bases, not tSeqWrd4's) required to minimally exactly match over
 					m_Sequences.pSeqs2Assemb,			// target sequence
-					(UINT8 *)m_Sequences.pSuffixArray,	// target sequence suffix array
+					(uint8_t *)m_Sequences.pSuffixArray,	// target sequence suffix array
 					0,									// low index in pSfxArray
 					m_Sequences.NumSuffixEls-1);		// high index in pSfxArray
 
@@ -1760,7 +1760,7 @@ for(SubOfs = 0; SubOfs <= (int)(CurProbeSeqLen - pPars->ProbeMinReqOverlap); Sub
 			break;									   // should only be a NULL if exhusted all potential overlaps
 
 		// which target was hit and what length is it?
-		pCurTargStartSeqWrd = (tSeqWrd4 *)GetSeqHeader(pHit,&CurTargSeqID,NULL,NULL,(UINT32 *)&CurTargSeqLen,false);  
+		pCurTargStartSeqWrd = (tSeqWrd4 *)GetSeqHeader(pHit,&CurTargSeqID,NULL,NULL,(uint32_t *)&CurTargSeqLen,false);  
 		if(CurTargSeqID == pPars->PE1ProbeSeqID || CurTargSeqID == pPars->PE2ProbeSeqID)	// if self hit to probe sequence, or effectively a self hit from probes PE1 to PE2, then not interested, try for another target sequence
 			continue;
 
@@ -1820,7 +1820,7 @@ for(SubOfs = 0; SubOfs <= (int)(CurProbeSeqLen - pPars->ProbeMinReqOverlap); Sub
 		// then don't incorporate into current fragment extensions
 		// not serialising read access to the flags with AcquireSerialiseSeqFlags() and  ReleaseSerialiseSeqFlags() there is a significant throughput hit with the serialisation and
 		// later will be checking flags with serialisation before updating flags within AtomicSeqMerge()
-		UINT16 *pFlag;
+		uint16_t *pFlag;
 		pFlag = &m_Sequences.pSeqFlags[CurTargSeqID-1];
 		CurTargSeqFlags = *pFlag;
 
@@ -1905,7 +1905,7 @@ for(SubOfs = 0; SubOfs <= (int)(CurProbeSeqLen - pPars->ProbeMinReqOverlap); Sub
 			if(CurTargSeqFlags & cFlgSeqPE)      // if target PE1 was paired end (not single end) then also need to initialise target PE2 
 				{
 				PE2TargSeqID = PE1TargSeqID + 1;
-				pPE2TargStartSeqWrd = GetSeqHeader(PE2TargSeqID,NULL,NULL,(UINT32 *)&PE2TargSeqLen,false);
+				pPE2TargStartSeqWrd = GetSeqHeader(PE2TargSeqID,NULL,NULL,(uint32_t *)&PE2TargSeqLen,false);
 				PE2TargSeq5SubOfs = 0;			// actual is determined in subsequent overlay processing
 				}
 			else    // else was single ended or a contig so no putative overlap onto target PE2 to be processed 
@@ -1923,7 +1923,7 @@ for(SubOfs = 0; SubOfs <= (int)(CurProbeSeqLen - pPars->ProbeMinReqOverlap); Sub
 			pPE2TargStartSeqWrd = pCurTargStartSeqWrd;
 			PE2TargSeq5SubOfs = SubOfs;
 			PE1TargSeqID = PE2TargSeqID - 1;
-			pPE1TargStartSeqWrd = GetSeqHeader(PE1TargSeqID,NULL,NULL,(UINT32 *)&PE1TargSeqLen,false);
+			pPE1TargStartSeqWrd = GetSeqHeader(PE1TargSeqID,NULL,NULL,(uint32_t *)&PE1TargSeqLen,false);
 			PE1TargSeq5SubOfs = 0;			// actual is determined in subsequent processing
 			}
 

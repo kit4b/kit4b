@@ -1258,7 +1258,7 @@ while((ChromID = m_pBioSeqFile->Next(ChromID))>0)
 			m_pChromSeq = NULL;
 			}
 		int AllocLen = m_ChromSeqLen + m_ChromSeqLen/10; 
-		if((m_pChromSeq = new unsigned char [AllocLen])==NULL)
+		if((m_pChromSeq = new uint8_t [AllocLen])==NULL)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to alloc memory (%d requested) for holding raw sequence data",AllocLen);
 			Reset();

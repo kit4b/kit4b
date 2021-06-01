@@ -163,43 +163,43 @@ typedef struct TAG_sExclZone {
 } tsExclZone;
 
 typedef struct TAG_sRefIDChrom {
-	UINT32 ChromID;			// uniquely identifies chromosome
-	UINT32 Hash;			// hash on chromosome name - GenHash24()
-	UINT32 Next;			// used to link chroms with same Hash 
+	uint32_t ChromID;			// uniquely identifies chromosome
+	uint32_t Hash;			// hash on chromosome name - GenHash24()
+	uint32_t Next;			// used to link chroms with same Hash 
 	char szChromName[cMaxDatasetSpeciesChrom+1];	// chromosome name
 } tsRefIDChrom;
 
 typedef struct TAG_sAlignReadLoci {
-	UINT8 ExprFlag:1;			// 0 if aligned read from control, 1 if from experiment
-	UINT8 Sense:1;				// 0 if '-' or antisense crick, 1 if '+' or sense watson
-	UINT8 FileID:5;				// from which reads alignment file was this alignment loaded
-	UINT32 NormCnts;			// coalesced counts with control vs experiment library size normalisation
-	UINT32 ArtCnts;				// used as temp count storage during artefact reduction processing
-	UINT32 AlignHitIdx;			// current read hit index + 1 for this read
-	UINT32 ChromID;				// identifies hit chromosome - ChromToID(pszChrom)
-	UINT32 Loci;				// 5' start loci on chromosome of this alignment
-	UINT32 ReadLen;				// read length
+	uint8_t ExprFlag:1;			// 0 if aligned read from control, 1 if from experiment
+	uint8_t Sense:1;				// 0 if '-' or antisense crick, 1 if '+' or sense watson
+	uint8_t FileID:5;				// from which reads alignment file was this alignment loaded
+	uint32_t NormCnts;			// coalesced counts with control vs experiment library size normalisation
+	uint32_t ArtCnts;				// used as temp count storage during artefact reduction processing
+	uint32_t AlignHitIdx;			// current read hit index + 1 for this read
+	uint32_t ChromID;				// identifies hit chromosome - ChromToID(pszChrom)
+	uint32_t Loci;				// 5' start loci on chromosome of this alignment
+	uint32_t ReadLen;				// read length
 } tsAlignReadLoci;
 
 typedef struct TAG_sAlignLociInstStarts {
-	UINT32 Bin;					// instance counts are for this bin
-	UINT32 RelLoci;				// instance counts are at this loci
-	UINT32 NumCtrlStarts;		// number of control start loci instances at this loci instance
-	UINT32 NumExprStarts;		// number of experiment start loci instances at this loci instance
+	uint32_t Bin;					// instance counts are for this bin
+	uint32_t RelLoci;				// instance counts are at this loci
+	uint32_t NumCtrlStarts;		// number of control start loci instances at this loci instance
+	uint32_t NumExprStarts;		// number of experiment start loci instances at this loci instance
 } tsAlignLociInstStarts ;
 
 typedef struct TAG_sAlignBin {
-	UINT32 Bin;					// poisson counts are from this bin (1..n)
-	UINT32 BinRelStartLoci;		// bin starts at this relative loci
-	UINT32 BinRelEndLoci;		// bin starts at this relative loci
-	UINT32 NumCtrlInstStarts;	// number of control start loci instances in this bin
-	UINT32 NumExprInstStarts;	// number of experiment start loci instances in this bin
-	UINT32 ControlCnts;			// original total control counts in this bin over control start loci instances
-	UINT32 ExperimentCnts;		// original total experiment counts in this bin over experiment start loci instances
-	UINT32 ControlCoverage;     // coverage apportioned to this bin (control reads likely to overlap multiple bins)
-	UINT32 ExperimentCoverage;  // coverage apportioned to this bin (experiment reads likely to overlap multiple bins)
-	UINT32 ControlPoissonCnts;	 // after poisson control counts
-	UINT32 ExperimentPoissonCnts;// after poisson experiment counts
+	uint32_t Bin;					// poisson counts are from this bin (1..n)
+	uint32_t BinRelStartLoci;		// bin starts at this relative loci
+	uint32_t BinRelEndLoci;		// bin starts at this relative loci
+	uint32_t NumCtrlInstStarts;	// number of control start loci instances in this bin
+	uint32_t NumExprInstStarts;	// number of experiment start loci instances in this bin
+	uint32_t ControlCnts;			// original total control counts in this bin over control start loci instances
+	uint32_t ExperimentCnts;		// original total experiment counts in this bin over experiment start loci instances
+	uint32_t ControlCoverage;     // coverage apportioned to this bin (control reads likely to overlap multiple bins)
+	uint32_t ExperimentCoverage;  // coverage apportioned to this bin (experiment reads likely to overlap multiple bins)
+	uint32_t ControlPoissonCnts;	 // after poisson control counts
+	uint32_t ExperimentPoissonCnts;// after poisson experiment counts
 } tsAlignBin;
 
 typedef struct TAG_sFeatDE {
@@ -229,14 +229,14 @@ typedef struct TAG_sFeatDE {
 		int BinsShared;			// number of bins with both control and experiment counts
 		int BinsExclCtrl;		// number of bins holding counts exclusive to control
 		int BinsExclExpr;		// number of bins holding counts exclusive to experiment
-		UINT32 BinsCtrlDepth[cMaxNumBins];	// to hold read coverage depth in each control bin
-		UINT32 BinsExprDepth[cMaxNumBins];	// to hold read coverage depth in each experiment bin
+		uint32_t BinsCtrlDepth[cMaxNumBins];	// to hold read coverage depth in each control bin
+		uint32_t BinsExprDepth[cMaxNumBins];	// to hold read coverage depth in each experiment bin
 } tsFeatDE;
 
 
 // each thread has it's own instance of the following
 typedef struct TAG_ThreadInstData {
-	UINT32 ThreadInst;				// uniquely identifies this thread instance
+	uint32_t ThreadInst;				// uniquely identifies this thread instance
 #ifdef _WIN32
 	HANDLE threadHandle;			// handle as returned by _beginthreadex()
 	unsigned int threadID;			// identifier as set by _beginthreadex()
@@ -248,17 +248,17 @@ typedef struct TAG_ThreadInstData {
 	teBSFrsltCodes Rslt;				// thread processing completed result - eBSFSuccess if no errors
 	int FeatureID;						// currently processing this feature
 
-	UINT32 CurFeatLen;					// current feature length over which counts are being processed
+	uint32_t CurFeatLen;					// current feature length over which counts are being processed
 	int CurRegionLen;					// region length for curent gene or feature being processed
 
 	double *pPValues;					// to hold PValues for transcript
 	double *pFeatFoldChanges;			// to hold feature fold changes (Ctrl + 0.001)/(Expr + 0.001)) whilst determining feature confidence interval
 	double *pPearsons;					 // prealocated to hold Pearsons whilst determining confidence interval
-	UINT32 NumBinsWithLoci;				// pAlignBins currently contains this number of bin instances with at least one aligned loci instance
+	uint32_t NumBinsWithLoci;				// pAlignBins currently contains this number of bin instances with at least one aligned loci instance
 	tsAlignBin *pAlignBins;				// preallocated to hold alignment bin cnts reserved for this thread
 
 	tsAlignBin *pPoissonAlignBins;		// to hold alignment bins with poisson applied
-	UINT32 NumBinInstStarts;				// m_pBinInstsCnts currently contains this many experiment and control start instances
+	uint32_t NumBinInstStarts;				// m_pBinInstsCnts currently contains this many experiment and control start instances
 	tsAlignLociInstStarts *pBinLociInstStarts;	// preallocated pts to list of control and experiment start instance counts for all bins
 	int MaxFeats2Proc;					// max number of FeatureIDs which can be allocated for processing by this thread by GetFeats2Proc() into Feats2Proc[]
 	int NumFeats2Proc;					// process this number of features in Feats2Proc[]
@@ -286,7 +286,7 @@ teBSFrsltCodes Process(etDEPMode PMode,					// processing mode
 					int NumThreads,						// number of threads (0 defaults to number of CPUs)
 					int  CoWinLen,						// counts coalescing window length
 					int ArtifactCntsThres,				// if counts at any loci are >= this threshold then process for PCR artifact reduction
-					UINT32 LimitAligned,				// for test/evaluation can limit number of reads parsed to be no more than this number (0 for no limit)
+					uint32_t LimitAligned,				// for test/evaluation can limit number of reads parsed to be no more than this number (0 for no limit)
 					bool bFiltNonaligned,				// true if only features having at least one read aligned are to be be reported
 					char AlignStrand,					// process for reads aligning to this strand only
 					char FeatStrand,					// process for genes or features on this strand only
@@ -369,10 +369,10 @@ PearsonsPValue(tsThreadInstData *pThreadInst,	// thread instance
 
 teBSFrsltCodes
 GenBinAlignStarts(tsThreadInstData *pThreadInst,	// thread instance
-				  UINT32 RegionOfs,			// StartLoci is at this region offset
+				  uint32_t RegionOfs,			// StartLoci is at this region offset
 				  char *pszChrom,			// alignments are on this chrom
-				  UINT32 StartLoci,			// must start on or after this loci
-				  UINT32 EndLoci);			// must start on or before this loci
+				  uint32_t StartLoci,			// must start on or after this loci
+				  uint32_t EndLoci);			// must start on or before this loci
 
 
 teBSFrsltCodes
@@ -387,8 +387,8 @@ AddAlignBinCnts(tsThreadInstData *pThreadInst,	// thread instance data
 int ReportDEandPearsons(void);
 int ReportDEandPearsonBinCounts(void);
 
-char *IDtoChrom(UINT32 ChromID);			// returns ptr to chrom for ChromID
-UINT32					  // unique identifier or 0 if chromosome not known
+char *IDtoChrom(uint32_t ChromID);			// returns ptr to chrom for ChromID
+uint32_t					  // unique identifier or 0 if chromosome not known
 ChromToID(char *pszChrom, // get unique chromosome identifier for this chrom
 			bool bAdd);	  // if true and chromosome not already known then add and return it's identifier
 
@@ -1040,40 +1040,40 @@ int m_NumExclZones;					// total number of read exclusion zones loaded
 int m_NumExclReads;					// total number of reads which were excluded because they overlaid an exclusion zone
 tsExclZone *m_pExclZones;			// pts to exclusion zones to which overlaying reads are to be excluded from processing
 
-UINT32 m_LimitAligned;				// for test/evaluation can limit number of reads parsed to be no more than this number (0 for no limit)
+uint32_t m_LimitAligned;				// for test/evaluation can limit number of reads parsed to be no more than this number (0 for no limit)
 int m_CoWinLen;						// counts coalescing window length
 
 tsAlignReadLoci *m_pCtrlAlignReadLoci = NULL; // memory allocated to hold control read alignment loci, reads are written contiguously into this memory
-UINT32 m_AllocdCtrlAlignReadsLoci;			  // how many instances of control tsAlignReadLoci have been allocated
+uint32_t m_AllocdCtrlAlignReadsLoci;			  // how many instances of control tsAlignReadLoci have been allocated
 size_t m_AllocdCtrlAlignReadsMem;			 // size of allocated memory
-UINT32 m_CurNumCtrlAlignReadsLoci;			  // m_pAlignReadLoci currently contains a total of this many control read alignment loci
-UINT64 m_CurSumCtrlReadsLen;				  // current summed control reads length
+uint32_t m_CurNumCtrlAlignReadsLoci;			  // m_pAlignReadLoci currently contains a total of this many control read alignment loci
+uint64_t m_CurSumCtrlReadsLen;				  // current summed control reads length
 
 tsAlignReadLoci *m_pExprAlignReadLoci = NULL;	// memory allocated to hold experiment read alignment loci, reads are written contiguously into this memory
-UINT32 m_AllocdExprAlignReadsLoci;			// how instances of experiment tsAlignReadLoci have been allocated
+uint32_t m_AllocdExprAlignReadsLoci;			// how instances of experiment tsAlignReadLoci have been allocated
 size_t m_AllocdExprAlignReadsMem;			 // size of allocated memory
-UINT32 m_CurNumExprAlignReadsLoci;			// m_pAlignReadLoci currently contains a total of this many experiment read alignment loci
-UINT64 m_CurSumExprReadsLen;				// current summed control reads length
+uint32_t m_CurNumExprAlignReadsLoci;			// m_pAlignReadLoci currently contains a total of this many experiment read alignment loci
+uint64_t m_CurSumExprReadsLen;				// current summed control reads length
 
-UINT32 m_NumLoadedCtrlReads;			// total number of control reads actually loaded prior to any  coalescing and library size normalisation
-UINT32 m_NumLoadedExprReads;			// total number of expression reads loaded loaded prior to any coalescing and library size normalisation
-UINT32 m_MeanLenCtrlReads;				// mean length of loaded control reads
-UINT32 m_MeanLenExprReads;				// mean length of loaded experiment reads
+uint32_t m_NumLoadedCtrlReads;			// total number of control reads actually loaded prior to any  coalescing and library size normalisation
+uint32_t m_NumLoadedExprReads;			// total number of expression reads loaded loaded prior to any coalescing and library size normalisation
+uint32_t m_MeanLenCtrlReads;				// mean length of loaded control reads
+uint32_t m_MeanLenExprReads;				// mean length of loaded experiment reads
 
 
-UINT32 m_NumNormCtrlReads;				// total number of control reads after library size normalisation
-UINT32 m_NumNormExprReads;				// total number of expression reads after library size normalisation
+uint32_t m_NumNormCtrlReads;				// total number of control reads after library size normalisation
+uint32_t m_NumNormExprReads;				// total number of expression reads after library size normalisation
 
-UINT32 m_NumPoissonNormCtrlReads;		// total number of control reads after poisson noise
-UINT32 m_NumPoissonNormExprReads;		// total number of expression after after poisson noise
+uint32_t m_NumPoissonNormCtrlReads;		// total number of control reads after poisson noise
+uint32_t m_NumPoissonNormExprReads;		// total number of expression after after poisson noise
 
-UINT32 m_NumFeaturesLoaded;				// total number of features loaded for processing
-UINT32 m_NumFeaturesProcessed;			// current number of features processed
+uint32_t m_NumFeaturesLoaded;				// total number of features loaded for processing
+uint32_t m_NumFeaturesProcessed;			// current number of features processed
 
 tsAlignBin *m_pAlignBins = NULL;		// memory allocated to hold alignment bin cnts
-UINT32 m_AllocdAlignBins = 0;			// how instances of tsAlignBin have been allocated
+uint32_t m_AllocdAlignBins = 0;			// how instances of tsAlignBin have been allocated
 tsAlignLociInstStarts *m_pBinInstsStarts;	// pts to list of control and experiment start instance counts for all bins
-UINT32 m_AllocBinInstStarts = 0;			// m_pBinInstsCnts is currently allocated to hold at most this number of start loci instance counts
+uint32_t m_AllocBinInstStarts = 0;			// m_pBinInstsCnts is currently allocated to hold at most this number of start loci instance counts
 
 int m_FeatsPerThread;					// number of features to be processed as a block by each thread
 
@@ -1096,8 +1096,8 @@ size_t m_AllocBinWrtBuff = 0;		// memory allocated for output bin write buffers
 size_t m_AllocStatsWrtBuff = 0;		// memory allocated for output stats write buffers
 size_t m_WrtBinBuffOfs = 0;			// offset at which to next write
 size_t m_WrtStatsBuffOfs = 0;		// offset at which to next write
-UINT8 *m_pWrtBinBuff;				// used to buffer output writes to bin counts file
-UINT8 *m_pWrtStatsBuff;				// used to buffer output writes to stats file
+uint8_t *m_pWrtBinBuff;				// used to buffer output writes to bin counts file
+uint8_t *m_pWrtStatsBuff;				// used to buffer output writes to stats file
 int m_hOutStatsFile;				// output stats results file
 bool m_bWrtStatHdr;					// true if stats file requires header
 int m_hOutBinFile;					// output bin counts file
@@ -1128,7 +1128,7 @@ tsRefIDChrom *m_pChroms = NULL;
 int m_NumChromsAllocd = 0;
 int m_CurNumChroms = 0;
 int m_MRAChromID = 0;
-UINT32 *m_pChromHashes;			// allocated to provide hash index for chroms
+uint32_t *m_pChromHashes;			// allocated to provide hash index for chroms
 
 int m_LastFeatureAllocProc = 0;					// set to the last FeatureID allocated to a thread for processing, 0 if starting feature allocation, -1 if all features have been allocated
 
@@ -1223,7 +1223,7 @@ for(Lambda = 1; Lambda <= 10; Lambda++)
 int
 RandPoisson(tsThreadInstData *pThreadInst,int Lambda)
 {
-UINT32 IdxPoisson;
+uint32_t IdxPoisson;
 int *pPoissons;
 int Range;
 
@@ -1844,7 +1844,7 @@ double *pFeatFoldChanges;
 tsAlignBin *pAlignBins;
 tsAlignBin *pPoissonAlignBins;
 tsAlignLociInstStarts *pAlignLociInstStarts;
-UINT32 ThreadInst;
+uint32_t ThreadInst;
 
 m_NumFeatsDEd = 0;
 m_LastFeatureAllocProc = 0;
@@ -1858,7 +1858,7 @@ pPoissonAlignBins = m_pPoissonAlignBins;
 pAlignLociInstStarts = m_pBinInstsStarts;
 pThreadInst = m_pThreadsInstData;
 memset(m_pThreadsInstData,0,sizeof(tsThreadInstData) * m_NumDEThreads);
-for(ThreadInst = 1; ThreadInst <= (UINT32)m_NumDEThreads; ThreadInst++,pThreadInst++,
+for(ThreadInst = 1; ThreadInst <= (uint32_t)m_NumDEThreads; ThreadInst++,pThreadInst++,
 										pPearsons += cMaxConfidenceIterations,
 										pPValues += cMaxConfidenceIterations,
 										pAlignBins += m_NumBins,
@@ -1897,10 +1897,10 @@ gDiagnostics.DiagOut(eDLInfo,gszProcName,"Iterating features and processing alig
 #endif
 
 
-UINT32 NumFeaturesProcessed = 0;
+uint32_t NumFeaturesProcessed = 0;
 // wait for all threads to have completed
 pThreadInst = m_pThreadsInstData;
-for(ThreadInst = 1;ThreadInst <= (UINT32)m_NumDEThreads; ThreadInst++,pThreadInst++)
+for(ThreadInst = 1;ThreadInst <= (uint32_t)m_NumDEThreads; ThreadInst++,pThreadInst++)
 	{
 #ifdef _WIN32
 	while(WAIT_TIMEOUT == WaitForSingleObject( pThreadInst->threadHandle, 60000 * 10))
@@ -2094,7 +2094,7 @@ Process(etDEPMode PMode,									// processing mode
 					int NumThreads,						// number of threads (0 defaults to number of CPUs)
 					int CoWinLen,						// counts coalescing window length
 					int ArtifactCntsThres,				// if counts at any loci are >= this threshold then process for PCR artifact reduction
-					UINT32 LimitAligned,				// for test/evaluation can limit number of reads parsed to be no more than this number (0 for no limit)
+					uint32_t LimitAligned,				// for test/evaluation can limit number of reads parsed to be no more than this number (0 for no limit)
 					bool bFiltNonaligned,				// true if only features having at least one read aligned are to be be reported
 					char AlignStrand,					// process for reads on this strand only
 					char FeatStrand,					// process for genes or features on this strand only
@@ -2164,7 +2164,7 @@ if((m_hOutStatsFile = open(pszOutfile, O_RDWR | O_CREAT |O_TRUNC, S_IREAD | S_IW
 	}
 m_bWrtStatHdr = true;
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Output results file created/truncated: '%s'",pszOutfile);
-if((m_pWrtStatsBuff = new UINT8 [cWrtStatBuffSize])==NULL)
+if((m_pWrtStatsBuff = new uint8_t [cWrtStatBuffSize])==NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate %d bytes for output write buffering",cWrtStatBuffSize);
 	DEReset();
@@ -2188,7 +2188,7 @@ if(pszBinCountsFile != NULL && pszBinCountsFile[0] != '\0')
 
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Output bin counts file created/truncated: '%s'",pszBinCountsFile);
 	m_bWrtBinHdr = true;
-	if((m_pWrtBinBuff = new UINT8 [cWrtBinBuffSize])==NULL)
+	if((m_pWrtBinBuff = new uint8_t [cWrtBinBuffSize])==NULL)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate %d bytes for output write buffering",cWrtBinBuffSize);
 		DEReset();
@@ -2299,7 +2299,7 @@ memreq = m_NumBins * sizeof(tsAlignBin) * NumThreads;
 m_pAlignBins = (tsAlignBin *) malloc((size_t)memreq);
 if(m_pAlignBins == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for bins failed",(INT64)memreq);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for bins failed",(int64_t)memreq);
 	DEReset();
 	return(eBSFerrMem);
 	}
@@ -2308,7 +2308,7 @@ if(m_pAlignBins == NULL)
 m_pAlignBins = (tsAlignBin *)mmap(NULL,(size_t)memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pAlignBins == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for bins through mmap()  failed",(INT64)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for bins through mmap()  failed",(int64_t)memreq,strerror(errno));
 	m_pAlignBins = NULL;
 	DEReset();
 	return(eBSFerrMem);
@@ -2322,7 +2322,7 @@ memreq = m_NumBins * sizeof(tsAlignBin) * NumThreads;
 m_pPoissonAlignBins = (tsAlignBin *) malloc((size_t)memreq);
 if(m_pPoissonAlignBins == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for bins failed",(INT64)memreq);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for bins failed",(int64_t)memreq);
 	DEReset();
 	return(eBSFerrMem);
 	}
@@ -2331,7 +2331,7 @@ if(m_pPoissonAlignBins == NULL)
 m_pPoissonAlignBins = (tsAlignBin *)mmap(NULL,(size_t)memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pPoissonAlignBins == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for bins through mmap()  failed",(INT64)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for bins through mmap()  failed",(int64_t)memreq,strerror(errno));
 	m_pPoissonAlignBins = NULL;
 	DEReset();
 	return(eBSFerrMem);
@@ -2345,7 +2345,7 @@ memreq = cMaxAssumTransLoci * NumThreads * sizeof(tsAlignLociInstStarts);
 m_pBinInstsStarts = (tsAlignLociInstStarts *) malloc((size_t)memreq);
 if(m_pBinInstsStarts == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for bin loci instances failed",(INT64)memreq);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for bin loci instances failed",(int64_t)memreq);
 	DEReset();
 	return(eBSFerrMem);
 	}
@@ -2354,7 +2354,7 @@ if(m_pBinInstsStarts == NULL)
 m_pBinInstsStarts = (tsAlignLociInstStarts *)mmap(NULL,(size_t)memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pBinInstsStarts == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for bin loci instances through mmap()  failed",(INT64)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for bin loci instances through mmap()  failed",(int64_t)memreq,strerror(errno));
 	m_pBinInstsStarts = NULL;
 	DEReset();
 	return(eBSFerrMem);
@@ -2368,7 +2368,7 @@ memreq = cMaxConfidenceIterations * NumThreads * sizeof(double);
 m_pFeatFoldChanges = (double *) malloc((size_t)memreq);
 if(m_pFeatFoldChanges == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for fold change instances failed",(INT64)memreq);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for fold change instances failed",(int64_t)memreq);
 	DEReset();
 	return(eBSFerrMem);
 	}
@@ -2377,7 +2377,7 @@ if(m_pFeatFoldChanges == NULL)
 m_pFeatFoldChanges = (double *)mmap(NULL,(size_t)memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pFeatFoldChanges == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for fold change instances through mmap()  failed",(INT64)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for fold change instances through mmap()  failed",(int64_t)memreq,strerror(errno));
 	m_pFeatFoldChanges = NULL;
 	DEReset();
 	return(eBSFerrMem);
@@ -2390,7 +2390,7 @@ memreq = cMaxConfidenceIterations * NumThreads * sizeof(double);
 m_pPValues = (double *) malloc((size_t)memreq);
 if(m_pPValues == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for PValue instances failed",(INT64)memreq);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for PValue instances failed",(int64_t)memreq);
 	DEReset();
 	return(eBSFerrMem);
 	}
@@ -2399,7 +2399,7 @@ if(m_pPValues == NULL)
 m_pPValues = (double *)mmap(NULL,(size_t)memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pPValues == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for PValue instances through mmap()  failed",(INT64)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for PValue instances through mmap()  failed",(int64_t)memreq,strerror(errno));
 	m_pPValues = NULL;
 	DEReset();
 	return(eBSFerrMem);
@@ -2412,7 +2412,7 @@ memreq = cMaxConfidenceIterations * NumThreads * sizeof(double);
 m_pPearsons = (double *) malloc((size_t)memreq);
 if(m_pPearsons == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for fold change pearsons instances failed",(INT64)memreq);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for fold change pearsons instances failed",(int64_t)memreq);
 	DEReset();
 	return(eBSFerrMem);
 	}
@@ -2421,7 +2421,7 @@ if(m_pPearsons == NULL)
 m_pPearsons = (double *)mmap(NULL,(size_t)memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pFeatFoldChanges == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for fold change instances through mmap()  failed",(INT64)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for fold change instances through mmap()  failed",(int64_t)memreq,strerror(errno));
 	m_pFeatFoldChanges = NULL;
 	DEReset();
 	return(eBSFerrMem);
@@ -2434,7 +2434,7 @@ memreq = (m_NumFeaturesLoaded + 1) * sizeof(tsFeatDE);
 m_pFeatDEs = (tsFeatDE *) malloc((size_t)memreq);
 if(m_pFeatDEs == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for processed feature instances failed",(INT64)memreq);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for processed feature instances failed",(int64_t)memreq);
 	DEReset();
 	return(eBSFerrMem);
 	}
@@ -2443,7 +2443,7 @@ if(m_pFeatDEs == NULL)
 m_pFeatDEs = (tsFeatDE *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pFeatDEs == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for processed feature instances through mmap()  failed",(INT64)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for processed feature instances through mmap()  failed",(int64_t)memreq,strerror(errno));
 	m_pFeatDEs = NULL;
 	DEReset();
 	return(eBSFerrMem);
@@ -2460,7 +2460,7 @@ _ASSERTE( _CrtCheckMemory());
 
 // now initialise thread instance data
 
-if(m_NumFeaturesLoaded < (UINT32)NumThreads)
+if(m_NumFeaturesLoaded < (uint32_t)NumThreads)
 	m_NumDEThreads = m_NumFeaturesLoaded;
 m_FeatsPerThread = min(cMaxFeats2ProcAlloc,m_NumFeaturesLoaded/m_NumDEThreads);
 
@@ -2626,13 +2626,13 @@ return(eBSFSuccess);
 
 tsAlignLociInstStarts *
 UpdateBinLociInstStarts(tsThreadInstData *pThreadInst,			// thread instance
-					UINT32 Bin,								// starts are in this bin
+					uint32_t Bin,								// starts are in this bin
 					int RelLoci,							// starts at this relative (to start of binned transcript) loci
-					UINT32 CtrlStarts,						// this number of control reads start at RelLoci
-					UINT32 ExprStarts)						// this number of experiment reads start at RelLoci
+					uint32_t CtrlStarts,						// this number of control reads start at RelLoci
+					uint32_t ExprStarts)						// this number of experiment reads start at RelLoci
 {
 tsAlignLociInstStarts *pBinLociInstStarts;
-UINT32 Idx;
+uint32_t Idx;
 pBinLociInstStarts = pThreadInst->pBinLociInstStarts;
 if(pThreadInst->NumBinInstStarts)
 	{
@@ -2657,22 +2657,22 @@ return(pBinLociInstStarts);
 
 teBSFrsltCodes
 AddAlignBinCnts(tsThreadInstData *pThreadInst,	// thread instance data
-			UINT32 RelLoci,			// relative offset within  pThreadInst->CurRegionLen from which these cnts were derived
-			UINT32 MeanControlReadLen,	// control reads were of this mean length
+			uint32_t RelLoci,			// relative offset within  pThreadInst->CurRegionLen from which these cnts were derived
+			uint32_t MeanControlReadLen,	// control reads were of this mean length
 			bool bSense,				// 1 if aligned sense, 0 if antisense
-			UINT32 ControlCnts,		// attribute this many control counts (alignments) to relevant bin(s)
-			UINT32 MeanExperimentReadLen,	// experiment reads were of this mean length
-			UINT32 ExperimentCnts)		// attribute this many experiment counts (alignments) to relevant bin(s)
+			uint32_t ControlCnts,		// attribute this many control counts (alignments) to relevant bin(s)
+			uint32_t MeanExperimentReadLen,	// experiment reads were of this mean length
+			uint32_t ExperimentCnts)		// attribute this many experiment counts (alignments) to relevant bin(s)
 {
 tsAlignBin *pAlignBin;
 tsAlignBin *pCovAlignBin;
-INT32 CurLoci;
-UINT32 BasesCovered;
+int32_t CurLoci;
+uint32_t BasesCovered;
 int CurBinIdx;
-UINT32 CurBinLen;
-UINT32 CurStartLoci;
+uint32_t CurBinLen;
+uint32_t CurStartLoci;
 
-if(RelLoci >= (UINT32)pThreadInst->CurRegionLen) // should always start within region but best to check it does!
+if(RelLoci >= (uint32_t)pThreadInst->CurRegionLen) // should always start within region but best to check it does!
 	return(eBSFerrInternal);
 
 if(pThreadInst->NumBinsWithLoci == 0)					// first bin for current feature, if so then initialise all bins for this feature
@@ -2719,7 +2719,7 @@ if(!bSense)				// if was aligned antisense
 	{
 	if(ControlCnts)
 		{
-		if(MeanControlReadLen <= (UINT32)CurLoci + 1)
+		if(MeanControlReadLen <= (uint32_t)CurLoci + 1)
 			CurLoci -= MeanControlReadLen - 1;
 		else
 			{
@@ -2730,7 +2730,7 @@ if(!bSense)				// if was aligned antisense
 	else
 		if(ExperimentCnts)
 			{
-			if(MeanExperimentReadLen <= (UINT32)CurLoci + 1)
+			if(MeanExperimentReadLen <= (uint32_t)CurLoci + 1)
 				CurLoci -= MeanExperimentReadLen - 1;
 			else
 				{
@@ -2741,7 +2741,7 @@ if(!bSense)				// if was aligned antisense
 
 	pCovAlignBin = pThreadInst->pAlignBins; 
 	for(CurBinIdx = 0; CurBinIdx < m_NumBins; CurBinIdx++,pCovAlignBin++)
-		if(CurLoci <= (INT32)pCovAlignBin->BinRelEndLoci)
+		if(CurLoci <= (int32_t)pCovAlignBin->BinRelEndLoci)
 			break;
 	}
 
@@ -2784,8 +2784,8 @@ AddReadHit(int FileID,				// parsed from this file
 			int ReadLen)			// and is of this length
 {
 size_t memreq;
-UINT8 *pTmpAlloc;
-UINT32 ChromID;
+uint8_t *pTmpAlloc;
+uint32_t ChromID;
 tsAlignReadLoci *pAlignReadLoci;
 
 if(bIsExperiment)
@@ -2795,9 +2795,9 @@ if(bIsExperiment)
 		{
 		memreq = m_AllocdExprAlignReadsMem + ((size_t)cAlignReadsLociRealloc * sizeof(tsAlignReadLoci));
 	#ifdef _WIN32
-		pTmpAlloc = (UINT8 *) realloc(m_pExprAlignReadLoci,memreq);
+		pTmpAlloc = (uint8_t *) realloc(m_pExprAlignReadLoci,memreq);
 	#else
-		pTmpAlloc = (UINT8 *)mremap(m_pExprAlignReadLoci, m_AllocdExprAlignReadsMem,memreq,MREMAP_MAYMOVE);
+		pTmpAlloc = (uint8_t *)mremap(m_pExprAlignReadLoci, m_AllocdExprAlignReadsMem,memreq,MREMAP_MAYMOVE);
 		if(pTmpAlloc == MAP_FAILED)
 			pTmpAlloc = NULL;
 	#endif
@@ -2820,9 +2820,9 @@ else
 		{
 		memreq = m_AllocdCtrlAlignReadsMem + ((size_t)cAlignReadsLociRealloc * sizeof(tsAlignReadLoci));;
 	#ifdef _WIN32
-		pTmpAlloc = (UINT8 *) realloc(m_pCtrlAlignReadLoci,memreq);
+		pTmpAlloc = (uint8_t *) realloc(m_pCtrlAlignReadLoci,memreq);
 	#else
-		pTmpAlloc = (UINT8 *)mremap(m_pCtrlAlignReadLoci, m_AllocdCtrlAlignReadsMem,memreq,MREMAP_MAYMOVE);
+		pTmpAlloc = (uint8_t *)mremap(m_pCtrlAlignReadLoci, m_AllocdCtrlAlignReadsMem,memreq,MREMAP_MAYMOVE);
 		if(pTmpAlloc == MAP_FAILED)
 			pTmpAlloc = NULL;
 	#endif
@@ -2898,11 +2898,11 @@ CoalesceReadAlignments(int WinLen,		// coalescing window length 1..20
 					   bool bExperiment) // if true then coalesce experiment read loci otherwise control read loci
 {
 size_t memreq;
-UINT8 *pTmpAlloc;
-UINT32 Idx;
-UINT32 NumAlignReadsLoci;
+uint8_t *pTmpAlloc;
+uint32_t Idx;
+uint32_t NumAlignReadsLoci;
 
-UINT32 CurNumAlignReadsLoci;
+uint32_t CurNumAlignReadsLoci;
 tsAlignReadLoci *pAlignReadLoci;
 
 tsAlignReadLoci *pCurLoci;
@@ -2979,9 +2979,9 @@ if(bExperiment)
 		{
 		memreq = (NumAlignReadsLoci + 10000) * sizeof(tsAlignReadLoci);
 	#ifdef _WIN32
-		pTmpAlloc = (UINT8 *) realloc(m_pExprAlignReadLoci,memreq);
+		pTmpAlloc = (uint8_t *) realloc(m_pExprAlignReadLoci,memreq);
 	#else
-		pTmpAlloc = (UINT8 *)mremap(m_pExprAlignReadLoci, m_AllocdExprAlignReadsMem,memreq,MREMAP_MAYMOVE);
+		pTmpAlloc = (uint8_t *)mremap(m_pExprAlignReadLoci, m_AllocdExprAlignReadsMem,memreq,MREMAP_MAYMOVE);
 		if(pTmpAlloc == MAP_FAILED)
 			pTmpAlloc = NULL;
 	#endif
@@ -3004,9 +3004,9 @@ else
 		{
 		memreq = (NumAlignReadsLoci + 10000) * sizeof(tsAlignReadLoci);
 	#ifdef _WIN32
-		pTmpAlloc = (UINT8 *) realloc(m_pCtrlAlignReadLoci,memreq);
+		pTmpAlloc = (uint8_t *) realloc(m_pCtrlAlignReadLoci,memreq);
 	#else
-		pTmpAlloc = (UINT8 *)mremap(m_pCtrlAlignReadLoci, m_AllocdCtrlAlignReadsMem,memreq,MREMAP_MAYMOVE);
+		pTmpAlloc = (uint8_t *)mremap(m_pCtrlAlignReadLoci, m_AllocdCtrlAlignReadsMem,memreq,MREMAP_MAYMOVE);
 		if(pTmpAlloc == MAP_FAILED)
 			pTmpAlloc = NULL;
 	#endif
@@ -3033,13 +3033,13 @@ teBSFrsltCodes
 NormaliseLibraryCounts(void)
 {
 bool bScaleExpr;
-UINT32 TargTotal;
+uint32_t TargTotal;
 double NormCnts;
 double Diff;
-UINT32 TotNormCnts;
-UINT32 Idx;
+uint32_t TotNormCnts;
+uint32_t Idx;
 
-UINT32 CurNumAlignReadsLoci;
+uint32_t CurNumAlignReadsLoci;
 tsAlignReadLoci *pAlignReadLoci;
 tsAlignReadLoci *pCurLoci;
 
@@ -3105,7 +3105,7 @@ for(Idx = 0; Idx < CurNumAlignReadsLoci; Idx++,pCurLoci++)
 	if(!pCurLoci->NormCnts)
 		continue;
 	NormCnts = pCurLoci->NormCnts * m_LibSizeNormExpToCtrl;
-	pCurLoci->NormCnts = (UINT32)NormCnts;
+	pCurLoci->NormCnts = (uint32_t)NormCnts;
 	Diff += NormCnts - (double)pCurLoci->NormCnts;
 	if(Diff >= 0.5)
 		{
@@ -3125,23 +3125,23 @@ gDiagnostics.DiagOut(eDLInfo,gszProcName,"Completed library size normalisation o
 return(eBSFSuccess);
 }
 
-UINT32										// reduced total counts by this
+uint32_t										// reduced total counts by this
 ReducePCR(int FlankLen,						// 5' and 3' flank length over which the background mean rate is to be measured
 		int ArtifactCntsThres,				// if counts at any loci are >= this threshold then process for PCR artifact reduction
-		UINT32 NumAlignReadsLoci,tsAlignReadLoci *pAlignReadLoci)
+		uint32_t NumAlignReadsLoci,tsAlignReadLoci *pAlignReadLoci)
 {
-UINT32 Idx;
-UINT32 WinIdx;
-UINT32 ChromRelIdx;
-UINT32 WinCnts;
-UINT32 NumCntLoci;
-UINT32 ReducedBy;
-UINT32 NormCnts;
+uint32_t Idx;
+uint32_t WinIdx;
+uint32_t ChromRelIdx;
+uint32_t WinCnts;
+uint32_t NumCntLoci;
+uint32_t ReducedBy;
+uint32_t NormCnts;
 double MeanX3;
 tsAlignReadLoci *pTargLoci;
 tsAlignReadLoci *pWinLoci;
 
-UINT32 CurChromID;
+uint32_t CurChromID;
 CurChromID = 0;
 ReducedBy = 0;
 pTargLoci = pAlignReadLoci;
@@ -3153,12 +3153,12 @@ for(Idx = 0; Idx < NumAlignReadsLoci; Idx++,pTargLoci++)
 		ChromRelIdx = Idx;
 		CurChromID = pTargLoci->ChromID;
 		}
-	if(pTargLoci->NormCnts <= (UINT32)ArtifactCntsThres)
+	if(pTargLoci->NormCnts <= (uint32_t)ArtifactCntsThres)
 		continue;
 
 	WinCnts = 0;
 	NumCntLoci = 0;
-	if((Idx - ChromRelIdx) >= (UINT32)FlankLen)
+	if((Idx - ChromRelIdx) >= (uint32_t)FlankLen)
 		WinIdx = Idx - FlankLen;
 	else
 		WinIdx = ChromRelIdx;
@@ -3194,13 +3194,13 @@ for(Idx = 0; Idx < NumAlignReadsLoci; Idx++,pTargLoci++)
 		if (NumCntLoci >= 1)
 		{
 			MeanX3 = (double)(3 * WinCnts) / NumCntLoci;
-			if (pTargLoci->NormCnts > (UINT32)MeanX3)
-				NormCnts = (UINT32)(MeanX3 + sqrt((double)pTargLoci->NormCnts - MeanX3));
+			if (pTargLoci->NormCnts > (uint32_t)MeanX3)
+				NormCnts = (uint32_t)(MeanX3 + sqrt((double)pTargLoci->NormCnts - MeanX3));
 			else
 				continue;
 		}
 		else
-			NormCnts = (UINT32)(ArtifactCntsThres + sqrt((double)pTargLoci->NormCnts - ArtifactCntsThres));
+			NormCnts = (uint32_t)(ArtifactCntsThres + sqrt((double)pTargLoci->NormCnts - ArtifactCntsThres));
 		ReducedBy += pTargLoci->NormCnts - NormCnts;
 		pTargLoci->ArtCnts = NormCnts;
 	}
@@ -3220,7 +3220,7 @@ teBSFrsltCodes
 ReducePCRartifacts(int FlankLen,		// 5' and 3' flank length over which the background mean rate is to be measured
 	int ArtifactCntsThres)		// if counts at any loci are >= this threshold then process for PCR artifact reduction
 {
-	UINT32 ReducedBy;
+	uint32_t ReducedBy;
 
 	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Starting PCR artifact count processing");
 
@@ -3299,7 +3299,7 @@ NumProcessed = 0;
 NumRdsExcluded = 0;
 while((LineLen = pBAMfile->GetNxtSAMline(szLine)) > 0)
 	{
-	if(m_LimitAligned > 0 && (UINT32)NumProcessed > m_LimitAligned)
+	if(m_LimitAligned > 0 && (uint32_t)NumProcessed > m_LimitAligned)
 		break;
 
 	if(!(NumProcessed % 10000))
@@ -3394,7 +3394,7 @@ unsigned long Now;
 unsigned long PrevNow = gStopWatch.ReadUSecs();
 while(Rslt == eBSFSuccess && (CurFeatureID = pBEDFile->GetNextFeatureID(CurFeatureID)) > 0)
 	{
-	if(m_LimitAligned > 0 && (UINT32)NumProcessed > m_LimitAligned)
+	if(m_LimitAligned > 0 && (uint32_t)NumProcessed > m_LimitAligned)
 		break;
 
 	if(!(NumProcessed % 10000))
@@ -3490,7 +3490,7 @@ unsigned long Now;
 unsigned long PrevNow = gStopWatch.ReadUSecs();
 while((Rslt=(teBSFrsltCodes)pCSVAligns->NextLine()) > 0)	// onto next line containing fields
 	{
-	if(m_LimitAligned > 0 && (UINT32)NumProcessed > m_LimitAligned)
+	if(m_LimitAligned > 0 && (uint32_t)NumProcessed > m_LimitAligned)
 		{
 		Rslt = eBSFSuccess;
 		break;
@@ -3556,10 +3556,10 @@ return(Rslt);
 }
 
 char *
-IDtoChrom(UINT32 ChromID)	// returns ptr to chrom for ChromID
+IDtoChrom(uint32_t ChromID)	// returns ptr to chrom for ChromID
 {
 char *pszChrom;
-if(m_pChroms == NULL || m_pChromHashes == NULL || ChromID == 0 || ChromID > (UINT32)m_CurNumChroms)
+if(m_pChroms == NULL || m_pChromHashes == NULL || ChromID == 0 || ChromID > (uint32_t)m_CurNumChroms)
 	{
 	DEReleaseSerialise();
 	return(NULL);
@@ -3568,23 +3568,23 @@ pszChrom = m_pChroms[ChromID-1].szChromName;
 return(pszChrom);
 }
 
-UINT32					  // unique identifier or 0 if chromosome not known
+uint32_t					  // unique identifier or 0 if chromosome not known
 ChromToID(char *pszChrom, // get unique chromosome identifier for this chrom
 			bool bAdd)	  // if true and chromosome not already known then add and return it's identifier
 {
 tsRefIDChrom *pNewChrom;
-UINT32 aHash = (UINT32)CUtility::GenHash24(pszChrom);
+uint32_t aHash = (uint32_t)CUtility::GenHash24(pszChrom);
 DEAcquireSerialise();
 
 if(m_pChromHashes == NULL)		// NULL if first time..
 	{
-	m_pChromHashes = new UINT32 [0x01000000];	// 24bit hashes
+	m_pChromHashes = new uint32_t [0x01000000];	// 24bit hashes
 	if(m_pChromHashes == NULL)
 		{
 		DEReleaseSerialise();
 		return(0);
 		}
-	memset(m_pChromHashes,0,sizeof(UINT32) * 0x01000000);
+	memset(m_pChromHashes,0,sizeof(uint32_t) * 0x01000000);
 	}
 
 if(m_pChroms == NULL)		// NULL if first time...
@@ -3665,7 +3665,7 @@ else
 	pNewChrom->Next = 0;
 m_pChromHashes[aHash - 1] = m_CurNumChroms;
 DEReleaseSerialise();
-return((UINT32)m_CurNumChroms);
+return((uint32_t)m_CurNumChroms);
 }
 
 int
@@ -3731,7 +3731,7 @@ if(m_pCtrlAlignReadLoci == NULL)
 	m_pCtrlAlignReadLoci = (tsAlignReadLoci *) malloc((size_t)memreq);
 	if(m_pCtrlAlignReadLoci == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEntry: Memory allocation of %lld bytes failed",(INT64)memreq);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEntry: Memory allocation of %lld bytes failed",(int64_t)memreq);
 		DEReset();
 		return(eBSFerrMem);
 		}
@@ -3740,7 +3740,7 @@ if(m_pCtrlAlignReadLoci == NULL)
 	m_pCtrlAlignReadLoci = (tsAlignReadLoci *)mmap(NULL,(size_t)memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pCtrlAlignReadLoci == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadAlignedReadFiles: Memory allocation of %lld bytes through mmap()  failed",(INT64)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadAlignedReadFiles: Memory allocation of %lld bytes through mmap()  failed",(int64_t)memreq,strerror(errno));
 		m_pCtrlAlignReadLoci = NULL;
 		DEReset();
 		return(eBSFerrMem);
@@ -3759,7 +3759,7 @@ if(m_pExprAlignReadLoci == NULL)
 	m_pExprAlignReadLoci = (tsAlignReadLoci *) malloc((size_t)memreq);
 	if(m_pExprAlignReadLoci == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEntry: Memory allocation of %lld bytes failed",(INT64)memreq);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEntry: Memory allocation of %lld bytes failed",(int64_t)memreq);
 		DEReset();
 		return(eBSFerrMem);
 		}
@@ -3768,7 +3768,7 @@ if(m_pExprAlignReadLoci == NULL)
 	m_pExprAlignReadLoci = (tsAlignReadLoci *)mmap(NULL,(size_t)memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pExprAlignReadLoci == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadAlignedReadFiles: Memory allocation of %lld bytes through mmap()  failed",(INT64)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadAlignedReadFiles: Memory allocation of %lld bytes through mmap()  failed",(int64_t)memreq,strerror(errno));
 		m_pExprAlignReadLoci = NULL;
 		DEReset();
 		return(eBSFerrMem);
@@ -3821,7 +3821,7 @@ if(NumInputFilesProcessed == 0 || m_CurNumCtrlAlignReadsLoci == 0)
 	return(eBSFerrOpnFile);
 	}
 m_NumLoadedCtrlReads = m_CurNumCtrlAlignReadsLoci;
-m_MeanLenCtrlReads = (UINT32)( m_CurSumCtrlReadsLen / m_NumLoadedCtrlReads);
+m_MeanLenCtrlReads = (uint32_t)( m_CurSumCtrlReadsLen / m_NumLoadedCtrlReads);
 
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"LoadAlignedReadFiles: Accepted %d control aligned reads on strand '%c'",m_NumLoadedCtrlReads,Strand);
 
@@ -3859,7 +3859,7 @@ for(Idx = 0; Idx < NumInputExperimentSpecs; Idx++)
 
 m_NumLoadedExprReads = m_CurNumExprAlignReadsLoci;
 if(m_NumLoadedExprReads)
-	m_MeanLenExprReads = (UINT32)( m_CurSumExprReadsLen / m_NumLoadedExprReads);
+	m_MeanLenExprReads = (uint32_t)( m_CurSumExprReadsLen / m_NumLoadedExprReads);
 
 if(NumInputFilesProcessed == 0 || m_NumLoadedExprReads == 0)
 	{
@@ -3892,7 +3892,7 @@ return(Rslt);
 
 
 int
-LocateStartAlignment(char Strand,UINT32 ChromID,UINT32 StartLoci,UINT32 EndLoci, UINT32 NumAlignReadsLoci,tsAlignReadLoci *pAlignReadLoci)
+LocateStartAlignment(char Strand,uint32_t ChromID,uint32_t StartLoci,uint32_t EndLoci, uint32_t NumAlignReadsLoci,tsAlignReadLoci *pAlignReadLoci)
 {
 if(pAlignReadLoci == NULL|| NumAlignReadsLoci == 0)
 	return(0);
@@ -3901,8 +3901,8 @@ tsAlignReadLoci *pEl2;
 
 int CmpRslt;
 
-UINT32 TargPsn;
-UINT32 Lo,Hi;
+uint32_t TargPsn;
+uint32_t Lo,Hi;
 
 Lo = 0;
 Hi = NumAlignReadsLoci - 1;
@@ -3969,28 +3969,28 @@ return(0);	// unable to locate any alignment instances
 
 teBSFrsltCodes
 GenBinStarts(tsThreadInstData *pThreadInst,	// thread instance
-				  UINT32 RegionOfs,			// StartLoci is at this rlative offset within the current region
-				  UINT32 ChromID,			// alignments are on this chrom
-				  UINT32 StartLoci,			// must start on or after this loci
-				  UINT32 EndLoci,			// must start on or before this loci
-				  UINT32 NumAlignReadsLoci,
+				  uint32_t RegionOfs,			// StartLoci is at this rlative offset within the current region
+				  uint32_t ChromID,			// alignments are on this chrom
+				  uint32_t StartLoci,			// must start on or after this loci
+				  uint32_t EndLoci,			// must start on or before this loci
+				  uint32_t NumAlignReadsLoci,
 				  tsAlignReadLoci *pAlignReadsLoci)
 {
-UINT32 AlignIdx;
+uint32_t AlignIdx;
 int CurAlignDiffIdx;
-UINT8 CurSense;
-UINT32 ControlCnts;
-UINT32 ExperimentCnts;
-UINT32 SumControlReadLen;
-UINT32 SumExperimentReadLen;
-UINT32 MeanControlReadLen;
-UINT32 MeanExperimentReadLen;
+uint8_t CurSense;
+uint32_t ControlCnts;
+uint32_t ExperimentCnts;
+uint32_t SumControlReadLen;
+uint32_t SumExperimentReadLen;
+uint32_t MeanControlReadLen;
+uint32_t MeanExperimentReadLen;
 int CurLoci;
 int CurBin;
 int PrvBin;
 tsAlignReadLoci *pAlignReadLoci;
 
-if((AlignIdx = (UINT32)LocateStartAlignment(m_DEAlignStrand,ChromID,StartLoci,EndLoci,NumAlignReadsLoci,pAlignReadsLoci))==0)
+if((AlignIdx = (uint32_t)LocateStartAlignment(m_DEAlignStrand,ChromID,StartLoci,EndLoci,NumAlignReadsLoci,pAlignReadsLoci))==0)
 	return(eBSFSuccess);
 
 pAlignReadLoci = &pAlignReadsLoci[AlignIdx -1];
@@ -4068,13 +4068,13 @@ return(eBSFSuccess);
 
 teBSFrsltCodes
 GenBinAlignStarts(tsThreadInstData *pThreadInst,	// thread instance
-				  UINT32 RegionOfs,			// StartLoci is at this relative offset within the current region
+				  uint32_t RegionOfs,			// StartLoci is at this relative offset within the current region
 				  char *pszChrom,			// alignments are on this chrom
-				  UINT32 StartLoci,			// must start on or after this loci
-				  UINT32 EndLoci)			// must start on or before this loci
+				  uint32_t StartLoci,			// must start on or after this loci
+				  uint32_t EndLoci)			// must start on or before this loci
 {
 teBSFrsltCodes Rslt;
-UINT32 ChromID;
+uint32_t ChromID;
 
 pThreadInst->CurFeatLen += 1 + EndLoci - StartLoci;
 
@@ -4366,8 +4366,8 @@ double PValue;
 int Cells[2][2];
 
 
-UINT32 SumFeatCtrlPoissonCnts;
-UINT32 SumFeatExprPoissonCnts;
+uint32_t SumFeatCtrlPoissonCnts;
+uint32_t SumFeatExprPoissonCnts;
 
 double CurPearson;
 
@@ -4387,8 +4387,8 @@ MaxNumPerms = m_NumBins * 2000;
 if(MaxNumPerms > MaxPerms)
 	MaxNumPerms = MaxPerms;
 
-UINT32 TotPoissonCtrlLibCnts = 0;
-UINT32 TotPoissonExprLibCnts = 0;
+uint32_t TotPoissonCtrlLibCnts = 0;
+uint32_t TotPoissonExprLibCnts = 0;
 
 Supportive = 0;
 pPearson = pThreadInst->pPearsons;
@@ -4424,10 +4424,10 @@ for(PermIter = 0; PermIter < MaxNumPerms; PermIter++,pPearson++,pFeatFoldChanges
 		Supportive += 1;
 
 	// Poissson the total library counts
-	UINT32 PoissonCtrlLibCnts;
-	UINT32 PoissonExprLibCnts;
-	PoissonExprLibCnts = (UINT32)RandPoisson(pThreadInst,m_NumNormExprReads - SumFeatExprPoissonCnts);
-	PoissonCtrlLibCnts = (UINT32)RandPoisson(pThreadInst,m_NumNormCtrlReads  - SumFeatCtrlPoissonCnts);
+	uint32_t PoissonCtrlLibCnts;
+	uint32_t PoissonExprLibCnts;
+	PoissonExprLibCnts = (uint32_t)RandPoisson(pThreadInst,m_NumNormExprReads - SumFeatExprPoissonCnts);
+	PoissonCtrlLibCnts = (uint32_t)RandPoisson(pThreadInst,m_NumNormCtrlReads  - SumFeatCtrlPoissonCnts);
 
 	TotPoissonCtrlLibCnts += PoissonCtrlLibCnts;
 	TotPoissonExprLibCnts += PoissonExprLibCnts;
@@ -4491,7 +4491,7 @@ ReportDEandPearsonBinCounts(void)
 {
 int Idx;
 tsFeatDE *pFeatDE;
-UINT32 *pBinCnts;
+uint32_t *pBinCnts;
 int CurBin;
 
 if(m_hOutBinFile == -1 || m_pWrtBinBuff == NULL)
@@ -4655,9 +4655,9 @@ tsFeatDE *pFeatDE;
 int CurFeatID;
 
 tsAlignBin *pAlignBin;
-UINT32 *pCtrlBin;
-UINT32 *pExprBin;
-UINT32 BinLen;
+uint32_t *pCtrlBin;
+uint32_t *pExprBin;
+uint32_t BinLen;
 int Idx;
 
 DEAcquireSerialise();

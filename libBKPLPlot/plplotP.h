@@ -525,11 +525,11 @@ plP_clipline( PLINT *p_x1, PLINT *p_y1, PLINT *p_x2, PLINT *p_y2,
 
 // Stores hex digit value into FCI (font characterization integer).
 void
-plP_hex2fci( unsigned char hexdigit, unsigned char hexpower, PLUNICODE *pfci );
+plP_hex2fci( uint8_t hexdigit, uint8_t hexpower, PLUNICODE *pfci );
 
 // Retrieves hex digit value from FCI (font characterization integer).
 void
-plP_fci2hex( PLUNICODE fci, unsigned char *phexdigit, unsigned char hexpower );
+plP_fci2hex( PLUNICODE fci, uint8_t *phexdigit, uint8_t hexpower );
 
 // Pattern fills in software the polygon bounded by the input points.
 
@@ -1145,7 +1145,7 @@ plhershey2unicode( int in );
 typedef struct
 {
     PLUNICODE           fci;
-    const unsigned char *pfont;
+    const uint8_t *pfont;
 } FCI_to_FontName_Table;
 
 // Internal function to obtain a pointer to a valid font name.

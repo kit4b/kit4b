@@ -113,7 +113,7 @@ typedef struct TAG_sSamplingThreadPars {
 	int NumReadEls;
 	tsReadEl *pReadEls;
 	tsTransCnt *pTransCnts;
-	UINT64 NumTestedSamples;// number of samples tested
+	uint64_t NumTestedSamples;// number of samples tested
 	int NumAcceptedSamples;	// number of actually accepted samples
 
 } tsSamplingThreadPars;
@@ -408,8 +408,8 @@ int m_NumFeatures;				// number of features in BED file and number of transcript
 tsTransCnt *m_pTransCnts;		// used to hold transcript counts
 CBEDfile *m_pBEDFile;			// holds gene/features representing transcripts
 
-UINT64 m_NumTestedSamples;		// number of sample reads tested
-UINT32 m_NumAcceptedSamples;    // number of sample reads accepted as counts 
+uint64_t m_NumTestedSamples;		// number of sample reads tested
+uint32_t m_NumAcceptedSamples;    // number of sample reads accepted as counts 
 
 int m_TotTranscribedLen;		// total transcribed length of all gene/features
 
@@ -497,15 +497,15 @@ m_FMode = FMode;
 m_WhiteNoise = WhiteNoise;
 
 // seed random number generator
-UINT32 RandSeed;
+uint32_t RandSeed;
 #ifdef _WIN32
-RandSeed = (UINT32)(UINT64)GetTickCount();   // number of millisecs since system was started
+RandSeed = (uint32_t)(uint64_t)GetTickCount();   // number of millisecs since system was started
 #else
 struct tms Times;
-RandSeed = (UINT32)times(&Times);			// number of clock ticks since an arbitrary point in the past - it's only a seed so not too concerned as to when this point was
+RandSeed = (uint32_t)times(&Times);			// number of clock ticks since an arbitrary point in the past - it's only a seed so not too concerned as to when this point was
 #endif
 if(!RandSeed)								// just in case
-	RandSeed = (UINT32)time(NULL);
+	RandSeed = (uint32_t)time(NULL);
 TRandomCombined<CRandomMother,CRandomMersenne> RGseeds(RandSeed);
 // generator can take a number of iterations to settle down before generating reasonable psuedo-random values so run it for a million cycles
 for(RandSeed = 0; RandSeed < 100000; RandSeed++)
@@ -597,7 +597,7 @@ if((m_pTransCnts = new tsTransCnt [m_NumFeatures]) == NULL)
 // allocate for required number of reads plus max allowance for the variation
 NumReads *= 1000000;		// reads were specified as millions
 if(VaryReads > 0)
-	Num2Vary = (int)(((UINT64)NumReads * VaryReads)/100);
+	Num2Vary = (int)(((uint64_t)NumReads * VaryReads)/100);
 else
 	Num2Vary = 0;
 if((m_pReadEls = new tsReadEl [NumReads + Num2Vary]) == NULL)
@@ -639,7 +639,7 @@ for(ElIdx = 0; ElIdx < m_NumReadEls; ElIdx++, pReadEl++)
 		{
 		CurFeatLen = pTransCnt->TranscribedLen;
 		CurFeatureID = pTransCnt->TransID;
-    	NumReadsCurTrans = max(1,(int)(((UINT64)(m_NumReadEls - ElIdx) * CurFeatLen)/TotRemainFeatLen));
+    	NumReadsCurTrans = max(1,(int)(((uint64_t)(m_NumReadEls - ElIdx) * CurFeatLen)/TotRemainFeatLen));
 		pTransCnt->NumReads = NumReadsCurTrans;
 		TotRemainFeatLen -= CurFeatLen;
 		pTransCnt += 1;
@@ -867,8 +867,8 @@ return(0);
 void
 ShowProgress(void)
 {
-UINT64 NumTestedSamples;
-UINT32 NumAcceptedSamples;
+uint64_t NumTestedSamples;
+uint32_t NumAcceptedSamples;
 #ifdef _WIN32
 		AcquireSRWLockExclusive(&m_hCntsRwLock);
 #else
@@ -956,22 +956,22 @@ int	DeltaAcceptedSamples;
 int CurThres;
 int ElIdx;
 int RepIdx;
-UINT64 NumTestedSamples;
-UINT64 DeltaTestedSamples;
+uint64_t NumTestedSamples;
+uint64_t DeltaTestedSamples;
 tsTransCnt *pTransCnt;
 tsReadEl *pReadEl;
 
 // seed random number generator
-UINT32 RandSeed;
+uint32_t RandSeed;
 #ifdef _WIN32
-RandSeed = (UINT32)(UINT64)GetTickCount();   // number of millisecs since system was started
+RandSeed = (uint32_t)(uint64_t)GetTickCount();   // number of millisecs since system was started
 #else
 struct tms Times;
-RandSeed = (UINT32)times(&Times);			// number of clock ticks since an arbitrary point in the past - it's only a seed so not too concerned as to when this point was
+RandSeed = (uint32_t)times(&Times);			// number of clock ticks since an arbitrary point in the past - it's only a seed so not too concerned as to when this point was
 #endif
-RandSeed += (UINT32)pPars->threadID + (UINT32)(UINT64)&RandSeed;
+RandSeed += (uint32_t)pPars->threadID + (uint32_t)(uint64_t)&RandSeed;
 if(!RandSeed)								// just in case
-	RandSeed = (UINT32)time(NULL);
+	RandSeed = (uint32_t)time(NULL);
 TRandomCombined<CRandomMother,CRandomMersenne> RGseeds(RandSeed);
 for(ElIdx = 0; ElIdx < 10000; ElIdx++)
 	RGseeds.IRandom(0,1000000);

@@ -66,10 +66,10 @@ typedef enum TAG_eDEPMode {
 #pragma pack(1)
 
 typedef struct TAG_sFeatRPKM {
-	UINT32 SampleSetID;				// feature is in this sampleset
-	UINT32 FeatID;						// uniquely identifies this feature in sampleset
-	UINT32 FeatLen;						// feature length
-	UINT32 ExonIntronCnts;				// total number of exon + intron counts ascribed to this feature
+	uint32_t SampleSetID;				// feature is in this sampleset
+	uint32_t FeatID;						// uniquely identifies this feature in sampleset
+	uint32_t FeatLen;						// feature length
+	uint32_t ExonIntronCnts;				// total number of exon + intron counts ascribed to this feature
 	char szFeatName[cMaxFeatNameLen];	// '\0' terminated feature name
 	double RPKM;						// RPKM for this feature
 } tsFeatRPKM;
@@ -101,10 +101,10 @@ teBSFrsltCodes LoadFile(int SampleSetID,	// uniquely identifies sampleset
 
 int
 AddFeatureRPKM(int SampleSetID,			// processed from this sampleset
-				UINT32 FeatID,				// unique feature identifier within this sampleset
-				UINT32 FeatLen,				// feature length
+				uint32_t FeatID,				// unique feature identifier within this sampleset
+				uint32_t FeatLen,				// feature length
 			   char *pszFeatName,			// feature name
-			   UINT32 ExonIntronCnts,		// total number of exon + intron counts ascribed to this feature
+			   uint32_t ExonIntronCnts,		// total number of exon + intron counts ascribed to this feature
 			   double RPKM);				// associated RPKM
 
 int WriteoutDESeq(bool bFeatLen,		// output feature length as an additional column
@@ -570,9 +570,9 @@ const int cDataBuffAlloc = 0x0fffffff;		// allocation size to hold features
 
 etDEPMode m_GDEPMode;							// processing mode
 double m_NormCntsScale;						// normalise the counts by scaling with this factor
-UINT32 m_NumSampleSets;						// total number of sample datasets (1 per input file)
-UINT32 m_NumExperimentSets;					// number of experiment datasets (1 per input file)
-UINT32 m_NumControlSets;					// number of control datasets (1 per input file)
+uint32_t m_NumSampleSets;						// total number of sample datasets (1 per input file)
+uint32_t m_NumExperimentSets;					// number of experiment datasets (1 per input file)
+uint32_t m_NumControlSets;					// number of control datasets (1 per input file)
 char *m_pSampleSetNames;					// array of sampleset names
 
 tsFeatRPKM *m_pFeatRPKMs = NULL;
@@ -584,7 +584,7 @@ int m_NumOverLength;						// number of features over length
 int m_NumUnderCnts;							// number of features with too few counts
 
 size_t m_DataBuffLen = 0;					// total memory allocated 
-UINT8 *m_pWrtBuff;							// used to buffer output writes to file
+uint8_t *m_pWrtBuff;							// used to buffer output writes to file
 
 int m_hOutDESeqFile;								// output results file
 
@@ -973,10 +973,10 @@ return((teBSFrsltCodes)Rslt);
 
 int
 AddFeatureRPKM(int SampleSetID,			// processed from this experiment
-				UINT32 FeatID,				// unique feature identifier within this experiment
-				UINT32 FeatLen,				// feature length
+				uint32_t FeatID,				// unique feature identifier within this experiment
+				uint32_t FeatLen,				// feature length
 			   char *pszFeatName,			// feature name
-			   UINT32 ExonIntronCnts,		// total number of exon + intron counts ascribed to this feature
+			   uint32_t ExonIntronCnts,		// total number of exon + intron counts ascribed to this feature
 			   double RPKM)					// associated RPKM
 {
 size_t memreq;
@@ -990,7 +990,7 @@ if(m_pFeatRPKMs == NULL)
 	memreq = sizeof(tsFeatRPKM) * cAllocFeatRPKMs;
 	if((m_pFeatRPKMs = (tsFeatRPKM *)malloc(memreq))==NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddFeatureRPKM: Memory allocation of %lld bytes - %s",(INT64)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddFeatureRPKM: Memory allocation of %lld bytes - %s",(int64_t)memreq,strerror(errno));
 		GDEReset();
 		return(eBSFerrMem);
 		}
@@ -1004,7 +1004,7 @@ else
 		memreq = sizeof(tsFeatRPKM) * (m_AllocdFeatRPMs + cAllocFeatRPKMs);
 		if((pFeatRPKM = (tsFeatRPKM *)realloc(m_pFeatRPKMs,memreq))==NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddFeatureRPKM: Memory allocation of %lld bytes - %s",(INT64)memreq,strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddFeatureRPKM: Memory allocation of %lld bytes - %s",(int64_t)memreq,strerror(errno));
 			GDEReset();
 			return(eBSFerrMem);
 			}
@@ -1027,21 +1027,21 @@ int
 WriteoutDESeq(bool bFeatLens,			// if true then write out the feature length
 				int MinExonIntronCnts)	// only write out those features having sum of exon/intron counts at least MinExonIntronCnts	
 {
-UINT32 ExpIdx;
-UINT32 CurExperimentID;
-UINT32 Cnts[cMaxSampleSets];
+uint32_t ExpIdx;
+uint32_t CurExperimentID;
+uint32_t Cnts[cMaxSampleSets];
 tsFeatRPKM *pFeatRPKM;
 tsFeatRPKM *pMrkFeatRPKM;
 char *pszCurFeature;
 char szBuff[16000];
 int BuffIdx;
-UINT32 NumSamples;
-UINT32 TotExonIntronCnts;
-UINT32 NumMinExonIntronCnts;
+uint32_t NumSamples;
+uint32_t TotExonIntronCnts;
+uint32_t NumMinExonIntronCnts;
 double TotRPKM;
-UINT32 NumFeats;
-UINT32 NumFeaturesDEd;
-UINT32 FeatLen;
+uint32_t NumFeats;
+uint32_t NumFeaturesDEd;
+uint32_t FeatLen;
 int Idx;
 
 if(m_pFeatRPKMs == NULL)
@@ -1079,7 +1079,7 @@ for(Idx = 0; Idx < m_NumFeatRPMs; Idx++,pFeatRPKM++)
 	else
 		{
 		// should have been exactly m_NumSampleSets samples; also check that the min exon/intron cnts or RPKM is above the min
-		if(NumSamples < m_NumSampleSets || (MinExonIntronCnts > 0 && (TotExonIntronCnts < (UINT32)MinExonIntronCnts || TotRPKM < (double)MinExonIntronCnts)))
+		if(NumSamples < m_NumSampleSets || (MinExonIntronCnts > 0 && (TotExonIntronCnts < (uint32_t)MinExonIntronCnts || TotRPKM < (double)MinExonIntronCnts)))
 			{
 			if(NumSamples >= m_NumSampleSets)
 				NumMinExonIntronCnts += 1;
@@ -1099,7 +1099,7 @@ for(Idx = 0; Idx < m_NumFeatRPMs; Idx++,pFeatRPKM++)
 		}
 	}
 
-if(NumSamples < m_NumSampleSets || (MinExonIntronCnts > 0 && (TotExonIntronCnts < (UINT32)MinExonIntronCnts || TotRPKM < (double)MinExonIntronCnts)))
+if(NumSamples < m_NumSampleSets || (MinExonIntronCnts > 0 && (TotExonIntronCnts < (uint32_t)MinExonIntronCnts || TotRPKM < (double)MinExonIntronCnts)))
 	{
 	if(NumSamples >= m_NumSampleSets)
 		NumMinExonIntronCnts += 1;
@@ -1160,7 +1160,7 @@ for(int Idx = 0; Idx < m_NumFeatRPMs; Idx++,pFeatRPKM++)
 
 	if(pFeatRPKM->RPKM < 0.0 || pFeatRPKM->RPKM > 250000000.0)
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"WriteoutDESeq: Check - %s - as counts are rather abnormal at %f",pFeatRPKM->szFeatName,pFeatRPKM->RPKM);
-	Cnts[pFeatRPKM->SampleSetID-1] = (UINT32)(0.5 + (pFeatRPKM->RPKM * m_NormCntsScale));
+	Cnts[pFeatRPKM->SampleSetID-1] = (uint32_t)(0.5 + (pFeatRPKM->RPKM * m_NormCntsScale));
 	if(((int)Cnts[pFeatRPKM->SampleSetID-1]) < 0 || Cnts[pFeatRPKM->SampleSetID-1] > 250000000)
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"WriteoutDESeq: Check - %s - as scaled counts are rather abnormal at %d",pFeatRPKM->szFeatName,pFeatRPKM->RPKM);
 	}

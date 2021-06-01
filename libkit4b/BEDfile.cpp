@@ -309,13 +309,13 @@ m_szFile[_MAX_PATH-1] = '\0';
 
 if(m_pChromHashes == NULL)
 	{
-	if((m_pChromHashes = (UINT32 *) new UINT32 [ 0x1000000 ]) == NULL)
+	if((m_pChromHashes = (uint32_t *) new uint32_t [ 0x1000000 ]) == NULL)
 		{
 		AddErrMsg("CBEDfile::Open","Unable to allocate memory for chrom hashes");
 		Reset(false);
 		return(eBSFerrMem);
 		}
-	memset(m_pChromHashes,0,sizeof(UINT32) * 0x1000000);
+	memset(m_pChromHashes,0,sizeof(uint32_t) * 0x1000000);
 	}
 
 if(bCreate)
@@ -1262,14 +1262,14 @@ return(true);
 
 
 tsUnsortToSortID *
-CBEDfile::LocateU2S(UINT32 OldID,	// original feature chromid to locate
+CBEDfile::LocateU2S(uint32_t OldID,	// original feature chromid to locate
 		  int NumOldIDs,			// number of old chromids to binary search over
 		  tsUnsortToSortID *pSortedU2s) // sorted old to new chrom id mappings
 {
 tsUnsortToSortID *pEl;
-INT32 StartIdx;
-INT32 MidIdx;
-INT32 EndIdx;
+int32_t StartIdx;
+int32_t MidIdx;
+int32_t EndIdx;
 if(NumOldIDs < 25)				// if just a few then do a simple linear search
 	{
 	while(NumOldIDs--)
@@ -1308,12 +1308,12 @@ int EndIdx;
 int MidIdx;
 int Cnt;
 tsBEDchromname *pChromName;
-UINT32 Hash;
+uint32_t Hash;
 if(pszChromName == NULL || *pszChromName == '\0' ||
    m_FileHdr.NumChroms == 0 || m_pChromNames == NULL)
 	return(NULL);
 
-Hash = (UINT32)CUtility::GenHash24(pszChromName);
+Hash = (uint32_t)CUtility::GenHash24(pszChromName);
 
 // check if name matches that previously returned
 if(m_pCacheChromName != NULL)
@@ -1396,7 +1396,7 @@ int ExonStarts[cMaxNumExons];	// to hold exon starts as parsed from BED file in 
 int ExonSizes[cMaxNumExons]; //to hold exon sizes as parsed from BED file in pszSuppInfo
 int Psn,RelPsn;
 int Cnt,Idx;
-UINT32 Hash;
+uint32_t Hash;
 static 	int MaxLinkedLen = 0;
 
 static int MaxNumFeatures = 0;
@@ -1424,7 +1424,7 @@ if(m_FileHdr.NumFeatures == m_FileHdr.MaxFeatures)
 
 // realloc memory as may be required to hold at least one new  tsBEDchromname instance in m_pChromNames
 if(m_pChromNames == NULL || 
-   (((m_FileHdr.ChromNamesSize + (UINT32)sizeof(tsBEDchromname)) >= (UINT32)m_AllocChromNamesSize)))
+   (((m_FileHdr.ChromNamesSize + (uint32_t)sizeof(tsBEDchromname)) >= (uint32_t)m_AllocChromNamesSize)))
 	{
 	size_t ReallocTo;
 	if(m_pChromNames == NULL)
@@ -1440,7 +1440,7 @@ if(m_pChromNames == NULL ||
 #endif
 		if(m_pChromNames == NULL)
 			{
-			AddErrMsg("CBEDfile::AddFeature","Memory allocation of %lld bytes failed - %s",(INT64)ReallocTo,strerror(errno));
+			AddErrMsg("CBEDfile::AddFeature","Memory allocation of %lld bytes failed - %s",(int64_t)ReallocTo,strerror(errno));
 			m_AllocChromNamesSize = 0;
 			return(eBSFerrMem);
 			}
@@ -1519,7 +1519,7 @@ switch(m_FileHdr.FeatType) {
 		break;
 	}
 
-Hash = (UINT32)CUtility::GenHash24(pszChromName);
+Hash = (uint32_t)CUtility::GenHash24(pszChromName);
 pChromName = NULL;
 
 // check if name matches prev cached chrom name
@@ -1538,7 +1538,7 @@ if(pChromName == NULL) // NULL if not prev cached
 	pChromName = m_pChromNames;
 	if(m_FileHdr.NumChroms == 0)		// first so can't be any others with same hash..
 		{
-		memset(m_pChromHashes,0,sizeof(UINT32) * 0x1000000); // ensure hashes are reset - 0 if no chrom has that hash
+		memset(m_pChromHashes,0,sizeof(uint32_t) * 0x1000000); // ensure hashes are reset - 0 if no chrom has that hash
 		bNewChrom = true;
 		}
 	else
@@ -1606,7 +1606,7 @@ if(m_pFeatures == NULL ||
 
 		if(m_pFeatures == NULL)
 			{
-			AddErrMsg("CBEDfile::LoadFeatures","Memory allocation of %lld bytes failed - %s",(INT64)ReallocTo,strerror(errno));
+			AddErrMsg("CBEDfile::LoadFeatures","Memory allocation of %lld bytes failed - %s",(int64_t)ReallocTo,strerror(errno));
 			m_AllocFeaturesSize = 0;
 			return(eBSFerrMem);
 			}
@@ -1653,7 +1653,7 @@ if(SuppInfoLen)
 			break;
 		}
 	}
-pFeature->Hash = (UINT32)CUtility::GenHash24(pszFeatName);
+pFeature->Hash = (uint32_t)CUtility::GenHash24(pszFeatName);
 return(eBSFSuccess);
 }
 
@@ -1719,10 +1719,10 @@ if(m_hFile != -1 && m_bCreate)		// if file opened for write
 			{
 			tsBEDfeature *pFeature;
 			tsGeneStructure *pGene;
-			UINT8 *pBytes;
+			uint8_t *pBytes;
 
 			pFeature = m_pFeatures;
-			pBytes = (UINT8 *)pFeature;
+			pBytes = (uint8_t *)pFeature;
 			for(Idx = 0; Idx < m_FileHdr.NumFeatures; Idx++)
 				{
 				if(m_FileHdr.FeatType == eBTGeneExons)
@@ -1741,7 +1741,7 @@ if(m_hFile != -1 && m_bCreate)		// if file opened for write
 				pFeature->Hash = SwapUI32Endians(pFeature->Hash);						// hash on szName
 				if(pGene != NULL)
 					{
-					INT32 *pStartEnd;
+					int32_t *pStartEnd;
 					pStartEnd = pGene->ExonStartEnds;
 					for(Idy = 0; Idy < pGene->NumExons*2; Idy++,pStartEnd++)
 						*pStartEnd = SwapUI32Endians(*pStartEnd);
@@ -1880,7 +1880,7 @@ if(m_pFeatures == MAP_FAILED)
 
 if(m_pFeatures == NULL)
 	{
-	AddErrMsg("CBEDfile::LoadFeatures","Memory allocation of %lld bytes failed - %s",(INT64)m_FileHdr.FeaturesSize,strerror(errno));
+	AddErrMsg("CBEDfile::LoadFeatures","Memory allocation of %lld bytes failed - %s",(int64_t)m_FileHdr.FeaturesSize,strerror(errno));
 	if(bCloseFile)
 		{
 		close(m_hFile);
@@ -1899,7 +1899,7 @@ if(m_pChromNames != NULL)
 	m_AllocChromNamesSize = 0;
 	}
 
-if((m_pChromNames = (tsBEDchromname *)new unsigned char [m_FileHdr.ChromNamesSize])==NULL)
+if((m_pChromNames = (tsBEDchromname *)new uint8_t [m_FileHdr.ChromNamesSize])==NULL)
 	{
 	AddErrMsg("CBEDfile::LoadFeatures","Unable to alloc %d bytes of memory to hold feature chrom names - %s",m_FileHdr.ChromNamesSize,m_szFile);
 	m_AllocChromNamesSize = 0;
@@ -1972,10 +1972,10 @@ if(Rslt == eBSFSuccess)
 		{
 		tsBEDfeature *pFeature;
 		tsGeneStructure *pGene;
-		UINT8 *pBytes;
+		uint8_t *pBytes;
 
 		pFeature = m_pFeatures;
-		pBytes = (UINT8 *)pFeature;
+		pBytes = (uint8_t *)pFeature;
 		for(Idx = 0; Idx < m_FileHdr.NumFeatures; Idx++)
 			{
 			pFeature = (tsBEDfeature *)pBytes;
@@ -1991,7 +1991,7 @@ if(Rslt == eBSFSuccess)
 			if(m_FileHdr.FeatType == eBTGeneExons)
 				{
 				pGene = (tsGeneStructure *)&pFeature->szName[pFeature->FeatNameLen+1];
-				INT32 *pStartEnd;
+				int32_t *pStartEnd;
 				pStartEnd = pGene->ExonStartEnds;
 				pGene->NumExons = SwapUI32Endians(pGene->NumExons);						// number of exons in this gene
 				for(Idy = 0; Idy < pGene->NumExons*2; Idy++,pStartEnd++)
@@ -2049,7 +2049,7 @@ return(Rslt);
 // ReadDisk
 // Reads block of size 'Len' from disk starting at 'DiskOfs' into preallocated memory at 'pTo'
 teBSFrsltCodes
-CBEDfile::ReadDisk(INT64 DiskOfs,int Len,void *pTo)
+CBEDfile::ReadDisk(int64_t DiskOfs,int Len,void *pTo)
 {
 if(_lseeki64(m_hFile,DiskOfs,SEEK_SET)!=DiskOfs)
 	{
@@ -2513,7 +2513,7 @@ CBEDfile::MapTransOfs2Loci(int FeatureID,	 // identifies which feature/transcrip
 {
 tsBEDfeature *pFeature;
 tsGeneStructure *pGene;
-INT32 *pExonStartEnd;
+int32_t *pExonStartEnd;
 int ChromLoci;
 int Exon;
 int ExonLen;
@@ -3116,7 +3116,7 @@ int Exon;
 int Len;
 tsGeneStructure *pGene;
 tsBEDfeature *pProbe;
-INT32 *pExonStartEnd;
+int32_t *pExonStartEnd;
 if(!m_bFeaturesAvail || !m_FileHdr.NumFeatures || FeatureID < 1 || FeatureID > m_FileHdr.NumFeatures)
 	return(eBSFerrFeature);
 if(m_FileHdr.FeatType != eBTGeneExons)
@@ -3137,11 +3137,11 @@ int Exon;
 int Len;
 tsGeneStructure *pGene;
 tsBEDfeature *pProbe;
-INT32 *pExonStartEnd;
-UINT32 StartLoci;
-UINT32 EndLoci;
-UINT32 CDSstart;
-UINT32 CDSend;
+int32_t *pExonStartEnd;
+uint32_t StartLoci;
+uint32_t EndLoci;
+uint32_t CDSstart;
+uint32_t CDSend;
 
 if(!m_bFeaturesAvail || !m_FileHdr.NumFeatures || FeatureID < 1 || FeatureID > m_FileHdr.NumFeatures)
 	return(eBSFerrFeature);
@@ -3181,11 +3181,11 @@ int Exon;
 int Len;
 tsGeneStructure *pGene;
 tsBEDfeature *pProbe;
-INT32 *pExonStartEnd;
-UINT32 StartLoci;
-UINT32 EndLoci;
-UINT32 CDSstart;
-UINT32 CDSend;
+int32_t *pExonStartEnd;
+uint32_t StartLoci;
+uint32_t EndLoci;
+uint32_t CDSstart;
+uint32_t CDSend;
 
 if(!m_bFeaturesAvail || !m_FileHdr.NumFeatures || FeatureID < 1 || FeatureID > m_FileHdr.NumFeatures)
 	return(eBSFerrFeature);
@@ -3239,11 +3239,11 @@ int Exon;
 int Len;
 tsGeneStructure *pGene;
 tsBEDfeature *pProbe;
-INT32 *pExonStartEnd;
-UINT32 StartLoci;
-UINT32 EndLoci;
-UINT32 CDSstart;
-UINT32 CDSend;
+int32_t *pExonStartEnd;
+uint32_t StartLoci;
+uint32_t EndLoci;
+uint32_t CDSstart;
+uint32_t CDSend;
 
 if(!m_bFeaturesAvail || !m_FileHdr.NumFeatures || FeatureID < 1 || FeatureID > m_FileHdr.NumFeatures)
 	return(eBSFerrFeature);

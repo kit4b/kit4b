@@ -401,7 +401,7 @@ if(m_ppDirEntryIDs != NULL)
 	m_ppDirEntryIDs = NULL;
 	}
 // allocate memory to hold directory entries
-if((m_pDirEntries = (tsBSFDirEntry *)new unsigned char [m_FileHdr.DirEntriesSize])==NULL)
+if((m_pDirEntries = (tsBSFDirEntry *)new uint8_t [m_FileHdr.DirEntriesSize])==NULL)
 	{
 	m_AllocDirEntriesSize = 0;
 	return(eBSFerrMem);
@@ -421,7 +421,7 @@ if(Rslt == eBSFSuccess)
 	if(m_bIsBigEndian)	// if on a big-endian machine then need to make little endian as that is our native file format
 		{
 		tsBSFDirEntry *pDir = m_pDirEntries;
-		UINT8 *pByte = (UINT8 *)pDir;
+		uint8_t *pByte = (uint8_t *)pDir;
 		for(Idx = 0; Idx < m_FileHdr.NumEntries; Idx++)
 			{
 			pDir = (tsBSFDirEntry *)pByte;
@@ -437,15 +437,15 @@ if(Rslt == eBSFSuccess)
 	}
 
 if(Rslt == eBSFSuccess)
-	Rslt = ReadDisk(m_FileHdr.DirEntryNameIdxOfs,m_FileHdr.NumEntries * sizeof(INT32),m_ppDirEntryNames);
+	Rslt = ReadDisk(m_FileHdr.DirEntryNameIdxOfs,m_FileHdr.NumEntries * sizeof(int32_t),m_ppDirEntryNames);
 if(Rslt == eBSFSuccess)
-	Rslt = ReadDisk(m_FileHdr.DirEntryIDIdxOfs,m_FileHdr.NumEntries * sizeof(INT32),m_ppDirEntryIDs);
+	Rslt = ReadDisk(m_FileHdr.DirEntryIDIdxOfs,m_FileHdr.NumEntries * sizeof(int32_t),m_ppDirEntryIDs);
 #pragma warning(push)
 #pragma warning(disable: 4311)
 
-INT32 *pInt32;
+int32_t *pInt32;
 tsBSFDirEntry **ppEl;
-pInt32 = (INT32 *)m_ppDirEntryNames;
+pInt32 = (int32_t *)m_ppDirEntryNames;
 pInt32 += m_FileHdr.NumEntries-1;
 ppEl = &m_ppDirEntryNames[m_FileHdr.NumEntries-1];
 for(Idx = m_FileHdr.NumEntries-1; Idx >= 0; Idx--,pInt32--,ppEl--)
@@ -455,7 +455,7 @@ for(Idx = m_FileHdr.NumEntries-1; Idx >= 0; Idx--,pInt32--,ppEl--)
 	 *ppEl = (tsBSFDirEntry *)((char *)m_pDirEntries + *pInt32);
 	}
 
-pInt32 = (INT32 *)m_ppDirEntryIDs;
+pInt32 = (int32_t *)m_ppDirEntryIDs;
 pInt32 += m_FileHdr.NumEntries-1;
 ppEl = &m_ppDirEntryIDs[m_FileHdr.NumEntries-1];
 for(Idx = m_FileHdr.NumEntries-1; Idx >= 0; Idx--,pInt32--,ppEl--)
@@ -472,7 +472,7 @@ return(Rslt);
 // ReadDisk
 // Reads block of size 'Len' from disk starting at 'DiskOfs' into preallocated memory at 'pTo'
 teBSFrsltCodes
-CBioSeqFile::ReadDisk(INT64 DiskOfs,int Len,void *pTo)
+CBioSeqFile::ReadDisk(int64_t DiskOfs,int Len,void *pTo)
 {
 if(_lseeki64(m_hFile,DiskOfs,SEEK_SET)!=DiskOfs)
 	{
@@ -543,7 +543,7 @@ if(m_hFile != -1 && m_bCreate)		// if file opened for write
 		if(m_bIsBigEndian)	// if on a big-endian machine then need to make little endian as that is our native file format
 			{
 			tsBSFDirEntry *pDir = m_pDirEntries;
-			UINT8 *pByte = (UINT8 *)pDir;
+			uint8_t *pByte = (uint8_t *)pDir;
 			for(Idx = 0; Idx < m_FileHdr.NumEntries; Idx++)
 				{
 				pByte += pDir->Size;
@@ -833,7 +833,7 @@ if(pEntry == NULL)
 	return(eBSFerrEntry);
 
 NameLen = (int)strlen(pEntry->szName);
-if((UINT32)(NameLen + (int)sizeof(tsBSFDirEntry)) < pEntry->Size)
+if((uint32_t)(NameLen + (int)sizeof(tsBSFDirEntry)) < pEntry->Size)
 	{
 	strncpy(pszDescr,&pEntry->szName[NameLen+1],MaxLen);
 	pszDescr[MaxLen-1] = '\0';
@@ -885,7 +885,7 @@ if(pszDescr != NULL)
 		}
 	if(!NameLen)
 		NameLen = (int)strlen(pEntry->szName);
-	if((UINT32)(NameLen + (int)sizeof(tsBSFDirEntry)) < pEntry->Size)
+	if((uint32_t)(NameLen + (int)sizeof(tsBSFDirEntry)) < pEntry->Size)
 		{
 		strncpy(pszDescr,&pEntry->szName[NameLen+1],MaxDescrLen);
 		pszDescr[MaxDescrLen-1] = '\0';
@@ -898,7 +898,7 @@ return(eBSFSuccess);
 
 
 // returns unpacked data length	
-UINT32 
+uint32_t 
 CBioSeqFile::GetDataLen(tBSFEntryID EntryID)
 {
 tsBSFDirEntry *pEntry;
@@ -927,17 +927,17 @@ return(pEntry->DType);
 int 
 CBioSeqFile::GetData(tBSFEntryID EntryID,
 				etDataType ReqDataType,
-				 UINT32 Ofs,				// start base offset (0..MaxLen-1)
-				 unsigned char *pBuffer,	// where to return bases
-				 UINT32 MaxLen)				// max length to return (1..n)
+				 uint32_t Ofs,				// start base offset (0..MaxLen-1)
+				 uint8_t *pBuffer,	// where to return bases
+				 uint32_t MaxLen)				// max length to return (1..n)
 {
-unsigned char DataBuff[0x03fff];
+uint8_t DataBuff[0x03fff];
 int BuffLen;
 unsigned int FileSeqLen;
 int CurReadFileSeqLen;
 int BuffOfs;
 
-INT64 DataPsn;
+int64_t DataPsn;
 unsigned int ReadLen;
 tsBSFDirEntry *pEntry;
 if(m_hFile == -1)
@@ -1002,7 +1002,7 @@ if(ReqDataType == pEntry->DType)
 
 if(ReqDataType == eAsciiType && pEntry->DType == eSeqBaseType)
 	{
-	UINT32 NumCvrted = 0;
+	uint32_t NumCvrted = 0;
 	while(NumCvrted < MaxLen && FileSeqLen)
 		{
 		CurReadFileSeqLen = min(FileSeqLen,sizeof(DataBuff));
@@ -1013,7 +1013,7 @@ if(ReqDataType == eAsciiType && pEntry->DType == eSeqBaseType)
 			return(eBSFerrFileAccess);
 			}
 
-		BuffLen = min(MaxLen,(UINT32)CurReadFileSeqLen*2);
+		BuffLen = min(MaxLen,(uint32_t)CurReadFileSeqLen*2);
 		CSeqTrans::MapPackedSeq2Ascii(Ofs,DataBuff,BuffLen,(char *)pBuffer);
 		
 		Ofs = 0;
@@ -1123,9 +1123,9 @@ int
 CBioSeqFile::PackBases(unsigned int SeqLen,	// unpacked sequence length 
 		  etSeqBase *pUnpacked,				// pts to sequence to pack from
 		  unsigned int NibbleOfs,			// nibble to start pack into (0..SeqLen-1)
-		  unsigned char *pPacked)			// where to pack
+		  uint8_t *pPacked)			// where to pack
 {
-unsigned char byte;
+uint8_t byte;
 bool bStartHi=false;	// true if first base is to be packed into hi nibble
 bool bEndLo=false;		// true id last base is to be packed into lo nibble
 
@@ -1174,7 +1174,7 @@ int
 CBioSeqFile::UnpackBases(unsigned int SeqLen,	// unpacked sequence length 
 		  etSeqBase *pUnpacked,				// pts to sequence to unpack into
 		  unsigned int NibbleOfs,			// nibble to start unpack from (0..1)
-		  unsigned char *pPacked)			// where to unpack from
+		  uint8_t *pPacked)			// where to unpack from
 {
 bool bEndHi=false;			// true if last base is to be unpacked from hi nibble
 bool bStartLo=false;		// true if first base is to be unpacked from lo nibble
@@ -1224,7 +1224,7 @@ return(eBSFSuccess);
 // Add data to specified entry
 // NOTE - can only add data to currently created entry
 teBSFrsltCodes 
-CBioSeqFile::AddData(unsigned int DataLen, unsigned char *pData)
+CBioSeqFile::AddData(unsigned int DataLen, uint8_t *pData)
 {
 unsigned int BlockLen;
 unsigned int PackedLen;
@@ -1233,7 +1233,7 @@ if(m_pCreatingEntry == NULL || pData == NULL || !DataLen)
 	
 if(m_pDataBuff == NULL)
 	{
-	m_pDataBuff = new unsigned char [cBSFDataBuffSize + 1];	// allow for additional low nibble write
+	m_pDataBuff = new uint8_t [cBSFDataBuffSize + 1];	// allow for additional low nibble write
 	if(m_pDataBuff == NULL)
 		{
 		AddErrMsg("CBioSeqFile::AddData","Memory allocation of %d bytes for %s- %s",cBSFDataBuffSize+1,m_szFile,strerror(errno));
@@ -1529,7 +1529,7 @@ int
 CBioSeqFile::GetShuffledBases(int ChromID,	// reference chromosome identifier
 					  int ChromOfs,			// start on reference chromosome (0..n) 
 					  int NumPts,			// number of points to return
-					  unsigned char *pToRet,	// where to return etSeqBases
+					  uint8_t *pToRet,	// where to return etSeqBases
 					  etSeqBase MissingMarker)	// value to use if missing bases
 {
 int SegStart;
@@ -1618,7 +1618,7 @@ unsigned int DataType;
 unsigned int DataLen;
 int Len;
 
-unsigned char *pSeqBuff = NULL;
+uint8_t *pSeqBuff = NULL;
 unsigned int MaxAllocdSeqLen = 0;
 unsigned int DumpSeqLen = 0;
 
@@ -1667,7 +1667,7 @@ while((EntryID = Next(EntryID))!=0)
 			if(pSeqBuff != NULL)
 				delete pSeqBuff;
 			MaxAllocdSeqLen = (DumpSeqLen * 2) + 10000; // note that additional is allocated to reduce prob of a later alloc being required
-			pSeqBuff = new unsigned char [MaxAllocdSeqLen];
+			pSeqBuff = new uint8_t [MaxAllocdSeqLen];
 			if(pSeqBuff == NULL)
 				{
 				close(hDumpXMLFile);
@@ -1758,7 +1758,7 @@ CBioSeqFile::ScoreComplexity(etSeqBase *pSeq,
 							 
 {
 int TriFreqCnts[64+1];		// used to hold counts of trimers plus a end marker
-unsigned char Base;
+uint8_t Base;
 int CntA;
 int *pCntA;
 
@@ -1857,9 +1857,9 @@ CBioSeqFile::QuickAlignRight(unsigned int AllowedMismatches,	// total allowed mi
 		   unsigned int AllowedTargInDels,	// total allowed indel events on target
 		   unsigned int MaxInDelExtension,	// max length of any InDel extension 
 		   unsigned int ProbeLen,			// remaining probe length
-		   unsigned char *pProbe,
+		   uint8_t *pProbe,
 		   unsigned int TargLen,			// remaining target length
-		   unsigned char *pTarg)
+		   uint8_t *pTarg)
 {
 unsigned int Score = 0;
 unsigned int MismatchSeqLen = 0;
@@ -1975,9 +1975,9 @@ CBioSeqFile::QuickAlignLeft(unsigned int AllowedMismatches,	// total allowed mis
 		   unsigned int AllowedTargInDels,	// total allowed indel events on target
 		   unsigned int MaxInDelExtension,	// max length of any InDel extension 
 		   unsigned int ProbeLen,			// remaining probe length
-		   unsigned char *pProbe,
+		   uint8_t *pProbe,
 		   unsigned int TargLen,			// remaining target length
-		   unsigned char *pTarg)
+		   uint8_t *pTarg)
 {
 unsigned int Score = 0;
 unsigned int MismatchSeqLen = 0;

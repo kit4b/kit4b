@@ -208,16 +208,16 @@ __sync_val_compare_and_swap(&m_CASSerialise,1,0);
 
 
 int				// 0 no service request job available, 1 job details are being returned, -1 job is available but MaxParamSize < required, -2 job available but MaxRequestData < required, -3 if session being terminated
-CBKSProvider::GetJobToProcess(UINT32 *pInstanceID,		// MANDATORY:  service instance identifier, JobResponse() must use this identifier
-	  						UINT64 *pClassInstanceID,	// MANDATORY: returned class instance to apply job to
-							UINT32 *pClassMethodID,			// MANDATORY: returned class method to apply on class instance
-							  UINT32 *pMaxParamsSize,	//  MANDATORY: on input, max sized parameter block accepted, on return then the actual size of the parameter block
-							  UINT8 *pParams,			//  MANDATORY: returned parameter block
-							  UINT32 *pMaxRequestData,	//  MANDATORY: on input the max sized request data block accepted, on return the actual size of the request data block
-							  UINT8 *pRequestData)		//  MANDATORY: returned request data block
+CBKSProvider::GetJobToProcess(uint32_t *pInstanceID,		// MANDATORY:  service instance identifier, JobResponse() must use this identifier
+							uint64_t *pClassInstanceID,	// MANDATORY: returned class instance to apply job to
+							uint32_t *pClassMethodID,			// MANDATORY: returned class method to apply on class instance
+							  uint32_t *pMaxParamsSize,	//  MANDATORY: on input, max sized parameter block accepted, on return then the actual size of the parameter block
+							  uint8_t *pParams,			//  MANDATORY: returned parameter block
+							  uint32_t *pMaxRequestData,	//  MANDATORY: on input the max sized request data block accepted, on return the actual size of the request data block
+							  uint8_t *pRequestData)		//  MANDATORY: returned request data block
 {
 teBKSPProvState BKSPState;
-UINT32 InstanceID;
+uint32_t InstanceID;
 tsReqResp *pInstance;
 if(pInstanceID == NULL || pMaxParamsSize == NULL || pParams == NULL || pMaxRequestData == NULL || pRequestData == NULL)
 	return(eBSFerrParams);
@@ -271,7 +271,7 @@ for(InstanceID = 1; InstanceID <= m_BKSConnection.NumInstances; InstanceID+=1)
 		ReleaseLock(true);
 		return(1);
 		}
-	pInstance = (tsReqResp *)((UINT8 *)pInstance + m_BKSConnection.ReqRespInstSize);
+	pInstance = (tsReqResp *)((uint8_t *)pInstance + m_BKSConnection.ReqRespInstSize);
 	}
 
 ReleaseLock(true);
@@ -280,14 +280,14 @@ return(0);
 
 
 int					// 0 if response accepted, -1 if job does not exist or parameterisation errors, -3 if session terminating
-CBKSProvider::JobResponse(INT32 InstanceIDEx,	// service instance identifier returned by GetJobToProcess
-				UINT64 ClassInstanceID,		// response is for this class instance
-				UINT32 ProcRslt,			// service request processing result
-				UINT32 ResponseSize,		// response data block size
-				UINT8 *pResponseData)		// response data
+CBKSProvider::JobResponse(int32_t InstanceIDEx,	// service instance identifier returned by GetJobToProcess
+				uint64_t ClassInstanceID,		// response is for this class instance
+				uint32_t ProcRslt,			// service request processing result
+				uint32_t ResponseSize,		// response data block size
+				uint8_t *pResponseData)		// response data
 {
 teBKSPProvState BKSPState;
-UINT32 InstanceID;
+uint32_t InstanceID;
 tsReqResp *pInstance;
 InstanceID = InstanceIDEx & 0x0fff;
 
@@ -318,7 +318,7 @@ if ((BKSPState = (teBKSPProvState)m_BKSConnection.BKSPState) != eBKSPSAcceptedSe
 	ReleaseLock(true);
 	return(BKSPState == eBKSPSAcceptedServiceActv ? -3 : -1);
 	}
-pInstance = (tsReqResp *)((UINT8 *)m_BKSConnection.pReqResp + (m_BKSConnection.ReqRespInstSize * (InstanceID - 1)));
+pInstance = (tsReqResp *)((uint8_t *)m_BKSConnection.pReqResp + (m_BKSConnection.ReqRespInstSize * (InstanceID - 1)));
 if(pInstance->InstanceID != InstanceID || pInstance->InstanceIDEx != InstanceIDEx || !pInstance->flgProc)
 	{
 	ReleaseLock(true);
@@ -344,12 +344,12 @@ CBKSProvider::TerminateConnection(bool bFreeMem,		  // true if any allocated mem
 									bool bResetInitTypes) // reset all service types
 {
 int Idx;
-UINT8 *pRxdBuff;
-UINT8 *pTxdBuff;
-UINT8 *pReqResp;
-UINT32 AllocdTxdBuff;
-UINT32 AllocdRxdBuff;
-UINT32 AllocdReqResp;
+uint8_t *pRxdBuff;
+uint8_t *pTxdBuff;
+uint8_t *pReqResp;
+uint32_t AllocdTxdBuff;
+uint32_t AllocdRxdBuff;
+uint32_t AllocdReqResp;
 
 tsTxdRxd *pTxdRxd;
 
@@ -516,20 +516,20 @@ CBKSProvider::Initialise(int MaxConnWait,			// wait for at most this many minute
 
 // if at time of registration user did not specify the costing function for determining the
 // number of instances to support then use this default costing function
-UINT32
+uint32_t
 CostNumInstances(teBKSPType BKSPType,				// determine number of service instances to offer for this service type
-				 UINT32 MaxServiceInsts,			// limited to support a maximum of this many service instances
-				 UINT32 MaxQuerySeqLen,			// accepted query sequences can be up to this length
-				 UINT32 MaxTargSeqLen,			// accepted target sequences can be up to this length
-				 UINT32 MaxReqPayloadSize,		// request payloads from the service requester, including framing, can be up to this size (UINT8s),
-				 UINT32 MaxRespPayloadSize,		// response payloads from the service provider to requester, including framing, can be up to this  size (UINT8s)
+				 uint32_t MaxServiceInsts,			// limited to support a maximum of this many service instances
+				 uint32_t MaxQuerySeqLen,			// accepted query sequences can be up to this length
+				 uint32_t MaxTargSeqLen,			// accepted target sequences can be up to this length
+				 uint32_t MaxReqPayloadSize,		// request payloads from the service requester, including framing, can be up to this size (UINT8s),
+				 uint32_t MaxRespPayloadSize,		// response payloads from the service provider to requester, including framing, can be up to this  size (UINT8s)
 				 double ScalePayload,					// ScaledPayload = (MaxReqPayloadSize + MaxTargSeqLen) * ScalePayload
 				 double ScaleTargLen,					// ScaledTargLen = MaxTargSeqLen * ScaleTargLen
 				 double ScaleQueryLen,				// ScaledQueryLen = MaxTargSeqLen * ScaleQueryLen
 				 double ScaleScaledTargQuery,			// ScaledScaledTargQuery = (ScaledTargLen * ScaledQueryLen) * ScaleScaledTargQuery
 				 double AvailResources)				// OfferedInstances = AvailResources / (ScaledScaledTargQuery + ScalePayload)
 {
-	UINT32 MaxServiceInstances;
+	uint32_t MaxServiceInstances;
 
 double Divisor;  // used to place a floor on divisor of 0.0001
 Divisor =  ((ScalePayload * (double)(MaxReqPayloadSize + MaxRespPayloadSize)) +
@@ -538,7 +538,7 @@ if(Divisor < 0.0001)
 	Divisor = 0.0001;
 
 	// in this implementation using same default costing function for all service types
-	MaxServiceInstances = (UINT32)((AvailResources + 0.5) / Divisor);
+	MaxServiceInstances = (uint32_t)((AvailResources + 0.5) / Divisor);
 	if (MaxServiceInstances > MaxServiceInsts)
 		MaxServiceInstances = MaxServiceInsts;
 	return(MaxServiceInstances);
@@ -547,23 +547,23 @@ if(Divisor < 0.0001)
 
 int					// returns total number of registered service types or teBSFrsltCodes error code if any parameterisation errors or already registered type
 CBKSProvider::RegServiceType(teBKSPType BKSPType,		// registering this service type
-			   UINT32 ProviderVersion,					// service provider version 
-			   UINT32 MaxServiceInsts,					// limited to support a maximum of this many service instances
-			   UINT32 MaxQuerySeqLen,					// accepted query sequences can be up to this length
-			   UINT32 MaxTargSeqLen,					// accepted target sequences can be up to this length
-			   UINT32 MaxReqPayloadSize,				// request payloads from the service requester, including framing, can be up to this size (UINT8s),
-			   UINT32 MaxRespPayloadSize,				// response payloads from the service provider to requester, including framing, can be up to this  size (UINT8s)
+			   uint32_t ProviderVersion,					// service provider version 
+			   uint32_t MaxServiceInsts,					// limited to support a maximum of this many service instances
+			   uint32_t MaxQuerySeqLen,					// accepted query sequences can be up to this length
+			   uint32_t MaxTargSeqLen,					// accepted target sequences can be up to this length
+			   uint32_t MaxReqPayloadSize,				// request payloads from the service requester, including framing, can be up to this size (UINT8s),
+			   uint32_t MaxRespPayloadSize,				// response payloads from the service provider to requester, including framing, can be up to this  size (UINT8s)
 				double ScalePayload,					// ScaledPayload = (MaxReqPayloadSize + MaxTargSeqLen) * ScalePayload
 				double ScaleTargLen,					// ScaledTargLen = MaxTargSeqLen * ScaleTargLen
 				double ScaleQueryLen,					// ScaledQueryLen = MaxTargSeqLen * ScaleQueryLen
 				double ScaleScaledTargQuery,			// ScaledScaledTargQuery = (ScaledTargLen * ScaledQueryLen) * ScaleScaledTargQuery;
 				double AvailResources,					// OfferedInstances = AvailResources / (ScaledScaledTargQuery + ScalePayload)
-				UINT32 (*  pfnCostNumInstances)(teBKSPType BKSPType,				// determine number of service instances to offer for this service type
-						UINT32 MaxServiceInsts,			// limited to support a maximum of this many service instances
-						UINT32 MaxQuerySeqLen,			// accepted query sequences can be up to this length
-						UINT32 MaxTargSeqLen,			// accepted target sequences can be up to this length
-						UINT32 MaxReqPayloadSize,		// request payloads from the service requester, including framing, can be up to this size (UINT8s),
-						UINT32 MaxRespPayloadSize,		// response payloads from the service provider to requester, including framing, can be up to this  size (UINT8s)
+				uint32_t (*  pfnCostNumInstances)(teBKSPType BKSPType,				// determine number of service instances to offer for this service type
+						uint32_t MaxServiceInsts,			// limited to support a maximum of this many service instances
+						uint32_t MaxQuerySeqLen,			// accepted query sequences can be up to this length
+						uint32_t MaxTargSeqLen,			// accepted target sequences can be up to this length
+						uint32_t MaxReqPayloadSize,		// request payloads from the service requester, including framing, can be up to this size (UINT8s),
+						uint32_t MaxRespPayloadSize,		// response payloads from the service provider to requester, including framing, can be up to this  size (UINT8s)
 						double ScalePayload,					// ScaledPayload = (MaxReqPayloadSize + MaxTargSeqLen) * ScalePayload
 						double ScaleTargLen,					// ScaledTargLen = MaxTargSeqLen * ScaleTargLen
 						double ScaleQueryLen,				// ScaledQueryLen = MaxTargSeqLen * ScaleQueryLen
@@ -596,8 +596,8 @@ if (pType->BKSPType != eBKSPTUndefined)				// not allowed to reinitialise if alr
 	return(eBSFerrInternal);
 	}
 
-if(MaxServiceInsts > (UINT32)m_MaxServInsts)
-	MaxServiceInsts = (UINT32)m_MaxServInsts;
+if(MaxServiceInsts > (uint32_t)m_MaxServInsts)
+	MaxServiceInsts = (uint32_t)m_MaxServInsts;
 if(AvailResources > (double)m_MaxServMemGB * 0x03fffffff)
 	AvailResources = (double)m_MaxServMemGB * 0x03fffffff;
 
@@ -634,21 +634,21 @@ return(NumInitTypes);
 teBSFrsltCodes				// cBSFSuccess if no errors and registration process is continued, cBSFSocketErr if any errors and connection has been terminated, eBSFerrMem if unable to allocate memory 
 CBKSProvider::ProcessSessEstab(bool bCpltdWrite)	// false if frame received from server, true if frame sent
 {
-UINT32 RegIdx;
-UINT32 ReqIdx;
+uint32_t RegIdx;
+uint32_t ReqIdx;
 tsBKSPacHdr *pRxdHdr;
 tsBKSOfferedService *pOfferedService;
 tsBKSReqServices *pReqServices;
 tsBKSAcceptService *pAcceptService;
 tsServiceDetail *pReqService;
 tsBKSType *pRegService;
-UINT32 MaxServiceInstances;
-UINT32 PriorityServiceInstances;
+uint32_t MaxServiceInstances;
+uint32_t PriorityServiceInstances;
 tsBKSReqServices PriorityReqService;
 tsBKSType *pPriorityRegService;
-UINT32 NumReqTypes;
-UINT32 MemReq;
-UINT32 Diff;
+uint32_t NumReqTypes;
+uint32_t MemReq;
+uint32_t Diff;
 
 memset(&PriorityReqService,0,sizeof(tsBKSReqServices));
 if (m_BKSConnection.BKSPState == eBKSPSUndefined ||
@@ -725,7 +725,7 @@ if (!bCpltdWrite)				// if a request frame has been received then ensure it is f
 					}
 				}
 			}	
-		UINT8 *pTmp;
+		uint8_t *pTmp;
 		if(PriorityServiceInstances > 0)				// can offer service?
 			{
 			size_t AllocMem = (PriorityReqService.Details[0].MaxReqPayloadSize + PriorityReqService.Details[0].MaxRespPayloadSize) * PriorityServiceInstances * 11 / 10; // allowing 10% additional for overheads
@@ -735,7 +735,7 @@ if (!bCpltdWrite)				// if a request frame has been received then ensure it is f
 					pTmp = m_BKSConnection.pReqResp;
 				else
 					pTmp = NULL; 
-				if((m_BKSConnection.pReqResp = (UINT8 *)malloc(AllocMem))==NULL)
+				if((m_BKSConnection.pReqResp = (uint8_t *)malloc(AllocMem))==NULL)
 					{
 					gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessSessEstab: unable to allocate %lld bytes memory for pReqResp", AllocMem);
 					if(pTmp != NULL)
@@ -748,7 +748,7 @@ if (!bCpltdWrite)				// if a request frame has been received then ensure it is f
 					memcpy(m_BKSConnection.pReqResp,pTmp, m_BKSConnection.AllocdReqResp);
 					free(pTmp);
 					}
-				m_BKSConnection.AllocdReqResp = (UINT32)AllocMem;
+				m_BKSConnection.AllocdReqResp = (uint32_t)AllocMem;
 				}
 
 			AllocMem = PriorityReqService.Details[0].MaxReqPayloadSize * 15 / 10;			// providers receive requests, allowing 50% additional for overheads
@@ -758,7 +758,7 @@ if (!bCpltdWrite)				// if a request frame has been received then ensure it is f
 					pTmp = m_BKSConnection.TxdRxd.pRxdBuff;
 				else
 					pTmp = NULL;
-				if((m_BKSConnection.TxdRxd.pRxdBuff = (UINT8 *)malloc(AllocMem))==NULL)
+				if((m_BKSConnection.TxdRxd.pRxdBuff = (uint8_t *)malloc(AllocMem))==NULL)
 					{
 					gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessSessEstab: unable to allocate %lld bytes memory for pRxdBuff", AllocMem);
 					if(pTmp != NULL)
@@ -771,7 +771,7 @@ if (!bCpltdWrite)				// if a request frame has been received then ensure it is f
 					memcpy(m_BKSConnection.TxdRxd.pRxdBuff, pTmp, m_BKSConnection.TxdRxd.AllocdRxdBuff);
 					free(pTmp);
 					}
-				m_BKSConnection.TxdRxd.AllocdRxdBuff = (UINT32)AllocMem;
+				m_BKSConnection.TxdRxd.AllocdRxdBuff = (uint32_t)AllocMem;
 				}
 
 			AllocMem = PriorityReqService.Details[0].MaxRespPayloadSize * 15 / 10;			// providers respond to requests, allowing 50% additional for overheads
@@ -781,7 +781,7 @@ if (!bCpltdWrite)				// if a request frame has been received then ensure it is f
 					pTmp = m_BKSConnection.TxdRxd.pTxdBuff;
 				else
 					pTmp = NULL;
-				if((m_BKSConnection.TxdRxd.pTxdBuff = (UINT8 *)malloc(AllocMem))==NULL)
+				if((m_BKSConnection.TxdRxd.pTxdBuff = (uint8_t *)malloc(AllocMem))==NULL)
 					{
 					gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessSessEstab: unable to allocate %lld bytes memory for pTxdBuff", AllocMem);
 					if (pTmp != NULL)
@@ -794,7 +794,7 @@ if (!bCpltdWrite)				// if a request frame has been received then ensure it is f
 					memcpy(m_BKSConnection.TxdRxd.pTxdBuff, pTmp, m_BKSConnection.TxdRxd.AllocdTxdBuff);
 					free(pTmp);
 					}
-				m_BKSConnection.TxdRxd.AllocdTxdBuff = (UINT32)AllocMem;
+				m_BKSConnection.TxdRxd.AllocdTxdBuff = (uint32_t)AllocMem;
 				}
 
 			m_BKSConnection.InstancesBusy = 0;
@@ -810,7 +810,7 @@ if (!bCpltdWrite)				// if a request frame has been received then ensure it is f
 			m_BKSConnection.MaxRespPayloadSize = PriorityReqService.Details[0].MaxRespPayloadSize;
 			m_BKSConnection.ReqRespInstSize = sizeof(tsReqResp) + max(m_BKSConnection.MaxReqPayloadSize, m_BKSConnection.MaxRespPayloadSize);
 			m_BKSConnection.AllocdReqResp = m_BKSConnection.ReqRespInstSize * m_BKSConnection.NumInstances;
-			if ((m_BKSConnection.pReqResp = (UINT8 *)malloc(m_BKSConnection.AllocdReqResp)) == NULL)
+			if ((m_BKSConnection.pReqResp = (uint8_t *)malloc(m_BKSConnection.AllocdReqResp)) == NULL)
 				{
 				gDiagnostics.DiagOut(eDLInfo, gszProcName, "ProcessSessEstab: Unable to allocate memory for %d service instances totaling %d bytes", m_BKSConnection.NumInstances, m_BKSConnection.AllocdReqResp);
 				TerminateConnection(true, true, true);
@@ -951,12 +951,12 @@ return(cBSFSocketErr);
 int							// number of received requests allocated to service instances
 CBKSProvider::HandleServiceRequests(void) // handler for received requests for allocation of a service instance to process the service request
 {
-UINT32 InstanceID;
+uint32_t InstanceID;
 sBKSServReq *pServReq;
 sBKSServResp *pServResp;
 tsReqResp *pInstance;
-UINT32 TxFrameSize;
-UINT32 Diff;
+uint32_t TxFrameSize;
+uint32_t Diff;
 
 pServReq = (sBKSServReq *)m_BKSConnection.TxdRxd.pRxdBuff;
 
@@ -989,7 +989,7 @@ if (m_BKSConnection.InstancesBusy >= m_BKSConnection.NumInstances)
 else  // not all service instances are committed so can accept this request
 	{
 	pInstance = (tsReqResp *)m_BKSConnection.pReqResp;
-	for (InstanceID = 1; InstanceID <= m_BKSConnection.NumInstances; InstanceID += 1, pInstance = (tsReqResp *)((UINT8 *)pInstance + m_BKSConnection.ReqRespInstSize))
+	for (InstanceID = 1; InstanceID <= m_BKSConnection.NumInstances; InstanceID += 1, pInstance = (tsReqResp *)((uint8_t *)pInstance + m_BKSConnection.ReqRespInstSize))
 		{
 		if (pInstance->InstanceID == 0)  // 0 if this instance available
 			{
@@ -1034,9 +1034,9 @@ int										// number of responses assembled into m_BKSConnection.TxdRxd.pTxdBu
 CBKSProvider::HandleServiceResponses(void) // locate those service instances with responses ready to be sent to the requester and send these responses
 {
 int NumResponses;
-UINT32 TxFrameID;
-UINT32 InstanceID;
-UINT32 TxFrameSize;
+uint32_t TxFrameID;
+uint32_t InstanceID;
+uint32_t TxFrameSize;
 sBKSServResp *pServResp;
 tsReqResp *pInstance;
 tsReqResp *pNxtInstance;
@@ -1082,7 +1082,7 @@ if(m_BKSConnection.InstancesCpltd > 0)
 			if (m_BKSConnection.TxdRxd.TxFrameID > 0x07f)
 				m_BKSConnection.TxdRxd.TxFrameID = 1;
 			m_BKSConnection.TxdRxd.TotTxd += pServResp->Hdr.FrameLen;
-			pNxtInstance = (tsReqResp *)((UINT8 *)pInstance + m_BKSConnection.ReqRespInstSize);
+			pNxtInstance = (tsReqResp *)((uint8_t *)pInstance + m_BKSConnection.ReqRespInstSize);
 			memset(pInstance,0,sizeof(tsReqResp));
 			pInstance = pNxtInstance;
 			m_BKSConnection.InstancesCpltd -= 1;
@@ -1090,7 +1090,7 @@ if(m_BKSConnection.InstancesCpltd > 0)
 			NumResponses += 1;
 			}
 		else
-			pInstance = (tsReqResp *)((UINT8 *)pInstance + m_BKSConnection.ReqRespInstSize);
+			pInstance = (tsReqResp *)((uint8_t *)pInstance + m_BKSConnection.ReqRespInstSize);
 		}
 	}
 if(NumResponses)
@@ -1337,8 +1337,8 @@ m_Ctrl[0].Socket = INVALID_SOCKET;
 m_Ctrl[1].Socket = INVALID_SOCKET;
 
 union {
-    struct sockaddr_in inaddr;
-    struct sockaddr addr;
+	struct sockaddr_in inaddr;
+	struct sockaddr addr;
 } Addr;
 
 int LastErr;
@@ -1348,7 +1348,7 @@ int reuse = 1;
 
 ListenerSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 if (ListenerSocket == -1)
-    return(false);
+	return(false);
 
 memset(&Addr, 0, sizeof(Addr));
 Addr.inaddr.sin_family = AF_INET;
@@ -1357,45 +1357,45 @@ Addr.inaddr.sin_port = 0;
 
 bSuccess = false;
 while(!bSuccess) {
-    if (setsockopt(ListenerSocket, SOL_SOCKET, SO_REUSEADDR,
-            (char*) &reuse, (socklen_t) sizeof(reuse)) == -1)
-        break;
-    if  (bind(ListenerSocket, &Addr.addr, sizeof(Addr.inaddr)) == SOCKET_ERROR)
-        break;
+	if (setsockopt(ListenerSocket, SOL_SOCKET, SO_REUSEADDR,
+			(char*) &reuse, (socklen_t) sizeof(reuse)) == -1)
+		break;
+	if  (bind(ListenerSocket, &Addr.addr, sizeof(Addr.inaddr)) == SOCKET_ERROR)
+		break;
 
-    memset(&Addr, 0, sizeof(Addr));
-    if  (getsockname(ListenerSocket, &Addr.addr, &addrlen) == SOCKET_ERROR)
-        break;
-     Addr.inaddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-    Addr.inaddr.sin_family = AF_INET;
+	memset(&Addr, 0, sizeof(Addr));
+	if  (getsockname(ListenerSocket, &Addr.addr, &addrlen) == SOCKET_ERROR)
+		break;
+	 Addr.inaddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+	Addr.inaddr.sin_family = AF_INET;
 
-    if (listen(ListenerSocket, 1) == SOCKET_ERROR)
-        break;
+	if (listen(ListenerSocket, 1) == SOCKET_ERROR)
+		break;
 
-    SocketPair[0] = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if (SocketPair[0] == -1)
-        break;
-    if (connect(SocketPair[0], &Addr.addr, sizeof(Addr.inaddr)) == SOCKET_ERROR)
-        break;
+	SocketPair[0] = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (SocketPair[0] == -1)
+		break;
+	if (connect(SocketPair[0], &Addr.addr, sizeof(Addr.inaddr)) == SOCKET_ERROR)
+		break;
 
-    SocketPair[1] = accept(ListenerSocket, NULL, NULL);
-    if (SocketPair[1] == -1)
-        break;
+	SocketPair[1] = accept(ListenerSocket, NULL, NULL);
+	if (SocketPair[1] == -1)
+		break;
 
-    closesocket(ListenerSocket);
+	closesocket(ListenerSocket);
 	ListenerSocket = INVALID_SOCKET;
 	bSuccess = true;
-    }
+	}
 
 
 if(!bSuccess)
 	{
-    LastErr = WSAGetLastError();
-    closesocket(ListenerSocket);
-    closesocket(SocketPair[0]);
-    closesocket(SocketPair[1]);
-    WSASetLastError(LastErr);
-    return(false);
+	LastErr = WSAGetLastError();
+	closesocket(ListenerSocket);
+	closesocket(SocketPair[0]);
+	closesocket(SocketPair[1]);
+	WSASetLastError(LastErr);
+	return(false);
 	}
 #else
 m_Ctrl[0].Socket = -1;
@@ -1424,23 +1424,23 @@ if(Rsltz == -1 || fcntl(m_Ctrl[1].Socket, F_SETFL, fcntl(m_Ctrl[1].Socket,F_GETF
 	}
 	
 #endif
-if((m_Ctrl[0].pRxdBuff = (UINT8 *)calloc(cCtrlbuffSize,1))==NULL)
+if((m_Ctrl[0].pRxdBuff = (uint8_t *)calloc(cCtrlbuffSize,1))==NULL)
 	return(false);
 m_Ctrl[0].AllocdRxdBuff = cCtrlbuffSize;
-if((m_Ctrl[1].pRxdBuff = (UINT8 *)calloc(cCtrlbuffSize,1))==NULL)
+if((m_Ctrl[1].pRxdBuff = (uint8_t *)calloc(cCtrlbuffSize,1))==NULL)
 	return(false);
 m_Ctrl[1].AllocdRxdBuff = cCtrlbuffSize;
-if((m_Ctrl[0].pTxdBuff = (UINT8 *)calloc(cCtrlbuffSize,1))==NULL)
+if((m_Ctrl[0].pTxdBuff = (uint8_t *)calloc(cCtrlbuffSize,1))==NULL)
 	return(false);
 m_Ctrl[0].AllocdTxdBuff = cCtrlbuffSize;
-if((m_Ctrl[1].pTxdBuff = (UINT8 *)calloc(cCtrlbuffSize,1))==NULL)
+if((m_Ctrl[1].pTxdBuff = (uint8_t *)calloc(cCtrlbuffSize,1))==NULL)
 	return(false);
 m_Ctrl[1].AllocdTxdBuff = cCtrlbuffSize;
 return(true);
 }
 
 bool 
-CBKSProvider::ProcessCtrlMsg(int MsgLen,UINT8 *pMsg)			// process a message received by control socket m_Ctrl[1] - note: currently these messages are simply discarded
+CBKSProvider::ProcessCtrlMsg(int MsgLen,uint8_t *pMsg)			// process a message received by control socket m_Ctrl[1] - note: currently these messages are simply discarded
 {
 // currrently not processing control payloads
 m_Ctrl[1].flgRxCplt = 0;
@@ -1457,8 +1457,8 @@ CBKSProvider::InitialiseConnect(int MaxConnWait,			// wait for at most this many
 								const char* pszHost,	// connecting to this server host/IP address; NULL to use first INET IP local to this machine
 								  char *pszService)		// connecting to this server service/port; NULL to use default port 
 {
-UINT32 Now;
-UINT32 Then;
+uint32_t Now;
+uint32_t Then;
 
 struct addrinfo AddrInfoHints;
 struct addrinfo *pAddrInfoRes;
@@ -1489,7 +1489,7 @@ m_BKSConnection.TxdRxd.Socket = -1;
 
 if(m_BKSConnection.TxdRxd.pRxdBuff == NULL)
 	{
-	if((m_BKSConnection.TxdRxd.pRxdBuff = (UINT8 *)malloc(cMinTxRxBuffSize))==NULL)
+	if((m_BKSConnection.TxdRxd.pRxdBuff = (uint8_t *)malloc(cMinTxRxBuffSize))==NULL)
 		{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "InitialiseConnect: Unable to allocate %d bytes memory", cMinTxRxBuffSize);
 		return(false);
@@ -1498,7 +1498,7 @@ if(m_BKSConnection.TxdRxd.pRxdBuff == NULL)
 	}
 if (m_BKSConnection.TxdRxd.pTxdBuff == NULL)
 	{
-	if ((m_BKSConnection.TxdRxd.pTxdBuff = (UINT8 *)malloc(cMinTxRxBuffSize)) == NULL)
+	if ((m_BKSConnection.TxdRxd.pTxdBuff = (uint8_t *)malloc(cMinTxRxBuffSize)) == NULL)
 		{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "InitialiseConnect: Unable to allocate %d bytes memory", cMinTxRxBuffSize);
 		return(false);
@@ -1511,7 +1511,7 @@ if (m_BKSConnection.TxdRxd.pTxdBuff == NULL)
 if (pszService == NULL || pszService[0] == '\0')	// use default port if not specified by caller
 	pszService = (char *)cDfltServerPort;
 
-Then = (UINT32)time(NULL);
+Then = (uint32_t)time(NULL);
 MaxConnWait *= 60;			// time() returns secs
 
 memset(&AddrInfoHints, 0, sizeof(struct addrinfo));
@@ -1560,7 +1560,7 @@ do {
 #endif
 	gDiagnostics.DiagOut(eDLInfo, gszProcName, "InitialiseConnect: Retrying connection ...");
 	}
-while(Rslt != 0 && (((Now = (UINT32)time(NULL)) - Then) <= (UINT32)MaxConnWait));
+while(Rslt != 0 && (((Now = (uint32_t)time(NULL)) - Then) <= (uint32_t)MaxConnWait));
 
 	// report the connection address
 #ifdef WIN32
@@ -1675,7 +1675,7 @@ bool
 CBKSProvider::RxData(tsTxdRxd *pRxd)					// receiving session data
 {
 int RxdLen;
-UINT32 ExpRxdLen;
+uint32_t ExpRxdLen;
 tsBKSPacHdr *pRxdHdr;
 
 // ensure socket is valid
@@ -1750,11 +1750,11 @@ if (pRxd->TotRxd >= sizeof(tsBKSPacHdr))
 
 	// if at least tsBKSPacHdr.FrameLen in receive buffer then the total expected header+payload size is known
 	// if less then complete reading in the header only
-if (pRxd->TotRxd < sizeof(UINT32))
+if (pRxd->TotRxd < sizeof(uint32_t))
 	ExpRxdLen = sizeof(tsBKSPacHdr);
 else
 	{
-	ExpRxdLen = *(UINT32 *)pRxd->pRxdBuff;
+	ExpRxdLen = *(uint32_t *)pRxd->pRxdBuff;
 	if (ExpRxdLen < sizeof(tsBKSPacHdr))
 		{
 		pRxd->flgErr = 1;
@@ -1941,11 +1941,11 @@ CBKSProvider::TxData(tsTxdRxd *pTxd)
 // with message immediately following the initial byte
 int								// received message is this length, 0 if no outstanding messages, < 0 if errors
 CBKSProvider::RcvCtrl(int BuffLen,			// available buffer into which the control message can be copied (must be at 128 bytes)
-		UINT8 *pBuff)			// copy control message into this buffer
+		uint8_t *pBuff)			// copy control message into this buffer
 {
 tsTxdRxd *pCtrl;
-UINT8 *pCtrlMsg;
-UINT32 ExpRxdLen;
+uint8_t *pCtrlMsg;
+uint32_t ExpRxdLen;
 int RxdLen;
 
 if(BuffLen < 128 || pBuff == NULL)
@@ -1975,9 +1975,9 @@ if (pCtrl->Socket == -1)
 	}
 
 	// perhaps a message is already buffered but not yet characterised as being a complete message
-if (pCtrl->TotRxd >= sizeof(UINT8))
+if (pCtrl->TotRxd >= sizeof(uint8_t))
 	{
-	pCtrlMsg = (UINT8 *)pCtrl->pRxdBuff;
+	pCtrlMsg = (uint8_t *)pCtrl->pRxdBuff;
 	if(*pCtrlMsg & 0x080)
 		ExpRxdLen = *pCtrlMsg & 0x07f;
 	else
@@ -1988,7 +1988,7 @@ if (pCtrl->TotRxd >= sizeof(UINT8))
 		pCtrl->CurPacRxd = ExpRxdLen;
 		pCtrl->flgRxCplt = 1;
 		memcpy(pBuff,pCtrl->pRxdBuff,ExpRxdLen);
-		UINT32 Diff;
+		uint32_t Diff;
 		if ((Diff = (m_Ctrl[1].TotRxd - m_Ctrl[1].CurPacRxd)) > 0)
 			memmove(m_Ctrl[1].pRxdBuff, &m_Ctrl[1].pRxdBuff[m_Ctrl[1].CurPacRxd], Diff);
 		m_Ctrl[1].TotRxd = Diff;
@@ -2032,9 +2032,9 @@ if (RxdLen == -1)
 
 	// received at least 1 byte, can now be characterised as being a complete message?
 pCtrl->TotRxd += RxdLen;
-if (pCtrl->TotRxd >= sizeof(UINT8))
+if (pCtrl->TotRxd >= sizeof(uint8_t))
 	{
-	pCtrlMsg = (UINT8 *)pCtrl->pRxdBuff;
+	pCtrlMsg = (uint8_t *)pCtrl->pRxdBuff;
 	if(*pCtrlMsg & 0x080)
 		ExpRxdLen = *pCtrlMsg & 0x07f;
 	else
@@ -2045,7 +2045,7 @@ if (pCtrl->TotRxd >= sizeof(UINT8))
 		pCtrl->CurPacRxd = ExpRxdLen;
 		pCtrl->flgRxCplt = 1;
 		memcpy(pBuff,pCtrl->pRxdBuff,ExpRxdLen);
-		UINT32 Diff;
+		uint32_t Diff;
 		if ((Diff = (m_Ctrl[1].TotRxd - m_Ctrl[1].CurPacRxd)) > 0)
 			memmove(m_Ctrl[1].pRxdBuff, &m_Ctrl[1].pRxdBuff[m_Ctrl[1].CurPacRxd], Diff);
 		m_Ctrl[1].TotRxd = Diff;
@@ -2059,7 +2059,7 @@ return(0);
 
 
 bool 
-CBKSProvider::NotifyCtrl(UINT8 Msg) 
+CBKSProvider::NotifyCtrl(uint8_t Msg) 
 {
 if(Msg & 0x080)			// reserved for multibyte messages
 	{
@@ -2071,7 +2071,7 @@ return(SendCtrlMsg(sizeof(Msg),&Msg));
 
 bool
 CBKSProvider::SendCtrlMsg(int Len,				// number of control message bytes to send ptd at by pCtrlMsg, can be 0
-								UINT8 *pCtrlMsg)	// pCtrlMsg pts to control message bytes
+								uint8_t *pCtrlMsg)	// pCtrlMsg pts to control message bytes
 {
 tsTxdRxd *pCtrl;
 int ActTxLen;
@@ -2167,10 +2167,10 @@ CBKSProvider::ConnectServer(int MaxConnWait,			// wait for at most this many min
 							char *pszService)			// server expected to be listening on this service/port; NULL to use default port 
 {
 int SelectRslt;
-UINT32 NumPendCpltd;
+uint32_t NumPendCpltd;
 int HiFDs;
 bool bRxDataRslt;
-UINT32 Diff;
+uint32_t Diff;
 time_t CurTimeSecs;
 time_t Then;
 tsBKSType *pType;
@@ -2328,8 +2328,8 @@ while (!m_bTermConnectionReq)		// keep processing for rxd/txd data over connecti
 		while (1)
 			{     
 			int CtrlMsgLen;
-			UINT8 CtrlMsg[256];
-                                                                                                                                                                                \
+			uint8_t CtrlMsg[256];
+																																												\
 			if((CtrlMsgLen = RcvCtrl(sizeof(CtrlMsg),CtrlMsg))==0)
 				break;
 
@@ -2483,13 +2483,13 @@ pthread_exit(NULL);
 }
 
 int 
-CBKSProvider::StartWorkerThreads(UINT32 NumInstances,	// this number of worker threads required
-						   UINT8 BKSPType)		// workers are providing this service type
+CBKSProvider::StartWorkerThreads(uint32_t NumInstances,	// this number of worker threads required
+						   uint8_t BKSPType)		// workers are providing this service type
 {
-UINT32 MaxWait;
-UINT32 Idx;
-UINT32 ThreadIdx;
-UINT32 StartedInstances;
+uint32_t MaxWait;
+uint32_t Idx;
+uint32_t ThreadIdx;
+uint32_t StartedInstances;
 tsWorkerInstance *pThreadPar;
 m_TermAllThreads = 0;
 m_NumPendCpltd = 0;
@@ -2502,11 +2502,11 @@ for(ThreadIdx = 0; ThreadIdx < NumInstances; ThreadIdx++,pThreadPar++)
 #else
 	pThreadPar->threadID = 0;
 #endif
-	if((pThreadPar->pReqData = (UINT8 *)malloc(cMaxReqDataSize))==NULL)
+	if((pThreadPar->pReqData = (uint8_t *)malloc(cMaxReqDataSize))==NULL)
 		break;
-	if((pThreadPar->pParamData = (UINT8 *)malloc(cMaxReqParamSize))==NULL)
+	if((pThreadPar->pParamData = (uint8_t *)malloc(cMaxReqParamSize))==NULL)
 		break;
-	if((pThreadPar->pRespData = (UINT8 *)malloc(cMaxRespDataSize))==NULL)
+	if((pThreadPar->pRespData = (uint8_t *)malloc(cMaxRespDataSize))==NULL)
 		break;
 	if((pThreadPar->pszBuffer = (char *)malloc(cMaxMFABuffSize))==NULL)
 		break;
@@ -2577,8 +2577,8 @@ int     // number of threads requiring force termination
 CBKSProvider::TerminateWorkerThreads(void)			
 {
 int NumForceTerminated;
-UINT32 Idx;
-UINT32 StartedInstances; 
+uint32_t Idx;
+uint32_t StartedInstances; 
 tsWorkerInstance *pThreadPar;
 time_t Then;
 time_t Now;
@@ -2616,7 +2616,7 @@ for(Idx = 0; Idx < StartedInstances; Idx++, pThreadPar += 1)
 #ifdef WIN32
 	if(pThreadPar->threadHandle != NULL)
 		{
-		if(WAIT_TIMEOUT == WaitForSingleObject(pThreadPar->threadHandle, (UINT32)Now * 1000))
+		if(WAIT_TIMEOUT == WaitForSingleObject(pThreadPar->threadHandle, (uint32_t)Now * 1000))
 			{
 			NumForceTerminated += 1;
 			TerminateThread(pThreadPar->threadHandle,0);
@@ -2668,11 +2668,11 @@ return(NumForceTerminated);
 
 
 tsClassInstance *
-CBKSProvider::LocateClassInstance(UINT64 ClassInstanceID)
+CBKSProvider::LocateClassInstance(uint64_t ClassInstanceID)
 {
-UINT32 Idx;
+uint32_t Idx;
 tsClassInstance *pInstance;
-Idx = ((UINT32)(ClassInstanceID >> 40) & 0x0fff)-1;
+Idx = ((uint32_t)(ClassInstanceID >> 40) & 0x0fff)-1;
 if(Idx >= m_MaxClassInsts)
 	return(NULL);
 AcquireCASSerialise();
@@ -2689,7 +2689,7 @@ return(NULL);
 tsClassInstance *
 CBKSProvider::AllocClassInstance(void) // allocate a new tsClassInstance and initialise with class instance
 {
-UINT32 Idx;
+uint32_t Idx;
 tsClassInstance *pInstance;
 pInstance = &m_ClassInstances[0];
 AcquireCASSerialise();
@@ -2700,7 +2700,7 @@ for(Idx = 0; Idx < m_MaxClassInsts; Idx++, pInstance++)
 		m_HiClassInstanceID += 1;
 		if(m_HiClassInstanceID > 0x0ffffffffff)
 			m_HiClassInstanceID = 1;
-		pInstance->ClassInstanceID = ((UINT64)m_BKSConnection.TxdRxd.SessionID << 53) | ((UINT64)(Idx+1) << 40) | m_HiClassInstanceID;
+		pInstance->ClassInstanceID = ((uint64_t)m_BKSConnection.TxdRxd.SessionID << 53) | ((uint64_t)(Idx+1) << 40) | m_HiClassInstanceID;
 		m_NumClassInsts += 1;
 		ReleaseCASSerialise();
 		pInstance->LastAccessed = time(NULL);
@@ -2718,13 +2718,13 @@ return(NULL);
 }
 
 bool
-CBKSProvider::FreeClassInstance(UINT64 ClassInstanceID) // free a previously allocated class instance
+CBKSProvider::FreeClassInstance(uint64_t ClassInstanceID) // free a previously allocated class instance
 {
-UINT32 Idx;
+uint32_t Idx;
 tsClassInstance *pInstance;
 CSSW *pClass;
 pClass = NULL;
-Idx = ((UINT32)(ClassInstanceID >> 40) & 0x0fff)-1;
+Idx = ((uint32_t)(ClassInstanceID >> 40) & 0x0fff)-1;
 if(Idx >= m_MaxClassInsts)
 	return(NULL);
 AcquireCASSerialise();
@@ -2750,62 +2750,62 @@ return(false);
 
 
 int											// marshaled parameter required this many bytes
-CBKSProvider::MarshalResp(UINT8 *pInto,					// marshal into this list
+CBKSProvider::MarshalResp(uint8_t *pInto,					// marshal into this list
 				teRMIParamType Type,			// parameter type
 				void *pValue,				// parameter value
-				UINT32 ValLen)				// length of parameter ptd to by pValue, only used if parameter type is pUint8
+				uint32_t ValLen)				// length of parameter ptd to by pValue, only used if parameter type is pUint8
 
 {
 switch(Type) {
 	case eRMIPTBool:	// boolean
-		*pInto++ = (UINT8)eRMIPTBool;
+		*pInto++ = (uint8_t)eRMIPTBool;
 		*pInto = *(bool *)pValue == true ? 1 : 0;
-		return(sizeof(UINT8) + 1);
+		return(sizeof(uint8_t) + 1);
 
 	case eRMIPTInt8:		// 8bit signed int
-		*pInto++ = (UINT8)eRMIPTInt8;
-		*pInto = *(INT8 *)pValue;
-		return(sizeof(INT8) + 1);
+		*pInto++ = (uint8_t)eRMIPTInt8;
+		*pInto = *(int8_t *)pValue;
+		return(sizeof(int8_t) + 1);
 
 	case eRMIPTUint8:       // 8bit  unsigned int
-		*pInto++ = (UINT8)eRMIPTUint8;
-		*pInto = *(UINT8 *)pValue;
-		return(sizeof(UINT8) + 1);
+		*pInto++ = (uint8_t)eRMIPTUint8;
+		*pInto = *(uint8_t *)pValue;
+		return(sizeof(uint8_t) + 1);
 
 	case eRMIPTInt32:		// 32bit signed int
-		*pInto++ = (UINT8)eRMIPTInt32;
-		*(INT32 *)pInto = *(INT32 *)pValue;
-		return(sizeof(INT32) + 1);
+		*pInto++ = (uint8_t)eRMIPTInt32;
+		*(int32_t *)pInto = *(int32_t *)pValue;
+		return(sizeof(int32_t) + 1);
 
 	case eRMIPTUint32:		// 32bit unsigned int
-		*pInto++ = (UINT8)eRMIPTInt32;
-		*(UINT32 *)pInto = *(UINT32 *)pValue;
-		return(sizeof(UINT32) + 1);
+		*pInto++ = (uint8_t)eRMIPTInt32;
+		*(uint32_t *)pInto = *(uint32_t *)pValue;
+		return(sizeof(uint32_t) + 1);
 
 	case eRMIPTInt64:		// 64bit signed int
-		*pInto++ = (UINT8)eRMIPTInt64;
-		*(INT64 *)pInto = *(INT64 *)pValue;
-		return(sizeof(INT64) + 1);
+		*pInto++ = (uint8_t)eRMIPTInt64;
+		*(int64_t *)pInto = *(int64_t *)pValue;
+		return(sizeof(int64_t) + 1);
 
 	case eRMIPTUint64:		// 64bit unsigned int
-		*pInto++ = (UINT8)eRMIPTUint64;
-		*(UINT64 *)pInto = *(UINT64 *)pValue;
-		return(sizeof(UINT64) + 1);
+		*pInto++ = (uint8_t)eRMIPTUint64;
+		*(uint64_t *)pInto = *(uint64_t *)pValue;
+		return(sizeof(uint64_t) + 1);
 
 	case eRMIPTDouble:		// floating point double
-		*pInto++ = (UINT8)eRMIPTDouble;
+		*pInto++ = (uint8_t)eRMIPTDouble;
 		*(double *)pInto = *(double *)pValue;
 		return(sizeof(double) + 1);
 
 	case eRMIPTVarUint8:		// variable length
-		*pInto++ = (UINT8)eRMIPTVarUint8;
-		*(UINT32 *)pInto = ValLen;
+		*pInto++ = (uint8_t)eRMIPTVarUint8;
+		*(uint32_t *)pInto = ValLen;
 		if(ValLen > 0 && pValue != NULL)
 			{
-			pInto += sizeof(UINT32);
+			pInto += sizeof(uint32_t);
 			memcpy(pInto,pValue,ValLen);
 			}
-		return(sizeof(UINT32) + ValLen + 1);
+		return(sizeof(uint32_t) + ValLen + 1);
 
 	default:
 		break;
@@ -2817,51 +2817,51 @@ return(0);
 #pragma warning( push )
 #pragma warning( disable : 4789 )
 int
-CBKSProvider::UnmarshalReq(UINT32 DataLen,
-				UINT8 *pFrom,		// unmarshall from this marshalled parameter list
+CBKSProvider::UnmarshalReq(uint32_t DataLen,
+				uint8_t *pFrom,		// unmarshall from this marshalled parameter list
 				void *pValue)		// returned value, note that value could be a ptr
 {
-UINT32 ValLen;
+uint32_t ValLen;
 switch(*pFrom++) {
 	case eRMIPTBool:	// boolean
 		*(bool *)pValue = *pFrom == 0 ? false : true;
-		return(sizeof(UINT8) + 1);
+		return(sizeof(uint8_t) + 1);
 
 	case eRMIPTInt8:		// 8bit signed int
-		*(INT8 *)pValue = *(INT8 *)pFrom;
-		return(sizeof(INT8) + 1);
+		*(int8_t *)pValue = *(int8_t *)pFrom;
+		return(sizeof(int8_t) + 1);
 
 	case eRMIPTUint8:       // 8bit  unsigned int
-		*(UINT8 *)pValue = *(UINT8 *)pFrom;
-		return(sizeof(UINT8) + 1);
+		*(uint8_t *)pValue = *(uint8_t *)pFrom;
+		return(sizeof(uint8_t) + 1);
 
 	case eRMIPTInt32:		// 32bit signed int
-		*(INT32 *)pValue = *(INT32 *)pFrom;
-		return(sizeof(INT32) + 1);
+		*(int32_t *)pValue = *(int32_t *)pFrom;
+		return(sizeof(int32_t) + 1);
 
 	case eRMIPTUint32:		// 32bit unsigned int
-		*(UINT32 *)pValue = *(UINT32 *)pFrom;
-		return(sizeof(UINT32) + 1);
+		*(uint32_t *)pValue = *(uint32_t *)pFrom;
+		return(sizeof(uint32_t) + 1);
 
 	case eRMIPTInt64:		// 64bit signed int
-		*(INT64 *)pValue = *(INT64 *)pFrom;
-		return(sizeof(INT64) + 1);
+		*(int64_t *)pValue = *(int64_t *)pFrom;
+		return(sizeof(int64_t) + 1);
 
 	case eRMIPTUint64:		// 64bit unsigned int
-		*(UINT64 *)pValue = *(UINT64 *)pFrom;
-		return(sizeof(UINT64) + 1);
+		*(uint64_t *)pValue = *(uint64_t *)pFrom;
+		return(sizeof(uint64_t) + 1);
 
 	case eRMIPTDouble:		// floating point double
 		*(double *)pValue = *(double *)pFrom;
 		return(sizeof(double) + 1);
 
 	case eRMIPTVarUint8:		// variable length
-		ValLen = *(UINT32 *)pFrom;
+		ValLen = *(uint32_t *)pFrom;
 		if(ValLen > 0)
 			{
-			pFrom += sizeof(UINT32);
+			pFrom += sizeof(uint32_t);
 			*(void **)pValue = pFrom;
-			return(sizeof(UINT32) + ValLen + 1);
+			return(sizeof(uint32_t) + ValLen + 1);
 			}
 		*(void **)pValue = NULL;
 		return(ValLen + 1);
@@ -2882,12 +2882,12 @@ int ReqDataOfs;
 int RespDataOfs;
 int JobRslt;
 int NumJobsProc;
-UINT32	MaxParamSize;
-UINT32	MaxRequestData;
-UINT32 InstanceID;
+uint32_t	MaxParamSize;
+uint32_t	MaxRequestData;
+uint32_t InstanceID;
 
-UINT64 ClassInstanceID;
-UINT32 ClassMethodID;
+uint64_t ClassInstanceID;
+uint32_t ClassMethodID;
 tsClassInstance *pClassInstance;
 
 NumJobsProc = 0;
@@ -2992,10 +2992,10 @@ while(JobRslt >= 0)
 			case eSWMPreAllocMaxTargLen:		// PreAllocMaxTargLen
 				if((pClassInstance = LocateClassInstance(ClassInstanceID))!=NULL)
 					{
-					UINT32 MaxTargLen;					// preallocate to process targets of this maximal length
-					UINT32 MaxOverlapLen;			// allocating tracebacks for this maximal expected overlap, 0 if no tracebacks required
-					ReqDataOfs = UnmarshalReq(sizeof(UINT32),&pThreadPar->pReqData[0],&MaxTargLen);
-					ReqDataOfs += UnmarshalReq(sizeof(UINT32),&pThreadPar->pReqData[ReqDataOfs],&MaxOverlapLen);
+					uint32_t MaxTargLen;					// preallocate to process targets of this maximal length
+					uint32_t MaxOverlapLen;			// allocating tracebacks for this maximal expected overlap, 0 if no tracebacks required
+					ReqDataOfs = UnmarshalReq(sizeof(uint32_t),&pThreadPar->pReqData[0],&MaxTargLen);
+					ReqDataOfs += UnmarshalReq(sizeof(uint32_t),&pThreadPar->pReqData[ReqDataOfs],&MaxOverlapLen);
 					bRslt = pClassInstance->pClass->PreAllocMaxTargLen(MaxTargLen,MaxOverlapLen);
 					}
 				else
@@ -3009,17 +3009,17 @@ while(JobRslt >= 0)
 					int SeqLen;						// probe sequence is this length
 					etSeqBase *pProbeSeq;			// probe sequence 
 					int Alignments;					// number of pairwise alignments to allocate for
-					UINT8 Flags;					// flags
-					ReqDataOfs = UnmarshalReq(sizeof(INT32),&pThreadPar->pReqData[0],&SeqLen);
+					uint8_t Flags;					// flags
+					ReqDataOfs = UnmarshalReq(sizeof(int32_t),&pThreadPar->pReqData[0],&SeqLen);
 					ReqDataOfs += UnmarshalReq(SeqLen,&pThreadPar->pReqData[ReqDataOfs],&pProbeSeq);
-					ReqDataOfs += UnmarshalReq(sizeof(INT32),&pThreadPar->pReqData[ReqDataOfs],&Alignments);
-					ReqDataOfs += UnmarshalReq(sizeof(UINT8),&pThreadPar->pReqData[ReqDataOfs],&Flags);
+					ReqDataOfs += UnmarshalReq(sizeof(int32_t),&pThreadPar->pReqData[ReqDataOfs],&Alignments);
+					ReqDataOfs += UnmarshalReq(sizeof(uint8_t),&pThreadPar->pReqData[ReqDataOfs],&Flags);
 
 					iRslt = pClassInstance->pClass->StartMultiAlignments(SeqLen,pProbeSeq,Alignments,Flags);
 					}
 				else
 					iRslt = -1;
-				JobRslt = JobResponse(InstanceID,ClassInstanceID, (UINT32)iRslt,0, NULL);
+				JobRslt = JobResponse(InstanceID,ClassInstanceID, (uint32_t)iRslt,0, NULL);
 				break;
 
 			case eSWMSetProbe:				// SetProbe
@@ -3027,7 +3027,7 @@ while(JobRslt >= 0)
 					{
 					int SeqLen;						// probe sequence is this length
 					etSeqBase *pProbeSeq;			// probe sequence 
-					ReqDataOfs = UnmarshalReq(sizeof(INT32),&pThreadPar->pReqData[0],&SeqLen);
+					ReqDataOfs = UnmarshalReq(sizeof(int32_t),&pThreadPar->pReqData[0],&SeqLen);
 					ReqDataOfs += UnmarshalReq(SeqLen,&pThreadPar->pReqData[ReqDataOfs],&pProbeSeq);
 					bRslt = pClassInstance->pClass->SetProbe(SeqLen,pProbeSeq);
 					}
@@ -3041,7 +3041,7 @@ while(JobRslt >= 0)
 					{
 					int SeqLen;						// target sequence is this length
 					etSeqBase *pTargSeq;			// target sequence 
-					ReqDataOfs = UnmarshalReq(sizeof(INT32),&pThreadPar->pReqData[0],&SeqLen);
+					ReqDataOfs = UnmarshalReq(sizeof(int32_t),&pThreadPar->pReqData[0],&SeqLen);
 					ReqDataOfs += UnmarshalReq(SeqLen,&pThreadPar->pReqData[ReqDataOfs],&pTargSeq);
 					bRslt = pClassInstance->pClass->SetTarg(SeqLen,pTargSeq);
 					}
@@ -3053,20 +3053,20 @@ while(JobRslt >= 0)
 			case eSWMSetAlignRange:			// SetAlignRange
 				if((pClassInstance = LocateClassInstance(ClassInstanceID))!=NULL)
 					{
-					UINT32 m_ProbeStartRelOfs;	// when aligning then start SW from this probe sequence relative offset
-					UINT32 m_TargStartRelOfs; 	// and SW starting from this target sequence relative offset
-					UINT32 m_ProbeRelLen;	// and SW with this probe relative length starting from m_ProbeStartRelOfs - if 0 then until end of probe sequence
-					UINT32 m_TargRelLen;	// and SW with this target relative length starting from m_TargStartRelOfs - if 0 then until end of target sequence
+					uint32_t m_ProbeStartRelOfs;	// when aligning then start SW from this probe sequence relative offset
+					uint32_t m_TargStartRelOfs; 	// and SW starting from this target sequence relative offset
+					uint32_t m_ProbeRelLen;	// and SW with this probe relative length starting from m_ProbeStartRelOfs - if 0 then until end of probe sequence
+					uint32_t m_TargRelLen;	// and SW with this target relative length starting from m_TargStartRelOfs - if 0 then until end of target sequence
 
-					ReqDataOfs = UnmarshalReq(sizeof(UINT32),pThreadPar->pReqData,&m_ProbeStartRelOfs);
-					ReqDataOfs += UnmarshalReq(sizeof(UINT32),&pThreadPar->pReqData[ReqDataOfs],&m_TargStartRelOfs);
-					ReqDataOfs += UnmarshalReq(sizeof(UINT32),&pThreadPar->pReqData[ReqDataOfs],&m_ProbeRelLen);
-					ReqDataOfs += UnmarshalReq(sizeof(UINT32),&pThreadPar->pReqData[ReqDataOfs],&m_TargRelLen);
+					ReqDataOfs = UnmarshalReq(sizeof(uint32_t),pThreadPar->pReqData,&m_ProbeStartRelOfs);
+					ReqDataOfs += UnmarshalReq(sizeof(uint32_t),&pThreadPar->pReqData[ReqDataOfs],&m_TargStartRelOfs);
+					ReqDataOfs += UnmarshalReq(sizeof(uint32_t),&pThreadPar->pReqData[ReqDataOfs],&m_ProbeRelLen);
+					ReqDataOfs += UnmarshalReq(sizeof(uint32_t),&pThreadPar->pReqData[ReqDataOfs],&m_TargRelLen);
 					iRslt = pClassInstance->pClass->SetAlignRange(m_ProbeStartRelOfs,m_TargStartRelOfs,m_ProbeRelLen,m_TargRelLen);
 					}
 				else
 					iRslt = -1;
-				JobRslt = JobResponse(InstanceID,ClassInstanceID, (UINT32)iRslt,0, NULL);
+				JobRslt = JobResponse(InstanceID,ClassInstanceID, (uint32_t)iRslt,0, NULL);
 				break;
 
 			case eSWMAlign:					// Align
@@ -3081,9 +3081,9 @@ while(JobRslt >= 0)
 				if((pClassInstance = LocateClassInstance(ClassInstanceID))!=NULL)
 					{
 					int ReqDataOfs;
-					UINT32 MaxOverlapLen;			// process tracebacks for this maximal expected overlap, 0 if no tracebacks required
+					uint32_t MaxOverlapLen;			// process tracebacks for this maximal expected overlap, 0 if no tracebacks required
 					ReqDataOfs = UnmarshalReq(sizeof(bool),pThreadPar->pReqData,&bPeakScoreCell);
-					ReqDataOfs += UnmarshalReq(sizeof(UINT32),&pThreadPar->pReqData[ReqDataOfs],&MaxOverlapLen);
+					ReqDataOfs += UnmarshalReq(sizeof(uint32_t),&pThreadPar->pReqData[ReqDataOfs],&MaxOverlapLen);
 					pPeakMatchesCell = pClassInstance->pClass->Align(bPeakScoreCell ? &PeakScoreCell : NULL,MaxOverlapLen);
 					iRslt = 0;
 					}
@@ -3102,7 +3102,7 @@ while(JobRslt >= 0)
 				else
 					RespDataOfs = 0;	
 
-				JobRslt = JobResponse(InstanceID,ClassInstanceID, (UINT32)iRslt,RespDataOfs, pThreadPar->pRespData);
+				JobRslt = JobResponse(InstanceID,ClassInstanceID, (uint32_t)iRslt,RespDataOfs, pThreadPar->pRespData);
 				break;
 
 			case eSWMCombinedTargAlign:					// // method which combines the functionality of eSWMSetTarg, eSWMSetAlignRange, eSWMAlign, eSWMClassifyPath, eSWMTracebacksToAlignOps, eSWMAddMultiAlignment into a single method to reduce RMI overheads 
@@ -3129,7 +3129,7 @@ while(JobRslt >= 0)
 				else
 					RespDataOfs = 0;	
 
-				JobRslt = JobResponse(InstanceID,ClassInstanceID, (UINT32)iRslt,RespDataOfs, pThreadPar->pRespData);
+				JobRslt = JobResponse(InstanceID,ClassInstanceID, (uint32_t)iRslt,RespDataOfs, pThreadPar->pRespData);
 				break;
 
 
@@ -3137,20 +3137,20 @@ while(JobRslt >= 0)
 				if((pClassInstance = LocateClassInstance(ClassInstanceID))!=NULL)
 					{
 					int MaxArtefactDev;				// classify path as artefactual if sliding window of 500bp over any overlap deviates by more than this percentage from the overlap mean
-					UINT32 ProbeStartOfs;			// alignment starts at this probe sequence offset (1..n)
-					UINT32 ProbeEndOfs;				// alignment ends at this probe sequence offset
-					UINT32 TargStartOfs;			// alignment starts at this target sequence offset (1..n)
-					UINT32 TargEndOfs;				// alignment ends at this target sequence offset
-					ReqDataOfs = UnmarshalReq(sizeof(INT32),pThreadPar->pReqData,&MaxArtefactDev);
-					ReqDataOfs += UnmarshalReq(sizeof(UINT32),&pThreadPar->pReqData[ReqDataOfs],&ProbeStartOfs);
-					ReqDataOfs += UnmarshalReq(sizeof(UINT32),&pThreadPar->pReqData[ReqDataOfs],&ProbeEndOfs);
-					ReqDataOfs += UnmarshalReq(sizeof(UINT32),&pThreadPar->pReqData[ReqDataOfs],&TargStartOfs);
-					ReqDataOfs += UnmarshalReq(sizeof(UINT32),&pThreadPar->pReqData[ReqDataOfs],&TargEndOfs);
+					uint32_t ProbeStartOfs;			// alignment starts at this probe sequence offset (1..n)
+					uint32_t ProbeEndOfs;				// alignment ends at this probe sequence offset
+					uint32_t TargStartOfs;			// alignment starts at this target sequence offset (1..n)
+					uint32_t TargEndOfs;				// alignment ends at this target sequence offset
+					ReqDataOfs = UnmarshalReq(sizeof(int32_t),pThreadPar->pReqData,&MaxArtefactDev);
+					ReqDataOfs += UnmarshalReq(sizeof(uint32_t),&pThreadPar->pReqData[ReqDataOfs],&ProbeStartOfs);
+					ReqDataOfs += UnmarshalReq(sizeof(uint32_t),&pThreadPar->pReqData[ReqDataOfs],&ProbeEndOfs);
+					ReqDataOfs += UnmarshalReq(sizeof(uint32_t),&pThreadPar->pReqData[ReqDataOfs],&TargStartOfs);
+					ReqDataOfs += UnmarshalReq(sizeof(uint32_t),&pThreadPar->pReqData[ReqDataOfs],&TargEndOfs);
 					iRslt = pClassInstance->pClass->ClassifyPath(MaxArtefactDev,ProbeStartOfs,ProbeEndOfs,TargStartOfs,TargEndOfs);
 					}
 				else
 					iRslt = -1;
-				JobRslt = JobResponse(InstanceID,ClassInstanceID, (UINT32)iRslt,0, NULL);
+				JobRslt = JobResponse(InstanceID,ClassInstanceID, (uint32_t)iRslt,0, NULL);
 				break;
 
 			case eSWMTracebacksToAlignOps:	// TracebacksToAlignOps
@@ -3158,14 +3158,14 @@ while(JobRslt >= 0)
 				bool bAlignOps;
 				if((pClassInstance = LocateClassInstance(ClassInstanceID))!=NULL)
 					{
-					UINT32 ProbeStartOfs;			// alignment starts at this probe sequence offset (1..n)
-					UINT32 ProbeEndOfs;				// alignment ends at this probe sequence offset
-					UINT32 TargStartOfs;			// alignment starts at this target sequence offset (1..n)
-					UINT32 TargEndOfs;				// alignment ends at this target sequence offset
-					ReqDataOfs = UnmarshalReq(sizeof(UINT32),pThreadPar->pReqData,&ProbeStartOfs);
-					ReqDataOfs += UnmarshalReq(sizeof(UINT32),&pThreadPar->pReqData[ReqDataOfs],&ProbeEndOfs);
-					ReqDataOfs += UnmarshalReq(sizeof(UINT32),&pThreadPar->pReqData[ReqDataOfs],&TargStartOfs);
-					ReqDataOfs += UnmarshalReq(sizeof(UINT32),&pThreadPar->pReqData[ReqDataOfs],&TargEndOfs);
+					uint32_t ProbeStartOfs;			// alignment starts at this probe sequence offset (1..n)
+					uint32_t ProbeEndOfs;				// alignment ends at this probe sequence offset
+					uint32_t TargStartOfs;			// alignment starts at this target sequence offset (1..n)
+					uint32_t TargEndOfs;				// alignment ends at this target sequence offset
+					ReqDataOfs = UnmarshalReq(sizeof(uint32_t),pThreadPar->pReqData,&ProbeStartOfs);
+					ReqDataOfs += UnmarshalReq(sizeof(uint32_t),&pThreadPar->pReqData[ReqDataOfs],&ProbeEndOfs);
+					ReqDataOfs += UnmarshalReq(sizeof(uint32_t),&pThreadPar->pReqData[ReqDataOfs],&TargStartOfs);
+					ReqDataOfs += UnmarshalReq(sizeof(uint32_t),&pThreadPar->pReqData[ReqDataOfs],&TargEndOfs);
 					ReqDataOfs += UnmarshalReq(sizeof(bool),&pThreadPar->pReqData[ReqDataOfs],&bAlignOps);
 					iRslt = pClassInstance->pClass->TracebacksToAlignOps(ProbeStartOfs,ProbeEndOfs,TargStartOfs,TargEndOfs,bAlignOps ? &pAlignOps : NULL);
 					}
@@ -3181,32 +3181,32 @@ while(JobRslt >= 0)
 				else
 					RespDataOfs = 0;	
 
-				JobRslt = JobResponse(InstanceID,ClassInstanceID, (UINT32)iRslt,RespDataOfs, pThreadPar->pRespData);
+				JobRslt = JobResponse(InstanceID,ClassInstanceID, (uint32_t)iRslt,RespDataOfs, pThreadPar->pRespData);
 				break;
 
 			case eSWMAddMultiAlignment:		// AddMultiAlignment
 				if((pClassInstance = LocateClassInstance(ClassInstanceID))!=NULL)
 					{
-					UINT32 ProbeStartOfs;			// alignment starts at this probe sequence offset (1..n)
-					  UINT32 ProbeEndOfs;			// alignment ends at this probe sequence offset inclusive
-					  UINT32 TargStartOfs;			// alignment starts at this target sequence offset (1..n)
-					  UINT32 TargEndOfs;			// alignment ends at this target sequence offset inclusive
-					  UINT32 TargSeqLen;			// target sequence length
+					uint32_t ProbeStartOfs;			// alignment starts at this probe sequence offset (1..n)
+					  uint32_t ProbeEndOfs;			// alignment ends at this probe sequence offset inclusive
+					  uint32_t TargStartOfs;			// alignment starts at this target sequence offset (1..n)
+					  uint32_t TargEndOfs;			// alignment ends at this target sequence offset inclusive
+					  uint32_t TargSeqLen;			// target sequence length
 					  etSeqBase *pTargSeq;			// alignment target sequence
-					  UINT8 Flags;					// bit 7 set if target loaded as a high confidence sequence, bits 0..3 is weighting factor to apply when generating consensus bases
+					  uint8_t Flags;					// bit 7 set if target loaded as a high confidence sequence, bits 0..3 is weighting factor to apply when generating consensus bases
 
-					ReqDataOfs = UnmarshalReq(sizeof(UINT32),pThreadPar->pReqData,&ProbeStartOfs);
-					ReqDataOfs += UnmarshalReq(sizeof(UINT32),&pThreadPar->pReqData[ReqDataOfs],&ProbeEndOfs);
-					ReqDataOfs += UnmarshalReq(sizeof(UINT32),&pThreadPar->pReqData[ReqDataOfs],&TargStartOfs);
-					ReqDataOfs += UnmarshalReq(sizeof(UINT32),&pThreadPar->pReqData[ReqDataOfs],&TargEndOfs);
-					ReqDataOfs += UnmarshalReq(sizeof(UINT32),&pThreadPar->pReqData[ReqDataOfs],&TargSeqLen);
+					ReqDataOfs = UnmarshalReq(sizeof(uint32_t),pThreadPar->pReqData,&ProbeStartOfs);
+					ReqDataOfs += UnmarshalReq(sizeof(uint32_t),&pThreadPar->pReqData[ReqDataOfs],&ProbeEndOfs);
+					ReqDataOfs += UnmarshalReq(sizeof(uint32_t),&pThreadPar->pReqData[ReqDataOfs],&TargStartOfs);
+					ReqDataOfs += UnmarshalReq(sizeof(uint32_t),&pThreadPar->pReqData[ReqDataOfs],&TargEndOfs);
+					ReqDataOfs += UnmarshalReq(sizeof(uint32_t),&pThreadPar->pReqData[ReqDataOfs],&TargSeqLen);
 					ReqDataOfs += UnmarshalReq(sizeof(etSeqBase **),&pThreadPar->pReqData[ReqDataOfs],&pTargSeq);
-					ReqDataOfs += UnmarshalReq(sizeof(UINT8),&pThreadPar->pReqData[ReqDataOfs],&Flags);
+					ReqDataOfs += UnmarshalReq(sizeof(uint8_t),&pThreadPar->pReqData[ReqDataOfs],&Flags);
 					iRslt = pClassInstance->pClass->AddMultiAlignment(ProbeStartOfs,ProbeEndOfs,TargStartOfs,TargEndOfs,TargSeqLen,pTargSeq,Flags);
 					}
 				else
 					iRslt = -1;
-				JobRslt = JobResponse(InstanceID,ClassInstanceID, (UINT32)iRslt,0, NULL);
+				JobRslt = JobResponse(InstanceID,ClassInstanceID, (uint32_t)iRslt,0, NULL);
 				break;
 
 			case eSWMGenMultialignConcensus:	// GenMultialignConcensus
@@ -3214,20 +3214,20 @@ while(JobRslt >= 0)
 					iRslt = pClassInstance->pClass->GenMultialignConcensus();
 				else
 					iRslt = -1;
-				JobRslt = JobResponse(InstanceID,ClassInstanceID, (UINT32)iRslt,0, NULL);
+				JobRslt = JobResponse(InstanceID,ClassInstanceID, (uint32_t)iRslt,0, NULL);
 				break;
 
 			case eSWMMAlignCols2fasta:		// MAlignCols2fasta
 				if((pClassInstance = LocateClassInstance(ClassInstanceID))!=NULL)
 					{
-					UINT32 ProbeID;				// identifies sequence which was used as the probe when determining the multialignments
-					INT32 MinConf;				// sequence bases averaged over 100bp must be of at least this confidence (0..9)
-					INT32 MinLen;				// and sequence lengths must be of at least this length 
-					UINT32 BuffSize;			// buffer allocated to hold at most this many chars
-					ReqDataOfs = UnmarshalReq(sizeof(INT32),pThreadPar->pReqData,&ProbeID);
-					ReqDataOfs += UnmarshalReq(sizeof(INT32),&pThreadPar->pReqData[ReqDataOfs],&MinConf);
-					ReqDataOfs += UnmarshalReq(sizeof(INT32),&pThreadPar->pReqData[ReqDataOfs],&MinLen);
-					ReqDataOfs += UnmarshalReq(sizeof(UINT32),&pThreadPar->pReqData[ReqDataOfs],&BuffSize);
+					uint32_t ProbeID;				// identifies sequence which was used as the probe when determining the multialignments
+					int32_t MinConf;				// sequence bases averaged over 100bp must be of at least this confidence (0..9)
+					int32_t MinLen;				// and sequence lengths must be of at least this length 
+					uint32_t BuffSize;			// buffer allocated to hold at most this many chars
+					ReqDataOfs = UnmarshalReq(sizeof(int32_t),pThreadPar->pReqData,&ProbeID);
+					ReqDataOfs += UnmarshalReq(sizeof(int32_t),&pThreadPar->pReqData[ReqDataOfs],&MinConf);
+					ReqDataOfs += UnmarshalReq(sizeof(int32_t),&pThreadPar->pReqData[ReqDataOfs],&MinLen);
+					ReqDataOfs += UnmarshalReq(sizeof(uint32_t),&pThreadPar->pReqData[ReqDataOfs],&BuffSize);
 					if(BuffSize > cMaxMFABuffSize)
 						BuffSize = cMaxMFABuffSize;				
 					iRslt = pClassInstance->pClass->MAlignCols2fasta(ProbeID,MinConf,MinLen,BuffSize,pThreadPar->pszBuffer);
@@ -3238,17 +3238,17 @@ while(JobRslt >= 0)
 					RespDataOfs = MarshalResp(pThreadPar->pRespData,eRMIPTVarUint8,pThreadPar->pszBuffer,iRslt);
 				else
 					RespDataOfs = 0;
-				JobRslt = JobResponse(InstanceID,ClassInstanceID, (UINT32)iRslt,RespDataOfs, pThreadPar->pRespData);
+				JobRslt = JobResponse(InstanceID,ClassInstanceID, (uint32_t)iRslt,RespDataOfs, pThreadPar->pRespData);
 				break;
 
 			case eSWMMAlignCols2MFA:			// MAlignCols2MFA
 				if((pClassInstance = LocateClassInstance(ClassInstanceID))!=NULL)
 					{
-					UINT32 ProbeID;		// identifies sequence which was used as the probe when determining the multialignments
-					UINT32 BuffSize;	// buffer allocated to hold at most this many chars
+					uint32_t ProbeID;		// identifies sequence which was used as the probe when determining the multialignments
+					uint32_t BuffSize;	// buffer allocated to hold at most this many chars
 
-					ReqDataOfs = UnmarshalReq(sizeof(UINT32),&pThreadPar->pReqData[ReqDataOfs],&ProbeID);
-					ReqDataOfs += UnmarshalReq(sizeof(UINT32),&pThreadPar->pReqData[ReqDataOfs],&BuffSize);
+					ReqDataOfs = UnmarshalReq(sizeof(uint32_t),&pThreadPar->pReqData[ReqDataOfs],&ProbeID);
+					ReqDataOfs += UnmarshalReq(sizeof(uint32_t),&pThreadPar->pReqData[ReqDataOfs],&BuffSize);
 					if(BuffSize > cMaxMFABuffSize)
 						BuffSize = cMaxMFABuffSize;	
 					iRslt = pClassInstance->pClass->MAlignCols2MFA(ProbeID,BuffSize,pThreadPar->pszBuffer);
@@ -3259,7 +3259,7 @@ while(JobRslt >= 0)
 					RespDataOfs = MarshalResp(pThreadPar->pRespData,eRMIPTVarUint8,pThreadPar->pszBuffer,iRslt);
 				else
 					RespDataOfs = 0;
-				JobRslt = JobResponse(InstanceID,ClassInstanceID, (UINT32)iRslt,RespDataOfs, pThreadPar->pRespData);
+				JobRslt = JobResponse(InstanceID,ClassInstanceID, (uint32_t)iRslt,RespDataOfs, pThreadPar->pRespData);
 				break;
 
 			default:			// currently any other method is not implemented

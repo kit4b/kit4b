@@ -191,9 +191,9 @@ ProcSWService(int argc, char** argv)
 		MEMORYSTATUSEX MemStatus;
 		MemStatus.dwLength = sizeof (MemStatus);
 		GlobalMemoryStatusEx(&MemStatus);
-		MaxAvailServMemGB = (int)(((MemStatus.ullAvailPhys + 0x01fffffff)*(UINT64)75) / ((UINT64)100 * 0x03fffffff)); 
+		MaxAvailServMemGB = (int)(((MemStatus.ullAvailPhys + 0x01fffffff)*(uint64_t)75) / ((uint64_t)100 * 0x03fffffff)); 
 #else
-		MaxAvailServMemGB = (int)(((((UINT64)sysconf(_SC_PHYS_PAGES) * (UINT64)sysconf(_SC_PAGESIZE)) + 0x01fffffff)*(UINT64)75) / ((UINT64)100 * 0x03fffffff));
+		MaxAvailServMemGB = (int)(((((uint64_t)sysconf(_SC_PHYS_PAGES) * (uint64_t)sysconf(_SC_PAGESIZE)) + 0x01fffffff)*(uint64_t)75) / ((uint64_t)100 * 0x03fffffff));
 #endif
 
 		if(MaxServInsts == 0 || MaxServMemGB == 0)

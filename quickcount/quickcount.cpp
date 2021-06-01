@@ -44,7 +44,7 @@ typedef struct TAG_sExcludeEl {
 
 #pragma pack(1)
 typedef struct TAG_sNormDensity {
-	UINT32 Instances;			// absolute number of instances for current chromosome (later used to hold sequence identifier)
+	uint32_t Instances;			// absolute number of instances for current chromosome (later used to hold sequence identifier)
 	double SumDensities;		// densities for each chromosome summed (later used to hold means)
 	double SumDensitiesSquared;	// densities for each chromosome squared and then summed (later used to hold stddev)
 	double COV;					// holds coefficient of variation
@@ -850,7 +850,7 @@ while((CurEntryID = pProcParams->pBioSeqFile->Next(CurEntryID))>0)
 	if(CurSeqLen > pProcParams->AllocdSeqLen)
 		{
 		delete pProcParams->pSeq;
-		if((pProcParams->pSeq = new unsigned char [CurSeqLen+0x07fff])==NULL)
+		if((pProcParams->pSeq = new uint8_t [CurSeqLen+0x07fff])==NULL)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to alloc memory (%d requested) for holding raw sequence data",CurSeqLen+0x07fff);
 			Rslt = eBSFerrMem;
@@ -948,7 +948,7 @@ if(pProcParams->pSeq == NULL || pProcParams->AllocdSeqLen < MaxSeqLen)
 	if(pProcParams->pSeq != NULL)
 		delete pProcParams->pSeq;
 	pProcParams->AllocdSeqLen = 0;
-	if((pProcParams->pSeq = new unsigned char [MaxSeqLen])==NULL)
+	if((pProcParams->pSeq = new uint8_t [MaxSeqLen])==NULL)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory (%d bytes) for seq processing ",MaxSeqLen);
 		return(eBSFerrMem);
@@ -1031,7 +1031,7 @@ int Rslt;
 char szTitleLine[512];
 int Len;
 
-if((pProcParams->pSeq = new unsigned char [cChromSeqLen])==NULL)
+if((pProcParams->pSeq = new uint8_t [cChromSeqLen])==NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory (%d bytes) for seq processing ",cChromSeqLen);
 	return(eBSFerrMem);

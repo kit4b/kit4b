@@ -28,27 +28,27 @@ const int cHashSize = 0x0ffffff;			// use this sized hash (24bits)
 
 #pragma pack(1)
 typedef struct TAG_sPEScaffoldContig {
-	INT32 ContigID;						// uniquely identifies this contig
+	int32_t ContigID;						// uniquely identifies this contig
 	char szContig[cMaxContigNameLen+1];	// which has this name
-	INT32 NumClustered;					// Total number of contigs in this cluster 
-	INT32 ClusterID;					// identifies the cluster containing this contig
-	INT32 HashNext;						// if non-zero then identifier of next contig with same hash
+	int32_t NumClustered;					// Total number of contigs in this cluster 
+	int32_t ClusterID;					// identifies the cluster containing this contig
+	int32_t HashNext;						// if non-zero then identifier of next contig with same hash
 	} tsPEScaffoldContig;
 
 typedef struct TAG_sPEIdent {
-	INT32 IdentID;						// uniquely identifies this PE identifier
+	int32_t IdentID;						// uniquely identifies this PE identifier
 	char szIdent[cMaxPENameLen+1];		// which has this name
-	INT32 PEScafoldID;					// associated scaffold (invalid after scaffolds sorted)
-	INT32 HashNext;						// if non-zero then identifier of next PEIdent with same hash
+	int32_t PEScafoldID;					// associated scaffold (invalid after scaffolds sorted)
+	int32_t HashNext;						// if non-zero then identifier of next PEIdent with same hash
 	} tsPEIdent;
 
 typedef struct TAG_sPEScaffold {
-	INT32 PEScafoldID;					// uniquely identifies this scaffold
-	INT32 PE12SeqID;					// PE1/PE2 sequence identifier
-	INT32 PE1ContigID;					// PE1 is aligned onto this contig (0 if alignment unknown)
-	INT32 PE2ContigID;					// PE2 is aligned onto this contig (0 if alignment unknown)
-	UINT8 PE1Sense:1;					// 1 if PE1 aligned sense onto PE1ContigID; 0 if aligned antisense
-	UINT8 PE2Sense:1;					// 1 if PE2 aligned sense onto PE2ContigID; 0 if aligned antisense
+	int32_t PEScafoldID;					// uniquely identifies this scaffold
+	int32_t PE12SeqID;					// PE1/PE2 sequence identifier
+	int32_t PE1ContigID;					// PE1 is aligned onto this contig (0 if alignment unknown)
+	int32_t PE2ContigID;					// PE2 is aligned onto this contig (0 if alignment unknown)
+	uint8_t PE1Sense:1;					// 1 if PE1 aligned sense onto PE1ContigID; 0 if aligned antisense
+	uint8_t PE2Sense:1;					// 1 if PE2 aligned sense onto PE2ContigID; 0 if aligned antisense
 } tsPEScaffold; 
 #pragma pack()
 

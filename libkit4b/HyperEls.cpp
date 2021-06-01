@@ -148,7 +148,7 @@ int
 CHyperEls::AddChrom(char *pszChrom)	// get unique chromosome identifier
 {
 tsHyperChrom *pNewChrom;
-UINT16 aHash = CUtility::GenHash16(pszChrom);
+uint16_t aHash = CUtility::GenHash16(pszChrom);
 
 if(m_pChroms == NULL)
 	{
@@ -158,7 +158,7 @@ if(m_pChroms == NULL)
 
 	if(m_pChroms == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddChrom: Memory allocation of %lld bytes - %s",(INT64)m_MemAllocChroms,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddChrom: Memory allocation of %lld bytes - %s",(int64_t)m_MemAllocChroms,strerror(errno));
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -167,7 +167,7 @@ if(m_pChroms == NULL)
 	m_pChroms = (tsHyperChrom *)mmap(NULL,m_MemAllocChroms, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pChroms == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddChrom: Memory allocation of %lld bytes through mmap()  failed - %s",(INT64)m_MemAllocChroms,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddChrom: Memory allocation of %lld bytes through mmap()  failed - %s",(int64_t)m_MemAllocChroms,strerror(errno));
 		m_pChroms = NULL;
 		Reset();
 		return(eBSFerrMem);
@@ -179,8 +179,8 @@ if(m_pChroms == NULL)
 
 if(m_pChromHashes == NULL)
 	{
-	m_pChromHashes = (UINT64 *) new UINT64 [0x010001];
-	memset(m_pChromHashes,0,sizeof(UINT64)*0x010001);
+	m_pChromHashes = (uint64_t *) new uint64_t [0x010001];
+	memset(m_pChromHashes,0,sizeof(uint64_t)*0x010001);
 	}
 
 if((m_NumChroms+5) >= m_NumChromsAllocd)
@@ -406,7 +406,7 @@ if(m_pSeqBases == NULL)
 	m_pSeqBases = (etSeqBase *) malloc(m_MemAllocSeqBases);	// initial and perhaps the only allocation
 	if(m_pSeqBases == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"PreAllocMem: Memory allocation of %lld bytes - %s",(INT64)m_MemAllocSeqBases,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"PreAllocMem: Memory allocation of %lld bytes - %s",(int64_t)m_MemAllocSeqBases,strerror(errno));
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -415,7 +415,7 @@ if(m_pSeqBases == NULL)
 	m_pSeqBases = (etSeqBase *)mmap(NULL,m_MemAllocSeqBases, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pSeqBases == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"PreAllocMem: Memory allocation of %lld bytes through mmap()  failed - %s",(INT64)m_MemAllocSeqBases,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"PreAllocMem: Memory allocation of %lld bytes through mmap()  failed - %s",(int64_t)m_MemAllocSeqBases,strerror(errno));
 		m_pSeqBases = NULL;
 		Reset();
 		return(eBSFerrMem);
@@ -434,7 +434,7 @@ if(m_pElements == NULL)
 	m_pElements = (tsHyperElement *) malloc(m_MemAllocEls);	// initial and perhaps the only allocation
 	if(m_pElements == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddElCore: Memory allocation of %lld bytes - %s",(INT64)m_MemAllocEls,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddElCore: Memory allocation of %lld bytes - %s",(int64_t)m_MemAllocEls,strerror(errno));
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -443,7 +443,7 @@ if(m_pElements == NULL)
 	m_pElements = (tsHyperElement *)mmap(NULL,m_MemAllocEls, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pElements == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddElCore: Memory allocation of %lld bytes through mmap()  failed - %s",(INT64)m_MemAllocEls,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddElCore: Memory allocation of %lld bytes through mmap()  failed - %s",(int64_t)m_MemAllocEls,strerror(errno));
 		m_pElements = NULL;
 		Reset();
 		return(eBSFerrMem);
@@ -474,9 +474,9 @@ CHyperEls::AddElCore(int SrcID,	// element identifier as parsed from source file
 		  etSeqBase *pSeq) // any associated sequence, NULL if none,  sequence is expected to be of length NumSNPBases (if not 0) otherwise Len
 {
 tsHyperElement *pEl;
-UINT8 *pBase;
-UINT8 Base;
-UINT8 SNPBases;
+uint8_t *pBase;
+uint8_t Base;
+uint8_t SNPBases;
 size_t memreq;
 int Idx;
 
@@ -513,7 +513,7 @@ if(!NumSNPBases && pSeq != NULL && m_pSeqBases == NULL)
 
 	if(m_pSeqBases == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddElCore: Memory allocation of %lld bytes - %s",(INT64)m_MemAllocSeqBases,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddElCore: Memory allocation of %lld bytes - %s",(int64_t)m_MemAllocSeqBases,strerror(errno));
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -522,7 +522,7 @@ if(!NumSNPBases && pSeq != NULL && m_pSeqBases == NULL)
 	m_pSeqBases = (etSeqBase *)mmap(NULL,m_MemAllocSeqBases, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pSeqBases == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddElCore: Memory allocation of %lld bytes through mmap()  failed - %s",(INT64)m_MemAllocSeqBases,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddElCore: Memory allocation of %lld bytes through mmap()  failed - %s",(int64_t)m_MemAllocSeqBases,strerror(errno));
 		m_pSeqBases = NULL;
 		Reset();
 		return(eBSFerrMem);
@@ -569,7 +569,7 @@ if(m_pElements == NULL)
 
 	if(m_pElements == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddElCore: Memory allocation of %lld bytes - %s",(INT64)m_MemAllocEls,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddElCore: Memory allocation of %lld bytes - %s",(int64_t)m_MemAllocEls,strerror(errno));
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -578,7 +578,7 @@ if(m_pElements == NULL)
 	m_pElements = (tsHyperElement *)mmap(NULL,m_MemAllocEls, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pElements == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddElCore: Memory allocation of %lld bytes through mmap()  failed - %s",(INT64)m_MemAllocEls,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddElCore: Memory allocation of %lld bytes through mmap()  failed - %s",(int64_t)m_MemAllocEls,strerror(errno));
 		m_pElements = NULL;
 		Reset();
 		return(eBSFerrMem);
@@ -1365,7 +1365,7 @@ return(&m_pChroms[ChromID-1].szChromName[0]);
 }
 
 
-char *CHyperEls::GetType(unsigned char ElTypeID)			// get element type
+char *CHyperEls::GetType(uint8_t ElTypeID)			// get element type
 {
 if(ElTypeID < 1 || ElTypeID > m_NumElTypes)
 	return(NULL);
@@ -1373,7 +1373,7 @@ return((char *)m_ElTypes[ElTypeID-1].szName);
 }
 
 char *
-CHyperEls::GetRelSpecies(unsigned char SpeciesID)		// get relative species
+CHyperEls::GetRelSpecies(uint8_t SpeciesID)		// get relative species
 {
 if(SpeciesID < 1 || SpeciesID > m_NumRelSpecies)
 	return(NULL);
@@ -1381,7 +1381,7 @@ return((char *)m_RelSpecies[SpeciesID-1].szName);
 }
 
 
-char *CHyperEls::GetRefSpecies(unsigned char SpeciesID)		// get reference species
+char *CHyperEls::GetRefSpecies(uint8_t SpeciesID)		// get reference species
 {
 if(SpeciesID < 1 || SpeciesID > m_NumRefSpecies)
 	return(NULL);
@@ -1702,7 +1702,7 @@ return(NumOverlapping);
 }
 
 int
-CHyperEls::LocateLociBaseCnts(int ChromID,int StartLoci,UINT32 *pCntA, UINT32 *pCntC,UINT32 *pCntG,UINT32 *pCntT,UINT32 *pCntN) // returns counts of all bases aligning to specified chrom+loci
+CHyperEls::LocateLociBaseCnts(int ChromID,int StartLoci,uint32_t *pCntA, uint32_t *pCntC,uint32_t *pCntG,uint32_t *pCntT,uint32_t *pCntN) // returns counts of all bases aligning to specified chrom+loci
 {
 tsHyperElement *pTarg;
 etSeqBase SeqBase;

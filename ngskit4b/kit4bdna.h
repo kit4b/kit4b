@@ -23,22 +23,22 @@ Original 'BioKanga' copyright notice has been retained and immediately follows t
 
 #pragma once
 
-const UINT32 cPPCRdsFileVersion = 2;			// current file header version
-const UINT32 cPPCRdsFileVersionBack= 2;			// backward compatible to this version
+const uint32_t cPPCRdsFileVersion = 2;			// current file header version
+const uint32_t cPPCRdsFileVersionBack= 2;			// backward compatible to this version
 
-typedef UINT32 tSeqWrd4;					// used to hold upto 15 packed 2bit canonical bases plus 2 flg bits in bits 30 and 31 (32bits or 4 bytes total)
-typedef UINT32 tSeqWrd1;					// used to hold single canonical base in bits 0..1 plus plus 2 flg bits in bits 6 and 7
-typedef UINT32 tSeqID;						// sequence identifiers are 32bits
-typedef UINT32 tVertID;						// vertice identifiers are 32bits
-typedef UINT64 tEdgeID;						// edges identifiers are 64bits
-typedef UINT32 tSubGraphID;					// disconnected subgraph identifiers are 32bits 
+typedef uint32_t tSeqWrd4;					// used to hold upto 15 packed 2bit canonical bases plus 2 flg bits in bits 30 and 31 (32bits or 4 bytes total)
+typedef uint32_t tSeqWrd1;					// used to hold single canonical base in bits 0..1 plus plus 2 flg bits in bits 6 and 7
+typedef uint32_t tSeqID;						// sequence identifiers are 32bits
+typedef uint32_t tVertID;						// vertice identifiers are 32bits
+typedef uint64_t tEdgeID;						// edges identifiers are 64bits
+typedef uint32_t tSubGraphID;					// disconnected subgraph identifiers are 32bits 
 
-const UINT32 cMinSeqs2Assemb = 100;			// require at least this many sequences for preprocessing
+const uint32_t cMinSeqs2Assemb = 100;			// require at least this many sequences for preprocessing
 
-const UINT32 cMaxRawSeqLen   = 0x03ffffff;	 // allow for raw seed SE sequences loaded from file of no more than 64Mbp (26bits required)
-const UINT32 cMaxQScoreLen   = 0x03ffff;	 // if filtering on the basis of minimum Phred scores then allow for fastq sequence lengths up to this many bases and quality scores
-const UINT32 cMaxContigLen   = 0x3fffffff;	 // allow for assembled contigs of no more than 1Gbp (30bits required)
-const UINT32 cMaxSeqID       = 0xffffffff;	 // allow for sequence identifiers of upto ~4Billion (32bits required)
+const uint32_t cMaxRawSeqLen   = 0x03ffffff;	 // allow for raw seed SE sequences loaded from file of no more than 64Mbp (26bits required)
+const uint32_t cMaxQScoreLen   = 0x03ffff;	 // if filtering on the basis of minimum Phred scores then allow for fastq sequence lengths up to this many bases and quality scores
+const uint32_t cMaxContigLen   = 0x3fffffff;	 // allow for assembled contigs of no more than 1Gbp (30bits required)
+const uint32_t cMaxSeqID       = 0xffffffff;	 // allow for sequence identifiers of upto ~4Billion (32bits required)
 
 // Every packed sequence is immediately preceded by 3 x 32bit (tSeqWrd4's) header words
 // Header words have their most significant bit 31 set whereas the packed sequence words have bit 31 reset so header words can easily be distingished from sequence words
@@ -58,26 +58,26 @@ const tSeqWrd4 cSeqWrd4Msk  = 0x3fffffff;	// payload mask for bits 29..0 - seque
 const tSeqWrd1 cSeqWrd1PartSeq=0x40000000;	// bit 7 reset and bit 6 set flags low order 1..0 bits as containing 1 bases
 const tSeqWrd1 cSeqWrd1Msk  = 0x3f;			// payload mask for bits 5..0  
 
-// sequences being processed for duplicates/filtered are marked with these flags (can have a maximum of 16 defined as must fit within UINT16
-const UINT16 cFlgSeqPE        = 0x001;		// sequence is paired ended; if reset then sequence is single ended
-const UINT16 cFlgSeqPE2       = 0x002;		// sequence is PE2; if reset then sequence is single ended or PE1 with partner flagged as being cFlgSeqPE2
-const UINT16 cFlg5Prime		  = 0x004;		// the 5' end of this sequence is overlapped, or overlaps at least 1 other sequence
-const UINT16 cFlg3Prime		  = 0x008;		// the 3' end of this sequence is overlapped, or overlaps at least 1 other sequence
-const UINT16 cFlgNoProc		  = 0x010;		// sequence is marked as not requiring further processing
-const UINT16 cFlgSeqUnique	  = 0x020;		// sequence is marked as being unique with no other exactly matching sequences; or if duplicates not filtered then cFlgSeqUnique, cFlgSeq1stDup and cFlgSeqNthDup will be reset
-const UINT16 cFlgSeq1stDup	  = 0x040;		// sequence is marked as being the representative duplicate sequence with other indentically matching sequences marked as being cFlgSeqNthDup
-const UINT16 cFlgSeqNthDup	  = 0x080;		// sequence is marked as being a duplicate of one or more another sequences with one representative duplicate sequence marked as cFlgSeq1stDup
-const UINT16 cFlgSeqRemove	 = 0x0100;		// sequence is marked as being for removal, either because it is a duplicate and duplicates being removed, or because it is not fully overlapped
-const UINT16 cFlgOvlLenMsk	 = 0xFE00;		// sequence overlays, or is overlaid by, at least one other sequence by this percentage of the sequence length 
+// sequences being processed for duplicates/filtered are marked with these flags (can have a maximum of 16 defined as must fit within uint16_t
+const uint16_t cFlgSeqPE        = 0x001;		// sequence is paired ended; if reset then sequence is single ended
+const uint16_t cFlgSeqPE2       = 0x002;		// sequence is PE2; if reset then sequence is single ended or PE1 with partner flagged as being cFlgSeqPE2
+const uint16_t cFlg5Prime		  = 0x004;		// the 5' end of this sequence is overlapped, or overlaps at least 1 other sequence
+const uint16_t cFlg3Prime		  = 0x008;		// the 3' end of this sequence is overlapped, or overlaps at least 1 other sequence
+const uint16_t cFlgNoProc		  = 0x010;		// sequence is marked as not requiring further processing
+const uint16_t cFlgSeqUnique	  = 0x020;		// sequence is marked as being unique with no other exactly matching sequences; or if duplicates not filtered then cFlgSeqUnique, cFlgSeq1stDup and cFlgSeqNthDup will be reset
+const uint16_t cFlgSeq1stDup	  = 0x040;		// sequence is marked as being the representative duplicate sequence with other indentically matching sequences marked as being cFlgSeqNthDup
+const uint16_t cFlgSeqNthDup	  = 0x080;		// sequence is marked as being a duplicate of one or more another sequences with one representative duplicate sequence marked as cFlgSeq1stDup
+const uint16_t cFlgSeqRemove	 = 0x0100;		// sequence is marked as being for removal, either because it is a duplicate and duplicates being removed, or because it is not fully overlapped
+const uint16_t cFlgOvlLenMsk	 = 0xFE00;		// sequence overlays, or is overlaid by, at least one other sequence by this percentage of the sequence length 
 
-// sequences being processed for de Novo assembly are marked with these flags (can have a maximum of 16 defined as must fit within UINT16
-//const UINT16 cFlgSeqPE        = 0x001;		// sequence is paired ended; if reset then sequence is single ended
-//const UINT16 cFlgSeqPE2       = 0x002;		// sequence is PE2; if reset then sequence is single ended or PE1 with partner flagged as being cFlgSeqPE2
-const UINT16 cFlgAsmbSeed       = 0x004;		// sequence being used as seed to be extended by other sequences
-const UINT16 cFlgAsmbExtn       = 0x008;		// sequence is being used to extend some other cFlgAsmbSeed sequence
-const UINT16 cFlgAsmbCplt       = 0x010;		// sequence accepted and not available for further assembly
-const UINT16 cFlgNonOverlap     = 0x020;		// sequence determined to have inconsistent sense relative to other sequences and not to be used when attempting to overlap with other sequences
-const UINT16 cFlgContainRemove     = 0x040;		// sequence has been marked for removal, sequence is completely contained by some other SE sequence
+// sequences being processed for de Novo assembly are marked with these flags (can have a maximum of 16 defined as must fit within uint16_t
+//const uint16_t cFlgSeqPE        = 0x001;		// sequence is paired ended; if reset then sequence is single ended
+//const uint16_t cFlgSeqPE2       = 0x002;		// sequence is PE2; if reset then sequence is single ended or PE1 with partner flagged as being cFlgSeqPE2
+const uint16_t cFlgAsmbSeed       = 0x004;		// sequence being used as seed to be extended by other sequences
+const uint16_t cFlgAsmbExtn       = 0x008;		// sequence is being used to extend some other cFlgAsmbSeed sequence
+const uint16_t cFlgAsmbCplt       = 0x010;		// sequence accepted and not available for further assembly
+const uint16_t cFlgNonOverlap     = 0x020;		// sequence determined to have inconsistent sense relative to other sequences and not to be used when attempting to overlap with other sequences
+const uint16_t cFlgContainRemove     = 0x040;		// sequence has been marked for removal, sequence is completely contained by some other SE sequence
 
 // Suffix sparsity applies to the word boundaries at which suffixes will be indexed
 // Word boundaries depend on the base packing which will be one of the user specified following; 
@@ -89,9 +89,9 @@ typedef enum TAG_eSfxSparsity {
 	} etSfxSparsity;
 const int cDfltSuffixSparsity = eSSparsity15;	// default suffix sparsity supported is at 15bp (32bit word) boundaries
 
-const UINT32 cMaxSfxBlkEls = 4000000000;	// construct suffix block arrays with 4byte array elements if no more than this, otherwise use 5 byte array elements
+const uint32_t cMaxSfxBlkEls = 4000000000;	// construct suffix block arrays with 4byte array elements if no more than this, otherwise use 5 byte array elements
 
-const UINT64 cMaxConcatSeqLen = (UINT64)0x0ffffffffff; // arbitary limit to all concatenated read sequences lengths - 1Tbp should be enough!   
+const uint64_t cMaxConcatSeqLen = (uint64_t)0x0ffffffffff; // arbitary limit to all concatenated read sequences lengths - 1Tbp should be enough!   
 
 const int cMaxDupInstances = 2500;			// maintain instance counts up this max number of instances
 
@@ -152,16 +152,16 @@ typedef enum TAG_eOvlFlankPhase {
 #pragma pack(1)
 
 typedef struct TAG_sPregenLevenshteinsHdr {
-	UINT8 Signiture[4];  // will be initialised to contain 'levd'
-	UINT32 LevKMers;	// number of Kmers, matrix size will be LevKMers * LevKMers
-	UINT32 KMerLen;		// generate levenshtein distances for all k-mers of this length (currently limited to 8bp)
-	UINT32 MaxLev;		// will be only accepting overlapping k-mers if their Levenshteins is <= MaxLev
-	INT32 PenaltyMatch;	// match penalty
-	INT32 PenaltyMisMatch;	// override the default mismatch penalty
-	INT32 PenaltyInsert;	// override the default insert penalty
-	INT32 PenaltyDelete;	// override the default deletion penalty
-	UINT32 m_AcceptLevWidth;	// each matrix row is this width in bytes, each byte contains bit flags packed 8 per byte 
-	UINT32 m_AllocAcceptLevDist;  // allocation size for m_pAcceptLevDist
+	uint8_t Signiture[4];  // will be initialised to contain 'levd'
+	uint32_t LevKMers;	// number of Kmers, matrix size will be LevKMers * LevKMers
+	uint32_t KMerLen;		// generate levenshtein distances for all k-mers of this length (currently limited to 8bp)
+	uint32_t MaxLev;		// will be only accepting overlapping k-mers if their Levenshteins is <= MaxLev
+	int32_t PenaltyMatch;	// match penalty
+	int32_t PenaltyMisMatch;	// override the default mismatch penalty
+	int32_t PenaltyInsert;	// override the default insert penalty
+	int32_t PenaltyDelete;	// override the default deletion penalty
+	uint32_t m_AcceptLevWidth;	// each matrix row is this width in bytes, each byte contains bit flags packed 8 per byte 
+	uint32_t m_AllocAcceptLevDist;  // allocation size for m_pAcceptLevDist
 } tsPregenLevenshteinsHdr;
 
 typedef struct TAG_sThreadPregenLevPars {
@@ -175,18 +175,18 @@ typedef struct TAG_sThreadPregenLevPars {
 	pthread_t threadID;				// identifier as set by pthread_create ()
 #endif
 	int Rslt;				// levelshtein processing result
-	UINT32 NumAccepted;		// number of KMers accepted as being within MaxLev
-	UINT32 NumRejected;     // number of KMers not accepted as being within MaxLev
-	UINT32 NumRows;		// number of KMers to be processd by this thread
-	UINT32 StartKMer;	// start KMer inclusive
-	UINT32 EndKMer;		// end KMer inclusive
-	UINT32 LevKMers;	// number of Kmers, matrix size will be LevKMers * LevKMers
-	UINT32 KMerLen;		// generate levenshtein distances for all k-mers of this length (currently limited to 8bp)
-	UINT32 MaxLev;		// will be only accepting overlapping k-mers if their Levenshteins is <= MaxLev
-	INT32 PenaltyMatch;	// match penalty
-	INT32 PenaltyMisMatch;	// override the default mismatch penalty
-	INT32 PenaltyInsert;	// override the default insert penalty
-	INT32 PenaltyDelete;	// override the default deletion penalty
+	uint32_t NumAccepted;		// number of KMers accepted as being within MaxLev
+	uint32_t NumRejected;     // number of KMers not accepted as being within MaxLev
+	uint32_t NumRows;		// number of KMers to be processd by this thread
+	uint32_t StartKMer;	// start KMer inclusive
+	uint32_t EndKMer;		// end KMer inclusive
+	uint32_t LevKMers;	// number of Kmers, matrix size will be LevKMers * LevKMers
+	uint32_t KMerLen;		// generate levenshtein distances for all k-mers of this length (currently limited to 8bp)
+	uint32_t MaxLev;		// will be only accepting overlapping k-mers if their Levenshteins is <= MaxLev
+	int32_t PenaltyMatch;	// match penalty
+	int32_t PenaltyMisMatch;	// override the default mismatch penalty
+	int32_t PenaltyInsert;	// override the default insert penalty
+	int32_t PenaltyDelete;	// override the default deletion penalty
 } tsThreadPregenLevPars;
 
 
@@ -194,13 +194,13 @@ typedef struct TAG_sProcReadsCtrl {
 	teBSFrsltCodes Rslt;			// if not eBSFSuccess then errors whilst reading from file
 	bool bPE1PE2AllReadsProc;		// set true when all reads for current SE or PE1 and PE2 files have been completely processed
 	bool bProcPE;					// true if processing PE 
-	UINT32 NumPE1ParsedReads;		// number of reads parsed from the current SE or PE1 fasta file
-	UINT32 NumPE1DescrReads;		// number of reads with descriptors parsed from the current SE or PE1 fasta file
-	UINT32 NumPE2ParsedReads;		// number of reads parsed from the current PE2 fasta file
-	UINT32 NumPE2DescrReads;		// number of reads with descriptors parsed from the current PE2 fasta file
+	uint32_t NumPE1ParsedReads;		// number of reads parsed from the current SE or PE1 fasta file
+	uint32_t NumPE1DescrReads;		// number of reads with descriptors parsed from the current SE or PE1 fasta file
+	uint32_t NumPE2ParsedReads;		// number of reads parsed from the current PE2 fasta file
+	uint32_t NumPE2DescrReads;		// number of reads with descriptors parsed from the current PE2 fasta file
 
-	UINT32 CurTotPE1ReadsParsed;	// current number of reads, either SE or PE, parsed by all threads
-	UINT32 CurTotPE1ReadsAccepted;	// current number of reads, either SE or PE, accepted by all threads
+	uint32_t CurTotPE1ReadsParsed;	// current number of reads, either SE or PE, parsed by all threads
+	uint32_t CurTotPE1ReadsAccepted;	// current number of reads, either SE or PE, accepted by all threads
 
 	int MinPhredScore;				// minimum acceptable Phred score
 	bool bIsPE1Fastq;				// true if filtering SE or PE1 on fastq quality scores
@@ -241,21 +241,21 @@ typedef struct TAG_sThreadFiltReadsPars {
 	int PE1FileID;			// PE1 reads are being processed fron this file
 	int PE2FileID;			// PE2 reads are being processed fron this file
 
-	UINT32 PE1ReadLen;
-	UINT8 PE1RawReadsBuff[cMaxRawSeqLen+1];
-	UINT32 PE1QSLen;
-	UINT8 szPE1QScoresBuff[cMaxQScoreLen+1];
-	UINT32 PE2ReadLen;
-	UINT8 *PE2RawReadsBuff[cMaxRawSeqLen+1];
-	UINT32 PE2QSLen;
-	UINT8 szPE2QScoresBuff[cMaxQScoreLen+1];
+	uint32_t PE1ReadLen;
+	uint8_t PE1RawReadsBuff[cMaxRawSeqLen+1];
+	uint32_t PE1QSLen;
+	uint8_t szPE1QScoresBuff[cMaxQScoreLen+1];
+	uint32_t PE2ReadLen;
+	uint8_t *PE2RawReadsBuff[cMaxRawSeqLen+1];
+	uint32_t PE2QSLen;
+	uint8_t szPE2QScoresBuff[cMaxQScoreLen+1];
 
 	int NumPE1ParsedReads;   // thread parsed this many PE1 reads
 	int NumPE1AcceptedReads; // and this many were accepted after filtering
 	int NumPE2ParsedReads;   // thread parsed this many PE2 reads
 	int NumPE2AcceptedReads; // and this many were accepted after filtering
 
-	INT64 AcceptedTotSeqLen; // sum of all sequence lengths, both PE1 and PE2 accepted by this thread
+	int64_t AcceptedTotSeqLen; // sum of all sequence lengths, both PE1 and PE2 accepted by this thread
 	int MaxAcceptedReadLen;	 // max length of any read, either PE1 or PE2, accepted by this thread
 	int MinAcceptedReadLen;	 // min length of any read, either PE1 or PE2, accepted by this thread
 
@@ -268,8 +268,8 @@ typedef struct TAG_sThreadFiltReadsPars {
 	int NumPE1ExcessNs;		   // number of PE1's not accepte as more than this number of MaxNs indeterminates
 	int NumPE2ExcessNs;		   // number of PE2's not accepte as more than this number of MaxNs indeterminates
 
-	UINT32 NumContamVector;		// number of reads contained within contaminate vector
-	UINT32 NumContamFlankTrim;  // number of reads which were flank trimmed because of overlap onto contaminate adaptor
+	uint32_t NumContamVector;		// number of reads contained within contaminate vector
+	uint32_t NumContamFlankTrim;  // number of reads which were flank trimmed because of overlap onto contaminate adaptor
 } tsThreadFiltReadsPars;
  
 typedef struct TAG_sSeqOverlay {
@@ -279,7 +279,7 @@ typedef struct TAG_sSeqOverlay {
 	tSeqID SeqID2;		// and this sequence
 	int Seq2Len;		//    sequence 2 unpacked length
 	int Seq2WrdBytes;	//    bases are packed into either 1 or 4 bytes corresponding respectively to eSSparsity1 or eSSparsity15  
-	UINT16 OvlFlgs;		// overlay classification flags
+	uint16_t OvlFlgs;		// overlay classification flags
 	int OverlayLen;		// overlay is of this length
 	int NumSubs;		// with this many substitutions required
 	int Seq1StartOfs;	// overlay starts at this offset on Seq1
@@ -288,88 +288,88 @@ typedef struct TAG_sSeqOverlay {
 	int Seq2EndOfs;		// overlay finishes at this offset on Seq2
 	bool bSeq1Packed;	// set true if Seq1 still in packed format
 	bool bSeq2Packed;	// set true if Seq2 still in packed format
-	UINT8 Seq1[cMaxCmpOverlapBases+1];	// holds unpacked (bSeq1Packed == false) or packed (bSeq1Packed == true) sequence 1	
-	UINT8 Seq2[cMaxCmpOverlapBases+1];  // holds unpacked (bSeq2Packed == false) or packed (bSeq2Packed == true) sequence 1
+	uint8_t Seq1[cMaxCmpOverlapBases+1];	// holds unpacked (bSeq1Packed == false) or packed (bSeq1Packed == true) sequence 1	
+	uint8_t Seq2[cMaxCmpOverlapBases+1];  // holds unpacked (bSeq2Packed == false) or packed (bSeq2Packed == true) sequence 1
 } tsSeqOverlay;
 
 
 
 typedef struct TAG_sSequences {		// contains sequences and sparse suffix for sequences
-	UINT8 bSeqs2AssembDirty;		// set true whenever any changes to NumSeqs2Assemb, TotSeqs2Assemb, Seqs2AssembLen or pSeqs2Assemb have been modified
+	uint8_t bSeqs2AssembDirty;		// set true whenever any changes to NumSeqs2Assemb, TotSeqs2Assemb, Seqs2AssembLen or pSeqs2Assemb have been modified
 									// and new suffix and descriptors/starts should be generated  
-	UINT8  bPESeqs;					// non-zero if sequences are from paired end reads
-	UINT32 TotSeqsParsed;			// total number of sequences parsed
-    UINT32 TotSeqsUnderLen;			// total number of sequences filtered out because underlength
-	UINT32 TotSeqsExcessNs;			// total number of sequences filtered out because too many Ns
-	UINT32 NumProcessed;			// number processed
-	UINT32 NumDuplicates;			// of which this number are duplicates
-	UINT32 NumOverlapping;			// number of sequences which overlapped other sequences
-	UINT64 NumOverlapped;			// number of sequences determined as being overlapped
-	UINT32 TotSeqs2Assemb;			// original total number of sequences to be assembled after length filtering
-	UINT32 NumSeqs2Assemb;			// total number of sequences accepted into m_pSeqs2Assemb
-	UINT32 NumPE1Seqs2Assemb;		// total number of sequences accepted into m_pSeqs2Assemb from PE1 (or single ended reads)
-	UINT32 NumPE2Seqs2Assemb;		// total number of sequences accepted into m_pSeqs2Assemb from PE2
-	UINT64 Seqs2AssembLen;			// the sequences in m_pSeqs2Assemb total to this number of bases
-	UINT8  SfxSparsity;				// suffix sparsity - expected to be one of eSSparsity1 or eSSparsity15
-	UINT32 SeqWrdBytes;				// bases are packed into either 4 bytes corresponding to eSSparsity15, or a single byte eSSparsity1 if sequences are unpacked  
-	UINT32 SeqHdrLen;				// length (in tSeqWrds) of sequence headers; currently 3 (tSeqWrd4) for both eSSparsity1 and eSSparsity4
-	UINT64 Seqs2AssembOfs;			// offset in m_pSeqs2Assemb to write next sequence
-	UINT64 AllocMemSeqs2Assemb;		// memory (bytes) currently allocated for m_pSeqs2Assemb 
-	UINT32 NumSeqStarts;			// number of sequence start offsets in pSeqStarts
-	UINT64 AllocMemSeqStarts;		// memory (bytes) currently allocated to m_pSeqStarts 
-	UINT32 NumSeqFlags;				// number of sequence flags used in pSeqFlags
-	UINT64 AllocMemSeqFlags;		// memory (bytes) currently allocated to pSeqFlags
+	uint8_t  bPESeqs;					// non-zero if sequences are from paired end reads
+	uint32_t TotSeqsParsed;			// total number of sequences parsed
+    uint32_t TotSeqsUnderLen;			// total number of sequences filtered out because underlength
+	uint32_t TotSeqsExcessNs;			// total number of sequences filtered out because too many Ns
+	uint32_t NumProcessed;			// number processed
+	uint32_t NumDuplicates;			// of which this number are duplicates
+	uint32_t NumOverlapping;			// number of sequences which overlapped other sequences
+	uint64_t NumOverlapped;			// number of sequences determined as being overlapped
+	uint32_t TotSeqs2Assemb;			// original total number of sequences to be assembled after length filtering
+	uint32_t NumSeqs2Assemb;			// total number of sequences accepted into m_pSeqs2Assemb
+	uint32_t NumPE1Seqs2Assemb;		// total number of sequences accepted into m_pSeqs2Assemb from PE1 (or single ended reads)
+	uint32_t NumPE2Seqs2Assemb;		// total number of sequences accepted into m_pSeqs2Assemb from PE2
+	uint64_t Seqs2AssembLen;			// the sequences in m_pSeqs2Assemb total to this number of bases
+	uint8_t  SfxSparsity;				// suffix sparsity - expected to be one of eSSparsity1 or eSSparsity15
+	uint32_t SeqWrdBytes;				// bases are packed into either 4 bytes corresponding to eSSparsity15, or a single byte eSSparsity1 if sequences are unpacked  
+	uint32_t SeqHdrLen;				// length (in tSeqWrds) of sequence headers; currently 3 (tSeqWrd4) for both eSSparsity1 and eSSparsity4
+	uint64_t Seqs2AssembOfs;			// offset in m_pSeqs2Assemb to write next sequence
+	uint64_t AllocMemSeqs2Assemb;		// memory (bytes) currently allocated for m_pSeqs2Assemb 
+	uint32_t NumSeqStarts;			// number of sequence start offsets in pSeqStarts
+	uint64_t AllocMemSeqStarts;		// memory (bytes) currently allocated to m_pSeqStarts 
+	uint32_t NumSeqFlags;				// number of sequence flags used in pSeqFlags
+	uint64_t AllocMemSeqFlags;		// memory (bytes) currently allocated to pSeqFlags
 	double MeanSeqLen;				// mean length of all sequences
-	UINT32 MinSeqLen;				// minimum sequence length
-	UINT32 MaxSeqLen;				// maximum sequence length
-	UINT32	SfxElSize;				// suffix element size - either 4, <= cMaxSfxBlkEls, or 5 if > cMaxSfxBlkEls 
-	UINT64 NumSuffixEls;			// number of elements in suffix array
-	UINT64 AllocMemSfx;				// allocated memory size for suffix array
-	UINT64 OfsSeqs2Assemb;			// when loading from/to disk then holds the file offset at which the concatenated packed sequences start
+	uint32_t MinSeqLen;				// minimum sequence length
+	uint32_t MaxSeqLen;				// maximum sequence length
+	uint32_t	SfxElSize;				// suffix element size - either 4, <= cMaxSfxBlkEls, or 5 if > cMaxSfxBlkEls 
+	uint64_t NumSuffixEls;			// number of elements in suffix array
+	uint64_t AllocMemSfx;				// allocated memory size for suffix array
+	uint64_t OfsSeqs2Assemb;			// when loading from/to disk then holds the file offset at which the concatenated packed sequences start
 	union {							// as a union to ensure that size of this structure remains constant independent of 32/64 bit compilation 
 		struct {
 			void *pTmpRevCplSeqs;       // used to hold sequences whilst revcpl PEs, either as tSeqWrd4s if packed or tSeqWrd1s if unpacked sequences
-			void *pSeqs2Assemb;				// holds sequences concatenated with UINT32 lengths prepended to each sequence which are to be subsequently suffix indexed and assembled
+			void *pSeqs2Assemb;				// holds sequences concatenated with uint32_t lengths prepended to each sequence which are to be subsequently suffix indexed and assembled
 			void *pSuffixArray;				// to hold suffix array for concatenated read/contig sequences, element sizes may be either 4 or 5 bytes as specified by m_SfxElSize
-			UINT64 *pSeqStarts;				// holds array of sequence start tSeqWrd1 or tSeqWrd4 offsets (indexed by sequence identifiers)
-			UINT16  *pSeqFlags;				// holds array of sequence flags (indexed by sequence identifiers)
+			uint64_t *pSeqStarts;				// holds array of sequence start tSeqWrd1 or tSeqWrd4 offsets (indexed by sequence identifiers)
+			uint16_t  *pSeqFlags;				// holds array of sequence flags (indexed by sequence identifiers)
 			};
-		UINT64 Padd4Ptrs[5];
+		uint64_t Padd4Ptrs[5];
 		};
 } tsSequences;
 
 typedef struct TAG_sEstSeqs {
 	bool bCalcMeanSeqLen;			// set true when ever the mean sequence length needs to be re-calculated
-	UINT32 NumFiles;				// number of files from which these estimates were derived 
-	UINT64 TotSeqLens;				// estimates of total sequence length  
-	UINT32 TotNumSeqs;				// estimates of total number of sequences to be parsed
-	UINT32 NumSeqsToProc;			// estimate of total number of sequences, after any sampling to be further processed
-	UINT32 MeanSeqLen;				// estimates of mean sequence length
+	uint32_t NumFiles;				// number of files from which these estimates were derived 
+	uint64_t TotSeqLens;				// estimates of total sequence length  
+	uint32_t TotNumSeqs;				// estimates of total number of sequences to be parsed
+	uint32_t NumSeqsToProc;			// estimate of total number of sequences, after any sampling to be further processed
+	uint32_t MeanSeqLen;				// estimates of mean sequence length
 } tsEstSeqs;
 
 
 typedef struct TAG_sMultiSeqFlags {
 	tSeqID SeqID;				// sequence identifier (32 bits)
-	UINT16 SetFlags;			// flags to set
-	UINT16 ResetFlags;			// flags to be reset
-	UINT16 CurFlags;			// after flag processing then contains the updated flags		
+	uint16_t SetFlags;			// flags to set
+	uint16_t ResetFlags;			// flags to be reset
+	uint16_t CurFlags;			// after flag processing then contains the updated flags		
 } tsMultiSeqFlags;
 
 typedef struct TAG_sReadFile {
-	UINT8 FileID;					// uniquely identifies this sequence source file
-	UINT8 PEFileID;					// if paired end processing then it's partner source file identifier
-	UINT32 SeqsParsed;				// number of sequences parsed
-    UINT32 SeqsUnderLen;			// number of sequences filtered out because underlength
-	UINT32 SeqsExcessNs;			// number of sequences filtered out because too many Ns
-	UINT32 SeqsAccepted;			// number of sequences accepted
-	UINT8 szFile[_MAX_PATH];		// source file name
+	uint8_t FileID;					// uniquely identifies this sequence source file
+	uint8_t PEFileID;					// if paired end processing then it's partner source file identifier
+	uint32_t SeqsParsed;				// number of sequences parsed
+    uint32_t SeqsUnderLen;			// number of sequences filtered out because underlength
+	uint32_t SeqsExcessNs;			// number of sequences filtered out because too many Ns
+	uint32_t SeqsAccepted;			// number of sequences accepted
+	uint8_t szFile[_MAX_PATH];		// source file name
 	} tsReadFile;
 
 typedef struct TAG_sSparseSfxFileHdr {
-	UINT8 Magic[4];					// magic chars to identify this file as a preprocessed and packed read sequences file
-	UINT32 Version;					// file structure version (cPPCRdsFileVersion)
-	UINT64 FileSize;				// file should be of this size
-	UINT32 NumRawFiles;				// number of raw reads files processed
+	uint8_t Magic[4];					// magic chars to identify this file as a preprocessed and packed read sequences file
+	uint32_t Version;					// file structure version (cPPCRdsFileVersion)
+	uint64_t FileSize;				// file should be of this size
+	uint32_t NumRawFiles;				// number of raw reads files processed
 	tsReadFile SrcFiles[1 + (cKDNAMaxInFileSpecs * 2)]; // original source files from which sequences were parsed, allows for PE1 and PE2 source file names plus an optional seed contig file
 	tsSequences Sequences;			// to hold sequences for PE1 and PE2
 } tsPPCRdsFileHdr;
@@ -382,8 +382,8 @@ const int cSizeofPPCRdsFileHdr = sizeof(tsPPCRdsFileHdr);
 // currently this indeterminate processing is only utilised in scaffolding as it is enables progressive scaffolding with different mate pair libraries 
 typedef struct TAG_sBlockNsLoci {
 	tSeqID SeqID;				// sequence identifier (32 bits) containing this block of indeterminates
-	UINT32 Ofs;					// offset (0..n) in the sequence at which the indeterminates start
-	UINT32 NumNs;				// number of indeterminates in this block
+	uint32_t Ofs;					// offset (0..n) in the sequence at which the indeterminates start
+	uint32_t NumNs;				// number of indeterminates in this block
 	} tsBlockNsLoci;
 
 #pragma pack()
@@ -469,60 +469,60 @@ friend class CPacBio;					// CPacBio requires access to all members of this clas
 	int m_LineBuffLen;				// current number of chars buffered in m_pszLineBuff
 	int m_AllocLineBuff;			// m_pszLineBuff allocated to hold at most this number of chars
 
-	UINT64 m_CurMaxMemWorkSetBytes;  // currently set max working set in bytes
-	UINT32 m_WinPageSize;			// windows memory page size in bytes (0 if process not on Windows)
-	UINT64 m_BaseWinMinMem;			// windows base min working set memory in bytes when process initially started
-	UINT64 m_BaseWinMaxMem;			// windows base max working set memory in bytes when process initially started
+	uint64_t m_CurMaxMemWorkSetBytes;  // currently set max working set in bytes
+	uint32_t m_WinPageSize;			// windows memory page size in bytes (0 if process not on Windows)
+	uint64_t m_BaseWinMinMem;			// windows base min working set memory in bytes when process initially started
+	uint64_t m_BaseWinMaxMem;			// windows base max working set memory in bytes when process initially started
 
 	tsSequences m_Sequences;			//  5' (eSTypePE1) and 3' (eSTtypePE2) sequences
 
 	tsEstSeqs m_SeqEsts;			// estimates of sequence lengths + total number of sequences for each sequence type
 
-	UINT32 m_NumPartialSeqs2Assemb;	 // total number of partial sequences to assemble
-	UINT64 m_LenPartialSeqs2Assemb;  // total length of partial sequences
-	UINT64 m_PartialSeqs2AssembOfs;	 // offset into m_pPartialSeqs2Assemb at which next sequence can be copied
-	UINT64 m_AllocdPartialSeqs2Assemb; // bytes memory allocated to m_pPartialSeqs2Assemb;
+	uint32_t m_NumPartialSeqs2Assemb;	 // total number of partial sequences to assemble
+	uint64_t m_LenPartialSeqs2Assemb;  // total length of partial sequences
+	uint64_t m_PartialSeqs2AssembOfs;	 // offset into m_pPartialSeqs2Assemb at which next sequence can be copied
+	uint64_t m_AllocdPartialSeqs2Assemb; // bytes memory allocated to m_pPartialSeqs2Assemb;
 	void *m_pPartialSeqs2Assemb;		// to hold partially assembled sequences during each assembly phase
 
 
-	UINT32 m_NumBlockNsLoci;		// number of blocks currently used
-	UINT32 m_AllocdBlockNsLoci;		// currently this number of blocks have been allocated - may be on demand reallocated
+	uint32_t m_NumBlockNsLoci;		// number of blocks currently used
+	uint32_t m_AllocdBlockNsLoci;		// currently this number of blocks have been allocated - may be on demand reallocated
 	size_t m_AllocdBlockNsLociSize;  // memory allocation size
 	tsBlockNsLoci *m_pBlockNsLoci;   // pts to blocks of indeterminate start loci + len
 
 	int								// returned sequence length, will be limited to MaxSeqLen
 		GetSeq(tSeqID SeqID,		// sequence identifier
-			UINT8 *pRetSeq,			// where to copy unpacked sequence bases
-			UINT32 MaxSeqLen = 0,	// return at most MaxSeqLen bases (0 if no limit)
+			uint8_t *pRetSeq,			// where to copy unpacked sequence bases
+			uint32_t MaxSeqLen = 0,	// return at most MaxSeqLen bases (0 if no limit)
 			bool bNoEOSTerm = false);	// option to not terminate unpacked string with EOS
 
 	int								// returned sequence length, will be limited to MaxSeqLen
 		GetSeq(void *pStartSeqWrd,
-				UINT8 *pRetSeq,				// where to copy unpacked sequence bases
-				UINT32 MaxSeqLen = 0,		// return at most MaxSeqLen bases (0 if no limit)
+				uint8_t *pRetSeq,				// where to copy unpacked sequence bases
+				uint32_t MaxSeqLen = 0,		// return at most MaxSeqLen bases (0 if no limit)
 				bool bNoEOSTerm = false);	// option to not terminate unpacked string with EOS
 	
 	int // returns sequence length for sequence with specified SeqID
 			GetSeqLen(tSeqID SeqID); // sequence identifier
 
 	teBSFrsltCodes	// returns min/mean/max lengths for PE1/PE2 and SE sequences
-		GetSeqLenDist(UINT32 *pNumPEs = NULL,	// total number of paired ends (number of pairs!)
+		GetSeqLenDist(uint32_t *pNumPEs = NULL,	// total number of paired ends (number of pairs!)
 					  int *pPE1min = NULL,	// returned PE1 min length
 					  int *pPE1mean = NULL,// returned PE1 mean length
 					  int *pPE1max = NULL, // returned PE1 max length
 					  int *pPE2min = NULL,	// returned PE2 min length
 					  int *pPE2mean = NULL,// returned PE2 mean length
 					  int *pPE2max = NULL, // returned PE2 max length
-					  UINT32 *pNumSEs = NULL,	// total number of single ends
+					  uint32_t *pNumSEs = NULL,	// total number of single ends
 					  int *pSEmin = NULL,	// returned SE min length
 					  int *pSEmean = NULL,	// returned SE mean length
 					  int *pSEmax = NULL);	// returned SE max length
 
 
-	teBSFrsltCodes ChunkedWrite(UINT64 WrtOfs,UINT8 *pData,UINT64 WrtLen);
-	teBSFrsltCodes ChunkedWrite(int hFile,char *pszFile,UINT64 WrtOfs,UINT8 *pData,UINT64 WrtLen);
-	teBSFrsltCodes ChunkedRead(int hFile,char *pszFile,UINT64 RdOfs,UINT8 *pData,UINT64 RdLen);
-	teBSFrsltCodes ChunkedRead(UINT64 RdOfs,UINT8 *pData,UINT64 RdLen);
+	teBSFrsltCodes ChunkedWrite(uint64_t WrtOfs,uint8_t *pData,uint64_t WrtLen);
+	teBSFrsltCodes ChunkedWrite(int hFile,char *pszFile,uint64_t WrtOfs,uint8_t *pData,uint64_t WrtLen);
+	teBSFrsltCodes ChunkedRead(int hFile,char *pszFile,uint64_t RdOfs,uint8_t *pData,uint64_t RdLen);
+	teBSFrsltCodes ChunkedRead(uint64_t RdOfs,uint8_t *pData,uint64_t RdLen);
 
 				
 
@@ -575,32 +575,32 @@ friend class CPacBio;					// CPacBio requires access to all members of this clas
 	int CreateMutexes(void);
 	void DeleteMutexes(void);
 
-	static inline UINT64		// unpacks the 5 bytes ptd at by p5Bytes and returns as UINT64 
-		Unpack5(UINT8 *p5Bytes)
+	static inline uint64_t		// unpacks the 5 bytes ptd at by p5Bytes and returns as uint64_t 
+		Unpack5(uint8_t *p5Bytes)
 		{
-		// ensures that only 5 bytes are actually accessed, can't just access as a UINT64 and mask retain bottom 40 bits...
-		return((UINT64)((UINT64)p5Bytes[4] << 32 | *(UINT32 *)p5Bytes));
+		// ensures that only 5 bytes are actually accessed, can't just access as a uint64_t and mask retain bottom 40 bits...
+		return((uint64_t)((uint64_t)p5Bytes[4] << 32 | *(uint32_t *)p5Bytes));
 		}
 
-	static inline UINT8 *Pack5(UINT64 Value, UINT8 *p5Bytes)
+	static inline uint8_t *Pack5(uint64_t Value, uint8_t *p5Bytes)
 		{
-		*(UINT32 *)p5Bytes = (UINT32)Value;
-		p5Bytes[4] = (UINT8)(Value >> 32);
+		*(uint32_t *)p5Bytes = (uint32_t)Value;
+		p5Bytes[4] = (uint8_t)(Value >> 32);
 		return(p5Bytes + 5);
 		}
 
-	teBSFrsltCodes AddSeq(UINT32 SrcFileID,		// 8bits identifies source file from which this sequence was processed
-						UINT32 SeqFlags,    	// 16bits as bit flags
-						UINT32 SeqLen,			// 30bit sequence length
-						UINT8 *pSeq);			// ptr to sequence
+	teBSFrsltCodes AddSeq(uint32_t SrcFileID,		// 8bits identifies source file from which this sequence was processed
+						uint32_t SeqFlags,    	// 16bits as bit flags
+						uint32_t SeqLen,			// 30bit sequence length
+						uint8_t *pSeq);			// ptr to sequence
 
-	teBSFrsltCodes AddPESeqs(UINT32 SrcFileID,			// 8bits identifies source file from which this sequence was processed
-						UINT32 PE1SeqFlags,    	// PE1 16bits as bit flags
-						UINT32 PE1SeqLen,		// PE1 30bit sequence length
-						UINT8 *pPE1Seq,			// PE1 ptr to sequence
-						UINT32 PE2SeqFlags,    	// PE2 16bits as bit flags
-						UINT32 PE2SeqLen,		// PE2 30bit sequence length
-						UINT8 *pPE2Seq);			// PE2 ptr to sequence
+	teBSFrsltCodes AddPESeqs(uint32_t SrcFileID,			// 8bits identifies source file from which this sequence was processed
+						uint32_t PE1SeqFlags,    	// PE1 16bits as bit flags
+						uint32_t PE1SeqLen,		// PE1 30bit sequence length
+						uint8_t *pPE1Seq,			// PE1 ptr to sequence
+						uint32_t PE2SeqFlags,    	// PE2 16bits as bit flags
+						uint32_t PE2SeqLen,		// PE2 30bit sequence length
+						uint8_t *pPE2Seq);			// PE2 ptr to sequence
 
 	int
 		GenPackedSeqWrds(int SeqLen,	// sequence length ptd at by pSeq
@@ -708,92 +708,92 @@ friend class CPacBio;					// CPacBio requires access to all members of this clas
 	static int Sfx5SortSeqWrd4Func(const void *arg1, const void *arg2);
 
 
-	UINT32 m_LevDistKMerLen;                    // Levenshtein distances have been precalculated for sequences of this K-mer length
-	UINT32 m_MaxLev;							// and if <= this distance have been bit set as accepted in m_pAcceptLevDist
-	UINT32 m_LevKMers;							// number of K-mers of len
+	uint32_t m_LevDistKMerLen;                    // Levenshtein distances have been precalculated for sequences of this K-mer length
+	uint32_t m_MaxLev;							// and if <= this distance have been bit set as accepted in m_pAcceptLevDist
+	uint32_t m_LevKMers;							// number of K-mers of len
 	int m_PenaltyMatch;							// override the default match penalty (0)
 	int m_PenaltyMisMatch;						// override the default mismatch penalty (1)
 	int m_PenaltyInsert;						// override the default insert penalty (1)
 	int m_PenaltyDelete;						// override the default deletion penalty (1)
-	UINT32 m_AcceptLevWidth;					// each matrix row is this width in bytes, each byte contains bit flags packed 8 per byte 
-	UINT32 m_AllocAcceptLevDist;            // allocation size for m_pAcceptLevDist
-	UINT8 *m_pAcceptLevDist;				// allocated to hold Levenshtein accepted as bit flags packed 8 per byte 
+	uint32_t m_AcceptLevWidth;					// each matrix row is this width in bytes, each byte contains bit flags packed 8 per byte 
+	uint32_t m_AllocAcceptLevDist;            // allocation size for m_pAcceptLevDist
+	uint8_t *m_pAcceptLevDist;				// allocated to hold Levenshtein accepted as bit flags packed 8 per byte 
 
 
 	tSeqWrd4 *									// returned ptr to 1st packed sequence word
-			SfxIdxToFirstSeqWrd(UINT64 SfxWrdIdx, // index + 1
+			SfxIdxToFirstSeqWrd(uint64_t SfxWrdIdx, // index + 1
 							   int *pWrdOfs = NULL);	  // returned sequence word is at this relative word offset to SfxWrdIdx; e.g if 1 then SfxWrdIdx referenced the second word in the sequence 
 							
 	tSeqID									// returned sequence identifer
-		SfxIdx2SeqID(UINT64 SfxWrdIdx);		// (offset + 1) into pTypeSeqs  
+		SfxIdx2SeqID(uint64_t SfxWrdIdx);		// (offset + 1) into pTypeSeqs  
 			
-	UINT64			// index+1 pSfxArray of first exactly matching probe or 0 if no match				
+	uint64_t			// index+1 pSfxArray of first exactly matching probe or 0 if no match				
 		LocateFirstExact(int ElSize,					// sizeof elements in pSfxArray - currently will be either 4 or 5 bytes
 				  void *pProbe,					// pts to probe sequence
 				  int ProbeLen,					// probe length (in bases, not tSeqWrds) to exactly match over
 				  void *pTarg,					// target sequence
-				  UINT8 *pSfxArray,				// target sequence suffix array
-				  UINT64 SfxLo,					// low index in pSfxArray
-				  UINT64 SfxHi);				// high index in pSfxArray
+				  uint8_t *pSfxArray,				// target sequence suffix array
+				  uint64_t SfxLo,					// low index in pSfxArray
+				  uint64_t SfxHi);				// high index in pSfxArray
 
-	UINT64			// index+1 in pSfxArray of last exactly matching probe or 0 if no match					
+	uint64_t			// index+1 in pSfxArray of last exactly matching probe or 0 if no match					
 		LocateLastExact(int ElSize,					// sizeof elements in pSfxArray - currently will be either 4 or 5 bytes
 				  void *pProbe,					// pts to probe sequence
 				  int ProbeLen,					// probe length (in bases, not tSeqWrds) to exactly match over
 				  void *pTarg,					// target sequence
-				  UINT8 *pSfxArray,				// target sequence suffix array
-				  UINT64 SfxLo,					// low index in pSfxArray
-				  UINT64 SfxHi,					// high index in pSfxArray
-				  UINT32 Limit);				// if non-zero then need only iterate towards last exactly matching this for this Limit iterations
+				  uint8_t *pSfxArray,				// target sequence suffix array
+				  uint64_t SfxLo,					// low index in pSfxArray
+				  uint64_t SfxHi,					// high index in pSfxArray
+				  uint32_t Limit);				// if non-zero then need only iterate towards last exactly matching this for this Limit iterations
 
 	tSeqWrd4 *								// returned ptr to 1st word of actual packed sequence (use this as pCurSeq on next invocation)
 		IterSeqHeaders(tSeqWrd4 *pCurSeq,	// iterate to next sequence following (NULL to return 1st sequence)
 			tSeqID *pSeqID = NULL,			// returned 32bit sequence identifier
-			UINT32 *pSrcFileID = NULL,		// returned 8 bit source file identifier
-			UINT32 *pFlgs = NULL,			// returned 16 bit sequence flags
-			UINT32 *pSeqLen = NULL,		    // returned 30 bit sequence length
+			uint32_t *pSrcFileID = NULL,		// returned 8 bit source file identifier
+			uint32_t *pFlgs = NULL,			// returned 16 bit sequence flags
+			uint32_t *pSeqLen = NULL,		    // returned 30 bit sequence length
 			bool bSerialise = false);		// true if access to headers are to be serialised, false if access is not serialised
 
 	tSeqWrd4 *							// returned ptr to 1st word of actual packed sequence
 		GetSeqHeader(tSeqWrd4 *pSeqWrd,	// pts to a SeqWrd within the sequence
 			tSeqID *pSeqID = NULL,		// returned 32 bit sequence identifier
-			UINT32 *pSrcFileID = NULL,	// returned 8 bit source file identifier
-			UINT32 *pFlgs = NULL,		// returned 16 bit sequence flags
-			UINT32 *pSeqLen = NULL, 	// returned 30 bit sequence length
+			uint32_t *pSrcFileID = NULL,	// returned 8 bit source file identifier
+			uint32_t *pFlgs = NULL,		// returned 16 bit sequence flags
+			uint32_t *pSeqLen = NULL, 	// returned 30 bit sequence length
 			bool bSerialise = false);	// set true if access to headers are required to be serialised
 
 	tSeqWrd4 *								// returned ptr to 1st word of actual packed sequence
 		GetSeqHeader(tSeqID SeqID,		// 32 bit sequence identifier
-			UINT32 *pSrcFileID = NULL,	// returned 8 bit source file identifier
-			UINT32 *pFlgs = NULL,		// returned 16 bit sequence flags
-			UINT32 *pSeqLen = NULL,		// returned 30 bit sequence length
+			uint32_t *pSrcFileID = NULL,	// returned 8 bit source file identifier
+			uint32_t *pFlgs = NULL,		// returned 16 bit sequence flags
+			uint32_t *pSeqLen = NULL,		// returned 30 bit sequence length
 			bool bSerialise = false);	// set true if access to headers are required to be serialised
 
 	tSeqWrd4 *									// returned ptr to next word to write packed sequence 
 		SetSeqHeader(tSeqWrd4 *pSeqHdrWrd,		// pts to where to write the sequence header
 			tSeqID SeqID,				// sequence identifier (32 bits)
-			UINT32 SrcFileID,			// identifies source file from which this sequence was processed (8 bits)
-			UINT32 Flgs,				// sequence flags (16 bits)
-			UINT32 SeqLen,				// sequence length (30 bits)
+			uint32_t SrcFileID,			// identifies source file from which this sequence was processed (8 bits)
+			uint32_t Flgs,				// sequence flags (16 bits)
+			uint32_t SeqLen,				// sequence length (30 bits)
 			int *pNumSeqWrds = NULL,	// used to return the number of SeqWrds used
 			bool bAddingHdr = true,     // set true if adding header, false if updating an existing header
 			bool bSerialise = false);	// set true if access to headers are required to be serialised
 
 	int									// returned updated flags, or if < 0 then error 
 		UpdateSeqHeaderFlags(tSeqID SeqID,				// sequence identifier (32 bits)
-			UINT32 SetFlags,			// flags to set
-			UINT32 ResetFlags,			// flags to be reset
+			uint32_t SetFlags,			// flags to set
+			uint32_t ResetFlags,			// flags to be reset
 			bool bSerialise = false);	// set true if access to headers are required to be serialised
 
 	int									// returned updated flags, or if < 0 then error 
 		UpdateSeqHeaderFlags(tSeqWrd4 *pSeqWrd,				// pts to a SeqWrd within the sequence
-			UINT32 SetFlags,			// flags to set
-			UINT32 ResetFlags,			// flags to be reset
+			uint32_t SetFlags,			// flags to set
+			uint32_t ResetFlags,			// flags to be reset
 			bool bSerialise = false);	// set true if access to headers are required to be serialised
 
 		int					// < 0 if errors
-		UpdateAllSeqHeaderFlags(UINT32 SetFlags,	// flags to set
-					UINT32 ResetFlags,				// flags to be reset
+		UpdateAllSeqHeaderFlags(uint32_t SetFlags,	// flags to set
+					uint32_t ResetFlags,				// flags to be reset
 					bool bSerialise);				// set true if access to headers are required to be serialised
 
 	int
@@ -803,7 +803,7 @@ friend class CPacBio;					// CPacBio requires access to all members of this clas
 			bool bSerialise = false);			// set true if access to flags are required to be serialised
 
 	int
-		GetSeqFlags(UINT32 NumSeqs,						// number of sequences 
+		GetSeqFlags(uint32_t NumSeqs,						// number of sequences 
 			tsMultiSeqFlags *pMultiSeqFlags,	// holds sequence identifiers plus used to return flags
 			bool bSerialise = false);			// set true if access to flags are required to be serialised
 
@@ -812,14 +812,14 @@ friend class CPacBio;					// CPacBio requires access to all members of this clas
 			bool bSerialise = false);	// set true if access to headers are required to be serialised
 
 	int
-		UpdateSeqFlags(UINT32 NumSeqs,								// number of sequences requiring flag updates
+		UpdateSeqFlags(uint32_t NumSeqs,								// number of sequences requiring flag updates
 			tsMultiSeqFlags *pMultiSeqFlags,			// holds sequence identifiers plus flag update operations
 			bool bSerialise =false);							// set true if access to flags are required to be serialised
 
 	int									// returned updated flags, or if < 0 then error 
 		UpdateSeqFlags(tSeqID SeqID,				// sequence identifier (32 bits)
-			UINT32 SetFlags,			// flags to set
-			UINT32 ResetFlags,			// flags to be reset
+			uint32_t SetFlags,			// flags to set
+			uint32_t ResetFlags,			// flags to be reset
 			bool bSerialise = false);	// set true if access to headers are required to be serialised
 
 
@@ -828,7 +828,7 @@ friend class CPacBio;					// CPacBio requires access to all members of this clas
 	tSeqID m_NextProcSeqID;				// next sequence identifier for processing
 	int m_NumProcSeqIDs;				// each thread to process at most this many sequences as a block
 
-	INT64									// accumulated partial sequence lengths	
+	int64_t									// accumulated partial sequence lengths	
 		SavePartialSeqs(int PE1Len,		// length of partially assembled sequence ptd at by pPE1
 				tSeqWrd4 *pPE1,			// partially assembled PE1
 				int PE2Len,				// (optional) length of partially assembled sequence ptd at by pPE2
@@ -847,11 +847,11 @@ friend class CPacBio;					// CPacBio requires access to all members of this clas
 	int
 		PackedRevCpl(tSeqWrd4 *pSeqToRev,
 			bool bRevOnly = false,			// if true then reverse only, false to reverse complement
-			UINT32 MaxSeqWrds = 0);			// reverse for at most this many SeqWrds (0 for no limit)
+			uint32_t MaxSeqWrds = 0);			// reverse for at most this many SeqWrds (0 for no limit)
 
 	int										// returned number of bases complemented
 		PackedCpl(tSeqWrd4 *pSeqToCpl,
-			UINT32 MaxSeqWrds = 0);			// complement for at most this many SeqWrds (0 for no limit)
+			uint32_t MaxSeqWrds = 0);			// complement for at most this many SeqWrds (0 for no limit)
 
 	int										// returned number of packed sequence words copied
 		CopyPackedSeq(void *pSrcSeq,		// copy from this start tSeqWrd
@@ -931,23 +931,23 @@ friend class CPacBio;					// CPacBio requires access to all members of this clas
 
 	char *
 		AsciifySequence(void *pSeqWrds,			// sequence words to asciify
-				UINT32 MaxSeqLen = 0,			// asciify at most cMaxDiagAsciiSeqLen bases
+				uint32_t MaxSeqLen = 0,			// asciify at most cMaxDiagAsciiSeqLen bases
 				bool bRevCpl = false);			// true if sequence to be reverse complemented before asciifying
 	
 	char *
 		AsciifySequence(tSeqID SeqID,			// sequence identifier
-				UINT32 MaxSeqLen = 0,			// asciify at most MaxSeqLen bases (limited to at most cMaxDiagAsciiSeqLen)
+				uint32_t MaxSeqLen = 0,			// asciify at most MaxSeqLen bases (limited to at most cMaxDiagAsciiSeqLen)
 				bool bRevCpl = false);			// true if sequence to be reverse complemented before asciifying
 
 	char *
 		AsciifySequences(tSeqID SeqID1,			// sequence identifier
 				tSeqID SeqID2,					// sequence identifier
-				UINT32 MaxSeqLen,				// asciify at most MaxSeqLen bases
+				uint32_t MaxSeqLen,				// asciify at most MaxSeqLen bases
 				char **ppszSeq1,				// returned seq1
 				char **ppszSeq2);				// returned seq2
 
 	void	DumpSeqs2Assemble(char *pszHeading,		// use this header text
-								UINT32 Max2Dump = 100);		// dump at most this many sequences, 0 if no limit
+								uint32_t Max2Dump = 100);		// dump at most this many sequences, 0 if no limit
 
 	teBSFrsltCodes DumpHeader(char *pszTypeSeqFile);	// opens, dumps file header, and then closes pszTypeSeqFile
 
@@ -980,8 +980,8 @@ static const int cLevenshteinPacBioMismatch = 2;  // PacBio has very low rates o
 
 	int
        LoadPregenLevenshteinsFwd(char *pszLevenshteinsFile, // load pregenerated Levenshteins from this file
-				UINT32 KMerLen,		// expecting levenshtein distances for all k-mers to be of this length (must be in range 4..8)
-				UINT32 MaxLev,		// expecting that will be accepting overlapping k-mers if their Levenshteins is <= MaxLev 
+				uint32_t KMerLen,		// expecting levenshtein distances for all k-mers to be of this length (must be in range 4..8)
+				uint32_t MaxLev,		// expecting that will be accepting overlapping k-mers if their Levenshteins is <= MaxLev 
 				int PenaltyMatch = 0,	// override the default match penalty
 				int PenaltyMisMatch = cLevenshteinDefault,// override the default mismatch penalty
 				int PenaltyInsert = cLevenshteinDefault,	// override the default insert penalty
@@ -990,18 +990,18 @@ static const int cLevenshteinPacBioMismatch = 2;  // PacBio has very low rates o
 	int
        SavePregenLevenshteinsFwd(char *pszLevenshteinsFile); // save pregenerated Levenshteins to this file
 
-	UINT32										// total number of k-mer instances which have Levenshteins is <= MaxLev  
-		PregenLevenshteinsFwd(UINT32 KMerLen,		// generate levenshtein distances for all k-mers of this length (must be in range 4..8)
-						 UINT32 MaxLev,			// will be only accepting overlapping k-mers if their Levenshteins is <= MaxLev 
+	uint32_t										// total number of k-mer instances which have Levenshteins is <= MaxLev  
+		PregenLevenshteinsFwd(uint32_t KMerLen,		// generate levenshtein distances for all k-mers of this length (must be in range 4..8)
+						 uint32_t MaxLev,			// will be only accepting overlapping k-mers if their Levenshteins is <= MaxLev 
   					    int PenaltyMatch = 0,	// override the default match penalty
 						int PenaltyMisMatch = cLevenshteinDefault,	// override the default mismatch penalty
 						int PenaltyInsert = cLevenshteinDefault,	// override the default insert penalty
 						int PenaltyDelete = cLevenshteinDefault);	// override the default deletion penalty
 
 	static int										// returned levenshtein distance between RefSeq and QuerySeq, -1 if errors
-		GetLevenshteinDistFwd(UINT32 KMerLen,		// number (1..16) of packed bases in both RefSeq and QuerySeq, bits 31/30 containing 5' base 
-							UINT32 RefSeq,		// calculate levenshtein distance between packed sequence (2bits/base) in RefSeq, bits 31/30 containing 5' base 
-						   UINT32 QuerySeq,     // and packed sequence (2bits/base) in QuerySeq, bits 31/30 containing 5' base
+		GetLevenshteinDistFwd(uint32_t KMerLen,		// number (1..16) of packed bases in both RefSeq and QuerySeq, bits 31/30 containing 5' base 
+							uint32_t RefSeq,		// calculate levenshtein distance between packed sequence (2bits/base) in RefSeq, bits 31/30 containing 5' base 
+						   uint32_t QuerySeq,     // and packed sequence (2bits/base) in QuerySeq, bits 31/30 containing 5' base
 						   int PenaltyMatch = 0,	// override the default match penalty
 						   int PenaltyMisMatch = cLevenshteinDefault,	// override the default mismatch penalty
 						   int PenaltyInsert = cLevenshteinDefault,	// override the default insert penalty
@@ -1009,7 +1009,7 @@ static const int cLevenshteinPacBioMismatch = 2;  // PacBio has very low rates o
 
 
 	static int										// returned levenshtein distance between RefSeq and QuerySeq, -1 if errors
-		GetLevenshteinDistFwd(UINT32 KMerLen,		// number (1..1000) of bases in both pRefSeq and pQuerySeq 
+		GetLevenshteinDistFwd(uint32_t KMerLen,		// number (1..1000) of bases in both pRefSeq and pQuerySeq 
 							etSeqBase *pRefSeq,	// calculate levenshtein distance between this sequence (pRefSeq[0] contains 5' base)
 						   etSeqBase *pQuerySeq, // and sequence in pQuerySeq
 						   int PenaltyMatch = 0,	// override the default match penalty
@@ -1019,7 +1019,7 @@ static const int cLevenshteinPacBioMismatch = 2;  // PacBio has very low rates o
 						   int MaxExpDist = 0);     // set to max expected distance to early terminate if observed distance would be greater; set 0 if no expected maximum
 
 	static int			// returned levenshtein distance between RefSeq and QuerySeq, -1 if errors, assumes pRefSeq, pRefSeq point to last 3' bases 
-		GetLevenshteinDistRev(UINT32 KMerLen,	// number (1..cLevenshteinMaxSeqLen) of bases in both pRefSeq and pQuerySeq 
+		GetLevenshteinDistRev(uint32_t KMerLen,	// number (1..cLevenshteinMaxSeqLen) of bases in both pRefSeq and pQuerySeq 
 							etSeqBase *pRefSeq,	// calculate levenshtein distance between this sequence (pRefSeq[0] contains 3' base)
 						   etSeqBase *pQuerySeq, // and sequence in pQuerySeq (pQuerySeq[0] contains 3' base)
 							int PenaltyMatch = 0,	// override the default match penalty (0)
@@ -1029,7 +1029,7 @@ static const int cLevenshteinPacBioMismatch = 2;  // PacBio has very low rates o
 						   int MaxExpDist = 0);     // set to max expected distance to early terminate if observed distance would be greater; set 0 if no expected maximum
 
 	static int												// returned affine gap levenshtein distance between RefSeq and QuerySeq, -1 if errors
-		GetAGLevenshteinDistFwd(UINT32 KMerLen,	// number (1..cLevenshteinMaxSeqLen) of bases in both pRefSeq and pQuerySeq 
+		GetAGLevenshteinDistFwd(uint32_t KMerLen,	// number (1..cLevenshteinMaxSeqLen) of bases in both pRefSeq and pQuerySeq 
 							etSeqBase *pRefSeq,	// calculate levenshtein distance between this sequence (pRefSeq[0] contains 5' base)
 						   etSeqBase *pQuerySeq, // and sequence in pQuerySeq
 							int PenaltyMatch = 0,	// override the default match penalty (0)
@@ -1038,10 +1038,10 @@ static const int cLevenshteinPacBioMismatch = 2;  // PacBio has very low rates o
 							int PenaltyInDelExtd = 1);	// override the default indel gap extension (1 per base extension)
 
 	bool										// returns true if QuerySeq within MaxDist from RefSeq
-		IsLevenshteinAcceptedFwd(UINT32 KMerLen,	// number (1..16) of packed bases in RefSeq and QuerySeq, bits 31/30 containing 5' base
-							UINT32 RefSeq,		// calculate levenshtein distance between packed sequence (2bits/base) in RefSeq, bits 31/30 containing 5' base 
-						   UINT32 QuerySeq,     // and packed sequence (2bits/base) in QuerySeq, bits 31/30 containing 5' base
-							UINT32 MaxLev,		// will be only accepting overlapping k-mers if their Levenshteins is <= MaxDist
+		IsLevenshteinAcceptedFwd(uint32_t KMerLen,	// number (1..16) of packed bases in RefSeq and QuerySeq, bits 31/30 containing 5' base
+							uint32_t RefSeq,		// calculate levenshtein distance between packed sequence (2bits/base) in RefSeq, bits 31/30 containing 5' base 
+						   uint32_t QuerySeq,     // and packed sequence (2bits/base) in QuerySeq, bits 31/30 containing 5' base
+							uint32_t MaxLev,		// will be only accepting overlapping k-mers if their Levenshteins is <= MaxDist
 						   int PenaltyMatch = 0,	// override the default match penalty
 						   int PenaltyMisMatch = cLevenshteinDefault,	// override the default mismatch penalty
 						   int PenaltyInsert = cLevenshteinDefault,	// override the default insert penalty
@@ -1052,17 +1052,17 @@ static const int cLevenshteinPacBioMismatch = 2;  // PacBio has very low rates o
 	
 	int GetSeqWrdBytes(void);			// returns size of tSeqWd 
 
-		UINT32									// total number of reads accepted for processing into next phase
-			GetNumReads(UINT32 *pNumPE1Reads=NULL,	// returned total number of single ended or 5' paired end read sequences accepted parsed
-			UINT32 *pNumPE2Reads=NULL,				// returned total number of 3' paired end read sequences accepted parsed
-			UINT32 *pTotPE1Seqs=NULL,				// number of PE1 sequences remaining at end of each phase completion
-			UINT32 *pTotPE2Seqs=NULL,				// number of PE2 sequences remaining at end of each phase completion
-			UINT32 *pTotSeqsParsed=NULL,			// returned total number of sequences parsed for 3' and 5' combined
-			UINT32 *pTotSeqsUnderLen=NULL,			// returned total number of under length sequences parsed for 3' and 5' combined
-			UINT32 *pTotSeqsExcessNs=NULL,			// returned total number of under length sequences parsed for 3' and 5' combined
-			UINT32 *pMeanSeqLen = NULL,				// returned mean (rounded down) length of all sequences
-			UINT32 *pMinSeqLen = NULL,				// returned minimum sequence length
-			UINT32 *pMaxSeqLen = NULL);				// returned maximum sequence length			
+		uint32_t									// total number of reads accepted for processing into next phase
+			GetNumReads(uint32_t *pNumPE1Reads=NULL,	// returned total number of single ended or 5' paired end read sequences accepted parsed
+			uint32_t *pNumPE2Reads=NULL,				// returned total number of 3' paired end read sequences accepted parsed
+			uint32_t *pTotPE1Seqs=NULL,				// number of PE1 sequences remaining at end of each phase completion
+			uint32_t *pTotPE2Seqs=NULL,				// number of PE2 sequences remaining at end of each phase completion
+			uint32_t *pTotSeqsParsed=NULL,			// returned total number of sequences parsed for 3' and 5' combined
+			uint32_t *pTotSeqsUnderLen=NULL,			// returned total number of under length sequences parsed for 3' and 5' combined
+			uint32_t *pTotSeqsExcessNs=NULL,			// returned total number of under length sequences parsed for 3' and 5' combined
+			uint32_t *pMeanSeqLen = NULL,				// returned mean (rounded down) length of all sequences
+			uint32_t *pMinSeqLen = NULL,				// returned minimum sequence length
+			uint32_t *pMaxSeqLen = NULL);				// returned maximum sequence length			
 
 	teBSFrsltCodes			// load previously saved concatenated and packed sequences from file 
 		LoadPackedSeqsFromFile(char *pszTypeSeqFile);	// loading is from this file
@@ -1070,9 +1070,9 @@ static const int cLevenshteinPacBioMismatch = 2;  // PacBio has very low rates o
 	teBSFrsltCodes			// save concatenated and packed sequences to file 
 		SavePackedSeqsToFile(char *pszTypeSeqFile);	// save to this file
 
-	UINT32				// returned number of sequences in m_Sequences.pSeqs2Assemb
-			ValidateSeqs2AssembStarts(UINT32 *pNumPEs = NULL,
-							  UINT32 *pNumSEs = NULL);
+	uint32_t				// returned number of sequences in m_Sequences.pSeqs2Assemb
+			ValidateSeqs2AssembStarts(uint32_t *pNumPEs = NULL,
+							  uint32_t *pNumSEs = NULL);
 	int ValidatePartialSeqsStarts(int *pPartialNumPEs = NULL,
 							  int *pPartialNumSEs = NULL);
 
@@ -1087,14 +1087,14 @@ static const int cLevenshteinPacBioMismatch = 2;  // PacBio has very low rates o
 	teBSFrsltCodes 
 			EstMemReq(char *pszInFile);      // accumulate estimates from this file
 
-	UINT64			// returned estimate of memory size (bytes) required to hold packed sequences plus headers 
+	uint64_t			// returned estimate of memory size (bytes) required to hold packed sequences plus headers 
 		EstMemReq(	int Trim5,				// will be trimming this number of 5' bases from input sequences (default is 0, range 0..20)
 					int Trim3,				// will be trimming trim this number of 3' bases from input sequences (default is 0, range 0..20)
 					int TrimSeqLen,			// will be trimming sequences to be no longer than this length (default is 0 for no length trimming, MinSeqLen...10000)
 					int SampleNth,			// will only be processing every Nth reads
 					int Zreads);				// will only accept this number of reads for processing from any file
 
-	UINT32 GetEstSeqsToProc(void);			// returned estimate of number of sequences to process 
+	uint32_t GetEstSeqsToProc(void);			// returned estimate of number of sequences to process 
 	
 	tsEstSeqs * 
 			GetEstMemReq(int Trim5,				// will be trimming this number of 5' bases from input sequences (default is 0, range 0..20)
@@ -1156,10 +1156,10 @@ static const int cLevenshteinPacBioMismatch = 2;  // PacBio has very low rates o
 
 	teBSFrsltCodes 
 			AllocLoadBlock(char *pszInFile, // loading from this file
-					 UINT64 FileOfs,				// load from this file offset
-					 UINT64  AllocBlockSize,		// load, and allocate for, this block size from disk
+					 uint64_t FileOfs,				// load from this file offset
+					 uint64_t  AllocBlockSize,		// load, and allocate for, this block size from disk
 					 void **ppLoadedBlock,		// returned ptr to allocated memory
-					 UINT64 *pAllocBlockSize);	// size of allocated memory
+					 uint64_t *pAllocBlockSize);	// size of allocated memory
 
 
 	teBSFrsltCodes GenSeqStarts(bool bGenFlags=false,	// optionally generate flags array
@@ -1169,18 +1169,18 @@ static const int cLevenshteinPacBioMismatch = 2;  // PacBio has very low rates o
 		                     int ExcludeLastNSeqWrds = 0,	// exclude last N SeqWrds in each read sequence from indexing, 0 to index FirstNSeqWrds
 							 bool bExclPE = false);	    // true to exclude sequences marked as being PE from being indexed
 
-	teBSFrsltCodes AllocSeqs2AssembMem(UINT64 ReqAllocSize);	// alloc/realloc to at least ReqAllocSize (bytes)
+	teBSFrsltCodes AllocSeqs2AssembMem(uint64_t ReqAllocSize);	// alloc/realloc to at least ReqAllocSize (bytes)
 
-	teBSFrsltCodes AllocBlockNsLoci(UINT32 ReqAllocBlocks);		// alloc/realloc to at least ReqAllocSize (tsBlockNsLoci)
+	teBSFrsltCodes AllocBlockNsLoci(uint32_t ReqAllocBlocks);		// alloc/realloc to at least ReqAllocSize (tsBlockNsLoci)
 
 	
 	int GenContigSeqs(void);	// process overlapped reads and generate contig sequences
 
 
 	int
-		RemoveMarkedSeqs(UINT32 RemovalFlags,		// if any of these flags set then remove this sequence
-								UINT32 AllRequiredFlags = 0,        // if containing any flags then remove this sequence unless all of these flags are set
-								UINT32 AllOptionalFlags = 0,        // if containing any flags then remove this sequence unless at least one of these flags is set
+		RemoveMarkedSeqs(uint32_t RemovalFlags,		// if any of these flags set then remove this sequence
+								uint32_t AllRequiredFlags = 0,        // if containing any flags then remove this sequence unless all of these flags are set
+								uint32_t AllOptionalFlags = 0,        // if containing any flags then remove this sequence unless at least one of these flags is set
 								bool bUpdateHdrFlags = false);		// if true, and if pSeqFlags != NULL, then replace sequence header flags with those from pSeqFlags
 
 

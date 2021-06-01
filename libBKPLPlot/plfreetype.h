@@ -39,13 +39,13 @@
 #define FT_Data    _FT_Data_
 
 #ifndef GetGValue
-#define GetGValue( rgb )    ( (unsigned char) ( ( (unsigned short) ( rgb ) ) >> 8 ) )
+#define GetGValue( rgb )    ( (uint8_t) ( ( (unsigned short) ( rgb ) ) >> 8 ) )
 #endif
 #ifndef GetRValue
-#define GetRValue( rgb )    ( (unsigned char) ( rgb ) )
+#define GetRValue( rgb )    ( (uint8_t) ( rgb ) )
 #endif
 #ifndef GetBValue
-#define GetBValue( rgb )    ( (unsigned char) ( ( rgb ) >> 16 ) )
+#define GetBValue( rgb )    ( (uint8_t) ( ( rgb ) >> 16 ) )
 #endif
 #ifndef RGB
 #define RGB( r, g, b )      ( ( ( r ) |          \
@@ -90,13 +90,13 @@ typedef struct FT_Data
     PLFLT         scalex;
     PLFLT         scaley;
 
-    unsigned char greek;
+    uint8_t greek;
 
 //
 //  Set "invert_y" to 1 if the y coordinates need to be inverted for
 //  plotting. Most bitmaps will need this.
 //
-    unsigned char invert_y;
+    uint8_t invert_y;
 
 //
 //  ymax should be equal to, what it says - the maximum y coordinate of the
@@ -174,7 +174,7 @@ typedef struct FT_Data
 //  we can use a more advanced antialiasing algorithm, which blends the text
 //  with the background. Set to 1 if you have this.
 //
-    unsigned char BLENDED_ANTIALIASING;
+    uint8_t BLENDED_ANTIALIASING;
 } FT_Data;
 
 

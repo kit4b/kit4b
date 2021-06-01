@@ -383,7 +383,7 @@ if (!argerrors)
 
 	long pages = sysconf(_SC_PHYS_PAGES);
 	long page_size = sysconf(_SC_PAGE_SIZE);
-	AvailGBMemory = (int)(((INT64)pages * (INT64)page_size)/0x040000000);
+	AvailGBMemory = (int)(((int64_t)pages * (int64_t)page_size)/0x040000000);
 #endif
 
 	int MaxAllowedThreads = min(cMaxWorkerThreads,NumberOfProcessors);	// limit to be at most cMaxWorkerThreads
@@ -476,21 +476,21 @@ ProcessFastaFile(int MinSeqLen,		// only accept for indexing sequences of at lea
 				char *pszFile)
 {
 CFasta Fasta;
-unsigned char *pSeqBuff;
-unsigned char *pMskBase;
-UINT32 MskIdx;
+uint8_t *pSeqBuff;
+uint8_t *pMskBase;
+uint32_t MskIdx;
 size_t BuffOfs;
 size_t AllocdBuffSize;
 size_t AvailBuffSize;
 char szName[cBSFSourceSize];
 char szDescription[cBSFDescriptionSize];
-UINT32 SeqLen;
+uint32_t SeqLen;
 int Descrlen;
 bool bFirstEntry;
 bool bEntryCreated;
 int Rslt;
 int SeqID;
-UINT32 NumSeqsUnderlength;
+uint32_t NumSeqsUnderlength;
 
 if((Rslt=Fasta.Open(pszFile,true))!=eBSFSuccess)
 	{
@@ -501,9 +501,9 @@ if((Rslt=Fasta.Open(pszFile,true))!=eBSFSuccess)
 
 AllocdBuffSize = (size_t)cMaxAXAllocBuffChunk * 16;
 // note malloc is used as can then simply realloc to expand as may later be required
-if((pSeqBuff = (unsigned char *)malloc(AllocdBuffSize)) == NULL)
+if((pSeqBuff = (uint8_t *)malloc(AllocdBuffSize)) == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessFastaFile:- Unable to allocate memory (%u bytes) for sequence buffer",(UINT32)AllocdBuffSize);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessFastaFile:- Unable to allocate memory (%u bytes) for sequence buffer",(uint32_t)AllocdBuffSize);
 	Fasta.Close();
 	return(eBSFerrMem);
 	}
@@ -526,7 +526,7 @@ while((Rslt = SeqLen = Fasta.ReadSequence(&pSeqBuff[BuffOfs],(int)min(AvailBuffS
 			if(BuffOfs < (size_t)MinSeqLen)
 				NumSeqsUnderlength += 1;
 			else
-				if((Rslt=m_pSfxFile->AddEntry(szName,pSeqBuff,(UINT32)BuffOfs)) < eBSFSuccess)
+				if((Rslt=m_pSfxFile->AddEntry(szName,pSeqBuff,(uint32_t)BuffOfs)) < eBSFSuccess)
 					{
 					gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessFastaFile - error %d %s",Rslt,m_pSfxFile->GetErrMsg());
 					break;
@@ -585,10 +585,10 @@ while((Rslt = SeqLen = Fasta.ReadSequence(&pSeqBuff[BuffOfs],(int)min(AvailBuffS
 	if(AvailBuffSize < (size_t)(cMaxAXAllocBuffChunk / 8))
 		{
 		size_t NewSize = (size_t)cMaxAXAllocBuffChunk + AllocdBuffSize;
-		unsigned char *pTmp;
-		if((pTmp = (unsigned char *)realloc(pSeqBuff,NewSize))==NULL)
+		uint8_t *pTmp;
+		if((pTmp = (uint8_t *)realloc(pSeqBuff,NewSize))==NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessFastaFile:- Unable to reallocate memory (%u bytes) for sequence buffer",(UINT32)NewSize);
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessFastaFile:- Unable to reallocate memory (%u bytes) for sequence buffer",(uint32_t)NewSize);
 			return(eBSFerrMem);
 			}
 		pSeqBuff = pTmp;
@@ -606,7 +606,7 @@ if(Rslt >= eBSFSuccess && bEntryCreated && BuffOfs > 0)			// close entry
 		}
 	else
 		{
-		if((Rslt=m_pSfxFile->AddEntry(szName,pSeqBuff,(UINT32)BuffOfs)) < eBSFSuccess)
+		if((Rslt=m_pSfxFile->AddEntry(szName,pSeqBuff,(uint32_t)BuffOfs)) < eBSFSuccess)
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessFastaFile - error %d %s",Rslt,m_pSfxFile->GetErrMsg());
 		else
 			Rslt = eBSFSuccess;
@@ -628,7 +628,7 @@ ProcessSimGenome(int SimGenomeSize)		// simulate genome of this total sequence s
 int Rslt;
 char szName[80];
 int CurChromID;
-unsigned char *pSeqBuff;
+uint8_t *pSeqBuff;
 etSeqBase *pBase;
 size_t BuffOfs;
 size_t BuffRandRelOfs;
@@ -646,9 +646,9 @@ NumSimChroms = cNumSimChroms;
 
 AllocdBuffSize = SimGenomeSizebp / (size_t)(NumSimChroms - 1); // a little larger than actually required
 // note malloc is used as can then simply realloc to expand as may later be required
-if((pSeqBuff = (unsigned char *)malloc(AllocdBuffSize)) == NULL)
+if((pSeqBuff = (uint8_t *)malloc(AllocdBuffSize)) == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessSimGenome:- Unable to allocate memory (%u bytes) for simulated sequence buffer",(UINT32)AllocdBuffSize);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessSimGenome:- Unable to allocate memory (%u bytes) for simulated sequence buffer",(uint32_t)AllocdBuffSize);
 	return(eBSFerrMem);
 	}
 AvailBuffSize = AllocdBuffSize;
@@ -684,9 +684,9 @@ for(CurChromID = 1; CurChromID <= NumSimChroms; CurChromID++)
 	BuffOfs = SimChromSize;
 
 	sprintf(szName,"SimChrom%d",CurChromID);
-	if((Rslt=m_pSfxFile->AddEntry(szName,pSeqBuff,(UINT32)BuffOfs)) < eBSFSuccess)
+	if((Rslt=m_pSfxFile->AddEntry(szName,pSeqBuff,(uint32_t)BuffOfs)) < eBSFSuccess)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessSimGenome - adding %s of size %lld (cumulative total bases %lld) error %d %s",szName,BuffOfs,(INT64)SimGenomeSizebp - RemainingSimGenomeSizebp,Rslt,m_pSfxFile->GetErrMsg());
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessSimGenome - adding %s of size %lld (cumulative total bases %lld) error %d %s",szName,BuffOfs,(int64_t)SimGenomeSizebp - RemainingSimGenomeSizebp,Rslt,m_pSfxFile->GetErrMsg());
 		break;
 		}
 	if(!(CurChromID % 1000))
@@ -773,8 +773,8 @@ CreateBioseqSuffixFile(int Mode,
 int Rslt;
 int Idx;
 int NumGlobs;
-INT64 SumFileSizes;
-UINT32 DupEntries[cMaxDupEntries];
+int64_t SumFileSizes;
+uint32_t DupEntries[cMaxDupEntries];
 int NumDupEntries;
 char szDupEntry[100];
 
@@ -783,7 +783,7 @@ InitpSfx();
 CSimpleGlob glob(SG_GLOB_FULLSORT);
 
 if(Mode == 2)
-	SumFileSizes = (INT64)SimGenomeSize * cGbpSeqSize;
+	SumFileSizes = (int64_t)SimGenomeSize * cGbpSeqSize;
 else
 	{
 	// determine crude estimate of total genome size

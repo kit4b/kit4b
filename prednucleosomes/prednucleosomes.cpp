@@ -55,14 +55,14 @@ typedef enum TAG_eAFMode {
 
 #pragma pack(1)
 typedef struct TAG_sAlignHit {
-	UINT32 AlignHitIdx;			// current read hit index + 1 for this read
-	UINT32 ReadID;				// read identifier from the preprocessed read (tsProcRead)
+	uint32_t AlignHitIdx;			// current read hit index + 1 for this read
+	uint32_t ReadID;				// read identifier from the preprocessed read (tsProcRead)
 	char szChromName[cMaxDatasetSpeciesChrom];	// identifies hit chromosome
-	UINT32 ChromID;				// chromosome identifier
-	UINT8 Strand;				// hit strand - '+' or '-'
-	UINT32 Loci;				// offset on chromosome of hit
-	UINT16 AlignLen;			// alignment length
-	UINT8 Processed:1;			// 0 until this reads has been processed for dyad potential
+	uint32_t ChromID;				// chromosome identifier
+	uint8_t Strand;				// hit strand - '+' or '-'
+	uint32_t Loci;				// offset on chromosome of hit
+	uint16_t AlignLen;			// alignment length
+	uint8_t Processed:1;			// 0 until this reads has been processed for dyad potential
 } tsAlignHit;
 #pragma pack()
 
@@ -90,7 +90,7 @@ LoadReads(char *pszInFile,				// load aligned reads from these files
 			int NumExcludeChroms,		// number of chromosomes explicitly defined to be excluded
 			char **ppszExcludeChroms);	// ptr to array of reg expressions defining chroms to exclude
 
-tsAlignHit *LocateRead(UINT32 ReadID);			// locate read identified by ReadID
+tsAlignHit *LocateRead(uint32_t ReadID);			// locate read identified by ReadID
 
 tsAlignHit *IterReads(tsAlignHit *pCurAlignHit);	// iterate over unsorted reads
 tsAlignHit *IterSortedReads(tsAlignHit *pCurAlignHit, bool bForward); //iterate over sorted rads
@@ -111,12 +111,12 @@ const int cReadsReAlloc = 5000000;								// realloc allocation in this sized in
 
 
 tsAlignHit *m_pAlignHits = NULL;	// memory allocated to hold reads, reads are written contiguously into this memory
-UINT32 m_AllocdAlignHits = 0;		// how instances of tsAlignHit have been allocated
-UINT32 m_NumAlignHits = 0;			// m_pAlignHits contains this many reads
-UINT32 m_FinalReadID = 0;			// final read identifier loaded as a preprocessed read (tsProcRead)
+uint32_t m_AllocdAlignHits = 0;		// how instances of tsAlignHit have been allocated
+uint32_t m_NumAlignHits = 0;			// m_pAlignHits contains this many reads
+uint32_t m_FinalReadID = 0;			// final read identifier loaded as a preprocessed read (tsProcRead)
 
 tsAlignHit **m_ppAlignHitsIdx = NULL;	// memory allocated to hold array of ptrs to read hits in m_pAlignHits - usually sorted by some critera
-UINT32 m_AllocdAlignHitsIdx = 0;		// how many elements for m_pAlignHitsIdx have been allocated
+uint32_t m_AllocdAlignHitsIdx = 0;		// how many elements for m_pAlignHitsIdx have been allocated
 etReadsSortMode	m_CurReadsSortMode;	    // sort mode last used on m_ppAlignHitsIdx
 
 CCSVFile *m_pCSVAligns;				// used if loading aligned reads from csv file
@@ -833,7 +833,7 @@ GetFileType(char *pszInFile)
 {
 int hFile;
 int Len;
-UINT8 Buff[10];
+uint8_t Buff[10];
 
 // try to actually open file
 hFile = open(pszInFile,O_READSEQ);
@@ -1531,7 +1531,7 @@ int AllocdDyads;
 int MaxDyadLoci;
 int CurDyadLoci;
 char szCurChromName[cMaxDatasetSpeciesChrom];
-UINT32 CurChromID;
+uint32_t CurChromID;
 int NumProcessed = 0;
 int Unprocessed = 0;
 int NucLen;
@@ -1601,7 +1601,7 @@ while((pCurAlignHit = IterSortedReads(pCurAlignHit, true))!=NULL)
 			printf("\b\b\b\b\b\b\b\b%8.8d",NumProcessed);
 		}
 	NumProcessed += 1;
-	if(pCurAlignHit->Loci >= (UINT32)AllocdDyads)
+	if(pCurAlignHit->Loci >= (uint32_t)AllocdDyads)
 		{
 		if((pTmpDyadScores = new int [pCurAlignHit->Loci + cDyadsReAlloc])==NULL)
 			{
@@ -1816,7 +1816,7 @@ return(Rslt);
 // LocateRead
 // Locate read with requested ReadID
 tsAlignHit *
-LocateRead(UINT32 ReadID)
+LocateRead(uint32_t ReadID)
 {
 int Rslt;
 tsAlignHit *pProbe;
@@ -1860,7 +1860,7 @@ if(pCurAlignHit == NULL)
 	pNxtAlignHit = m_pAlignHits;
 else
 	if(pCurAlignHit->ReadID != m_FinalReadID)
-		pNxtAlignHit = (tsAlignHit *)((UINT8 *)pCurAlignHit + sizeof(tsAlignHit));
+		pNxtAlignHit = (tsAlignHit *)((uint8_t *)pCurAlignHit + sizeof(tsAlignHit));
 return(pNxtAlignHit);
 }
 
@@ -1935,7 +1935,7 @@ switch(SortMode) {
 		break;
 	}
 
-UINT32 ChromID = 0;
+uint32_t ChromID = 0;
 char *pszCurChrom = NULL;
 for(Idx = 0; Idx < (int)m_NumAlignHits; Idx++)
 	{

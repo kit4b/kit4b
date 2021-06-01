@@ -43,19 +43,19 @@ typedef enum TAG_eReadsSortMode {
 
 #pragma pack(1)
 typedef struct TAG_sAlignChrom {
-	UINT32 ChromID;				// uniquely identifies this chromosome
+	uint32_t ChromID;				// uniquely identifies this chromosome
 	char szChromName[cMaxDatasetSpeciesChrom];	// chromosome name
 	} tsAlignChrom;
 
 
 typedef struct TAG_sAlignHit {
-	UINT32 AlignHitIdx;			// current read hit index + 1 for this read
-	UINT8 State;				// alignment state - 1 if this read is to be filtered out
-	UINT32 ReadID;				// read identifier
-	UINT32 ChromID;				// identifies chromosome
-	UINT8 Strand;				// hit strand - '+' or '-'
-	UINT32 Loci;				// offset on chromosome of hit
-	UINT16 LociLen;				// length
+	uint32_t AlignHitIdx;			// current read hit index + 1 for this read
+	uint8_t State;				// alignment state - 1 if this read is to be filtered out
+	uint32_t ReadID;				// read identifier
+	uint32_t ChromID;				// identifies chromosome
+	uint8_t Strand;				// hit strand - '+' or '-'
+	uint32_t Loci;				// offset on chromosome of hit
+	uint16_t LociLen;				// length
 	int RawLineLen;				// length of original raw line from  CSV or BED file
 	size_t RawLineOfs;			// offset into m_pRawLines of the original CSV or BED raw line 
 } tsAlignHit;
@@ -92,19 +92,19 @@ char *m_pRawLines = NULL;					// mem allocated for holding raw CSV or BED lines
 CBEDfile *m_pBEDFile = NULL;
 CCSVFile *m_pCSVAligns = NULL;
 tsAlignHit *m_pAlignHits = NULL;	// memory allocated to hold reads, reads are written contiguously into this memory
-UINT32 m_AllocdAlignHitsMem = 0;	// how many bytes of memory  for reads have been allocated
-UINT32 m_UsedAlignHitsMem = 0;	// how many bytes of allocated reads memory is currently used 
-UINT32 m_NumAlignHits = 0;		// m_pAlignHits contains this many reads
-UINT32 m_FinalReadID = 0;		// final read identifier loaded as a preprocessed read (tsProcRead)
+uint32_t m_AllocdAlignHitsMem = 0;	// how many bytes of memory  for reads have been allocated
+uint32_t m_UsedAlignHitsMem = 0;	// how many bytes of allocated reads memory is currently used 
+uint32_t m_NumAlignHits = 0;		// m_pAlignHits contains this many reads
+uint32_t m_FinalReadID = 0;		// final read identifier loaded as a preprocessed read (tsProcRead)
 
 tsAlignHit **m_ppAlignHitsIdx = NULL;	// memory allocated to hold array of ptrs to read hits in m_pAlignHits - usually sorted by some critera
-UINT32 m_AllocdAlignHitsIdx = 0;		// how many elements for m_pAlignHitsIdx have been allocated
+uint32_t m_AllocdAlignHitsIdx = 0;		// how many elements for m_pAlignHitsIdx have been allocated
 etReadsSortMode	m_CurReadsSortMode;	// sort mode last used on m_ppAlignHitsIdx
 
 int m_NumAlignChroms;							// number of chroms in m_AlignChroms
 tsAlignChrom m_AlignChroms[cMaxAlignChroms];	// to hold all chroms from CSV alignment file
 
-tsAlignHit *LocateRead(UINT32 ReadID);			// locate read identified by ReadID
+tsAlignHit *LocateRead(uint32_t ReadID);			// locate read identified by ReadID
 
 tsAlignHit *IterReads(tsAlignHit *pCurAlignHit);	// iterate over unsorted reads
 tsAlignHit *IterSortedReads(tsAlignHit *pCurAlignHit);	// iterate over unsorted reads
@@ -653,7 +653,7 @@ memreq = cReadsHitAlloc;
 m_pAlignHits = (tsAlignHit *) malloc(memreq);	// initial and perhaps the only allocation
 if(m_pAlignHits == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"InitialMemAlloc: Memory allocation of %lld bytes - %s",(INT64)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"InitialMemAlloc: Memory allocation of %lld bytes - %s",(int64_t)memreq,strerror(errno));
 	Reset();
 	return(eBSFerrMem);
 	}
@@ -662,7 +662,7 @@ if(m_pAlignHits == NULL)
 m_pAlignHits = (tsAlignHit *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pAlignHits == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"InitialMemAlloc: Memory allocation of %lld bytes through mmap()  failed - %s",(INT64)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"InitialMemAlloc: Memory allocation of %lld bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
 	m_pAlignHits = NULL;
 	Reset();
 	return(eBSFerrMem);
@@ -678,7 +678,7 @@ memreq = cRawLineAlloc;
 m_pRawLines = (char *) malloc(memreq);	// initial and perhaps the only allocation
 if(m_pRawLines == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"InitialMemAlloc: Memory allocation of %lld bytes - %s",(INT64)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"InitialMemAlloc: Memory allocation of %lld bytes - %s",(int64_t)memreq,strerror(errno));
 	Reset();
 	return(eBSFerrMem);
 	}
@@ -687,7 +687,7 @@ if(m_pRawLines == NULL)
 m_pRawLines = (char *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pRawLines == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"InitialMemAlloc: Memory allocation of %lld bytes through mmap()  failed - %s",(INT64)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"InitialMemAlloc: Memory allocation of %lld bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
 	m_pRawLines = NULL;
 	Reset();
 	return(eBSFerrMem);
@@ -821,7 +821,7 @@ while((Rslt=m_pCSVAligns->NextLine()) > 0)	// onto next line containing fields
 
 
 	
-	pAlignHit = (tsAlignHit *)((UINT8 *)m_pAlignHits + m_UsedAlignHitsMem);
+	pAlignHit = (tsAlignHit *)((uint8_t *)m_pAlignHits + m_UsedAlignHitsMem);
 	m_UsedAlignHitsMem += sizeof(tsAlignHit); 
 	memset(pAlignHit,0,sizeof(tsAlignHit));
 	pAlignHit->ReadID = ReadID;
@@ -857,11 +857,11 @@ int BEDFilter(char ROIStrand,				// filter for this strand of interest
 			 char *pszBedFile)				// UCSC BED input file containing features of interest
 {
 int Rslt;
-UINT32 NumEls;
-UINT32 NumElsOut;
+uint32_t NumEls;
+uint32_t NumElsOut;
 int OverlapFeats;
-UINT32 BEDChromID;
-UINT32 ReadsChromID;
+uint32_t BEDChromID;
+uint32_t ReadsChromID;
 char *pszChrom;
 tsAlignHit *pCurAlignHit;
 
@@ -1104,7 +1104,7 @@ return(Rslt);
 // LocateRead
 // Locate read with requested ReadID
 tsAlignHit *
-LocateRead(UINT32 ReadID)
+LocateRead(uint32_t ReadID)
 {
 int Rslt;
 tsAlignHit *pProbe;
@@ -1148,7 +1148,7 @@ if(pCurAlignHit == NULL)
 	pNxtAlignHit = m_pAlignHits;
 else
 	if(pCurAlignHit->ReadID != m_FinalReadID)
-		pNxtAlignHit = (tsAlignHit *)((UINT8 *)pCurAlignHit + sizeof(tsAlignHit));
+		pNxtAlignHit = (tsAlignHit *)((uint8_t *)pCurAlignHit + sizeof(tsAlignHit));
 return(pNxtAlignHit);
 }
 

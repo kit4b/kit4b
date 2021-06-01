@@ -1848,16 +1848,16 @@ CPBErrCorrect::ProcessBioseqFile(int MinSeqLen,		// only accept for indexing seq
 {
 CBioSeqFile BioSeqFile;
 etSeqBase *pSeqBuff = NULL;
-UINT32 AllocLen = 0;
+uint32_t AllocLen = 0;
 char szSource[cBSFSourceSize];
 char szDescription[cBSFDescriptionSize];
-UINT32 SeqLen;
+uint32_t SeqLen;
 int Rslt;
-UINT32 SeqID;
-UINT32 NumSampled;
-UINT32 NumSeqsUnderlength;
-UINT32 NumSeqsOverlength;
-UINT32 NumSeqsAccepted;
+uint32_t SeqID;
+uint32_t NumSampled;
+uint32_t NumSeqsUnderlength;
+uint32_t NumSeqsOverlength;
+uint32_t NumSeqsAccepted;
 size_t TotAcceptedLen;
 tBSFEntryID CurEntryID;
 
@@ -1881,16 +1881,16 @@ while((Rslt = CurEntryID = BioSeqFile.Next(CurEntryID)) > eBSFSuccess)
 											cBSFDescriptionSize-1,(char *)&szDescription);
 	SeqLen = BioSeqFile.GetDataLen(CurEntryID);
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Processing %s|%s",szSource,szDescription);
-	if((NumSeqsAccepted + NumSeqsUnderlength) > ((SeqID * (UINT64)m_SampleInRate) / 100))
+	if((NumSeqsAccepted + NumSeqsUnderlength) > ((SeqID * (uint64_t)m_SampleInRate) / 100))
 		continue;
 	NumSampled += 1;
-	if(SeqLen < (UINT32)MinSeqLen)		// only accept for indexing sequences of at least this length)
+	if(SeqLen < (uint32_t)MinSeqLen)		// only accept for indexing sequences of at least this length)
 		{
 		NumSeqsUnderlength += 1;
 		continue;
 		}
 
-	if (SeqLen > (UINT32)MaxSeqLen)		// only accept for indexing sequences of no more than this length)
+	if (SeqLen > (uint32_t)MaxSeqLen)		// only accept for indexing sequences of no more than this length)
 		{
 		NumSeqsOverlength += 1;
 		continue;
@@ -1902,7 +1902,7 @@ while((Rslt = CurEntryID = BioSeqFile.Next(CurEntryID)) > eBSFSuccess)
 		if(pSeqBuff != NULL)
 			delete pSeqBuff;
 		AllocLen = SeqLen;
-		pSeqBuff = new unsigned char [AllocLen];
+		pSeqBuff = new uint8_t [AllocLen];
 		if(pSeqBuff == NULL)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessBioseqFile - Unable to alloc %u bytes memory for pSeqBuff",AllocLen);
@@ -1925,7 +1925,7 @@ while((Rslt = CurEntryID = BioSeqFile.Next(CurEntryID)) > eBSFSuccess)
 	//	e.g <25Ns>r<12Ns>r<12Ns> where r is a pseudorandom base
 	etSeqBase *pMskBase = pSeqBuff;
 	int SeqNs = 0;
-	for(UINT32 MskIdx = 0; MskIdx < SeqLen; MskIdx++,pMskBase++)
+	for(uint32_t MskIdx = 0; MskIdx < SeqLen; MskIdx++,pMskBase++)
 		{
 		*pMskBase &= ~cRptMskFlg;
 		if(*pMskBase == eBaseN && (MskIdx+5) < SeqLen)
@@ -1977,15 +1977,15 @@ CPBErrCorrect::ProcessFastaFile(int MinSeqLen,		// only accept for indexing sequ
 				int Flags)							// default is for flags = cFlgLCSeq used with PacBio read sequences
 {
 CFasta Fasta;
-unsigned char *pSeqBuff;
-unsigned char *pMskBase;
-UINT32 MskIdx;
+uint8_t *pSeqBuff;
+uint8_t *pMskBase;
+uint32_t MskIdx;
 size_t BuffOfs;
 size_t AllocdBuffSize;
 size_t AvailBuffSize;
 char szName[cBSFSourceSize];
 char szDescription[cBSFDescriptionSize];
-UINT32 SeqLen;
+uint32_t SeqLen;
 int Descrlen;
 bool bFirstEntry;
 bool bEntryCreated;
@@ -1994,11 +1994,11 @@ int SeqID;
 int NumSampled;
 int NumSeqsAccepted;
 size_t TotAcceptedLen;
-UINT32 NumSeqsUnderlength;
-UINT32 NumSeqsOverlength;
-UINT32 Num5Trimmed;
-UINT32 Num3Trimmed;
-UINT32 NumInternAdapters;
+uint32_t NumSeqsUnderlength;
+uint32_t NumSeqsOverlength;
+uint32_t Num5Trimmed;
+uint32_t Num3Trimmed;
+uint32_t NumInternAdapters;
 int AdaptBasesTrimmed;
 int AdaptBasesTrimmedDist[28];
 int Idx;
@@ -2012,9 +2012,9 @@ if((Rslt=Fasta.Open(pszFile,true))!=eBSFSuccess)
 
 AllocdBuffSize = (size_t)cMaxAllocBuffChunk * 16;
 // note malloc is used as can then simply realloc to expand as may later be required
-if((pSeqBuff = (unsigned char *)malloc(AllocdBuffSize)) == NULL)
+if((pSeqBuff = (uint8_t *)malloc(AllocdBuffSize)) == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessFastaFile:- Unable to allocate memory (%u bytes) for sequence buffer",(UINT32)AllocdBuffSize);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessFastaFile:- Unable to allocate memory (%u bytes) for sequence buffer",(uint32_t)AllocdBuffSize);
 	Fasta.Close();
 	return(eBSFerrMem);
 	}
@@ -2043,7 +2043,7 @@ while((Rslt = SeqLen = Fasta.ReadSequence(&pSeqBuff[BuffOfs],(int)min(AvailBuffS
 		SeqID++;
 		if(bEntryCreated)				// add any previous entry
 			{
-			if(BuffOfs > 0 && (NumSeqsAccepted + NumSeqsUnderlength) <= ((SeqID * (UINT64)m_SampleInRate) / 100))
+			if(BuffOfs > 0 && (NumSeqsAccepted + NumSeqsUnderlength) <= ((SeqID * (uint64_t)m_SampleInRate) / 100))
 				{
 				NumSampled += 1;
 				if(BuffOfs < (size_t)MinSeqLen || BuffOfs > (size_t)MaxSeqLen)
@@ -2055,7 +2055,7 @@ while((Rslt = SeqLen = Fasta.ReadSequence(&pSeqBuff[BuffOfs],(int)min(AvailBuffS
 					}
 				else
 					{
-					if((Rslt=m_pSfxArray->AddEntry(szName,pSeqBuff,(UINT32)BuffOfs,Flags)) < eBSFSuccess)
+					if((Rslt=m_pSfxArray->AddEntry(szName,pSeqBuff,(uint32_t)BuffOfs,Flags)) < eBSFSuccess)
 						{
 						gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessFastaFile - error %d %s",Rslt,m_pSfxArray->GetErrMsg());
 						break;
@@ -2166,13 +2166,13 @@ while((Rslt = SeqLen = Fasta.ReadSequence(&pSeqBuff[BuffOfs],(int)min(AvailBuffS
 	if(m_FiltMinHomoLen > 0)
 		{
 	// checking for near homopolymer runs and marking these bases for deletion
-		UINT8 *pHomoBase;
-		UINT8 *pDelHomoBase;
-		UINT8 HomoBase;
-		UINT8 CurHomoBase;
-		UINT32 TotHomoLen;
-		UINT32 HomoIdx;
-		UINT32 StartHomoIdx;
+		uint8_t *pHomoBase;
+		uint8_t *pDelHomoBase;
+		uint8_t HomoBase;
+		uint8_t CurHomoBase;
+		uint32_t TotHomoLen;
+		uint32_t HomoIdx;
+		uint32_t StartHomoIdx;
 		bool bHomoRuns;
 		TotHomoLen = 0;
 		StartHomoIdx = 0;
@@ -2205,7 +2205,7 @@ while((Rslt = SeqLen = Fasta.ReadSequence(&pSeqBuff[BuffOfs],(int)min(AvailBuffS
 								}
 							}
 
-						if(TotHomoLen >= (UINT32)m_FiltMinHomoLen)				// accepting as homopolymer if at least m_FiltMinHomoLen long
+						if(TotHomoLen >= (uint32_t)m_FiltMinHomoLen)				// accepting as homopolymer if at least m_FiltMinHomoLen long
 							{
 							pDelHomoBase = &pSeqBuff[StartHomoIdx+6];	// retaining the first 6 bases as these started the homopolymer run
 							TotHomoLen -= 6;							// and retaining the last 6 bases as these terminated the homopolymer run
@@ -2219,7 +2219,7 @@ while((Rslt = SeqLen = Fasta.ReadSequence(&pSeqBuff[BuffOfs],(int)min(AvailBuffS
 					}
 				}
  			}
-		if(TotHomoLen >= (UINT32)m_FiltMinHomoLen)			// accepting as homopolymer if at least m_FiltMinHomoLen long
+		if(TotHomoLen >= (uint32_t)m_FiltMinHomoLen)			// accepting as homopolymer if at least m_FiltMinHomoLen long
 			{
 			pDelHomoBase = &pSeqBuff[StartHomoIdx+6];	// retaining the first 5 bases as these started the homopolymer run
 			TotHomoLen -= 6;					    // and retaining the last 5 bases as these terminated the homopolymer run
@@ -2249,10 +2249,10 @@ while((Rslt = SeqLen = Fasta.ReadSequence(&pSeqBuff[BuffOfs],(int)min(AvailBuffS
 	if(AvailBuffSize < (size_t)(cMaxAllocBuffChunk / 8))
 		{
 		size_t NewSize = (size_t)cMaxAllocBuffChunk + AllocdBuffSize;
-		unsigned char *pTmp;
-		if((pTmp = (unsigned char *)realloc(pSeqBuff,NewSize))==NULL)
+		uint8_t *pTmp;
+		if((pTmp = (uint8_t *)realloc(pSeqBuff,NewSize))==NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessFastaFile:- Unable to reallocate memory (%u bytes) for sequence buffer",(UINT32)NewSize);
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessFastaFile:- Unable to reallocate memory (%u bytes) for sequence buffer",(uint32_t)NewSize);
 			return(eBSFerrMem);
 			}
 		pSeqBuff = pTmp;
@@ -2269,7 +2269,7 @@ if(Rslt < eBSFSuccess && Rslt != eBSErrSession)
 
 if(Rslt >= eBSFSuccess && bEntryCreated && BuffOfs > 0)			// close entry
 	{
-	if((NumSeqsAccepted + NumSeqsUnderlength) <= ((SeqID * (UINT64)m_SampleInRate) / 100))
+	if((NumSeqsAccepted + NumSeqsUnderlength) <= ((SeqID * (uint64_t)m_SampleInRate) / 100))
 		{
 		NumSampled += 1;
 		if(BuffOfs < (size_t)MinSeqLen || BuffOfs > (size_t)MaxSeqLen)
@@ -2282,7 +2282,7 @@ if(Rslt >= eBSFSuccess && bEntryCreated && BuffOfs > 0)			// close entry
 			}
 		else
 			{
-			if((Rslt=m_pSfxArray->AddEntry(szName,pSeqBuff,(UINT32)BuffOfs,Flags)) < eBSFSuccess)
+			if((Rslt=m_pSfxArray->AddEntry(szName,pSeqBuff,(uint32_t)BuffOfs,Flags)) < eBSFSuccess)
 				gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessFastaFile - error %d %s",Rslt,m_pSfxArray->GetErrMsg());
 			else
 				{
@@ -2319,10 +2319,10 @@ if(Adapter5Len > 0 || Adapter3Len > 0)
 return(Rslt);
 }
 
-INT64
+int64_t
 CPBErrCorrect::EstSumSeqLens(int NumTargFiles,char **pszTargFiles)		// guestimate total sequence length by simply summing the lengths of each file - likely to grossly over estimate
 {
-INT64 SumFileSizes;
+int64_t SumFileSizes;
 int Idx;
 int NumGlobs;
 
@@ -2334,7 +2334,7 @@ for(Idx = 0; Idx < NumTargFiles; Idx++)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to glob '%s",pszTargFiles[Idx]);
 		Reset();
-		return((INT64)eBSFerrOpnFile);
+		return((int64_t)eBSFerrOpnFile);
    		}
 
 
@@ -2348,7 +2348,7 @@ for (NumGlobs = 0; NumGlobs < glob.FileCount(); NumGlobs += 1)
 	struct stat64 st;
 	if(!stat64(glob.File(NumGlobs),&st))
 #endif
-		SumFileSizes += (INT64)st.st_size;
+		SumFileSizes += (int64_t)st.st_size;
 	}
 if(NumGlobs == 0)
 	{
@@ -2387,8 +2387,8 @@ CPBErrCorrect::LoadSeqs(int MinSeqLen,					 // only accept for indexing sequence
 int Rslt;
 int Idx;
 int NumGlobs;
-INT64 SumFileSizes;
-UINT32 DupEntries[cMaxDupEntries];
+int64_t SumFileSizes;
+uint32_t DupEntries[cMaxDupEntries];
 int NumDupEntries;
 char szDupEntry[100];
 
@@ -2416,7 +2416,7 @@ for (NumGlobs = 0; NumGlobs < glob.FileCount(); NumGlobs += 1)
 	struct stat64 st;
 	if(!stat64(glob.File(NumGlobs),&st))
 #endif
-		SumFileSizes += (INT64)st.st_size;
+		SumFileSizes += (int64_t)st.st_size;
 	}
 if(NumGlobs == 0)
 	{
@@ -2459,19 +2459,19 @@ return(eBSFSuccess);
 }
 
 int				// returns number of bins containing at least 1 read, 0 if no bins, < 0 if errors
-CPBErrCorrect::ReadLenBinning(UINT32 NumLenBins,		// binning read lengths into this number of bins
-			   UINT32 BinLenRange,			// each bin is to hold this delta length range 
-			   UINT32 FirstBinStartLen,		// first bin starts at this read length
-			   UINT16 RjctSeqFlagsSet,		// slough reads with any of these flags set
-			   UINT16 RjctSeqFlagsReset)	// slough reads with any of these flags not set
+CPBErrCorrect::ReadLenBinning(uint32_t NumLenBins,		// binning read lengths into this number of bins
+			   uint32_t BinLenRange,			// each bin is to hold this delta length range 
+			   uint32_t FirstBinStartLen,		// first bin starts at this read length
+			   uint16_t RjctSeqFlagsSet,		// slough reads with any of these flags set
+			   uint16_t RjctSeqFlagsReset)	// slough reads with any of these flags not set
 {
-UINT32 CurNodeID;
+uint32_t CurNodeID;
 int NumTargSeqs;
 tsPacBioLenBin *pCurReadLenBin; 	
-UINT32 CurReadLen;
-UINT32 BinIdx;
-UINT32 NumBins;
-UINT16 SeqFlags;
+uint32_t CurReadLen;
+uint32_t BinIdx;
+uint32_t NumBins;
+uint16_t SeqFlags;
 
 if(m_pSfxArray == NULL || NumLenBins > cMaxBinnedReadLens || BinLenRange == 0 || FirstBinStartLen == 0)
 	return(eBSFerrParams);
@@ -2502,7 +2502,7 @@ if((NumTargSeqs = m_pSfxArray->GetNumEntries()) < 1)
 	return(0);
 
 NumBins = 0;
-for(CurNodeID = 1; CurNodeID <= (UINT32)NumTargSeqs; CurNodeID++)
+for(CurNodeID = 1; CurNodeID <= (uint32_t)NumTargSeqs; CurNodeID++)
 	{
 	SeqFlags = m_pSfxArray->GetIdentFlags(CurNodeID);
 	if(RjctSeqFlagsSet & SeqFlags)
@@ -2580,9 +2580,9 @@ CPBErrCorrect::Process(etPBPMode PMode,		// processing mode
 {
 int Rslt = eBSFSuccess;
 int Idx;
-UINT32 NumTargSeqs;
-UINT32 CurNodeID;
-UINT32 MaxSeqLen;
+uint32_t NumTargSeqs;
+uint32_t CurNodeID;
+uint32_t MaxSeqLen;
 tsPBEScaffNode *pCurPBScaffNode;
 
 Reset();
@@ -2726,7 +2726,7 @@ else
 m_hMultiAlignFile = -1;
 m_MultiAlignFileUnsyncedSize = 0;
 
-INT64 SumFileSizes;
+int64_t SumFileSizes;
 
 SumFileSizes = EstSumSeqLens(NumPacBioFiles,pszPacBioFiles);	// guestimate sum of all sequences; will return -1 if errors
 if(SumFileSizes == -1)
@@ -2737,9 +2737,9 @@ if(SumFileSizes == -1)
 
 if(NumHiConfFiles && pszHiConfFiles != NULL)
 	{
-	INT64 HiConfFileSizes;
+	int64_t HiConfFileSizes;
 	HiConfFileSizes = EstSumSeqLens(NumHiConfFiles,pszHiConfFiles);	// guestimate sum of all sequences; will return eBSFerrOpnFile if errors
-	if(HiConfFileSizes == (INT64)eBSFerrOpnFile)
+	if(HiConfFileSizes == (int64_t)eBSFerrOpnFile)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Unable to access the high confidence files");
 		return(eBSFerrObj);
@@ -2883,19 +2883,19 @@ if((m_pPBScaffNodes = new tsPBEScaffNode [NumTargSeqs + 1]) == NULL)
 	}
 memset(m_pPBScaffNodes,0,sizeof(tsPBEScaffNode) * (NumTargSeqs+1));
 m_AllocdPBScaffNodes = NumTargSeqs;
-if((m_pMapEntryID2NodeIDs = new UINT32 [NumTargSeqs + 1]) == NULL)
+if((m_pMapEntryID2NodeIDs = new uint32_t [NumTargSeqs + 1]) == NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate for %d mapping entries nodes",NumTargSeqs);
 	Reset();
 	return(eBSFerrMem);
 	}
-memset(m_pMapEntryID2NodeIDs,0,sizeof(UINT32) * (NumTargSeqs+1));
+memset(m_pMapEntryID2NodeIDs,0,sizeof(uint32_t) * (NumTargSeqs+1));
 m_NumPBScaffNodes = 0;
 
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Initialising for %d sequences",NumTargSeqs);	
 MaxSeqLen = 0;
-UINT32 NumSloughed;
-UINT32 NumAccepted;
+uint32_t NumSloughed;
+uint32_t NumAccepted;
 double PropAccepted;
 double ExpPropAccept;
 
@@ -2905,7 +2905,7 @@ NumAccepted = 0;
 ExpPropAccept = (double)m_SampleAcceptRate / 1000.0;
 for(CurNodeID = 1; CurNodeID <= NumTargSeqs; CurNodeID++,pCurPBScaffNode++)
 	{
-	UINT16 SeqFlags;
+	uint16_t SeqFlags;
 	pCurPBScaffNode->SeqLen = m_pSfxArray->GetSeqLen(CurNodeID);
 	pCurPBScaffNode->EntryID = CurNodeID;
 	SeqFlags = m_pSfxArray->GetIdentFlags(CurNodeID);
@@ -2927,7 +2927,7 @@ for(CurNodeID = 1; CurNodeID <= NumTargSeqs; CurNodeID++,pCurPBScaffNode++)
 			}
 		}
 
-	if(MaxSeqLen == 0 || pCurPBScaffNode->SeqLen > (UINT32)MaxSeqLen)
+	if(MaxSeqLen == 0 || pCurPBScaffNode->SeqLen > (uint32_t)MaxSeqLen)
 		MaxSeqLen = pCurPBScaffNode->SeqLen;
 	}
 if(m_SampleAcceptRate < 1000)
@@ -2946,9 +2946,9 @@ if(m_NumPBScaffNodes > 1)
 	}
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Sorting %d sequences completed",NumTargSeqs);
 
-UINT32 CurSeqLen;
-UINT32 NumCurSeqLen;
-UINT32 MaxNumCurSeqLen;
+uint32_t CurSeqLen;
+uint32_t NumCurSeqLen;
+uint32_t MaxNumCurSeqLen;
 
 pCurPBScaffNode = m_pPBScaffNodes;
 CurSeqLen = 0;
@@ -2989,9 +2989,9 @@ m_hErrCorFile = -1;
 if(m_szChkPtsFile[0] != '\0' && m_szErrCorFile[0] != '\0')
 	{
 	tsECChkPt CurChkPt;
-	UINT32 NodeID;
-	UINT32 NumChkPtsExptd;
-	UINT32 NumChkPtsAccepted;
+	uint32_t NodeID;
+	uint32_t NumChkPtsExptd;
+	uint32_t NumChkPtsAccepted;
 	int ChkPtsStatRslt;
 	off_t ChkPtFileSize;
 	int ECStatRslt;
@@ -3085,12 +3085,12 @@ if(m_szChkPtsFile[0] != '\0' && m_szErrCorFile[0] != '\0')
 	if(ChkPtsStatRslt >= 0)
 		{
 		bool bRestartChkPts = false;
-		UINT32 NumOverlapProcessed = 0;
-		INT64 MaxECFileSize = 0;
-		INT64 MaxECFileSizeAccepted = 0;
+		uint32_t NumOverlapProcessed = 0;
+		int64_t MaxECFileSize = 0;
+		int64_t MaxECFileSizeAccepted = 0;
 		// iterate over all checkpoint entries
 		// stop iterating if either an inconsistency between checkpointed entry and local, or if offset is after error corrected file size
-		NumChkPtsExptd = (UINT32)(ChkPtFileSize / sizeof(tsECChkPt));
+		NumChkPtsExptd = (uint32_t)(ChkPtFileSize / sizeof(tsECChkPt));
 		NumChkPtsAccepted = 0;
 		gDiagnostics.DiagOut(eDLInfo,gszProcName,"Checkpoint file contains approximately %d entries, now processing and validating these entries",NumChkPtsExptd);
 		while(NumChkPtsExptd && read(m_hChkPtsFile,&CurChkPt,sizeof(tsECChkPt)) == sizeof(tsECChkPt))
@@ -3100,7 +3100,7 @@ if(m_szChkPtsFile[0] != '\0' && m_szErrCorFile[0] != '\0')
 				{
 				if(NumChkPtsAccepted >= 200 && NumChkPtsExptd < 100)		// if accepted at least 200 check points and less than 100 more check points remaining when an inconsistency is identified then accept checkpoints up to and including last accepted
 					{
-					_lseeki64(m_hChkPtsFile,(off_t)((UINT64)NumChkPtsAccepted *  sizeof(tsECChkPt)),SEEK_SET);
+					_lseeki64(m_hChkPtsFile,(off_t)((uint64_t)NumChkPtsAccepted *  sizeof(tsECChkPt)),SEEK_SET);
 					break;					
 					}
 				bRestartChkPts = true;
@@ -3116,7 +3116,7 @@ if(m_szChkPtsFile[0] != '\0' && m_szErrCorFile[0] != '\0')
 				{
 				if(NumChkPtsAccepted >= 200 && NumChkPtsExptd < 100)		// if accepted at least 200 check points and less than 100 more check points remaining when an inconsistency is identified then accept checkpoints up to and including last accepted
 					{
-					_lseeki64(m_hChkPtsFile,(off_t)((UINT64)NumChkPtsAccepted *  sizeof(tsECChkPt)),SEEK_SET);
+					_lseeki64(m_hChkPtsFile,(off_t)((uint64_t)NumChkPtsAccepted *  sizeof(tsECChkPt)),SEEK_SET);
 					break;					
 					}
 				bRestartChkPts = true;
@@ -3128,16 +3128,16 @@ if(m_szChkPtsFile[0] != '\0' && m_szErrCorFile[0] != '\0')
 				{
 				if(CurChkPt.ECFileOfs > ECFileSize)
 					{
-					_lseeki64(m_hChkPtsFile,(off_t)((UINT64)NumChkPtsAccepted *  sizeof(tsECChkPt)),SEEK_SET);
+					_lseeki64(m_hChkPtsFile,(off_t)((uint64_t)NumChkPtsAccepted *  sizeof(tsECChkPt)),SEEK_SET);
 					break;
 					}
 				if(CurChkPt.ECFileOfs > MaxECFileSize)
 					{
-					if((MaxECFileSize = (INT64)_lseeki64(m_hErrCorFile,(off_t)CurChkPt.ECFileOfs,SEEK_SET))!=CurChkPt.ECFileOfs)
+					if((MaxECFileSize = (int64_t)_lseeki64(m_hErrCorFile,(off_t)CurChkPt.ECFileOfs,SEEK_SET))!=CurChkPt.ECFileOfs)
 						{
 						if(NumChkPtsAccepted >= 200 && NumChkPtsExptd < 100)		// if accepted at least 200 check points and less than 100 more check points remaining when an inconsistency is identified then accept checkpoints up to and including last accepted
 							{
-							_lseeki64(m_hChkPtsFile,(off_t)((UINT64)NumChkPtsAccepted *  sizeof(tsECChkPt)),SEEK_SET);
+							_lseeki64(m_hChkPtsFile,(off_t)((uint64_t)NumChkPtsAccepted *  sizeof(tsECChkPt)),SEEK_SET);
 							_lseeki64(m_hErrCorFile,(off_t)MaxECFileSizeAccepted,SEEK_SET);
 							break;					
 							}
@@ -3284,8 +3284,8 @@ else
 
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Identifying sequence overlaps ...");
 
-UINT32 MaxWorkerThreads;
-UINT32 ReqRMICores;
+uint32_t MaxWorkerThreads;
+uint32_t ReqRMICores;
 if(m_bRMI)
 	{
 	MaxWorkerThreads = m_MaxRMIInstances;
@@ -3329,16 +3329,16 @@ pthread_exit(NULL);
 int
 CPBErrCorrect::UpdateProcessStats(void)	// determine current CPU utilisation by this process and numbers of commited and uncommited service provider classses
 {
-UINT32 NumClasses;
-UINT32 NumCommitedClasses;
-UINT32 NumUncommitedClasses;
-UINT32 CurNodeID;
+uint32_t NumClasses;
+uint32_t NumCommitedClasses;
+uint32_t NumUncommitedClasses;
+uint32_t CurNodeID;
 int DeltaThreads;					// > 0 to enable increase in non-RMI active threads, < 0 to enable decrease in active non-RMI threads 
 tsPBEScaffNode *pCurPBScaffNode;
 time_t Now;
 
-UINT32 TargNonRMIThreads;
-UINT32 TargRMIThreads;
+uint32_t TargNonRMIThreads;
+uint32_t TargRMIThreads;
 
 if(m_ProcessStatsThen == 0)
 	{
@@ -3358,29 +3358,29 @@ NumUncommitedClasses = 0;
 if(m_bRMI && (Now - m_ProcessStatsThen) >= 60)
 	{
 	NumClasses = m_pRequester->GetNumClassInstances(eBKSPTSmithWaterman,&NumCommitedClasses,&NumUncommitedClasses);
-	UINT32 PercentIdle;
+	uint32_t PercentIdle;
 
 #ifdef WIN32
-	UINT64 CurIdleNanoSecs;    
-	UINT64 PrevIdleNanoSecs;
-	UINT64 Norm1SecIdleNanoSecs;  // idle nanosecs per second over the preceding 60 secs
+	uint64_t CurIdleNanoSecs;    
+	uint64_t PrevIdleNanoSecs;
+	uint64_t Norm1SecIdleNanoSecs;  // idle nanosecs per second over the preceding 60 secs
 
 	FILETIME CurIdleTime;
 	FILETIME CurKernelTime;
 	FILETIME CurUserTime;
 	GetSystemTimes(&CurIdleTime,&CurKernelTime,&CurUserTime);
-	CurIdleNanoSecs = (UINT64)CurIdleTime.dwLowDateTime;
-	CurIdleNanoSecs |= (UINT64)CurIdleTime.dwHighDateTime << 32;
-	PrevIdleNanoSecs = (UINT64)m_PrevIdleTime.dwLowDateTime;
-	PrevIdleNanoSecs |= (UINT64)m_PrevIdleTime.dwHighDateTime << 32;
+	CurIdleNanoSecs = (uint64_t)CurIdleTime.dwLowDateTime;
+	CurIdleNanoSecs |= (uint64_t)CurIdleTime.dwHighDateTime << 32;
+	PrevIdleNanoSecs = (uint64_t)m_PrevIdleTime.dwLowDateTime;
+	PrevIdleNanoSecs |= (uint64_t)m_PrevIdleTime.dwHighDateTime << 32;
 	m_PrevIdleTime = CurIdleTime;
-	Norm1SecIdleNanoSecs = (CurIdleNanoSecs - PrevIdleNanoSecs) / (UINT64)(Now - m_ProcessStatsThen);
-	PercentIdle = min(100,(UINT32)(Norm1SecIdleNanoSecs / 1000000));
+	Norm1SecIdleNanoSecs = (CurIdleNanoSecs - PrevIdleNanoSecs) / (uint64_t)(Now - m_ProcessStatsThen);
+	PercentIdle = min(100,(uint32_t)(Norm1SecIdleNanoSecs / 1000000));
 #else
 	double Loadavgs[3];
 	getloadavg(Loadavgs,3);
 
-	PercentIdle = (UINT32)max(0.0,100.0 - (100.0 * (Loadavgs[0] / m_NumOvlpCores)));
+	PercentIdle = (uint32_t)max(0.0,100.0 - (100.0 * (Loadavgs[0] / m_NumOvlpCores)));
 
 #endif
 	if(PercentIdle < 3)
@@ -3397,10 +3397,10 @@ if(m_bRMI && (Now - m_ProcessStatsThen) >= 60)
 	TargRMIThreads = min(NumClasses,m_MaxRMIInstances);	
 	TargNonRMIThreads = m_CurActiveNonRMIThreads;
 	if(DeltaThreads < 0)		// needing to reduce non-RMI threads
-		TargNonRMIThreads = (UINT32)max(0,(int)m_CurActiveNonRMIThreads + DeltaThreads);
+		TargNonRMIThreads = (uint32_t)max(0,(int)m_CurActiveNonRMIThreads + DeltaThreads);
 	else
 		if(DeltaThreads > 0)		// wanting to increase non-RMI threads
-			TargNonRMIThreads = (UINT32)min(m_MaxNonRMIThreads,m_CurActiveNonRMIThreads + DeltaThreads); 
+			TargNonRMIThreads = (uint32_t)min(m_MaxNonRMIThreads,m_CurActiveNonRMIThreads + DeltaThreads); 
  
 	if(TargNonRMIThreads < m_CurActiveNonRMIThreads)
 		m_ReduceNonRMIThreads = min(m_CurActiveNonRMIThreads - TargNonRMIThreads,cRMIThreadsPerCore);
@@ -3454,16 +3454,16 @@ CPBErrCorrect::IdentifySequenceOverlaps(int MaxSeqLen,		// max length sequence t
 									int NumOvlpCores,		// targeting to maximise usage of this many cores
 									int NumOvlpThreads,		// identify all read overlaps using at most this this many threads 
 								    teBKSPType RMIBKSPType,	// workers are to request this service type
-									UINT32 RMIBufferSize,	// each worker thread default allocates to process up to this much buffered data
-									UINT32 RMIParamDataSize,// each worker thread default allocates to process up to this much parameter data
-									UINT32 RMIReqDataSize,	// each worker thread default allocates to process up to this much request data
-									UINT32 RMIRespDataSize)	// each worker thread default allocates to process up to this much response data
+									uint32_t RMIBufferSize,	// each worker thread default allocates to process up to this much buffered data
+									uint32_t RMIParamDataSize,// each worker thread default allocates to process up to this much parameter data
+									uint32_t RMIReqDataSize,	// each worker thread default allocates to process up to this much request data
+									uint32_t RMIRespDataSize)	// each worker thread default allocates to process up to this much response data
 {
 tsThreadPBErrCorrect *pThreadPutOvlps;
 int ThreadIdx;
 tsThreadPBErrCorrect *pThreadPar;
-UINT32 NumCommitedClasses;
-UINT32 NumUncommitedClasses;
+uint32_t NumCommitedClasses;
+uint32_t NumUncommitedClasses;
 int NumClasses;
 memset(m_ExactKmerDists,0,sizeof(m_ExactKmerDists));
 m_TotAlignSeqLen = 0;
@@ -3548,27 +3548,27 @@ for(ThreadIdx = 0; ThreadIdx < NumOvlpThreads; ThreadIdx++,pThreadPar++)
 		pThreadPar->ServiceType = RMIBKSPType;
 		pThreadPar->pRequester = m_pRequester;	
 		pThreadPar->RMIReqDataSize = RMIReqDataSize;		// pRMIReqData allocation size
-		if((pThreadPar->pRMIReqData = (UINT8 *)malloc(RMIReqDataSize))==NULL)
+		if((pThreadPar->pRMIReqData = (uint8_t *)malloc(RMIReqDataSize))==NULL)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate %d memory for RMIReqData buffering",RMIReqDataSize);
 			break;
 			}
 
 		pThreadPar->RMIParamDataSize = RMIParamDataSize;	// pRMIParamData allocation size
-		if((pThreadPar->pRMIParamData = (UINT8 *)malloc(RMIParamDataSize))==NULL)
+		if((pThreadPar->pRMIParamData = (uint8_t *)malloc(RMIParamDataSize))==NULL)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate %d memory for RMIParamData buffering",RMIParamDataSize);
 			break;
 			}
 
 		pThreadPar->RMIRespDataSize = RMIRespDataSize;		// pRMIRespData allocation size
-		if((pThreadPar->pRMIRespData = (UINT8 *)malloc(RMIRespDataSize))==NULL)
+		if((pThreadPar->pRMIRespData = (uint8_t *)malloc(RMIRespDataSize))==NULL)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate %d memory for RMIRespDatabuffering",RMIRespDataSize);
 			break;
 			}
 		pThreadPar->RMIBufferSize = RMIBufferSize;			// RMIBuffer allocation size
-		if((pThreadPar->pRMIBuffer = (UINT8 *)malloc(RMIBufferSize))==NULL)
+		if((pThreadPar->pRMIBuffer = (uint8_t *)malloc(RMIBufferSize))==NULL)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate %d memory for RMIBuffer buffering",RMIBufferSize);
 			break;
@@ -3615,7 +3615,7 @@ if(ThreadIdx != NumOvlpThreads)	// any errors whilst allocating memory for core 
 	while(ThreadIdx >= 0);
 	delete pThreadPutOvlps;
 	Reset();
-	return((INT64)eBSFerrMem);
+	return((int64_t)eBSFerrMem);
 	}
 
 if(m_bRMI)
@@ -3753,56 +3753,56 @@ return(0);
 int
 CPBErrCorrect::ThreadPBErrCorrect(tsThreadPBErrCorrect *pThreadPar)
 {
-UINT32 AdjOverlapFloat;
-UINT32 CurTargCoreHitCnts;
+uint32_t AdjOverlapFloat;
+uint32_t CurTargCoreHitCnts;
 tsPBEScaffNode *pTargNode;
 
-UINT32 TargSeqLen;
-UINT32 ProbeSeqLen;
-UINT32 LongSAligns;
-UINT32 LongAAligns;
+uint32_t TargSeqLen;
+uint32_t ProbeSeqLen;
+uint32_t LongSAligns;
+uint32_t LongAAligns;
 tsSSWCell *pPeakMatchesCell;
 tsSSWCell PeakMatchesCell;
 #ifdef _PEAKSCOREACCEPT
 tsSSWCell PeakScoreCell;
 #endif
 bool bTargSense;
-UINT32 Idx;
-UINT32 CurSummaryHitCnts;
-UINT32 LowestSummaryHitCnts;
+uint32_t Idx;
+uint32_t CurSummaryHitCnts;
+uint32_t LowestSummaryHitCnts;
 sPBECoreHitCnts *pLowestSummaryHitCnts;
-UINT32 HitIdx;
+uint32_t HitIdx;
 tsPBECoreHit *pCoreHit;
 tsPBECoreHit *pNxtCoreHit;
-UINT32 CurTargHitOfs;
-UINT32 CurProbeHitOfs;
-UINT32 CurSEntryIDHits;
-UINT32 CurAEntryIDHits;
-UINT32	CurSTargStartOfs;
-UINT32	CurSTargEndOfs;
-UINT32	CurATargStartOfs;
-UINT32	CurATargEndOfs;
-UINT32	CurSProbeStartOfs;
-UINT32	CurSProbeEndOfs;
-UINT32	CurAProbeStartOfs;
-UINT32	CurAProbeEndOfs;
-UINT32 ProvOverlapping;
-UINT32 ProvOverlapped;
-UINT32 ProvContained;
-UINT32 ProvArtefact;
-UINT32 ProvSWchecked;
-UINT32 MinOverlapLen;
-UINT32 MinTranscriptOverlapLen;
+uint32_t CurTargHitOfs;
+uint32_t CurProbeHitOfs;
+uint32_t CurSEntryIDHits;
+uint32_t CurAEntryIDHits;
+uint32_t	CurSTargStartOfs;
+uint32_t	CurSTargEndOfs;
+uint32_t	CurATargStartOfs;
+uint32_t	CurATargEndOfs;
+uint32_t	CurSProbeStartOfs;
+uint32_t	CurSProbeEndOfs;
+uint32_t	CurAProbeStartOfs;
+uint32_t	CurAProbeEndOfs;
+uint32_t ProvOverlapping;
+uint32_t ProvOverlapped;
+uint32_t ProvContained;
+uint32_t ProvArtefact;
+uint32_t ProvSWchecked;
+uint32_t MinOverlapLen;
+uint32_t MinTranscriptOverlapLen;
 sPBECoreHitCnts *pSummaryCnts;
-UINT32 CurNodeID;
-UINT32 LowestCpltdProcNodeID;
+uint32_t CurNodeID;
+uint32_t LowestCpltdProcNodeID;
 int NumInMultiAlignment;
 
 char szTargSeqName[cMaxDatasetSpeciesChrom];
 char szProbeSeqName[cMaxDatasetSpeciesChrom];
 
-UINT64 ClassInstanceID;
-UINT32 ClassMethodID;
+uint64_t ClassInstanceID;
+uint32_t ClassMethodID;
 bool bRMIInitialised;
 bool bRMIRslt;
 int iRMIRslt;
@@ -3812,7 +3812,7 @@ int iNonRMIRslt;
 tsECChkPt CurChkPt;
 
 tsPBEScaffNode *pCurPBScaffNode;
-UINT32 RMINumUncommitedClasses;
+uint32_t RMINumUncommitedClasses;
 
 pThreadPar->pSW = NULL;
 pCurPBScaffNode = NULL;
@@ -3854,7 +3854,7 @@ bRMIInitialised = false;
 pThreadPar->bRMI = false;
  
 // if debugging and only interested in sessions with a specific identifier then set this to the session identifier of interest!!
-UINT32 ReqSessionID = 0;
+uint32_t ReqSessionID = 0;
 
 while(1)
 	{
@@ -3897,7 +3897,7 @@ while(1)
 	else											// not using RMI classes or if using RMI then there are no RMI uncommitted class instances remaining
 		{
 		AcquireCASSerialise();
-		if(m_CurActiveNonRMIThreads >= (UINT32)m_MaxNonRMIThreads || m_ReduceNonRMIThreads > 0)
+		if(m_CurActiveNonRMIThreads >= (uint32_t)m_MaxNonRMIThreads || m_ReduceNonRMIThreads > 0)
 			{
 			ReleaseCASSerialise();
 			ReleaseCASThreadPBErrCorrect();
@@ -3932,7 +3932,7 @@ for(CurNodeID = (LowestCpltdProcNodeID+1); CurNodeID <= m_NumPBScaffNodes; CurNo
 			pCurPBScaffNode->flgCpltdProc == 1 ||	// completed processing
 			pCurPBScaffNode->flgHCseq == 1 ||			// not error correcting already assumed to be high confidence sequences 
 		    pCurPBScaffNode->flgUnderlength == 1 || // must be of a user specified minimum length 
-			pCurPBScaffNode->SeqLen < (UINT32)pThreadPar->MinPBSeqLen) 
+			pCurPBScaffNode->SeqLen < (uint32_t)pThreadPar->MinPBSeqLen) 
 		{
 		ReleaseCASLock();
 		continue;
@@ -3995,15 +3995,15 @@ for(CurNodeID = (LowestCpltdProcNodeID+1); CurNodeID <= m_NumPBScaffNodes; CurNo
 		// process and mark these probable artifact hits by identifying the most spatially related cluster of hits; hits outside of
 		// the most spatially related cluster are marked as being artefactual 
 
-		UINT32 CurTargSeqID;
-		UINT32 MaxWinSize;
-		UINT32 RelWinSize;
+		uint32_t CurTargSeqID;
+		uint32_t MaxWinSize;
+		uint32_t RelWinSize;
 		bool bFirstHitNewTargSeq;
-		UINT32 PrevAcceptedProbeOfs;
-		UINT32 PrevAcceptedTargOfs;
-		UINT32 MaxNoHitGapLen;
-		UINT32 NumNoHitGaps;
-		UINT32 SumNoHitGapLens;
+		uint32_t PrevAcceptedProbeOfs;
+		uint32_t PrevAcceptedTargOfs;
+		uint32_t MaxNoHitGapLen;
+		uint32_t NumNoHitGaps;
+		uint32_t SumNoHitGapLens;
 		tsPBECoreHit *pFirstCoreHit;
 		tsPBECoreHit *pMaxCoreHit;
 
@@ -4071,7 +4071,7 @@ for(CurNodeID = (LowestCpltdProcNodeID+1); CurNodeID <= m_NumPBScaffNodes; CurNo
 
 					if(pFirstCoreHit->WinHits >= pThreadPar->MinNumCores && ((PrevAcceptedProbeOfs + MaxNoHitGapLen) > ProbeSeqLen || (PrevAcceptedTargOfs + MaxNoHitGapLen) > TargSeqLen))
 						{
-						UINT32 PutativeOverlapLen = 1 + PrevAcceptedProbeOfs - pFirstCoreHit->ProbeOfs;
+						uint32_t PutativeOverlapLen = 1 + PrevAcceptedProbeOfs - pFirstCoreHit->ProbeOfs;
 						if(((SumNoHitGapLens * 100) / PutativeOverlapLen) <= 20)		// only accepting if no more than 20% of alignment sums to gaps > MaxNoHitGapLen
 							{
 							if (pMaxCoreHit == NULL || pFirstCoreHit->WinHits > pMaxCoreHit->WinHits)
@@ -4326,10 +4326,10 @@ for(CurNodeID = (LowestCpltdProcNodeID+1); CurNodeID <= m_NumPBScaffNodes; CurNo
 			}
 
 		// iterate over all putative targets and SW these
-		UINT64 ReqSummCoverage;
-		UINT64 CurSummCoverage;
+		uint64_t ReqSummCoverage;
+		uint64_t CurSummCoverage;
 
-		ReqSummCoverage = (UINT64)pCurPBScaffNode->SeqLen * cReqConsensusCoverage;
+		ReqSummCoverage = (uint64_t)pCurPBScaffNode->SeqLen * cReqConsensusCoverage;
 		CurSummCoverage = 0;
 
 		pSummaryCnts = &pThreadPar->TargCoreHitCnts[0];
@@ -4363,7 +4363,7 @@ for(CurNodeID = (LowestCpltdProcNodeID+1); CurNodeID <= m_NumPBScaffNodes; CurNo
 
 
 			TargSeqLen = pTargNode->SeqLen; 
-			if(TargSeqLen + 10 > (UINT32)pThreadPar->AllocdTargSeqSize)
+			if(TargSeqLen + 10 > (uint32_t)pThreadPar->AllocdTargSeqSize)
 				{
 				delete pThreadPar->pTargSeq;
 				pThreadPar->AllocdTargSeqSize = (TargSeqLen * 150) / 100;
@@ -4423,7 +4423,7 @@ for(CurNodeID = (LowestCpltdProcNodeID+1); CurNodeID <= m_NumPBScaffNodes; CurNo
 				}
 			else
 				{
-				UINT32 Xchg;
+				uint32_t Xchg;
 				Xchg = pSummaryCnts->AProbeStartOfs;
 				pSummaryCnts->AProbeStartOfs = pCurPBScaffNode->SeqLen - (pSummaryCnts->AProbeEndOfs + 1);
 				pSummaryCnts->AProbeEndOfs = pCurPBScaffNode->SeqLen - (Xchg + 1);
@@ -4492,7 +4492,7 @@ for(CurNodeID = (LowestCpltdProcNodeID+1); CurNodeID <= m_NumPBScaffNodes; CurNo
 						}
 					else
 						{
-						UINT64 OvlpLen =  (UINT64)(TargAlignRet.ProbeAlignLength + TargAlignRet.TargAlignLength + 1) / 2;
+						uint64_t OvlpLen =  (uint64_t)(TargAlignRet.ProbeAlignLength + TargAlignRet.TargAlignLength + 1) / 2;
 						if(pSummaryCnts->flgTargHCseq == 1)
 							CurSummCoverage += OvlpLen * 3 / 2;  // if alignment was onto a high confidence sequence then less coverage depth required for consensus confidence 
 						else
@@ -4587,7 +4587,7 @@ for(CurNodeID = (LowestCpltdProcNodeID+1); CurNodeID <= m_NumPBScaffNodes; CurNo
 
 					if(m_hChkPtsFile != -1)
 						{
-						CurChkPt.ECFileOfs = (INT64)_lseeki64(m_hErrCorFile,(off_t)0,SEEK_CUR);
+						CurChkPt.ECFileOfs = (int64_t)_lseeki64(m_hErrCorFile,(off_t)0,SEEK_CUR);
 						CurChkPt.flgContained = pCurPBScaffNode->flgContained;
 						CurChkPt.flgContains = pCurPBScaffNode->flgContains;
 						CurChkPt.flgCpltdProc = 1;
@@ -4647,7 +4647,7 @@ for(CurNodeID = (LowestCpltdProcNodeID+1); CurNodeID <= m_NumPBScaffNodes; CurNo
 			if(m_PMode == ePBMConsolidate &&  m_hErrCorFile != -1)
 				{
 				// asciify the consensus and report to m_hErrCorFile
-				UINT32 BaseIdx = 0;
+				uint32_t BaseIdx = 0;
 				int BasesLine = 0;
 
 				pThreadPar->ErrCorBuffIdx += sprintf(&pThreadPar->pszErrCorLineBuff[pThreadPar->ErrCorBuffIdx],">txseq%u_1 %d|%d\n",pCurPBScaffNode->EntryID,pCurPBScaffNode->SeqLen,1);
@@ -4695,7 +4695,7 @@ for(CurNodeID = (LowestCpltdProcNodeID+1); CurNodeID <= m_NumPBScaffNodes; CurNo
 
 				if(m_hChkPtsFile != -1)
 					{
-					CurChkPt.ECFileOfs = (INT64)_lseeki64(m_hErrCorFile,(off_t)0,SEEK_CUR);
+					CurChkPt.ECFileOfs = (int64_t)_lseeki64(m_hErrCorFile,(off_t)0,SEEK_CUR);
 					CurChkPt.flgContained = pCurPBScaffNode->flgContained;
 					CurChkPt.flgContains = pCurPBScaffNode->flgContains;
 					CurChkPt.flgCpltdProc = 1;
@@ -4818,17 +4818,17 @@ return(0);
 
 
 int					// returns 0 if core overlapped (uses a non-exhaustive search) a previously added core, index 1..N of just added core hit or -1 if errors
-CPBErrCorrect::AddCoreHit(UINT32 ProbeNodeID,			// core hit was from this probe scaffold node 
+CPBErrCorrect::AddCoreHit(uint32_t ProbeNodeID,			// core hit was from this probe scaffold node 
 			   bool bRevCpl,					// true if core sequence was revcpl'd before matching
-			   UINT32 ProbeOfs,                 // hit started at this probe offset
-			   UINT32 TargNodeID,               // probe core matched onto this target scaffold node
-			   UINT32 TargOfs,                  // probe core matched starting at this target loci
-			   UINT32 HitLen,					// hit was of this length
+			   uint32_t ProbeOfs,                 // hit started at this probe offset
+			   uint32_t TargNodeID,               // probe core matched onto this target scaffold node
+			   uint32_t TargOfs,                  // probe core matched starting at this target loci
+			   uint32_t HitLen,					// hit was of this length
                tsThreadPBErrCorrect *pPars)			// thread specific
 {
-UINT32 ExpdHitLen;
-UINT32 NumHits2Chk;
-UINT32 HitsChkd;
+uint32_t ExpdHitLen;
+uint32_t NumHits2Chk;
+uint32_t HitsChkd;
 tsPBECoreHit *pCurCoreHit;
 
 if((pPars->NumCoreHits + 5) > pPars->AllocdCoreHits)	// need to realloc memory to hold additional cores?
@@ -4837,7 +4837,7 @@ if((pPars->NumCoreHits + 5) > pPars->AllocdCoreHits)	// need to realloc memory t
 	int coresreq;
 	size_t memreq;
 	void *pAllocd;
-	coresreq = (int)(((INT64)pPars->AllocdCoreHits * 125) / (INT64)100);
+	coresreq = (int)(((int64_t)pPars->AllocdCoreHits * 125) / (int64_t)100);
 	memreq = coresreq * sizeof(tsPBECoreHit);
 
 #ifdef _WIN32
@@ -4895,8 +4895,8 @@ return(pPars->NumCoreHits);
 
 // MapEntryID2NodeID
 // Given a suffix array entry identifier returns the corresponding node identifier
-UINT32										// returned tsPBScaffNode node identifier
-CPBErrCorrect::MapEntryID2NodeID(UINT32 EntryID)			// suffix array entry identifier
+uint32_t										// returned tsPBScaffNode node identifier
+CPBErrCorrect::MapEntryID2NodeID(uint32_t EntryID)			// suffix array entry identifier
 {
 if(EntryID == 0 || EntryID > m_NumPBScaffNodes || m_pMapEntryID2NodeIDs == NULL)
 	return(0);
@@ -4906,26 +4906,26 @@ return(m_pMapEntryID2NodeIDs[EntryID-1]);
 
 
 int
-CPBErrCorrect::IdentifyCoreHits(UINT32 ProbeNodeID,	// identify all overlaps of this probe sequence ProbeNodeID onto target sequences
+CPBErrCorrect::IdentifyCoreHits(uint32_t ProbeNodeID,	// identify all overlaps of this probe sequence ProbeNodeID onto target sequences
 				tsThreadPBErrCorrect *pPars)		// thread specific
 {
-INT64 PrevHitIdx;
-INT64 NextHitIdx;
-UINT32 HitEntryID;
-UINT32 HitLoci;
-UINT32 HitsThisCore;
-UINT32 HighHitsThisCore;
-UINT32 TotHitsAllCores;
-UINT32 HitSeqLen;
-UINT32 TargOvlpLenDiffbp;
-UINT32 ProbeOfs;
-UINT32 LastProbeOfs;
+int64_t PrevHitIdx;
+int64_t NextHitIdx;
+uint32_t HitEntryID;
+uint32_t HitLoci;
+uint32_t HitsThisCore;
+uint32_t HighHitsThisCore;
+uint32_t TotHitsAllCores;
+uint32_t HitSeqLen;
+uint32_t TargOvlpLenDiffbp;
+uint32_t ProbeOfs;
+uint32_t LastProbeOfs;
 
-UINT32 MinTargLen;
-UINT32 MaxTargLen;
+uint32_t MinTargLen;
+uint32_t MaxTargLen;
 
-UINT32 ChkOvrLapCoreProbeOfs;
-UINT32 LastCoreProbeOfs;
+uint32_t ChkOvrLapCoreProbeOfs;
+uint32_t LastCoreProbeOfs;
 int ChkOvrLapCoreStartIdx;
 
 etSeqBase *pCoreSeq;
@@ -4937,7 +4937,7 @@ int HomoBaseCnts[4];
 int MaxAcceptHomoCnt;
 
 tsQualTarg QualTargs[cMaxQualTargs];
-UINT32 QualCoreLen;
+uint32_t QualCoreLen;
 int NumQualSeqs;
 
 
@@ -5019,7 +5019,7 @@ if(NumQualSeqs > 0)
 				continue;
 
 			if((pPars->bSelfHits ? pTargNode->NodeID != pProbeNode->NodeID : pTargNode->NodeID == pProbeNode->NodeID) || 
-								HitSeqLen < (UINT32)pPars->MinOverlapLen)		// not interested if target sequence length less than min overlap length required
+								HitSeqLen < (uint32_t)pPars->MinOverlapLen)		// not interested if target sequence length less than min overlap length required
 				continue;
 
   			if(AddCoreHit(ProbeNodeID,pPars->bRevCpl,ProbeOfs,pTargNode->NodeID,HitLoci,pPars->CoreSeqLen,pPars)>0)
@@ -5044,62 +5044,62 @@ return(pPars->NumCoreHits);
 }
 
 int											// marshaled parameter required this many bytes
-CPBErrCorrect::MarshalReq(UINT8 *pInto,					// marshal into this list
+CPBErrCorrect::MarshalReq(uint8_t *pInto,					// marshal into this list
 				teRMIParamType Type,			// parameter type
 				void *pValue,				// parameter value
-				UINT32 ValLen)				// length of parameter ptd to by pValue, only used if parameter type is pUint8
+				uint32_t ValLen)				// length of parameter ptd to by pValue, only used if parameter type is pUint8
 
 {
 switch(Type) {
 	case eRMIPTBool:	// boolean
-		*pInto++ = (UINT8)eRMIPTBool;
+		*pInto++ = (uint8_t)eRMIPTBool;
 		*pInto = *(bool *)pValue == true ? 1 : 0;
-		return(sizeof(UINT8) + 1);
+		return(sizeof(uint8_t) + 1);
 
 	case eRMIPTInt8:		// 8bit signed int
-		*pInto++ = (UINT8)eRMIPTInt8;
-		*pInto = *(INT8 *)pValue;
-		return(sizeof(INT8) + 1);
+		*pInto++ = (uint8_t)eRMIPTInt8;
+		*pInto = *(int8_t *)pValue;
+		return(sizeof(int8_t) + 1);
 
 	case eRMIPTUint8:       // 8bit  unsigned int
-		*pInto++ = (UINT8)eRMIPTUint8;
-		*pInto = *(UINT8 *)pValue;
-		return(sizeof(UINT8) + 1);
+		*pInto++ = (uint8_t)eRMIPTUint8;
+		*pInto = *(uint8_t *)pValue;
+		return(sizeof(uint8_t) + 1);
 
 	case eRMIPTInt32:		// 32bit signed int
-		*pInto++ = (UINT8)eRMIPTInt32;
-		*(INT32 *)pInto = *(INT32 *)pValue;
-		return(sizeof(INT32) + 1);
+		*pInto++ = (uint8_t)eRMIPTInt32;
+		*(int32_t *)pInto = *(int32_t *)pValue;
+		return(sizeof(int32_t) + 1);
 
 	case eRMIPTUint32:		// 32bit unsigned int
-		*pInto++ = (UINT8)eRMIPTInt32;
-		*(UINT32 *)pInto = *(UINT32 *)pValue;
-		return(sizeof(UINT32) + 1);
+		*pInto++ = (uint8_t)eRMIPTInt32;
+		*(uint32_t *)pInto = *(uint32_t *)pValue;
+		return(sizeof(uint32_t) + 1);
 
 	case eRMIPTInt64:		// 64bit signed int
-		*pInto++ = (UINT8)eRMIPTInt64;
-		*(INT64 *)pInto = *(INT64 *)pValue;
-		return(sizeof(INT64) + 1);
+		*pInto++ = (uint8_t)eRMIPTInt64;
+		*(int64_t *)pInto = *(int64_t *)pValue;
+		return(sizeof(int64_t) + 1);
 
 	case eRMIPTUint64:		// 64bit unsigned int
-		*pInto++ = (UINT8)eRMIPTUint64;
-		*(UINT64 *)pInto = *(UINT64 *)pValue;
-		return(sizeof(UINT64) + 1);
+		*pInto++ = (uint8_t)eRMIPTUint64;
+		*(uint64_t *)pInto = *(uint64_t *)pValue;
+		return(sizeof(uint64_t) + 1);
 
 	case eRMIPTDouble:		// floating point double
-		*pInto++ = (UINT8)eRMIPTDouble;
+		*pInto++ = (uint8_t)eRMIPTDouble;
 		*(double *)pInto = *(double *)pValue;
 		return(sizeof(double) + 1);
 
 	case eRMIPTVarUint8:		// variable length
-		*pInto++ = (UINT8)eRMIPTVarUint8;
-		*(UINT32 *)pInto = ValLen;
+		*pInto++ = (uint8_t)eRMIPTVarUint8;
+		*(uint32_t *)pInto = ValLen;
 		if(ValLen > 0 && pValue != NULL)
 			{
-			pInto += sizeof(UINT32);
+			pInto += sizeof(uint32_t);
 			memcpy(pInto,pValue,ValLen);
 			}
-		return(sizeof(UINT32) + ValLen + 1);
+		return(sizeof(uint32_t) + ValLen + 1);
 
 	default:
 		break;
@@ -5109,54 +5109,54 @@ return(0);
 }
 
 int
-CPBErrCorrect::UnmarshalResp(UINT32 DataLen,
-				UINT8 *pFrom,		// unmarshal from this marshalled parameter list
+CPBErrCorrect::UnmarshalResp(uint32_t DataLen,
+				uint8_t *pFrom,		// unmarshal from this marshalled parameter list
 				void *pValue)
 {
-UINT32 ValLen;
+uint32_t ValLen;
 switch(*pFrom++) {
 	case eRMIPTBool:	// boolean
 		*(bool *)pValue = *pFrom == 0 ? false : true;
-		return(sizeof(UINT8) + 1);
+		return(sizeof(uint8_t) + 1);
 
 	case eRMIPTInt8:		// 8bit signed int
-		*(INT8 *)pValue = *(INT8 *)pFrom;
-		return(sizeof(INT8) + 1);
+		*(int8_t *)pValue = *(int8_t *)pFrom;
+		return(sizeof(int8_t) + 1);
 
 	case eRMIPTUint8:       // 8bit  unsigned int
-		*(UINT8 *)pValue = *(UINT8 *)pFrom;
-		return(sizeof(UINT8) + 1);
+		*(uint8_t *)pValue = *(uint8_t *)pFrom;
+		return(sizeof(uint8_t) + 1);
 
 	case eRMIPTInt32:		// 32bit signed int
-		*(INT32 *)pValue = *(INT32 *)pFrom;
-		return(sizeof(INT32) + 1);
+		*(int32_t *)pValue = *(int32_t *)pFrom;
+		return(sizeof(int32_t) + 1);
 
 	case eRMIPTUint32:		// 32bit unsigned int
-		*(UINT32 *)pValue = *(UINT32 *)pFrom;
-		return(sizeof(UINT32) + 1);
+		*(uint32_t *)pValue = *(uint32_t *)pFrom;
+		return(sizeof(uint32_t) + 1);
 
 	case eRMIPTInt64:		// 64bit signed int
-		*(INT64 *)pValue = *(INT64 *)pFrom;
-		return(sizeof(INT64) + 1);
+		*(int64_t *)pValue = *(int64_t *)pFrom;
+		return(sizeof(int64_t) + 1);
 
 	case eRMIPTUint64:		// 64bit unsigned int
-		*(UINT64 *)pValue = *(UINT64 *)pFrom;
-		return(sizeof(UINT64) + 1);
+		*(uint64_t *)pValue = *(uint64_t *)pFrom;
+		return(sizeof(uint64_t) + 1);
 
 	case eRMIPTDouble:		// floating point double
 		*(double *)pValue = *(double *)pFrom;
 		return(sizeof(double) + 1);
 
 	case eRMIPTVarUint8:		// variable length
-		ValLen = *(UINT32 *)pFrom;
+		ValLen = *(uint32_t *)pFrom;
 		if(ValLen > 0)
 			{
-			pFrom += sizeof(UINT32);
+			pFrom += sizeof(uint32_t);
 			*(void **)pValue = pFrom;
-			return(sizeof(UINT32) + ValLen + 1);
+			return(sizeof(uint32_t) + ValLen + 1);
 			}
 		*(void **)pValue = (void *)NULL;
-		return(sizeof(UINT32) + 1);
+		return(sizeof(uint32_t) + 1);
 
 	default:
 		break;
@@ -5165,19 +5165,19 @@ return(0);
 }
 
 
-UINT64		// returned class instance identifier
-CPBErrCorrect::RMI_new(tsThreadPBErrCorrect *pThreadPar, UINT32 Timeout,	// allow at most Timeout seconds for class instantiation
-						UINT32 SessionID)									// requesting class instance on this specific session, 0 if on least loaded session
+uint64_t		// returned class instance identifier
+CPBErrCorrect::RMI_new(tsThreadPBErrCorrect *pThreadPar, uint32_t Timeout,	// allow at most Timeout seconds for class instantiation
+						uint32_t SessionID)									// requesting class instance on this specific session, 0 if on least loaded session
 {
 int Rslt;
-UINT32 JobRslt;
+uint32_t JobRslt;
 tJobIDEx JobID;
-UINT64 ClassInstanceID;
-UINT32 ClassMethodID;
-UINT32	MaxResponseSize = 0;
+uint64_t ClassInstanceID;
+uint32_t ClassMethodID;
+uint32_t	MaxResponseSize = 0;
 time_t Then;
 time_t Now;
-UINT32 SleepTime;
+uint32_t SleepTime;
 
 SleepTime = 50;
 Then = time(NULL);
@@ -5185,7 +5185,7 @@ while((Rslt = pThreadPar->pRequester->AddJobRequest(&JobID,pThreadPar->ServiceTy
 	{
 	Now = time(NULL);
 	if((Now - Then) > Timeout)
-		return((UINT64)0);
+		return((uint64_t)0);
 	CUtility::SleepMillisecs(SleepTime);
 	if(SleepTime < 1000)
 		SleepTime += 50;
@@ -5198,28 +5198,28 @@ while((Rslt = pThreadPar->pRequester->GetJobResponse(JobID,&ClassInstanceID,&Cla
 	{
 	Now = time(NULL);
 	if((Now - Then) > Timeout)
-		return((UINT64)0);
+		return((uint64_t)0);
 	CUtility::SleepMillisecs(SleepTime);
 	if(SleepTime < 1000)
 		SleepTime += 50;
 	}
 if(Rslt < 1)		// JobID not accepted, service provider session terminated??
-	return((UINT64)0);	
+	return((uint64_t)0);	
 return(ClassInstanceID);
 }
 
-volatile UINT32 gDeleteFailed = 0;
+volatile uint32_t gDeleteFailed = 0;
 void
-CPBErrCorrect::RMI_delete(tsThreadPBErrCorrect *pThreadPar, UINT32 Timeout, UINT64 ClassInstanceID) // allow at most Timeout seconds for class deletion
+CPBErrCorrect::RMI_delete(tsThreadPBErrCorrect *pThreadPar, uint32_t Timeout, uint64_t ClassInstanceID) // allow at most Timeout seconds for class deletion
 {
 int Rslt;
-UINT32 JobRslt;
+uint32_t JobRslt;
 tJobIDEx JobID;
-UINT32 ClassMethodID;
-UINT32	MaxResponseSize = 0;
+uint32_t ClassMethodID;
+uint32_t	MaxResponseSize = 0;
 time_t Then;
 time_t Now;
-UINT32 SleepTime;
+uint32_t SleepTime;
 
 SleepTime = 50;
 Then = time(NULL);
@@ -5255,7 +5255,7 @@ return;
 }
 
 bool 
-CPBErrCorrect::RMI_SetScores(tsThreadPBErrCorrect *pThreadPar, UINT32 Timeout,  UINT64 ClassInstanceID,
+CPBErrCorrect::RMI_SetScores(tsThreadPBErrCorrect *pThreadPar, uint32_t Timeout,  uint64_t ClassInstanceID,
 				int MatchScore,									// score for match
 				int MismatchPenalty,							// penalty for mismatch
 				int GapOpenPenalty,								// penalty for opening a gap
@@ -5266,13 +5266,13 @@ CPBErrCorrect::RMI_SetScores(tsThreadPBErrCorrect *pThreadPar, UINT32 Timeout,  
 {
 int Rslt;
 int RespDataOfs;
-UINT32 JobRslt;
+uint32_t JobRslt;
 tJobIDEx JobID;
-UINT32 ClassMethodID;
-UINT32	MaxResponseSize = 0;
+uint32_t ClassMethodID;
+uint32_t	MaxResponseSize = 0;
 time_t Then;
 time_t Now;
-UINT32 SleepTime;
+uint32_t SleepTime;
 
 SleepTime = 50;
 Then = time(NULL);
@@ -5310,7 +5310,7 @@ return((JobRslt == 0 || Rslt < 1) ? false : true);
 }
 
 bool 
-CPBErrCorrect::RMI_SetCPScores(tsThreadPBErrCorrect *pThreadPar, UINT32 Timeout,  UINT64 ClassInstanceID,
+CPBErrCorrect::RMI_SetCPScores(tsThreadPBErrCorrect *pThreadPar, uint32_t Timeout,  uint64_t ClassInstanceID,
 				int MatchScore,		// ClassifyPath() score for match
 				int MismatchPenalty,	// ClassifyPath() penalty for mismatch
 				int GapOpenPenalty,	// ClassifyPath() penalty for opening a gap
@@ -5318,13 +5318,13 @@ CPBErrCorrect::RMI_SetCPScores(tsThreadPBErrCorrect *pThreadPar, UINT32 Timeout,
 {
 int Rslt;
 int RespDataOfs;
-UINT32 JobRslt;
+uint32_t JobRslt;
 tJobIDEx JobID;
-UINT32 ClassMethodID;
-UINT32	MaxResponseSize = 0;
+uint32_t ClassMethodID;
+uint32_t	MaxResponseSize = 0;
 time_t Then;
 time_t Now;
-UINT32 SleepTime;
+uint32_t SleepTime;
 
 SleepTime = 50;
 Then = time(NULL);
@@ -5360,18 +5360,18 @@ return((JobRslt == 0 || Rslt < 1) ? false : true);
 
 
 bool 
-CPBErrCorrect::RMI_SetMaxInitiatePathOfs(tsThreadPBErrCorrect *pThreadPar, UINT32 Timeout,  UINT64 ClassInstanceID,
+CPBErrCorrect::RMI_SetMaxInitiatePathOfs(tsThreadPBErrCorrect *pThreadPar, uint32_t Timeout,  uint64_t ClassInstanceID,
 			int MaxInitiatePathOfs)	// require SW paths to have started within this many bp (0 to disable) on either the probe or target - effectively anchoring the SW 
 {
 int Rslt;
 int RespDataOfs;
-UINT32 JobRslt;
+uint32_t JobRslt;
 tJobIDEx JobID;
-UINT32 ClassMethodID;
-UINT32	MaxResponseSize = 0;
+uint32_t ClassMethodID;
+uint32_t	MaxResponseSize = 0;
 time_t Then;
 time_t Now;
-UINT32 SleepTime;
+uint32_t SleepTime;
 
 SleepTime = 50;
 Then = time(NULL);
@@ -5403,19 +5403,19 @@ return((JobRslt == 0 || Rslt < 1) ? false : true);
 }
 
 bool
-CPBErrCorrect::RMI_PreAllocMaxTargLen( tsThreadPBErrCorrect *pThreadPar, UINT32 Timeout,  UINT64 ClassInstanceID,
-							 UINT32 MaxTargLen,					// preallocate to process targets of this maximal length
-							 UINT32 MaxOverlapLen)			// allocating tracebacks for this maximal expected overlap, 0 if no tracebacks required
+CPBErrCorrect::RMI_PreAllocMaxTargLen( tsThreadPBErrCorrect *pThreadPar, uint32_t Timeout,  uint64_t ClassInstanceID,
+							 uint32_t MaxTargLen,					// preallocate to process targets of this maximal length
+							 uint32_t MaxOverlapLen)			// allocating tracebacks for this maximal expected overlap, 0 if no tracebacks required
 {
 int Rslt;
 int RespDataOfs;
-UINT32 JobRslt;
+uint32_t JobRslt;
 tJobIDEx JobID;
-UINT32 ClassMethodID;
-UINT32	MaxResponseSize = 0;
+uint32_t ClassMethodID;
+uint32_t	MaxResponseSize = 0;
 time_t Then;
 time_t Now;
-UINT32 SleepTime;
+uint32_t SleepTime;
 
 SleepTime = 50;
 Then = time(NULL);
@@ -5448,21 +5448,21 @@ return((JobRslt == 0 || Rslt < 1) ? false : true);
 }
 
 int
-CPBErrCorrect::RMI_StartMultiAlignments(tsThreadPBErrCorrect *pThreadPar, UINT32 Timeout,  UINT64 ClassInstanceID,
+CPBErrCorrect::RMI_StartMultiAlignments(tsThreadPBErrCorrect *pThreadPar, uint32_t Timeout,  uint64_t ClassInstanceID,
 					int SeqLen,						// probe sequence is this length
 					etSeqBase *pProbeSeq,			// probe sequence 
 					int Alignments,					// number of pairwise alignments to allocate for
-					UINT8 Flags)					// bit 0 set true if probe sequence loaded as a high confidence sequence
+					uint8_t Flags)					// bit 0 set true if probe sequence loaded as a high confidence sequence
 {
 int Rslt;
 int RespDataOfs;
-UINT32 JobRslt;
+uint32_t JobRslt;
 tJobIDEx JobID;
-UINT32 ClassMethodID;
-UINT32	MaxResponseSize = 0;
+uint32_t ClassMethodID;
+uint32_t	MaxResponseSize = 0;
 time_t Then;
 time_t Now;
-UINT32 SleepTime;
+uint32_t SleepTime;
 
 SleepTime = 50;
 Then = time(NULL);
@@ -5497,18 +5497,18 @@ return(Rslt < 1 ? -1 : (int)JobRslt);
 }
 
 bool 
-CPBErrCorrect::RMI_SetProbe(tsThreadPBErrCorrect *pThreadPar, UINT32 Timeout,  UINT64 ClassInstanceID, 
-					UINT32 Len,etSeqBase *pSeq)					// set probe sequence to use in subsequent alignments
+CPBErrCorrect::RMI_SetProbe(tsThreadPBErrCorrect *pThreadPar, uint32_t Timeout,  uint64_t ClassInstanceID, 
+					uint32_t Len,etSeqBase *pSeq)					// set probe sequence to use in subsequent alignments
 {
 int Rslt;
 int RespDataOfs;
-UINT32 JobRslt;
+uint32_t JobRslt;
 tJobIDEx JobID;
-UINT32 ClassMethodID;
-UINT32	MaxResponseSize = 0;
+uint32_t ClassMethodID;
+uint32_t	MaxResponseSize = 0;
 time_t Then;
 time_t Now;
-UINT32 SleepTime;
+uint32_t SleepTime;
 
 SleepTime = 50;
 Then = time(NULL);
@@ -5540,18 +5540,18 @@ return((JobRslt == 0 || Rslt < 1) ? false : true);
 }
 
 bool 
-CPBErrCorrect::RMI_SetTarg(tsThreadPBErrCorrect *pThreadPar, UINT32 Timeout,  UINT64 ClassInstanceID,  
-			UINT32 Len,etSeqBase *pSeq)					// set target sequence to use in subsequent alignments
+CPBErrCorrect::RMI_SetTarg(tsThreadPBErrCorrect *pThreadPar, uint32_t Timeout,  uint64_t ClassInstanceID,  
+			uint32_t Len,etSeqBase *pSeq)					// set target sequence to use in subsequent alignments
 {
 int Rslt;
 int RespDataOfs;
-UINT32 JobRslt;
+uint32_t JobRslt;
 tJobIDEx JobID;
-UINT32 ClassMethodID;
-UINT32	MaxResponseSize = 0;
+uint32_t ClassMethodID;
+uint32_t	MaxResponseSize = 0;
 time_t Then;
 time_t Now;
-UINT32 SleepTime;
+uint32_t SleepTime;
 
 SleepTime = 50;
 Then = time(NULL);
@@ -5581,21 +5581,21 @@ return((JobRslt == 0 || Rslt < 1) ? false : true);
 }
 
 int 
-CPBErrCorrect::RMI_SetAlignRange(tsThreadPBErrCorrect *pThreadPar, UINT32 Timeout,  UINT64 ClassInstanceID,  
-				UINT32 m_ProbeStartRelOfs,	// when aligning then start SW from this probe sequence relative offset
-				UINT32 m_TargStartRelOfs, 	// and SW starting from this target sequence relative offset
-				UINT32 m_ProbeRelLen,	// and SW with this probe relative length starting from m_ProbeStartRelOfs - if 0 then until end of probe sequence
-				UINT32 m_TargRelLen)	// and SW with this target relative length starting from m_TargStartRelOfs - if 0 then until end of target sequence
+CPBErrCorrect::RMI_SetAlignRange(tsThreadPBErrCorrect *pThreadPar, uint32_t Timeout,  uint64_t ClassInstanceID,  
+				uint32_t m_ProbeStartRelOfs,	// when aligning then start SW from this probe sequence relative offset
+				uint32_t m_TargStartRelOfs, 	// and SW starting from this target sequence relative offset
+				uint32_t m_ProbeRelLen,	// and SW with this probe relative length starting from m_ProbeStartRelOfs - if 0 then until end of probe sequence
+				uint32_t m_TargRelLen)	// and SW with this target relative length starting from m_TargStartRelOfs - if 0 then until end of target sequence
 {
 int Rslt;
 int RespDataOfs;
-UINT32 JobRslt;
+uint32_t JobRslt;
 tJobIDEx JobID;
-UINT32 ClassMethodID;
-UINT32	MaxResponseSize = 0;
+uint32_t ClassMethodID;
+uint32_t	MaxResponseSize = 0;
 time_t Then;
 time_t Now;
-UINT32 SleepTime;
+uint32_t SleepTime;
 
 SleepTime = 50;
 Then = time(NULL);
@@ -5630,19 +5630,19 @@ return(Rslt < 1 ? -1 : (int)JobRslt);
 
 
 tsSSWCell *									// smith-waterman style local alignment, returns highest accumulated exact matches scoring cell
-CPBErrCorrect::RMI_Align(tsThreadPBErrCorrect *pThreadPar, UINT32 Timeout,  UINT64 ClassInstanceID, 
+CPBErrCorrect::RMI_Align(tsThreadPBErrCorrect *pThreadPar, uint32_t Timeout,  uint64_t ClassInstanceID, 
 				tsSSWCell *pPeakScoreCell,	// optionally also return conventional peak scoring cell
-				UINT32 MaxOverlapLen)		// process tracebacks for this maximal expected overlap, 0 if no tracebacks required
+				uint32_t MaxOverlapLen)		// process tracebacks for this maximal expected overlap, 0 if no tracebacks required
 {
 int Rslt;
 int RespDataOfs;
-UINT32 JobRslt;
+uint32_t JobRslt;
 tJobIDEx JobID;
-UINT32 ClassMethodID;
-UINT32	MaxResponseSize = (sizeof(tsSSWCell) + 20) * 2;
+uint32_t ClassMethodID;
+uint32_t	MaxResponseSize = (sizeof(tsSSWCell) + 20) * 2;
 time_t Then;
 time_t Now;
-UINT32 SleepTime;
+uint32_t SleepTime;
 bool bPeakScoreCell;
 tsSSWCell *pCell;
 
@@ -5697,20 +5697,20 @@ return(&pThreadPar->RMIHighScoreCell);
 
       // methods which combines the functionality of SetTarg, SetAlignRange, Align, ClassifyPath, TracebacksToAlignOps, and AddMultiAlignment into a single method 
 int //  -3: timeout waiting for job to complete, -2: parameter errors, -1: class instance no longer exists, 0: currently no available service instance 1: if job accepted and processed
-CPBErrCorrect::RMI_CombinedTargAlign(tsThreadPBErrCorrect *pThreadPar, UINT32 Timeout,  UINT64 ClassInstanceID,
+CPBErrCorrect::RMI_CombinedTargAlign(tsThreadPBErrCorrect *pThreadPar, uint32_t Timeout,  uint64_t ClassInstanceID,
 						tsCombinedTargAlignPars *pAlignPars, // input alignment parameters
 						tsCombinedTargAlignRet *pAlignRet)		// returned alignment results
 {
 int Rslt;
 int RespDataOfs;
-UINT32 JobRslt;
+uint32_t JobRslt;
 tJobIDEx JobID;
-UINT32 ClassMethodID;
-UINT32	MaxResponseSize = (sizeof(tsCombinedTargAlignRet) + 20) * 2;
+uint32_t ClassMethodID;
+uint32_t	MaxResponseSize = (sizeof(tsCombinedTargAlignRet) + 20) * 2;
 tsCombinedTargAlignRet *pTmpAlignRet;
 time_t Then;
 time_t Now;
-UINT32 SleepTime;
+uint32_t SleepTime;
 
 SleepTime = 50;
 memset(pAlignRet,0,sizeof(tsCombinedTargAlignRet));
@@ -5752,25 +5752,25 @@ return(1);
 
 
 int // -3: timeout waiting for job to complete, -2: parameter errors, -1: class instance no longer exists, 0: currently no available service instance 1: if job accepted and processed
-CPBErrCorrect::RMI_CombinedTargAlign(tsThreadPBErrCorrect *pThreadPar, UINT32 Timeout,  UINT64 ClassInstanceID,
-						UINT8 PMode,              // processing mode: 0 error correct , 1 generate consensus from previously generated multiple alignments, 2  generate overlap detail from previously generated consensus sequences
-						UINT32 NumTargSeqs,			// current probe putatively overlaying this many targets
-						UINT32 ProbeSeqLen,         // use this probe sequence length 
-						UINT8 TargFlags,		    // bit 7 set if target loaded as a high confidence sequence, bits 0..3 is weighting factor to apply when generating consensus bases
-						UINT32 TargSeqLen,          // target sequence length
+CPBErrCorrect::RMI_CombinedTargAlign(tsThreadPBErrCorrect *pThreadPar, uint32_t Timeout,  uint64_t ClassInstanceID,
+						uint8_t PMode,              // processing mode: 0 error correct , 1 generate consensus from previously generated multiple alignments, 2  generate overlap detail from previously generated consensus sequences
+						uint32_t NumTargSeqs,			// current probe putatively overlaying this many targets
+						uint32_t ProbeSeqLen,         // use this probe sequence length 
+						uint8_t TargFlags,		    // bit 7 set if target loaded as a high confidence sequence, bits 0..3 is weighting factor to apply when generating consensus bases
+						uint32_t TargSeqLen,          // target sequence length
 						etSeqBase *pTargSeq,        // target sequence
-						UINT32 ProbeStartRelOfs,	// when aligning then start SW from this probe sequence relative offset
-						UINT32 TargStartRelOfs, 	// and SW starting from this target sequence relative offset
-						UINT32 ProbeRelLen,		    // and SW with this probe relative length starting from m_ProbeStartRelOfs - if 0 then until end of probe sequence
-						UINT32 TargRelLen,		    // and SW with this target relative length starting from m_TargStartRelOfs - if 0 then until end of target sequence
-						UINT32 OverlapFloat,		// allowing up to this much float on overlaps to account for the PacBio error profile
-						UINT32 MaxArtefactDev,		// classify overlaps as artefactual if sliding window of 1Kbp over any overlap deviates by more than this percentage from the overlap mean
-						UINT32 MinOverlapLen,       // minimum accepted overlap length
-						UINT32 MaxOverlapLen,      // max expected overlap length
-						UINT8 *pRetClass,			// returned overlap classification
+						uint32_t ProbeStartRelOfs,	// when aligning then start SW from this probe sequence relative offset
+						uint32_t TargStartRelOfs, 	// and SW starting from this target sequence relative offset
+						uint32_t ProbeRelLen,		    // and SW with this probe relative length starting from m_ProbeStartRelOfs - if 0 then until end of probe sequence
+						uint32_t TargRelLen,		    // and SW with this target relative length starting from m_TargStartRelOfs - if 0 then until end of target sequence
+						uint32_t OverlapFloat,		// allowing up to this much float on overlaps to account for the PacBio error profile
+						uint32_t MaxArtefactDev,		// classify overlaps as artefactual if sliding window of 1Kbp over any overlap deviates by more than this percentage from the overlap mean
+						uint32_t MinOverlapLen,       // minimum accepted overlap length
+						uint32_t MaxOverlapLen,      // max expected overlap length
+						uint8_t *pRetClass,			// returned overlap classification
 						tsSSWCell *pRetPeakMatchesCell, // returned peak matches cell
-						UINT32 *pRetProbeAlignLength, // probe alignment length
-						UINT32 *pRetTargAlignLength, // target alignment length
+						uint32_t *pRetProbeAlignLength, // probe alignment length
+						uint32_t *pRetTargAlignLength, // target alignment length
 						bool *pRetbProvOverlapping,  // probe overlapping target
 						bool *pRetbProvArtefact,	// set true if overlap classified as artefact
 						bool *pRetbProvContained,	// probe was contained
@@ -5819,22 +5819,22 @@ return(Rslt);
 }
 
 int												// attempting to determine if path is artfact resulting from aligning to a paralogous fragment
-CPBErrCorrect::RMI_ClassifyPath(tsThreadPBErrCorrect *pThreadPar, UINT32 Timeout,  UINT64 ClassInstanceID,
+CPBErrCorrect::RMI_ClassifyPath(tsThreadPBErrCorrect *pThreadPar, uint32_t Timeout,  uint64_t ClassInstanceID,
 			int MaxArtefactDev,			// classify path as artefactual if sliding window of 500bp over any overlap deviates by more than this percentage from the overlap mean
-			UINT32 ProbeStartOfs,			// alignment starts at this probe sequence offset (1..n)
-			UINT32 ProbeEndOfs,				// alignment ends at this probe sequence offset
-			UINT32 TargStartOfs,			// alignment starts at this target sequence offset (1..n)
-			UINT32 TargEndOfs)				// alignment ends at this target sequence offset
+			uint32_t ProbeStartOfs,			// alignment starts at this probe sequence offset (1..n)
+			uint32_t ProbeEndOfs,				// alignment ends at this probe sequence offset
+			uint32_t TargStartOfs,			// alignment starts at this target sequence offset (1..n)
+			uint32_t TargEndOfs)				// alignment ends at this target sequence offset
 {
 int Rslt;
 int RespDataOfs;
-UINT32 JobRslt;
+uint32_t JobRslt;
 tJobIDEx JobID;
-UINT32 ClassMethodID;
-UINT32	MaxResponseSize = 0;
+uint32_t ClassMethodID;
+uint32_t	MaxResponseSize = 0;
 time_t Then;
 time_t Now;
-UINT32 SleepTime;
+uint32_t SleepTime;
 
 SleepTime = 50;
 Then = time(NULL);
@@ -5869,22 +5869,22 @@ return(Rslt < 1 ? -1 : (int)JobRslt);
 }
 
 int												// number of alignment ops generated
-CPBErrCorrect::RMI_TracebacksToAlignOps(tsThreadPBErrCorrect *pThreadPar, UINT32 Timeout,  UINT64 ClassInstanceID,
-			UINT32 ProbeStartOfs,			// alignment starts at this probe sequence offset (1..n)
-			UINT32 ProbeEndOfs,				// alignment ends at this probe sequence offset
-			UINT32 TargStartOfs,			// alignment starts at this target sequence offset (1..n)
-			UINT32 TargEndOfs,				// alignment ends at this target sequence offset
+CPBErrCorrect::RMI_TracebacksToAlignOps(tsThreadPBErrCorrect *pThreadPar, uint32_t Timeout,  uint64_t ClassInstanceID,
+			uint32_t ProbeStartOfs,			// alignment starts at this probe sequence offset (1..n)
+			uint32_t ProbeEndOfs,				// alignment ends at this probe sequence offset
+			uint32_t TargStartOfs,			// alignment starts at this target sequence offset (1..n)
+			uint32_t TargEndOfs,				// alignment ends at this target sequence offset
 			tMAOp **ppAlignOps)				// optionally return ptr to alignment operations
 {
 int Rslt;
 int RespDataOfs;
-UINT32 JobRslt;
+uint32_t JobRslt;
 tJobIDEx JobID;
-UINT32 ClassMethodID;
-UINT32	MaxResponseSize;
+uint32_t ClassMethodID;
+uint32_t	MaxResponseSize;
 time_t Then;
 time_t Now;
-UINT32 SleepTime;
+uint32_t SleepTime;
 bool bAlignOps;
 
 SleepTime = 50;
@@ -5937,24 +5937,24 @@ return((int)JobRslt);
 }
 
 int
-CPBErrCorrect::RMI_AddMultiAlignment(tsThreadPBErrCorrect *pThreadPar, UINT32 Timeout,  UINT64 ClassInstanceID,
-				UINT32 ProbeStartOfs,			// alignment starts at this probe sequence offset (1..n)
-				UINT32 ProbeEndOfs,				// alignment ends at this probe sequence offset inclusive
-				UINT32 TargStartOfs,			// alignment starts at this target sequence offset (1..n)
-				UINT32 TargEndOfs,				// alignment ends at this target sequence offset inclusive
-				UINT32 TargSeqLen,				// target sequence length
+CPBErrCorrect::RMI_AddMultiAlignment(tsThreadPBErrCorrect *pThreadPar, uint32_t Timeout,  uint64_t ClassInstanceID,
+				uint32_t ProbeStartOfs,			// alignment starts at this probe sequence offset (1..n)
+				uint32_t ProbeEndOfs,				// alignment ends at this probe sequence offset inclusive
+				uint32_t TargStartOfs,			// alignment starts at this target sequence offset (1..n)
+				uint32_t TargEndOfs,				// alignment ends at this target sequence offset inclusive
+				uint32_t TargSeqLen,				// target sequence length
 				etSeqBase *pTargSeq,			// alignment target sequence
-				UINT8 Flags)                    // bit 7 set if target loaded as a high confidence sequence, bits 0..3 is weighting factor to apply when generating consensus bases
+				uint8_t Flags)                    // bit 7 set if target loaded as a high confidence sequence, bits 0..3 is weighting factor to apply when generating consensus bases
 {
 int Rslt;
 int RespDataOfs;
-UINT32 JobRslt;
+uint32_t JobRslt;
 tJobIDEx JobID;
-UINT32 ClassMethodID;
-UINT32	MaxResponseSize = 0;
+uint32_t ClassMethodID;
+uint32_t	MaxResponseSize = 0;
 time_t Then;
 time_t Now;
-UINT32 SleepTime;
+uint32_t SleepTime;
 
 SleepTime = 50;
 Then = time(NULL);
@@ -5991,16 +5991,16 @@ return(Rslt < 1 ? -1 : (int)JobRslt);
 }
 
 int
-CPBErrCorrect::RMI_GenMultialignConcensus(tsThreadPBErrCorrect *pThreadPar, UINT32 Timeout,  UINT64 ClassInstanceID)
+CPBErrCorrect::RMI_GenMultialignConcensus(tsThreadPBErrCorrect *pThreadPar, uint32_t Timeout,  uint64_t ClassInstanceID)
 {
 int Rslt;
-UINT32 JobRslt;
+uint32_t JobRslt;
 tJobIDEx JobID;
-UINT32 ClassMethodID;
-UINT32	MaxResponseSize = 0;
+uint32_t ClassMethodID;
+uint32_t	MaxResponseSize = 0;
 time_t Then;
 time_t Now;
-UINT32 SleepTime;
+uint32_t SleepTime;
 
 SleepTime = 50;
 Then = time(NULL);
@@ -6030,23 +6030,23 @@ return(Rslt < 1 ? -1 : (int)JobRslt);
 }
 
 int      // total number of returned chars in pszBuffer for the textual representation of the error corrected consensus sequence (could be multiple consensus sequences)
-CPBErrCorrect::RMI_MAlignCols2fasta(tsThreadPBErrCorrect *pThreadPar, UINT32 Timeout,  UINT64 ClassInstanceID,
-			UINT32 ProbeID,	// identifies sequence which was used as the probe when determining the multialignments
+CPBErrCorrect::RMI_MAlignCols2fasta(tsThreadPBErrCorrect *pThreadPar, uint32_t Timeout,  uint64_t ClassInstanceID,
+			uint32_t ProbeID,	// identifies sequence which was used as the probe when determining the multialignments
 			int MinConf,				// sequence bases averaged over 100bp must be of at least this confidence (0..9)
 			int MinLen,					// and sequence lengths must be of at least this length 
-			UINT32 BuffSize,			// buffer allocated to hold at most this many chars
+			uint32_t BuffSize,			// buffer allocated to hold at most this many chars
 			char *pszBuffer)			// output error corrected sequences to this buffer
 {
 int Rslt;
 int RespDataOfs;
-UINT32 JobRslt;
+uint32_t JobRslt;
 tJobIDEx JobID;
-UINT32 ClassMethodID;
-UINT32	MaxResponseSize;
+uint32_t ClassMethodID;
+uint32_t	MaxResponseSize;
 char *pszAlignRow;
 time_t Then;
 time_t Now;
-UINT32 SleepTime;
+uint32_t SleepTime;
 
 SleepTime = 50;
 if(BuffSize > pThreadPar->RMIBufferSize)
@@ -6084,7 +6084,7 @@ if(Rslt < 1)
 	return(-1);
 if(JobRslt > 0)
 	{
-	RespDataOfs = UnmarshalResp(JobRslt,pThreadPar->pRMIRespData,(UINT8 *)&pszAlignRow);
+	RespDataOfs = UnmarshalResp(JobRslt,pThreadPar->pRMIRespData,(uint8_t *)&pszAlignRow);
 	strncpy(pszBuffer,pszAlignRow,JobRslt);
 	pszBuffer[JobRslt] = '\0';
 	}
@@ -6092,21 +6092,21 @@ return(JobRslt);
 }
 
 int      // total number of returned chars in pszBuffer for the textual representation of the multialignment or -1 if job not accepted 
-CPBErrCorrect::RMI_MAlignCols2MFA(tsThreadPBErrCorrect *pThreadPar, UINT32 Timeout,  UINT64 ClassInstanceID,
-					UINT32 ProbeID,		// identifies sequence which was used as the probe when determining the multialignments
-				UINT32 BuffSize,	// buffer allocated to hold at most this many chars
+CPBErrCorrect::RMI_MAlignCols2MFA(tsThreadPBErrCorrect *pThreadPar, uint32_t Timeout,  uint64_t ClassInstanceID,
+					uint32_t ProbeID,		// identifies sequence which was used as the probe when determining the multialignments
+				uint32_t BuffSize,	// buffer allocated to hold at most this many chars
 				char *pszBuffer)	// output multialignment textual representation to this buffer
 {
 int Rslt;
 int RespDataOfs;
-UINT32 JobRslt;
+uint32_t JobRslt;
 tJobIDEx JobID;
-UINT32 ClassMethodID;
-UINT32	MaxResponseSize;
+uint32_t ClassMethodID;
+uint32_t	MaxResponseSize;
 char *pszAlignRow;
 time_t Then;
 time_t Now;
-UINT32 SleepTime;
+uint32_t SleepTime;
 
 SleepTime = 50;
 if(BuffSize > pThreadPar->RMIBufferSize)
@@ -6144,7 +6144,7 @@ if(Rslt < 1)
 	return(-1);
 if(JobRslt > 0)
 	{
-	RespDataOfs = UnmarshalResp(JobRslt,pThreadPar->pRMIRespData,(UINT8 *)&pszAlignRow);
+	RespDataOfs = UnmarshalResp(JobRslt,pThreadPar->pRMIRespData,(uint8_t *)&pszAlignRow);
 	strncpy(pszBuffer,pszAlignRow,JobRslt);
 	pszBuffer[JobRslt] = '\0';
 	}
@@ -6237,8 +6237,8 @@ CPBErrCorrect::SortCoreHitsDescending(const void *arg1, const void *arg2)
 sPBECoreHitCnts *pEl1 = (sPBECoreHitCnts *)arg1;
 sPBECoreHitCnts *pEl2 = (sPBECoreHitCnts *)arg2;
 
-UINT32 El1NumHits;
-UINT32 El2NumHits;
+uint32_t El1NumHits;
+uint32_t El2NumHits;
 El1NumHits = max(pEl1->NumSHits,pEl1->NumAHits);
 El2NumHits = max(pEl2->NumSHits,pEl2->NumAHits);
 if(El1NumHits > El2NumHits)

@@ -133,17 +133,17 @@ return 1;
  *           1 on success. 
  */
 int
-CShuffle::SeqDPShuffle(int SeqLen,unsigned char *pSeq1, unsigned char *pSeq2)
+CShuffle::SeqDPShuffle(int SeqLen,uint8_t *pSeq1, uint8_t *pSeq2)
 {
 int    len;
 int    pos;		/* a position in pSeq1 or pSeq2 */
 int    x,y;		/* indices of two bases */
-unsigned char *EdgeList[4];     /* edge lists: EdgeList[0] is the edge list from vertex A */
+uint8_t *EdgeList[4];     /* edge lists: EdgeList[0] is the edge list from vertex A */
 int   EdgeListLen[4];    /* lengths of edge lists */
 int   iE[4];		/* positions in edge lists */
 int    n;		/* tmp: remaining length of an edge list to be shuffled */
-unsigned char   sf;		/* last base in pSeq2 */
-unsigned char   Z[4];	/* connectivity in last edge graph Z */ 
+uint8_t   sf;		/* last base in pSeq2 */
+uint8_t   Z[4];	/* connectivity in last edge graph Z */ 
 int    keep_connecting; /* flag used in Z connectivity algorithm */
 int    is_eulerian;		/* flag used for when we've got a good Z */
 
@@ -158,7 +158,7 @@ len = SeqLen;
    */
    for (x = 0; x < 4; x++)
     {
-      EdgeList[x]  = new unsigned char [len-1];
+      EdgeList[x]  = new uint8_t [len-1];
       EdgeListLen[x] = 0; 
     }
 

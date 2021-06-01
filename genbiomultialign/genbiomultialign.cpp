@@ -104,22 +104,22 @@ if(argerrors >= 0)
 
 /* special case: '--help' takes precedence over error reporting */
 if (help->count > 0)
-        {
+		{
 		printf("\n%s ", gszProcName);
-        arg_print_syntax(stdout,argtable,"\n");
-        arg_print_glossary(stdout,argtable,"  %-25s %s\n");
+		arg_print_syntax(stdout,argtable,"\n");
+		arg_print_glossary(stdout,argtable,"  %-25s %s\n");
 		printf("\nNote: Parameters can be entered into a parameter file, one parameter per line.");
 		printf("\n      To invoke this parameter file then precede its name with '@'");
 		printf("\n      e.g. %s @myparams.txt\n\n",gszProcName);
 		exit(1);
-        }
+		}
 
-    /* special case: '--version' takes precedence error reporting */
+	/* special case: '--version' takes precedence error reporting */
 if (version->count > 0)
-        {
+		{
 		printf("\n%s Version %s",gszProcName, kit4bversion);
 		exit(1);
-        }
+		}
 
 
 if (!argerrors)
@@ -416,18 +416,18 @@ return(Rslt);
 int
 ProcessMAFline(int LineLen, tsProcParams *pProcParams)
 {
-static long Score;						// alignment line score or pass value
-static int RefChromID;					// reference chromosome
+static int32_t Score;						// alignment line score or pass value
+static int32_t RefChromID;					// reference chromosome
 static bool bRefChromNxt;				// true if next chromosome is the first in block - assume this is the reference
 char szSpecies[cMaxDatasetSpeciesChrom];
 char szChrom[cMaxDatasetSpeciesChrom];
-unsigned long iStart;
-unsigned long iLen;
-unsigned long iAlignLen;
-long ChromLen;
+uint32_t Start;
+uint32_t Len;
+uint32_t AlignLen;
+int32_t ChromLen;
 char cStrand;
-int Psn;
-int Cnt;
+int32_t Psn;
+int32_t Cnt;
 int Rslt = eBSFSuccess;
 char *pszLine = pProcParams->pszLineBuffer;
 switch(*pszLine) {
@@ -450,7 +450,7 @@ switch(*pszLine) {
 		pszLine = StripWS(pszLine+1);
 		if(*pszLine != '\0')
 			{
-			if(!sscanf(pszLine,"score=%ld",&Score))	// note: only interested in integral part of score (scores are floating points)
+			if(!sscanf(pszLine,"score=%d",&Score))	// note: only interested in integral part of score (scores are floating points)
 				Score = 0;
 			}
 		else
@@ -468,8 +468,8 @@ switch(*pszLine) {
 	case 's':		// species sequence
 		pszLine = StripWS(pszLine+1);
 
-		Cnt=sscanf(pszLine,"%s %ld %ld %c %ld %n",
-						szSpecies,&iStart,&iLen,&cStrand,&ChromLen,&Psn);
+		Cnt=sscanf(pszLine,"%s %u %u %c %u %n",
+						szSpecies,&Start,&Len,&cStrand,&ChromLen,&Psn);
 		if(Cnt != 5)
 			{
 			pszLine[25]='\0';
@@ -495,10 +495,10 @@ switch(*pszLine) {
 			}
 		szSpecies[cMaxDatasetSpeciesChrom-1] = '\0';
 		pszLine = StripWS(pszLine+Psn);
-		iAlignLen = (unsigned long)strlen(pszLine);
-		if((Rslt = pProcParams->pAlignFile->AddAlignSeq(szSpecies,szChrom,ChromLen,iStart,iAlignLen,cStrand,pszLine))!= eBSFSuccess)
+		AlignLen = (uint32_t)strlen(pszLine);
+		if((Rslt = pProcParams->pAlignFile->AddAlignSeq(szSpecies,szChrom,(int)ChromLen,(int)Start,(int)AlignLen,cStrand,pszLine))!= eBSFSuccess)
 			{
-			gDiagnostics.DiagOut(eDLWarn,gszProcName,"ProcessMAFline: Unable to add sequence for %s.%s ofs: %d len: %d\n",szSpecies,szChrom,iStart,iAlignLen);
+			gDiagnostics.DiagOut(eDLWarn,gszProcName,"ProcessMAFline: Unable to add sequence for %s.%s ofs: %u len: %u\n",szSpecies,szChrom,Start,AlignLen);
 			while(pProcParams->pAlignFile->NumErrMsgs())
 				gDiagnostics.DiagOut(eDLWarn,gszProcName,"ProcessMAFline: Error-> %s",pProcParams->pAlignFile->GetErrMsg());
 			}
@@ -602,17 +602,17 @@ int RefChromLen;
 int RelChromLen;
 
 static bool b1stAlign = true;
-static long iAlignNum;
-static long iStart1;
-static long iEnd1;
-static long iStart2;
-static long iEnd2;
-static long iLen1;
-static long iLen2;
+static int32_t AlignNum;
+static int32_t Start1;
+static int32_t End1;
+static int32_t Start2;
+static int32_t End2;
+static int32_t Len1;
+static int32_t Len2;
 static char cStrand;
 static char szChrom1[cMaxDatasetSpeciesChrom];
 static char szChrom2[cMaxDatasetSpeciesChrom];
-static long Score;
+static int32_t Score;
 char *pszLine = pProcParams->pszLineBuffer;
 static int BlockID = 0;
 
@@ -621,10 +621,10 @@ if(isdigit(*pszLine))
 	{
 			// close any currently opened block
 	b1stAlign = true;
-	sscanf(pszLine,"%*d %s %ld %ld %s %ld %ld %c %ld", // note: only interested in integral part of score (scores are floating points)
-					szChrom1,&iStart1,&iEnd1,szChrom2,&iStart2,&iEnd2,&cStrand,&Score);
-	iLen1 = iEnd1 - iStart1 + 1;
-	iLen2 = iEnd2 - iStart2 + 1;
+	sscanf(pszLine,"%*d %s %d %d %s %d %d %c %d", // note: only interested in integral part of score (scores are floating points)
+					szChrom1,&Start1,&End1,szChrom2,&Start2,&End2,&cStrand,&Score);
+	Len1 = End1 - Start1 + 1;
+	Len2 = End2 - Start2 + 1;
 
 //----- hack to get around the factor that there could be zillions of scafolds in some assemblies which will exceed the limit on number of chromosomes (currently 20000)
 #ifdef _WIN32
@@ -671,15 +671,15 @@ if(IsBase(*pszLine))
 			ReverseComplement(SeqLenInclInDels,pProcParams->pszAXTBuffer);
 			}
 
-		Rslt = pProcParams->pAlignFile->AddAlignSeq(pProcParams->pszRelSpecies,szChrom2,RelChromLen,iStart2-1,SeqLenInclInDels,'+',pszLine);
-		Rslt = pProcParams->pAlignFile->AddAlignSeq(pProcParams->pszRefSpecies,szChrom1,RefChromLen,iStart1-1,SeqLenInclInDels,cStrand,pProcParams->pszAXTBuffer); // note that AXT have 1..n, we use 0..n locus co-ordinates
+		Rslt = pProcParams->pAlignFile->AddAlignSeq(pProcParams->pszRelSpecies,szChrom2,RelChromLen,Start2-1,SeqLenInclInDels,'+',pszLine);
+		Rslt = pProcParams->pAlignFile->AddAlignSeq(pProcParams->pszRefSpecies,szChrom1,RefChromLen,Start1-1,SeqLenInclInDels,cStrand,pProcParams->pszAXTBuffer); // note that AXT have 1..n, we use 0..n locus co-ordinates
 
 	}
 	else	// not exchanging....
 		{
 
-		Rslt = pProcParams->pAlignFile->AddAlignSeq(pProcParams->pszRefSpecies,szChrom1,RefChromLen,iStart1-1,SeqLenInclInDels,'+',pProcParams->pszAXTBuffer); // note that AXT have 1..n, we use 0..n locus co-ordinates
-		Rslt = pProcParams->pAlignFile->AddAlignSeq(pProcParams->pszRelSpecies,szChrom2,RelChromLen,iStart2-1,SeqLenInclInDels,cStrand,pszLine);
+		Rslt = pProcParams->pAlignFile->AddAlignSeq(pProcParams->pszRefSpecies,szChrom1,RefChromLen,Start1-1,SeqLenInclInDels,'+',pProcParams->pszAXTBuffer); // note that AXT have 1..n, we use 0..n locus co-ordinates
+		Rslt = pProcParams->pAlignFile->AddAlignSeq(pProcParams->pszRelSpecies,szChrom2,RelChromLen,Start2-1,SeqLenInclInDels,cStrand,pszLine);
 		
 	}
 
@@ -769,14 +769,14 @@ if(Rslt==eBSFSuccess)
 		for (int n = 0; Rslt >= eBSFSuccess &&  n < glob.FileCount(); ++n)
 			gDiagnostics.DiagOut(eDLInfo,gszProcName,"Will process in this order: %d '%s", n+1,glob.File(n));
 
-	    for (int n = 0; Rslt >= eBSFSuccess &&  n < glob.FileCount(); ++n)
+		for (int n = 0; Rslt >= eBSFSuccess &&  n < glob.FileCount(); ++n)
 			Rslt = ProcessThisFile(glob.File(n),&ProcParams);
 		}
 	else
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to glob '%s",pszSrcDirPath);
 		Rslt = eBSFerrOpnFile;	// treat as though unable to open file
-	    }
+		}
 	ProcParams.pAlignFile->Close();
 	}
 delete ProcParams.pAlignFile;

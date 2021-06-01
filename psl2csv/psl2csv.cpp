@@ -60,7 +60,7 @@ typedef struct TAG_sProcParams
 	{
 	int hPSLinFile;				// opened file handle for psl files
 	int hOutFile;				// opened file handle for csv file being written
-	unsigned char *pInBuffer;	// mem allocd to buffer chars being read from psl
+	uint8_t *pInBuffer;	// mem allocd to buffer chars being read from psl
 	int NumInBuffer;			// num of chars currently in pInBuffer
 	int InBuffIdx;				// index of next char to read from pInBuffer[]
 	int PushedBack;				// last pushed back char (only 1 level of pushback supported!)
@@ -520,7 +520,7 @@ ProcParams.NumInBuffer = 0;
 ProcParams.PushedBack = 0;
 strcpy(ProcParams.szOutFile,pszOutFile);
 
-if((ProcParams.pInBuffer = new unsigned char [cMaxP2CInBuffSize])==NULL)
+if((ProcParams.pInBuffer = new uint8_t [cMaxP2CInBuffSize])==NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Unable to allocate memory (%d bytes) for input buffering", 
 		cMaxP2CInBuffSize);

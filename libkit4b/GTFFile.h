@@ -40,8 +40,8 @@ typedef struct TAG_sGTFFields {
 	char szSeqName[cMaxDatasetSpeciesChrom];		// sequence name
 	char szSeqSource[cMaxDatasetSpeciesChrom];		// sequence source
 	char szFeature[cMaxDatasetSpeciesChrom];		// feature type
-	UINT32 Start;									// feature start locus (1..End)
-	UINT32 End;										// feature end locus (inclusive and >= start)
+	uint32_t Start;									// feature start locus (1..End)
+	uint32_t End;										// feature end locus (inclusive and >= start)
 	int ScoreOfs;									// offset into szRawLine at score starts
 	bool bDfltScore;								// true if no score specified and default (0.0) is used
 	float Score;									// if none then 0.0

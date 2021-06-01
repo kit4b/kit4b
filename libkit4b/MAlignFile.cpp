@@ -435,19 +435,19 @@ return(eBSFSuccess);
 // ChunkedWrite
 // Seeks to specified 64bit file offset and writes to disk as chunks of no more than INT_MAX/16
 teBSFrsltCodes
-CMAlignFile::ChunkedWrite(INT64 WrtOfs,UINT8 *pData,INT64 WrtLen)
+CMAlignFile::ChunkedWrite(int64_t WrtOfs,uint8_t *pData,int64_t WrtLen)
 {
 int BlockLen;
 if(_lseeki64(m_hFile,WrtOfs,SEEK_SET) != WrtOfs)
 	{
-	AddErrMsg("CMAlignFile::ChunkedWrite","Unable to seek to %ld on file %s - error %s",WrtOfs,m_szFile,strerror(errno));
+	AddErrMsg("CMAlignFile::ChunkedWrite","Unable to seek to %lld on file %s - error %s",WrtOfs,m_szFile,strerror(errno));
 	Reset(false);
 	return(eBSFerrFileAccess);
 	}
 
 while(WrtLen)
 	{
-	BlockLen = WrtLen > (INT64)(INT_MAX/16) ? (INT_MAX/16) : (int)WrtLen;
+	BlockLen = WrtLen > (int64_t)(INT_MAX/16) ? (INT_MAX/16) : (int)WrtLen;
 	WrtLen -= BlockLen;
 	if(write(m_hFile,pData,BlockLen)!=BlockLen)
 		{
@@ -463,19 +463,19 @@ return(eBSFSuccess);
 // ChunkedRead
 // Seeks to specified 64bit file offset and reads from disk as chunks of no more than INT_MAX/32
 teBSFrsltCodes
-CMAlignFile::ChunkedRead(INT64 RdOfs,UINT8 *pData,INT64 RdLen)
+CMAlignFile::ChunkedRead(int64_t RdOfs,uint8_t *pData,int64_t RdLen)
 {
-UINT32 BlockLen;
-UINT32 ActualRdLen;
+uint32_t BlockLen;
+uint32_t ActualRdLen;
 if(_lseeki64(m_hFile,RdOfs,SEEK_SET) != RdOfs)
 	{
-	AddErrMsg("CSfxArray::ChunkedRead","Unable to seek to %ld on file %s - error %s",RdOfs,m_szFile,strerror(errno));
+	AddErrMsg("CSfxArray::ChunkedRead","Unable to seek to %lld on file %s - error %s",RdOfs,m_szFile,strerror(errno));
 	return(eBSFerrFileAccess);
 	}
 
 while(RdLen)
 	{
-	BlockLen = RdLen > (INT64)(INT_MAX/2) ? (INT_MAX/2) : (UINT32)RdLen;
+	BlockLen = RdLen > (int64_t)(INT_MAX/2) ? (INT_MAX/2) : (uint32_t)RdLen;
 	RdLen -= BlockLen;
 	if((ActualRdLen = read(m_hFile,pData,BlockLen))!=BlockLen)
 		{
@@ -497,9 +497,9 @@ CMAlignFile::Open(char *pszMAlignFile,	// specifies file to open or create
 			   char *pszRefSpeciesName)	// reference species 
 {
 int Rslt;
-INT64 AllocLen;
+int64_t AllocLen;
 int ReadLen;
-INT64 FileOfs;
+int64_t FileOfs;
 
 Close(false);						// reset context in case file still opened
 
@@ -528,7 +528,7 @@ switch(AccessMode) {
 		break;
 	case eMAPOCreate:				// create/truncate
 		if((m_hFile = open64(pszMAlignFile,O_RDWR | O_CREAT,S_IREAD | S_IWRITE))!=-1)
-	        if(ftruncate(m_hFile,0)!=0)
+			if(ftruncate(m_hFile,0)!=0)
 				{
 				AddErrMsg("CMAlignFile::Open","Unable to truncate %s - %s",pszMAlignFile,strerror(errno));
 				Rslt = eBSFerrCreateFile;
@@ -569,13 +569,13 @@ if(AccessMode == eMAPOCreate)
 #ifdef _WIN32
 	m_pDirEls = (tsBlockDirEl *) malloc((size_t)m_AllocdDirElsMem);	// initial and will be realloc'd as may be required for additional blocks
 	if(m_pDirEls == NULL)
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %lld bytes through malloc()  failed - %s",(INT64)m_AllocdDirElsMem,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %lld bytes through malloc()  failed - %s",(int64_t)m_AllocdDirElsMem,strerror(errno));
 #else
 // gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
 	m_pDirEls = (tsBlockDirEl *)mmap(NULL,(size_t)m_AllocdDirElsMem, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pDirEls == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %lld bytes through mmap()  failed - %s",(INT64)m_AllocdDirElsMem,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %lld bytes through mmap()  failed - %s",(int64_t)m_AllocdDirElsMem,strerror(errno));
 		m_pDirEls = NULL;
 		}
 #endif
@@ -590,7 +590,7 @@ if(AccessMode == eMAPOCreate)
 
 	// allocate memory to hold maximal number of chrom names
 	AllocLen = m_FileHdr.MaxChroms * sizeof(tsChromName);	
-	if((m_pChromNames = (tsChromName *)new unsigned char [(int)AllocLen])==NULL)
+	if((m_pChromNames = (tsChromName *)new uint8_t [(int)AllocLen])==NULL)
 		{
 		Close();
 		return(eBSFerrMem);
@@ -633,7 +633,7 @@ else // else opening existing file
 	m_pDirEls = (tsBlockDirEl *)mmap(NULL,(size_t)m_AllocdDirElsMem, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pDirEls == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %lld bytes through mmap()  failed - %s",(INT64)m_AllocdDirElsMem,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %lld bytes through mmap()  failed - %s",(int64_t)m_AllocdDirElsMem,strerror(errno));
 		m_pDirEls = NULL;
 		}
 #endif
@@ -645,13 +645,13 @@ else // else opening existing file
 		}
 
 	AllocLen -= sizeof(tsBlockDirEl);
-	if((Rslt=ChunkedRead(m_FileHdr.DirElOfs,(UINT8 *)m_pDirEls,AllocLen))!=eBSFSuccess)
+	if((Rslt=ChunkedRead(m_FileHdr.DirElOfs,(uint8_t *)m_pDirEls,AllocLen))!=eBSFSuccess)
 		{
 		Close();
 		return(Rslt);
 		}
 
-    m_pDirEls[m_FileHdr.NumAlignBlocks].BlockID = 0;			// initial guard
+	m_pDirEls[m_FileHdr.NumAlignBlocks].BlockID = 0;			// initial guard
 	m_pDirEls[m_FileHdr.NumAlignBlocks].ChromID = eBSFerrChrom;
 	if(m_bIsBigEndian)
 		{
@@ -670,7 +670,7 @@ else // else opening existing file
 
 			// allocate memory to hold chrom names
 	AllocLen = m_FileHdr.NumChroms * sizeof(tsChromName);	
-	if((m_pChromNames = (tsChromName *)new unsigned char [(int)AllocLen])==NULL)
+	if((m_pChromNames = (tsChromName *)new uint8_t [(int)AllocLen])==NULL)
 		{
 		Close();
 		return(eBSFerrMem);
@@ -896,7 +896,7 @@ if(MaxLen > 10)
 	strncpy((char *)&pSrcFile->szHeaderMetaData[pSrcFile->MetaDataLen],pszHeaderLine,MaxLen);
 	pSrcFile->szHeaderMetaData[cMaxMetaDataLen-1] = '\0';
 	}
-pSrcFile->MetaDataLen = (INT16)strlen((char *)pSrcFile->szHeaderMetaData);
+pSrcFile->MetaDataLen = (int16_t)strlen((char *)pSrcFile->szHeaderMetaData);
 m_bHdrDirty = true;
 return(eBSFSuccess);
 }
@@ -923,7 +923,7 @@ if(MaxLen > 10)
 	strncpy((char *)&pSrcFile->szAlignParams[pSrcFile->AlignParamsLen],pszParamsLine,MaxLen);
 	pSrcFile->szAlignParams[cMaxParamLen-1] = '\0';
 	}
-pSrcFile->AlignParamsLen = (INT16)strlen((char *)pSrcFile->szAlignParams);
+pSrcFile->AlignParamsLen = (int16_t)strlen((char *)pSrcFile->szAlignParams);
 m_bHdrDirty = true;
 return(eBSFSuccess);
 }
@@ -948,7 +948,7 @@ if(m_FileHdr.NumAlignBlocks >= cMaxAlignBlocks)
 
 if(m_pAlignBlock == NULL)
 	{
-	if(NULL == (m_pAlignBlock = (tsAlignBlock *)new unsigned char[cAlloc4Block]))
+	if(NULL == (m_pAlignBlock = (tsAlignBlock *)new uint8_t[cAlloc4Block]))
 		return(eBSFerrMem);
 	m_AllocdBlockSize = cAlloc4Block;
 	m_AlignBlockID = 0;
@@ -1023,7 +1023,7 @@ tsBlockDirEl *pDirEl;
 tsAlignBlock Block;
 int SpeciesIdx;
 tsAlignSpecies *pSpecies;
-UINT8 *pByte;
+uint8_t *pByte;
 
 if(pBlock == NULL || !pBlock->BlockLenWithSpecies || !m_BlockStarted)
 	return(eBSFerrAlignBlk);
@@ -1090,8 +1090,8 @@ if(m_bIsBigEndian)
 	pBlock->AlignIncInDelLen=SwapUI32Endians(pBlock->AlignIncInDelLen);		// alignment sequence length (1..n) , includes '-' insertion markers					
 	pBlock->AlgnScore=SwapUI32Endians(pBlock->AlgnScore);					// alignment block score
 	pBlock->NumSpecies=SwapUI32Endians(pBlock->NumSpecies);					// number of species/chromosomes in represented in this block
-	pSpecies = (tsAlignSpecies *)(((UINT8 *)pBlock) + sizeof(tsAlignBlock));
-	pByte = (UINT8 *)pSpecies;
+	pSpecies = (tsAlignSpecies *)(((uint8_t *)pBlock) + sizeof(tsAlignBlock));
+	pByte = (uint8_t *)pSpecies;
 	for(SpeciesIdx = 0; SpeciesIdx < Block.NumSpecies; SpeciesIdx++)
 		{
 		pByte += pSpecies->AlignSpeciesLen;
@@ -1110,8 +1110,8 @@ if(m_bIsBigEndian)
 		}
 
 	memmove(pBlock,&Block,sizeof(tsAlignBlock));
-	pSpecies = (tsAlignSpecies *)(((UINT8 *)pBlock) + sizeof(tsAlignBlock));
-	pByte = (UINT8 *)pSpecies;
+	pSpecies = (tsAlignSpecies *)(((uint8_t *)pBlock) + sizeof(tsAlignBlock));
+	pByte = (uint8_t *)pSpecies;
 	for(SpeciesIdx = 0; SpeciesIdx < pBlock->NumSpecies; SpeciesIdx++)
 		{
 		pSpecies = (tsAlignSpecies *)pByte;
@@ -1156,14 +1156,14 @@ return(eBSFSuccess);
 // GenNameHash
 // Generates a 16bit hash on specified lowercased name
 // This hash can then be used to quickly eliminate probe names which can't match a target name by comparing hashes
-UINT16 
+uint16_t 
 CMAlignFile::GenNameHash(char *pszName)
 {
 unsigned long hash = 5381;
 char Chr;
 while (Chr = *pszName++)
 	hash = ((hash << 5) + hash) + tolower(Chr);
-return ((UINT16)hash);
+return ((uint16_t)hash);
 }
 
 
@@ -1232,7 +1232,7 @@ return(LocateChromID(SpeciesID,pszChromName));
 
 
 int
-CMAlignFile::SetConfScore(tAlignBlockID BlockID,tSpeciesID SpeciesID,INT8 ConfScore,bool bFinal)
+CMAlignFile::SetConfScore(tAlignBlockID BlockID,tSpeciesID SpeciesID,int8_t ConfScore,bool bFinal)
 {
 tsAlignSpecies *pSpecies;
 
@@ -1318,20 +1318,20 @@ return(NxtID == INT_MAX ? eBSFerrChrom : NxtID);
 int	
 CMAlignFile::AddAlignSeq(char *pszSpeciesName,	    // species being added to alignment
 						 char *pszChromName,	// alignment is on this species chromosome
-  						 int ChromLen,			// chromosome length or 0 if unknown
- 						 int ChromOfs,			// aligns from this relative offset ('+' == 0..ChromLen-1, '-' == ChromLen-1..0)
+						 int ChromLen,			// chromosome length or 0 if unknown
+						 int ChromOfs,			// aligns from this relative offset ('+' == 0..ChromLen-1, '-' == ChromLen-1..0)
 						 int IncInDelLen,		// alignment length (1..n) including any InDels
 						 char Strand,			// alignment strand
 						 char *pszSeq,			// species.chromosome specific alignment sequence
 						 bool RptMskUpperCase,  // true if uppercase represents softmasked repeats
- 						 INT8 ConfScore)		// confidence associated with this alignment sequence
+						 int8_t ConfScore)		// confidence associated with this alignment sequence
 {
 static etSeqBase Ascii2SeqBuff[0x07fff];
 etSeqBase *pSeq;
 int Rslt;
 if(IncInDelLen >= 0x07fff)	// need to use dynamically allocated buffer?
 	{
-	pSeq = new unsigned char [IncInDelLen+1];
+	pSeq = new uint8_t [IncInDelLen+1];
 	CSeqTrans::MapAscii2Sense(pszSeq,IncInDelLen,pSeq,RptMskUpperCase);
 	Rslt = AddAlignSeqBases(pszSpeciesName,pszChromName,ChromLen,ChromOfs,IncInDelLen,Strand,pSeq,ConfScore);
 	delete pSeq;
@@ -1348,12 +1348,12 @@ return(Rslt);
 int 
 CMAlignFile::AddAlignSeqBases(char *pszSpeciesName,	// species being added to alignment
 						 char *pszChromName,	// alignment is on species chromosome
- 						 int ChromLen,			// chromosome length or 0 if unknown
+						 int ChromLen,			// chromosome length or 0 if unknown
 						 int ChromOfs,			// aligns from this relative offset ('+' == 0..ChromLen-1, '-' == ChromLen-1..0)
-					 	 int IncInDelLen,		// alignment length (1..n) in relative chromosome incl InDels
+						 int IncInDelLen,		// alignment length (1..n) in relative chromosome incl InDels
 						 char Strand,			// aligns from this strand
 						 etSeqBase *pBases,		// species.chromosome specific alignment sequence
-						 INT8 ConfScore)		// confidence associated with this alignment sequence
+						 int8_t ConfScore)		// confidence associated with this alignment sequence
 {
 tsSpeciesName *pSpecies;
 tsChromName *pChrom;
@@ -1423,7 +1423,7 @@ if(SpeciesID == m_FileHdr.RefSpeciesID)
 	m_CurRefChromXInDelLen = XInDelLen;
 	}
 
-pAlignSpecies = (tsAlignSpecies *)((unsigned char *)m_pAlignBlock + m_pAlignBlock->BlockLenWithSpecies);
+pAlignSpecies = (tsAlignSpecies *)((uint8_t *)m_pAlignBlock + m_pAlignBlock->BlockLenWithSpecies);
 pAlignSpecies->ChromID  = ChromID;
 pAlignSpecies->AlignXInDelLen = XInDelLen;
 pAlignSpecies->ChromOfs = ChromOfs;
@@ -1464,10 +1464,10 @@ return(LoadBlock(pDirEl));
 int
 CMAlignFile::LoadBlock(tsBlockDirEl *pDirEl)// directory element with block file offset
 {
-UINT32 BlockRemaining;
+uint32_t BlockRemaining;
 int SpeciesIdx;
 tsAlignSpecies *pSpecies;
-UINT8 *pByte;
+uint8_t *pByte;
 
 if(pDirEl->FileOfs < m_FileHdr.SizeOfHdr)	// should never have a block which starts before the header finishes!
 	return(eBSFerrInternal);				// but bugs or incomplete block writes may result in incorrect offset
@@ -1476,7 +1476,7 @@ if(pDirEl->FileOfs < m_FileHdr.SizeOfHdr)	// should never have a block which sta
 	// to hold largest block in file
 if(m_pAlignBlock == NULL)
 	{
-	if(NULL == (m_pAlignBlock = (tsAlignBlock *)new unsigned char[m_FileHdr.AlignBlockLen]))
+	if(NULL == (m_pAlignBlock = (tsAlignBlock *)new uint8_t[m_FileHdr.AlignBlockLen]))
 		return(eBSFerrMem);
 	memset(m_pAlignBlock,0,sizeof(tsAlignBlock));
 	m_AllocdBlockSize = m_FileHdr.AlignBlockLen;
@@ -1505,14 +1505,14 @@ m_AlignBlockID = pDirEl->BlockID;
 BlockRemaining = m_pAlignBlock->BlockLenWithSpecies - sizeof(tsAlignBlock);
 if(BlockRemaining)
 	{
-	if(BlockRemaining != read(m_hFile,(unsigned char *)m_pAlignBlock + sizeof(tsAlignBlock),BlockRemaining))
+	if(BlockRemaining != read(m_hFile,(uint8_t *)m_pAlignBlock + sizeof(tsAlignBlock),BlockRemaining))
 		return(eBSFerrFileAccess);
 	}
 
 if(m_bIsBigEndian)
 	{
-	pSpecies = (tsAlignSpecies *)(((UINT8 *)m_pAlignBlock) + sizeof(tsAlignBlock));
-	pByte = (UINT8 *)pSpecies;
+	pSpecies = (tsAlignSpecies *)(((uint8_t *)m_pAlignBlock) + sizeof(tsAlignBlock));
+	pByte = (uint8_t *)pSpecies;
 	for(SpeciesIdx = 0; SpeciesIdx < m_pAlignBlock->NumSpecies; SpeciesIdx++)
 		{
 		pSpecies = (tsAlignSpecies *)pByte;
@@ -1545,14 +1545,14 @@ NumSpecies = m_pAlignBlock->NumSpecies;
 if(!NumSpecies)
 	return(NULL);
 
-pSpecies = (tsAlignSpecies *)((unsigned char *)m_pAlignBlock + sizeof(tsAlignBlock));
+pSpecies = (tsAlignSpecies *)((uint8_t *)m_pAlignBlock + sizeof(tsAlignBlock));
 while(ChromID = pSpecies->ChromID) 
 	{
 	if(SpeciesID == m_pChromNames[ChromID-1].SpeciesID)
 		break;
 	if(!--NumSpecies)
 		return(NULL);
-	pSpecies = (tsAlignSpecies *)((unsigned char *)pSpecies + pSpecies->AlignSpeciesLen);
+	pSpecies = (tsAlignSpecies *)((uint8_t *)pSpecies + pSpecies->AlignSpeciesLen);
 	}
 return(pSpecies);
 }
@@ -1562,7 +1562,7 @@ CMAlignFile::LoadAlignChrom(tAlignBlockID BlockID,		// which alignment block
 							tChromID ChromID)			// which chromosome to locate alignment for
 {
 tsAlignSpecies *pSpecies;
-UINT32 NumSpecies;
+uint32_t NumSpecies;
 
 if(!ChromID || ChromID > m_FileHdr.NumChroms || !BlockID || BlockID > m_FileHdr.NumAlignBlocks)
 	return(NULL);
@@ -1575,12 +1575,12 @@ NumSpecies = m_pAlignBlock->NumSpecies;
 if(!NumSpecies)
 	return(NULL);
 
-pSpecies = (tsAlignSpecies *)((unsigned char *)m_pAlignBlock + sizeof(tsAlignBlock));
+pSpecies = (tsAlignSpecies *)((uint8_t *)m_pAlignBlock + sizeof(tsAlignBlock));
 while(ChromID != pSpecies->ChromID) 
 	{
 	if(!--NumSpecies)
 		return(NULL);
-	pSpecies = (tsAlignSpecies *)((unsigned char *)pSpecies + pSpecies->AlignSpeciesLen);
+	pSpecies = (tsAlignSpecies *)((uint8_t *)pSpecies + pSpecies->AlignSpeciesLen);
 	}
 return(pSpecies);
 }
@@ -1694,7 +1694,7 @@ NumSpecies = m_pAlignBlock->NumSpecies;
 if(!NumSpecies)
 	return(0);
 
-pSpecies = (tsAlignSpecies *)((unsigned char *)m_pAlignBlock + sizeof(tsAlignBlock));
+pSpecies = (tsAlignSpecies *)((uint8_t *)m_pAlignBlock + sizeof(tsAlignBlock));
 NxtSpeciesID = cMaxAlignedSpecies+1;		// used to indicate that NxtSpeciesID does not exist, if less than (cMaxAlignedSpecies+1) then it holds the next species identifier
 while(ChromID = pSpecies->ChromID) 
 	{
@@ -1703,7 +1703,7 @@ while(ChromID = pSpecies->ChromID)
 		NxtSpeciesID = LoSpeciesID;
 	if(!--NumSpecies)
 		break;
-	pSpecies = (tsAlignSpecies *)((unsigned char *)pSpecies + pSpecies->AlignSpeciesLen);
+	pSpecies = (tsAlignSpecies *)((uint8_t *)pSpecies + pSpecies->AlignSpeciesLen);
 	}
 return(NxtSpeciesID > cMaxAlignedSpecies ? 0 : NxtSpeciesID);
 }
@@ -1942,7 +1942,7 @@ CMAlignFile::LoadAlignment(char *pszRefChrom,	// alignment is to this ref specie
 					  etSeqBase RelUnalignedBase) // base to return if ref species aligned but no alignment onto rel species
 {
 int Rslt;
-INT32 RefChromID;
+int32_t RefChromID;
 tSpeciesID RelSpeciesID;
 if((Rslt = RefChromID = LocateChromID(GetRefSpeciesID(),pszRefChrom))<0)
 	return(Rslt);
@@ -1952,7 +1952,7 @@ return(LoadAlignment(RefChromID,StartLoci,EndLoci,RelSpeciesID,MaxBases,pRefBase
 }
 
 int												// returns number of bases (incl InDels and NotAlignedBase)
-CMAlignFile::LoadAlignment(INT32 RefChromID,	// alignment is to this ref species chromosome
+CMAlignFile::LoadAlignment(int32_t RefChromID,	// alignment is to this ref species chromosome
 					  int StartLoci,			// starting from this ref chromosome loci
 					  int EndLoci,				// and ending at this ref chromosome loci
 					  int RelSpeciesID,			// aligned bases are to be returned for this species
@@ -2046,7 +2046,7 @@ return(BasesReturned);
 // LoadAlignments
 // Loads multiple species alignments
 int												// returns number of bases (incl InDels and NotAlignedBase)
-CMAlignFile::LoadAlignments(INT32 RefChromID,	// alignment is to this ref species chromosome
+CMAlignFile::LoadAlignments(int32_t RefChromID,	// alignment is to this ref species chromosome
 					  int StartLoci,			// starting from this ref chromosome loci
 					  int EndLoci,				// and ending at this ref chromosome loci
 					  int MaxBases,				// max number of bases for each species to be returned
@@ -2212,15 +2212,15 @@ char RefStrand;
 int NumSpecies;									// number of aligned species
 int Rslt;
 
-UINT32 CurBlockID;
+uint32_t CurBlockID;
 int MaxAlignLen;
-UINT32 AlignPsn;
-UINT32 RefAlignStart;
-UINT32 RelAlignStart;
-UINT32 AlignLen;
-UINT32 RefAlignLen;
-UINT32 RefStructLen;
-UINT32 RelStructLen;
+uint32_t AlignPsn;
+uint32_t RefAlignStart;
+uint32_t RelAlignStart;
+uint32_t AlignLen;
+uint32_t RefAlignLen;
+uint32_t RefStructLen;
+uint32_t RelStructLen;
 char RelStrand;
 
 int PrevRefChromID;
@@ -2233,8 +2233,8 @@ tsBlockDirEl *pDirEl;
 int DirElIdx;
 
 
-UINT32 AllocLen = 0;
-unsigned char *pSeqBuff = NULL;
+uint32_t AllocLen = 0;
+uint8_t *pSeqBuff = NULL;
 
 if((Rslt=Open(pszMAF))!=eBSFSuccess)
 	{
@@ -2264,8 +2264,8 @@ pDataPoints->SetTitle(pszTitle);
 // grab enough memory to hold maximal length aligned sequences + guard
 pRef2Struct = pRel2Struct = NULL;
 MaxAlignLen = GetMaxAlignLen();
-pRef2Struct = new unsigned char [MaxAlignLen + 1];
-pRel2Struct = new unsigned char [MaxAlignLen + 1];
+pRef2Struct = new uint8_t [MaxAlignLen + 1];
+pRel2Struct = new uint8_t [MaxAlignLen + 1];
 if(pRef2Struct == NULL || pRel2Struct == NULL)
 	{
 	AddErrMsg("CMAlignFile::MultiAlignAll2DataPts","Unable to allocate memory to hold aligned sequences");
@@ -2370,7 +2370,7 @@ PrvBlockID = pDirEl->BlockID;
 		pDataPoints->AddRefChrom(pszRefChrom,RefChromLen);
 		}
 	Rslt=JoinSegments(pDataPoints,
-				    pszRefChrom,			// reference species chromosome
+					pszRefChrom,			// reference species chromosome
 					RefChromOfs,			// reference species chromosome offset
 					pszRefSpecies,			// into which species relative dataset
 					pszRefChrom,			// on which chromosome
@@ -2436,7 +2436,7 @@ PrvBlockID = pDirEl->BlockID;
 				}
 			}
 		Rslt=JoinSegments(pDataPoints,
-				    pszRefChrom,			// reference species chromosome
+					pszRefChrom,			// reference species chromosome
 					RefChromOfs,			// reference species chromosome offset
 					pszRelSpecies,			// into which species relative dataset
 					pszRelChrom,			// on which chromosome
@@ -2478,14 +2478,14 @@ int
 CMAlignFile::NewSegEntry(tsSegCache *pEntry,
 					unsigned short RefChromHash,
 					unsigned short RelDatasetHash,
-				     char *pszRefChrom,			// reference species chromosome
+					 char *pszRefChrom,			// reference species chromosome
 					 int RefChromOfs,			// reference species chromosome offset
 					 char *pszRelDataset,		// into which species relative dataset
 					 char *pszRelChrom,			// on which chromosome
 					 int RelChromOfs,			// relative species chromosome offset
 					 char RelStrand,				// relative strand '+' or '-'
 					 int NumPts,				// number of datapoints
-					 unsigned char *pDataPts)	// array of data points
+					 uint8_t *pDataPts)	// array of data points
 {
 pEntry->RelDatasetHash = RelDatasetHash;
 strncpy(pEntry->szRelDataset,pszRelDataset,cMaxDatasetSpeciesChrom);
@@ -2504,11 +2504,11 @@ if(pEntry->pDataPts == NULL ||pEntry->AllocdSize < NumPts)
 	int ReqSize;
 	if(pEntry->pDataPts != NULL)
 		delete pEntry->pDataPts;
-    pEntry->AllocdSize = 0;
+	pEntry->AllocdSize = 0;
 	ReqSize = 10000;
 	if(NumPts > 10000)
 		ReqSize = (NumPts * 4) / 3;
-	if((pEntry->pDataPts = new unsigned char [ReqSize])==NULL)
+	if((pEntry->pDataPts = new uint8_t [ReqSize])==NULL)
 		return(eBSFerrMem);
 	pEntry->AllocdSize = ReqSize;
 	}
@@ -2548,14 +2548,14 @@ return(eBSFSuccess);
 
 int
 CMAlignFile::JoinSegments(CDataPoints *pDataPoints,
-				     char *pszRefChrom,			// reference species chromosome
+					 char *pszRefChrom,			// reference species chromosome
 					 int RefChromOfs,			// reference species chromosome offset
 					 char *pszRelDataset,		// into which species relative dataset
 					 char *pszRelChrom,			// on which chromosome
 					 int RelChromOfs,			// relative species chromosome offset
 					 char RelStrand,			// relative strand '+' or '-'
 					 int NumPts,				// number of datapoints
-					 unsigned char *pDataPts)	// array of data points
+					 uint8_t *pDataPts)	// array of data points
 {
 unsigned short RelDatasetHash = GenNameHash(pszRelDataset);
 unsigned short RefChromHash   = GenNameHash(pszRefChrom);
@@ -2613,11 +2613,11 @@ if(pEntry->RefChromHash != RefChromHash ||		// make sure it's the same chromosom
 // same chromosome, no gap so extend...
 if(pEntry->AllocdSize < pEntry->NumPts + NumPts) // need to alloc more memory?
 	{
-	unsigned char *pNewAlloc;
+	uint8_t *pNewAlloc;
 	int ReqSize = 10000;
 	if(pEntry->NumPts + NumPts > 10000)
 		ReqSize = ((pEntry->NumPts + NumPts) * 4) / 3;
-	if((pNewAlloc = new unsigned char [ReqSize])== NULL)
+	if((pNewAlloc = new uint8_t [ReqSize])== NULL)
 		return(eBSFerrMem);
 	memmove(pNewAlloc,pEntry->pDataPts,pEntry->NumPts);
 	delete pEntry->pDataPts;

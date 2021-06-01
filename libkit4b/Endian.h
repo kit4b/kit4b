@@ -7,7 +7,7 @@ protected:
 public:
 	CEndian(void);
 	~CEndian(void);
-	UINT16 SwapUI16Endians(UINT16 Val);	// Swaps 16bit (2byte) endian order
-	UINT32 SwapUI32Endians(UINT32 Val);	// Swaps 32bit (4byte) endian order
-	UINT64 SwapUI64Endians(UINT64 Val);	// Swaps 64bit (8byte) endian order
+	uint16_t SwapUI16Endians(uint16_t Val);	// Swaps 16bit (2byte) endian order
+	uint32_t SwapUI32Endians(uint32_t Val);	// Swaps 32bit (4byte) endian order
+	uint64_t SwapUI64Endians(uint64_t Val);	// Swaps 64bit (8byte) endian order
 };

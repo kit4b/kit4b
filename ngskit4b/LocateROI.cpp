@@ -143,25 +143,25 @@ argerrors = CUtility::arg_parsefromfile(argc,(char **)argv,&pAllArgs);
 if(argerrors >= 0)
 	argerrors = arg_parse(argerrors,pAllArgs,argtable);
 
-    /* special case: '--help' takes precedence over error reporting */
+	/* special case: '--help' takes precedence over error reporting */
 if (help->count > 0)
-        {
+		{
 		printf("\n%s %s %s, Version %s\nOptions ---\n", gszProcName, gpszSubProcess->pszName, gpszSubProcess->pszFullDescr, kit4bversion);
-        arg_print_syntax(stdout,argtable,"\n");
-        arg_print_glossary(stdout,argtable,"  %-25s %s\n");
+		arg_print_syntax(stdout,argtable,"\n");
+		arg_print_glossary(stdout,argtable,"  %-25s %s\n");
 		printf("\nNote: Parameters can be entered into a parameter file, one parameter per line.");
 		printf("\n      To invoke this parameter file then precede its name with '@'");
 		printf("\n      e.g. %s @myparams.txt\n",gszProcName);
 		printf("\nPlease report any issues regarding usage of %s to https://github.com/kit4b/kit4b/issues\n\n",gszProcName);
 		exit(1);
-        }
-        
-    /* special case: '--version' takes precedence error reporting */
+		}
+		
+	/* special case: '--version' takes precedence error reporting */
 if (version->count > 0)
-        {
+		{
 		printf("\n%s Version %s\n",gszProcName,kit4bversion);
 		exit(1);
-        }
+		}
 if (!argerrors)
 	{
 	if(FileLogLevel->count && !LogFile->count)
@@ -540,7 +540,7 @@ if(m_NumChromsCov > 0)
 			free(m_ChromCnts[ChromIdx].pCovCnts);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
 #else
 			if(m_ChromCnts[ChromIdx].pCovCnts != MAP_FAILED)
-				munmap(m_ChromCnts[ChromIdx].pCovCnts,m_ChromCnts[ChromIdx].AllocCovCnts * sizeof(UINT32));
+				munmap(m_ChromCnts[ChromIdx].pCovCnts,m_ChromCnts[ChromIdx].AllocCovCnts * sizeof(uint32_t));
 #endif
 			m_ChromCnts[ChromIdx].pCovCnts = NULL;
 			}
@@ -586,7 +586,7 @@ CLocateROI::BuildReadCoverage(char *pszChrom,		// coverage is onto this chrom
 tsChromCnts *pChrom;
 int ChromIdx;
 int AllocCovCnts;
-UINT32 *pCovCnts;
+uint32_t *pCovCnts;
 size_t ReallocTo;
 
 if(pszChrom == NULL || pszChrom[0] == '\0')
@@ -635,21 +635,21 @@ if(ChromIdx == m_NumChromsCov)	// if a new or first chrom
 	pChrom->StartOfs = StartOfs;
 	pChrom->EndOfs = EndOfs;
 	AllocCovCnts = EndOfs + cAllocCovCnts;
-	ReallocTo =  AllocCovCnts * sizeof(UINT32);
+	ReallocTo =  AllocCovCnts * sizeof(uint32_t);
 #ifdef _WIN32
-	pChrom->pCovCnts = (UINT32 *) malloc(ReallocTo);	// initial and perhaps the only allocation
+	pChrom->pCovCnts = (uint32_t *) malloc(ReallocTo);	// initial and perhaps the only allocation
 	if(pChrom->pCovCnts == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"BuildReadCoverage: Memory allocation of %lld bytes - %s",(INT64)ReallocTo,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"BuildReadCoverage: Memory allocation of %lld bytes - %s",(int64_t)ReallocTo,strerror(errno));
 		Reset();
 		return(eBSFerrMem);
 		}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-	pChrom->pCovCnts = (UINT32 *)mmap(NULL,ReallocTo, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+	pChrom->pCovCnts = (uint32_t *)mmap(NULL,ReallocTo, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(pChrom->pCovCnts == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"BuildReadCoverage: Memory allocation of %lld bytes through mmap()  failed - %s",(INT64)ReallocTo,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"BuildReadCoverage: Memory allocation of %lld bytes through mmap()  failed - %s",(int64_t)ReallocTo,strerror(errno));
 		pChrom->pCovCnts = NULL;
 		Reset();
 		return(eBSFerrMem);
@@ -664,11 +664,11 @@ if(ChromIdx == m_NumChromsCov)	// if a new or first chrom
 if(EndOfs >= pChrom->AllocCovCnts)
 	{
 	AllocCovCnts = EndOfs + cAllocCovCnts;
-	ReallocTo = AllocCovCnts * sizeof(UINT32);
+	ReallocTo = AllocCovCnts * sizeof(uint32_t);
 #ifdef _WIN32
-	pCovCnts = (UINT32 *) realloc(pChrom->pCovCnts,ReallocTo);
+	pCovCnts = (uint32_t *) realloc(pChrom->pCovCnts,ReallocTo);
 #else
-	pCovCnts = (UINT32 *)mremap(pChrom->pCovCnts,pChrom->AllocCovCnts * sizeof(UINT32),ReallocTo,MREMAP_MAYMOVE);
+	pCovCnts = (uint32_t *)mremap(pChrom->pCovCnts,pChrom->AllocCovCnts * sizeof(uint32_t),ReallocTo,MREMAP_MAYMOVE);
 	if(pCovCnts == MAP_FAILED)
 		pCovCnts = NULL;
 #endif
@@ -679,7 +679,7 @@ if(EndOfs >= pChrom->AllocCovCnts)
 		return(eBSFerrMem);
 		}
 	pChrom->pCovCnts = pCovCnts;
-	memset(&pChrom->pCovCnts[pChrom->AllocCovCnts],0,(AllocCovCnts - pChrom->AllocCovCnts) * sizeof(UINT32));
+	memset(&pChrom->pCovCnts[pChrom->AllocCovCnts],0,(AllocCovCnts - pChrom->AllocCovCnts) * sizeof(uint32_t));
 	pChrom->AllocCovCnts = AllocCovCnts;
 	}
 
@@ -692,8 +692,8 @@ pCovCnts = &pChrom->pCovCnts[StartOfs];
 while(StartOfs++ <= EndOfs)
 	{
 	// clamp accumulated cnts to be no greater than cMaxAccumCnt
-	if((cMaxAccumCnt - *pCovCnts) > (UINT32)Cnt)
-		*pCovCnts += (UINT32)Cnt;
+	if((cMaxAccumCnt - *pCovCnts) > (uint32_t)Cnt)
+		*pCovCnts += (uint32_t)Cnt;
 	else
 		*pCovCnts = cMaxAccumCnt;
 	pCovCnts += 1;
@@ -716,7 +716,7 @@ CLocateROI::RetainReadCoverage(char *pszChrom,		// filtering is onto this chrom
 {
 tsChromCnts *pChrom;
 int ChromIdx;
-UINT32 *pCovCnts;
+uint32_t *pCovCnts;
 
 if(pszChrom == NULL || pszChrom[0] == '\0')
 	{
@@ -774,9 +774,9 @@ CLocateROI::IdentROI(etFROIMode FMode,					// output in this format to m_hRsltsF
 {
 tsROI *pROI;
 tsChromCnts *pChrom;
-UINT32 *pCnts;
+uint32_t *pCnts;
 int Cnts;
-UINT32 SumCnts;
+uint32_t SumCnts;
 int ChromIdx;
 int SeqIdx;
 int StartOfRegion;
@@ -786,7 +786,7 @@ int NumMedCnts;
 int SubRegionLen;
 int TotRegionLen;
 int NumRegions;
-UINT64 TotGenomeCnts;
+uint64_t TotGenomeCnts;
 double GenomeCntsPerM;
 size_t memreq;
 
@@ -799,7 +799,7 @@ if(m_pROIs == NULL)		// should be the case but who knows :-)
 	m_pROIs = (tsROI *) malloc(memreq);	// initial allocation
 	if(m_pROIs == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"IdentROI: Memory allocation of %lld bytes - %s",(INT64)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"IdentROI: Memory allocation of %lld bytes - %s",(int64_t)memreq,strerror(errno));
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -808,7 +808,7 @@ if(m_pROIs == NULL)		// should be the case but who knows :-)
 	m_pROIs = (tsROI *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pROIs == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"IdentROI: Memory allocation of %lld bytes through mmap()  failed - %s",(INT64)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"IdentROI: Memory allocation of %lld bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
 		m_pROIs = NULL;
 		Reset();
 		return(eBSFerrMem);
@@ -1010,7 +1010,7 @@ for(ROIidx = 0; ROIidx < m_NumOfROIs; ROIidx++,pROI++)
 								pROI->RegionID,pszTitle,pChrom->szChrom,pROI->StartOfRegion,pROI->EndOfRegion,1 + pROI->EndOfRegion - pROI->StartOfRegion,
 											pROI->Strand,
 								m_pszFeatFiles[AnnoFileID-1],
-							    pROI->USFeatStrand,pROI->USFeatDist,pROI->szUSFeatID,
+								pROI->USFeatStrand,pROI->USFeatDist,pROI->szUSFeatID,
 								m_pszFeatFiles[AnnoFileID-1],
 								pROI->DSFeatStrand,pROI->DSFeatDist,pROI->szDSFeatID,
 								pROI->BPKM);
@@ -1214,8 +1214,8 @@ while(Rslt == eBSFSuccess && (CurFeatureID = m_pBEDFile->GetNextFeatureID(CurFea
 				szChrom,				// where to return chromosome name
 				&StartLoci,				// where to return feature start on chromosome (0..n) 
 				&EndLoci,				// where to return feature end on chromosome
- 				&Score,					// where to return score
- 				&Strand);				// where to return strand
+				&Score,					// where to return score
+				&Strand);				// where to return strand
 
 	if(CurFeatureID == 1 || stricmp(szChrom,szPrevChrom))	// if new chromosome then reset IntergenicStart
 		{
@@ -1538,8 +1538,8 @@ while(Rslt == eBSFSuccess && (CurFeatureID = m_pBEDFile->GetNextFeatureID(CurFea
 				szChrom,				// where to return chromosome name
 				&StartLoci,				// where to return feature start on chromosome (0..n) 
 				&EndLoci,				// where to return feature end on chromosome
- 				&Score,					// where to return score
- 				&Strand);				// where to return strand
+				&Score,					// where to return score
+				&Strand);				// where to return strand
 
 	if(CurFeatureID == 1 || stricmp(szChrom,szPrevChrom))	// if new chromosome then reset IntergenicStart
 		{
@@ -1743,7 +1743,7 @@ else
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to glob '%s",pszInFile);
 	Reset();
 	return(eBSFerrOpnFile);	
-    }
+	}
 
 
 

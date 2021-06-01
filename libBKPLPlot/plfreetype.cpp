@@ -428,7 +428,7 @@ void
 FT_PlotChar( PLStream *pls, FT_Data *FT, FT_GlyphSlot slot,
              int x, int y )
 {
-    unsigned char bittest;
+    uint8_t bittest;
     short         i, k, j;
     int           n = slot->bitmap.pitch;
     int           current_pixel_colour;
@@ -517,7 +517,7 @@ FT_PlotChar( PLStream *pls, FT_Data *FT, FT_GlyphSlot slot,
                 bittest = 128;
                 for ( j = 0; j < 8; j++ )
                 {
-                    if ( ( bittest & (unsigned char) slot->bitmap.buffer[( i * n ) + k] ) == bittest )
+                    if ( ( bittest & (uint8_t) slot->bitmap.buffer[( i * n ) + k] ) == bittest )
                     {
                         xx = x + ( k * 8 ) + j;
                         if ( ( xx >= clipxmin ) && ( xx <= clipxmax ) )
@@ -799,7 +799,7 @@ void plD_FreeType_init( PLStream *pls )
         if ( FT->font_name[i][0] == '\0' )
             FontLookup[i].pfont = NULL;
         else
-            FontLookup[i].pfont = (unsigned char *) FT->font_name[i];
+            FontLookup[i].pfont = (uint8_t *) FT->font_name[i];
     }
 //
 // Next, we check to see if -drvopt has been used on the command line to

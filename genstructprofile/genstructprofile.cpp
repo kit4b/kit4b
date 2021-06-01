@@ -56,12 +56,12 @@ typedef enum TAG_ePMode {
 typedef struct TAG_sSeqValues {
 	int SeqID;							// uniquely identifies this sequence (1..m_NumSeqValues)
 	int Sizeof;							// total size, in bytes, of this instance
-	UINT8 RandSel:1;					// currently reserved for use to indicate that this sequence was randomly selected
+	uint8_t RandSel:1;					// currently reserved for use to indicate that this sequence was randomly selected
 	int SeqLen;							// sequence length
 	int LenDescr;						// length of fasta descriptor (appended after conformational values)
 	int DyadIdx;						// step index (0..NumSteps-1) for putative dyad at which maximal profile score was obtained for this sequence (-1 if none)
 	int Score;							// maximal score for this sequence
-	UINT8 SeqDescr[1];				    // sequence followed by appended '\0' terminated fasta descriptor
+	uint8_t SeqDescr[1];				    // sequence followed by appended '\0' terminated fasta descriptor
 } tsSeqValues;
 
 typedef struct TAG_sConfRange {

@@ -21,23 +21,23 @@ typedef enum eBEDRegion {
 
 #pragma pack(1)
 typedef struct TAG_sBED {
-	UINT8 BedID;				// uniquely identifies this BED file
+	uint8_t BedID;				// uniquely identifies this BED file
 	char szBedFile[_MAX_PATH];	// BED file name
-	UINT32 NumEls;				// number of elements loaded from this file
+	uint32_t NumEls;				// number of elements loaded from this file
 } tsBED;
 
 typedef struct TAG_sFeatureEl {
-	UINT8 BedID;				// BED file from which this feature was loaded
-	UINT32 FeatureID;			// feature start/ends share same feature identifier
-	UINT32 ChromID;				// chrom on which this feature is located
-	UINT32 Loci;				// feature starts or ends at this loci (0..N)
-	UINT8 FlgStart:1;			// will be 1 if feature start
-	UINT8 FlgEnd:1;				// will be 1 if feature end
+	uint8_t BedID;				// BED file from which this feature was loaded
+	uint32_t FeatureID;			// feature start/ends share same feature identifier
+	uint32_t ChromID;				// chrom on which this feature is located
+	uint32_t Loci;				// feature starts or ends at this loci (0..N)
+	uint8_t FlgStart:1;			// will be 1 if feature start
+	uint8_t FlgEnd:1;				// will be 1 if feature end
 	char Strand;				// feature is on this strand
 } tsFeatureEl;
 
 typedef struct TAG_sChromFeatures {
-	UINT32 ChromID;					// uniquely identifies this chromosome
+	uint32_t ChromID;					// uniquely identifies this chromosome
 	char szChrom[cMaxDatasetSpeciesChrom];
 	int StartLoci;
 	int EndLoci;
@@ -83,10 +83,10 @@ class CChromFeatures
 
 	void DumpFeat(char *pszMsg,tsFeatureEl *pFeat);
 
-	int ReportMergedFeat(UINT32 FeatID,				// uniquely identifies this merged feature
+	int ReportMergedFeat(uint32_t FeatID,				// uniquely identifies this merged feature
 						 char *pszChrom,			// feature is on this chrom
-						 UINT32 MergeStartLoci,		// starting at this loci
-						 UINT32 MergeEndLoci,		// ending at this loci
+						 uint32_t MergeStartLoci,		// starting at this loci
+						 uint32_t MergeEndLoci,		// ending at this loci
 						 char Strand);				// and is on this strand
 
 	static int SortFeatures(const void *arg1, const void *arg2);

@@ -33,10 +33,10 @@ typedef struct TAG_sProcParams
 	int hOutFile;		// opened file handle for current multifasta file being written
 	int OutFileIdx;	// current output file sequential prefix
 	int PushedBack;	// last pushed back char (only 1 level of pushback supported!)
-	unsigned char *pInBuffer; // mem allocd to buffer chars being read from fasta
+	uint8_t *pInBuffer; // mem allocd to buffer chars being read from fasta
 	int NumInBuffer;		   // num of chars currently in pInBuffer
 	int InBuffIdx;			   // index of next char to read from pInBuffer[]
-	unsigned char *pOutBuffer; // mem allocd to buffer chars being written to fasta
+	uint8_t *pOutBuffer; // mem allocd to buffer chars being written to fasta
 	int OutBuffIdx;			// number of chars in pOutBuffer[] ready to be written
 	char szOutPath[_MAX_PATH]; // path on which to create output files (contains format char '%d' ready for seq number)
 	char szOutFasta[_MAX_PATH];	// path + output file
@@ -340,14 +340,14 @@ if(pszGenome != NULL && pszGenome[0] != '\0')
 else
 	ProcParams.szGenome[0] = '\0';
 
-if((ProcParams.pInBuffer = new unsigned char [cMaxSMFInBuffSize])==NULL)
+if((ProcParams.pInBuffer = new uint8_t [cMaxSMFInBuffSize])==NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Unable to allocate memory (%d bytes) for input buffering", 
 		cMaxSMFInBuffSize);
 	return(eBSFerrMem);
 	}
 
-if((ProcParams.pOutBuffer = new unsigned char [cMaxOutBuffSize])==NULL)
+if((ProcParams.pOutBuffer = new uint8_t [cMaxOutBuffSize])==NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Unable to allocate memory (%d bytes) for output buffering", 
 				cMaxOutBuffSize);

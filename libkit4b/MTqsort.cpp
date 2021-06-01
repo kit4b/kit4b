@@ -142,17 +142,17 @@ return NULL;
 // Exchange
 // Exchange two elements each of size ElSize, note it is assumed that elements are not overlapped!
 void 
-CMTqsort::Exchange(UINT8 *pEl1,			    // exchange this element
-	  UINT8 *pEl2,					// with this element
+CMTqsort::Exchange(uint8_t *pEl1,			    // exchange this element
+	  uint8_t *pEl2,					// with this element
 	  size_t ElSize)				// size in bytes of each element
 {
 size_t Idx;
 
 union {
-	UINT8 T8;
-	UINT16 T16;
-	UINT32 T32;
-	UINT64 T64;
+	uint8_t T8;
+	uint16_t T16;
+	uint32_t T32;
+	uint64_t T64;
 } Tmp;
 
 if(pEl1 == pEl2 || ElSize < 1)
@@ -165,80 +165,80 @@ switch(ElSize) {
 		*pEl2 = Tmp.T8;
 		return;
 	case 2:
-		Tmp.T16 = *(UINT16 *)pEl1;
-		*(UINT16 *)pEl1 = *(UINT16 *)pEl2;
-		*(UINT16 *)pEl2 = Tmp.T16;
+		Tmp.T16 = *(uint16_t *)pEl1;
+		*(uint16_t *)pEl1 = *(uint16_t *)pEl2;
+		*(uint16_t *)pEl2 = Tmp.T16;
 		return;
 
 	case 3:
-		Tmp.T16 = *(UINT16 *)pEl1;
-		*(UINT16 *)pEl1 = *(UINT16 *)pEl2;
-		*(UINT16 *)pEl2 = Tmp.T16;
-		pEl1 += sizeof(UINT16);
-		pEl2 += sizeof(UINT16);
+		Tmp.T16 = *(uint16_t *)pEl1;
+		*(uint16_t *)pEl1 = *(uint16_t *)pEl2;
+		*(uint16_t *)pEl2 = Tmp.T16;
+		pEl1 += sizeof(uint16_t);
+		pEl2 += sizeof(uint16_t);
 		Tmp.T8 = *pEl1;
 		*pEl1 = *pEl2;
 		*pEl2 = Tmp.T8;
 		return;
 
 	case 4:
-		Tmp.T32 = *(UINT32 *)pEl1;
-		*(UINT32 *)pEl1 = *(UINT32 *)pEl2;
-		*(UINT32 *)pEl2 = Tmp.T32;
+		Tmp.T32 = *(uint32_t *)pEl1;
+		*(uint32_t *)pEl1 = *(uint32_t *)pEl2;
+		*(uint32_t *)pEl2 = Tmp.T32;
 		return;
 
 	case 5:
-		Tmp.T32 = *(UINT32 *)pEl1;
-		*(UINT32 *)pEl1 = *(UINT32 *)pEl2;
-		*(UINT32 *)pEl2 = Tmp.T32;
-		pEl1 += sizeof(UINT32);
-		pEl2 += sizeof(UINT32);
+		Tmp.T32 = *(uint32_t *)pEl1;
+		*(uint32_t *)pEl1 = *(uint32_t *)pEl2;
+		*(uint32_t *)pEl2 = Tmp.T32;
+		pEl1 += sizeof(uint32_t);
+		pEl2 += sizeof(uint32_t);
 		Tmp.T8 = *pEl1;
 		*pEl1 = *pEl2;
 		*pEl2 = Tmp.T8;
 		return;
 
 	case 6:
-		Tmp.T32 = *(UINT32 *)pEl1;
-		*(UINT32 *)pEl1 = *(UINT32 *)pEl2;
-		*(UINT32 *)pEl2 = Tmp.T32;
-		pEl1 += sizeof(UINT32);
-		pEl2 += sizeof(UINT32);
-		Tmp.T16 = *(UINT16 *)pEl1;
-		*(UINT16 *)pEl1 = *(UINT16 *)pEl2;
-		*(UINT16 *)pEl2 = Tmp.T16;
+		Tmp.T32 = *(uint32_t *)pEl1;
+		*(uint32_t *)pEl1 = *(uint32_t *)pEl2;
+		*(uint32_t *)pEl2 = Tmp.T32;
+		pEl1 += sizeof(uint32_t);
+		pEl2 += sizeof(uint32_t);
+		Tmp.T16 = *(uint16_t *)pEl1;
+		*(uint16_t *)pEl1 = *(uint16_t *)pEl2;
+		*(uint16_t *)pEl2 = Tmp.T16;
 		return;
 
 	case 7:
-		Tmp.T32 = *(UINT32 *)pEl1;
-		*(UINT32 *)pEl1 = *(UINT32 *)pEl2;
-		*(UINT32 *)pEl2 = Tmp.T32;
-		pEl1 += sizeof(UINT32);
-		pEl2 += sizeof(UINT32);
-		Tmp.T16 = *(UINT16 *)pEl1;
-		*(UINT16 *)pEl1 = *(UINT16 *)pEl2;
-		*(UINT16 *)pEl2 = Tmp.T16;
-		pEl1 += sizeof(UINT16);
-		pEl2 += sizeof(UINT16);
+		Tmp.T32 = *(uint32_t *)pEl1;
+		*(uint32_t *)pEl1 = *(uint32_t *)pEl2;
+		*(uint32_t *)pEl2 = Tmp.T32;
+		pEl1 += sizeof(uint32_t);
+		pEl2 += sizeof(uint32_t);
+		Tmp.T16 = *(uint16_t *)pEl1;
+		*(uint16_t *)pEl1 = *(uint16_t *)pEl2;
+		*(uint16_t *)pEl2 = Tmp.T16;
+		pEl1 += sizeof(uint16_t);
+		pEl2 += sizeof(uint16_t);
 		Tmp.T8 = *pEl1;
 		*pEl1 = *pEl2;
 		*pEl2 = Tmp.T8;
 		return;
 
 	case 8:
-		Tmp.T64 = *(UINT64 *)pEl1;
-		*(UINT64 *)pEl1 = *(UINT64 *)pEl2;
-		*(UINT64 *)pEl2 = Tmp.T64;
+		Tmp.T64 = *(uint64_t *)pEl1;
+		*(uint64_t *)pEl1 = *(uint64_t *)pEl2;
+		*(uint64_t *)pEl2 = Tmp.T64;
 		return;
 
-	default:					// some strange size, first exchange as UINT32's then remainder as UINT8s
-		for (Idx=0; Idx < (UINT32)(ElSize - ElSize % sizeof(UINT32)); Idx += sizeof(UINT32)) 
+	default:					// some strange size, first exchange as uint32_t's then remainder as UINT8s
+		for (Idx=0; Idx < (uint32_t)(ElSize - ElSize % sizeof(uint32_t)); Idx += sizeof(uint32_t)) 
 			{
-			Tmp.T32 = *(UINT32 *)pEl1;
-			*(UINT32 *)pEl1 = *(UINT32 *)pEl2;
-			*(UINT32 *)pEl2 = Tmp.T32;
-			pEl1 += sizeof(UINT32);
-			pEl2 += sizeof(UINT32);
+			Tmp.T32 = *(uint32_t *)pEl1;
+			*(uint32_t *)pEl1 = *(uint32_t *)pEl2;
+			*(uint32_t *)pEl2 = Tmp.T32;
+			pEl1 += sizeof(uint32_t);
+			pEl2 += sizeof(uint32_t);
 			}
 
 		  for (; Idx < ElSize; Idx++) 
@@ -254,13 +254,13 @@ switch(ElSize) {
 // InsertSort
 // Insertion sort used when the number of elements in partition is below cInsertSortMinLen
 void
-CMTqsort::InsertSort(UINT8 *pLeft,	// pts to leftmost element		
-	    UINT8 *pRight,				// pts to rightmost element
+CMTqsort::InsertSort(uint8_t *pLeft,	// pts to leftmost element		
+	    uint8_t *pRight,				// pts to rightmost element
 		size_t ElSize,				// size in bytes of each element
 		comparer CompareFunc)		// function to compare pairs of elements
 {
-UINT8 *pProbe;
-UINT8 *pMax;
+uint8_t *pProbe;
+uint8_t *pMax;
 
 while (pRight > pLeft) {
 	pMax = pLeft;
@@ -328,15 +328,15 @@ return(false);
 void 
 CMTqsort::_mtqsort (bool bUseThreads,		// if true then can create threads to handle sub-partitions
 				void *pArray,				// array containing elements to be sorted
-				INT64 NumEls,					// number of elements in array
+				int64_t NumEls,					// number of elements in array
 				size_t ElSize,					// size in bytes of each element
 				comparer CompareFunc)			// function to compare pairs of elements
 {
-UINT8 *pCurPartStart;							// current partition start
-UINT8 *pCurPartEnd;								// current partition end
-UINT8 *pCurPartMid;								// pivot point in current partition, hopefully will be the median value so partition will be split into two equal sized sub partitions!
-UINT8 *pLow;									// used when traversing partition starting from start towards end 
-UINT8 *pHigh;									// used when traversing partition starting from end towards start 
+uint8_t *pCurPartStart;							// current partition start
+uint8_t *pCurPartEnd;								// current partition end
+uint8_t *pCurPartMid;								// pivot point in current partition, hopefully will be the median value so partition will be split into two equal sized sub partitions!
+uint8_t *pLow;									// used when traversing partition starting from start towards end 
+uint8_t *pHigh;									// used when traversing partition starting from end towards start 
 size_t NumElsCurPart;							// number of elements in current sub-partition
 tsSubPartStackEl SubPartStackEls[cMaxPartStack];		// stack of sub-partitions to yet to be processed 
 tsSubPartStackEl *pSubPartStackEl;				// stack ptr
@@ -345,8 +345,8 @@ if (NumEls < 2)									// anything to sort?
     return;                
 
 pSubPartStackEl = &SubPartStackEls[0];                 
-pCurPartStart = (UINT8 *)pArray;
-pCurPartEnd = (UINT8 *)pArray + ElSize * (NumEls-1);    
+pCurPartStart = (uint8_t *)pArray;
+pCurPartEnd = (uint8_t *)pArray + ElSize * (NumEls-1);    
 
 recurse:
 	{
@@ -462,7 +462,7 @@ return;
 // threaded qsort 
 void 
 CMTqsort::qsort(void *pArray,
-				INT64 NumEls,
+				int64_t NumEls,
 				size_t ElSize,
 				comparer CompareFunc)
 {

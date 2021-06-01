@@ -318,7 +318,7 @@ if(m_bTerminate)		// check if should early exit
 	ReleaseSerialise();
 	return(eBSFerrInternal);
 	}
-if((m_UsedGraphOutEdges + (UINT32)NumSeqs) >= cMaxNumEdges)
+if((m_UsedGraphOutEdges + (uint32_t)NumSeqs) >= cMaxNumEdges)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEdges: too many edges, can only accept at most %u",cMaxNumEdges);
 	m_bTerminate = true;
@@ -369,11 +369,11 @@ else
 	if((m_UsedGraphOutEdges + NumSeqs + 4) >= m_AllocGraphOutEdges) // need to add additional forward graph edges, 4 is simply to allow a small margin of error
 		{
 		tsGraphOutEdge *pTmp;
-		UINT64 AllocEdges;
-		UINT64 ReallocEdges;
+		uint64_t AllocEdges;
+		uint64_t ReallocEdges;
 
-		ReallocEdges =  (UINT64)((double)m_AllocGraphOutEdges * cReallocEdges);
-		AllocEdges = (UINT64)m_AllocGraphOutEdges + ReallocEdges;
+		ReallocEdges =  (uint64_t)((double)m_AllocGraphOutEdges * cReallocEdges);
+		AllocEdges = (uint64_t)m_AllocGraphOutEdges + ReallocEdges;
 		if(AllocEdges > 0x0ffffffff)
 			AllocEdges = 0x0ffffffff;
 		AllocMem = (size_t)(AllocEdges * sizeof(tsGraphOutEdge));
@@ -392,7 +392,7 @@ else
 			ReleaseSerialise();
 			return(eBSFerrMem);
 			}
-		m_AllocGraphOutEdges += (UINT32)ReallocEdges;
+		m_AllocGraphOutEdges += (uint32_t)ReallocEdges;
 		m_pGraphOutEdges = pTmp;
 		}
 	}
@@ -540,9 +540,9 @@ else
 	if((m_UsedGraphOutEdges + 4) > m_AllocGraphOutEdges) // need to add additional forward graph edges, 4 is simply to allow a small margin of error
 		{
 		tsGraphOutEdge *pTmp;
-		UINT64 AllocEdges;
-		UINT64 ReallocEdges =  (UINT64)((double)m_AllocGraphOutEdges * cReallocEdges);
-		AllocEdges = (UINT64)m_AllocGraphOutEdges + ReallocEdges;
+		uint64_t AllocEdges;
+		uint64_t ReallocEdges =  (uint64_t)((double)m_AllocGraphOutEdges * cReallocEdges);
+		AllocEdges = (uint64_t)m_AllocGraphOutEdges + ReallocEdges;
 		if(AllocEdges > 0x0ffffffff)
 			AllocEdges = 0x0ffffffff;
 		AllocMem = (size_t)(AllocEdges * sizeof(tsGraphOutEdge));
@@ -561,7 +561,7 @@ else
 			ReleaseSerialise();
 			return(eBSFerrMem);
 			}
-		m_AllocGraphOutEdges += (UINT32)ReallocEdges;
+		m_AllocGraphOutEdges += (uint32_t)ReallocEdges;
 		m_pGraphOutEdges = pTmp;
 		}
 	}
@@ -581,8 +581,8 @@ ReleaseSerialise();
 return(eBSFSuccess);
 }
 
-UINT32										// returned vertex identifier
-CAssembGraph::AddVertex(UINT32 SeqLen,		// sequence length
+uint32_t										// returned vertex identifier
+CAssembGraph::AddVertex(uint32_t SeqLen,		// sequence length
 						tSeqID SeqID,		// allocates and initialises a new graph vertex which references this sequence
 						tSeqID PESeqID)		// if paired end assembly then the paired (partner) sequence identifier, 0 if no paired end
 
@@ -633,9 +633,9 @@ else
 	if(m_UsedGraphVertices >= m_AllocGraphVertices) // need to alloc additional graph vertices?
 		{
 		tsGraphVertex *pTmp;
-		UINT32 ReallocVertices;
+		uint32_t ReallocVertices;
 		size_t memreq;
-		ReallocVertices = (UINT32)(m_AllocGraphVertices * cReallocVertices);
+		ReallocVertices = (uint32_t)(m_AllocGraphVertices * cReallocVertices);
 
 		memreq = (m_AllocGraphVertices + ReallocVertices) * sizeof(tsGraphVertex);
 #ifdef _WIN32
@@ -675,9 +675,9 @@ CAssembGraph::LocateVertexSeqID(tSeqID SeqID)		// match this SeqID
 {
 tsGraphVertex *pEl2;
 int CmpRslt;
-UINT32 TargPsn;
-UINT32 NodeLo;				
-UINT32 NodeHi;				
+uint32_t TargPsn;
+uint32_t NodeLo;				
+uint32_t NodeHi;				
 if( SeqID < 1,								// must be valid
 	m_pGraphVertices == NULL,				// must be allocated
 	m_UsedGraphVertices < 1 ||				// must have at least 1 vertex
@@ -687,7 +687,7 @@ if( SeqID < 1,								// must be valid
 NodeLo = 0;
 NodeHi = m_UsedGraphVertices - 1;
 do {
-	TargPsn = ((UINT64)NodeLo + NodeHi) / 2L;
+	TargPsn = ((uint64_t)NodeLo + NodeHi) / 2L;
 	pEl2 = &m_pGraphVertices[TargPsn];
 
 	if(SeqID == pEl2->SeqID)
@@ -717,9 +717,9 @@ CAssembGraph::LocateVertex(tVertID VertexID)		// match this VertexID
 {
 tsGraphVertex *pEl2;
 int CmpRslt;
-UINT32 TargPsn;
-UINT32 NodeLo;				
-UINT32 NodeHi;				
+uint32_t TargPsn;
+uint32_t NodeLo;				
+uint32_t NodeHi;				
 if( VertexID < 1,								// must be valid
 	m_pGraphVertices == NULL,				// must be allocated
 	m_UsedGraphVertices < 1 ||				// must have at least 1 vertex
@@ -729,7 +729,7 @@ if( VertexID < 1,								// must be valid
 NodeLo = 0;
 NodeHi = m_UsedGraphVertices - 1;
 do {
-	TargPsn = ((UINT64)NodeLo + NodeHi) / 2L;
+	TargPsn = ((uint64_t)NodeLo + NodeHi) / 2L;
 	pEl2 = &m_pGraphVertices[TargPsn];
 
 	if(VertexID == pEl2->VertexID)
@@ -757,10 +757,10 @@ return(0);	// unable to locate any instance of VertexID
 
 // when all sequences have been associated to vertices then FinaliseVertices must be called which
 // will firstly sort the vertices in SeqID ascending order and then remap the PEVertexIDs ready for edges between adjacent vertexes to be added with AddEdge()
-UINT32									// 0 if errors else number of vertices finalised
+uint32_t									// 0 if errors else number of vertices finalised
 CAssembGraph::FinaliseVertices(void)
 {
-UINT32 Idx;
+uint32_t Idx;
 tsGraphVertex *pVertex;
 tsGraphVertex *pPEVertex;
 if(m_pGraphVertices == NULL ||				// must be allocated
@@ -797,12 +797,12 @@ return(m_UsedGraphVertices);
 
 
 // when all edges have been added then FinaliseEdges must be called
-UINT32									// 0 if errors else number of edges finalised
+uint32_t									// 0 if errors else number of edges finalised
 CAssembGraph::FinaliseEdges(void)
 {
 tsGraphOutEdge *pOutEdge;
 tEdgeID *pInEdge;
-UINT32 EdgeIdx;
+uint32_t EdgeIdx;
 tVertID CurVertexID;
 tsGraphVertex *pVertex;
 #ifdef _DEBUG
@@ -951,30 +951,30 @@ _ASSERTE( _CrtCheckMemory());
 return(m_UsedGraphOutEdges);
 }
 
-UINT32 
+uint32_t 
 CAssembGraph::GetNumGraphVertices(void)		// returns current number of graph vertices
 {
-UINT32 Num;
+uint32_t Num;
 AcquireSerialise();
 Num = m_UsedGraphVertices;
 ReleaseSerialise();
 return(Num);
 }
 
-UINT32 
+uint32_t 
 CAssembGraph::GetNumGraphOutEdges(void)		// returns current number of graph forward edges
 {
-UINT32 Num;
+uint32_t Num;
 AcquireSerialise();
 Num = m_UsedGraphOutEdges;
 ReleaseSerialise();
 return(Num);
 }
 
-UINT32 
+uint32_t 
 CAssembGraph::GetNumReducts(void)		// returns current number of edge reductions
 {
-UINT32 Num;
+uint32_t Num;
 AcquireSerialise();
 Num = m_NumReducts;
 ReleaseSerialise();
@@ -982,11 +982,11 @@ return(Num);
 }
 
 
-UINT32								
+uint32_t								
 CAssembGraph::ClearEdgeTravFwdRevs(void)
 {
 tsGraphOutEdge *pEdge;
-UINT32 EdgeIdx;
+uint32_t EdgeIdx;
 pEdge = m_pGraphOutEdges;
 for(EdgeIdx = 0; EdgeIdx < m_UsedGraphOutEdges; EdgeIdx++,pEdge++)
 	{
@@ -996,29 +996,29 @@ for(EdgeIdx = 0; EdgeIdx < m_UsedGraphOutEdges; EdgeIdx++,pEdge++)
 return(m_UsedGraphOutEdges);
 }
 
-UINT32								
+uint32_t								
 CAssembGraph::ClearDiscCompIDs(void)
 {
 tsGraphVertex *pVertex;
-UINT32 VertexIdx;
+uint32_t VertexIdx;
 pVertex = m_pGraphVertices;
 for(VertexIdx = 0; VertexIdx < m_UsedGraphVertices; VertexIdx++,pVertex++)
 	pVertex->DiscGraphID = 0;
 return(m_UsedGraphVertices);
 }
 
-UINT32									// total number of vertices with both inbound and outbound edges
+uint32_t									// total number of vertices with both inbound and outbound edges
 CAssembGraph::VertexConnections(void)	// identify and mark vertices which have multiple in/out bound edges
 {
-UINT32 NumOutEdges;
-UINT32 NumInEdges;
-UINT32 NumMultiInVertices;
-UINT32 NumMultiOutVertices;
-UINT32 NumMultiInOutVertices;
-UINT32 NumIsolatedVertices;
-UINT32 NumStartVertices;
-UINT32 NumEndVertices;
-UINT32  NumInternVertices;
+uint32_t NumOutEdges;
+uint32_t NumInEdges;
+uint32_t NumMultiInVertices;
+uint32_t NumMultiOutVertices;
+uint32_t NumMultiInOutVertices;
+uint32_t NumIsolatedVertices;
+uint32_t NumStartVertices;
+uint32_t NumEndVertices;
+uint32_t  NumInternVertices;
 tEdgeID EdgeID;
 tVertID VertexID;
 tsGraphVertex *pVertex;
@@ -1088,7 +1088,7 @@ return(NumInternVertices);
 }
 
 
-static UINT32 m_NumReplacedDiscGraphIDs;
+static uint32_t m_NumReplacedDiscGraphIDs;
 // IdentifyDisconnectedSubGraphs
 // Within the graph there are likely to be many (could be millions) of completely disconnected subgraphs
 // These disconnected subgraphs have no sequences which overlay, or are overlaid by, sequences in any other subgraph 
@@ -1096,13 +1096,13 @@ static UINT32 m_NumReplacedDiscGraphIDs;
 // as belonging to an disconnected subgraph
 // Currently this function is single threaded, could be worthwhile to multithread
 // 
-UINT32						// returned number of subgraphs identified
+uint32_t						// returned number of subgraphs identified
 CAssembGraph::IdentifyDisconnectedSubGraphs(void)
 {
-UINT32 VertexIdx;
-UINT32 NumVertices;
-UINT32 MaxVertices;
-UINT32 Cntr;
+uint32_t VertexIdx;
+uint32_t NumVertices;
+uint32_t MaxVertices;
+uint32_t Cntr;
 tDiscGraphID CurDiscGraphID;
 tsGraphVertex *pVertex;
 
@@ -1180,8 +1180,8 @@ for(VertexIdx = 0; VertexIdx < m_UsedGraphVertices; VertexIdx++, pVertex++)
 			{
 			size_t AllocMem;
 			tsComponent *pTmp;
-			UINT32 ReallocComponents;
-			ReallocComponents = (UINT32)(m_AllocComponents * cReallocComponents);
+			uint32_t ReallocComponents;
+			ReallocComponents = (uint32_t)(m_AllocComponents * cReallocComponents);
 			AllocMem = (size_t)((m_AllocComponents + ReallocComponents) * sizeof(tsComponent));
 		#ifdef _WIN32
 			pTmp = (tsComponent *)realloc(m_pComponents,AllocMem);
@@ -1193,7 +1193,7 @@ for(VertexIdx = 0; VertexIdx < m_UsedGraphVertices; VertexIdx++, pVertex++)
 			if(pTmp == NULL)
 				{
 				gDiagnostics.DiagOut(eDLFatal,gszProcName,"PushTransitStack: graph Transit stack (%d bytes per entry) re-allocation to %lld from %lld failed - %s",
-																	(int)sizeof(tsComponent),m_AllocComponents  + (UINT64)ReallocComponents,m_AllocComponents,strerror(errno));
+																	(int)sizeof(tsComponent),m_AllocComponents  + (uint64_t)ReallocComponents,m_AllocComponents,strerror(errno));
 				return(eBSFerrMem);
 				}
 			m_AllocComponents += ReallocComponents;
@@ -1221,7 +1221,7 @@ if(m_UsedComponents)
 		pStaticComponents = m_pComponents;
 		m_MTqsort.qsort(pStaticComponents,m_UsedComponents,sizeof(tsComponent),SortComponentNumVertices);
 		}
-	for(UINT32 Idx = 0; Idx < min(100,m_UsedComponents); Idx++)
+	for(uint32_t Idx = 0; Idx < min(100,m_UsedComponents); Idx++)
 		{
 		gDiagnostics.DiagOut(eDLInfo,gszProcName,"ComponentID %u, Vertices %u",m_pComponents[Idx].ComponentID,m_pComponents[Idx].NumVertices);
 		}
@@ -1265,8 +1265,8 @@ else
 		{
 		size_t AllocMem;
 		tVertID *pTmp;
-		UINT32 ReallocTransitStack;
-		ReallocTransitStack = (UINT32)(m_AllocTransitStack * cReallocTransitStack); 
+		uint32_t ReallocTransitStack;
+		ReallocTransitStack = (uint32_t)(m_AllocTransitStack * cReallocTransitStack); 
 		AllocMem = (size_t)((m_AllocTransitStack + ReallocTransitStack) * sizeof(tVertID));
 	#ifdef _WIN32
 		pTmp = (tVertID *)realloc(m_pTransitStack,AllocMem);
@@ -1278,7 +1278,7 @@ else
 		if(pTmp == NULL)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"PushTransitStack: graph Transit stack (%d bytes per entry) re-allocation to %lld from %lld failed - %s",
-																(int)sizeof(tVertID),m_AllocTransitStack  + (UINT64)ReallocTransitStack,m_AllocTransitStack,strerror(errno));
+																(int)sizeof(tVertID),m_AllocTransitStack  + (uint64_t)ReallocTransitStack,m_AllocTransitStack,strerror(errno));
 			return(eBSFerrMem);
 			}
 		m_AllocTransitStack += ReallocTransitStack;
@@ -1312,12 +1312,12 @@ m_CurTransitDepth = 0;
 }
 
 
-UINT32												 // number of vertices marked as members of this component
+uint32_t												 // number of vertices marked as members of this component
 CAssembGraph::IdentifyDiscComponent(tVertID VertexID, // start component traversal from this vertex
 				tDiscGraphID DiscGraphID)			 // mark all traversed vertices as members of this component
 {
 bool bTraverse;
-UINT32 NumMembers;
+uint32_t NumMembers;
 tEdgeID EdgeID;
 tVertID CurVertexID;
 tsGraphVertex *pVertex;
@@ -1431,10 +1431,10 @@ return(NumMembers);
 // Process all vectices in specified component and generate output fragments
 // Generated fragments contain vertice sequences whereby the 5' vertex has 0 or more than 1 inbound edge, intermediate vertexs 1 inbound and 1 outbound edge, and
 // the 5' vertex sequence had 0 or more than 1 outbound edge
-UINT32
+uint32_t
 CAssembGraph::GenSeqFragment(tsGraphVertex *pVertex)		// initial seed vertex
 {
-UINT32 FragLen;
+uint32_t FragLen;
 tsGraphOutEdge *pEdge;
 bool bSense = true;
 
@@ -1470,15 +1470,15 @@ return(FragLen);
 }
 
 
-UINT32					// number of replacements
+uint32_t					// number of replacements
 CAssembGraph::ReplaceDiscGraphIDs(void) 
 {
-UINT32 VertexIdx;
+uint32_t VertexIdx;
 tsGraphVertex *pVertex;
 tsRemapDiscGraphID *pRemap;
 bool bReplaced;
-UINT32 RemapIdx;
-UINT32 NumReplaced = 0;
+uint32_t RemapIdx;
+uint32_t NumReplaced = 0;
 
 if(!m_NumDiscRemaps)
 	return(0);
@@ -1503,13 +1503,13 @@ m_NumDiscRemaps = 0;
 return(NumReplaced);
 }
 
-UINT32					// number of replacements
+uint32_t					// number of replacements
 CAssembGraph::ReplaceDiscGraphID(tDiscGraphID ToReplaceID,		// replace existing disconnected graph identifiers 
 		tDiscGraphID ReplaceID)					// with this identifier
 {
-UINT32 VertexIdx;
+uint32_t VertexIdx;
 tsGraphVertex *pVertex;
-UINT32 NumReplaced = 0;
+uint32_t NumReplaced = 0;
 pVertex = m_pGraphVertices;
 for(VertexIdx = 0; VertexIdx < m_UsedGraphVertices; VertexIdx++, pVertex++)
 	{
@@ -1523,21 +1523,21 @@ return(NumReplaced);
 }
 
 
-UINT32			// index+1 in m_pGraphOutEdges of first matching FromVertexID, or 0 if non matching				
+uint32_t			// index+1 in m_pGraphOutEdges of first matching FromVertexID, or 0 if non matching				
 CAssembGraph::LocateFirstVertID(tVertID FromVertexID)	// find first matching  
 {
 tsGraphOutEdge *pEl2;
 int CmpRslt;
-UINT32 Mark;
-UINT32 TargPsn;
-UINT32 NodeLo = 0;
-UINT32 NodeHi = m_UsedGraphOutEdges-1;
+uint32_t Mark;
+uint32_t TargPsn;
+uint32_t NodeLo = 0;
+uint32_t NodeHi = m_UsedGraphOutEdges-1;
 
 if(m_bOutEdgeSorted == false)		// out edges must be sorted by FromVertexID ascending
 	return(0);
 
 do {
-	TargPsn = ((UINT64)NodeLo + NodeHi) / 2L;
+	TargPsn = ((uint64_t)NodeLo + NodeHi) / 2L;
 	pEl2 = &m_pGraphOutEdges[TargPsn];
 
 	if(FromVertexID > pEl2->FromVertexID)
@@ -1561,7 +1561,7 @@ do {
 					return(Mark+1);
 				NodeHi = TargPsn - 1;
 				}	
-			TargPsn = ((UINT64)NodeLo + NodeHi) / 2L;
+			TargPsn = ((uint64_t)NodeLo + NodeHi) / 2L;
 
 			pEl2 = &m_pGraphOutEdges[TargPsn];
 			if(FromVertexID > pEl2->FromVertexID)
@@ -1596,7 +1596,7 @@ return(0);	// unable to locate any instance of FromVertexID
 
 
 
-UINT64 
+uint64_t 
 CAssembGraph::WriteContigs(char *pszOutFile)  // write assembled contigs to this output file
 {
 // given an initial starting node then objective is to locate an upstream head node 
@@ -1653,17 +1653,17 @@ return(0);
 // ReduceEdges
 // As edges are added independently of all other edges then graph may contain many extraneous edges
 // This function firstly identifies these extraneous edges and finally removes them
-UINT32								// number of extraneous edges removed	 
+uint32_t								// number of extraneous edges removed	 
 CAssembGraph::ReduceEdges(void)		// reduce graph by detecting and removing extraneous edges
 {
 tsGraphOutEdge *pEdge;
 tsGraphOutEdge *pDstEdge;
 tVertID ToVertexID;
-UINT16 SeqOfs;
-UINT32 Idx;
+uint16_t SeqOfs;
+uint32_t Idx;
 
-UINT32 Num2Remove;
-UINT32 NumRemoved;
+uint32_t Num2Remove;
+uint32_t NumRemoved;
 
 
 if(m_pGraphOutEdges == NULL || m_UsedGraphOutEdges < 2)	// any edges to be reduced?
@@ -1736,16 +1736,16 @@ CAssembGraph::LocateSeqIDDnSeqID(tSeqID SeqID,			// match this SeqID1
 {
 tsGraphOutEdge *pEl2;
 int CmpRslt;
-UINT32 TargPsn;
-UINT32 NodeLo;				
-UINT32 NodeHi;				
+uint32_t TargPsn;
+uint32_t NodeLo;				
+uint32_t NodeHi;				
 if(m_NodeSortMode != eNSMSeqIDDnSeqID)		// nodes must be sorted by SeqID1.DnSeqID ascending
 	return(NULL);
 
 NodeLo = 0;
 NodeHi = m_UsedGraphNodes - 1;
 do {
-	TargPsn = ((UINT64)NodeLo + NodeHi) / 2L;
+	TargPsn = ((uint64_t)NodeLo + NodeHi) / 2L;
 	pEl2 = &m_pGraphOutEdges[TargPsn];
 
 	if(SeqID == pEl2->SeqID && DnSeqID == pEl2->DnSeqID)
@@ -1786,16 +1786,16 @@ CAssembGraph::LocateDnSeqIDSeq(tSeqID DnSeqID,	// match this DnSeqID
 {
 tsGraphOutEdge *pEl2;
 int CmpRslt;
-UINT32 TargPsn;
-UINT32 NodeLo;				
-UINT32 NodeHi;				
+uint32_t TargPsn;
+uint32_t NodeLo;				
+uint32_t NodeHi;				
 if(m_NodeSortMode != eNSMDnSeqIDSeqID)		// nodes must be sorted by DnSeqID.SeqID1 ascending
 	return(NULL);
 
 NodeLo = 0;
 NodeHi = m_UsedGraphNodes - 1;
 do {
-	TargPsn = ((UINT64)NodeLo + NodeHi) / 2L;
+	TargPsn = ((uint64_t)NodeLo + NodeHi) / 2L;
 	pEl2 = &m_pGraphOutEdges[TargPsn];
 
 	if(DnSeqID == pEl2->DnSeqID && SeqID == pEl2->SeqID)
@@ -1830,21 +1830,21 @@ while(NodeHi >= NodeLo);
 return(0);	// unable to locate any instance of DnSeqID.SeqID1
 }
 
-UINT32			// index+1 in m_pGraphOutEdges of first matching SeqID1, or 0 if non matching				
+uint32_t			// index+1 in m_pGraphOutEdges of first matching SeqID1, or 0 if non matching				
 CAssembGraph::LocateFirstSeqID(tSeqID SeqID)			// find first matching 
 {
 tsGraphOutEdge *pEl2;
 int CmpRslt;
-UINT32 Mark;
-UINT32 TargPsn;
-UINT32 NodeLo = 0;
-UINT32 NodeHi = m_UsedGraphNodes-1;
+uint32_t Mark;
+uint32_t TargPsn;
+uint32_t NodeLo = 0;
+uint32_t NodeHi = m_UsedGraphNodes-1;
 
 if(m_NodeSortMode != eNSMSeqIDDnSeqID)		// nodes must be sorted by SeqID1 ascending
 	return(0);
 
 do {
-	TargPsn = ((UINT64)NodeLo + NodeHi) / 2L;
+	TargPsn = ((uint64_t)NodeLo + NodeHi) / 2L;
 	pEl2 = &m_pGraphOutEdges[TargPsn];
 
 	if(SeqID > pEl2->SeqID)
@@ -1868,7 +1868,7 @@ do {
 					return(Mark+1);
 				NodeHi = TargPsn - 1;
 				}	
-			TargPsn = ((UINT64)NodeLo + NodeHi) / 2L;
+			TargPsn = ((uint64_t)NodeLo + NodeHi) / 2L;
 
 			pEl2 = &m_pGraphOutEdges[TargPsn];
 			if(SeqID > pEl2->SeqID)
@@ -1902,21 +1902,21 @@ return(0);	// unable to locate any instance of SeqID
 }
 
 
-UINT32			// index+1 in m_pGraphOutEdges of first matching DnSeqID, or 0 if non matching				
+uint32_t			// index+1 in m_pGraphOutEdges of first matching DnSeqID, or 0 if non matching				
 CAssembGraph::LocateFirstDnSeqID(tSeqID DnSeqID)			// find first matching 
 {
 tsGraphOutEdge *pEl2;
 int CmpRslt;
-UINT32 Mark;
-UINT32 TargPsn;
-UINT32 NodeLo = 0;
-UINT32 NodeHi = m_UsedGraphNodes-1;
+uint32_t Mark;
+uint32_t TargPsn;
+uint32_t NodeLo = 0;
+uint32_t NodeHi = m_UsedGraphNodes-1;
 
 if(!(m_NodeSortMode == eNSMDnSeqIDSeqID || m_NodeSortMode == eNSMDnSeqIDOfs))		// nodes must be sorted by DnSeqID ascending
 	return(0);
 
 do {
-	TargPsn = ((UINT64)NodeLo + NodeHi) / 2L;
+	TargPsn = ((uint64_t)NodeLo + NodeHi) / 2L;
 	pEl2 = &m_pGraphOutEdges[TargPsn];
 
 	if(DnSeqID > pEl2->DnSeqID)
@@ -1940,7 +1940,7 @@ do {
 					return(Mark+1);
 				NodeHi = TargPsn - 1;
 				}	
-			TargPsn = ((UINT64)NodeLo + NodeHi) / 2L;
+			TargPsn = ((uint64_t)NodeLo + NodeHi) / 2L;
 
 			pEl2 = &m_pGraphOutEdges[TargPsn];
 			if(DnSeqID > pEl2->DnSeqID)

@@ -40,52 +40,52 @@ typedef enum TAG_eContamType {
 
 // Vector sequence characterisation
 typedef struct TAG_sVectContam {
-	UINT16 ContamID;					// uniquely identifies this vector sequence
+	uint16_t ContamID;					// uniquely identifies this vector sequence
 	char szName[cMaxGeneNameLen];		// vector name
-	UINT8 FlgPE1Sense:1;				// check for sense overlaps of PE1 reads
-	UINT8 FlgPE1Antisense:1;			// check for antisense overlaps	of PE1 reads			
-	UINT8 FlgPE2Sense:1;				// check for sense overlaps of PE2 reads
-	UINT8 FlgPE2Antisense:1;			// check for antisense overlaps	of PE2 reads				
-	UINT32 HitTot;						// number of times this vector sequence contained a query read sequence
-	INT32 ContamLen;					// length of vector sequence
+	uint8_t FlgPE1Sense:1;				// check for sense overlaps of PE1 reads
+	uint8_t FlgPE1Antisense:1;			// check for antisense overlaps	of PE1 reads			
+	uint8_t FlgPE2Sense:1;				// check for sense overlaps of PE2 reads
+	uint8_t FlgPE2Antisense:1;			// check for antisense overlaps	of PE2 reads				
+	uint32_t HitTot;						// number of times this vector sequence contained a query read sequence
+	int32_t ContamLen;					// length of vector sequence
 	etSeqBase *pBases;					// allocated to hold the vector sequence bases
-	INT32 *pSfxIdx;						// allocated to hold suffix index over pBases
+	int32_t *pSfxIdx;						// allocated to hold suffix index over pBases
 } tsVectContam;
 
 // Flank contaminant characterisation
 typedef struct TAG_sFlankContam {
-	UINT16 ContamID;					// uniquely identifies this Contaminant sequence
+	uint16_t ContamID;					// uniquely identifies this Contaminant sequence
 	teContamType Type;					// flank type of this contaminant
-	UINT8 FlgRevCpl:1;					// 1 if contaminant sequence has been ReCpl'd relative to when loaded from contaminants file
+	uint8_t FlgRevCpl:1;					// 1 if contaminant sequence has been ReCpl'd relative to when loaded from contaminants file
 	char szName[cMaxGeneNameLen];		// Contaminant name
-	UINT32 HitTot;						// number of times this Contaminant sequence was overlapping onto a target sequence
-	UINT8 ContamLen;					// length of Contaminant sequence
-	UINT32 HitDist[cMaxContaminantLen+1];	// overlap length hit count distribution
+	uint32_t HitTot;						// number of times this Contaminant sequence was overlapping onto a target sequence
+	uint8_t ContamLen;					// length of Contaminant sequence
+	uint32_t HitDist[cMaxContaminantLen+1];	// overlap length hit count distribution
 	etSeqBase Bases[cMaxContaminantLen+1];// holds the Contaminant sequence bases
 } tsFlankContam;
 
 typedef struct TAG_sContaminantType {
 	teContamType Type;						// identifies the overlay type of contaminants
-	UINT32 NumChecks;						// number of times this type was checked for an overlap onto a target sequence
-	UINT32 HitTot;							// number of times this type was overlapping onto a target sequence
-	UINT32 HitDist[cMaxContaminantLen+1];	// overlap length hit count distribution for all contaminants of this type
+	uint32_t NumChecks;						// number of times this type was checked for an overlap onto a target sequence
+	uint32_t HitTot;							// number of times this type was overlapping onto a target sequence
+	uint32_t HitDist[cMaxContaminantLen+1];	// overlap length hit count distribution for all contaminants of this type
 	int NumContaminants;					// number of contaminants of this type
 	int MaxContamSeqLen;					// longest contaminant sequence length of this type
 	int MinContamSeqLen;					// shortest Contaminant sequence length	of this type
 	tsFlankContam *pFirstContam;			// pts to first contaminant of this type
 	tsFlankContam *pLastContam;				// pts to last contaminant of this type
-	UINT32 RootContamSeqNodeIdx;			// index + 1 (0 if none) into m_pContamSeqNodes[] of root node for contaminant sequences of this type
+	uint32_t RootContamSeqNodeIdx;			// index + 1 (0 if none) into m_pContamSeqNodes[] of root node for contaminant sequences of this type
 } tsContaminantType;
 
 typedef struct TAG_sContamSeqNodeBase {
-	UINT8 Base;								// contaminant base
-	UINT8 MaxContamSfxLen;					// maximum suffix length of any contaminate prefix sequence ending with current base
-	UINT16 ContamID;						// if overlay onto target prefix starts with this contaminant suffix then attribute to this contaminate
-	UINT32 ChildNodeIdx;					// index of child contaminate sequence node
+	uint8_t Base;								// contaminant base
+	uint8_t MaxContamSfxLen;					// maximum suffix length of any contaminate prefix sequence ending with current base
+	uint16_t ContamID;						// if overlay onto target prefix starts with this contaminant suffix then attribute to this contaminate
+	uint32_t ChildNodeIdx;					// index of child contaminate sequence node
 } tsContamSeqNodeBase;
 
 typedef struct TAG_sContamSeqNode {
-	UINT8 NumNodeBases;						// number of node bases in this contaminant sequence node
+	uint8_t NumNodeBases;						// number of node bases in this contaminant sequence node
 	tsContamSeqNodeBase Bases[5];			// upto 5 node bases (a,c,g,t,n)
 } tsContamSeqNode;
 
@@ -95,7 +95,7 @@ typedef struct TAG_sContamSeqNode {
 class CContaminants
 {
 	char szContaminantFile[_MAX_PATH];		// file from which Contaminant sequences were loaded
-	UINT8 *m_pSeqBuff;						// allocated to buffer sequences when parsing from file
+	uint8_t *m_pSeqBuff;						// allocated to buffer sequences when parsing from file
 	tsContaminantType m_ContaminantTypes[eAOFPlaceholder];	// indexed by teContamType
 	int m_TotNumContaminants;				// total number of Contaminants loaded into either m_pContaminants or m_ContaminantVectors
 	int m_NumFlankContaminates;				// number of flanking contaminants
@@ -111,7 +111,7 @@ class CContaminants
 	tsFlankContam *m_pContaminants;			 // allocated to hold loaded Contaminants, note that after loading these are sorted by length decending
 	CMTqsort m_mtqsort;						// muti-threaded qsort
 	
-	UINT32 m_NumContamSeqNodes;				// currently using this many nodes in contamiant sequences B-Tree
+	uint32_t m_NumContamSeqNodes;				// currently using this many nodes in contamiant sequences B-Tree
 	size_t m_AllocdContamSeqNodes;			// allocated to hold this many contamiant nodes
 	size_t m_AllocdContamSeqNodesMem;		// memory size allocated to hold contamiant nodes
 	tsContamSeqNode *m_pContamSeqNodes;		// ptr to allocated nodes
@@ -149,8 +149,8 @@ class CContaminants
 		
 
 	int IndexContamSeq(teContamType Type,	// contaminant sequence is of this overlay type
-					 UINT16 ContamID,		// identifies contaminant sequence
-					 UINT8 SeqLen,			// contaminant sequence is of this length
+					 uint16_t ContamID,		// identifies contaminant sequence
+					 uint8_t SeqLen,			// contaminant sequence is of this length
 					 etSeqBase *pSeq);		// contaminant sequence
 
 	int
@@ -235,7 +235,7 @@ public:
 	int	MaxContaminantLen(teContamClass ComtamClass= eCCAllContam);				// returns longest length of any contaminant sequence
 	int	MinContaminantLen(teContamClass ComtamClass= eCCAllContam);				// returns shortest length of any contaminant sequence
 
-	UINT32 NumChecks(teContamType Type);	// returns number of times this contaminant type was checked for an overlap onto a target sequence
+	uint32_t NumChecks(teContamType Type);	// returns number of times this contaminant type was checked for an overlap onto a target sequence
 
 	teContamType							// returned contaminant type
 		ContaminantType(int ContamID);		// contaminant identifier

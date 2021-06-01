@@ -96,11 +96,11 @@
 
 /*-- Stuff for randomising repetitive blocks. --*/
 
-extern UINT32 rNums[512];
+extern uint32_t rNums[512];
 
 #define BZ_RAND_DECLS                          \
-   UINT32 rNToGo;                               \
-   UINT32 rTPos                                 \
+   uint32_t rNToGo;                               \
+   uint32_t rTPos                                 \
 
 #define BZ_RAND_INIT_MASK                      \
    s->rNToGo = 0;                              \
@@ -136,7 +136,7 @@ extern unsigned int crc32Table[256];
 {                                              \
    crcVar = (crcVar << 8) ^                    \
             crc32Table[(crcVar >> 24) ^        \
-                       ((unsigned char)cha)];          \
+                       ((uint8_t)cha)];          \
 }
 
 
@@ -158,10 +158,10 @@ extern unsigned int crc32Table[256];
 
 /*-- externs for compression. --*/
 extern void 
-hbAssignCodes ( UINT32*, unsigned char*, UINT32, UINT32, UINT32 );
+hbAssignCodes ( uint32_t*, uint8_t*, uint32_t, uint32_t, uint32_t );
 
 extern void 
-hbMakeCodeLengths ( unsigned char*, UINT32*, UINT32, UINT32 );
+hbMakeCodeLengths ( uint8_t*, uint32_t*, uint32_t, uint32_t );
 
 
 
@@ -226,12 +226,12 @@ hbMakeCodeLengths ( unsigned char*, UINT32*, UINT32, UINT32 );
 
 #define BZ_GET_FAST(cccc)                     \
     s->tPos = s->tt[s->tPos];                 \
-    cccc = (unsigned char)(s->tPos & 0xff);           \
+    cccc = (uint8_t)(s->tPos & 0xff);           \
     s->tPos >>= 8;
 
 #define BZ_GET_FAST_C(cccc)                   \
     c_tPos = c_tt[c_tPos];                    \
-    cccc = (unsigned char)(c_tPos & 0xff);            \
+    cccc = (uint8_t)(c_tPos & 0xff);            \
     c_tPos >>= 8;
 
 #define SET_LL4(i,n)                                          \
@@ -244,7 +244,7 @@ hbMakeCodeLengths ( unsigned char*, UINT32*, UINT32, UINT32 );
    ((((unsigned int)(s->ll4[(i) >> 1])) >> (((i) << 2) & 0x4)) & 0xF)
 
 #define SET_LL(i,n)                          \
-   { s->ll16[i] = (UINT16)(n & 0x0000ffff);  \
+   { s->ll16[i] = (uint16_t)(n & 0x0000ffff);  \
      SET_LL4(i, n >> 16);                    \
    }
 
@@ -258,13 +258,13 @@ hbMakeCodeLengths ( unsigned char*, UINT32*, UINT32, UINT32 );
 
 /*-- externs for decompression. --*/
 
-extern UINT32 
-indexIntoF ( UINT32, UINT32* );
+extern uint32_t 
+indexIntoF ( uint32_t, uint32_t* );
 
 
 extern void 
-hbCreateDecodeTables ( UINT32*, UINT32*, UINT32*, unsigned char*,
-                       UINT32,  UINT32, UINT32 );
+hbCreateDecodeTables ( uint32_t*, uint32_t*, uint32_t*, uint8_t*,
+                       uint32_t,  uint32_t, uint32_t );
 
 #endif
 
@@ -306,12 +306,12 @@ hbCreateDecodeTables ( UINT32*, UINT32*, UINT32*, unsigned char*,
 							   
 /* (numero bits da leggere, int che conterra' il risultato) */
 #define fm_bit_read24(__n,__result)	{					\
-	UINT32 __t,__u;										\
+	uint32_t __t,__u;										\
 	assert(__Bit_buffer_size<8);						\
 	assert(__n>0 && __n<=24);							\
 	/* --- read groups of 8 bits until size>= n --- */ 	\
   	while(__Bit_buffer_size < __n) {					\
-		__t = (UINT32) *__MemAddress;					\
+		__t = (uint32_t) *__MemAddress;					\
 		__MemAddress++; (*__Num_Bytes)++;				\
     	__Bit_buffer |= (__t << (24-__Bit_buffer_size));\
     	__Bit_buffer_size += 8;}						\
@@ -324,7 +324,7 @@ hbCreateDecodeTables ( UINT32*, UINT32*, UINT32*, unsigned char*,
 
 	
 #define BIT_READ(__bitz, __result) {					\
-  UINT32 __ur = 0;										\
+  uint32_t __ur = 0;										\
   int __ir;												\
   assert(__bitz <= 32);									\
   if (__bitz > 24){										\
@@ -347,8 +347,8 @@ hbCreateDecodeTables ( UINT32*, UINT32*, UINT32*, unsigned char*,
    */
 
 #define fm_integer_encode(__numero, __log2log2maxvalue) {{		\
-	UINT32  __k;										\
-	UINT32 __i = 0;									\
+	uint32_t  __k;										\
+	uint32_t __i = 0;									\
 	assert(__log2log2maxvalue<6);							\
 	switch ( __numero ){									\
 		/* primi 4 casi speciali */							\
@@ -367,7 +367,7 @@ hbCreateDecodeTables ( UINT32*, UINT32*, UINT32*, unsigned char*,
 		e k su i-1 bits indica __numero in piu' alla		\
 	 	potenza di due precedente 						*/	\
 		default: {											\
-			UINT32 __pow = 1;									\
+			uint32_t __pow = 1;									\
 			/* 	calcola distanza dalla potenza di due 		\	
 			 	precedente i indica l'esponente di 			\
 				tale potenza */ 							\
@@ -383,7 +383,7 @@ hbCreateDecodeTables ( UINT32*, UINT32*, UINT32*, unsigned char*,
 			fm_bit_write24(__i-1,__k);							\
 			}}}}
 			
-UINT32 fm_integer_decode(unsigned short int);
+uint32_t fm_integer_decode(unsigned short int);
 #endif
 
 

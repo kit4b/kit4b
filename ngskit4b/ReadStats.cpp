@@ -606,7 +606,7 @@ if (!argerrors)
 							  bStrand,					// true if read strand specific distributions
 							  Trim5,					// trim this number of bases from 5' end of reads when loading the reads
 							  Trim3,					// trim this number of bases from 3' end of reads when loading the reads
-			  				  MaxKMerLen,				// processing is for upto this KMer length inclusive
+							  MaxKMerLen,				// processing is for upto this KMer length inclusive
 							  KMerCCC,					// concordance correlation coefficient measure KMer length
 							  MaxContamSubRate,			// max allowed contamimant substitution rate (bases per 25bp of contaminant overlap, 1st 15bp of overlap no subs allowed)
 							  MinContamLen,				// accept contaminant overlaps if overlap at least this many bases 
@@ -1163,7 +1163,7 @@ return(Rslt);
 
 int
 CReadStats::ProcessReadsetDist(etRSDMode PMode,		// processing mode; eRSDindependent or eRSDpooled
-				    int ProcessingID,				// processing instance identifier, used if processing eRSDindependent to identify output file instances 
+					int ProcessingID,				// processing instance identifier, used if processing eRSDindependent to identify output file instances 
 					bool bStrand,					// true if read strand specific distributions
 					int Trim5,						// trim this number of bases from 5' end of reads when loading the reads
 					int Trim3,						// trim this number of bases from 3' end of reads when loading the reads
@@ -1187,13 +1187,13 @@ int Rslt;
 int Idx;
 char *pszInFile;
 int SeriesID;
-UINT32 EstNumReads;
-INT32 EstSeqLen;
-INT32 EstMaxSeqLen;
-UINT64 EstTotNumPE1Reads;
-UINT64 EstTotNumPE2Reads;
-UINT64 EstTotPE1SeqLen;
-UINT64 EstTotPE2SeqLen;
+uint32_t EstNumReads;
+int32_t EstSeqLen;
+int32_t EstMaxSeqLen;
+uint64_t EstTotNumPE1Reads;
+uint64_t EstTotNumPE2Reads;
+uint64_t EstTotPE1SeqLen;
+uint64_t EstTotPE2SeqLen;
 
 bool bIsSAM;			// true if current file being processed is SAM or BAM
 CFasta FastaEsts;		// used for estimating number of sequences, lengths
@@ -1412,7 +1412,7 @@ for(Idx = 0; Idx < NumPE1InputFiles; Idx++)
 		EstTotNumPE1Reads += EstNumReads;
 		if(EstMaxSeqLen > m_EstMaxSeqLen)
 			m_EstMaxSeqLen = EstMaxSeqLen;
-		EstTotPE1SeqLen += (UINT64)EstSeqLen * EstNumReads;
+		EstTotPE1SeqLen += (uint64_t)EstSeqLen * EstNumReads;
 		m_InReadsFiles[m_NumInFiles].FileID = m_NumInFiles + 1;
 		strncpy(m_InReadsFiles[m_NumInFiles].szFileName, pszInFile, _MAX_PATH);
 		m_InReadsFiles[m_NumInFiles].QSSchema = QSSchema;
@@ -1460,7 +1460,7 @@ if (m_bPEProc)
 			EstTotNumPE2Reads += EstNumReads;
 			if(EstMaxSeqLen > m_EstMaxSeqLen)
 				m_EstMaxSeqLen = EstMaxSeqLen;
-			EstTotPE2SeqLen += (UINT64)EstSeqLen * EstNumReads;
+			EstTotPE2SeqLen += (uint64_t)EstSeqLen * EstNumReads;
 			m_InReadsFiles[m_NumInFiles].FileID = m_NumInFiles + 1;
 			strncpy(m_InReadsFiles[m_NumInFiles].szFileName, pszInFile, _MAX_PATH);
 			m_InReadsFiles[m_NumInFiles].QSSchema = QSSchema;
@@ -1484,29 +1484,29 @@ if (m_bPEProc && (m_NumPE1InFiles != m_NumPE2InFiles))
 
 // have work to do!
 // preallocate for distribution counts
-if((m_pBaseNs = new UINT32 [cMaxRSSeqLen])==NULL)
+if((m_pBaseNs = new uint32_t [cMaxRSSeqLen])==NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName," (Instance %d) ProcessReadsetDist: Unable to allocate memory for indeterminate base counts",ProcessingID);
 	Reset();
 	return(eBSFerrMem);
 	}
-memset(m_pBaseNs,0,sizeof(UINT32) * cMaxRSSeqLen);
+memset(m_pBaseNs,0,sizeof(uint32_t) * cMaxRSSeqLen);
 
-if((m_pScores = new UINT32 [cMaxRSSeqLen * 42])==NULL)			// Phred scores can range from 0 to 41 inclusive
+if((m_pScores = new uint32_t [cMaxRSSeqLen * 42])==NULL)			// Phred scores can range from 0 to 41 inclusive
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"(Instance %d) ProcessReadsetDist: Unable to allocate memory for Phred quality score distributions",ProcessingID);
 	Reset();
 	return(eBSFerrMem);
 	}
-memset(m_pScores,0,sizeof(UINT32) * cMaxRSSeqLen * 42);
+memset(m_pScores,0,sizeof(uint32_t) * cMaxRSSeqLen * 42);
 
-if ((m_pSeqHashes = new UINT32[cMaxHashArrayEntries]) == NULL)
+if ((m_pSeqHashes = new uint32_t[cMaxHashArrayEntries]) == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessReadsetDist: (Instance %d) Memory allocation of %lld bytes for hashes - %s", ProcessingID,(INT64)cMaxHashArrayEntries*sizeof(UINT32), strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessReadsetDist: (Instance %d) Memory allocation of %lld bytes for hashes - %s", ProcessingID,(int64_t)cMaxHashArrayEntries*sizeof(uint32_t), strerror(errno));
 	Reset();
 	return(eBSFerrMem);
 	}
-memset(m_pSeqHashes, 0, sizeof(UINT32)*cMaxHashArrayEntries);
+memset(m_pSeqHashes, 0, sizeof(uint32_t)*cMaxHashArrayEntries);
 m_NumSeqHashes = 0;
 
 size_t memreq;
@@ -1521,22 +1521,22 @@ for(int Kmer = 1; Kmer <= m_MaxKMerLen; Kmer++)
 	memreq += Pow;
 	}
 m_KMerCntsEls = (int)memreq;
-memreq *= m_AllocdMaxReadLen * sizeof(UINT32);
+memreq *= m_AllocdMaxReadLen * sizeof(uint32_t);
  
 #ifdef _WIN32
-m_pKMerCnts = (UINT32 *)malloc(memreq);	// initial and with any luck perhaps the only allocation
+m_pKMerCnts = (uint32_t *)malloc(memreq);	// initial and with any luck perhaps the only allocation
 if (m_pKMerCnts == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessReadsetDist: (Instance %d) Memory allocation of %lld bytes for K-mer distributions - %s", ProcessingID, (INT64)memreq, strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessReadsetDist: (Instance %d) Memory allocation of %lld bytes for K-mer distributions - %s", ProcessingID, (int64_t)memreq, strerror(errno));
 	Reset();
 	return(eBSFerrMem);
 	}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-m_pKMerCnts = (UINT32 *)mmap(NULL, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+m_pKMerCnts = (uint32_t *)mmap(NULL, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 if (m_pKMerCnts == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessReadsetDist: (Instance %d) Memory allocation of %lld bytes  for K-mer distributions through mmap()  failed - %s", ProcessingID, (INT64)memreq, strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessReadsetDist: (Instance %d) Memory allocation of %lld bytes  for K-mer distributions through mmap()  failed - %s", ProcessingID, (int64_t)memreq, strerror(errno));
 	m_pKMerCnts = NULL;
 	Reset();
 	return(eBSFerrMem);
@@ -1550,19 +1550,19 @@ m_AllocdSampledSeqWrds *= ReqMaxDupSeeds;
 memreq = m_AllocdSampledSeqWrds * 4;
 
 #ifdef _WIN32
-m_pSampledSeqs = (UINT32 *)malloc(memreq);	// initial and with any luck perhaps the only allocation
+m_pSampledSeqs = (uint32_t *)malloc(memreq);	// initial and with any luck perhaps the only allocation
 if (m_pSampledSeqs == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessReadsetDist: (Instance %d) Memory allocation of %lld bytes - %s", ProcessingID, (INT64)memreq, strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessReadsetDist: (Instance %d) Memory allocation of %lld bytes - %s", ProcessingID, (int64_t)memreq, strerror(errno));
 	Reset();
 	return(eBSFerrMem);
 	}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-m_pSampledSeqs = (UINT32 *)mmap(NULL, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+m_pSampledSeqs = (uint32_t *)mmap(NULL, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 if (m_pSampledSeqs == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessReadsetDist: (Instance %d) Memory allocation of %lld bytes through mmap()  failed - %s",ProcessingID, (INT64)memreq, strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessReadsetDist: (Instance %d) Memory allocation of %lld bytes through mmap()  failed - %s",ProcessingID, (int64_t)memreq, strerror(errno));
 	m_pSampledSeqs = NULL;
 	Reset();
 	return(eBSFerrMem);
@@ -1637,11 +1637,11 @@ if (m_bTerminate)		// early termination because of some problem?
 
 // report on the number of reads processed
 pThread = pThreads;
-INT64 TotNumSEReads;
-INT64 TotNumPEReads;
-INT64 NotProcNs;
-INT64 NotProcQS;
-INT64 NotProcUL;
+int64_t TotNumSEReads;
+int64_t TotNumPEReads;
+int64_t NotProcNs;
+int64_t NotProcQS;
+int64_t NotProcUL;
 
 
 TotNumSEReads = 0;
@@ -1678,10 +1678,10 @@ if(m_ActMaxDupSeeds == 0)
 	}
 
 // report on duplicate counts for sampled reads
-UINT32 DupDists[2001];			// duplicate counts limited 1..1999 and 2000+
-UINT32 DupDist10[11];			// duplicate counts limited 1..9 and 10+
+uint32_t DupDists[2001];			// duplicate counts limited 1..1999 and 2000+
+uint32_t DupDist10[11];			// duplicate counts limited 1..9 and 10+
 
-UINT32 TotalDupReads;			// total number of reads in samples
+uint32_t TotalDupReads;			// total number of reads in samples
 	
 memset(DupDists,0,sizeof(DupDists));
 memset(DupDist10, 0, sizeof(DupDist10));
@@ -1689,7 +1689,7 @@ TotalDupReads = 0;
 if (m_pSampledSeqs != NULL)
 	{
 	int HashIdx;
-	UINT32 HashSeqsOfs;
+	uint32_t HashSeqsOfs;
 	tsSampledSeq *pSampledSeq;
 	for (HashIdx = 0; HashIdx < cMaxHashArrayEntries; HashIdx++)
 		{
@@ -1777,8 +1777,8 @@ m_hDuplicatesDistRptFile = -1;
 if(pPlots != NULL)
 	{
 	char szLen[20];
-	UINT64 SumCnts; 
-	UINT64 CummulativeSum;
+	uint64_t SumCnts; 
+	uint64_t CummulativeSum;
 	int LenRange = 1 + m_MaxReadLen - m_MinReadLen;
 	pPlots->Init(1,1,LenRange+10,(char *)"Read Length Distribution",(char *)"Length (bp)",(char *)"Proportion of Reads");
 	pPlots->SetWorldCoords((PLFLT)max(1,m_MinReadLen - 5),(PLFLT)m_MaxReadLen+5,0.0,1.05);
@@ -1825,8 +1825,8 @@ m_hReadLenDistRptFile = -1;
 if(pPlots != NULL)
 	{
 	char szPhred[10];
-	UINT64 SumCnts; 
-	UINT64 CummulativeSum;
+	uint64_t SumCnts; 
+	uint64_t CummulativeSum;
 	int PhredIDs[42];
 	int PhredIdx;
 	int Idy;
@@ -1896,8 +1896,8 @@ m_hQScoreDistRptFile = -1;
 
 if(pPlots != NULL)
 	{
-	UINT64 SumCnts; 
-	UINT64 CummulativeSum;
+	uint64_t SumCnts; 
+	uint64_t CummulativeSum;
 	int CumulativeSeriesID;
 	pPlots->Init(2,2,100,(char *)"Phred Derived Error Free Probability Distribution",(char *)"Error Free Probability",(char *)"Proportion of Reads");
 	pPlots->SetWorldCoords(0.0,(PLFLT)1.01,0.0,1.05);
@@ -1927,7 +1927,11 @@ BuffIdx = sprintf(szRptBuff,"\"ProbabilityBin\",\"Count\"");
 CUtility::RetryWrites(m_hErrFreeReadDistRptFile,szRptBuff,BuffIdx);
 BuffIdx = 0;
 for (int Idx = 0; Idx < 100; Idx++)
+#ifdef _WIN32
 	BuffIdx += sprintf(&szRptBuff[BuffIdx],"\n%1.2f,%lld",(double)Idx*0.01,m_ProbNoReadErrDist[Idx]);
+#else
+	BuffIdx += sprintf(&szRptBuff[BuffIdx],"\n%1.2f,%ld",(double)Idx*0.01,m_ProbNoReadErrDist[Idx]);
+#endif
 if(BuffIdx)
 	CUtility::RetryWrites(m_hErrFreeReadDistRptFile,szRptBuff,BuffIdx);
 #ifdef _WIN32
@@ -1944,13 +1948,13 @@ int KMerLen;
 int KMerOfs;
 int NumEls;
 int BaseIdx;
-UINT32 *pCtrlKMerCnts;
-UINT32 *pExprKMerCnts;
+uint32_t *pCtrlKMerCnts;
+uint32_t *pExprKMerCnts;
 
 if(pPlots != NULL)
 	{
-	UINT64 SumCnts; 
-	UINT32 *pKMerCnts;
+	uint64_t SumCnts; 
+	uint32_t *pKMerCnts;
 	pPlots->Init(2,4,m_MaxReadLen,(char *)"Compositional Distribution",(char *)"Read Base Offset",(char *)"Proportion");
 	pPlots->SetWorldCoords(0.0,(PLFLT)(PLFLT)m_MaxReadLen+0.05,0.0,1.05);
 	pPlots->AddSeries((char *)"A",false,BKPLaquamarine);
@@ -1967,7 +1971,7 @@ if(pPlots != NULL)
 		pKMerCnts = pCtrlKMerCnts;
 		SumCnts = 0;
 		for(int Idy=0;Idy < 4; Idy++,pKMerCnts++)
-			SumCnts += (UINT64)*pKMerCnts;
+			SumCnts += (uint64_t)*pKMerCnts;
 		if(SumCnts == 0)
 			SumCnts = 1;
 		pKMerCnts = pCtrlKMerCnts;
@@ -2040,7 +2044,7 @@ m_hKMerDistRptFile = -1;
 if(pPlots != NULL)
 	{
 	char szSeries[20];
-    char szPearsonTitle[80];
+	char szPearsonTitle[80];
 	sprintf(szPearsonTitle,"Pearson K-mer (1..%d) Concordance Distribution",m_KMerCCC);
 	pPlots->Init(2,m_KMerCCC,m_MaxReadLen,szPearsonTitle,(char *)"Read Base Offset",(char *)"Pearson");
 	pPlots->SetWorldCoords(0.0,(PLFLT)m_MaxReadLen,-1.0,1.0);
@@ -2121,7 +2125,7 @@ if(m_hContamRptFile != -1)		// reporting on contaminants?
 	teContamType ContamType;
 	teContamClass ContamClass;
 
-	UINT32 NumChecks;
+	uint32_t NumChecks;
 	int ContamLen;
 	char *pszContamName;
 	NumContaminants = m_pContaminates->NumOfContaminants();
@@ -2431,8 +2435,8 @@ int Rslt;
 int Idx;
 char *pszInFile;
 int NumReads;
-UINT32 NumPE1Reads;
-UINT32 NumPE2Reads;
+uint32_t NumPE1Reads;
+uint32_t NumPE2Reads;
 tsInReadsFile *pInPE1File;
 tsInReadsFile *pInPE2File;
 NumReads = 0;
@@ -2544,7 +2548,7 @@ else // else must be paired end processing so process PE1 and PE2 as paired file
 			ReleaseLock(true);
 			return((teBSFrsltCodes)Rslt);
 			}
-		NumReads = (UINT32)Rslt;
+		NumReads = (uint32_t)Rslt;
 		pThread->TotNumPEReads += NumReads;
 		if (NumReads == 0)
 			gDiagnostics.DiagOut(eDLWarn, gszProcName, "(Instance %d) Thread %d: No reads processed from input paired end files '%s' and '%s'", pThread->ProcessingID, pThread->ThreadIdx, pInPE1File->szFileName, pInPE2File->szFileName);
@@ -2590,31 +2594,31 @@ CReadStats::ProcessReads(tsThreadNGSQCPars *pThread, // thread specific processi
 {
 static int FileNamesOfs = 0;
 teBSFrsltCodes Rslt;
-UINT32 NumSampledReads;
+uint32_t NumSampledReads;
 
 bool bIsSAMfile;
 bool bIsPE1Fastq;
 int NumPE1DescrReads;
-UINT64 PE1TotReadsLen;
+uint64_t PE1TotReadsLen;
 int PE1MinReadLen;
 int PE1MaxReadLen;
 int NumPE1AcceptedReads;
 int NumPE1ParsedReads;
 int PE1ReadLen;
 int PE1DescrLen;
-UINT8 szPE1DescrBuff[1024];
+uint8_t szPE1DescrBuff[1024];
 
 bool bIsPE2Fastq;
 int NumPE2DescrReads;
 
 int NumPE2AcceptedReads;
 int NumPE2ParsedReads;
-UINT64 PE2TotReadsLen;
+uint64_t PE2TotReadsLen;
 int PE2MinReadLen;
 int PE2MaxReadLen;
 int PE2ReadLen;
 int PE2DescrLen;
-UINT8 szPE2DescrBuff[1024];
+uint8_t szPE2DescrBuff[1024];
 
 CFasta FastaPE1;
 CFasta FastaPE2;
@@ -2956,32 +2960,32 @@ return((teBSFrsltCodes)(NumPE1AcceptedReads + NumPE2AcceptedReads));
 int				// returns 0 if not accepted as read instance, 1 if this is the first instance of an accepted sampled read, 2..N if multiple instances exist
 CReadStats::AddReadInst(tsThreadNGSQCPars *pThread, // thread specific processing state and context
 				int PE1ReadLen,				// number of bases in PE1 read
-				UINT8 *pPE1RawRead,			// PE1 read sequence
+				uint8_t *pPE1RawRead,			// PE1 read sequence
 				int PE2ReadLen,				// number of bases in PE2 read
-				UINT8 *pPE2RawRead)			// PE2 read sequence
+				uint8_t *pPE2RawRead)			// PE2 read sequence
 {
-UINT32 PackedSeqs[((cMaxRSSeqLen+15)/16)*2];	// to hold both PE1 and PE2 (if PE processing) packed and concatenated together
-UINT32 PackedBases;								// bases are packed 16 per word
+uint32_t PackedSeqs[((cMaxRSSeqLen+15)/16)*2];	// to hold both PE1 and PE2 (if PE processing) packed and concatenated together
+uint32_t PackedBases;								// bases are packed 16 per word
 int PartialPacked;								// number of bases currently packed into PackedBases
-UINT32 *pPackedSeqs;
-UINT32 SeqHash;									// sequence hash
-UINT32 RevCplSeqHash;
-UINT32 HashSeqsOfs;
-UINT32 TermRevCplNxtSeq;
-UINT32 TermNxtSeq;
+uint32_t *pPackedSeqs;
+uint32_t SeqHash;									// sequence hash
+uint32_t RevCplSeqHash;
+uint32_t HashSeqsOfs;
+uint32_t TermRevCplNxtSeq;
+uint32_t TermNxtSeq;
 tsSampledSeq *pSampledSeq;
 tsSampledSeq *pNewSampledSeq;
 int Idx;
 int NumPackedWrds;
 etSeqBase SeqBase;
 
-UINT32 RevCplPackedSeqs[((cMaxRSSeqLen + 15) / 16) * 2];	// to hold RevCpl of both PE1 and PE2 (if PE processing) packed and concatenated together
-UINT8 *pPE1RevCplRawRead;
-UINT8 *pPE2RevCplRawRead;
-UINT32 *pRevCplPackedSeqs;
+uint32_t RevCplPackedSeqs[((cMaxRSSeqLen + 15) / 16) * 2];	// to hold RevCpl of both PE1 and PE2 (if PE processing) packed and concatenated together
+uint8_t *pPE1RevCplRawRead;
+uint8_t *pPE2RevCplRawRead;
+uint32_t *pRevCplPackedSeqs;
 tsSampledSeq *pRevCplSampledSeq;
-UINT32 RevCplHashSeqsOfs;
-UINT32 RevCplPackedBases;
+uint32_t RevCplHashSeqsOfs;
+uint32_t RevCplPackedBases;
 int RevCplNumPackedWrds;
 int RevCplPartialPacked;
 int NumInstances;
@@ -3149,7 +3153,7 @@ if (m_ActMaxDupSeeds && (HashSeqsOfs = m_pSeqHashes[SeqHash]) != 0)		// seen at 
 			{
 			if(pSampledSeq->PackedSeqs[0] == PackedSeqs[0])
 				{
-				if((pSampledSeq->NumPackedWrds == 1) || !memcmp(pSampledSeq->PackedSeqs,PackedSeqs,pSampledSeq->NumPackedWrds * sizeof(UINT32)))
+				if((pSampledSeq->NumPackedWrds == 1) || !memcmp(pSampledSeq->PackedSeqs,PackedSeqs,pSampledSeq->NumPackedWrds * sizeof(uint32_t)))
 					{
 					pSampledSeq->NumInstances += 1;
 					NumInstances = (int)pSampledSeq->NumInstances;
@@ -3179,7 +3183,7 @@ if (!m_bStrand && m_ActMaxDupSeeds)
 				{
 				if (pRevCplSampledSeq->PackedSeqs[0] == RevCplPackedSeqs[0])
 					{
-					if((pRevCplSampledSeq->NumPackedWrds == 1) || !memcmp(pRevCplSampledSeq->PackedSeqs, RevCplPackedSeqs, pRevCplSampledSeq->NumPackedWrds * sizeof(UINT32)))
+					if((pRevCplSampledSeq->NumPackedWrds == 1) || !memcmp(pRevCplSampledSeq->PackedSeqs, RevCplPackedSeqs, pRevCplSampledSeq->NumPackedWrds * sizeof(uint32_t)))
 						{
 						pRevCplSampledSeq->NumInstances += 1;
 						pRevCplSampledSeq->NumRevCplInstances += 1;
@@ -3205,12 +3209,12 @@ if (m_ActMaxDupSeeds >= m_ReqMaxDupSeeds)
 // realloc memory if required
 if((m_AllocdSampledSeqWrds - m_UsedSampledSeqWrds) < ((cMaxRSSeqLen+3)/4)*10)
 	{
-	UINT32 *pAllocd;
-	size_t memreq = m_AllocdSampledSeqMem + (cReallocPackedWrds * sizeof(UINT32));
+	uint32_t *pAllocd;
+	size_t memreq = m_AllocdSampledSeqMem + (cReallocPackedWrds * sizeof(uint32_t));
 #ifdef _WIN32
-	pAllocd = (UINT32 *)realloc(m_pSampledSeqs, memreq);
+	pAllocd = (uint32_t *)realloc(m_pSampledSeqs, memreq);
 #else
-	pAllocd = (UINT32 *)mremap(m_pSampledSeqs,m_AllocdSampledSeqMem,memreq,MREMAP_MAYMOVE);
+	pAllocd = (uint32_t *)mremap(m_pSampledSeqs,m_AllocdSampledSeqMem,memreq,MREMAP_MAYMOVE);
 	if(pAllocd == MAP_FAILED)
 		pAllocd = NULL;
 #endif
@@ -3233,7 +3237,7 @@ pNewSampledSeq->NxtSeq = 0;
 pNewSampledSeq->PE1ReadLen = PE1ReadLen;
 pNewSampledSeq->PE2ReadLen = m_bPEProc ? PE2ReadLen : 0;
 pNewSampledSeq->NumPackedWrds = NumPackedWrds;
-memcpy(pNewSampledSeq->PackedSeqs,PackedSeqs,NumPackedWrds * sizeof(UINT32));
+memcpy(pNewSampledSeq->PackedSeqs,PackedSeqs,NumPackedWrds * sizeof(uint32_t));
 if (TermNxtSeq == 0)
 	{
 	 m_pSeqHashes[SeqHash] = m_UsedSampledSeqWrds + 1;
@@ -3241,7 +3245,7 @@ if (TermNxtSeq == 0)
 	}
 else
 	((tsSampledSeq *)&m_pSampledSeqs[TermNxtSeq - 1])->NxtSeq = m_UsedSampledSeqWrds + 1;
-m_UsedSampledSeqWrds += NumPackedWrds + (((sizeof(tsSampledSeq)-sizeof(UINT32)) + 3)/4);
+m_UsedSampledSeqWrds += NumPackedWrds + (((sizeof(tsSampledSeq)-sizeof(uint32_t)) + 3)/4);
 m_ActMaxDupSeeds += 1;
 ReleaseSerialise();
 return(1);
@@ -3250,7 +3254,7 @@ return(1);
 double									// returned prob of read being error free
 GenProbErrFreeRead(int QSSchema,		// quality scoring schema - guestimated scoring schema - 0: no scoring, 1: Solexa, 2: Illumina 1.3+, 3: Illumina 1.5+, 4: Illumina 1.8+ or Sanger
 				   int ReadLen,			// read length
-				   UINT8 *pQScores)		// Phred quality scores
+				   uint8_t *pQScores)		// Phred quality scores
 {
 int SeqOfs;
 int Score;
@@ -3267,19 +3271,19 @@ for (SeqOfs = 0; SeqOfs < ReadLen; SeqOfs++, pQScores++)
 			if(*pQScores <= '@')
 				Score = 0;
 			else
-				Score = (int)(*pQScores - (UINT8)'@');
+				Score = (int)(*pQScores - (uint8_t)'@');
 			break;
 
 		case 2: // Illumina 1.3+ '@' (0) to 'h' (40)
-			Score = (int)(*pQScores - (UINT8)'@');
+			Score = (int)(*pQScores - (uint8_t)'@');
 			break;
 
 		case 3: // Illumina 1.5+ 'B' (2) to 'h' (40)
-			Score = (int)(*pQScores - (UINT8)'@');
+			Score = (int)(*pQScores - (uint8_t)'@');
 			break;
 
 		case 4: // Illumina 1.8+ or Sanger. Sanger is '!' (0) to 'J' (41) and Illumina is '#' (2) to 'J' (41)
-			Score = (int)(*pQScores - (UINT8)'!');
+			Score = (int)(*pQScores - (uint8_t)'!');
 			break;
 			}
 	if(Score < 0)			// force scores to always be in the range 0..41 --- shouldn't be outside 0..41 but some qscores have been observed to be outside the expected range!
@@ -3304,8 +3308,8 @@ int				// minimum score at any offset within the sequence
 CReadStats::AccumQScores(tsThreadNGSQCPars *pThread, // thread specific processing state and context
 				int QSSchema,					// quality scoring schema - guestimated scoring schema - 0: no scoring, 1: Solexa, 2: Illumina 1.3+, 3: Illumina 1.5+, 4: Illumina 1.8+ or Sanger 
 				int ReadLen,					// number of bases in read
-				UINT8 *pSeq,					// read sequence
-				UINT8 *pQScores)				// read quality scores (NULL if no associated quality scores)
+				uint8_t *pSeq,					// read sequence
+				uint8_t *pQScores)				// read quality scores (NULL if no associated quality scores)
 {
 int MinScore;
 int SeqOfs;
@@ -3314,12 +3318,12 @@ int SumBaseScores;
 int MeanReadScore;
 double ProbErr;
 double ProbNoReadErr;
-UINT32 Scores[cMaxRSSeqLen];
-UINT32 Ns[cMaxRSSeqLen];
-UINT32 *pScores;
-UINT32 *pNs;
-UINT32 *pScore;
-UINT32 *pBaseNs;
+uint32_t Scores[cMaxRSSeqLen];
+uint32_t Ns[cMaxRSSeqLen];
+uint32_t *pScores;
+uint32_t *pNs;
+uint32_t *pScore;
+uint32_t *pBaseNs;
 bool bTrunc;
 
 if(pThread == NULL || QSSchema < 0 || QSSchema > 4 || ReadLen < cMinRSSeqLen || pSeq == NULL)
@@ -3350,19 +3354,19 @@ for (SeqOfs = 0; SeqOfs < ReadLen; SeqOfs++, pSeq++, pNs++, pScore++,pQScores++)
 			if(*pQScores <= '@')
 				Score = 0;
 			else
-				Score = (int)(*pQScores - (UINT8)'@');
+				Score = (int)(*pQScores - (uint8_t)'@');
 			break;
 
 		case 2: // Illumina 1.3+ '@' (0) to 'h' (40)
-			Score = (int)(*pQScores - (UINT8)'@');
+			Score = (int)(*pQScores - (uint8_t)'@');
 			break;
 
 		case 3: // Illumina 1.5+ 'B' (2) to 'h' (40)
-			Score = (int)(*pQScores - (UINT8)'@');
+			Score = (int)(*pQScores - (uint8_t)'@');
 			break;
 
 		case 4: // Illumina 1.8+ or Sanger. Sanger is '!' (0) to 'J' (41) and Illumina is '#' (2) to 'J' (41)
-			Score = (int)(*pQScores - (UINT8)'!');
+			Score = (int)(*pQScores - (uint8_t)'!');
 			break;
 			
 		case 0:	// no scoring
@@ -3374,7 +3378,7 @@ for (SeqOfs = 0; SeqOfs < ReadLen; SeqOfs++, pSeq++, pNs++, pScore++,pQScores++)
 	else
 		if(Score > 41)
 			Score = 41;
-	*pScore = (UINT32)Score;
+	*pScore = (uint32_t)Score;
 
 	ProbErr = 1.0 / pow(10.0,(double)Score/10.0);
 	ProbNoReadErr *= (1.0 - ProbErr); 
@@ -3415,18 +3419,18 @@ return(MinScore);
 int				
 CReadStats::AccumKMers(tsThreadNGSQCPars *pThread, // thread specific processing state and context
 				int ReadLen,					// number of bases in read
-				UINT8 *pSeq)					// read sequence
+				uint8_t *pSeq)					// read sequence
 {
 int SeqOfs;
-UINT32 Base;
-UINT32 PackedKMer;
-UINT32 PackedKMerMsk;
-UINT32 KMerMsk;
+uint32_t Base;
+uint32_t PackedKMer;
+uint32_t PackedKMerMsk;
+uint32_t KMerMsk;
 int KMerLen;
 int KmerCntsOfs;
-UINT32 *pKMerCntsSeqOfs;
-UINT32 KMerOfs;
-UINT32 KMerLenOfs;
+uint32_t *pKMerCntsSeqOfs;
+uint32_t KMerOfs;
+uint32_t KMerLenOfs;
 int Pow;
 
 if(pThread == NULL || ReadLen < cMinRSSeqLen || pSeq == NULL)
@@ -3442,8 +3446,8 @@ for (SeqOfs = 0; SeqOfs < (ReadLen + m_MaxKMerLen); SeqOfs++, pSeq++)
 	{
 	if(SeqOfs < ReadLen)
 		{
-		if((Base = (UINT32)*pSeq) > eBaseT)			// if an indeterminate (shouldn't be any as only sequences accepted for duplicate processing should be k-mer processed)
-			Base = (UINT32)(SeqOfs % 4);			// substitute a cannonical base for indeterminate - should be near random as expecting indeterminates to be uniformly distributed along read length
+		if((Base = (uint32_t)*pSeq) > eBaseT)			// if an indeterminate (shouldn't be any as only sequences accepted for duplicate processing should be k-mer processed)
+			Base = (uint32_t)(SeqOfs % 4);			// substitute a cannonical base for indeterminate - should be near random as expecting indeterminates to be uniformly distributed along read length
 		PackedKMer <<= 2;
 		PackedKMer &= PackedKMerMsk;
 		PackedKMer |= Base;
@@ -3473,14 +3477,14 @@ AcquireSerialiseKMers();
 // ensure allocation for KMerCnts is sufficent for read lengths
 if(ReadLen > m_AllocdMaxReadLen)
 	{
-	UINT32 *pAllocd;
+	uint32_t *pAllocd;
 	m_AllocdMaxReadLen = (ReadLen * 120) / 100;
-	size_t memreq = m_KMerCntsEls * m_AllocdMaxReadLen * sizeof(UINT32);
+	size_t memreq = m_KMerCntsEls * m_AllocdMaxReadLen * sizeof(uint32_t);
 	gDiagnostics.DiagOut(eDLInfo, gszProcName, "AddReadInst: Memory re-allocation to %d bytes", memreq);
 #ifdef _WIN32
-	pAllocd = (UINT32 *)realloc(m_pKMerCnts, memreq);
+	pAllocd = (uint32_t *)realloc(m_pKMerCnts, memreq);
 #else
-	pAllocd = (UINT32 *)mremap(m_pKMerCnts,m_AllocdKMerCntsMem,memreq,MREMAP_MAYMOVE);
+	pAllocd = (uint32_t *)mremap(m_pKMerCnts,m_AllocdKMerCntsMem,memreq,MREMAP_MAYMOVE);
 	if(pAllocd == MAP_FAILED)
 		pAllocd = NULL;
 #endif
@@ -3510,11 +3514,11 @@ return(0);
 // A count of 1 is added to both control and experiment so as to provide for Laplaces smoothing and prevent divide by zero errors
 double									// returned Pearson
 CReadStats::Pearsons(int KMerLen,		// KMer length for which counts were accumulated 
-					UINT32 *pCtrlKMerCnts,  // KMer counts for control
-					UINT32 *pExprKMerCnts)	// KMer counts for experiment	
+					uint32_t *pCtrlKMerCnts,  // KMer counts for control
+					uint32_t *pExprKMerCnts)	// KMer counts for experiment	
 {
-UINT32 *pCtrl;
-UINT32 *pExpr;
+uint32_t *pCtrl;
+uint32_t *pExpr;
 
 int Idx;
 int NumLociCnts;
@@ -3575,20 +3579,20 @@ return(Correl);
 teBSFrsltCodes
 CReadStats::AnalyseReads(tsThreadNGSQCPars *pThread, // thread specific processing state and context
 		int PE1ReadLen,				    // number of bases in PE1 read
-		UINT8 *pPE1RawRead,				// PE1 read sequence
+		uint8_t *pPE1RawRead,				// PE1 read sequence
 		int PE1QScoreLen,				// number of quality scores in PE1 read
-		UINT8 *pPE1QScores,				// PE1 read quality scores (0 if no associated quality scores)
+		uint8_t *pPE1QScores,				// PE1 read quality scores (0 if no associated quality scores)
 		tsInReadsFile *pPE1File,		// file containing PE1 or SE reads
 		int PE2ReadLen,					// number of bases in PE2 read
-		UINT8 *pPE2RawRead,				// PE2 read sequence
+		uint8_t *pPE2RawRead,				// PE2 read sequence
 		int PE2QScoreLen,				// number of quality scores in PE2 read (0 if no associated quality scores)
-		UINT8 *pPE2QScores,				// PE2 read quality scores
+		uint8_t *pPE2QScores,				// PE2 read quality scores
 		tsInReadsFile *pPE2File)		// file containing PE2
 {
 int NumInsts;
 int SeqOfs;
-UINT8 *pBase;
-UINT8 *pScore;
+uint8_t *pBase;
+uint8_t *pScore;
 bool bPE1Contaminated;
 bool bPE2Contaminated;
 
@@ -3656,22 +3660,22 @@ if(m_bPEProc)
 int BaseScore;
 int SumReadScores;
 int MeanReadScores;
-UINT8 QScore0;
+uint8_t QScore0;
 switch(pPE1File->QSSchema) { // quality scoring schema - guestimated scoring schema - 0: no scoring, 1: Solexa, 2: Illumina 1.3+, 3: Illumina 1.5+, 4: Illumina 1.8+ or Sanger 
 	case 1:	// Solexa  ';' (-5) to 'h' (40)
-		QScore0 = (UINT8)'@';
+		QScore0 = (uint8_t)'@';
 		break;
 
 	case 2: // Illumina 1.3+ '@' (0) to 'h' (40)
-		QScore0 =  (UINT8)'@';
+		QScore0 =  (uint8_t)'@';
 		break;
 
 	case 3: // Illumina 1.5+ 'B' (1) to 'h' (40)
-		QScore0 =  (UINT8)'@';
+		QScore0 =  (uint8_t)'@';
 		break;
 
 	case 4: // Illumina 1.8+ or Sanger. Sanger is '!' (0) to 'J' (41) and Illumina is '#' (2) to 'J' (41)
-		QScore0 = (UINT8)'!';
+		QScore0 = (uint8_t)'!';
 		break;
 			
 	case 0:	// no scoring

@@ -16,9 +16,9 @@ const int cChromIDHashSize = 0x08000;		// chromosome hash table size - must be p
 
 
 // typedefs to make it easy to change common identifier types
-typedef INT32 tChromID;			// chromosome identifier
-typedef INT32 tAlignBlockID;	// alignment block identifier
-typedef UINT8  tSpeciesID;		// species identifier
+typedef int32_t tChromID;			// chromosome identifier
+typedef int32_t tAlignBlockID;	// alignment block identifier
+typedef uint8_t  tSpeciesID;		// species identifier
 
 typedef enum TAG_eMAOpen {
 	eMAPOReadOnly = 0,			// open for read only access, updates not allowed
@@ -29,59 +29,59 @@ typedef enum TAG_eMAOpen {
 #pragma pack(1)
 
 typedef struct TAG_sAlignSpecies {
-	INT32 AlignSpeciesLen;		// total size of this instance
-	INT32 ChromID;				// chromosome identifier (species.chrom unique)
-	INT32 ChromOfs;				// start offset (0..ChromLen-1) on ChromID (if '-' strand then ChromLen-1..0) 
-	INT32 AlignXInDelLen;		// alignment length (1..n) in relative chromosome excluding InDel'-' markers
-	INT8  Strand;				// "+" or "-". If the value is "-", the sequence aligns to the reverse-complemented source
-	INT8 ConfScore;				// confidence score (0..127) or flags (0..6) for this species in this alignment block
+	int32_t AlignSpeciesLen;		// total size of this instance
+	int32_t ChromID;				// chromosome identifier (species.chrom unique)
+	int32_t ChromOfs;				// start offset (0..ChromLen-1) on ChromID (if '-' strand then ChromLen-1..0) 
+	int32_t AlignXInDelLen;		// alignment length (1..n) in relative chromosome excluding InDel'-' markers
+	int8_t  Strand;				// "+" or "-". If the value is "-", the sequence aligns to the reverse-complemented source
+	int8_t ConfScore;				// confidence score (0..127) or flags (0..6) for this species in this alignment block
 	// note that the actual aligned sequence is concatenated on to each tsAlignSpecies instance
 } tsAlignSpecies;
 
-const INT8 cMASeqOverlayFlg = 0x01;	// flag in tsAlignSpecies used to indicate that this sequence is multiple aligned 
+const int8_t cMASeqOverlayFlg = 0x01;	// flag in tsAlignSpecies used to indicate that this sequence is multiple aligned 
 
 typedef struct TAG_sAlignBlock {
-	INT32 BlockLenWithSpecies;		// actual total size of this alignment block including all concatenated tsAlignSpecies
-	INT32 AlignIncInDelLen;			// alignment sequence length (1..n) , includes '-' insertion markers					
-	INT32 AlgnScore;				// alignment block score
-	INT32  NumSpecies;				// number of species/chromosomes in represented in this block
+	int32_t BlockLenWithSpecies;		// actual total size of this alignment block including all concatenated tsAlignSpecies
+	int32_t AlignIncInDelLen;			// alignment sequence length (1..n) , includes '-' insertion markers					
+	int32_t AlgnScore;				// alignment block score
+	int32_t  NumSpecies;				// number of species/chromosomes in represented in this block
 	// note that an array of tsAlignSpecies is concatenated on to each tsAlignBlock instance
 } tsAlignBlock;
 
 typedef struct TAG_sSpeciesName {
-		UINT16 Hash;				// hash used to quickly eliminate species names that can't match in searches
-		INT8 SpeciesID;				// globally unique (1..n) species identifier
-		INT8 NameLen;				// strlen(szSpeciesName)
-	    INT8 szSpeciesName[cMaxDatasetSpeciesChrom]; // species name
+		uint16_t Hash;				// hash used to quickly eliminate species names that can't match in searches
+		int8_t SpeciesID;				// globally unique (1..n) species identifier
+		int8_t NameLen;				// strlen(szSpeciesName)
+	    int8_t szSpeciesName[cMaxDatasetSpeciesChrom]; // species name
 } tsSpeciesName;
 
 typedef struct TAG_sChromName {
-		INT32 ChromID;				// globally unique (1..n) chromosome identifier
-		INT32 NxtHashChromID;		// next chromosome which shares same hash (0 if this is last)
-		INT32 ChromLen;				// chromosome length if known - 0 if unknown
-		UINT16 Hash;				// hash used to quickly eliminate chromosome names that can't match in searches
-		INT8 SpeciesID;				// for this species
-		INT8 NameLen;				// strlen(szChromName)
-	    INT8 szChromName[cMaxDatasetSpeciesChrom]; // chromosome name
+		int32_t ChromID;				// globally unique (1..n) chromosome identifier
+		int32_t NxtHashChromID;		// next chromosome which shares same hash (0 if this is last)
+		int32_t ChromLen;				// chromosome length if known - 0 if unknown
+		uint16_t Hash;				// hash used to quickly eliminate chromosome names that can't match in searches
+		int8_t SpeciesID;				// for this species
+		int8_t NameLen;				// strlen(szChromName)
+	    int8_t szChromName[cMaxDatasetSpeciesChrom]; // chromosome name
 } tsChromName;
 
 typedef struct TAG_sSrcFile {
-	INT16 SrcFileID;					// globally unique (1..n), identifies file from which alignments are sourced
-	INT16 MetaDataLen;					// header ("##") metadata length
-	INT16 AlignParamsLen;				// alignment ("#") parameter length
-	INT8 szSrcFile[_MAX_PATH];			// source file path
-	INT8 szHeaderMetaData[cMaxMetaDataLen];	// any header ("##") metadata
-	INT8 szAlignParams[cMaxParamLen];			// any alignment ("#") parameters
+	int16_t SrcFileID;					// globally unique (1..n), identifies file from which alignments are sourced
+	int16_t MetaDataLen;					// header ("##") metadata length
+	int16_t AlignParamsLen;				// alignment ("#") parameter length
+	int8_t szSrcFile[_MAX_PATH];			// source file path
+	int8_t szHeaderMetaData[cMaxMetaDataLen];	// any header ("##") metadata
+	int8_t szAlignParams[cMaxParamLen];			// any alignment ("#") parameters
 } tsSrcFile;
 
 
 
 typedef struct TAG_sBlockDirEl {
-	INT64	FileOfs;				// where on disk the associated alignment block starts
-	INT32 BlockID;					// block identifer
-	INT32 ChromID;					// (sort order 1)reference chromosome
-	INT32   ChromOfs;				// (sort order 2) starting offset (0..ChromLen-1)
-	INT32  AlignXInDelLen;			// (sort order 3 - longest) reference chromosome block alignment length excluding any InDel '-' (1..n)
+	int64_t	FileOfs;				// where on disk the associated alignment block starts
+	int32_t BlockID;					// block identifer
+	int32_t ChromID;					// (sort order 1)reference chromosome
+	int32_t   ChromOfs;				// (sort order 2) starting offset (0..ChromLen-1)
+	int32_t  AlignXInDelLen;			// (sort order 3 - longest) reference chromosome block alignment length excluding any InDel '-' (1..n)
 } tsBlockDirEl;
 
 
@@ -96,7 +96,7 @@ typedef struct TAG_sSegCache {
 	 char RelStrand;							// relative strand '+' or '-'
 	 int NumPts;								// number of datapoints
 	 int AllocdSize;							// max number of data points that can be currently held by pDataPts 
-	 unsigned char *pDataPts;					// pts to array of data points
+	 uint8_t *pDataPts;					// pts to array of data points
 } tsSegCache;
 
 // session specific context
@@ -104,8 +104,8 @@ typedef struct TAG_sMAFCtx {
 	tChromID m_CurRefChromID;		// aligned block (m_pAlignBlock) reference chromosome identifier
 	int m_CurRefChromOfs;			// aligned block (m_pAlignBlock) reference chromosome starting offset 
 	int m_CurRefChromXInDelLen;	    // aligned block (m_pAlignBlock) reference chromosome length excluding InDels
-	INT64 m_AllocdBlockSize;			// how much memory was allocd for m_pAlignBlock
-	INT64 m_CurBlocksSize;			// how much of the allocd memory is currently being used
+	int64_t m_AllocdBlockSize;			// how much memory was allocd for m_pAlignBlock
+	int64_t m_CurBlocksSize;			// how much of the allocd memory is currently being used
 	tAlignBlockID m_AlignBlockID;	// identifier for current block in m_pAlignBlock
 	tsAlignBlock *m_pAlignBlock;	// pts to memory allocated to hold an alignment block
 	int m_NumCachedSegs;			// number of cached segments in m_pSegCache
@@ -116,35 +116,35 @@ typedef struct TAG_sMAFCtx {
 
 #pragma pack(8)
 typedef struct TAG_sAlignHdr {
-	UINT8 Magic[4];					// magic chars to identify this file as a biosequence file
-	UINT64 FileLen;					// current file length
-	INT64 DirElOfs;					// file offset to block directory
-	INT64 ChromNamesOfs;			// file offset to ChromNames directory
-	UINT32 Type;					// biosequence file type 
-	UINT32 Version;					// header version, incremented if structure changes with later releases
-	UINT32 SizeOfHdr;				// total size of this header - alignment blocks (sAlignBlocks) immediately follow
-	INT32 MaxChroms;				// max number of species.chromosomes supported
-	INT32 MaxAlignBlocks;			// max number of alignment blocks supported
-	INT32 MaxAlignSeqLen;			// max length of any aligned sequence (including InDels) supported
-	INT32 NumChroms;				// actual number of aligned chromosomes
-	INT32 NumAlignBlocks;			// actual number of alignment blocks
-	INT32 AlignIncInDelLen;			// actual longest aligned sequence (incuding InDels) in any alignment
-	INT32 AlignBlockLen;			// actual longest alignment block
+	uint8_t Magic[4];					// magic chars to identify this file as a biosequence file
+	uint64_t FileLen;					// current file length
+	int64_t DirElOfs;					// file offset to block directory
+	int64_t ChromNamesOfs;			// file offset to ChromNames directory
+	uint32_t Type;					// biosequence file type 
+	uint32_t Version;					// header version, incremented if structure changes with later releases
+	uint32_t SizeOfHdr;				// total size of this header - alignment blocks (sAlignBlocks) immediately follow
+	int32_t MaxChroms;				// max number of species.chromosomes supported
+	int32_t MaxAlignBlocks;			// max number of alignment blocks supported
+	int32_t MaxAlignSeqLen;			// max length of any aligned sequence (including InDels) supported
+	int32_t NumChroms;				// actual number of aligned chromosomes
+	int32_t NumAlignBlocks;			// actual number of alignment blocks
+	int32_t AlignIncInDelLen;			// actual longest aligned sequence (incuding InDels) in any alignment
+	int32_t AlignBlockLen;			// actual longest alignment block
 	tsSpeciesName SpeciesNames[cMaxAlignedSpecies];	// directory of all aligned species
-	INT16 NumSrcFiles;				// actual number of files from which alignments were sourced
-	INT16 MaxSrcFiles;				// maximum number of source alignment files supported
-	INT8 DataType;					// datatype of sequences
-	INT8 NumSpecies;				// actual number of aligned species
-	INT8 RefSpeciesID;				// identifer for reference species - all other are relative
-	INT8 MaxSpecies;				// max number of species supported
+	int16_t NumSrcFiles;				// actual number of files from which alignments were sourced
+	int16_t MaxSrcFiles;				// maximum number of source alignment files supported
+	int8_t DataType;					// datatype of sequences
+	int8_t NumSpecies;				// actual number of aligned species
+	int8_t RefSpeciesID;				// identifer for reference species - all other are relative
+	int8_t MaxSpecies;				// max number of species supported
 	tsSrcFile SrcFiles[cMaxSrcFiles];			// directory of source files containing sequence alignments
-	INT8 szDescription[cMBSFFileDescrLen];		// describes contents of file
-	INT8 szTitle[cMBSFShortFileDescrLen];		// short title by which this file can be distingished from other files in dropdown lists etc
+	int8_t szDescription[cMBSFFileDescrLen];		// describes contents of file
+	int8_t szTitle[cMBSFShortFileDescrLen];		// short title by which this file can be distingished from other files in dropdown lists etc
 }tsAlignHdr;
 #pragma pack()
 // best initial guestimate of an upper limit on a maximal sized block
 // if an actual block is larger then error reported
-const INT64 cAlloc4Block = (10 * (sizeof(tsAlignSpecies) + cMaxAlignSeqLen)) + sizeof(tsAlignBlock);
+const int64_t cAlloc4Block = (10 * (sizeof(tsAlignSpecies) + cMaxAlignSeqLen)) + sizeof(tsAlignBlock);
 
 class CMAlignFile : protected CEndian,public CErrorCodes
 {
@@ -156,7 +156,7 @@ class CMAlignFile : protected CEndian,public CErrorCodes
 	int m_AlignBlockSeqs;			// cnt of number of sequences associated with alignment block
 
 	tsAlignHdr m_FileHdr;			// alignment header
-	INT64 m_AllocdDirElsMem;		// size of memory allocation for m_pDirEls
+	int64_t m_AllocdDirElsMem;		// size of memory allocation for m_pDirEls
 	int m_NumAllocdDirEls;			// actual many dir elements allocated 
 	tsBlockDirEl *m_pDirEls;		// pts to array of block directory elements
 
@@ -166,8 +166,8 @@ class CMAlignFile : protected CEndian,public CErrorCodes
 	tChromID m_CurRefChromID;		// aligned block (m_pAlignBlock) reference chromosome identifier
 	int m_CurRefChromOfs;			// aligned block (m_pAlignBlock) reference chromosome starting offset 
 	int m_CurRefChromXInDelLen;	    // aligned block (m_pAlignBlock) reference chromosome length excluding InDels
-	INT64 m_AllocdBlockSize;			// how much memory was allocd for m_pAlignBlock
-	INT64 m_CurBlocksSize;			// how much of the allocd memory is currently being used
+	int64_t m_AllocdBlockSize;			// how much memory was allocd for m_pAlignBlock
+	int64_t m_CurBlocksSize;			// how much of the allocd memory is currently being used
 
 	tAlignBlockID m_AlignBlockID;	// identifier for current block in m_pAlignBlock
 	tsAlignBlock *m_pAlignBlock;	// pts to memory allocated to hold an alignment block
@@ -175,21 +175,21 @@ class CMAlignFile : protected CEndian,public CErrorCodes
 	tsSegCache *m_pSegCache;		// pts to memory allocated to hold segments when joining adjacent segments
 
 	int m_NumFiltSpecies;			// number of species marked to be filtered in m_FiltSpecies
-	INT8	m_FiltSpecies[cMaxAlignedSpecies]; // if cMASeqOverlayFlg set then blocks with cMASeqOverlayFlg set for species are skiped by NxtBlock()
+	int8_t	m_FiltSpecies[cMaxAlignedSpecies]; // if cMASeqOverlayFlg set then blocks with cMASeqOverlayFlg set for species are skiped by NxtBlock()
 
 	tChromID m_ChromHshTbl[cChromIDHashSize]; // hash table
 	
 	// ChunkedWrite
 	// Seeks to specified 64bit file offset and writes to disk as chunks of no more than INT_MAX/16
 	teBSFrsltCodes
-		ChunkedWrite(INT64 WrtOfs,UINT8 *pData,INT64 WrtLen);
+		ChunkedWrite(int64_t WrtOfs,uint8_t *pData,int64_t WrtLen);
 
 	// ChunkedRead
 	// Seeks to specified 64bit file offset and reads from disk as chunks of no more than INT_MAX/32
 	// This allows checks for thread termination requests at reasonable time intervals
 	// returns (teBSFrsltCodes)1 if m_bTermThread was set by another thread
 	teBSFrsltCodes
-		ChunkedRead(INT64 RdOfs,UINT8 *pData,INT64 RdLen);
+		ChunkedRead(int64_t RdOfs,uint8_t *pData,int64_t RdLen);
 
 	teBSFrsltCodes Hdr2Disk(void);	
 	teBSFrsltCodes Disk2Hdr(char *pszSeqFile,int FileType);
@@ -237,7 +237,7 @@ public:
 						 char Strand,			// alignment strand
 						 char *pszSeq,			// species.chromosome specific alignment sequence
 						 bool RptMskUpperCase=false, // true if uppercase represents softmasked repeats
-						 INT8 ConfScore=0);		// confidence score or flags associated with this alignment sequence
+						 int8_t ConfScore=0);		// confidence score or flags associated with this alignment sequence
 
 	 int AddAlignSeqBases(char *pszSpeciesName,	// species being added to alignment
 						 char *pszChromName,	// alignment is on species chromosome
@@ -246,7 +246,7 @@ public:
 					 	 int IncInDelLen,		// alignment length (1..n) in relative chromosome incl InDels
 						 char Strand,			// aligns from this strand
 						 etSeqBase *pBases,	// species.chromosome specific alignment sequence
-						 INT8 ConfScore=0);		// confidence score or flags associated with this alignment sequence
+						 int8_t ConfScore=0);		// confidence score or flags associated with this alignment sequence
 
  	int GetNumBlocks(void);				// returns number of blocks in alignment
  	int GetNumChroms(void);				// returns number of chromosomes in alignment
@@ -268,7 +268,7 @@ public:
 	int GetScore(tAlignBlockID BlockID);	// returns score currently associated with the specified block (as processed from orginal MAF file)
 
 	int GetConfScore(tAlignBlockID BlockID,tSpeciesID SpeciesID);		// returns confidence score (0..127) or flags (0..6) for specified block + species
-	int SetConfScore(tAlignBlockID BlockID,tSpeciesID SpeciesID,INT8 Score=0,bool bFinal = true);	// sets block.species confidence score (0..127) or flags (0..6), if Final true then commits to disk
+	int SetConfScore(tAlignBlockID BlockID,tSpeciesID SpeciesID,int8_t Score=0,bool bFinal = true);	// sets block.species confidence score (0..127) or flags (0..6), if Final true then commits to disk
 
 	int SetConfFilt(tSpeciesID SpeciesID,bool bFilt); // sets filtering state - cMASeqOverlayFlg - for NxtBlock() filtering for this species
 	int SetAllConfFilt(bool bFilt);					  // sets filtering state - cMASeqOverlayFlg - for NxtBlock() filtering for all species
@@ -309,7 +309,7 @@ public:
 					 int RelChromOfs,			// relative species chromosome offset
 					 char RelStrand,				// relative strand '+' or '-'
 					 int NumPts,				// number of datapoints
-					 unsigned char *pDataPts);	// array of data points
+					 uint8_t *pDataPts);	// array of data points
 
 
 	int JoinSegments(CDataPoints *pDataPoints,
@@ -320,7 +320,7 @@ public:
 					 int RelChromOfs,			// relative species chromosome offset 
 					 char RelStrand,			// relative strand '+' or '-'
 					 int NumPts,				// number of datapoints
-					 unsigned char *pDataPts);	// array of data points
+					 uint8_t *pDataPts);	// array of data points
 
 
 	int											// returns number of bases (incl InDels and NotAlignedBase)
@@ -335,7 +335,7 @@ public:
 					  etSeqBase RelUnalignedBase = eBaseInDel); // base to return if ref species aligned but no alignment onto rel species
 
 	int												// returns number of bases (incl InDels and NotAlignedBase)
-		LoadAlignment(INT32 RefChromID,	// alignment is to this ref species chromosome
+		LoadAlignment(int32_t RefChromID,	// alignment is to this ref species chromosome
 					  int StartLoci,			// starting from this ref chromosome loci
 					  int EndLoci,				// and ending at this ref chromosome loci
 					  int RelSpeciesID,			// aligned bases are to be returned for this species
@@ -346,7 +346,7 @@ public:
 					  etSeqBase RelUnalignedBase = eBaseInDel); // base to return if ref species aligned but no alignment onto rel species
 
 	int											// returns number of bases (incl InDels and NotAlignedBase)
-		LoadAlignments(INT32 RefChromID,		// alignment is to this ref species chromosome
+		LoadAlignments(int32_t RefChromID,		// alignment is to this ref species chromosome
 					  int StartLoci,			// starting from this ref chromosome loci
 					  int EndLoci,				// and ending at this ref chromosome loci
 					  int MaxBases,				// max number of bases for each species to be returned

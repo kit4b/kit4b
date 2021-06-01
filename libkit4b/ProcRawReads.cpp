@@ -218,14 +218,14 @@ int BuffOfs;
 int NumReadsProc;						// number of reads processed
 int MaxLengthRead;						// max length read thus  far processed
 int RdLen;								// last read() result when filling m_pRdsBuff[]
-UINT8 *pSeqVal;
+uint8_t *pSeqVal;
 etSeqBase *pSeqFwd;
 tsRawReadV5 *pReadV5;						// preprocessed reads could be either V5
 tsRawReadV6 *pReadV6;						//  or V6
 
 etSeqBase Sequence[cMaxFastQSeqLen];	// to hold sequence (sans quality scores) for current read
-UINT8 Scores[cMaxFastQSeqLen];			// to hold quality scores for current read
-UINT8 *pScore;
+uint8_t Scores[cMaxFastQSeqLen];			// to hold quality scores for current read
+uint8_t *pScore;
 int SeqIdx;
 unsigned long Elapsed;
 unsigned long CurElapsed;
@@ -240,14 +240,14 @@ Elapsed = CurTime.ReadUSecs();
 
 Reset();
 
-if((m_pRdsBuff = new UINT8 [cRRRdsBuffAlloc])==NULL)
+if((m_pRdsBuff = new uint8_t [cRRRdsBuffAlloc])==NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate %d bytes memory for reads buffering",cRRRdsBuffAlloc,strerror(errno));
 	Reset();
 	return(eBSFerrMem);
 	}
 
-m_pWrtBuff = new UINT8[cRRWrtBuffSize];
+m_pWrtBuff = new uint8_t[cRRWrtBuffSize];
 if(m_pWrtBuff == NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Memory allocation of %d bytes for write buffer - %s",cRRWrtBuffSize,strerror(errno));
@@ -461,18 +461,18 @@ int BuffOfs;
 int NumReadsProc;						// number of reads processed
 int MaxLengthRead;						// max length read thus  far processed
 int RdLen;								// last read() result when filling m_pRdsBuff[]
-UINT8 *pSeqVal;
+uint8_t *pSeqVal;
 etSeqBase *pSeqFwd;
 tsRawReadV5 *pReadV5;						// current preprocessed read being processed if V5
 tsRawReadV6 *pReadV6;						// current preprocessed read being processed if V6
 etSeqBase Sequence[cMaxFastQSeqLen];	// to hold sequence (sans quality scores) for current read
-UINT8 Scores[cMaxFastQSeqLen];			// to hold quality scores for current read
-UINT8 *pScore;
+uint8_t Scores[cMaxFastQSeqLen];			// to hold quality scores for current read
+uint8_t *pScore;
 int SeqIdx;
 
-UINT32 BaseCnts[6];						// total counts for each base including 'N's
-UINT32 DistBaseCnts[6][cMaxFastQSeqLen]; // distribution of base counts along reads
-UINT32 SeqNsCnts[cMaxFastQSeqLen];		// distribution of number of 'N's over all reads
+uint32_t BaseCnts[6];						// total counts for each base including 'N's
+uint32_t DistBaseCnts[6][cMaxFastQSeqLen]; // distribution of base counts along reads
+uint32_t SeqNsCnts[cMaxFastQSeqLen];		// distribution of number of 'N's over all reads
 int CntIdx;
 int SeqNsIdx;
 
@@ -488,27 +488,27 @@ Elapsed = CurTime.ReadUSecs();
 
 Reset();
 
-if((m_pDistQualScores = new UINT32 [cMaxFastQSeqLen * 2 * 0x01f])==NULL)
+if((m_pDistQualScores = new uint32_t [cMaxFastQSeqLen * 2 * 0x01f])==NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory for quality counts",strerror(errno));
 	return(eBSFerrMem);
 	}
 
-if((m_pDimerCnts = new UINT32 [5*5*cMaxFastQSeqLen])==NULL)
+if((m_pDimerCnts = new uint32_t [5*5*cMaxFastQSeqLen])==NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory for dimer counts",strerror(errno));
 	Reset();
 	return(eBSFerrMem);
 	}
 
-if((m_pTrimerCnts = new UINT32 [5*5*5*cMaxFastQSeqLen])==NULL)
+if((m_pTrimerCnts = new uint32_t [5*5*5*cMaxFastQSeqLen])==NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory for trimer counts",strerror(errno));
 	Reset();
 	return(eBSFerrMem);
 	}
 
-if((m_pTetramerCnts = new UINT32 [5*5*5*5*cMaxFastQSeqLen])==NULL)
+if((m_pTetramerCnts = new uint32_t [5*5*5*5*cMaxFastQSeqLen])==NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory for tetramer counts",strerror(errno));
 	Reset();
@@ -516,16 +516,16 @@ if((m_pTetramerCnts = new UINT32 [5*5*5*5*cMaxFastQSeqLen])==NULL)
 	}
 
 memset(BaseCnts,0,sizeof(BaseCnts));
-memset(m_pDimerCnts,0,sizeof(UINT32) * 5*5*cMaxFastQSeqLen);
-memset(m_pTrimerCnts,0,sizeof(UINT32) * 5*5*5*cMaxFastQSeqLen);
-memset(m_pTetramerCnts,0,sizeof(UINT32) * 5*5*5*5*cMaxFastQSeqLen);
+memset(m_pDimerCnts,0,sizeof(uint32_t) * 5*5*cMaxFastQSeqLen);
+memset(m_pTrimerCnts,0,sizeof(uint32_t) * 5*5*5*cMaxFastQSeqLen);
+memset(m_pTetramerCnts,0,sizeof(uint32_t) * 5*5*5*5*cMaxFastQSeqLen);
 
 
 memset(SeqNsCnts,0,sizeof(SeqNsCnts));
 memset(DistBaseCnts,0,sizeof(DistBaseCnts));
-memset(m_pDistQualScores,0,sizeof(UINT32) * cMaxFastQSeqLen * 2 * 0x01f);
+memset(m_pDistQualScores,0,sizeof(uint32_t) * cMaxFastQSeqLen * 2 * 0x01f);
 
-if((m_pRdsBuff = new UINT8 [cRRRdsBuffAlloc])==NULL)
+if((m_pRdsBuff = new uint8_t [cRRRdsBuffAlloc])==NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate %d bytes memory for reads buffering",cRRRdsBuffAlloc,strerror(errno));
 	Reset();
@@ -1061,7 +1061,7 @@ CProcRawReads::WriteToFile(etPRRMode PMode,
 int Rslt;
 int Idx;
 int WrtOfs;
-UINT64 TotReadsLen;
+uint64_t TotReadsLen;
 tsRawReadV6 *pReadV6;
 
 unsigned long Elapsed;
@@ -1109,7 +1109,7 @@ if((Rslt=Hdr2Disk(pszOutFile))!=eBSFSuccess)
 	return(eBSFerrCreateFile);
 	}
 
-m_pWrtBuff = new UINT8[cRRWrtBuffSize];
+m_pWrtBuff = new uint8_t[cRRWrtBuffSize];
 if(m_pWrtBuff == NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Memory allocation of %d bytes for write buffer - %s",cRRWrtBuffSize,strerror(errno));
@@ -1173,7 +1173,7 @@ m_FileHdr.FlagsK = bKeepDups;
 m_FileHdr.FlagsCS = m_bIsSOLiD;
 m_FileHdr.FlagsPR = PMode == ePMRRNewPaired ? 1 : 0;
 m_FileHdr.TotReadsLen = TotReadsLen;
-m_FileHdr.PMode = (UINT8)PMode;
+m_FileHdr.PMode = (uint8_t)PMode;
 m_FileHdr.QMode = Quality;
 m_FileHdr.Trim5 = Trim5;
 m_FileHdr.Trim3 = Trim3;
@@ -1194,7 +1194,7 @@ return(eBSFSuccess);
 
 teBSFrsltCodes
 CProcRawReads::LoadAndProcessReads(etPRRMode PMode,		// processing mode
-		UINT32 NumReadsLimit,				// limit processing to this many reads
+		uint32_t NumReadsLimit,				// limit processing to this many reads
 		bool bKeepDups,						// true if duplicate reads not to be filtered out
 		etFQMethod Quality,					// fastq quality value method
 		int Trim5,							// trim this many bases off leading sequence 5' end
@@ -1301,7 +1301,7 @@ if(m_ppReadsIdx == NULL)
 	m_ppReadsIdx = (tsRawReadV6 **) malloc((size_t)memreq);
 	if(m_ppReadsIdx == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Reads Idx: Memory allocation of %lld bytes failed",(INT64)memreq);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Reads Idx: Memory allocation of %lld bytes failed",(int64_t)memreq);
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -1310,7 +1310,7 @@ if(m_ppReadsIdx == NULL)
 	m_ppReadsIdx = (tsRawReadV6 **)mmap(NULL,(size_t)memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_ppReadsIdx == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEntry: Memory allocation of %lld bytes through mmap()  failed",(INT64)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEntry: Memory allocation of %lld bytes through mmap()  failed",(int64_t)memreq,strerror(errno));
 		m_ppReadsIdx = NULL;
 		Reset();
 		return(eBSFerrMem);
@@ -1321,7 +1321,7 @@ if(m_ppReadsIdx == NULL)
 
 tsRawReadV6 *pRead = (tsRawReadV6 *)m_pDataBuff;
 tsRawReadV6 *pRead1;
-UINT8 *pSeq;
+uint8_t *pSeq;
 size_t BuffOfs = 0;
 for(Idx = 0; Idx < (int)m_NumDescrReads; Idx++)
 	{
@@ -1331,7 +1331,7 @@ for(Idx = 0; Idx < (int)m_NumDescrReads; Idx++)
 	}
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Process: sorting %d reads",m_NumDescrReads);
 
-m_MTqsort.qsort(m_ppReadsIdx,(INT64)m_NumDescrReads,sizeof(tsRawReadV6 *),SortReads);
+m_MTqsort.qsort(m_ppReadsIdx,(int64_t)m_NumDescrReads,sizeof(tsRawReadV6 *),SortReads);
 
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Process: sort of %d reads completed",m_NumDescrReads);
 
@@ -1357,7 +1357,7 @@ if(!bKeepDups)
 				for(Ofs = 0; Ofs < pRead->ReadLen; Ofs++, pSeq++)
 					{
 					SumQuals[Ofs] += (*pSeq >> 3) & 0x01f;
-					*pSeq = *pSeq & 0x07 | (UINT8)(((SumQuals[Ofs]+1) / pRead->NumReads) << 3);
+					*pSeq = *pSeq & 0x07 | (uint8_t)(((SumQuals[Ofs]+1) / pRead->NumReads) << 3);
 					}
 				}
 			NumUniqueReadSeqs += 1;
@@ -1382,7 +1382,7 @@ if(!bKeepDups)
 		for(Ofs = 0; Ofs < pRead->ReadLen; Ofs++, pSeq++)
 			{
 			SumQuals[Ofs] += (*pSeq >> 3) & 0x01f;
-			*pSeq = *pSeq & 0x07 | (UINT8)(((SumQuals[Ofs]+1) / pRead->NumReads) << 3);
+			*pSeq = *pSeq & 0x07 | (uint8_t)(((SumQuals[Ofs]+1) / pRead->NumReads) << 3);
 			}
 		pRead1->ReadID = 0;		// this read no longer of relevance
 		}
@@ -1422,7 +1422,7 @@ return(pszFile);
 
 teBSFrsltCodes
 CProcRawReads::LoadAndProcessReadsDE(etPRRMode PMode,						// processing mode
-		UINT32 NumReadsLimit,				// limit processing to this many reads
+		uint32_t NumReadsLimit,				// limit processing to this many reads
 		int Trim5,							// trim this many bases off leading sequence 5' end
 		int Trim3,							// trim this many bases off trailing sequence 3' end
 		int	MinSampleCnts,					// minimum sample counts
@@ -1437,11 +1437,11 @@ int Idx;			// general processing iteration index
 tsRawReadV6 *pRead;
 tsRawReadV6 *pRead1;
 size_t BuffOfs;
-UINT32 SampleReadCnts[cRRMaxInFiles];		// read counts for each sample
+uint32_t SampleReadCnts[cRRMaxInFiles];		// read counts for each sample
 char szBuff[(cMaxReadLen + 1) *4];
 int NumUniqueReadSeqs;
 int SeqIdx;
-UINT8 *pSrc;
+uint8_t *pSrc;
 etSeqBase Sequence[cMaxReadLen+1];
 etSeqBase *pDst = Sequence;
 int SmplIdx;
@@ -1534,7 +1534,7 @@ if(m_ppReadsIdx == NULL)
 	m_ppReadsIdx = (tsRawReadV6 **) malloc((size_t)memreq);
 	if(m_ppReadsIdx == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Reads Idx: Memory allocation of %lld bytes failed",(INT64)memreq);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Reads Idx: Memory allocation of %lld bytes failed",(int64_t)memreq);
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -1543,7 +1543,7 @@ if(m_ppReadsIdx == NULL)
 	m_ppReadsIdx = (tsRawReadV6 **)mmap(NULL,(size_t)memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_ppReadsIdx == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEntry: Memory allocation of %lld bytes through mmap()  failed",(INT64)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEntry: Memory allocation of %lld bytes through mmap()  failed",(int64_t)memreq,strerror(errno));
 		m_ppReadsIdx = NULL;
 		Reset();
 		return(eBSFerrMem);
@@ -1562,7 +1562,7 @@ for(Idx = 0; Idx < (int)m_NumDescrReads; Idx++)
 	}
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Process: sorting %d reads",m_NumDescrReads);
 
-m_MTqsort.qsort(m_ppReadsIdx,(INT64)m_NumDescrReads,sizeof(tsRawReadV6 *),SortReads);
+m_MTqsort.qsort(m_ppReadsIdx,(int64_t)m_NumDescrReads,sizeof(tsRawReadV6 *),SortReads);
 
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Process: sort of %d reads completed",m_NumDescrReads);
 
@@ -1571,7 +1571,7 @@ gDiagnostics.DiagOut(eDLInfo,gszProcName,"Process: starting to identify those re
 NumUniqueReadSeqs = 0;
 
 pRead = m_ppReadsIdx[0];
-memset(SampleReadCnts,0,NumInputFilesProcessed * sizeof(UINT32));
+memset(SampleReadCnts,0,NumInputFilesProcessed * sizeof(uint32_t));
 SampleReadCnts[pRead->FileID-1] = 1;
 bMinAnySampleCnts = MinSampleCnts == 1 ? true : false;
 NumSamplesTotalCnts = 1;
@@ -1606,7 +1606,7 @@ for(Idx = 1; Idx < (int)m_NumDescrReads; Idx++)
 				}
 			NumUniqueReadSeqs += 1;
 			}
-		memset(SampleReadCnts,0,NumInputFilesProcessed * sizeof(UINT32));
+		memset(SampleReadCnts,0,NumInputFilesProcessed * sizeof(uint32_t));
 		pRead = pRead1;
 		SampleReadCnts[pRead->FileID-1] = 1;
 		NumSamplesTotalCnts = 1;
@@ -1617,7 +1617,7 @@ for(Idx = 1; Idx < (int)m_NumDescrReads; Idx++)
 
 	// reads are identical, attribute counts to file from which that read was parsed
 	SampleReadCnts[pRead1->FileID-1] += 1;
-	if(!bMinAnySampleCnts && SampleReadCnts[pRead1->FileID-1] >= (UINT32)MinSampleCnts)
+	if(!bMinAnySampleCnts && SampleReadCnts[pRead1->FileID-1] >= (uint32_t)MinSampleCnts)
 		bMinAnySampleCnts = true;
 	NumSamplesTotalCnts += 1;
 
@@ -1659,8 +1659,8 @@ return((teBSFrsltCodes)Rslt);
 
 teBSFrsltCodes
 CProcRawReads::LoadReads(bool bIsPairRead,					// true if this file to process contains the paired reads
-		  UINT32 PairReadID,				// if non-zero then start paired reads identifiers from this value and increment after each read processed
-		  UINT32 NumReadsLimit,				// limit to at most this number of reads, 0 if no limit
+		  uint32_t PairReadID,				// if non-zero then start paired reads identifiers from this value and increment after each read processed
+		  uint32_t NumReadsLimit,				// limit to at most this number of reads, 0 if no limit
 		  etFQMethod Quality,				// fastq quality value method
   		  int Trim5,						// trim this many bases off leading sequence 5' end
 		  int Trim3,						// trim this many bases off trailing sequence 3' end
@@ -1675,14 +1675,14 @@ bool bIsFastq;
 bool bSimReads;
 
 int DescrLen;
-UINT8 szDescrBuff[cRRMaxDescrLen];
+uint8_t szDescrBuff[cRRMaxDescrLen];
 int ReadLen;
-UINT8 szReadBuff[cMaxReadLen];
+uint8_t szReadBuff[cMaxReadLen];
 int QualLen;
-UINT8 szQualBuff[cMaxReadLen];
-UINT8 *pReadBuff;
-UINT8 *pQualBuff;
-UINT8 Qphred;
+uint8_t szQualBuff[cMaxReadLen];
+uint8_t *pReadBuff;
+uint8_t *pQualBuff;
+uint8_t Qphred;
 int NumInvalValues = 0;
 int NumUnsupportedBases = 0;
 int NumUnderlength = 0;
@@ -1831,13 +1831,13 @@ while((NumReadsLimit == 0 || NumDescrReads < (int)NumReadsLimit) && ((Rslt = (te
 								*pQualBuff = 125;
 							}
 						Qphred = *pQualBuff - 59;	// Solexa/Illumina encodes into ascii starting from decimal 59
-						Qphred = (UINT8)(10 * log(1 + pow(10.0,((double)Qphred/10.0) / log(10.0))));	//
+						Qphred = (uint8_t)(10 * log(1 + pow(10.0,((double)Qphred/10.0) / log(10.0))));	//
 						if(Qphred > 40)				// clamp at phred equiv to 0.0001
 							Qphred = 40;
-						*pQualBuff = (UINT8)(((UINT32)Qphred * 31) / 40);
+						*pQualBuff = (uint8_t)(((uint32_t)Qphred * 31) / 40);
 						break;
 					}
-				*pQualBuff = (UINT8)((((UINT32)Qphred+2)*15)/40);
+				*pQualBuff = (uint8_t)((((uint32_t)Qphred+2)*15)/40);
 				}
 			// pack the read and quality, read into the low order bits 0..3, quality into bits 4..7
 			pQualBuff = szQualBuff;
@@ -1908,33 +1908,33 @@ return(eBSFSuccess);
 
 int
 CProcRawReads::AddEntry(bool bIsPairRead,		// true if this is the paired read
-		 UINT32 PairReadID,		// identifies partner of this read if paired read processing
-		 UINT8 FileID,			// identifies file from which this read was parsed
+		 uint32_t PairReadID,		// identifies partner of this read if paired read processing
+		 uint8_t FileID,			// identifies file from which this read was parsed
 		 int DescrLen,			// length of following descriptor
 		 char *pszReadDescr,	// copy of descriptor, used to pair reads with matching descriptors
 		 int ReadLen,			// length of following read
-		 UINT8 *pszReadBuff)	// packed read + phred score
+		 uint8_t *pszReadBuff)	// packed read + phred score
 {
-UINT8 *pTmpAlloc;
+uint8_t *pTmpAlloc;
 tsRawReadV6 DescrRead;
 size_t memreq;
 if(m_pDataBuff == NULL)
 	{
 	memreq = cRRDataBuffAlloc * 2;
 #ifdef _WIN32
-	m_pDataBuff = (UINT8 *) malloc((size_t)memreq);
+	m_pDataBuff = (uint8_t *) malloc((size_t)memreq);
 	if(m_pDataBuff == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEntry: Memory allocation of %lld bytes failed",(INT64)memreq);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEntry: Memory allocation of %lld bytes failed",(int64_t)memreq);
 		Reset();
 		return(eBSFerrMem);
 		}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-	m_pDataBuff = (UINT8 *)mmap(NULL,(size_t)memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+	m_pDataBuff = (uint8_t *)mmap(NULL,(size_t)memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pDataBuff == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEntry: Memory allocation of %lld bytes through mmap()  failed",(INT64)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEntry: Memory allocation of %lld bytes through mmap()  failed",(int64_t)memreq,strerror(errno));
 		m_pDataBuff = NULL;
 		Reset();
 		return(eBSFerrMem);
@@ -1949,9 +1949,9 @@ if((m_DataBuffAllocMem - m_DataBuffOfs) < (sizeof(tsRawReadV6) +  ReadLen + Desc
 	{
 	memreq = m_DataBuffAllocMem + cRRDataBuffAlloc;
 #ifdef _WIN32
-	pTmpAlloc = (UINT8 *) realloc(m_pDataBuff,memreq);
+	pTmpAlloc = (uint8_t *) realloc(m_pDataBuff,memreq);
 #else
-	pTmpAlloc = (UINT8 *)mremap(m_pDataBuff,m_DataBuffAllocMem,memreq,MREMAP_MAYMOVE);
+	pTmpAlloc = (uint8_t *)mremap(m_pDataBuff,m_DataBuffAllocMem,memreq,MREMAP_MAYMOVE);
 	if(pTmpAlloc == MAP_FAILED)
 		pTmpAlloc = NULL;
 #endif
@@ -1970,7 +1970,7 @@ if(bIsPairRead)
 	DescrRead.PairReadID |= 0x80000000;
 DescrRead.ReadLen = ReadLen;
 DescrRead.NumReads = 1;
-DescrRead.DescrLen=(UINT8)DescrLen;
+DescrRead.DescrLen=(uint8_t)DescrLen;
 DescrRead.FileID = FileID;
 memmove(&m_pDataBuff[m_DataBuffOfs],&DescrRead,sizeof(DescrRead)-1);
 m_DataBuffOfs += (int)sizeof(DescrRead)-1;
@@ -1990,8 +1990,8 @@ int
 CProcRawReads::CompareRead(tsRawReadV6 *pRead1,tsRawReadV6 *pRead2)
 {
 int Idx;
-UINT8 *pSeq1 = &pRead1->Read[pRead1->DescrLen+1];
-UINT8 *pSeq2 = &pRead2->Read[pRead2->DescrLen+1];
+uint8_t *pSeq1 = &pRead1->Read[pRead1->DescrLen+1];
+uint8_t *pSeq2 = &pRead2->Read[pRead2->DescrLen+1];
 
 for(Idx = 0; Idx < pRead1->ReadLen; Idx++, pSeq1++, pSeq2++)
 	{
@@ -2013,8 +2013,8 @@ int
 CProcRawReads::SortReads(const void *arg1, const void *arg2)
 {
 int Idx;
-UINT8 *pSeq1;
-UINT8 *pSeq2;
+uint8_t *pSeq1;
+uint8_t *pSeq2;
 
 tsRawReadV6 *pEl1 = *(tsRawReadV6 **)arg1;
 tsRawReadV6 *pEl2 = *(tsRawReadV6 **)arg2;

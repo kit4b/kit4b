@@ -43,11 +43,11 @@ const int cgzAllocOutBuffer = 0x1ffffff;			// gz processing output buffer size
 #pragma pack(1)
 typedef struct TAG_sFastaBlock
 	{
-	INT64  FileOfs;				// file offset from where fasta block (m_pCurBuffer) last read from file
-	INT32 BuffIdx;				// process next char from pBlock[BuffIdx]
-	INT32 BuffCnt;				// block currently loaded with this many chars
-	INT32 AllocSize;			// block was allocated to buffer at most this many chars in Fasta[]
-	UINT8 *pBlock;				// allocated to hold a block of fasta file content
+	int64_t  FileOfs;				// file offset from where fasta block (m_pCurBuffer) last read from file
+	int32_t BuffIdx;				// process next char from pBlock[BuffIdx]
+	int32_t BuffCnt;				// block currently loaded with this many chars
+	int32_t AllocSize;			// block was allocated to buffer at most this many chars in Fasta[]
+	uint8_t *pBlock;				// allocated to hold a block of fasta file content
 	} tsFastaBlock;
 #pragma pack()
 
@@ -56,11 +56,11 @@ class CFasta : public CErrorCodes
 	int m_hFile;				// opened for write fasta
 	gzFile m_gzFile;			// opened for read (could be compressed) fasta or fastq
 	char m_szFile[_MAX_PATH];	// to hold fasta file path+name
-	UINT64 m_StatFileSize;		// file size as returned by stat() when file initially opened
+	uint64_t m_StatFileSize;		// file size as returned by stat() when file initially opened
 	bool m_bIsGZ;				// true if processing a gz compressed file
 	bool m_bIsFastQ;			// true if processing a fastq file
 	bool m_bIscsfasta;			// sequences are in SOLiD csfasta format
-	static UINT8 m_SOLiDmap[5][5]; // used for transforming from SOLiD colorspace into basespace
+	static uint8_t m_SOLiDmap[5][5]; // used for transforming from SOLiD colorspace into basespace
 	bool m_bRead;				// TRUE if reading fasta file, FALSE if write to fasta file
 
 	tsFastaBlock *m_pCurFastaBlock;    // buffered fasta block currently being processed
@@ -76,8 +76,8 @@ class CFasta : public CErrorCodes
 	int m_CurFastQParseLine;	// current FastQ line being processed
 	int m_NumMissingSequences;	// total number of fastq records which were empty with no sequence present
 
-	INT64 m_FileDescrOfs;		// file offset from where last descriptor was parsed
-	INT64 m_FileReadDescrOfs;   // offset of last descriptor returned by ReadDescriptor()
+	int64_t m_FileDescrOfs;		// file offset from where last descriptor was parsed
+	int64_t m_FileReadDescrOfs;   // offset of last descriptor returned by ReadDescriptor()
 	unsigned int m_DescriptorLen;
 	unsigned int m_CurLineLen;
 
@@ -88,22 +88,22 @@ public:
 	CFasta(void);
 	~CFasta(void);
 	void Cleanup(void);
-	int Reset(INT64 FileOfs = 0l);				// reset context to that following an Open() with option to start processing at FileOfs
+	int Reset(int64_t FileOfs = 0l);				// reset context to that following an Open() with option to start processing at FileOfs
 												// NOTE: gzip library can't handle file offsets which are greater than 2^31 - 1
 
 	int Open(char *pszFile,bool Read = true,unsigned long BufferSize = cDfltStageBuffSize);
 	bool IsFastq(void);							// true if opened file is in fastq format
 	bool IsSOLiD(void);							// true if opened file is in SOLiD or colorspace format
-	UINT64 InitialFileSize(void);				// file size when initially opened for reading
+	uint64_t InitialFileSize(void);				// file size when initially opened for reading
 
-	UINT32										// returns estimated number of sequences in fasta/fastq file
+	uint32_t										// returns estimated number of sequences in fasta/fastq file
 		FastaEstSizes(char *pszFile,			// fasta or fastq file path+name to estimate sizes
-			  INT64 *pFileSize = NULL,			// file is this size on disk
-			  INT32 *pEstMaxDescrLen = NULL,	// with estimated maximum descriptor length
-			  INT32 *pEstMeanDescrLen = NULL,	// estimated mean descriptor length
-			  INT32 *pEstMaxSeqLen = NULL,		// and estimated maximum sequence length
-			  INT32 *pEstMeanSeqLen = NULL,		// estimated mean sequence length
-			  INT32 *pEstScoreSchema = NULL);	// guestimated scoring schema - 0: no scoring, 1: Solexa, 2: Illumina 1.3+, 3: Illumina 1.5+, 4: Illumina 1.8+ or could be Sanger 
+			  int64_t *pFileSize = NULL,			// file is this size on disk
+			  int32_t *pEstMaxDescrLen = NULL,	// with estimated maximum descriptor length
+			  int32_t *pEstMeanDescrLen = NULL,	// estimated mean descriptor length
+			  int32_t *pEstMaxSeqLen = NULL,		// and estimated maximum sequence length
+			  int32_t *pEstMeanSeqLen = NULL,		// estimated mean sequence length
+			  int32_t *pEstScoreSchema = NULL);	// guestimated scoring schema - 0: no scoring, 1: Solexa, 2: Illumina 1.3+, 3: Illumina 1.5+, 4: Illumina 1.8+ or could be Sanger 
 	
 	int Close(void);							 // close opened fasta file
 	int	LocateDescriptor(char *pszPrefixToMatch=NULL,// prefix to match or NULL if match any
@@ -125,7 +125,7 @@ public:
 					 int Max2Ret);			// max to return
 
 	int ReadDescriptor(char *pszDescriptor,int MaxLen); // copies last descriptor processed into pszDescriptor and returns copied length
-	INT64 GetDescrFileOfs(void);				// returns file offset at which descriptor returned by ReadDescriptor() was parsed from
+	int64_t GetDescrFileOfs(void);				// returns file offset at which descriptor returned by ReadDescriptor() was parsed from
 
 	static int Ascii2Sense(char *pAscii,		  // expected to be '\0' terminated, or SeqLen long
 					int MaxSeqLen,				  // maximal sized sequence that pSeq can hold

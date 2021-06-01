@@ -100,7 +100,7 @@ void DeleteProbes(tsProcCtx *pProcCtx);
 int										// returns the number of hits by probes against the chromosome sequence
 FindMatches(tsProcCtx *pProcCtx,			// processing parameters
 		   tBSFEntryID TargEntryID,		// current target entry identifier
-		   unsigned char *pTargSeq,		// pts to target sequence
+		   uint8_t *pTargSeq,		// pts to target sequence
 		   int TargSeqLen,				// target sequence length
 		   char *pszChrom);				// target is on this chromosome 
 int	CleanNameList(char *pszTxt);
@@ -447,7 +447,7 @@ int Process(teProcMode ProcMode,
 			int BinWidth)				// use this sized histogram bins when accumulating chromosome probe hits
 {
 CBioSeqFile *pBioSeq;
-unsigned char *pTargSeq;			// to hold sequence for each chromosome
+uint8_t *pTargSeq;			// to hold sequence for each chromosome
 int AllocdTargSeqLen;				// length of currently allocated pTargSeq
 int hRsltsFile;
 char szChromName[cBSFSourceSize+1];	// to hold current chromosome name
@@ -529,7 +529,7 @@ while((CurEntry = pBioSeq->Next(CurEntry)) > 0)
 		if(pTargSeq != NULL)
 			delete pTargSeq;
 		AllocdTargSeqLen = TargSeqLen + TargSeqLen/10; // alloc more than actually required, next sequence may not then need to be realloc'd
-		pTargSeq = (unsigned char *)new unsigned char [AllocdTargSeqLen];
+		pTargSeq = (uint8_t *)new uint8_t [AllocdTargSeqLen];
 		if(pTargSeq == NULL)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory (%d bytes) for holding chromosome sequence",AllocdTargSeqLen);
@@ -753,7 +753,7 @@ while((Rslt = SeqLen = pFasta->ReadSequence(SeqBuff,cMaxProbeLen)) > eBSFSuccess
 		pProcCtx->MaxProbeLen = SeqLen;
 	if(pProcCtx->MinProbeLen == 0 || SeqLen < pProcCtx->MinProbeLen)
 			pProcCtx->MinProbeLen = SeqLen;
-	pNxtProbe = (sFSAMProbe *)new unsigned char [ sizeof(sFSAMProbe) + SeqLen + 1];
+	pNxtProbe = (sFSAMProbe *)new uint8_t [ sizeof(sFSAMProbe) + SeqLen + 1];
 	memset(pNxtProbe,0,sizeof(sFSAMProbe));
 	pNxtProbe->ProbID = ++pProcCtx->NumProbes;
 	pNxtProbe->ProbeLen = SeqLen;
@@ -794,7 +794,7 @@ return(pProcCtx->NumProbes);
 int										// returns the number of hits by probes against the chromosome sequence
 FindMatches(tsProcCtx *pProcCtx,			// processing parameters
 		   tBSFEntryID TargEntryID,		// current target entry identifier
-		   unsigned char *pTargSeq,		// pts to target sequence
+		   uint8_t *pTargSeq,		// pts to target sequence
 		   int TargSeqLen,				// target sequence length
 		   char *pszChrom)				// target is on this chromosome 
 {

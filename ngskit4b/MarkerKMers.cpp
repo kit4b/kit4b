@@ -258,11 +258,11 @@ return(eBSFSuccess);
 }
 
 
-INT64														// returns number of K-Mers processed
-CMarkerKMers::GetKMerProcProgress(INT64 *pTotSenseCnts,	// number of K-Mers accepted on sense strand
-					INT64 *pTotAntisenseCnts)				// number of K-Mers accepted on antisense strand
+int64_t														// returns number of K-Mers processed
+CMarkerKMers::GetKMerProcProgress(int64_t *pTotSenseCnts,	// number of K-Mers accepted on sense strand
+					int64_t *pTotAntisenseCnts)				// number of K-Mers accepted on antisense strand
 {
-INT64 NumPutMarkers;
+int64_t NumPutMarkers;
 EnterCritSect();
 if(pTotSenseCnts != NULL)
 	*pTotSenseCnts = m_TotSenseCnts;
@@ -285,9 +285,9 @@ CMarkerKMers::LocKMers(etPMode PMode,			// processing mode - defaults to 0
 		  int NumThreads)				// max number of threads allowed
 {
 int Rslt;
-INT64 NumPutativePrefixKMers;
-INT64 TotSenseCnts;
-INT64 TotAntisenseCnts;
+int64_t NumPutativePrefixKMers;
+int64_t TotSenseCnts;
+int64_t TotAntisenseCnts;
 
 int EntryID;
 char szSfxEntryName[100];
@@ -308,7 +308,7 @@ strncpy(m_szMarkerFile,pszMarkerFile,sizeof(m_szMarkerFile));
 m_szMarkerFile[sizeof(m_szMarkerFile)-1] = '\0';
 
 // allocate buffers
-if((m_pMarkerBuff = new UINT8 [cMarkerSeqBuffSize])==NULL)
+if((m_pMarkerBuff = new uint8_t [cMarkerSeqBuffSize])==NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Unable to allocate (%d bytes) for marker buffering",cMarkerSeqBuffSize);
 	Reset();
@@ -323,7 +323,7 @@ m_AllocPutMarkersSize = (size_t)cAllocNumPutativeSeqs * m_PutMarkerSize;
 m_pPutMarkers = (tsPutMarker *) malloc(m_AllocPutMarkersSize);
 if(m_pPutMarkers == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for putative marker sequences",(INT64)m_AllocPutMarkersSize);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for putative marker sequences",(int64_t)m_AllocPutMarkersSize);
 	m_AllocPutMarkersSize = 0;
 	Reset(false);
 	return(eBSFerrMem);
@@ -333,7 +333,7 @@ if(m_pPutMarkers == NULL)
 m_pPutMarkers = (tsPutMarker *)mmap(NULL,m_AllocPutMarkersSize, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pPutMarkers == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for putative marker sequences",(INT64)m_AllocPutMarkersSize);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for putative marker sequences",(int64_t)m_AllocPutMarkersSize);
 	m_AllocPutMarkersSize = 0;
 	m_pPutMarkers = NULL;
 	Reset(false);
@@ -443,8 +443,8 @@ tsKMerThreadPars WorkerThreads[cMaxWorkerThreads];			// allow for max possible u
 int ThreadIdx;
 memset(WorkerThreads,0,sizeof(WorkerThreads));
 int NumActiveThreads;
-INT64 StartSfxIdx;
-INT64 EndSfxIdx;
+int64_t StartSfxIdx;
+int64_t EndSfxIdx;
 
 // partition the processing over multiple threads
 StartSfxIdx = 0;
@@ -550,22 +550,22 @@ if(m_NumPutMarkers == 0 || m_NumPutMarkers > 0x07fffffff)
 
 // at least one putative marker sequences identified
 // allocate and initialise for index over putative  markers
-m_AllocPutMarkersIndexSize = (size_t)m_NumPutMarkers * sizeof(UINT32);
+m_AllocPutMarkersIndexSize = (size_t)m_NumPutMarkers * sizeof(uint32_t);
 #ifdef _WIN32
-m_pPutMarkersIndex = (UINT32 *) malloc(m_AllocPutMarkersIndexSize);
+m_pPutMarkersIndex = (uint32_t *) malloc(m_AllocPutMarkersIndexSize);
 if(m_pPutMarkersIndex == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for putative marker sequence index",(INT64)m_AllocPutMarkersIndexSize);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for putative marker sequence index",(int64_t)m_AllocPutMarkersIndexSize);
 	m_AllocPutMarkersIndexSize = 0;
 	Reset(false);
 	return(eBSFerrMem);
 	}
 #else
 // gnu malloc is still in the 32bit world and seems to have issues if more than 2GB allocation
-m_pPutMarkersIndex = (UINT32 *)mmap(NULL,m_AllocPutMarkersIndexSize, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+m_pPutMarkersIndex = (uint32_t *)mmap(NULL,m_AllocPutMarkersIndexSize, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pPutMarkersIndex == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for putative marker sequences",(INT64)m_AllocPutMarkersIndexSize);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for putative marker sequences",(int64_t)m_AllocPutMarkersIndexSize);
 	m_AllocPutMarkersIndexSize = 0;
 	m_pPutMarkersIndex = NULL;
 	Reset(false);
@@ -575,12 +575,12 @@ if(m_pPutMarkersIndex == MAP_FAILED)
 
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Identifying redundant (duplicates, antisense, overlaps) putative markers ...");
 
-UINT32 TotRedundant;
-UINT32 NumOverlapping;
-UINT32 NumDuplicates;
-UINT32 NumAntisense;
-UINT32 Idx;
-UINT32 *pPutMarkerIdx;
+uint32_t TotRedundant;
+uint32_t NumOverlapping;
+uint32_t NumDuplicates;
+uint32_t NumAntisense;
+uint32_t Idx;
+uint32_t *pPutMarkerIdx;
 tsPutMarker *pMarker;
 tsPutMarker *pAntisense;
 pPutMarkerIdx = m_pPutMarkersIndex;
@@ -602,11 +602,11 @@ if(m_NumPutMarkers > 1)
 	gpPutativeMarkers = m_pPutMarkers;
 	gPutativeMarkerSeqLen = m_PrefixLen;
 	gPutMarkerSize = m_PutMarkerSize;
-	mtqsort.qsort(m_pPutMarkersIndex,m_NumPutMarkers,sizeof(UINT32),SortPutativeSeqs);
+	mtqsort.qsort(m_pPutMarkersIndex,m_NumPutMarkers,sizeof(uint32_t),SortPutativeSeqs);
 	pPutMarkerIdx = m_pPutMarkersIndex;
 	for(Idx = 0; Idx < m_NumPutMarkers; Idx++, pPutMarkerIdx++)
 		{
-		pMarker = (tsPutMarker *)((UINT8 *)m_pPutMarkers + (*pPutMarkerIdx * (UINT64)m_PutMarkerSize));
+		pMarker = (tsPutMarker *)((uint8_t *)m_pPutMarkers + (*pPutMarkerIdx * (uint64_t)m_PutMarkerSize));
 		pMarker->MarkerID = Idx + 1;
 		}
 
@@ -614,12 +614,12 @@ if(m_NumPutMarkers > 1)
 	pPutMarkerIdx = m_pPutMarkersIndex;
 	for(Idx = 0; Idx < m_NumPutMarkers; Idx++, pPutMarkerIdx++)
 		{
-		pMarker = (tsPutMarker *)((UINT8 *)m_pPutMarkers + (*pPutMarkerIdx * (UINT64)m_PutMarkerSize));
+		pMarker = (tsPutMarker *)((uint8_t *)m_pPutMarkers + (*pPutMarkerIdx * (uint64_t)m_PutMarkerSize));
 		
 		// check for duplicate and mark first instance of that duplicate
 		if(Idx < (m_NumPutMarkers - 1))
 			{
-			pNxtMarker = (tsPutMarker *)((UINT8 *)m_pPutMarkers + (pPutMarkerIdx[1] * (UINT64)m_PutMarkerSize));;
+			pNxtMarker = (tsPutMarker *)((uint8_t *)m_pPutMarkers + (pPutMarkerIdx[1] * (uint64_t)m_PutMarkerSize));;
 			if(!memcmp(pMarker->MarkerSeq,pNxtMarker->MarkerSeq,m_PrefixLen))
 				{
 				pMarker->Flags |= cMarkerDupFlg;
@@ -648,7 +648,7 @@ if(m_NumPutMarkers > 1)
 		}
 
 	// sort the markers by NumCultivars and sense/antisense counts as that is the order in which markers will be reported
-	mtqsort.qsort(m_pPutMarkersIndex,m_NumPutMarkers,sizeof(UINT32),SortNumCultivarsCnts);
+	mtqsort.qsort(m_pPutMarkersIndex,m_NumPutMarkers,sizeof(uint32_t),SortNumCultivarsCnts);
 	}
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Identified redundant putative markers, duplicates: %u, antisense: %u, overlaps: %u",NumDuplicates,NumAntisense,NumOverlapping);
 
@@ -657,7 +657,7 @@ gDiagnostics.DiagOut(eDLInfo,gszProcName,"Writing non-redundant markers to file:
 pPutMarkerIdx = m_pPutMarkersIndex;
 for(Idx = 0; Idx < m_NumPutMarkers; Idx++, pPutMarkerIdx++)
 	{
-	pMarker = (tsPutMarker *)((UINT8 *)m_pPutMarkers + (*pPutMarkerIdx * m_PutMarkerSize));
+	pMarker = (tsPutMarker *)((uint8_t *)m_pPutMarkers + (*pPutMarkerIdx * m_PutMarkerSize));
 	if(pMarker->Flags & 0x0ff)
 		continue;
 	ReportMarker(pMarker);
@@ -693,16 +693,16 @@ int Cmp;
 tsPutMarker *pPutMarker;
 etSeqBase *pEl1;
 etSeqBase *pEl2;
-UINT8 *pByte = (UINT8 *)m_pPutMarkers;
-UINT32 TargPsn;
-UINT32 Psn;
-INT64 SfxHi = (INT64)(UINT64)m_NumPutMarkers-1;
-INT64 SfxLo = 0;
+uint8_t *pByte = (uint8_t *)m_pPutMarkers;
+uint32_t TargPsn;
+uint32_t Psn;
+int64_t SfxHi = (int64_t)(uint64_t)m_NumPutMarkers-1;
+int64_t SfxLo = 0;
 pEl1 = &pMarker->MarkerSeq[1];							// checking if pMarker is overlapping with 1 base 5' overhang  
 do {
-	TargPsn = (UINT32)(((UINT64)(SfxLo + SfxHi)) / 2L);
+	TargPsn = (uint32_t)(((uint64_t)(SfxLo + SfxHi)) / 2L);
 	Psn = m_pPutMarkersIndex[TargPsn];
-	pPutMarker = (tsPutMarker *)&pByte[(UINT64)Psn * (UINT32)m_PutMarkerSize];
+	pPutMarker = (tsPutMarker *)&pByte[(uint64_t)Psn * (uint32_t)m_PutMarkerSize];
 	pEl2 = pPutMarker->MarkerSeq;
 	Cmp = memcmp(pEl1,pEl2,m_PrefixLen-1);
 	if(!Cmp)
@@ -713,7 +713,7 @@ do {
 		if(TargPsn > 0)
 			{
 			Psn = m_pPutMarkersIndex[TargPsn-1];
-			pPutMarker = (tsPutMarker *)&pByte[(UINT64)Psn * (UINT32)m_PutMarkerSize];
+			pPutMarker = (tsPutMarker *)&pByte[(uint64_t)Psn * (uint32_t)m_PutMarkerSize];
 			pEl2 = pPutMarker->MarkerSeq;
 			if(!memcmp(pEl1,pEl2,m_PrefixLen-1))
 				return(true);
@@ -721,7 +721,7 @@ do {
 		if(TargPsn < m_NumPutMarkers-1)
 			{
 			Psn = m_pPutMarkersIndex[TargPsn+1];
-			pPutMarker = (tsPutMarker *)&pByte[(UINT64)Psn * (UINT32)m_PutMarkerSize];
+			pPutMarker = (tsPutMarker *)&pByte[(uint64_t)Psn * (uint32_t)m_PutMarkerSize];
 			pEl2 = pPutMarker->MarkerSeq;
 			if(!memcmp(pEl1,pEl2,m_PrefixLen-1))
 				return(true);
@@ -729,9 +729,9 @@ do {
 		return(false);
 		}
 	if(Cmp < 1)
-		SfxHi = (INT64)(UINT64)TargPsn - 1;
+		SfxHi = (int64_t)(uint64_t)TargPsn - 1;
 	else
-		SfxLo = (INT64)(UINT64)TargPsn + 1;
+		SfxLo = (int64_t)(uint64_t)TargPsn + 1;
 	}
 while(SfxHi >= SfxLo);
 return(false);
@@ -746,19 +746,19 @@ etSeqBase AntisenseSeq[cMaxKMerLen];
 tsPutMarker *pPutMarker;
 etSeqBase *pEl1;
 etSeqBase *pEl2;
-UINT8 *pByte = (UINT8 *)m_pPutMarkers;
-UINT32 TargPsn;
-UINT32 Psn;
-INT64 SfxHi = (INT64)(UINT64)m_NumPutMarkers-1;
-INT64 SfxLo = 0;
+uint8_t *pByte = (uint8_t *)m_pPutMarkers;
+uint32_t TargPsn;
+uint32_t Psn;
+int64_t SfxHi = (int64_t)(uint64_t)m_NumPutMarkers-1;
+int64_t SfxLo = 0;
 
 memmove(AntisenseSeq,&pMarker->MarkerSeq,m_PrefixLen);
 CSeqTrans::ReverseComplement(m_PrefixLen,AntisenseSeq);
 pEl1 = AntisenseSeq;
 do {
-	TargPsn = (UINT32)(((UINT64)(SfxLo + SfxHi)) / 2L);
+	TargPsn = (uint32_t)(((uint64_t)(SfxLo + SfxHi)) / 2L);
 	Psn = m_pPutMarkersIndex[TargPsn];
-	pPutMarker = (tsPutMarker *)&pByte[(UINT64)Psn * (UINT32)m_PutMarkerSize];
+	pPutMarker = (tsPutMarker *)&pByte[(uint64_t)Psn * (uint32_t)m_PutMarkerSize];
 	pEl2 = pPutMarker->MarkerSeq;
 	Cmp = memcmp(pEl1,pEl2,m_PrefixLen);
 	if(!Cmp)
@@ -769,7 +769,7 @@ do {
 		if(TargPsn > 0)
 			{
 			Psn = m_pPutMarkersIndex[TargPsn-1];
-			pPutMarker = (tsPutMarker *)&pByte[(UINT64)Psn * (UINT32)m_PutMarkerSize];
+			pPutMarker = (tsPutMarker *)&pByte[(uint64_t)Psn * (uint32_t)m_PutMarkerSize];
 			pEl2 = pPutMarker->MarkerSeq;
 			if(!memcmp(pEl1,pEl2,m_PrefixLen))
 				return(pPutMarker);
@@ -777,7 +777,7 @@ do {
 		if(TargPsn < m_NumPutMarkers-1)
 			{
 			Psn = m_pPutMarkersIndex[TargPsn+1];
-			pPutMarker = (tsPutMarker *)&pByte[(UINT64)Psn * (UINT32)m_PutMarkerSize];
+			pPutMarker = (tsPutMarker *)&pByte[(uint64_t)Psn * (uint32_t)m_PutMarkerSize];
 			pEl2 = pPutMarker->MarkerSeq;
 			if(!memcmp(pEl1,pEl2,m_PrefixLen))
 				return(pPutMarker);
@@ -786,9 +786,9 @@ do {
 		}
 
 	if(Cmp < 1)
-		SfxHi = (INT64)(UINT64)TargPsn - 1;
+		SfxHi = (int64_t)(uint64_t)TargPsn - 1;
 	else
-		SfxLo = (INT64)(UINT64)TargPsn + 1;
+		SfxLo = (int64_t)(uint64_t)TargPsn + 1;
 	}
 while(SfxHi >= SfxLo);
 return(NULL);
@@ -816,7 +816,7 @@ int
 CMarkerKMers::MarkersCallback(void *pThis,tsKMerCultsCnts *pCultsCnts)
 {
 int Idx;
-UINT8 *pBase;
+uint8_t *pBase;
 tsPutMarker *pPutMarker;
 CMarkerKMers *pMarkerKMers;
 etSeqBase *pMarkerSeq;
@@ -843,7 +843,7 @@ if(((pMarkerKMers->m_NumPutMarkers + 1) * pMarkerKMers->m_PutMarkerSize) > pMark
 #endif
 	if(pRealloc == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"MarkersCallback: putative marker sequences memory re-allocation to %lld bytes - %s",(INT64)ReallocSize,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"MarkersCallback: putative marker sequences memory re-allocation to %lld bytes - %s",(int64_t)ReallocSize,strerror(errno));
 		pMarkerKMers->LeaveCritSect();
 		return(eBSFerrMem);
 		}
@@ -851,14 +851,14 @@ if(((pMarkerKMers->m_NumPutMarkers + 1) * pMarkerKMers->m_PutMarkerSize) > pMark
 	pMarkerKMers->m_AllocPutMarkersSize = ReallocSize;
 	}
 
-pBase = (UINT8 *)pMarkerKMers->m_pPutMarkers;
+pBase = (uint8_t *)pMarkerKMers->m_pPutMarkers;
 pPutMarker = (tsPutMarker *)(pBase + ((size_t)pMarkerKMers->m_PutMarkerSize * pMarkerKMers->m_NumPutMarkers));
 pMarkerSeq = pPutMarker->MarkerSeq;
 pSrc = pCultsCnts->KMerSeq;
 for(Idx = 0; Idx < pMarkerKMers->m_PrefixLen; Idx++,pMarkerSeq++,pSrc++)
 	*pMarkerSeq = *pSrc & 0x0f;
-pPutMarker->SenseCnts = (UINT32)(pCultsCnts->SenseCnts  > 0x0ffffffff ? 0x0ffffffff : pCultsCnts->SenseCnts);
-pPutMarker->AntisenseCnts = (UINT32)(pCultsCnts->AntisenseCnts > 0x0ffffffff ? 0x0ffffffff : pCultsCnts->AntisenseCnts);
+pPutMarker->SenseCnts = (uint32_t)(pCultsCnts->SenseCnts  > 0x0ffffffff ? 0x0ffffffff : pCultsCnts->SenseCnts);
+pPutMarker->AntisenseCnts = (uint32_t)(pCultsCnts->AntisenseCnts > 0x0ffffffff ? 0x0ffffffff : pCultsCnts->AntisenseCnts);
 pPutMarker->NumCultivars = pCultsCnts->NumCultivars;
 pPutMarker->Flags = 0;
 pPutMarker->MarkerID = ++pMarkerKMers->m_NumPutMarkers;
@@ -882,16 +882,16 @@ CMarkerKMers::SortPutativeSeqs(const void *arg1, const void *arg2)
 {
 size_t Ofs1;
 size_t Ofs2;
-UINT8 *pByte;
+uint8_t *pByte;
 etSeqBase *pEl1;
 etSeqBase *pEl2;
 
 tsPutMarker *pPM1;
 tsPutMarker *pPM2;
-Ofs1 = gPutMarkerSize * *(UINT32 *)arg1;
-Ofs2 = gPutMarkerSize * *(UINT32 *)arg2;
+Ofs1 = gPutMarkerSize * *(uint32_t *)arg1;
+Ofs2 = gPutMarkerSize * *(uint32_t *)arg2;
 
-pByte = (UINT8 *)gpPutativeMarkers;
+pByte = (uint8_t *)gpPutativeMarkers;
 pPM1 = (tsPutMarker *)(pByte + Ofs1);
 pPM2 = (tsPutMarker *)(pByte + Ofs2);
 pEl1 = pPM1->MarkerSeq;
@@ -905,16 +905,16 @@ CMarkerKMers::SortNumCultivarsCnts(const void *arg1, const void *arg2)
 {
 size_t Ofs1;
 size_t Ofs2;
-UINT8 *pByte;
-UINT64 PM1Cnts;
-UINT64 PM2Cnts;
+uint8_t *pByte;
+uint64_t PM1Cnts;
+uint64_t PM2Cnts;
 
 tsPutMarker *pPM1;
 tsPutMarker *pPM2;
-Ofs1 = gPutMarkerSize * *(UINT32 *)arg1;
-Ofs2 = gPutMarkerSize * *(UINT32 *)arg2;
+Ofs1 = gPutMarkerSize * *(uint32_t *)arg1;
+Ofs2 = gPutMarkerSize * *(uint32_t *)arg2;
 
-pByte = (UINT8 *)gpPutativeMarkers;
+pByte = (uint8_t *)gpPutativeMarkers;
 pPM1 = (tsPutMarker *)(pByte + Ofs1);
 pPM2 = (tsPutMarker *)(pByte + Ofs2);
 

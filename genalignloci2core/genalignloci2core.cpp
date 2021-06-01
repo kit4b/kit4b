@@ -94,7 +94,7 @@ typedef struct TAG_sCoreLoci {
 typedef struct TAG_sCoreChrom {
 	int ChromID;							// unique identifier for this chromosome
 	tsCoreLoci *pCoreLoci;					// pts to first core on this chromosome
-	UINT16 Hash;							// hash over chromosome name
+	uint16_t Hash;							// hash over chromosome name
 	char szChrom[cMaxDatasetSpeciesChrom];	// core chromosome
 } tsCoreChrom;
 
@@ -367,7 +367,7 @@ tsCoreLoci *GetLociOverlaps(char *pszChrom,			// reference species chromosome
 				tsCoreLoci *pPrevCoreLoci, // previous loci or NULL if none
 				tsProcParams *pProcParams); // global processing parameters
 
-UINT16 GenNameHash(char *pszName);
+uint16_t GenNameHash(char *pszName);
 
 static int CompareCoreEls( const void *arg1, const void *arg2);
 
@@ -1249,7 +1249,7 @@ switch(LociFileType) {
 ProcParams.MaxSeqAlignLen = cMAtotMaxSeqAlignLen/ProcParams.MaxNumSpecies;
 for(Idx = 0; Idx < ProcParams.MaxNumSpecies; Idx++)
 	{
-	if((ProcParams.pSeqs[Idx] = new unsigned char [ProcParams.MaxSeqAlignLen])==NULL)
+	if((ProcParams.pSeqs[Idx] = new uint8_t [ProcParams.MaxSeqAlignLen])==NULL)
 		{
 		CleanupResources(&ProcParams);
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory (%d bytes) for holding species sequences",ProcParams.MaxSeqAlignLen);
@@ -1286,7 +1286,7 @@ AddChrom(char *pszChrom,tsProcParams *pParams)
 {
 tsCoreChrom *pChrom;
 int Idx;
-UINT16 Hash;
+uint16_t Hash;
 Hash = GenNameHash(pszChrom);
 
 if(pParams->pCoreChroms != NULL && pParams->NumCoreChroms)
@@ -2312,14 +2312,14 @@ return(0);
 
 // GenNameHash
 // Generates a 16bit hash on specified lowercased name
-UINT16 
+uint16_t 
 GenNameHash(char *pszName)
 {
 unsigned long hash = 5381;
 char Chr;
 while (Chr = *pszName++)
 	hash = ((hash << 5) + hash) + tolower(Chr);
-return ((UINT16)hash);
+return ((uint16_t)hash);
 }
 
 
@@ -2328,7 +2328,7 @@ LocateCoreChrom(char *pszChrom,
 				tsProcParams *pProcParams) // global processing parameters
 {
 tsCoreChrom *pChrom;
-UINT16 Hash;
+uint16_t Hash;
 int Idx;
 if(pProcParams->pCoreChroms == NULL || pProcParams->NumCoreChroms < 1)
 	return(NULL);

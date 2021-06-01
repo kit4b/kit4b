@@ -218,8 +218,8 @@ typedef struct TAG_sChromSupercontig {
 	int ChromSuperID;				// used to unquely identify this instance (1..m_NumChromSupers)
 	char szChrom[cMaxOjCompLen];
 	char szSupercontig[cMaxOjCompLen];
-	UINT32 Start;
-	UINT32 End;
+	uint32_t Start;
+	uint32_t End;
 	} tsChromSupercontig;
 
 const int cAllocChromSupers = 10000;
@@ -332,7 +332,7 @@ return(true);
 }
 
 bool
-OutputSeq(int SeqLen,UINT8 *pSeq)
+OutputSeq(int SeqLen,uint8_t *pSeq)
 {
 char Base;
 
@@ -425,8 +425,8 @@ if((m_hAssembFile = open(pszAssembFile, O_RDWR | O_CREAT,S_IREAD | S_IWRITE))==-
 // now check that all contigs referenced in the AGP file have been loaded from the multifasta contig files
 pAGPentry = NULL;
 int NbaseCnt;
-UINT8 *pSeq;
-UINT32 Start = 1;
+uint8_t *pSeq;
+uint32_t Start = 1;
 char szCurObject[cMaxOjCompLen];
 szCurObject[0] = '\0';
 while((pAGPentry = m_pAGPs->Next(pAGPentry))!=NULL)

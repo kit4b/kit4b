@@ -65,7 +65,7 @@ tsStructStats *pStructStats;
 int *pStructValue;
 int Idx;
 int ParamIdx;
-INT64 Means[eSSNumStatParams];
+int64_t Means[eSSNumStatParams];
 double Variances[eSSNumStatParams];
 
 pStructStats = m_StructParamStats;
@@ -548,7 +548,7 @@ CTwister::CalcTwistStats(unsigned int iStartOfs,		// initial starting offset (0.
 {
 tsOctStructParam StructParams;
 int *pStructValue;
-INT64 SumValue;
+int64_t SumValue;
 int MeanValue;
 int StdDev;
 unsigned int Step;
@@ -595,7 +595,7 @@ if(!ValidSteps)
 	return(eBSFerrStructStep);
 	}
 
-MeanValue = (int)(SumValue/(INT64)(ValidSteps));
+MeanValue = (int)(SumValue/(int64_t)(ValidSteps));
 
 // now that mean is known then can calculate stddev
 double Variance = 0.0;
@@ -740,10 +740,10 @@ int hRslts = -1;
 unsigned int AllocLen = 0;
 unsigned int SeqLen;
 unsigned int iRemaining;
-unsigned char *pSeqBuff = NULL;
+uint8_t *pSeqBuff = NULL;
 char szRlstsFile[_MAX_PATH];
-unsigned char szSource[cBSFSourceSize];
-unsigned char szDescription[cBSFDescriptionSize];
+uint8_t szSource[cBSFSourceSize];
+uint8_t szDescription[cBSFDescriptionSize];
 char szProbeDescr[cBSFSourceSize+cBSFDescriptionSize+1];
 int LBuff;
 char Buff[100];
@@ -844,7 +844,7 @@ while(iSeqEntry || (ProbeEntryID = pBioSeqFile->Next(ProbeEntryID)) > eBSFSucces
 			if(pSeqBuff != NULL)
 				delete pSeqBuff;
 			AllocLen = 0;
-			if((pSeqBuff = new unsigned char [SeqLen + 10]) == NULL)
+			if((pSeqBuff = new uint8_t [SeqLen + 10]) == NULL)
 				{
 				AddErrMsg("CTwister::CalcStruct","Unable to locate alloc memory for pSeqBuff %d bytes",SeqLen + 10);
 				close(hRslts);
@@ -1059,7 +1059,7 @@ unsigned int Step;
 unsigned int LastStep;
 int RefValue, RelValue;
 int StdDev, Min, Max;
-INT64 Mean;
+int64_t Mean;
 int Diff;
 double Variance;
 

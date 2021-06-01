@@ -177,14 +177,14 @@ if((RelSpeciesID = pAlignments->LocateSpeciesID(pszRelSpecies))<1)
 	return(eBSFerrSpecies);
 	}
 
-if((pRefSeq = new unsigned char [cASSSMaxBlockSize])==NULL)
+if((pRefSeq = new uint8_t [cASSSMaxBlockSize])==NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory (%d bytes) for holding reference species sequences",cASSSMaxBlockSize);
 	delete pAlignments;
 	return(eBSFerrMem);
 	}
 
-if((pRelSeq = new unsigned char [cASSSMaxBlockSize])==NULL)
+if((pRelSeq = new uint8_t [cASSSMaxBlockSize])==NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory (%d bytes) for holding relative species sequences",cASSSMaxBlockSize);
 	delete pAlignments;

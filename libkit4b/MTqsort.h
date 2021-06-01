@@ -4,8 +4,8 @@ const int cMaxSortThreads = 64;		// allow for a max of this many sort threads
 const int cDfltSortThreads = 8;		// default is for this many sort threads
 const int cMaxPartStack = 100;		// qsort at most should only require 1 + log2(ElsToSort) stack entries so allow for full 2^64 entries plus a few spare
 const int cMergeSortThres = 16;		// switch from qsort to insert sort if <= this number of els to sort
-const INT64 cMinUseLibQsort = 25000; // use library qsort if less than this number of elements to be sorted
-const INT64 cMaxUseThreadQsort = 8000000000; // if more than this number of elements in current partition then keep sub-dividing until less or equal
+const int64_t cMinUseLibQsort = 25000; // use library qsort if less than this number of elements to be sorted
+const int64_t cMaxUseThreadQsort = 8000000000; // if more than this number of elements in current partition then keep sub-dividing until less or equal
 
 typedef int (*comparer)(const void *, const void *);
 
@@ -13,14 +13,14 @@ typedef int (*comparer)(const void *, const void *);
 
 // to avoid recursive calls, unsorted sub-partitions are stacked with effective push/pop through a stack ptr
 typedef struct TAG_sSubPartStackEl {
-	UINT8 *pCurLeft;						// left boundary for this stacked sub-partition 
-	UINT8 *pCurRight;						// right boundary for this stacked sub-partition
+	uint8_t *pCurLeft;						// left boundary for this stacked sub-partition 
+	uint8_t *pCurRight;						// right boundary for this stacked sub-partition
 } tsSubPartStackEl;
 
 typedef struct TAG_CMTqsort_args {
   class CMTqsort *pThis;
   void *pArray;				// array containing elements to be sorted 
-  INT64 NumEls;				// number of elements in array 
+  int64_t NumEls;				// number of elements in array 
   size_t ElSize;			// size in bytes of each element
   comparer CompareFunc;	    // function to compare pairs of elements
 } tsCMTqsort_args;
@@ -34,12 +34,12 @@ class CMTqsort
 
 	tsCMTqsort_args m_ThreadArgs[cMaxSortThreads];	// for holding thread args
 
-	void Exchange(UINT8 *pEl1,			    // exchange this element
-	  UINT8 *pEl2,					// with this element
+	void Exchange(uint8_t *pEl1,			    // exchange this element
+	  uint8_t *pEl2,					// with this element
 	  size_t ElSize);				// size in bytes of each element
 
-	void InsertSort(UINT8 *pLeft,	// pts to leftmost element		
-	    UINT8 *pRight,				// pts to rightmost element
+	void InsertSort(uint8_t *pLeft,	// pts to leftmost element		
+	    uint8_t *pRight,				// pts to rightmost element
 		size_t ElSize,				// size in bytes of each element
 		comparer CompareFunc);		// function to compare pairs of elements
 
@@ -51,7 +51,7 @@ class CMTqsort
 
 	void _mtqsort(bool bUseThreads,						// if true then can create threads to handle sub-partitions
 				void *pArray,				// array containing elements to be sorted
-				INT64 NumEls,					// number of elements in array
+				int64_t NumEls,					// number of elements in array
 				size_t ElSize,					// size in bytes of each element
 				comparer CompareFunc);			// function to compare pairs of elements
 
@@ -73,7 +73,7 @@ public:
 	void SetMaxThreads(int MaxThreads);
 
 	void qsort(void *pArray,					// array containing elements to be sorted
-				INT64 NumEls,					// number of elements in array
+				int64_t NumEls,					// number of elements in array
 				size_t ElSize,					// size in bytes of each element
 				comparer CompareFunc);			// function to compare pairs of elements
 };

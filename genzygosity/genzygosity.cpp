@@ -44,9 +44,9 @@ typedef struct TAG_sThreadMatchPars {
 	int NumIdentNodes;			// number of ident nodes allocd for exlusive use by this thread
 	tsIdentNode *pIdentNodes;	// thread to use these nodes
 
-	UINT32 NumSfxEntries;		// number of entries in pLocEntryCnts and pBlockEntryCnts
-	UINT32 *pLocEntryCnts;		// allocated to hold temp local counts for each suffix entry
-	UINT32 *pEntryCnts;			// allocated to hold counts for each suffix entry
+	uint32_t NumSfxEntries;		// number of entries in pLocEntryCnts and pBlockEntryCnts
+	uint32_t *pLocEntryCnts;		// allocated to hold temp local counts for each suffix entry
+	uint32_t *pEntryCnts;			// allocated to hold counts for each suffix entry
 
 #ifdef _WIN32
 	HANDLE threadHandle;			// handle as returned by _beginthreadex()
@@ -63,7 +63,7 @@ typedef struct TAG_sThreadMatchPars {
 
 typedef struct TAG_sSubseqsToMatchBlock {
 	int EntryID;			// suffix array entry identifier from which subsequences are derived
-	UINT32 StartOfs;		// starting offset in entry at which these subsequences start
+	uint32_t StartOfs;		// starting offset in entry at which these subsequences start
 	int NumSubseqs;			// number of subsequences for processing in this block
 } tsSubseqsToMatchBlock;
 #pragma pack()
@@ -100,7 +100,7 @@ int LocateCoredSubseqs();
 
 
 
-UINT32 ApproxNumSubseqsProc(void);		// gets an approximation of the number of reads thus far aligned
+uint32_t ApproxNumSubseqsProc(void);		// gets an approximation of the number of reads thus far aligned
 
 int
 AppendStr(char *pszBuff,	// write to this buffer
@@ -120,7 +120,7 @@ AppendChrs(char *pszBuff,	// write to this buffer
 int							// length written
 AppendUInt(char *pszBuff,	// write to this buffer
 		  char LeadSep,		// if > '\0' then prefix with this separator (usually ',' or '\t')
-		  UINT32 Value,
+		  uint32_t Value,
 		  char TrailSep);	// if > '\0' then suffix with this separator (usually ',' or '\t' or '\n')
 
 
@@ -435,12 +435,12 @@ int m_PerThreadAllocdIdentNodes;    // each thread can use this many tsIdentNode
 int m_TotAllocdIdentNodes;			// total number of tsIdentNodes allocated
 tsIdentNode *m_pAllocsIdentNodes;	// memory allocated to hold tsIdentNodes required by all threads
 int m_TotAllocdEntryCnts;			// total number of allocated suffix entry counts
-UINT32 *m_pAllocEntryCnts;			// memory allocated to hold each threads suffix entry counts 
+uint32_t *m_pAllocEntryCnts;			// memory allocated to hold each threads suffix entry counts 
 
-UINT32 *m_pEntryCntsMatrix;			// memory allocated to hold accumulated entry counts for all targeted genome entries
-UINT32 *m_pEntrySubseqCnts;			// memory allocated to hold accumulated number of entry unique subsequences
+uint32_t *m_pEntryCntsMatrix;			// memory allocated to hold accumulated entry counts for all targeted genome entries
+uint32_t *m_pEntrySubseqCnts;			// memory allocated to hold accumulated number of entry unique subsequences
 
-UINT32 m_SubseqLen;			// subsequences to be processed are of this length
+uint32_t m_SubseqLen;			// subsequences to be processed are of this length
 int m_hInFile;				// input file handle
 int m_hRsltsFile;			// results output file handle
 int m_hRawRsltsFile;		// raw results output file
@@ -448,11 +448,11 @@ int m_hRawRsltsFile;		// raw results output file
 char *m_pszRsltsFile;		// results to this file
 char *m_pszRawRsltsFile;	// raw results to this file
 char *m_pszSfxFile;			// target as suffix array
-UINT32 m_NumSfxEntries;		// suffix array contains this many entries (chroms/contigs etc)
-UINT32 m_CurSfxEntryProc;	// current suffix entry being processed
-UINT32 m_CurSfxEntryProcLen;	// length of current sfx array entry being processed
-UINT32 m_CurSfxEntryStartOfs;	// offset into sfx array entry at which next block of subsequences are to be processed from
-UINT32 m_TotSfxEntriesLen;	// total length of all sfx array entries
+uint32_t m_NumSfxEntries;		// suffix array contains this many entries (chroms/contigs etc)
+uint32_t m_CurSfxEntryProc;	// current suffix entry being processed
+uint32_t m_CurSfxEntryProcLen;	// length of current sfx array entry being processed
+uint32_t m_CurSfxEntryStartOfs;	// offset into sfx array entry at which next block of subsequences are to be processed from
+uint32_t m_TotSfxEntriesLen;	// total length of all sfx array entries
 
 int m_szLineBuffIdx;	// offset into m_pszLineBuff at which to next write
 char *m_pszLineBuff;	// allocated to hold output line buffering
@@ -682,7 +682,7 @@ if(m_NumSfxEntries < 1)
 // check that at least one entry has sequence of a length that one or more subsequences which can be processed from these entries
 for(m_CurSfxEntryProc = 1; m_CurSfxEntryProc <= m_NumSfxEntries; m_CurSfxEntryProc++)
 	{
-	if(m_pSfxArray->GetSeqLen(m_CurSfxEntryProc) >= (UINT32)SubseqLen)
+	if(m_pSfxArray->GetSeqLen(m_CurSfxEntryProc) >= (uint32_t)SubseqLen)
 		break;
 	}
 if( m_CurSfxEntryProc > m_NumSfxEntries)
@@ -693,7 +693,7 @@ if( m_CurSfxEntryProc > m_NumSfxEntries)
 	}
 m_CurSfxEntryProc = 0;
 
-m_TotSfxEntriesLen = (UINT32)m_pSfxArray->GetTotSeqsLen();
+m_TotSfxEntriesLen = (uint32_t)m_pSfxArray->GetTotSeqsLen();
 
 // restrict the max core iterations according to the requested sensitivity
 int MaxIter;
@@ -749,11 +749,11 @@ char szRslts[4096];
 int RsltsIdx;
 double Zigosity;
 char szSrcEntryName[100];
-UINT32 SrcEntryID;
+uint32_t SrcEntryID;
 char szTargEntryName[100];
-UINT32 TargEntryID;
-UINT32 *pTargEntryCnts;
-UINT32 *pSrcEntryCnts;
+uint32_t TargEntryID;
+uint32_t *pTargEntryCnts;
+uint32_t *pSrcEntryCnts;
 
 pSrcEntryCnts = m_pEntrySubseqCnts;
 pTargEntryCnts = m_pEntryCntsMatrix;
@@ -888,7 +888,7 @@ return(Len);
 int							// length written
 AppendUInt(char *pszBuff,	// write to this buffer
 		  char LeadSep,		// if > '\0' then prefix with this separator (usually ',' or '\t')
-		  UINT32 Value,
+		  uint32_t Value,
 		  char TrailSep)	// if > '\0' then suffix with this separator (usually ',' or '\t' or '\n')
 {
 int Len = 0;
@@ -943,10 +943,10 @@ LocateCoredSubseqs(void)
 int Rslt;
 int CurBlockID;							// current suffix block being processed
 tBSFEntryID CurChromID;				    // current suffix array entry being processed
-UINT32 TotNumReadsProc;					// total number of reads processed
+uint32_t TotNumReadsProc;					// total number of reads processed
 
-UINT32 CurReadsProc;
-UINT32 PrevReadsProc;
+uint32_t CurReadsProc;
+uint32_t PrevReadsProc;
 
 int ThreadIdx;
 tsThreadMatchPars WorkerThreads[cMaxWorkerThreads];
@@ -961,7 +961,7 @@ if((m_pAllocsIdentNodes = new tsIdentNode [m_TotAllocdIdentNodes])==NULL)
 	}
 
 m_TotAllocdEntryCnts = m_NumSfxEntries * m_NumThreads * 2;
-if((m_pAllocEntryCnts = new UINT32 [m_TotAllocdEntryCnts])==NULL)
+if((m_pAllocEntryCnts = new uint32_t [m_TotAllocdEntryCnts])==NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate memory for %d entry counts",m_TotAllocdEntryCnts);
 	Reset();
@@ -969,21 +969,21 @@ if((m_pAllocEntryCnts = new UINT32 [m_TotAllocdEntryCnts])==NULL)
 	}
 
 
-if((m_pEntryCntsMatrix = new UINT32 [m_NumSfxEntries * m_NumSfxEntries])==NULL)
+if((m_pEntryCntsMatrix = new uint32_t [m_NumSfxEntries * m_NumSfxEntries])==NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate memory for %d matrix entry counts",m_NumSfxEntries * m_NumSfxEntries);
 	Reset();
 	return(eBSFerrMem);
 	}
-memset(m_pEntryCntsMatrix,0,m_NumSfxEntries * m_NumSfxEntries * sizeof(UINT32));
+memset(m_pEntryCntsMatrix,0,m_NumSfxEntries * m_NumSfxEntries * sizeof(uint32_t));
 
-if((m_pEntrySubseqCnts = new UINT32 [m_NumSfxEntries])==NULL)
+if((m_pEntrySubseqCnts = new uint32_t [m_NumSfxEntries])==NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate memory for %d entry unique subseq counts",m_NumSfxEntries);
 	Reset();
 	return(eBSFerrMem);
 	}
-memset(m_pEntrySubseqCnts,0,m_NumSfxEntries * sizeof(UINT32));
+memset(m_pEntrySubseqCnts,0,m_NumSfxEntries * sizeof(uint32_t));
 
 #ifdef _WIN32
 if((m_hMtxIterReads = CreateMutex(NULL,false,NULL))==NULL)
@@ -1107,11 +1107,11 @@ return(eBSFSuccess);
 }
 
 bool
-AccumEntryMatchCnts(UINT32 SrcEntryID,UINT32 NumSrcSubseqs,UINT32 *pEntryCnts)
+AccumEntryMatchCnts(uint32_t SrcEntryID,uint32_t NumSrcSubseqs,uint32_t *pEntryCnts)
 {
-UINT32 Idx;
-UINT32 MatrixIdx;
-UINT32 *pColCnts;
+uint32_t Idx;
+uint32_t MatrixIdx;
+uint32_t *pColCnts;
 
 if(m_pEntryCntsMatrix == NULL || m_pEntrySubseqCnts == NULL || SrcEntryID == 0 || SrcEntryID > m_NumSfxEntries)
 	return(false);
@@ -1144,7 +1144,7 @@ void *ThreadedCoredApprox(void * pThreadPars)
 tsThreadMatchPars *pPars = (tsThreadMatchPars *)pThreadPars; // makes it easier not having to deal with casts!
 etSeqBase Sequence[cMaxFastQSeqLen+1];	// to hold sequence (sans quality scores) for current subsequence
 
-UINT32 SeqIdx;
+uint32_t SeqIdx;
 int NumNs;
 etSeqBase *pSeq;
 
@@ -1155,12 +1155,12 @@ int HitRslt;
 pPars->NumReadsProc = 0;
 SubseqsToMatchBlock.NumSubseqs = 0;
 
-UINT32 Idx;
+uint32_t Idx;
 int CurEntryID;					// current entry being processed
-UINT32 EntrySourceSfxEntryCnts;	// number of subseqs in current source sfx entry which were unique to that sfx entry
-UINT32 *pTmpAllEntryCount;		// temp ptr into pAllEntryCounts[]
-UINT32 *pTmplocEntryCount;		// temp ptr into pLocEntryCounts[]
-UINT32 MatchLoci;
+uint32_t EntrySourceSfxEntryCnts;	// number of subseqs in current source sfx entry which were unique to that sfx entry
+uint32_t *pTmpAllEntryCount;		// temp ptr into pAllEntryCounts[]
+uint32_t *pTmplocEntryCount;		// temp ptr into pLocEntryCounts[]
+uint32_t MatchLoci;
 
 EntrySourceSfxEntryCnts = 0;
 CurEntryID = 0;
@@ -1254,7 +1254,7 @@ pthread_exit(NULL);
 
 
 
-UINT32 m_NumSubseqsProc;	// number of subsequences thus far processed - note this is total subsequences handed out to processing threads
+uint32_t m_NumSubseqsProc;	// number of subsequences thus far processed - note this is total subsequences handed out to processing threads
 							// and should be treated as a guide only
 
 
@@ -1274,10 +1274,10 @@ ProcessingStartSecs = gStopWatch.ReadUSecs();
 // ApproxNumSubseqsProc
 // Returns number of subsequences thus far returned to threads for processing 
 // Only termed as approximate because processing may not have yet completed on all these subsequences
-UINT32
+uint32_t
 ApproxNumSubseqsProc(void)
 {
-UINT32 NumProc;
+uint32_t NumProc;
 #ifdef _WIN32
 WaitForSingleObject(m_hMtxIterReads,INFINITE);
 #else
@@ -1295,7 +1295,7 @@ return(NumProc);
 bool						// returns false if no more reads available for processing by calling thread
 ThreadedIterSubseqs(tsSubseqsToMatchBlock *pRetBlock)
 {
-UINT32 MaxSubSeqs2Proc;
+uint32_t MaxSubSeqs2Proc;
 pRetBlock->NumSubseqs = 0;
 pRetBlock->EntryID = 0;
 pRetBlock->StartOfs = 0;
@@ -1340,7 +1340,7 @@ if(m_CurSfxEntryProc == 0 || (m_CurSfxEntryStartOfs + m_SubseqLen) > m_CurSfxEnt
 
 // idea is to maximise the number of threads still processing when most subsequences have been processed so that
 // the last thread processing doesn't end up with a large block of subsequences needing lengthly processing
-MaxSubSeqs2Proc = min(cMaxSubseqsPerBlock,250 + ((m_TotSfxEntriesLen - m_NumSubseqsProc) / (UINT32)m_NumThreads));
+MaxSubSeqs2Proc = min(cMaxSubseqsPerBlock,250 + ((m_TotSfxEntriesLen - m_NumSubseqsProc) / (uint32_t)m_NumThreads));
 
 pRetBlock->NumSubseqs = min(MaxSubSeqs2Proc,1 + m_CurSfxEntryProcLen - (m_CurSfxEntryStartOfs + m_SubseqLen));
 pRetBlock->EntryID = m_CurSfxEntryProc;

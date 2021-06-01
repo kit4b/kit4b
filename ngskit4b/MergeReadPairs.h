@@ -69,11 +69,11 @@ typedef struct TAG_sMIDsBarcode  // MIDs (Multiplex Identifiers) barcode
 	} tsMIDsBarcode;
 
 typedef struct TAG_sBarcode {
-	UINT8 ColRow;		// 0 if barcode at 5' end (column) and 1 if 3' end (row) of amplicon
-	UINT8 Psn;		    // row or column position 1..N
-	UINT8 Len;			// barcode length
-	UINT32 BarCode;		// packed barcode bases	
-	UINT32 RevCplBarCode;  // revcpl packed barcode bases	
+	uint8_t ColRow;		// 0 if barcode at 5' end (column) and 1 if 3' end (row) of amplicon
+	uint8_t Psn;		    // row or column position 1..N
+	uint8_t Len;			// barcode length
+	uint32_t BarCode;		// packed barcode bases	
+	uint32_t RevCplBarCode;  // revcpl packed barcode bases	
 	} tsBarcode;
 
 typedef struct TAG_sAmpliconWellFile

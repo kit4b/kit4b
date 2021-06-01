@@ -263,7 +263,7 @@ int
 AddFastaIdentifier(char *pszFastaIdentifier)
 {
 static int PrevIdentID = 0;
-UINT16 Hash;
+uint16_t Hash;
 int HashIdx;
 tsFastaIdentifier *pFastaIdentifier;
 
@@ -354,7 +354,7 @@ Reset();
 }
 
 
-const UINT32 cMaxFastaLen = 500000000;  // allowing for fasta sequences of up to this max length
+const uint32_t cMaxFastaLen = 500000000;  // allowing for fasta sequences of up to this max length
 int
 RevCplSeqs(char *pszInFasta,			// reverse complement fasta sequences in this file
 		   char *pszOutFasta)			// and write out to this file
@@ -362,8 +362,8 @@ RevCplSeqs(char *pszInFasta,			// reverse complement fasta sequences in this fil
 int Rslt;
 int hOutFile;
 bool bFirstEntry;
-unsigned char *pSeqBuff;
-unsigned char *pszSeqBuff;
+uint8_t *pSeqBuff;
+uint8_t *pszSeqBuff;
 char szDescription[cBSFDescriptionSize];
 int SeqLen;
 int Descrlen;
@@ -371,13 +371,13 @@ int ChrIdx;
 CFasta InFasta;
 
 hOutFile = -1;
-if((pSeqBuff = new unsigned char [cMaxFastaLen]) == NULL)
+if((pSeqBuff = new uint8_t [cMaxFastaLen]) == NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessFastaFile:- Unable to allocate memory (%d bytes) for raw sequence buffer",cMaxFastaLen);
 	Reset();
 	return(eBSFerrMem);
 	}
-if((pszSeqBuff = new unsigned char [cMaxFastaLen]) == NULL)
+if((pszSeqBuff = new uint8_t [cMaxFastaLen]) == NULL)
 	{
 	delete pSeqBuff;
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessFastaFile:- Unable to allocate memory (%d bytes) for char sequence buffer",cMaxFastaLen);
@@ -476,7 +476,7 @@ int Process(int PMode,
 			char *pszInFasta,			// load from this fasta file 
 			char *pszOutFasta)			// output to this fasta file
 {
-UINT32 LineNum;
+uint32_t LineNum;
 int CurNrun;
 int CurSeqLen;
 int IdentLen;
@@ -499,7 +499,7 @@ m_pFastaIdentifiers = (tsFastaIdentifier *) malloc(memreq);	// initial and perha
 
 if(m_pFastaIdentifiers == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for m_pFastaIdentifiers - %s",(INT64)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for m_pFastaIdentifiers - %s",(int64_t)memreq,strerror(errno));
 	Reset();
 	return(eBSFerrMem);
 	}
@@ -508,7 +508,7 @@ if(m_pFastaIdentifiers == NULL)
 m_pFastaIdentifiers = (tsFastaIdentifier *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pFastaIdentifiers == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for m_pFastaIdentifiers through mmap()  failed - %s",(INT64)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for m_pFastaIdentifiers through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
 	m_pFastaIdentifiers = NULL;
 	Reset();
 	return(eBSFerrMem);

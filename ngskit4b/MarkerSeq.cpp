@@ -124,7 +124,7 @@ CMarkerSeq::ProcessMarkerSeqs(int PMode,		// currently default processing only i
 {
 int Rslt;
 CFasta Fasta;
-INT64 FastaSize;
+int64_t FastaSize;
 etClassifyFileType FileType;
 
 Reset();
@@ -146,7 +146,7 @@ strncpy(m_szOutFile,pszOutFile,sizeof(m_szOutFile));
 m_szOutFile[sizeof(m_szOutFile)-1] = '\0';
 
 // allocate to buffer generated marker sequences
-if((m_pMarkerBuff = new UINT8 [cMarkerBuffAlloc])==NULL)
+if((m_pMarkerBuff = new uint8_t [cMarkerBuffAlloc])==NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessMarkerSeqs: Unable to allocate %d bytes memory for marker buffer",cMarkerBuffAlloc);
 	Reset();
@@ -156,7 +156,7 @@ m_AllocdMarkerBuff = cMarkerBuffAlloc;
 MarkerBuffOfs = 0;
 
 // allocate to hold max sized sequences loaded from input fasta file
-UINT32 EstNumSeqs;
+uint32_t EstNumSeqs;
 if((EstNumSeqs = Fasta.FastaEstSizes(pszInFastaFile,&FastaSize)) == 0)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessMarkerSeqs: Nothing to do, fasta file '%s' seems empty or inaccessable",pszInFastaFile);
@@ -168,20 +168,20 @@ size_t memreq;
 memreq = (size_t)min(FastaSize,0x05fffffff);			// limited to processing contigous fasta sequences which are less than 1.6G
 
 #ifdef _WIN32
-m_pSeq = (UINT8 *) malloc(memreq);	// initial and perhaps the only allocation
+m_pSeq = (uint8_t *) malloc(memreq);	// initial and perhaps the only allocation
 
 if(m_pSeq == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessMarkerSeqs: Memory allocation of %lld bytes - %s",(INT64)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessMarkerSeqs: Memory allocation of %lld bytes - %s",(int64_t)memreq,strerror(errno));
 	Reset();
 	return(eBSFerrMem);
 	}
 #else
 // gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-m_pSeq = (UINT8 *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+m_pSeq = (uint8_t *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pSeq == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessMarkerSeqs: Memory allocation of %lld bytes through mmap()  failed - %s",(INT64)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessMarkerSeqs: Memory allocation of %lld bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
 	m_pSeq = NULL;
 	Reset();
 	return(eBSFerrMem);
@@ -289,10 +289,10 @@ gDiagnostics.DiagOut(eDLInfo,gszProcName,"Marker output multifasta file created/
 
 // check if descriptor identifies a sequence which contains marker
 int CurSeqLen;
-UINT32 CurEntryID;
+uint32_t CurEntryID;
 int ChromID;
-UINT8 *pSeqStart;
-UINT8 *pSeqEnd;
+uint8_t *pSeqStart;
+uint8_t *pSeqEnd;
 char *pSrc;
 char *pBase;
 char *pDst;
@@ -371,7 +371,7 @@ while((Rslt = CurSeqLen = m_pFasta->ReadSequence(m_pSeq,(int)(m_AllocdSeqMem-1))
 	int MarkerSeqLen;
 	int NumMarkersThisChrom = 0;
 	int NumSNPBases;
-	UINT8 SNPBases;
+	uint8_t SNPBases;
 	int VariantID;
 	NumMarkersThisChrom = 0;
 	PrevMarkerEnd = 0;

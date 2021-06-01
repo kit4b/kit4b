@@ -9,7 +9,7 @@ class CShuffle
 public:
 	CShuffle(void);
 	~CShuffle(void);
-	int SeqDPShuffle(int SeqLen,unsigned char *pSeq1, unsigned char *pSeq2);
+	int SeqDPShuffle(int SeqLen,uint8_t *pSeq1, uint8_t *pSeq2);
 	int SeqMarkov0(int SeqLen,char *pSeq1, char *pSeq2);
 	int SeqMarkov1(int SeqLen, char *pSeq1, char *pSeq2);
 	int SeqReverse(int SeqLen, char *pSeq1, char *pSeq2);

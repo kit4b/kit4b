@@ -380,7 +380,7 @@ return(true);
 // SetProbe
 // Set probe sequence to use in subsequent alignments
 bool 
-CSSW::SetProbe(UINT32 Len,etSeqBase *pSeq)
+CSSW::SetProbe(uint32_t Len,etSeqBase *pSeq)
 {
 if(Len < cSSWMinProbeOrTargLen || Len > cSSWMaxProbeOrTargLen || pSeq == NULL || *pSeq > eBaseN) 	// can't be bothered with very short or very long probes!
 	return(false);
@@ -405,13 +405,13 @@ CSSW::CombinedTargAlign(tsCombinedTargAlignPars *pAlignPars, // input alignment 
 						tsCombinedTargAlignRet *pAlignRet)		// returned alignment results
 {
 bool bRslt;
-UINT8 RetProcPhase;			// processing phase completed
-INT32 ErrRslt;				// result returned by that processing phase
+uint8_t RetProcPhase;			// processing phase completed
+int32_t ErrRslt;				// result returned by that processing phase
 
-UINT8 Class;
+uint8_t Class;
 tsSSWCell PeakMatchesCell;
-UINT32 ProbeAlignLength;
-UINT32 TargAlignLength;
+uint32_t ProbeAlignLength;
+uint32_t TargAlignLength;
 bool bProvOverlapping;
 bool bProvArtefact;
 bool bProvContained;
@@ -443,26 +443,26 @@ return(bRslt);
 
 // method which combines the functionality of SetTarg, SetAlignRange, Align, ClassifyPath, TracebacksToAlignOps, and AddMultiAlignment into a single method 
 bool		// true if combined phase alignment completed successfully
-CSSW::CombinedTargAlign(UINT8 PMode,              // processing mode: 0 error correct , 1 generate consensus from previously generated multiple alignments, 2  generate overlap detail from previously generated consensus sequences
-						UINT32 NumTargSeqs,			// current probe putatively overlaying this many targets
-						UINT32 ProbeSeqLen,         // use this probe sequence length 
-						UINT8 TargFlags,		    // bit 7 set if target loaded as a high confidence sequence, bits 0..3 is weighting factor to apply when generating consensus bases
-						UINT32 TargSeqLen,          // target sequence length
+CSSW::CombinedTargAlign(uint8_t PMode,              // processing mode: 0 error correct , 1 generate consensus from previously generated multiple alignments, 2  generate overlap detail from previously generated consensus sequences
+						uint32_t NumTargSeqs,			// current probe putatively overlaying this many targets
+						uint32_t ProbeSeqLen,         // use this probe sequence length 
+						uint8_t TargFlags,		    // bit 7 set if target loaded as a high confidence sequence, bits 0..3 is weighting factor to apply when generating consensus bases
+						uint32_t TargSeqLen,          // target sequence length
 						etSeqBase *pTargSeq,        // target sequence
-						UINT32 ProbeStartRelOfs,	// when aligning then start SW from this probe sequence relative offset
-						UINT32 TargStartRelOfs, 	// and SW starting from this target sequence relative offset
-						UINT32 ProbeRelLen,		    // and SW with this probe relative length starting from m_ProbeStartRelOfs - if 0 then until end of probe sequence
-						UINT32 TargRelLen,		    // and SW with this target relative length starting from m_TargStartRelOfs - if 0 then until end of target sequence
-						UINT32 OverlapFloat,		// allowing up to this much float on overlaps to account for the PacBio error profile
-						UINT32 MaxArtefactDev,		// classify overlaps as artefactual if sliding window of 500bp over any overlap deviates by more than this percentage from the overlap mean
-						UINT32 MinOverlapLen,       // minimum accepted overlap length
-						UINT32 MaxOverlapLen,      // max expected overlap length
-						UINT8 *pRetProcPhase,			// processing phase completed
-						INT32 *pErrRslt,				// result returned by that processing phase
-						UINT8 *pRetClass,			// returned overlap classification
+						uint32_t ProbeStartRelOfs,	// when aligning then start SW from this probe sequence relative offset
+						uint32_t TargStartRelOfs, 	// and SW starting from this target sequence relative offset
+						uint32_t ProbeRelLen,		    // and SW with this probe relative length starting from m_ProbeStartRelOfs - if 0 then until end of probe sequence
+						uint32_t TargRelLen,		    // and SW with this target relative length starting from m_TargStartRelOfs - if 0 then until end of target sequence
+						uint32_t OverlapFloat,		// allowing up to this much float on overlaps to account for the PacBio error profile
+						uint32_t MaxArtefactDev,		// classify overlaps as artefactual if sliding window of 500bp over any overlap deviates by more than this percentage from the overlap mean
+						uint32_t MinOverlapLen,       // minimum accepted overlap length
+						uint32_t MaxOverlapLen,      // max expected overlap length
+						uint8_t *pRetProcPhase,			// processing phase completed
+						int32_t *pErrRslt,				// result returned by that processing phase
+						uint8_t *pRetClass,			// returned overlap classification
 						tsSSWCell *pRetPeakMatchesCell, // returned peak matches cell
-						UINT32 *pRetProbeAlignLength, // probe alignment length
-						UINT32 *pRetTargAlignLength, // target alignment length
+						uint32_t *pRetProbeAlignLength, // probe alignment length
+						uint32_t *pRetTargAlignLength, // target alignment length
 						bool *pRetbProvOverlapping,  // probe overlapping target
 						bool *pRetbProvArtefact,	// set true if overlap classified as artefact
 						bool *pRetbProvContained,	// probe contained
@@ -475,8 +475,8 @@ bool bProvArtefact;
 bool bProvContained;
 bool bAddedMultiAlignment;
 
-UINT32 ProbeAlignLength;
-UINT32 TargAlignLength;
+uint32_t ProbeAlignLength;
+uint32_t TargAlignLength;
 tsSSWCell *pPeakMatchesCell;
 tsSSWCell PeakMatchesCell;
 
@@ -611,7 +611,7 @@ if(((1+ ProbeAlignLength + TargAlignLength) / 2) >= MinOverlapLen)
 
 // need to return:
 // Class, PeakMatchesCell, ProbeAlignLength, TargAlignLength, bAddedMultiAlignment, bProvOverlapping, bProvContained, bProvArtefact,
-*pRetClass = (UINT8)(Class & 0x07f);
+*pRetClass = (uint8_t)(Class & 0x07f);
 *pRetPeakMatchesCell = PeakMatchesCell;
 *pRetProbeAlignLength = ProbeAlignLength;
 *pRetTargAlignLength = TargAlignLength;
@@ -628,7 +628,7 @@ return(true);
 // SetTarg
 // Set target sequence to use in subsequent alignments
 bool 
-CSSW::SetTarg( UINT32 Len,etSeqBase *pSeq)
+CSSW::SetTarg( uint32_t Len,etSeqBase *pSeq)
 {
 if(Len < cSSWMinProbeOrTargLen || Len > cSSWMaxProbeOrTargLen || pSeq == NULL || *pSeq > eBaseN)	// can't be bothered with very short or very long targets!
 	return(false);
@@ -647,10 +647,10 @@ return(true);
 }
 
 bool 
-CSSW::PreAllocMaxTargLen( UINT32 MaxTargLen,			// preallocate to process targets of this maximal length
-						  UINT32 MaxOverlapLen)			// allocating tracebacks for this maximal expected overlap, 0 if no tracebacks required			
+CSSW::PreAllocMaxTargLen( uint32_t MaxTargLen,			// preallocate to process targets of this maximal length
+						  uint32_t MaxOverlapLen)			// allocating tracebacks for this maximal expected overlap, 0 if no tracebacks required			
 {
-UINT64 MaxAllocdTracebacks;
+uint64_t MaxAllocdTracebacks;
 if(m_pAllocdCells == NULL || (m_AllocdCells < (MaxTargLen + 5)))  // allowing a few additional cells to reduce potential for reallocations required
 	{
 	if(m_pAllocdCells != NULL)
@@ -665,13 +665,13 @@ if(m_pAllocdCells == NULL || (m_AllocdCells < (MaxTargLen + 5)))  // allowing a 
 		m_AllocdCells = 0;
 		m_AllocdCellSize = 0;
 		}
-	m_AllocdCells = min(250000,(UINT32)( ((UINT64)MaxTargLen * 3) / 2));		// always allocate for at least 250Kbp, saves on potential for any subsequent reallocation required
+	m_AllocdCells = min(250000,(uint32_t)( ((uint64_t)MaxTargLen * 3) / 2));		// always allocate for at least 250Kbp, saves on potential for any subsequent reallocation required
 	m_AllocdCellSize = sizeof(tsSSWCell) * m_AllocdCells;
 #ifdef _WIN32
 	m_pAllocdCells = (tsSSWCell *) malloc(m_AllocdCellSize);
 	if(m_pAllocdCells == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for cells",(INT64)m_AllocdCellSize);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for cells",(int64_t)m_AllocdCellSize);
 		m_AllocdCellSize = 0;
 		m_AllocdCells = 0;
 		return(false);
@@ -681,7 +681,7 @@ if(m_pAllocdCells == NULL || (m_AllocdCells < (MaxTargLen + 5)))  // allowing a 
 	m_pAllocdCells = (tsSSWCell *)mmap(NULL,m_AllocdCellSize, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pAllocdCells == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for cells",(INT64)m_AllocdCellSize);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for cells",(int64_t)m_AllocdCellSize);
 		m_pAllocdCells = NULL;
 		m_AllocdCellSize = 0;
 		m_AllocdCells = 0;
@@ -696,7 +696,7 @@ if(m_pAllocdCells == NULL || (m_AllocdCells < (MaxTargLen + 5)))  // allowing a 
 
 if(MaxOverlapLen > 0)
 	{
-    MaxAllocdTracebacks = min(MaxOverlapLen * (UINT64)10000, (UINT64)(0x7fff0000 / 8));
+    MaxAllocdTracebacks = min(MaxOverlapLen * (uint64_t)10000, (uint64_t)(0x7fff0000 / 8));
 
 	if(m_pAllocdTracebacks != NULL && (MaxAllocdTracebacks + 100) >  m_AllocdTracebacks)
 		{
@@ -719,7 +719,7 @@ if(MaxOverlapLen > 0)
 		m_pAllocdTracebacks = (tsSSWTraceback *)malloc(m_AllocdTracebacksSize);
 		if (m_pAllocdTracebacks == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Fatal: unable to allocate %lld bytes contiguous memory for traceback cells", (INT64)m_AllocdTracebacksSize);
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Fatal: unable to allocate %lld bytes contiguous memory for traceback cells", (int64_t)m_AllocdTracebacksSize);
 			m_AllocdTracebacksSize = 0;
 			m_AllocdTracebacks = 0;
 			return(false);
@@ -729,7 +729,7 @@ if(MaxOverlapLen > 0)
 		m_pAllocdTracebacks = (tsSSWTraceback *)mmap(NULL, m_AllocdTracebacksSize, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 		if (m_pAllocdTracebacks == MAP_FAILED)
 			{
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Fatal: unable to allocate %lld bytes contiguous memory for traceback cells", (INT64)m_AllocdTracebacksSize);
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Fatal: unable to allocate %lld bytes contiguous memory for traceback cells", (int64_t)m_AllocdTracebacksSize);
 			m_pAllocdTracebacks = NULL;
 			m_AllocdTracebacksSize = 0;
 			m_AllocdTracebacks = 0;
@@ -755,20 +755,20 @@ if(MaxOverlapLen > 0)
 		{
 		m_AllocdMAAlignOpsSize = (MaxOverlapLen * 3) + 100;
 #ifdef _WIN32
-		m_pMAAlignOps = (UINT8 *) malloc(m_AllocdMAAlignOpsSize);
+		m_pMAAlignOps = (uint8_t *) malloc(m_AllocdMAAlignOpsSize);
 		if(m_pMAAlignOps == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for multialignment operators",(INT64)m_AllocdMAAlignOpsSize);
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for multialignment operators",(int64_t)m_AllocdMAAlignOpsSize);
 			m_AllocdMAAlignOpsSize = 0;
 			return(false);
 			}
 		}
 #else
 		// gnu malloc is still in the 32bit world and seems to have issues if more than 2GB allocation
-		m_pMAAlignOps = (UINT8 *)mmap(NULL,m_AllocdMAAlignOpsSize, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+		m_pMAAlignOps = (uint8_t *)mmap(NULL,m_AllocdMAAlignOpsSize, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 		if(m_pMAAlignOps == MAP_FAILED)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for multialignment operators",(INT64)m_AllocdMAAlignOpsSize);
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for multialignment operators",(int64_t)m_AllocdMAAlignOpsSize);
 			m_pMAAlignOps = NULL;
 			m_AllocdMAAlignOpsSize = 0;
 			return(false);
@@ -786,8 +786,8 @@ CSSW::ValidateTracebacks(tsSSWCell *pCell)		// valdate that the path can be trac
 {
 tsSSWTraceback *pCurTraceback;
 tsSSWTraceback *pPrevTraceback;
-UINT32 ExpIdxP = pCell->EndPOfs;
-UINT32 ExpIdxT = pCell->EndTOfs;
+uint32_t ExpIdxP = pCell->EndPOfs;
+uint32_t ExpIdxT = pCell->EndTOfs;
 int PathLen;
 
 if((pCurTraceback = InitiateTraceback(pCell->EndPOfs,pCell->EndTOfs))==NULL)
@@ -843,9 +843,9 @@ return(PathLen);
 
 
 tsSSWTraceback *
-CSSW::InitiateTraceback(UINT32 IdxP, UINT32 IdxT)
+CSSW::InitiateTraceback(uint32_t IdxP, uint32_t IdxT)
 {
-UINT64 UsedTracebacks;
+uint64_t UsedTracebacks;
 tsSSWTraceback *pCur;
 
 if(IdxP == 0 || IdxT == 0 || (UsedTracebacks = m_UsedTracebacks) == 0 || m_AllocdTracebacks == 0 || m_pAllocdTracebacks == NULL)
@@ -865,8 +865,8 @@ return(pCur);
 tsSSWTraceback *						 // next traceback along path; NULL if at 5' start of path
 CSSW::NxtTraceback(tsSSWTraceback *pCur) // use to iterate over tracebacks
 {
-UINT32 IdxP;
-UINT32 IdxT;
+uint32_t IdxP;
+uint32_t IdxT;
 
 if(pCur == NULL || (pCur->IdxP & cTrBkIdxMsk) == 0 || (pCur->IdxT & cTrBkIdxMsk) == 0 || m_pAllocdTracebacks == NULL)
 	return(NULL);
@@ -899,11 +899,11 @@ while((pCur->IdxT & cTrBkIdxMsk) != IdxT || (pCur->IdxP & cTrBkIdxMsk) != IdxP)
 return(pCur);
 }
 
-UINT32											// number of tracebacks marked, can be less than actual path length if some tracebacks already marked
-CSSW::MarkTracebackPath(UINT32 MarkFlag,		// mark the traceback path which ends at 3' IdxP and IdxT with this marker flag(s) into the tsSSWTraceback.IdxT
-			UINT32 IdxP, UINT32 IdxT)
+uint32_t											// number of tracebacks marked, can be less than actual path length if some tracebacks already marked
+CSSW::MarkTracebackPath(uint32_t MarkFlag,		// mark the traceback path which ends at 3' IdxP and IdxT with this marker flag(s) into the tsSSWTraceback.IdxT
+			uint32_t IdxP, uint32_t IdxT)
 {
-UINT32 NumMarked;
+uint32_t NumMarked;
 tsSSWTraceback *pCur;
 MarkFlag &= cTrBkFlgsMsk;		
 if((pCur = InitiateTraceback(IdxP,IdxT))==NULL)
@@ -920,11 +920,11 @@ return(NumMarked);
 }
 
 
-UINT32											// number of tracedbacks which were reset
-CSSW::ResetTracebackFlags(UINT32 ResetFlags)	// reset these flags in all tracebacks
+uint32_t											// number of tracedbacks which were reset
+CSSW::ResetTracebackFlags(uint32_t ResetFlags)	// reset these flags in all tracebacks
 {
-UINT32 Idx;
-UINT32 NumReset;
+uint32_t Idx;
+uint32_t NumReset;
 tsSSWTraceback *pCur;
 
 if (!m_UsedTracebacks || m_AllocdTracebacks == 0 || m_pAllocdTracebacks == NULL)
@@ -946,12 +946,12 @@ return(NumReset);
 
 }
 
-UINT32                                      // after reduction there are this many tracebacks retained
-CSSW::ReduceTracebacks(UINT32 RetainFlag,	// reduce tracebacks by removing tracebacks which have NOT been marked with this flag in IdxT
-				 UINT32 ResetFlags)		    // and reset these flags in the retained traceback in IdxT
+uint32_t                                      // after reduction there are this many tracebacks retained
+CSSW::ReduceTracebacks(uint32_t RetainFlag,	// reduce tracebacks by removing tracebacks which have NOT been marked with this flag in IdxT
+				 uint32_t ResetFlags)		    // and reset these flags in the retained traceback in IdxT
 {
-UINT32 Idx;
-UINT32 NumRetained;
+uint32_t Idx;
+uint32_t NumRetained;
 tsSSWTraceback *pCur;
 tsSSWTraceback *pNxt;
 
@@ -978,10 +978,10 @@ return(NumRetained);
 } 
 
 int													// NOTE: both probe and target sequences must have been set (SetProbe and SetTarg) before setting the alignment range
-CSSW::SetAlignRange(UINT32 ProbeStartRelOfs,		// when aligning then start SW from this probe sequence relative offset
-					  UINT32 TargStartRelOfs, 	// and SW starting from this target sequence relative offset
-						UINT32 ProbeRelLen,		// and SW with this probe relative length starting from m_ProbeStartRelOfs - if 0 then until end of probe sequence
-						UINT32 TargRelLen)		// and SW with this target relative length starting from m_TargStartRelOfs - if 0 then until end of target sequence
+CSSW::SetAlignRange(uint32_t ProbeStartRelOfs,		// when aligning then start SW from this probe sequence relative offset
+					  uint32_t TargStartRelOfs, 	// and SW starting from this target sequence relative offset
+						uint32_t ProbeRelLen,		// and SW with this probe relative length starting from m_ProbeStartRelOfs - if 0 then until end of probe sequence
+						uint32_t TargRelLen)		// and SW with this target relative length starting from m_TargStartRelOfs - if 0 then until end of target sequence
 {
 if(m_ProbeLen < cSSWMinProbeOrTargLen || m_ProbeLen > cSSWMaxProbeOrTargLen ||  m_TargLen < cSSWMinProbeOrTargLen || m_TargLen > cSSWMaxProbeOrTargLen)
 	return(eBSFerrParams);	
@@ -1006,24 +1006,24 @@ return(eBSFSuccess);
 
 tsSSWCell *								// smith-waterman style local alignment, returns highest accumulated exact matches cell
 CSSW::Align(tsSSWCell *pPeakScoreCell,	// optionally also return conventional peak scoring cell
-				UINT32 MaxOverlapLen)	// process tracebacks for this maximal expected overlap, 0 if no tracebacks required
+				uint32_t MaxOverlapLen)	// process tracebacks for this maximal expected overlap, 0 if no tracebacks required
 {
-UINT32 IdxP;							// current index into m_Probe[]
-UINT32 IdxT;							// current index into m_Targ[]
+uint32_t IdxP;							// current index into m_Probe[]
+uint32_t IdxT;							// current index into m_Targ[]
 bool bMatch;
 bool bMatchNxt3;
-UINT32 StartIdxT;
-UINT32 NumCellsSkipped;
-UINT32 NumCellsChecked;
-UINT32 NxtMinIdxT;
-UINT32 CurMinIdxT;
-UINT32 CurMaxIdxT;
-UINT32 LastCheckedIdxT;
+uint32_t StartIdxT;
+uint32_t NumCellsSkipped;
+uint32_t NumCellsChecked;
+uint32_t NxtMinIdxT;
+uint32_t CurMinIdxT;
+uint32_t CurMaxIdxT;
+uint32_t LastCheckedIdxT;
 
-UINT32 TargRelLen;
-UINT32 ProbeRelLen;
+uint32_t TargRelLen;
+uint32_t ProbeRelLen;
 
-UINT64 trbsreq;
+uint64_t trbsreq;
 size_t memreq;
 void *pAllocd;
 
@@ -1130,7 +1130,7 @@ for(IdxP = 0; IdxP < ProbeRelLen; IdxP++)
 		ReduceTracebacks(cTrBkFlgRetain,cTrBkFlgRetain);
 		if((m_UsedTracebacks + 10) > (m_AllocdTracebacks - TargRelLen))
 			{
-			trbsreq = min((m_AllocdTracebacks + (TargRelLen * 6000)), (UINT64)(0x7fff0000 / 8));
+			trbsreq = min((m_AllocdTracebacks + (TargRelLen * 6000)), (uint64_t)(0x7fff0000 / 8));
 			if(trbsreq <= m_AllocdTracebacks)
 				{
 				gDiagnostics.DiagOut(eDLFatal,gszProcName,"Align: too many traceback cells required");
@@ -1176,12 +1176,12 @@ for(IdxP = 0; IdxP < ProbeRelLen; IdxP++)
 	pTarg = &m_pTarg[m_TargStartRelOfs + CurMinIdxT];
 	for(IdxT = CurMinIdxT; IdxT < CurMaxIdxT; IdxT++,pCell++)
 		{
-		if (pCell->StartPOfs != 0 && IdxP >(UINT32)m_MaxInitiatePathOfs && NxtMinIdxT == 0 && IdxT > 0)	
+		if (pCell->StartPOfs != 0 && IdxP >(uint32_t)m_MaxInitiatePathOfs && NxtMinIdxT == 0 && IdxT > 0)	
 			NxtMinIdxT = IdxT - 1;
 
 		// if m_MaxOverlapStartOfs > 0 then only starting new paths if within that max offset
 		// and early terminate low confidence paths; these are paths of longer than 1Kbp with coverage outside of 15% and with mean length of matching subseqs of less than 3.0bp
-		if(m_MaxInitiatePathOfs && (IdxT >= (UINT32)m_MaxInitiatePathOfs && IdxP >= (UINT32)m_MaxInitiatePathOfs))
+		if(m_MaxInitiatePathOfs && (IdxT >= (uint32_t)m_MaxInitiatePathOfs && IdxP >= (uint32_t)m_MaxInitiatePathOfs))
 			{
 			if(pCell->PeakScore > 0 && (pCell->NumGapsIns + pCell->NumGapsDel) > 10) // only check for path termination if a score and there are some InDel events in path
 				{
@@ -1250,7 +1250,7 @@ for(IdxP = 0; IdxP < ProbeRelLen; IdxP++)
 				memset(&LeftCell,0,sizeof(tsSSWCell));
 			memset(pCell,0,sizeof(tsSSWCell));
 			memset(&DiagCell,0,sizeof(tsSSWCell));
-			if(IdxT <= (UINT32)m_MaxInitiatePathOfs && IdxP <= (UINT32)m_MaxInitiatePathOfs && bMatch && bMatchNxt3)  // requiring seed of at least 4bp before starting path
+			if(IdxT <= (uint32_t)m_MaxInitiatePathOfs && IdxP <= (uint32_t)m_MaxInitiatePathOfs && bMatch && bMatchNxt3)  // requiring seed of at least 4bp before starting path
 				{
 				pCell->StartPOfs = m_ProbeStartRelOfs + IdxP + 1;
 				pCell->StartTOfs = m_TargStartRelOfs + IdxT + 1;
@@ -1344,7 +1344,7 @@ for(IdxP = 0; IdxP < ProbeRelLen; IdxP++)
 		if(DiagScore >= DownScore && DiagScore >= LeftScore) // if diag score at least equal highest then preference matches, either exact or mismatch, over InDels
 			{
 			if((DiagCell.StartPOfs == 0	&&				// if starting a new path then check
-					(IdxP > (UINT32)m_MaxInitiatePathOfs || IdxT > (UINT32)m_MaxInitiatePathOfs ||	// can only start paths if within m_MaxInitiatePathOfs and
+					(IdxP > (uint32_t)m_MaxInitiatePathOfs || IdxT > (uint32_t)m_MaxInitiatePathOfs ||	// can only start paths if within m_MaxInitiatePathOfs and
 					!(bMatch && bMatchNxt3))) ||            // path starts with at least 4 exacts
 					DiagCell.CurMismatchLen > 16)			// chances of more than 16 bases in a row without at least one base exactly matching are extremely low when underlying substitution rate is only a 2% 
 				{
@@ -1453,7 +1453,7 @@ for(IdxP = 0; IdxP < ProbeRelLen; IdxP++)
 			}
 
 
-		if(pCell->NumExacts >= (UINT32)m_MinNumExactMatches && pCell->CurExactLen >= 4) // only interested in putative paths which are terminating with at least 4 exact matches at terminal end - paths needed at least 4 exacts to start
+		if(pCell->NumExacts >= (uint32_t)m_MinNumExactMatches && pCell->CurExactLen >= 4) // only interested in putative paths which are terminating with at least 4 exact matches at terminal end - paths needed at least 4 exacts to start
 			{
 			if(pCell->PeakScore > m_PeakMatchesCell.PeakScore)
 				m_PeakMatchesCell = *pCell;
@@ -1541,10 +1541,10 @@ return(&m_PeakMatchesCell);
 
 
 int    // total number of returned chars in pszBuffer for the textual representation of error corrected consensus sequence (could be multiple consensus sequences)
-CSSW::MAlignCols2fasta(UINT32 ProbeID,	// identifies sequence which was used as the probe when determining the multialignments
+CSSW::MAlignCols2fasta(uint32_t ProbeID,	// identifies sequence which was used as the probe when determining the multialignments
 					int MinConf,		// sequence bases averaged over a 50bp window must be of at least this confidence (0..9) with the initial and final bases having at least this confidence
 				  int MinLen,			// and sequence lengths must be of at least this length 
-				  UINT32 BuffSize,		// buffer allocated to hold at most this many chars
+				  uint32_t BuffSize,		// buffer allocated to hold at most this many chars
 				  char *pszBuffer)		// output error corrected sequences to this buffer
 {
 int CurSeqLen;
@@ -1552,9 +1552,9 @@ int MaxCurSeqLen;
 int LineLen;
 int MeanConf;
 int ConfWinTot;
-UINT32 BuffOfs;
-UINT32 StartBuffOfs;
-UINT32 BelowMinConfBuffOfs;
+uint32_t BuffOfs;
+uint32_t StartBuffOfs;
+uint32_t BelowMinConfBuffOfs;
 char *pBuff;
 int NewSeqStartOfs;
 char szDescrLine[80];
@@ -1716,7 +1716,7 @@ return(BuffOfs);
 
 
 int    // total number of returned chars in pszBuffer for the textual representation of error corrected consensus sequence (could be multiple consensus sequences)
-CSSW::ConsConfSeq2Seqs(UINT32 ProbeID,	// identifies sequence which was used as the probe when determining the multialignments
+CSSW::ConsConfSeq2Seqs(uint32_t ProbeID,	// identifies sequence which was used as the probe when determining the multialignments
 					int MinConf,		// sequence bases averaged over a m_ConfWin window must be of at least this confidence (0..9) with the initial and final bases having at least this confidence
 				  int MinLen)			// and sequence lengths must be of at least this length 
 {
@@ -1725,9 +1725,9 @@ int MaxCurSeqLen;
 int LineLen;
 int MeanConf;
 int ConfWinTot;
-UINT32 BuffOfs;
-UINT32 StartBuffOfs;
-UINT32 BelowMinConfBuffOfs;
+uint32_t BuffOfs;
+uint32_t StartBuffOfs;
+uint32_t BelowMinConfBuffOfs;
 char *pBuff;
 int NewSeqStartOfs;
 char szDescrLine[80];
@@ -1893,7 +1893,7 @@ return(BuffOfs);
 int    // parse out the next multialignment block consensus bases and consensus confidence scores into m_pConsConfSeq
 CSSW::ParseConsConfSeq(bool bCpltdReadMAF,			// true if m_pConsConfSeq contains all remaining multialignment blocks loaded from file 
 						 int MinErrCorrectLen,		// error corrected sequences must be at least this minimum length
-						 UINT32 *pProbeID)			// returned probe identifier
+						 uint32_t *pProbeID)			// returned probe identifier
 {
 int State;
 int Cnt;
@@ -1903,7 +1903,7 @@ int NumConConfs;
 int ExpNumConConfs;
 int SeqLen;
 bool bSloughLine;
-UINT32 ProbeID;
+uint32_t ProbeID;
 char Chr;
 char *pBuff;
 etSeqBase Base;
@@ -2084,7 +2084,7 @@ for(; m_MAFAlignBuffIdx < m_MAFAlignBuffered; m_MAFAlignBuffIdx += 1,pBuff+=1)
 					return(eBSFerrAlignBlk);
 					}
 				NumConConfs += 1;
-				pConsConfSeq->Conf = (UINT8)(Chr - '0');	
+				pConsConfSeq->Conf = (uint8_t)(Chr - '0');	
 				pConsConfSeq += 1;	
 				continue;
 				}
@@ -2134,11 +2134,11 @@ CSSW::GenConsensusFromMAF(int MinErrCorrectLen,		// error corrected sequences mu
 			char *pszMultiAlignFile)	// name of file containing multiple alignments to process
 {
 int Rslt;
-UINT32 CurProbeID;
+uint32_t CurProbeID;
 int BuffCnt;
 int BuffTopUp;
 bool bCpltdReadMAF;
-UINT32 NumParsedBlocks;
+uint32_t NumParsedBlocks;
 int ConsSeqLen;
 
 m_AllocMAFAlignBuffSize = min(0x7ff00000,cMaxMAFBlockLen * 5);
@@ -2336,13 +2336,13 @@ return(Rslt);
 
 
 int      // total number of returned chars in pszBuffer for the textual representation of the multialignment 
-CSSW::MAlignCols2MFA(UINT32 ProbeID,		// identifies sequence which was used as the probe when determining the multialignments
-					UINT32 BuffSize,		// buffer allocated to hold at most this many chars
+CSSW::MAlignCols2MFA(uint32_t ProbeID,		// identifies sequence which was used as the probe when determining the multialignments
+					uint32_t BuffSize,		// buffer allocated to hold at most this many chars
 					char *pszBuffer)		// output multialignment textual representation to this buffer
 {
-UINT32 BuffOfs;
+uint32_t BuffOfs;
 char *pBuff;
-UINT32 DepthIdx;
+uint32_t DepthIdx;
 etSeqBase Base;
 int ConsConf;
 char ChrBase;
@@ -2472,10 +2472,10 @@ int     // eBSFSuccess if no errors otherwise either eBSFerrParams or eBSFerrMem
 CSSW::StartMultiAlignments(int SeqLen,		// probe sequence is this length
 					etSeqBase *pProbeSeq,	// probe sequence 
 					int Alignments,			// number of pairwise alignments to allocate for
-					UINT8 Flags)            // bit 0 set if probe loaded as a high confidence sequence
+					uint8_t Flags)            // bit 0 set if probe loaded as a high confidence sequence
 {
 int Idx;
-UINT8 *pBase;
+uint8_t *pBase;
 tsMAlignCol *pCol;
 size_t memreq;
 m_MACols = 0;
@@ -2506,18 +2506,18 @@ if(m_pMACols == NULL || (memreq + 10000) > m_AllocMAColsSize)
 		}
 	
 #ifdef _WIN32
-	m_pMACols = (UINT8 *) malloc(memreq);
+	m_pMACols = (uint8_t *) malloc(memreq);
 	if(m_pMACols == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for multialignment",(INT64)memreq);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for multialignment",(int64_t)memreq);
 		return(eBSFerrMem);
 		}
 #else
 		// gnu malloc is still in the 32bit world and seems to have issues if more than 2GB allocation
-	m_pMACols = (UINT8 *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+	m_pMACols = (uint8_t *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pMACols == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for multialignment",(INT64)memreq);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for multialignment",(int64_t)memreq);
 		m_pMACols = NULL;
 		return(eBSFerrMem);
 		}
@@ -2525,7 +2525,7 @@ if(m_pMACols == NULL || (memreq + 10000) > m_AllocMAColsSize)
 	m_AllocMAColsSize = memreq;	
 	}
 
-m_AllocMACols = (UINT32)(m_AllocMAColsSize/m_MAColSize); 
+m_AllocMACols = (uint32_t)(m_AllocMAColsSize/m_MAColSize); 
 memset(m_pMACols,0,m_AllocMAColsSize);
 m_MACols = SeqLen;
 m_MADepth = Alignments+1;
@@ -2543,7 +2543,7 @@ for(Idx = 1; Idx <= SeqLen; Idx++, pBase++)
 	pCol->Extn = 0;
 	pCol->ConsBase = *pBase;
 	pCol->Bases[0] = *pBase;
-	pCol = (tsMAlignCol *) ((UINT8 *)pCol + m_MAColSize);
+	pCol = (tsMAlignCol *) ((uint8_t *)pCol + m_MAColSize);
 	}
 
 memset(m_MAFlags,0,sizeof(m_MAFlags));
@@ -2554,23 +2554,23 @@ return(eBSFSuccess);
 }
 
 int												
-CSSW::PathKmerCnts(UINT32 MaxKMer,				// characterising for all exactly matching K-mers from 1 up to this maximum length K-mer over the full length path	
-					UINT32 *pKMerCnts,			// returned cnts for all K-mers from 1 up to MaxKMer inclusive
-				    UINT32 ProbeStartOfs,		// alignment starts at this probe sequence offset (1..n)
-					UINT32 ProbeEndOfs,			// alignment ends at this probe sequence offset
-					UINT32 TargStartOfs,		// alignment starts at this target sequence offset (1..n)
-					UINT32 TargEndOfs)			// alignment ends at this target sequence offset
+CSSW::PathKmerCnts(uint32_t MaxKMer,				// characterising for all exactly matching K-mers from 1 up to this maximum length K-mer over the full length path	
+					uint32_t *pKMerCnts,			// returned cnts for all K-mers from 1 up to MaxKMer inclusive
+				    uint32_t ProbeStartOfs,		// alignment starts at this probe sequence offset (1..n)
+					uint32_t ProbeEndOfs,			// alignment ends at this probe sequence offset
+					uint32_t TargStartOfs,		// alignment starts at this target sequence offset (1..n)
+					uint32_t TargEndOfs)			// alignment ends at this target sequence offset
 {
-UINT32 TrcBkOp;
+uint32_t TrcBkOp;
 bool bGapOpened;
-UINT32 CurKMerLen;
-UINT32 TotKMers;
+uint32_t CurKMerLen;
+uint32_t TotKMers;
 tsSSWTraceback *pTraceBack;
 
 if(MaxKMer < 1 || pKMerCnts == NULL)
 	return(0);
 
-memset(pKMerCnts,0,sizeof(UINT32) * MaxKMer);
+memset(pKMerCnts,0,sizeof(uint32_t) * MaxKMer);
 
 if(ProbeStartOfs == 0 || ProbeEndOfs <= ProbeStartOfs ||
 	TargStartOfs == 0 || TargEndOfs <= TargStartOfs)
@@ -2636,12 +2636,12 @@ return(TotKMers);
 
 int												// attempting to determine if path is artfact resulting from aligning to a paralogous fragment
 CSSW::ClassifyPath(int MaxArtefactDev,			// classify path as artefactual if sliding window (currently 500bp) over any overlap deviates by more than this percentage from the overlap mean
-				    UINT32 ProbeStartOfs,		// alignment starts at this probe sequence offset (1..n)
-					UINT32 ProbeEndOfs,			// alignment ends at this probe sequence offset
-					UINT32 TargStartOfs,		// alignment starts at this target sequence offset (1..n)
-					UINT32 TargEndOfs)			// alignment ends at this target sequence offset
+				    uint32_t ProbeStartOfs,		// alignment starts at this probe sequence offset (1..n)
+					uint32_t ProbeEndOfs,			// alignment ends at this probe sequence offset
+					uint32_t TargStartOfs,		// alignment starts at this target sequence offset (1..n)
+					uint32_t TargEndOfs)			// alignment ends at this target sequence offset
 {
-UINT32 TrcBkOp;
+uint32_t TrcBkOp;
 int Score;
 int ProbeOfs;
 bool bGapOpened;
@@ -2741,7 +2741,7 @@ int CurWinScore;
 int MaxWinScore;
 int MinWinScore;
 int MeanWinScore;
-INT64 SumWinScores;
+int64_t SumWinScores;
  
 SumWinScores = 0;
 pWinScore = m_pAllWinScores;
@@ -2749,7 +2749,7 @@ SumWinScores = MaxWinScore = MinWinScore = *pWinScore++;
 for(WinScoreIdx = 1; WinScoreIdx < m_NumWinScores; WinScoreIdx+=1,pWinScore+=1 )
 	{
 	CurWinScore = *pWinScore;
-	SumWinScores += (INT64)CurWinScore;
+	SumWinScores += (int64_t)CurWinScore;
 	if(CurWinScore > MaxWinScore)
 		MaxWinScore = CurWinScore;
 	if(CurWinScore < MinWinScore)
@@ -2766,16 +2766,16 @@ return(0);
 
 
 int													// number of alignment ops generated
-CSSW::TracebacksToAlignOps(UINT32 ProbeStartOfs,	// alignment starts at this probe sequence offset (1..n)
-					UINT32 ProbeEndOfs,				// alignment ends at this probe sequence offset
-					UINT32 TargStartOfs,			// alignment starts at this target sequence offset (1..n)
-					UINT32 TargEndOfs,				// alignment ends at this target sequence offset
+CSSW::TracebacksToAlignOps(uint32_t ProbeStartOfs,	// alignment starts at this probe sequence offset (1..n)
+					uint32_t ProbeEndOfs,				// alignment ends at this probe sequence offset
+					uint32_t TargStartOfs,			// alignment starts at this target sequence offset (1..n)
+					uint32_t TargEndOfs,				// alignment ends at this target sequence offset
 					tMAOp **ppAlignOps)             // optionally return ptr to alignment operations
 {
 tMAOp AOp;
 tMAOp *pOps;
 tMAOp *pOpsXchg;
-UINT32 TrcBkOp;
+uint32_t TrcBkOp;
 int Ofs;
 int NumOps;
 tsSSWTraceback *pTraceBack;
@@ -2819,7 +2819,7 @@ do {
 			return(eBSFerrMem);
 			}
 	
-		m_pMAAlignOps = (UINT8 *)pAllocd;
+		m_pMAAlignOps = (uint8_t *)pAllocd;
 		memset(&m_pMAAlignOps[m_MAAlignOps],0,memreq - m_AllocdMAAlignOpsSize);
 		m_AllocdMAAlignOpsSize = memreq;
 		}
@@ -2861,17 +2861,17 @@ return(NumOps);
 }
 
 int
-CSSW::AddMultiAlignment(UINT32 ProbeStartOfs,		// alignment starts at this probe sequence offset (1..n)
-					  UINT32 ProbeEndOfs,			// alignment ends at this probe sequence offset inclusive
-					  UINT32 TargStartOfs,			// alignment starts at this target sequence offset (1..n)
-					  UINT32 TargEndOfs,			// alignment ends at this target sequence offset inclusive
-					  UINT32 TargSeqLen,			// target sequence length
+CSSW::AddMultiAlignment(uint32_t ProbeStartOfs,		// alignment starts at this probe sequence offset (1..n)
+					  uint32_t ProbeEndOfs,			// alignment ends at this probe sequence offset inclusive
+					  uint32_t TargStartOfs,			// alignment starts at this target sequence offset (1..n)
+					  uint32_t TargEndOfs,			// alignment ends at this target sequence offset inclusive
+					  uint32_t TargSeqLen,			// target sequence length
 					  etSeqBase *pTargSeq,			// alignment target sequence
-					  UINT8 Flags)				    // bit 7 set if target loaded as a high confidence sequence, bits 0..3 is weighting factor to apply when generating consensus bases
+					  uint8_t Flags)				    // bit 7 set if target loaded as a high confidence sequence, bits 0..3 is weighting factor to apply when generating consensus bases
 {
 tMAOp Op;
 tMAOp *pAlignOps;
-UINT32 NumAlignOps;
+uint32_t NumAlignOps;
 int DepthIdx;
 tsMAlignCol *pNewCol;
 tsMAlignCol *pCol;
@@ -2978,9 +2978,9 @@ int *pCnts;
 int *pNxtCnts;
 int XAbundIdxs;
 int TotBaseCnts;
-UINT8 Base;
-UINT8 *pBase;
-UINT8 *pNxColBase;
+uint8_t Base;
+uint8_t *pBase;
+uint8_t *pNxColBase;
 int NumNxtBasesChkd;
 int NumTermAlignments;
 int NumNonTermAlignments;
@@ -3106,7 +3106,7 @@ return(eBSFSuccess);
 }
 
 tsMAlignCol *								// inserted column or NULL if errors inserting
-CSSW::InsertCol(UINT32 PrevCol)				// allocate and insert new column after Prev
+CSSW::InsertCol(uint32_t PrevCol)				// allocate and insert new column after Prev
 {
 tsMAlignCol *pCol;
 tsMAlignCol *pPrevCol;
@@ -3132,7 +3132,7 @@ if(m_MACols + 10 >= m_AllocMACols)			// need to extend previously allocated colu
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"InsertCol: Memory re-allocation to %lld bytes - %s",memreq,strerror(errno));
 		return(NULL);
 		}
-	m_pMACols = (UINT8 *)pAllocd;
+	m_pMACols = (uint8_t *)pAllocd;
 	memset(&m_pMACols[m_AllocMAColsSize],0,memreq - m_AllocMAColsSize);
 	m_AllocMACols = AllocMACols;
 	m_AllocMAColsSize = memreq;
@@ -3154,10 +3154,10 @@ return(pCol);
 
 
 
-UINT64		// returned mask
-CSSW::MSBBitMsk(UINT64 BitsSet) // get bit mask of most significant bit set in BitsSet
+uint64_t		// returned mask
+CSSW::MSBBitMsk(uint64_t BitsSet) // get bit mask of most significant bit set in BitsSet
 {
-UINT64 Msk;
+uint64_t Msk;
 if(BitsSet == 0)
 	return(0);
 
@@ -3180,10 +3180,10 @@ return(Msk);
 }
 
 
-UINT64		// returned mask
-CSSW::NSBBitMsk(int Nth,UINT64 BitsSet) // get bit mask of Nth (1 if MSB) significant bit set in BitsSet
+uint64_t		// returned mask
+CSSW::NSBBitMsk(int Nth,uint64_t BitsSet) // get bit mask of Nth (1 if MSB) significant bit set in BitsSet
 {
-UINT64 Msk;
+uint64_t Msk;
 if(BitsSet == 0)
 	return(0);
 while(BitsSet != 0)
@@ -3213,7 +3213,7 @@ return(0);
 
 
 int		// number of bits set
-CSSW::NumBitsSet(UINT64 BitsSet) // get total number of bits set in BitsSet
+CSSW::NumBitsSet(uint64_t BitsSet) // get total number of bits set in BitsSet
 {
 int BitCnt;
 for(BitCnt=0; BitsSet != 0; BitsSet &= BitsSet-1)
@@ -3221,7 +3221,7 @@ for(BitCnt=0; BitsSet != 0; BitsSet &= BitsSet-1)
 return(BitCnt);
 }
 
-static UINT64 _nCrMsks[] = { 0x0000000000000001, 0x0000000000000003, 0x0000000000000007, 0x000000000000000f,	// masks for {n or r} = 1..4
+static uint64_t _nCrMsks[] = { 0x0000000000000001, 0x0000000000000003, 0x0000000000000007, 0x000000000000000f,	// masks for {n or r} = 1..4
 				      0x000000000000001f, 0x000000000000003f, 0x000000000000007f, 0x00000000000000ff,           // masks for {n or r} = 5..8
 				      0x00000000000001ff, 0x00000000000003ff, 0x00000000000007ff, 0x0000000000000fff,			// masks for {n or r} = 9..12
                       0x0000000000001fff, 0x0000000000003fff, 0x0000000000007fff, 0x000000000000ffff,			// masks for {n or r} = 13..16
@@ -3240,14 +3240,14 @@ static UINT64 _nCrMsks[] = { 0x0000000000000001, 0x0000000000000003, 0x000000000
 					};
 
 
-UINT64
+uint64_t
 CSSW::Nxt_nCr(int nPossibilities,		 // from n possibilities
 				int rOutComes,			 // choose r outcomes 
-			   UINT64 PrevCombination)	 // bit mask of previous combination generated
+			   uint64_t PrevCombination)	 // bit mask of previous combination generated
 {
-UINT64 nCrMsk1;
-UINT64 nCrMsk2;
-UINT64 nCrMsk3;
+uint64_t nCrMsk1;
+uint64_t nCrMsk2;
+uint64_t nCrMsk3;
 
 // check if combination already at it's most significant; if so then use the initial least significant combination as the next combination
 nCrMsk1 = _nCrMsks[rOutComes-1] << (nPossibilities - rOutComes);
@@ -3264,7 +3264,7 @@ if(nCrMsk3 & _nCrMsks[nPossibilities-1])
 	}
 
 // determine just how many are set in the most significant
-nCrMsk1 = (UINT64)0x01 << (nPossibilities-2);
+nCrMsk1 = (uint64_t)0x01 << (nPossibilities-2);
 nCrMsk3 >>= 1;
 while(nCrMsk1 & nCrMsk2)
 	{
@@ -3290,7 +3290,7 @@ return(PrevCombination);
 bool											// true: sequence has been completely permutated, true, false: intermediate permutation 
 CSSW::PermuteInDels(tsPermInDels *pPerm)
 {
-UINT64 BitMsk;
+uint64_t BitMsk;
 int BaseIdx;
 etSeqBase *pBase;
 etSeqBase *pXBase;
@@ -3352,7 +3352,7 @@ return(pPerm->InitialInDelPsns == pPerm->CurInDelPsns); // if same permutation a
 typedef struct Tag_sExpCombs {
 		int SeqLen;							// for sequences of this length
 		int NumInDels;						// an individual sequence has this number of InDels
-		UINT64 ExpTotCombs;					// number of InDel combinations for this sequence instance to discover the combination resulting in maximal parsimony  
+		uint64_t ExpTotCombs;					// number of InDel combinations for this sequence instance to discover the combination resulting in maximal parsimony  
 	} tsExpCombs;
 
 static tsExpCombs _ExpCombinations[] = {
@@ -3389,10 +3389,10 @@ CSSW::ParsimoniousBasesMultialign(int NumSeqs,	// number of sequences (alignment
 int TrimSeqLen;
 double PeakParsimonyFactor;
 double CurParsimonyFactor;
-UINT32 NumAllInDels;
-UINT32 NumNoInDels;
-UINT32 NumPermutable;
-UINT64 ExpTotCombs;
+uint32_t NumAllInDels;
+uint32_t NumNoInDels;
+uint32_t NumPermutable;
+uint64_t ExpTotCombs;
 int NumSeqsNoUndefs;
 int NxtIdx;
 int HiCnts;
@@ -3403,8 +3403,8 @@ int PeakSeqIdx;
 int BaseIdx;
 int SeqIdx;
 int CntsIdx;
-UINT64 InDelMsk;
-UINT64 SeqInDelMsk;
+uint64_t InDelMsk;
+uint64_t SeqInDelMsk;
 etSeqBase Base;
 etSeqBase *pBase;
 etSeqBase *pSrcBase;
@@ -3488,7 +3488,7 @@ if(TrimSeqLen == 1)								// if only a single base then can't permutate so simp
 
 // have at least 2 sequences to be permuted
 // iterate each sequence to initialise it's corresponding tsPermInDels
-SeqInDelMsk = ~(0xffffffffffffffff << (UINT64)TrimSeqLen);
+SeqInDelMsk = ~(0xffffffffffffffff << (uint64_t)TrimSeqLen);
 pPermInDels = m_PermIndels;
 NumSeqsNoUndefs = 0;
 for(SeqIdx = 0; SeqIdx < NumSeqs; SeqIdx++,pPermInDels++)
@@ -3506,7 +3506,7 @@ for(SeqIdx = 0; SeqIdx < NumSeqs; SeqIdx++,pPermInDels++)
 	pPermInDels->NumCopies = 0;
 	pPermInDels->NumInDels = 0;
 	pPermInDels->InitialInDelPsns = 0;
-	InDelMsk = (UINT64)0x01 << (TrimSeqLen - 1);
+	InDelMsk = (uint64_t)0x01 << (TrimSeqLen - 1);
 	pSrcBase = &pSequences[SeqIdx*SeqLen];
 	pBase = pPermInDels->InPermSeq;
 	pParsePermSeq = pPermInDels->ParsePermSeq;
@@ -3689,13 +3689,13 @@ CSSW::ParsimoniousMultialign(int Depth,				// parsimony for this number of bases
 {
 double Score;
 double ChkScore;
-UINT8 *pColBase;
+uint8_t *pColBase;
 int ColIdx;
 int BaseIdx;
 int NumBases;
 tsMAlignCol *pCol;
 int ConcatSeqLen;
-UINT8 *pParsimoniousBase;
+uint8_t *pParsimoniousBase;
 
 if(Depth > cMaxMultiAlignSeqs)
 	return(-1.0);
@@ -3734,7 +3734,7 @@ if(m_pParsimoniousBuff == NULL || (ConcatSeqLen + 1000) > m_AllocParsimoniousSiz
 	if(m_pParsimoniousBuff != NULL)
 		delete m_pParsimoniousBuff;
 	m_AllocParsimoniousSize = ConcatSeqLen + 1000;
-	m_pParsimoniousBuff = new UINT8 [m_AllocParsimoniousSize];
+	m_pParsimoniousBuff = new uint8_t [m_AllocParsimoniousSize];
 	if(m_pParsimoniousBuff == NULL)
 		{
 		m_AllocParsimoniousSize = 0;

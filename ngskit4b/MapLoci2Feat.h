@@ -96,7 +96,7 @@ class CMapLoci2Feat
 	etStrandProc m_StrandProc;			// strand processing
 	etISOFProc m_IsoformRprt;    		// feature isoform reporting mode
 	int m_RegRegionLen;					// regulatory region length
-	UINT32 m_NumEls;					// total number of elements to be processed
+	uint32_t m_NumEls;					// total number of elements to be processed
 
 	int m_NumSplitEls;					// number of elements identified as being split elements
 	bool m_bFeatinsts;					// true if counts are to be accumulated on a feature unique basis instead of any features covering the genomic locus

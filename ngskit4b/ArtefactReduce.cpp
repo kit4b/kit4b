@@ -920,16 +920,16 @@ CArtefactReduce::Process(etARPMode PMode,	// processing mode, currently eAR2Fast
 int Rslt;
 int Idx;
 int NumInputFilesProcessed;
-UINT32 TotNumSeqsAccepted;
-UINT32 NumReads;
-UINT32 TotNumSEReads;
-UINT32 TotNumPEReads;
-UINT32 NumPE1Reads;
-UINT32 NumPE2Reads;
+uint32_t TotNumSeqsAccepted;
+uint32_t NumReads;
+uint32_t TotNumSEReads;
+uint32_t TotNumPEReads;
+uint32_t NumPE1Reads;
+uint32_t NumPE2Reads;
 
 int SeqWrdBytes;
-UINT64 CumulativeMemory;
-UINT32 CumulativeSequences;
+uint64_t CumulativeMemory;
+uint32_t CumulativeSequences;
 char *pszInFile;
 
 char szPEDupDistFile[_MAX_PATH];
@@ -1126,7 +1126,7 @@ if(Rslt < eBSFSuccess)
 					Reset(false);
 					return((teBSFrsltCodes)Rslt);
 					}
-				NumReads = (UINT32)Rslt;
+				NumReads = (uint32_t)Rslt;
 				TotNumSEReads += NumReads;
 				if(NumReads == 0)
 					gDiagnostics.DiagOut(eDLWarn,gszProcName,"Process: No sequences accepted from input single ended reads file '%s'",pszInFile);
@@ -1154,7 +1154,7 @@ if(Rslt < eBSFSuccess)
 				Reset(false);
 				return((teBSFrsltCodes)Rslt);
 				}
-			NumReads = (UINT32)Rslt;
+			NumReads = (uint32_t)Rslt;
 			TotNumPEReads += NumReads;
 			if(NumReads == 0)
 				gDiagnostics.DiagOut(eDLWarn,gszProcName,"Process: No reads accepted from input paired end files '%s' and '%s'",pszInPE1files[Idx], pszInPE2files[Idx]);
@@ -1186,13 +1186,13 @@ if(Rslt < eBSFSuccess)
 	}
 
 // now identify and remove all exact duplicates retaining a single copy of each
-UINT32 TotSeqsParsed;
-UINT32 TotSeqsUnderlength;
-UINT32 TotSeqsExcessNs;
+uint32_t TotSeqsParsed;
+uint32_t TotSeqsUnderlength;
+uint32_t TotSeqsExcessNs;
 
-UINT32 LoadedMeanSeqLen;
-UINT32 LoadedMinSeqLen;
-UINT32 LoadedMaxSeqLen;
+uint32_t LoadedMeanSeqLen;
+uint32_t LoadedMinSeqLen;
+uint32_t LoadedMaxSeqLen;
 
 GetNumReads(&NumPE1Reads,&NumPE2Reads,NULL,NULL,&TotSeqsParsed,&TotSeqsUnderlength,&TotSeqsExcessNs,&LoadedMeanSeqLen,&LoadedMinSeqLen,&LoadedMaxSeqLen);
 
@@ -1291,7 +1291,7 @@ if(KMerLenFilter)
 	m_pKMerSeqs = (tsKMerSeqInst *)malloc(m_AllocdKMerSeqInstsMem);	// initial and with any luck perhaps the only allocation
 	if (m_pKMerSeqs == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessReadsetDist: Memory allocation of %lld bytes for K-mer distributions - %s", (INT64)m_AllocdKMerSeqInstsMem, strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessReadsetDist: Memory allocation of %lld bytes for K-mer distributions - %s", (int64_t)m_AllocdKMerSeqInstsMem, strerror(errno));
 		m_AllocdKMerSeqInstsMem = 0;
 		ARReset();
 		Reset();
@@ -1302,7 +1302,7 @@ if(KMerLenFilter)
 	m_pKMerSeqs = (tsKMerSeqInst *)mmap(NULL, m_AllocdKMerSeqInstsMem, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	if (m_pKMerSeqs == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessReadsetDist: Memory allocation of %lld bytes  for K-mer distributions through mmap()  failed - %s", (INT64)m_AllocdKMerSeqInstsMem, strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessReadsetDist: Memory allocation of %lld bytes  for K-mer distributions through mmap()  failed - %s", (int64_t)m_AllocdKMerSeqInstsMem, strerror(errno));
 		m_pKMerSeqs = NULL;
 		m_AllocdKMerSeqInstsMem = 0;
 		ARReset();
@@ -1312,7 +1312,7 @@ if(KMerLenFilter)
 #endif
 	memset(m_pKMerSeqs,0,m_AllocdKMerSeqInstsMem);
 	m_NumKMerSeqHashes = 0;
-	if((m_pKMerSeqHashes = new UINT32 [cMaxKMerSeqHashArrayEntries]) == NULL)
+	if((m_pKMerSeqHashes = new uint32_t [cMaxKMerSeqHashArrayEntries]) == NULL)
 		{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessReadsetDist: Memory allocation of %d entries for K-mer hashes failed", cMaxKMerSeqHashArrayEntries);
 		m_AllocdKMerSeqInstsMem = 0;
@@ -1335,7 +1335,7 @@ m_AllocdKMerSeqInstsMem = 0;
 if(MinOverlap != -1)
 	RemoveNonOverlaps(MinOverlap,MinFlankLen,IterativePasses);
 
-gSQLiteSummaries.AddResult(gExperimentID, gProcessingID,(char *)"Retained",ePTUint32,sizeof(UINT32),"Cnt",&m_Sequences.NumSeqs2Assemb);
+gSQLiteSummaries.AddResult(gExperimentID, gProcessingID,(char *)"Retained",ePTUint32,sizeof(uint32_t),"Cnt",&m_Sequences.NumSeqs2Assemb);
 
 FreeSfx();
 FreeSeqStarts();
@@ -1376,19 +1376,19 @@ CArtefactReduce::RemoveNonOverlaps(int MinOverlap,			// minimum required overlap
 int Rslt;
 int Iteration;
 
-UINT16 *pPE1SeqFlags;
-UINT16 *pPE2SeqFlags;
-UINT16 PE1Flags;
-UINT16 PE2Flags;
+uint16_t *pPE1SeqFlags;
+uint16_t *pPE2SeqFlags;
+uint16_t PE1Flags;
+uint16_t PE2Flags;
 tSeqWrd4 *pPE1Targ;
 tSeqWrd4 *pPE2Targ;
-UINT32 PE1SeqLen;
-UINT32 PE2SeqLen;
-UINT32 PE1OvrlapLen;
-UINT32 PE2OvrlapLen;
-UINT32 NumPairedRecovered;
-UINT32 NumPairedAccepted;
-UINT32 NumPairedRejected;
+uint32_t PE1SeqLen;
+uint32_t PE2SeqLen;
+uint32_t PE1OvrlapLen;
+uint32_t PE2OvrlapLen;
+uint32_t NumPairedRecovered;
+uint32_t NumPairedAccepted;
+uint32_t NumPairedRejected;
 
 tSeqID SeqID;
 
@@ -1461,7 +1461,7 @@ for(Iteration = 1; Iteration <= NumIterations; Iteration++)
 				{
 				pPE1Targ = GetSeqHeader(SeqID,NULL,NULL,&PE1SeqLen,false);
 				PE1OvrlapLen = ((PE1SeqLen * (PE1Flags & cFlgOvlLenMsk) >> 9)) / 100;
-				if(PE1OvrlapLen < (UINT32)m_MinAcceptSeqLen)
+				if(PE1OvrlapLen < (uint32_t)m_MinAcceptSeqLen)
 					{
 					*pPE1SeqFlags |= cFlgSeqRemove;
 					*pPE2SeqFlags |= cFlgSeqRemove;
@@ -1474,7 +1474,7 @@ for(Iteration = 1; Iteration <= NumIterations; Iteration++)
 				{
 				pPE2Targ = GetSeqHeader(SeqID+1,NULL,NULL,&PE2SeqLen,false);
 				PE2OvrlapLen = ((PE2SeqLen * (PE2Flags & cFlgOvlLenMsk) >> 9)) / 100;
-				if(PE2OvrlapLen < (UINT32)m_MinAcceptSeqLen)
+				if(PE2OvrlapLen < (uint32_t)m_MinAcceptSeqLen)
 					{
 					*pPE1SeqFlags |= cFlgSeqRemove;
 					*pPE2SeqFlags |= cFlgSeqRemove;
@@ -1521,7 +1521,7 @@ for(Iteration = 1; Iteration <= NumIterations; Iteration++)
 				{
 				pPE1Targ = GetSeqHeader(SeqID,NULL,NULL,&PE1SeqLen,false);
 				PE1OvrlapLen = ((PE1SeqLen * (PE1Flags & cFlgOvlLenMsk) >> 9)) / 100;
-				if(PE1OvrlapLen < (UINT32)m_MinAcceptSeqLen)
+				if(PE1OvrlapLen < (uint32_t)m_MinAcceptSeqLen)
 					{
 					*pPE1SeqFlags |= cFlgSeqRemove;
 					NumPairedRejected += 1;
@@ -1551,18 +1551,18 @@ CArtefactReduce::IdentifyDuplicates(bool bPEdups,			// optionally request that d
 {
 tsThreadIdentDuplicatePars *pThreadParams;
 tsThreadIdentDuplicatePars *pCurThread;
-UINT32 *pNumDupInstances;
+uint32_t *pNumDupInstances;
 int ThreadIdx;
 int NumThreads;
 tSeqID CurStartSeqID;
 int hDupDistFile;
-UINT32 Idx;
-UINT32 CurNumProcessed;
-UINT32 PrevNumProcessed = 0;
-UINT32 CurNumDuplicates = 0;
-UINT32 PrevNumDuplicates = 0;
-UINT32 MaxDuplicates = 0;
-UINT32 MaxDuplicateInsts = 0;
+uint32_t Idx;
+uint32_t CurNumProcessed;
+uint32_t PrevNumProcessed = 0;
+uint32_t CurNumDuplicates = 0;
+uint32_t PrevNumDuplicates = 0;
+uint32_t MaxDuplicates = 0;
+uint32_t MaxDuplicateInsts = 0;
 
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Starting duplicate %s sequences identification...",bPEdups ? "paired end" : "single ended");
 
@@ -1586,13 +1586,13 @@ if((pThreadParams = new tsThreadIdentDuplicatePars[NumThreads])==NULL)
 	}
 memset(pThreadParams,0,sizeof(tsThreadIdentDuplicatePars) * NumThreads);
 
-if((pNumDupInstances = new UINT32[cMaxDupInstances+1])==NULL)
+if((pNumDupInstances = new uint32_t[cMaxDupInstances+1])==NULL)
 	{
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Unable to allocate memory for threads...");
 	Reset(false);
 	return(eBSFerrMem);
 	}
-memset(pNumDupInstances,0,sizeof(UINT32) * (cMaxDupInstances+1));
+memset(pNumDupInstances,0,sizeof(uint32_t) * (cMaxDupInstances+1));
 
 CurStartSeqID = 1;
 
@@ -1631,11 +1631,11 @@ for(ThreadIdx = 1; ThreadIdx <= NumThreads; ThreadIdx++,pCurThread++)
 	if(!bStrand)
 		{
 		pCurThread->AllocMemPE1SeqWrds = cMaxOvrlapSeqWrds * sizeof(tSeqWrd4);
-		pCurThread->pPE1SeqWrds = new UINT8 [pCurThread->AllocMemPE1SeqWrds];
+		pCurThread->pPE1SeqWrds = new uint8_t [pCurThread->AllocMemPE1SeqWrds];
 		if(bPEdups)
 			{
 			pCurThread->AllocMemPE2SeqWrds = cMaxOvrlapSeqWrds * sizeof(tSeqWrd4);
-			pCurThread->pPE2SeqWrds = new UINT8 [pCurThread->AllocMemPE2SeqWrds];
+			pCurThread->pPE2SeqWrds = new uint8_t [pCurThread->AllocMemPE2SeqWrds];
 			}
 		}
 
@@ -1696,11 +1696,11 @@ for(ThreadIdx = 0; ThreadIdx < NumThreads; ThreadIdx++,pCurThread++)
 		}
 #endif
 	if(pCurThread->pProbeSubSeq != NULL)
-		delete (UINT8 *)pCurThread->pProbeSubSeq;
+		delete (uint8_t *)pCurThread->pProbeSubSeq;
 	if(pCurThread->pPE1SeqWrds != NULL)
-		delete (UINT8 *)pCurThread->pPE1SeqWrds;
+		delete (uint8_t *)pCurThread->pPE1SeqWrds;
 	if(pCurThread->pPE2SeqWrds != NULL)
-		delete (UINT8 *)pCurThread->pPE2SeqWrds;
+		delete (uint8_t *)pCurThread->pPE2SeqWrds;
 	if(pCurThread->MaxDuplicates > MaxDuplicateInsts)
 		MaxDuplicateInsts = pCurThread->MaxDuplicates;
 	for(Idx = 0; Idx <= cMaxDupInstances; Idx++)
@@ -1778,7 +1778,7 @@ if(gProcessingID > 0)
 		{
 		if(pNumDupInstances[Idx] == 0)
 			continue;
-		gSQLiteSummaries.AddResultXY(gExperimentID, gProcessingID,(char *)"DupReadsDist",ePTUint32,sizeof(UINT32),"Copies",&Idx,ePTUint32,sizeof(UINT32),"NumInstances",&pNumDupInstances[Idx-1]);
+		gSQLiteSummaries.AddResultXY(gExperimentID, gProcessingID,(char *)"DupReadsDist",ePTUint32,sizeof(uint32_t),"Copies",&Idx,ePTUint32,sizeof(uint32_t),"NumInstances",&pNumDupInstances[Idx-1]);
 		}
 	}
 
@@ -1790,8 +1790,8 @@ if(pNumDupInstances)
 if(!m_bDedupeIndependent && bPEdups)
 	{
 	// iterate PE1 and PE2 flags and if either has cFlgSeqNthDup then set the other end to also have cFlgSeqNthDup
-	UINT16 *pPE1SeqFlags;
-	UINT16 *pPE2SeqFlags;
+	uint16_t *pPE1SeqFlags;
+	uint16_t *pPE2SeqFlags;
 
 	tSeqID SeqID;
 	pPE1SeqFlags = m_Sequences.pSeqFlags;
@@ -1823,12 +1823,12 @@ tsThreadIdentOverlapPars *pCurThread;
 int ThreadIdx;
 int NumThreads;
 char *pszPhaseDescr;
-UINT32 ProvNum2Retain;
-UINT32 Idx;
-UINT16 *pSeqFlags;
+uint32_t ProvNum2Retain;
+uint32_t Idx;
+uint16_t *pSeqFlags;
 tSeqID CurStartSeqID;
-UINT32 CurNumProcessed;
-UINT32 PrevNumProcessed = 0;
+uint32_t CurNumProcessed;
+uint32_t PrevNumProcessed = 0;
 
 switch(OvlFlankPhase) {
 	case eOvlpSenseToSense:					// it's sense overlap sense flank processing (probe cFlg5Prime and target cFlg3Prime set if overlap) 
@@ -1901,8 +1901,8 @@ for(ThreadIdx = 1; ThreadIdx <= NumThreads; ThreadIdx++,pCurThread++)
 	pCurThread->MinFlankLen = MinFlankLen;
 	pCurThread->OvlFlankPhase = OvlFlankPhase;
 	pCurThread->AllocMemOverlapSeq = cMaxOvrlapSeqWrds * sizeof(tSeqWrd4);	
-	pCurThread->pOverlapSeq = new UINT8 [pCurThread->AllocMemOverlapSeq];
-	pCurThread->pOverlapFlankSeq = new UINT8 [pCurThread->AllocMemOverlapSeq];
+	pCurThread->pOverlapSeq = new uint8_t [pCurThread->AllocMemOverlapSeq];
+	pCurThread->pOverlapFlankSeq = new uint8_t [pCurThread->AllocMemOverlapSeq];
 #ifdef _WIN32
 	pCurThread->threadHandle = (HANDLE)_beginthreadex(NULL,cWorkThreadStackSize,ThreadedIdentOverlaps,pCurThread,0,&pCurThread->threadID);
 #else
@@ -1951,8 +1951,8 @@ for(ThreadIdx = 0; ThreadIdx < NumThreads; ThreadIdx++,pCurThread++)
 		ts.tv_sec += 60;
 		}
 #endif
-	delete (UINT8 *)pCurThread->pOverlapSeq;
-	delete (UINT8 *)pCurThread->pOverlapFlankSeq;
+	delete (uint8_t *)pCurThread->pOverlapSeq;
+	delete (uint8_t *)pCurThread->pOverlapFlankSeq;
 	}
 
 // report provisional number of reads which will be retained
@@ -1986,27 +1986,27 @@ tsMultiSeqFlags MultiSeqFlags[cMaxMultiSeqFlags+1];			// always allow for 1 extr
 int TooMAnyWarnings;
 tSeqID SeqID;
 tSeqID MatchTargID;
-UINT32 NumProcessed;
-UINT32 NumUniques;
-UINT32 NumDuplicates;
-UINT32 NumRevCplDups;
-UINT32 CurDuplicates;
-UINT32 MaxDuplicates;
+uint32_t NumProcessed;
+uint32_t NumUniques;
+uint32_t NumDuplicates;
+uint32_t NumRevCplDups;
+uint32_t CurDuplicates;
+uint32_t MaxDuplicates;
 
-UINT64 SfxWrdIdx;
-UINT64 SfxWrdLowHit;
-UINT32 ProbeLen;
-UINT32 ProbeFlags;
-UINT32 TargFlags;
-UINT32 TargLen;
+uint64_t SfxWrdIdx;
+uint64_t SfxWrdLowHit;
+uint32_t ProbeLen;
+uint32_t ProbeFlags;
+uint32_t TargFlags;
+uint32_t TargLen;
 tSeqWrd4 *pStartSeqWrd;
 tSeqWrd4 *pTarg;
 
 tSeqWrd4 *pPE2StartSeqWrd;
-UINT32 PE2ProbeFlags;
-UINT32 PE2ProbeLen;
-UINT32 PE2TargLen;
-UINT32 PE2TargFlags;
+uint32_t PE2ProbeFlags;
+uint32_t PE2ProbeLen;
+uint32_t PE2TargLen;
+uint32_t PE2TargFlags;
 tSeqWrd4 *pPE2Targ;
 
 int DiagLevel = gDiagnostics.GetFileDiagLevel();
@@ -2103,7 +2103,7 @@ while(GetSeqProcRange(&StartingSeqID,&EndingSeqID,cMaxMultiSeqFlags) > 0)
 							  pStartSeqWrd,							// pts to probe sequence
 							  ProbeLen,								// probe length (in bases, not tSeqWrd4's) to exactly match over
 							  m_Sequences.pSeqs2Assemb,				// target sequences
-							  (UINT8 *)m_Sequences.pSuffixArray,	// target sequence suffix array
+							  (uint8_t *)m_Sequences.pSuffixArray,	// target sequence suffix array
 							  0,									// low index in pSfxArray
 							  m_Sequences.NumSuffixEls-1);			// high index in pSfxArray
 
@@ -2300,28 +2300,28 @@ tSeqID EndingSeqID;
 int TooMAnyWarnings;
 tSeqID SeqID;
 tSeqID MatchTargID;
-UINT32 NumProcessed;
+uint32_t NumProcessed;
 
-UINT32 NumOverlapping;
-UINT32 NumOverlapped;
+uint32_t NumOverlapping;
+uint32_t NumOverlapped;
 
 int CurReqSeedOverlap;
 
 tsMultiSeqFlags MultiSeqFlags[cMaxMultiSeqFlags+1];		// allow for 1 extra!
 
-UINT64 SfxWrdIdx;
-UINT32 ProbeLen;
-UINT32 PrevProbeLen;
-UINT32 ProbeFlags;
-UINT32 TargFlags;
-UINT32 TargLen;
+uint64_t SfxWrdIdx;
+uint32_t ProbeLen;
+uint32_t PrevProbeLen;
+uint32_t ProbeFlags;
+uint32_t TargFlags;
+uint32_t TargLen;
 tSeqWrd4 *pStartSeqWrd;
 
 tSeqWrd4 *pTarg;
 
-UINT64 TargIdx;
-UINT64 TargEl;
-UINT8 *pSfxEls;
+uint64_t TargIdx;
+uint64_t TargEl;
+uint8_t *pSfxEls;
 
 gDiagnostics.DiagOut(eDLDebug,gszProcName,"Thread %d startup for overlap identification...",pPars->ThreadIdx);
 
@@ -2435,7 +2435,7 @@ while(GetSeqProcRange(&StartingSeqID,&EndingSeqID,cMaxMultiSeqFlags) > 0)
 						pPars->pOverlapFlankSeq,			// pts to probes flank subsequence
 						CurReqSeedOverlap,					// length (in bases, not tSeqWrd4's), as a minimum to exactly match over
 						m_Sequences.pSeqs2Assemb,			// target sequence
-						(UINT8 *)m_Sequences.pSuffixArray,	// target sequence suffix array
+						(uint8_t *)m_Sequences.pSuffixArray,	// target sequence suffix array
 						0,									// low index in pSfxArray
 						m_Sequences.NumSuffixEls-1);			// high index in pSfxArray
 	
@@ -2444,9 +2444,9 @@ while(GetSeqProcRange(&StartingSeqID,&EndingSeqID,cMaxMultiSeqFlags) > 0)
 				if(!SfxWrdIdx || SfxWrdIdx > m_Sequences.NumSuffixEls)
 					break;
 				TargEl = (SfxWrdIdx - 1) * m_Sequences.SfxElSize;
-				pSfxEls = (UINT8 *)m_Sequences.pSuffixArray;
+				pSfxEls = (uint8_t *)m_Sequences.pSuffixArray;
 				if(m_Sequences.SfxElSize == 4)
-					TargIdx = *(UINT32 *)&pSfxEls[TargEl];
+					TargIdx = *(uint32_t *)&pSfxEls[TargEl];
 				else
 					TargIdx = Unpack5(&pSfxEls[TargEl]);
 				pTarg =  &((tSeqWrd4 *)m_Sequences.pSeqs2Assemb)[TargIdx];
@@ -2510,7 +2510,7 @@ while(GetSeqProcRange(&StartingSeqID,&EndingSeqID,cMaxMultiSeqFlags) > 0)
 						}
 					}
 
-				if(TargLen > (UINT32)CurReqSeedOverlap && (CmpRslt = CmpPackedSeqs((tSeqWrd4 *)pPars->pOverlapFlankSeq,pTarg,ReqOverlap))!=0)
+				if(TargLen > (uint32_t)CurReqSeedOverlap && (CmpRslt = CmpPackedSeqs((tSeqWrd4 *)pPars->pOverlapFlankSeq,pTarg,ReqOverlap))!=0)
 					{
 					CmpRslt = 0;
 					continue;
@@ -2552,7 +2552,7 @@ while(GetSeqProcRange(&StartingSeqID,&EndingSeqID,cMaxMultiSeqFlags) > 0)
 						  pStartSeqWrd,							// pts to probe sequence
 						  ProbeLen,								// probe length (in bases, not tSeqWrd4's) to exactly match over
 						  m_Sequences.pSeqs2Assemb,				// target sequence
-						  (UINT8 *)m_Sequences.pSuffixArray,	// target sequence suffix array
+						  (uint8_t *)m_Sequences.pSuffixArray,	// target sequence suffix array
 						  0,									// low index in pSfxArray
 						  m_Sequences.NumSuffixEls-1);			// high index in pSfxArray
 			CmpRslt = 0;
@@ -2561,10 +2561,10 @@ while(GetSeqProcRange(&StartingSeqID,&EndingSeqID,cMaxMultiSeqFlags) > 0)
 					break;
 
 				TargEl = (SfxWrdIdx - 1) * m_Sequences.SfxElSize;
-				pSfxEls = (UINT8 *)m_Sequences.pSuffixArray;
+				pSfxEls = (uint8_t *)m_Sequences.pSuffixArray;
 
 				if(m_Sequences.SfxElSize == 4)
-					TargIdx = *(UINT32 *)&pSfxEls[TargEl];
+					TargIdx = *(uint32_t *)&pSfxEls[TargEl];
 				else
 					TargIdx = Unpack5(&pSfxEls[TargEl]);
 				pTarg =  &((tSeqWrd4 *)m_Sequences.pSeqs2Assemb)[TargIdx];
@@ -2650,14 +2650,14 @@ int									 // returns < 0 if errors, 1 if this is the first instance of the KM
 CArtefactReduce::AddReadKMer(etSeqBase *pKMerSeq)	// KMer bases, expected to be of at least length m_KMerSeqLen
 {
 
-UINT8 PackedSeqs[((cMaxKMerDistLen+3)/4)];	// to hold packed read bases of upto cMaxKMerDistLen in length
-UINT32 NxtSeqInst;
+uint8_t PackedSeqs[((cMaxKMerDistLen+3)/4)];	// to hold packed read bases of upto cMaxKMerDistLen in length
+uint32_t NxtSeqInst;
 size_t NxtSeqInstOfs;
 etSeqBase *pKMerBase;
-UINT8 *pPacked;
-UINT8 Packed;
-UINT32 KMerHash;
-UINT32 *pKMerWrd;
+uint8_t *pPacked;
+uint8_t Packed;
+uint32_t KMerHash;
+uint32_t *pKMerWrd;
 int Idx;
 tsKMerSeqInst *pKMerSeqInst;
 tsKMerSeqInst *pNewKMerSeq;
@@ -2694,9 +2694,9 @@ AcquireSerialise();
 if (m_NumKMerSeqHashes && (NxtSeqInst = m_pKMerSeqHashes[KMerHash]) != 0)		// seen at least one sequence previously with same hash?
 	{
 	do {
-		NxtSeqInstOfs = (size_t)((NxtSeqInst - 1) * (UINT64)m_KMerSeqInstSize);
-		pKMerSeqInst = (tsKMerSeqInst *)((UINT8 *)m_pKMerSeqs + NxtSeqInstOfs);
-		if((UINT32 *)pKMerSeqInst->PackedSeqs == (UINT32 *)PackedSeqs)	
+		NxtSeqInstOfs = (size_t)((NxtSeqInst - 1) * (uint64_t)m_KMerSeqInstSize);
+		pKMerSeqInst = (tsKMerSeqInst *)((uint8_t *)m_pKMerSeqs + NxtSeqInstOfs);
+		if((uint32_t *)pKMerSeqInst->PackedSeqs == (uint32_t *)PackedSeqs)	
 			{
 			if(!memcmp(pKMerSeqInst->PackedSeqs,PackedSeqs,(m_KMerSeqLen + 3) / 4))
 				{
@@ -2721,8 +2721,8 @@ if(m_UsedKMerSeqInsts >= cMaxKMerSeqInsts)
 if(m_AllocdKMerSeqInsts >= m_UsedKMerSeqInsts)
 	{
 	tsKMerSeqInst *pAllocd;
-	UINT32 ReallocInstsTo;
-	ReallocInstsTo = min((size_t)(UINT64)m_AllocdKMerSeqInsts+cReallocKMerSeqInsts,cMaxKMerSeqInsts);
+	uint32_t ReallocInstsTo;
+	ReallocInstsTo = min((size_t)(uint64_t)m_AllocdKMerSeqInsts+cReallocKMerSeqInsts,cMaxKMerSeqInsts);
 
 	size_t memreq = ReallocInstsTo * (size_t)m_KMerSeqInstSize;
 

@@ -35,7 +35,7 @@ typedef enum eStanzaType {
 	eTSTTypeDef,		// typedef stanza
 	eTSTInstance		// instance stanza
 	} teStanzaType;
-typedef UINT8 tStanzaType;
+typedef uint8_t tStanzaType;
 
 // stanza tag enumerations
 typedef enum eStanzaTags {
@@ -101,7 +101,7 @@ typedef enum eStanzaTags {
 // end of accepted tags in .obo files
 	eTSTEndMarker			//used to flag the number of enums
 } teStanzaTags;
-typedef UINT8 tStanzaTag;
+typedef uint8_t tStanzaTag;
 
 typedef enum eTSTValueTypes {
 	eTSTValNone,				// no value to parse
@@ -112,7 +112,7 @@ typedef enum eTSTValueTypes {
 	eTSTBool,					// boolean, e.g true, false, 1, 0
 	eTSTText					// catchall general text which may be quoted/unquoted
 } teTSTValueType;
-typedef UINT8 tTSTValueType;
+typedef uint8_t tTSTValueType;
 
 typedef enum eTSTError {
 	eTSTErrNone,				// no error
@@ -127,7 +127,7 @@ typedef enum eTSTError {
 	eTSTErrDbxrefEnd,			// A dbxref list was found in an appropriate place, but no closing bracket was found
 	eTSTErrGenErr				// catchall error
 } etTSTError;
-typedef UINT8 tTSTError;
+typedef uint8_t tTSTError;
 
 #pragma pack(1)
 
@@ -136,7 +136,7 @@ typedef UINT8 tTSTError;
 // thus size needs to be independent
 typedef union uGOIntPtr {
 	int Idx;
-	INT64 Pad64;				// simply to ensure that ptr can be either 32 or 64bit so sizeof(tuGOIntPtr) is constant
+	int64_t Pad64;				// simply to ensure that ptr can be either 32 or 64bit so sizeof(tuGOIntPtr) is constant
 	void *ptr;
 	} tuGOIntPtr;
 
@@ -163,40 +163,40 @@ typedef struct TAG_sStanzaType {
 
 // GO element identifiers are maintained as a linear list
 typedef struct TAG_sGOID {
-	UINT16 Len;	// strlen(Txt)
-	UINT16 Hash;		// hash over element text to quickly determine if element could match a probe element
+	uint16_t Len;	// strlen(Txt)
+	uint16_t Hash;		// hash over element text to quickly determine if element could match a probe element
 	char Txt[1];			// element text placeholder, text to be '\0' terminated
 } tsGOID;
 
 // GO tag values are maintained as a linear list
 typedef struct TAG_sGOTagVal {
-	UINT16 Len;			// strlen(Txt)
-	UINT16 Hash;		// hash over tag value text to quickly determine if text could match a probe text
+	uint16_t Len;			// strlen(Txt)
+	uint16_t Hash;		// hash over tag value text to quickly determine if text could match a probe text
 	tStanzaTag Tag;		// tag
 	char Val[1];		// tag value text placeholder, text to be '\0' terminated
 } tsGOTagVal;
 
 typedef struct TAG_sGOTerm {
 	tuGOIntPtr TermGOID;		// GO:Ident
-	UINT32 GOTermID;			// uniquely identifies this term instance (1..n)
-	INT32 TermNameIdx;			// GO term name
-	INT32 TermDefIdx;				// GO term definition
-	INT32 ReplacedByIdx;			// GO term replacement GO:Ident
-	INT32 GOSupTermIdx;			// GO:term superceding identifier
-	INT32 GOAltTermsIdx;			// list of GO:term alternative identifiers
-	INT32 GOParentIDsIdx;			// list of IsA GO:Idents
-	INT32 GOPartOfIDsIdx;			// list of part_of GO:Idents (treated as if parents) 
-	INT32 GOChildIDsIdx;			// list of child GO:Idents 
-	INT32 GOTermCntsIdx;			// associated counts for this term or 0 if no counts
+	uint32_t GOTermID;			// uniquely identifies this term instance (1..n)
+	int32_t TermNameIdx;			// GO term name
+	int32_t TermDefIdx;				// GO term definition
+	int32_t ReplacedByIdx;			// GO term replacement GO:Ident
+	int32_t GOSupTermIdx;			// GO:term superceding identifier
+	int32_t GOAltTermsIdx;			// list of GO:term alternative identifiers
+	int32_t GOParentIDsIdx;			// list of IsA GO:Idents
+	int32_t GOPartOfIDsIdx;			// list of part_of GO:Idents (treated as if parents) 
+	int32_t GOChildIDsIdx;			// list of child GO:Idents 
+	int32_t GOTermCntsIdx;			// associated counts for this term or 0 if no counts
 
-	UINT16 NumParents;  // number of parents to this term as a child (GOParentIDs) 
-	UINT16 NumPartOfs; // number of part_of identifiers for this term (treated as if parents)
-	UINT16 NumChildren; // number of children to this term as a parent (GOChildIDs)
-	UINT16 NumAltTermIDs; // number of alternative identifiers for this term
+	uint16_t NumParents;  // number of parents to this term as a child (GOParentIDs) 
+	uint16_t NumPartOfs; // number of part_of identifiers for this term (treated as if parents)
+	uint16_t NumChildren; // number of children to this term as a parent (GOChildIDs)
+	uint16_t NumAltTermIDs; // number of alternative identifiers for this term
 
-	UINT8 RootOntology;	// to which root class (etOntologies) this term belongs 
-	UINT8 bIsObsolete:1;     // if set then this term is obsolete and the ReplacedByIdx term should be used
-	UINT8 bNoClass:1;		  // if set then term is classless - currently just bIsObsolete
+	uint8_t RootOntology;	// to which root class (etOntologies) this term belongs 
+	uint8_t bIsObsolete:1;     // if set then this term is obsolete and the ReplacedByIdx term should be used
+	uint8_t bNoClass:1;		  // if set then term is classless - currently just bIsObsolete
 	} tsGOTerm;
 
 typedef struct TAG_sGOTermCnts {
@@ -210,56 +210,56 @@ typedef struct TAG_sGOTermCnts {
 	unsigned int BkgdCnt;			// background counts 
 	unsigned int NumSampleGenes;	// number of sample genes
 	unsigned int SampleCnt;			// sample counts
-	unsigned char RootOntology;		// to which root class (etOntologies) this term count belongs 
+	uint8_t RootOntology;		// to which root class (etOntologies) this term count belongs 
 } tsGOTermCnts;
 #pragma pack()
 
 #pragma pack(8)
 typedef struct TAG_sGOTermsFileHdr {
-	unsigned char Magic[4];				// magic chars to identify this file as a biosequence file
-	UINT64 FileLen;						// current file length
-	INT64 GOTagValOfs;					// file offset to GO tag values
-	INT64 ChildGOIDsOfs;				// file offset to GO child references
-	INT64 ParentGOIDsOfs;				// file offset to GO parent references
-	INT64 AltGOIDsOfs;					// file offset to GO alternative references
-	INT64 GOTermOfs;					// file offset to GO terms
-	INT64 GOIDOfs;						// file offset to GO identifiers
+	uint8_t Magic[4];				// magic chars to identify this file as a biosequence file
+	uint64_t FileLen;						// current file length
+	int64_t GOTagValOfs;					// file offset to GO tag values
+	int64_t ChildGOIDsOfs;				// file offset to GO child references
+	int64_t ParentGOIDsOfs;				// file offset to GO parent references
+	int64_t AltGOIDsOfs;					// file offset to GO alternative references
+	int64_t GOTermOfs;					// file offset to GO terms
+	int64_t GOIDOfs;						// file offset to GO identifiers
 
-	INT32 Type;							// GOTerm file type 
-	INT32 Version;						// header version, incremented if structure changes with later releases
-	INT32 SizeOfHdr;					// total size of this header
+	int32_t Type;							// GOTerm file type 
+	int32_t Version;						// header version, incremented if structure changes with later releases
+	int32_t SizeOfHdr;					// total size of this header
 
-	INT32 CellTermID;					// identifies root cellular component term
-	INT32 BioTermID;					// identifies root biological process term 
-	INT32 MolTermID;					// identifies root molecular function term
+	int32_t CellTermID;					// identifies root cellular component term
+	int32_t BioTermID;					// identifies root biological process term 
+	int32_t MolTermID;					// identifies root molecular function term
 
-	INT32 POAnatomicalID;				// identifies plant plant anatomical entity term  (currently PO:0025131 as at June 2012)
-	INT32 POdevID;						// identified plant structure growth term (currently PO:0009012  as at June 2012)
+	int32_t POAnatomicalID;				// identifies plant plant anatomical entity term  (currently PO:0025131 as at June 2012)
+	int32_t POdevID;						// identified plant structure growth term (currently PO:0009012  as at June 2012)
 
-	INT32 GOIDcnt;						// number of GO identifiers
-	INT32 GOIDSize;						// size (bytes) on disk of GO identifiers
+	int32_t GOIDcnt;						// number of GO identifiers
+	int32_t GOIDSize;						// size (bytes) on disk of GO identifiers
 
-	INT32 GOTagValcnt;					// number of GO tag values
-	INT32 GOTagValSize;					// size (bytes) on disk of GO tag values
+	int32_t GOTagValcnt;					// number of GO tag values
+	int32_t GOTagValSize;					// size (bytes) on disk of GO tag values
 
-	INT32 ChildGOIDscnt;				// number of GO child references
-	INT32 ChildGOIDsSize;				// size (bytes) on disk of GO child references
+	int32_t ChildGOIDscnt;				// number of GO child references
+	int32_t ChildGOIDsSize;				// size (bytes) on disk of GO child references
 
-	INT32 ParentGOIDscnt;				// number of GO parent references
-	INT32 ParentGOIDsSize;				// size (bytes) on disk of GO parent references
+	int32_t ParentGOIDscnt;				// number of GO parent references
+	int32_t ParentGOIDsSize;				// size (bytes) on disk of GO parent references
 
-	INT32 AltGOIDscnt;					// number of GO alternative references
-	INT32 AltGOIDsSize;					// size (bytes) on disk of GO alternative references
+	int32_t AltGOIDscnt;					// number of GO alternative references
+	int32_t AltGOIDsSize;					// size (bytes) on disk of GO alternative references
 
-	INT32 GOCellTermcnt;				// number of terms classed as cellular
-	INT32 GOBioTermcnt;					// number of terms classed as biological
-	INT32 GOMolTermcnt;					// number of terms classed as molecular
+	int32_t GOCellTermcnt;				// number of terms classed as cellular
+	int32_t GOBioTermcnt;					// number of terms classed as biological
+	int32_t GOMolTermcnt;					// number of terms classed as molecular
 
-	INT32 POAnatomyTermCnt;				// number of terms classed as plant anatomical
-	INT32 PODevTermCnt;					// number of terms classed as plant structure developmental growth
+	int32_t POAnatomyTermCnt;				// number of terms classed as plant anatomical
+	int32_t PODevTermCnt;					// number of terms classed as plant structure developmental growth
 
-	INT32 GOTermcnt;					// number of GO terms
-	INT32 GOTermSize;					// size (bytes) on disk of GO terms
+	int32_t GOTermcnt;					// number of GO terms
+	int32_t GOTermSize;					// size (bytes) on disk of GO terms
 
 	char szDescription[cMBSFFileDescrLen];// describes contents of file
 	char szTitle[cMBSFShortFileDescrLen];	// short title by which this file can be distingished from other files in dropdown lists etc
@@ -302,17 +302,17 @@ class CGOTerms : protected CEndian, public CErrorCodes
 	int m_ChildGOIDscnt;			// currrent number of GOIDs in m_pGOChildIDs;
 	int m_NxtGOChildIDIdx;			// index into m_pGOChildIDs of where to write next child GOIDofs
 	int m_AllocdGOChildIDs;			// total memory (ints) currently allocated for m_pGOChildIDs
-	INT32 *m_pGOChildIDs;			// array of term child GOIDofs
+	int32_t *m_pGOChildIDs;			// array of term child GOIDofs
 
 	int m_ParentGOIDscnt;			// currrent number of GOIDs in m_pParentGOIDs;
 	int m_NxtGOParentIDIdx;			// index into m_pGOParentIDs of where to write next parent GOIDofs
 	int m_AllocdGOParentIDs;		// total memory (ints) currently allocated for m_pGOParentIDs
-	INT32 *m_pGOParentIDs;			// array of term parent GOIDofs
+	int32_t *m_pGOParentIDs;			// array of term parent GOIDofs
 
 	int m_AltGOIDscnt;				// currrent number of GOIDs in m_pAltGOIDs;
 	int m_NxtAltGOIDIdx;			// index into m_pAltGOIDs of where to write next alternative GOIDofs
 	int m_AllocdAltGOIDs;			// total memory (ints) currently allocated for m_pAltGOIDs
-	INT32 *m_pAltGOIDs;				// array of alternative GOIDofs
+	int32_t *m_pAltGOIDs;				// array of alternative GOIDofs
 
 	int m_CurOBOLineNum;			// line number in current OBO file being processed
 
@@ -322,7 +322,7 @@ class CGOTerms : protected CEndian, public CErrorCodes
 	tsGOTermCnts *m_pGOTermCnts;	// array of GOTermCnts
 
 	int m_CurUpdateSeq;				// current update sequence counter - incremented each time a new AddCount() call is made to track propagation of counts into parent terms
-	INT64 m_TotbBkgndLen;			// total of all backgound counts
+	int64_t m_TotbBkgndLen;			// total of all backgound counts
 
 
 	int	GetJoinedLine(char *pszRetLine,int MaxRetLineLen,FILE *pOBOstream);
@@ -357,7 +357,7 @@ class CGOTerms : protected CEndian, public CErrorCodes
 	void InitHdr(void);
 	teBSFrsltCodes Flush2Disk(void);
 	teBSFrsltCodes LoadTerms(void);
-	teBSFrsltCodes ReadDisk(INT64 DiskOfs,int Len,void *pTo);
+	teBSFrsltCodes ReadDisk(int64_t DiskOfs,int Len,void *pTo);
 	int GenBackRefs(void);
 	
 	void SwitchTermGOIDIDX2PTR(void);

@@ -7,7 +7,7 @@ const int cMaxDiNameLen = 80;   // truncating dinucleotide characteristic names 
 const int cMaxDiSupFieldsLen = 1023;   // truncating dinucleotide characteristic concatenated (comma separated) supplementary fields to be no longer than this length
 
 typedef struct TAG_stsDiStructParam {
-	UINT32 ID;					// uniquely identifies this structural characteristic, currently ranges from 1 to 125
+	uint32_t ID;					// uniquely identifies this structural characteristic, currently ranges from 1 to 125
 	char szName[cMaxDiNameLen+1];	// null terminated characteristic name
 	double DiValue[16];			// characteristic value for each dinucleotide from AA through  to TT
 	char szSupFields[cMaxDiSupFieldsLen+1];		// comma separated original supplementary fields in order of 'nucleicacid', 'strand', 'author', 'pubyear', 'reference', 'PMID', 'howcreated','type','scaleunit', 'description'

@@ -25,11 +25,11 @@ typedef enum TAG_eReadsSortMode {
 
 #pragma pack(1)
 typedef struct TAG_sAlignHit {
-	UINT32 AlignHitIdx;			// current read hit index + 1 for this read
+	uint32_t AlignHitIdx;			// current read hit index + 1 for this read
 	char szChromName[cMaxDatasetSpeciesChrom];	// identifies hit chromosome
-	UINT8 Strand;				// hit strand - '+' or '-'
-	UINT32 Loci;				// offset on chromosome of hit
-	UINT16 MatchLen;			// match length
+	uint8_t Strand;				// hit strand - '+' or '-'
+	uint32_t Loci;				// offset on chromosome of hit
+	uint16_t MatchLen;			// match length
 	etSeqBase Seq[8];			// will hold 4nt 5' to read start and 4nt 3' to read start
 } tsAlignHit;
 #pragma pack()
@@ -54,11 +54,11 @@ char gszProcName[_MAX_FNAME];			// process name
 const int cReadsInitalAlloc   = 10000000;						 // initial allocation to hold this many reads
 const int cReadsReAlloc = 5000000;	     // realloc allocation in this sized increments
 tsAlignHit *m_pAlignHits = NULL;	// memory allocated to hold reads, reads are written contiguously into this memory
-UINT32 m_AllocdAlignHits = 0;		// how instances of tsAlignHit have been allocated
-UINT32 m_NumAlignHits = 0;			// m_pAlignHits contains this many reads
+uint32_t m_AllocdAlignHits = 0;		// how instances of tsAlignHit have been allocated
+uint32_t m_NumAlignHits = 0;			// m_pAlignHits contains this many reads
 
 tsAlignHit **m_ppAlignHitsIdx = NULL;	// memory allocated to hold array of ptrs to read hits in m_pAlignHits - usually sorted by some critera
-UINT32 m_AllocdAlignHitsIdx = 0;		// how many elements for m_pAlignHitsIdx have been allocated
+uint32_t m_AllocdAlignHitsIdx = 0;		// how many elements for m_pAlignHitsIdx have been allocated
 etReadsSortMode	m_CurReadsSortMode;	    // sort mode last used on m_ppAlignHitsIdx
 
 CBioSeqFile *m_pBioseq;
@@ -663,7 +663,7 @@ while((ChromID = m_pBioseq->Next(ChromID))>0)
 			delete m_pSeq;
 			m_pSeq = NULL;
 			}
-		if((m_pSeq = new unsigned char [SeqLen+0x07fff])==NULL)
+		if((m_pSeq = new uint8_t [SeqLen+0x07fff])==NULL)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to alloc memory (%d requested) for holding raw sequence data",SeqLen+0x07fff);
 			Reset();

@@ -77,7 +77,7 @@ char chr, *pDst, *pSrc;
 
 if(m_pOctStructParams == NULL)
 	{	
-	m_pOctStructParams = (tsOctStructParam *) new UINT8[cOctStructParamAllocSize];
+	m_pOctStructParams = (tsOctStructParam *) new uint8_t[cOctStructParamAllocSize];
 	if(m_pOctStructParams == NULL)
 		{
 		AddErrMsg("CConformation::LoadStructParams","Unable to allocate memory to hold structural parameters");
@@ -217,7 +217,7 @@ char chr, *pDst, *pSrc;
 
 if(m_pDiStructParams == NULL)
 	{	
-	m_pDiStructParams = (tsDiStructParam *) new unsigned char[cDiStructParamAllocSize];
+	m_pDiStructParams = (tsDiStructParam *) new uint8_t[cDiStructParamAllocSize];
 	if(m_pDiStructParams == NULL)
 		{
 		AddErrMsg("CConformation::LoadStructDimersParams","Unable to allocate memory to hold structural parameters");
@@ -401,7 +401,7 @@ int ParamOfs;
 bool bContinue;
 bool bLeft;
 int Iters;
-INT64 InterpValue;
+int64_t InterpValue;
 bContinue = false;
 int	Cnt;
 int	OctOfs;
@@ -465,7 +465,7 @@ if(Step > 3 && Step < SeqLen - 3)
 	else
 		{
 		pStruct = &m_pOctStructParams[OctIdx];
-		return(*(int *)(((unsigned char *)pStruct)+ParamOfs));
+		return(*(int *)(((uint8_t *)pStruct)+ParamOfs));
 		}
 	}
 
@@ -526,7 +526,7 @@ for(Cnt = 0; Cnt < Iters; Cnt++)
 	if(OctIdx < 0)
 		return(UndefBaseValue);
 	pStruct = &m_pOctStructParams[OctIdx];
-	InterpValue += *(int *)(((unsigned char *)pStruct)+ParamOfs);;
+	InterpValue += *(int *)(((uint8_t *)pStruct)+ParamOfs);;
 
 	if(!bLeft)
 		{

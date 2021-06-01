@@ -30,7 +30,7 @@ const int cDfltTruncLength = 200;	    // default truncate length
 
 const int cMaxN50Length = 100000000;	// if N50 processing then can handle at most this length contigs
 const int cDfltN50Length = 100000000;	// if N50 processing then this is the default max length contig
-const UINT32 cAllocCtgLenDist = 10000000;	// allocate to hold this number of contig lengths for calc of N50 etc
+const uint32_t cAllocCtgLenDist = 10000000;	// allocate to hold this number of contig lengths for calc of N50 etc
 
 const int cMaxInFileSpecs = 50;			// allow at most this many input file specs
 
@@ -46,14 +46,14 @@ class CFastaNxx
 	int m_NumContigLens;				// current number of contig lengths in m_pContigLengths
 	size_t m_AllocdCtgLens;				// memory size currently alloc'd to m_pContigLengths 
 	int *m_pContigLengths;				// used to hold contig lengths for N50 and other stats generation 
-	INT64 m_TotLenCovered;				// sum of all contig lengths
-	UINT32 m_BaseCnts[6];				// total counts for each base including 'N's
-	UINT32 m_DistBaseCnts[6][cMaxFastQSeqLen]; // distribution of base counts along reads
-	UINT32 m_SeqNsCnts[cMaxFastQSeqLen]; // distribution of number of 'N's over all reads 
-	UINT32 *m_pDimerCnts;					// counts of all dimers
-	UINT32 *m_pTrimerCnts;				// counts of all trimers
-	UINT32 *m_pTetramerCnts;			// counts of all tetramers
-	UINT32 *m_pBins;					// bin counts
+	int64_t m_TotLenCovered;				// sum of all contig lengths
+	uint32_t m_BaseCnts[6];				// total counts for each base including 'N's
+	uint32_t m_DistBaseCnts[6][cMaxFastQSeqLen]; // distribution of base counts along reads
+	uint32_t m_SeqNsCnts[cMaxFastQSeqLen]; // distribution of number of 'N's over all reads 
+	uint32_t *m_pDimerCnts;					// counts of all dimers
+	uint32_t *m_pTrimerCnts;				// counts of all trimers
+	uint32_t *m_pTetramerCnts;			// counts of all tetramers
+	uint32_t *m_pBins;					// bin counts
 	int m_MaxLengthRead;
 	CMTqsort m_MTqsort;					// use this instance for sorts
 	static int SortByContigLen(const void *arg1, const void *arg2); // compare length function used by m_MTqsort

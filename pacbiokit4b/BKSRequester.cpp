@@ -290,9 +290,9 @@ pthread_exit(NULL);
 bool				// false if unable to begin thread execution or if executing thread took too long (default 3min) to initialise ready to accept connections
 CBKSRequester::Run(int Secs)	// expecting thread to take at most this many seconds to start and initialise ready to accept connections
 {
-UINT32 MaxWait;
-UINT32 ThreadActive;
-UINT32 Started;
+uint32_t MaxWait;
+uint32_t ThreadActive;
+uint32_t Started;
 
 tsRequesterThread *pThreadPar;
 m_ThreadActive = 0;
@@ -400,24 +400,24 @@ __sync_fetch_and_add(&m_ThreadActive,1);
 return(AcceptConnections());
 }
 
-const UINT32 cMinJobWaitSecs = 15;				// job wait times (secs) will be clamped to be within
-const UINT32 cMaxJobWaitSecs = (60*60*24);		// this range - 1 day should be long enough :-)
-const UINT32 cMaxParamsLen = 8192;				// job parameters can be at most this many bytes long
+const uint32_t cMinJobWaitSecs = 15;				// job wait times (secs) will be clamped to be within
+const uint32_t cMaxJobWaitSecs = (60*60*24);		// this range - 1 day should be long enough :-)
+const uint32_t cMaxParamsLen = 8192;				// job parameters can be at most this many bytes long
 
-UINT32											// returned request identifier or 0 if all identifiers have already been allocated
+uint32_t											// returned request identifier or 0 if all identifiers have already been allocated
 CBKSRequester::AllocReqID(void)					// returns next available unused request identifier and sets that identifier as allocated
 {
 int ReqID;
-UINT8 *pByte;
-UINT8 Msk;
-UINT32 *pVect;
+uint8_t *pByte;
+uint8_t Msk;
+uint32_t *pVect;
 
 pVect = m_ReqIDVect;
 for(ReqID = 1; ReqID <= cMaxReqID; ReqID+=32,pVect+=1 )
 	{
 	if(*pVect == 0x0ffffffff)
 		continue;
-	pByte = (UINT8 *)pVect;
+	pByte = (uint8_t *)pVect;
 	while(*pByte == 0x0ff)
 		{
 		ReqID += 8;
@@ -436,11 +436,11 @@ return(0);
 }
 
 bool				// true if ReqID was previously allocated (used), false if previously unallocated (unused)
-CBKSRequester::UnallocReqID(UINT32 ReqID)   // sets the ReqID in m_ReqIDVect as unallocated and available to be reused
+CBKSRequester::UnallocReqID(uint32_t ReqID)   // sets the ReqID in m_ReqIDVect as unallocated and available to be reused
 {
 bool bAllocd;
-UINT32 *pVect;
-UINT32 Msk;
+uint32_t *pVect;
+uint32_t Msk;
 if(ReqID == 0 || ReqID > cMaxReqID)
 	return(false);
 pVect = &m_ReqIDVect[(ReqID-1)/32];
@@ -451,10 +451,10 @@ return(bAllocd);
 }
 
 bool				// true if ReqID is currently allocated (used), false if unallocated (unused)
-CBKSRequester::IsAllocReqID(UINT32 ReqID)   // checking this ReqID in m_ReqIDVect
+CBKSRequester::IsAllocReqID(uint32_t ReqID)   // checking this ReqID in m_ReqIDVect
 {
-UINT32 *pVect;
-UINT32 Msk;
+uint32_t *pVect;
+uint32_t Msk;
 if (ReqID == 0 || ReqID > cMaxReqID)
 	return(false);
 pVect = &m_ReqIDVect[(ReqID - 1) / 32];
@@ -463,20 +463,20 @@ return(*pVect & Msk ? true : false);
 }
 
 
-UINT32											// returned session identifier or 0 if all identifiers have already been allocated
+uint32_t											// returned session identifier or 0 if all identifiers have already been allocated
 CBKSRequester::AllocSessionID(void)					// returns next available unused session identifier and sets that identifier in m_SessionIDVect as allocated
 {
 int SessionID;
-UINT8 *pByte;
-UINT8 Msk;
-UINT32 *pVect;
+uint8_t *pByte;
+uint8_t Msk;
+uint32_t *pVect;
 
 pVect = m_SessionIDVect;
 for (SessionID = 1; SessionID <= cMaxConcurrentSessions; SessionID += 32, pVect += 1)
 	{
 	if (*pVect == 0x0ffffffff)
 		continue;
-	pByte = (UINT8 *)pVect;
+	pByte = (uint8_t *)pVect;
 	while (*pByte == 0x0ff)
 		{
 		SessionID += 8;
@@ -495,11 +495,11 @@ return(0);
 }
 
 bool				// true if SessionID was previously allocated (used), false if previously unallocated (unused)
-CBKSRequester::UnallocSessionID(UINT32 SessionID)   // sets the SessionID in m_SessionIDVect as unallocated and available to be reused
+CBKSRequester::UnallocSessionID(uint32_t SessionID)   // sets the SessionID in m_SessionIDVect as unallocated and available to be reused
 {
 bool bAllocd;
-UINT32 *pVect;
-UINT32 Msk;
+uint32_t *pVect;
+uint32_t Msk;
 if (SessionID == 0 || SessionID > cMaxConcurrentSessions)
 	return(false);
 pVect = &m_SessionIDVect[(SessionID - 1) / 32];
@@ -510,10 +510,10 @@ return(bAllocd);
 }
 
 bool				// true if SessionID is currently allocated (used), false if unallocated (unused)
-CBKSRequester::IsAllocSessionID(UINT32 SessionID)   // checking this SessionID in m_SessionIDVect
+CBKSRequester::IsAllocSessionID(uint32_t SessionID)   // checking this SessionID in m_SessionIDVect
 {
-UINT32 *pVect;
-UINT32 Msk;
+uint32_t *pVect;
+uint32_t Msk;
 if (SessionID == 0 || SessionID > cMaxConcurrentSessions)
 	return(false);
 pVect = &m_SessionIDVect[(SessionID - 1) / 32];
@@ -523,11 +523,11 @@ return(*pVect & Msk ? true : false);
 
 
 tJobIDEx										// packed job identifier or 0 if range errors
-CBKSRequester::PackIntoJobIDEx(UINT32 ReqID,	// must be in the range 1..16777215 (24bits)
-				UINT32 SessionID,				// service provider session identifier, must be in the range 1..511 (9bits)
-				UINT32 InstanceID,				// service instance in the service providers session SessionID, must be in the range 1..511 (9bits)
-				UINT32 TypeID,					// identifies service being provided by the service provider, must be in the range 1..15 (4bits)
-				UINT32 TypeSessionID)			// index of this session in the service type, must be in the range 1..511 (9bits)
+CBKSRequester::PackIntoJobIDEx(uint32_t ReqID,	// must be in the range 1..16777215 (24bits)
+				uint32_t SessionID,				// service provider session identifier, must be in the range 1..511 (9bits)
+				uint32_t InstanceID,				// service instance in the service providers session SessionID, must be in the range 1..511 (9bits)
+				uint32_t TypeID,					// identifies service being provided by the service provider, must be in the range 1..15 (4bits)
+				uint32_t TypeSessionID)			// index of this session in the service type, must be in the range 1..511 (9bits)
 {
 tJobIDEx JobIDEx;
 
@@ -560,21 +560,21 @@ return(JobIDEx);
 
 bool				// false if any range errors whilst unpacking
 CBKSRequester::UnpackFromJobIDEx(tJobIDEx JobIDEx,				// unpack from this extended job identifier
-				UINT32 *pReqID,				    // returned ReqID, will be in the range 1..16777215
-				UINT32 *pSessionID,				// returned SessionID, will be in the range 1..131071
-				UINT32 *pInstanceID,			// returned InstanceID, will be in the range 1..511
-				UINT32 *pTypeID,				// returned service TypeID, will be in the range 1..15
-				UINT32 *pTypeSessionID)			// returned index of this session in the service type, will be in the range 1..511
+				uint32_t *pReqID,				    // returned ReqID, will be in the range 1..16777215
+				uint32_t *pSessionID,				// returned SessionID, will be in the range 1..131071
+				uint32_t *pInstanceID,			// returned InstanceID, will be in the range 1..511
+				uint32_t *pTypeID,				// returned service TypeID, will be in the range 1..15
+				uint32_t *pTypeSessionID)			// returned index of this session in the service type, will be in the range 1..511
 {
 tJobIDEx OrigJobIDEx;
-UINT32 ReqID;
-UINT32 SessionID;
-UINT32 InstanceID;
-UINT32 TypeID;
-UINT32 TypeSessionID;
+uint32_t ReqID;
+uint32_t SessionID;
+uint32_t InstanceID;
+uint32_t TypeID;
+uint32_t TypeSessionID;
 tsBKSType *pType;
 tsBKSRegSessionEx *pSession;
-UINT32 ReqRespInstOfs;
+uint32_t ReqRespInstOfs;
 tsReqRespInst *pReqRespInst;
 
 if(pReqID != NULL)
@@ -646,13 +646,13 @@ return(true);
 
 int												// total number of classes 
 CBKSRequester::GetNumClassInstances(teBKSPType TypeID,		// service required
-						UINT32 *pCommited,			// returned number of class instances currently committed or instantiated 
-						UINT32 *pUncommited)    // returned number of class instances currently not committed and available to be instantiated
+						uint32_t *pCommited,			// returned number of class instances currently committed or instantiated 
+						uint32_t *pUncommited)    // returned number of class instances currently not committed and available to be instantiated
 {
 tsBKSType *pType;
 tsBKSRegSessionEx *pSession;
-UINT32 NumCommited;
-UINT32 NumUncommited;
+uint32_t NumCommited;
+uint32_t NumUncommited;
 if(pCommited != NULL)
 	*pCommited = 0;
 if(pUncommited != NULL)
@@ -692,27 +692,27 @@ return(NumCommited + NumUncommited);
 int				// -2: parameter errors, -1: class instance no longer exists, 0: currently no available service instance 1: if job accepted
 CBKSRequester::AddJobRequest(tJobIDEx *pJobID,	// returned unique job identifier by which job can later be referenced
 						teBKSPType TypeID,		// service required
-						UINT64 ClassInstanceID,	// class instance on which job method is to be applied - can be 0 if no pre-existing class
-						UINT32 ClassMethodID,	// class method to apply on the class instance
-						UINT32 ParamsSize,		// processing parameters are this total size in bytes
+						uint64_t ClassInstanceID,	// class instance on which job method is to be applied - can be 0 if no pre-existing class
+						uint32_t ClassMethodID,	// class method to apply on the class instance
+						uint32_t ParamsSize,		// processing parameters are this total size in bytes
 						void *pParams,			// service processing parameters
-						UINT32 InDataSize,		// service processing input data is this total size in bytes
+						uint32_t InDataSize,		// service processing input data is this total size in bytes
 						void *pInData,			// service processing input data
-						UINT32 SessionID)		// if 0 then use session as specified by ClassInstanceID, otherwise use session corresponding to specific session identifier
+						uint32_t SessionID)		// if 0 then use session as specified by ClassInstanceID, otherwise use session corresponding to specific session identifier
 {
 tsBKSType *pType;
-UINT32 ReqRespInstIdx;
+uint32_t ReqRespInstIdx;
 tsReqRespInst *pReqRespInst;
 tsBKSRegSessionEx *pSession;
 tsBKSRegSessionEx *pLeastBusy;
 double LeastBusy;
 double CurBusy;
-UINT32 Idx;
-UINT32 ReqID;
-UINT32 JobSessionID;
-UINT32 InstanceID;
-UINT64 *pClassIdentifier;
-UINT32 TypeSessionID;
+uint32_t Idx;
+uint32_t ReqID;
+uint32_t JobSessionID;
+uint32_t InstanceID;
+uint64_t *pClassIdentifier;
+uint32_t TypeSessionID;
 
 // validate parameters
 if(pJobID == NULL || TypeID <= eBKSPTUndefined || TypeID >= eBKSPTPlaceHolder)
@@ -780,7 +780,7 @@ if(ClassInstanceID == 0)		// no pre-existing class instance if 0
 	}
 else   // method is on an already instantiated class 
 	{
-	JobSessionID = (UINT32)((UINT64)ClassInstanceID >> 53);
+	JobSessionID = (uint32_t)((uint64_t)ClassInstanceID >> 53);
 	if(SessionID != 0 && SessionID != JobSessionID)
 		{
 		ReleaseLock(true);
@@ -830,7 +830,7 @@ for(InstanceID = 1; InstanceID <= pSession->Session.MaxInstances; InstanceID++)
 		if(InDataSize > 0)
 			memcpy(&pReqRespInst->Data[ParamsSize], pInData, InDataSize);
 		pReqRespInst->FlgReq = 1;
-		pReqRespInst->SubmitAt = (UINT32)time(NULL);
+		pReqRespInst->SubmitAt = (uint32_t)time(NULL);
 		pSession->Session.NumReqs += 1;
 		pSession->Session.NumBusy += 1;
 		pType->FlgReq = 1;
@@ -843,7 +843,7 @@ for(InstanceID = 1; InstanceID <= pSession->Session.MaxInstances; InstanceID++)
 		ReleaseLock(true);
 		return(1);
 		}
-	pReqRespInst = (tsReqRespInst *)((UINT8 *)pReqRespInst + pType->ReqRespInstSize);
+	pReqRespInst = (tsReqRespInst *)((uint8_t *)pReqRespInst + pType->ReqRespInstSize);
 	}
 ReleaseLock(true);
 return(0);		// currently no service provider capacity to accept request
@@ -853,10 +853,10 @@ int
 CBKSRequester::SendRequestFrames(void)			// iterate all sessions and if any frames ready to send and room to accept the frame in TxdBuff then initiate the sending
 {
 int Idx;
-UINT32 TxFrameID;
-UINT32 FrameLen;
+uint32_t TxFrameID;
+uint32_t FrameLen;
 tsBKSType *pType;
-UINT32 ReqRespInstIdx;
+uint32_t ReqRespInstIdx;
 tsReqRespInst *pReqRespInst;
 tsBKSRegSessionEx *pSession;
 tsTxdRxd *pTxdRxd;
@@ -875,7 +875,7 @@ for (Idx = 0; Idx < eBKSPTPlaceHolder-1; Idx++, pType += 1)
 		pTxdRxd = &pSession->TxdRxd;
 		
 		pReqRespInst = (tsReqRespInst *)&pSession->pReqResp[(pSession->LastChkdReqIdx * pType->ReqRespInstSize)];
-		for(ReqRespInstIdx = pSession->LastChkdReqIdx; ReqRespInstIdx < pSession->Session.MaxInstances; ReqRespInstIdx++, pReqRespInst = (tsReqRespInst *)((UINT8 *)pReqRespInst + pType->ReqRespInstSize))
+		for(ReqRespInstIdx = pSession->LastChkdReqIdx; ReqRespInstIdx < pSession->Session.MaxInstances; ReqRespInstIdx++, pReqRespInst = (tsReqRespInst *)((uint8_t *)pReqRespInst + pType->ReqRespInstSize))
 			{
 			if(pSession->Session.NumReqs == 0)
 				{
@@ -945,19 +945,19 @@ return(0);
 int   // 0: accepted frame, -1: JobIDEx errors, -2 Session or type errors, -3 mismatch between instance JobIDEx's, ClassInstanceID mismatch
 CBKSRequester::ProcessResponseFrame(tsBKSRegSessionEx *pSession)	// process a received response frame
 {
-UINT32 Diff;
-UINT32 ReqID;
-UINT32 SessionID;
-UINT32 InstanceID;
-UINT32 TypeID;
-UINT32 TypeSessionID;
-UINT32 InstanceOfs;
+uint32_t Diff;
+uint32_t ReqID;
+uint32_t SessionID;
+uint32_t InstanceID;
+uint32_t TypeID;
+uint32_t TypeSessionID;
+uint32_t InstanceOfs;
 tsBKSType *pType;
 tsTxdRxd *pTxdRxd;
 tsReqRespInst *pInstance;
 sBKSServResp *pResponse;
-UINT32 Idx;
-UINT64 *pClassIdentifier;
+uint32_t Idx;
+uint64_t *pClassIdentifier;
 
 pTxdRxd = &pSession->TxdRxd;
 pResponse = (sBKSServResp *)pTxdRxd->pRxdBuff;
@@ -973,7 +973,7 @@ pInstance = (tsReqRespInst *)&pSession->pReqResp[InstanceOfs];
 if(pInstance->JobIDEx != pResponse->JobIDEx || !pInstance->FlgProc)
 	return(-3);
 
-pInstance->CpltdAt = (UINT32)time(NULL);
+pInstance->CpltdAt = (uint32_t)time(NULL);
 pInstance->JobRslt = pResponse->JobRslt;
 if(pResponse->ClassInstanceID != 0)
 	{
@@ -1007,7 +1007,7 @@ else // class instance identifier was 0, if request specified a class identifier
 		if(Idx != pSession->NumClassInstances)
 			{
 			if(Idx < pSession->NumClassInstances-1)
-				memmove(pClassIdentifier,&pClassIdentifier[1],(pSession->NumClassInstances-Idx - 1)*sizeof(UINT64));
+				memmove(pClassIdentifier,&pClassIdentifier[1],(pSession->NumClassInstances-Idx - 1)*sizeof(uint64_t));
 			pSession->NumClassInstances -= 1;
 			}
 		}
@@ -1041,24 +1041,24 @@ return(0);
 
 int				// < 0 if job no longer exists, 0 if job still being processed, > 0 if job completed
 CBKSRequester::GetJobResponse(tJobIDEx	JobID,	// unique job identifier returned when job was originally submitted
-				  UINT64 *pClassInstanceID,		// returned class instance on which job method was applied
-				  UINT32 *pClassMethodID,		// returned class method applied
-				   UINT32 *pJobRslt,		// job processing result as returned by service provider
-				   UINT32 *pOutDataSize,	// (IN) service processing output results expected to be at most this total length, [OUT] bytes of response data copied into pOutData 
+				  uint64_t *pClassInstanceID,		// returned class instance on which job method was applied
+				  uint32_t *pClassMethodID,		// returned class method applied
+				   uint32_t *pJobRslt,		// job processing result as returned by service provider
+				   uint32_t *pOutDataSize,	// (IN) service processing output results expected to be at most this total length, [OUT] bytes of response data copied into pOutData 
 				   void *pOutData,			// service processing output results data
 				   bool bRetain)		    // true if job response is to be retained and not deleted; subsequent call with bRetain==false will delete this response
 {
 tsBKSType *pType;
-UINT32 TypeID;
-UINT32 ReqID;
-UINT32 SessionID;
-UINT32 InstanceID;
-UINT32 TypeSessionID;
-UINT32 TotRespsAvail;
+uint32_t TypeID;
+uint32_t ReqID;
+uint32_t SessionID;
+uint32_t InstanceID;
+uint32_t TypeSessionID;
+uint32_t TotRespsAvail;
 tsBKSRegSessionEx *pSession;
 tsReqRespInst *pReqRespInst;
-UINT32 ReqRespInstOfs;
-UINT32 CpySize;
+uint32_t ReqRespInstOfs;
+uint32_t CpySize;
 
 if(JobID < 1)					// job identifier must be supplied and it must be valid
 	return(-1);
@@ -1164,7 +1164,7 @@ return(0);
 int
 CBKSRequester::TerminateAllSessions(void)
 {
-UINT32 Idx;
+uint32_t Idx;
 
 tsTxdRxd *pTxdRxd;
 tsBKSType *pType;
@@ -1351,7 +1351,7 @@ tsBKSRegSessionEx *pSession;
 tsBKSRegSessionEx *pNext;
 tsBKSRegSessionEx *pPrev;
 tsReqRespInst *pInstance;
-UINT32 InstanceID;
+uint32_t InstanceID;
 
 NumDeleted = 0;
 if (m_NumSessions)
@@ -1409,7 +1409,7 @@ if (m_NumSessions)
 								{
 								if(pInstance->ReqID > 0)
 									UnallocReqID(pInstance->ReqID);
-								pInstance = (tsReqRespInst *)((UINT8 *)pInstance + pType->ReqRespInstSize);
+								pInstance = (tsReqRespInst *)((uint8_t *)pInstance + pType->ReqRespInstSize);
 								}
 							free(pSession->pReqResp);
 							}
@@ -1466,18 +1466,18 @@ return(eBSFSuccess);
 
 int					// returns total number of registered service types or teBSFrsltCodes error code if any parameterisation errors or already registered type
 CBKSRequester::RegServiceType(teBKSPType BKSPType,			// registering this service type
-							  UINT32 MinProviderVersion,	// service provider version must be at least this software version
-							  UINT32 MaxProviderVersion,	// service provider version must be no more than this software version
-							  UINT32 KeepaliveSecs,			// expecting packet activity from session peer with periodicity of no more than this number of seconds
-							  UINT32 MaxSessions,			// allowing at most this many concurrent sessions of specified service type
-							  UINT32 MinServiceInsts,		// any session to support at least this minimum number of service instances
-							  UINT32 MaxServiceInsts,		// limit any session to support a maximum of this many service instances
-							  UINT32 MaxProcSecs,           // expecting any service provider to take no more than this number of seconds to complete processing a given request
-							  UINT32 MaxParamLen,			// service job parameters can be up to this length
-							  UINT32 MaxQuerySeqLen,		// query sequences can be up to this length
-							  UINT32 MaxTargSeqLen,			// target sequences can be up to this length
-							  UINT32 MaxReqPayloadSize,		// request payloads to the service provider, including framing, can be up to this size (UINT8s)
-							  UINT32 MaxRespPayloadSize)	// response payloads from the service provider, including framing, can be up to this  size (UINT8s)
+							  uint32_t MinProviderVersion,	// service provider version must be at least this software version
+							  uint32_t MaxProviderVersion,	// service provider version must be no more than this software version
+							  uint32_t KeepaliveSecs,			// expecting packet activity from session peer with periodicity of no more than this number of seconds
+							  uint32_t MaxSessions,			// allowing at most this many concurrent sessions of specified service type
+							  uint32_t MinServiceInsts,		// any session to support at least this minimum number of service instances
+							  uint32_t MaxServiceInsts,		// limit any session to support a maximum of this many service instances
+							  uint32_t MaxProcSecs,           // expecting any service provider to take no more than this number of seconds to complete processing a given request
+							  uint32_t MaxParamLen,			// service job parameters can be up to this length
+							  uint32_t MaxQuerySeqLen,		// query sequences can be up to this length
+							  uint32_t MaxTargSeqLen,			// target sequences can be up to this length
+							  uint32_t MaxReqPayloadSize,		// request payloads to the service provider, including framing, can be up to this size (UINT8s)
+							  uint32_t MaxRespPayloadSize)	// response payloads from the service provider, including framing, can be up to this  size (UINT8s)
 
 {
 tsBKSType *pType;
@@ -1520,7 +1520,7 @@ pType->Detail.MaxTargSeqLen = MaxTargSeqLen;
 pType->Detail.MaxReqPayloadSize = MaxReqPayloadSize;
 pType->Detail.MaxRespPayloadSize = MaxRespPayloadSize;
 pType->MaxSessions = MaxSessions;
-pType->ReqRespInstSize = (UINT32)sizeof(tsReqRespInst) + max(MaxReqPayloadSize,MaxRespPayloadSize);
+pType->ReqRespInstSize = (uint32_t)sizeof(tsReqRespInst) + max(MaxReqPayloadSize,MaxRespPayloadSize);
 pType->pFirstSession = NULL;
 m_NumInitTypes += 1;
 NumInitTypes = m_NumInitTypes;
@@ -1542,10 +1542,10 @@ tsBKSOfferedService *pOfferService;
 tsBKSAcceptService *pAcceptService;
 teBKSPType Type;
 tsBKSType *pBKSType;
-UINT32 ServiceInsts;
-UINT32 ClassInsts;
-UINT32 Idx;
-UINT32 Diff;
+uint32_t ServiceInsts;
+uint32_t ClassInsts;
+uint32_t Idx;
+uint32_t Diff;
 
 if(pSessEstab == NULL || pSessEstab->SEState == eSESnone ||
 #ifdef WIN32
@@ -1698,9 +1698,9 @@ bool
 CBKSRequester::AcceptFullSession(tsBKSSessEstab *pSessEstab) // accepting session being established as full session ready for normal payload request/responses
 {
 tsBKSType *pType;
-UINT32 NumSessions;
+uint32_t NumSessions;
 tsBKSRegSessionEx *pSession;
-UINT32 TypeSessionID;
+uint32_t TypeSessionID;
 
 if((pSession = (tsBKSRegSessionEx *)malloc(sizeof(tsBKSRegSessionEx)))==NULL)
 	return(false);
@@ -1723,22 +1723,22 @@ size_t MemReq;
 pSession->Session.MaxInstances = pSessEstab->MaxInstances;
 pSession->Session.MaxClassInstances = pSessEstab->MaxClassInstances;
 MemReq = pType->Detail.MaxRespPayloadSize * 2;			// buffering up to 2 responses to try and hide some potential network latency
-if ((pSession->TxdRxd.pRxdBuff = (UINT8 *)malloc(MemReq)) == NULL)
+if ((pSession->TxdRxd.pRxdBuff = (uint8_t *)malloc(MemReq)) == NULL)
 	return(false);
 
-pSession->TxdRxd.AllocdRxdBuff = (UINT32)MemReq;
+pSession->TxdRxd.AllocdRxdBuff = (uint32_t)MemReq;
 
 MemReq = pType->Detail.MaxReqPayloadSize * 2;			// buffering 2 requests to try and hide any potential network latency
-if ((pSession->TxdRxd.pTxdBuff = (UINT8 *)malloc(MemReq)) == NULL)
+if ((pSession->TxdRxd.pTxdBuff = (uint8_t *)malloc(MemReq)) == NULL)
 	{
 	free(pSession->TxdRxd.pRxdBuff);
 	pSession->TxdRxd.pRxdBuff = NULL;
 	return(false);
 	}
-pSession->TxdRxd.AllocdTxdBuff = (UINT32)MemReq;
+pSession->TxdRxd.AllocdTxdBuff = (uint32_t)MemReq;
 
 MemReq = (pType->Detail.MaxReqPayloadSize + pType->Detail.MaxRespPayloadSize + 1000) * pSessEstab->MaxInstances;
-if ((pSession->pReqResp = (UINT8 *)malloc(MemReq)) == NULL)
+if ((pSession->pReqResp = (uint8_t *)malloc(MemReq)) == NULL)
 	{
 	free(pSession->TxdRxd.pRxdBuff);
 	pSession->TxdRxd.pRxdBuff = NULL;
@@ -1747,7 +1747,7 @@ if ((pSession->pReqResp = (UINT8 *)malloc(MemReq)) == NULL)
 	return(false);
 	}
 memset(pSession->pReqResp,0,MemReq);
-pSession->AllocdReqResp = (UINT32)MemReq;
+pSession->AllocdReqResp = (uint32_t)MemReq;
 pSession->Session.BKSPState = eBKSPSRegisteredActv;
 pSession->Session.BKSPType = pSessEstab->BKSPType;
 pSession->Session.MaxInstances = pSessEstab->MaxInstances;
@@ -1791,10 +1791,10 @@ CBKSRequester::ResetSessEstab(tsBKSSessEstab *pSessEstab,			// reset this tsBKSS
  			  bool bKeepSessionID)					// if true then retain SessionID as session has been accepted
 
 {
-UINT8 *pRxdBuff;
-UINT32 AllocdRxdBuff;
-UINT8 *pTxdBuff;
-UINT32 AllocdTxdBuff;
+uint8_t *pRxdBuff;
+uint32_t AllocdRxdBuff;
+uint8_t *pTxdBuff;
+uint32_t AllocdTxdBuff;
 if(pSessEstab == NULL)
 	return;
 if(pSessEstab->TxdRxd.SessionID != 0 && !bKeepSessionID)
@@ -1845,12 +1845,12 @@ pSessEstab->TxdRxd.RxdTxFrameID = 0;
 }
 
 bool
-CBKSRequester::StartSessEstab(UINT32 SessionID,		// session identifier for this potential Session session
+CBKSRequester::StartSessEstab(uint32_t SessionID,		// session identifier for this potential Session session
 				socket_t Socket,					// communicating with Session over this connected socket
 				SOCKADDR_STORAGE  *pIPaddress)		// Session is at this socket network address
 {
 bool bReused;
-UINT32 Idx;
+uint32_t Idx;
 time_t Now;
 time_t Then;
 tsBKSSessEstab *pSessEstab;
@@ -1927,7 +1927,7 @@ ResetSessEstab(pSessEstab,true);
 
 if(pSessEstab->TxdRxd.pRxdBuff == NULL)
 	{
-	if((pSessEstab->TxdRxd.pRxdBuff = (UINT8 *)malloc(cMinTxRxBuffSize))==NULL)
+	if((pSessEstab->TxdRxd.pRxdBuff = (uint8_t *)malloc(cMinTxRxBuffSize))==NULL)
 		{
 		if(bReused)
 			m_NumSessEstabs -= 1;
@@ -1939,7 +1939,7 @@ if(pSessEstab->TxdRxd.pRxdBuff == NULL)
 	}
 if (pSessEstab->TxdRxd.pTxdBuff == NULL)
 	{
-	if ((pSessEstab->TxdRxd.pTxdBuff = (UINT8 *)malloc(cMinTxRxBuffSize)) == NULL)
+	if ((pSessEstab->TxdRxd.pTxdBuff = (uint8_t *)malloc(cMinTxRxBuffSize)) == NULL)
 		{
 		free(pSessEstab->TxdRxd.pRxdBuff);
 		pSessEstab->TxdRxd.AllocdRxdBuff = 0;
@@ -2009,7 +2009,7 @@ return(true);
 }
 
 tsBKSRegSessionEx *
-CBKSRequester::LocateSession(UINT32 SessionID) // locates an established session which is identified by SessionID
+CBKSRequester::LocateSession(uint32_t SessionID) // locates an established session which is identified by SessionID
 {
 tsBKSRegSessionEx *pSession;
 tsBKSType *pType;
@@ -2356,21 +2356,21 @@ int				// returns < 0 if errors, eBSFSuccess if initialisation success
 CBKSRequester::Initialise(char* pszHost,				// listening on this host/IP address; NULL to use first INET IP local to this machine
 						char *pszService,				// listening on this service/port; NULL to use default port 
 						teBKSPType BKSPType,			// registering this service type
-						UINT32 MinProviderVersion,		// service provider version must be at least this software version
-						UINT32 MaxProviderVersion,		// service provider version must be no more than this software version
-						UINT32 KeepaliveSecs,			// expecting packet activity from session peer with periodicity of no more than this number of seconds
-						UINT32 MaxSessions,				// allowing at most this many concurrent sessions of specified service type
-						UINT32 MinServiceInsts,			// any session to support at least this minimum number of service instances
-						UINT32 MaxServiceInsts,			// limit any session to support a maximum of this many service instances
-						UINT32 MaxProcSecs,             // expecting any service provider to take no more than this number of seconds to complete processing a given request
-						UINT32 MaxParamLen,				// service job parameters can be up to this length
-  						UINT32 MaxQuerySeqLen,			// query sequences can be up to this length
-						UINT32 MaxTargSeqLen,			// target sequences can be up to this length
-						UINT32 MaxReqPayloadSize,		// request payloads to the service provider, including framing, can be up to this size (UINT8s),
-						UINT32 MaxRespPayloadSize)		// response payloads from the service provider, including framing, can be up to this  size (UINT8s)
+						uint32_t MinProviderVersion,		// service provider version must be at least this software version
+						uint32_t MaxProviderVersion,		// service provider version must be no more than this software version
+						uint32_t KeepaliveSecs,			// expecting packet activity from session peer with periodicity of no more than this number of seconds
+						uint32_t MaxSessions,				// allowing at most this many concurrent sessions of specified service type
+						uint32_t MinServiceInsts,			// any session to support at least this minimum number of service instances
+						uint32_t MaxServiceInsts,			// limit any session to support a maximum of this many service instances
+						uint32_t MaxProcSecs,             // expecting any service provider to take no more than this number of seconds to complete processing a given request
+						uint32_t MaxParamLen,				// service job parameters can be up to this length
+  						uint32_t MaxQuerySeqLen,			// query sequences can be up to this length
+						uint32_t MaxTargSeqLen,			// target sequences can be up to this length
+						uint32_t MaxReqPayloadSize,		// request payloads to the service provider, including framing, can be up to this size (UINT8s),
+						uint32_t MaxRespPayloadSize)		// response payloads from the service provider, including framing, can be up to this  size (UINT8s)
 {
 int Rslt;
-UINT32 Idx;
+uint32_t Idx;
 tsBKSSessEstab *pSessEstab;
 
 Reset(false);
@@ -2626,23 +2626,23 @@ if(Rsltz == -1 || fcntl(m_Ctrl[1].Socket, F_SETFL, fcntl(m_Ctrl[1].Socket,F_GETF
 	}
 	
 #endif
-if((m_Ctrl[0].pRxdBuff = (UINT8 *)calloc(cCtrlbuffSize,1))==NULL)
+if((m_Ctrl[0].pRxdBuff = (uint8_t *)calloc(cCtrlbuffSize,1))==NULL)
 	return(false);
 m_Ctrl[0].AllocdRxdBuff = cCtrlbuffSize;
-if((m_Ctrl[1].pRxdBuff = (UINT8 *)calloc(cCtrlbuffSize,1))==NULL)
+if((m_Ctrl[1].pRxdBuff = (uint8_t *)calloc(cCtrlbuffSize,1))==NULL)
 	return(false);
 m_Ctrl[1].AllocdRxdBuff = cCtrlbuffSize;
-if((m_Ctrl[0].pTxdBuff = (UINT8 *)calloc(cCtrlbuffSize,1))==NULL)
+if((m_Ctrl[0].pTxdBuff = (uint8_t *)calloc(cCtrlbuffSize,1))==NULL)
 	return(false);
 m_Ctrl[0].AllocdTxdBuff = cCtrlbuffSize;
-if((m_Ctrl[1].pTxdBuff = (UINT8 *)calloc(cCtrlbuffSize,1))==NULL)
+if((m_Ctrl[1].pTxdBuff = (uint8_t *)calloc(cCtrlbuffSize,1))==NULL)
 	return(false);
 m_Ctrl[1].AllocdTxdBuff = cCtrlbuffSize;
 return(true);
 }
 
 bool 
-CBKSRequester::ProcessCtrlMsg(int MsgLen,UINT8 *pMsg)			// process a message received by control socket m_Ctrl[1] - note: currently these messages are simply discarded
+CBKSRequester::ProcessCtrlMsg(int MsgLen,uint8_t *pMsg)			// process a message received by control socket m_Ctrl[1] - note: currently these messages are simply discarded
 {
 // currently not processing control payloads
 m_Ctrl[1].flgRxCplt = 0;
@@ -2900,7 +2900,7 @@ bool
 CBKSRequester::RxData(tsTxdRxd *pRxd)					// receiving session data
 {
 int RxdLen;
-UINT32 ExpRxdLen;
+uint32_t ExpRxdLen;
 tsBKSPacHdr *pRxdHdr;
 
 // ensure socket is valid
@@ -2974,11 +2974,11 @@ if (pRxd->TotRxd >= sizeof(tsBKSPacHdr))
 
 	// if at least tsBKSPacHdr.FrameLen in receive buffer then the total expected header+payload size is known
 	// if less then complete reading in the header only
-if (pRxd->TotRxd < sizeof(UINT32))
+if (pRxd->TotRxd < sizeof(uint32_t))
 	ExpRxdLen = sizeof(tsBKSPacHdr);
 else
 	{
-	ExpRxdLen = *(UINT32 *)pRxd->pRxdBuff;
+	ExpRxdLen = *(uint32_t *)pRxd->pRxdBuff;
 	if (ExpRxdLen < sizeof(tsBKSPacHdr))
 		{
 		pRxd->flgErr = 1;
@@ -3165,11 +3165,11 @@ CBKSRequester::TxData(tsTxdRxd *pTxd)
 // with message immediately following the initial byte
 int								// received message is this length, 0 if no outstanding messages, < 0 if errors
 CBKSRequester::RcvCtrl(int BuffLen,			// available buffer into which the control message can be copied (must be at 128 bytes)
-		UINT8 *pBuff)			// copy control message into this buffer
+		uint8_t *pBuff)			// copy control message into this buffer
 {
 tsTxdRxd *pCtrl;
-UINT8 *pCtrlMsg;
-UINT32 ExpRxdLen;
+uint8_t *pCtrlMsg;
+uint32_t ExpRxdLen;
 int RxdLen;
 
 if(BuffLen < 128 || pBuff == NULL)
@@ -3199,9 +3199,9 @@ if (pCtrl->Socket == -1)
 	}
 
 	// perhaps a message is already buffered but not yet characterised as being a complete message
-if (pCtrl->TotRxd >= sizeof(UINT8))
+if (pCtrl->TotRxd >= sizeof(uint8_t))
 	{
-	pCtrlMsg = (UINT8 *)pCtrl->pRxdBuff;
+	pCtrlMsg = (uint8_t *)pCtrl->pRxdBuff;
 	if(*pCtrlMsg & 0x080)
 		ExpRxdLen = *pCtrlMsg & 0x07f;
 	else
@@ -3212,7 +3212,7 @@ if (pCtrl->TotRxd >= sizeof(UINT8))
 		pCtrl->CurPacRxd = ExpRxdLen;
 		pCtrl->flgRxCplt = 1;
 		memcpy(pBuff,pCtrl->pRxdBuff,ExpRxdLen);
-		UINT32 Diff;
+		uint32_t Diff;
 		if ((Diff = (m_Ctrl[1].TotRxd - m_Ctrl[1].CurPacRxd)) > 0)
 			memmove(m_Ctrl[1].pRxdBuff, &m_Ctrl[1].pRxdBuff[m_Ctrl[1].CurPacRxd], Diff);
 		m_Ctrl[1].TotRxd = Diff;
@@ -3256,9 +3256,9 @@ if (RxdLen == -1)
 
 	// received at least 1 byte, can now be characterised as being a complete message?
 pCtrl->TotRxd += RxdLen;
-if (pCtrl->TotRxd >= sizeof(UINT8))
+if (pCtrl->TotRxd >= sizeof(uint8_t))
 	{
-	pCtrlMsg = (UINT8 *)pCtrl->pRxdBuff;
+	pCtrlMsg = (uint8_t *)pCtrl->pRxdBuff;
 	if(*pCtrlMsg & 0x080)
 		ExpRxdLen = *pCtrlMsg & 0x07f;
 	else
@@ -3269,7 +3269,7 @@ if (pCtrl->TotRxd >= sizeof(UINT8))
 		pCtrl->CurPacRxd = ExpRxdLen;
 		pCtrl->flgRxCplt = 1;
 		memcpy(pBuff,pCtrl->pRxdBuff,ExpRxdLen);
-		UINT32 Diff;
+		uint32_t Diff;
 		if ((Diff = (m_Ctrl[1].TotRxd - m_Ctrl[1].CurPacRxd)) > 0)
 			memmove(m_Ctrl[1].pRxdBuff, &m_Ctrl[1].pRxdBuff[m_Ctrl[1].CurPacRxd], Diff);
 		m_Ctrl[1].TotRxd = Diff;
@@ -3283,7 +3283,7 @@ return(0);
 
 
 bool 
-CBKSRequester::NotifyCtrl(UINT8 Msg) 
+CBKSRequester::NotifyCtrl(uint8_t Msg) 
 {
 if(Msg & 0x080)			// reserved for multibyte messages
 	{
@@ -3295,7 +3295,7 @@ return(SendCtrlMsg(sizeof(Msg),&Msg));
 
 bool
 CBKSRequester::SendCtrlMsg(int Len,				// number of control message bytes to send ptd at by pCtrlMsg, can be 0
-								UINT8 *pCtrlMsg)	// pCtrlMsg pts to control message bytes
+								uint8_t *pCtrlMsg)	// pCtrlMsg pts to control message bytes
 {
 tsTxdRxd *pCtrl;
 int ActTxLen;
@@ -3507,9 +3507,9 @@ while (1)
 			}
 		}
 
-	UINT32 NumPendingReqs;
-	UINT32 NumPendingResps;
-	UINT32 TotRespsAvail;
+	uint32_t NumPendingReqs;
+	uint32_t NumPendingResps;
+	uint32_t TotRespsAvail;
 
     // if any RMI worker threads have pending requests or wanting to check for responses then allow these access
 	ReleaseLock(true);
@@ -3558,7 +3558,7 @@ while (1)
 									// report the connections peer address
 				getnameinfo((sockaddr*)&SockPeerAddr, SockPeerAddrSize, szPeerHost,sizeof(szPeerHost), szPeerService,sizeof(szPeerService), 0);
 
-				UINT32 LastSessionID;
+				uint32_t LastSessionID;
 				if((LastSessionID = AllocSessionID())==0)
 					{
 					// all sessions already committed, can't accept another
@@ -3616,7 +3616,7 @@ while (1)
 			while (1)
 				{     
 				int CtrlMsgLen;
-				UINT8 CtrlMsg[256];
+				uint8_t CtrlMsg[256];
                                                                                                                                                                                     \
 				if((CtrlMsgLen = RcvCtrl(sizeof(CtrlMsg),CtrlMsg))==0)
 					break;
@@ -3724,7 +3724,7 @@ while (1)
 									// slough if a control packet received, the time it was received has already been noted by RxData
 									if (pSessionEx->TxdRxd.CurPacRxd == sizeof(tsBKSPacHdr))
 										{
-										UINT32 Diff;
+										uint32_t Diff;
 										if ((Diff = (pSessionEx->TxdRxd.TotRxd - pSessionEx->TxdRxd.CurPacRxd)) > 0)
 											memmove(pSessionEx->TxdRxd.pRxdBuff, &pSessionEx->TxdRxd.pRxdBuff[pSessionEx->TxdRxd.CurPacRxd], Diff);
 										pSessionEx->TxdRxd.TotRxd = Diff;
@@ -3786,17 +3786,17 @@ const size_t cChkPtsReqAllocSizeIncr = 0x01fffff;	// realloc change point check 
 const size_t cChkPtsRespAllocSizeIncr = 0x01ffff;	// realloc change point check points in a minimum of this sized increments
 
 
-UINT32			// identifies created and initialised check point requests list
-CBKSRequester::CreateChkPtReqs(UINT32 SessionID,	// uniquely identifying this session between service requester and provider
-				UINT32 TypeSessionID,		// used as an index within the type to reference this session
-				UINT64 ClassInstanceID,		// check pointing this class instance
-			    UINT32 ClassMethodID,		// identifies class method
-				UINT32 ParamSize,			// instance specific parameter size
-				UINT32 InDataSize,			// instance specific input data size
-				UINT32 MaxOutDataSize,		// instance specific max expected output data for this method
-				UINT8 *pData)				// request parameters followed by input data
+uint32_t			// identifies created and initialised check point requests list
+CBKSRequester::CreateChkPtReqs(uint32_t SessionID,	// uniquely identifying this session between service requester and provider
+				uint32_t TypeSessionID,		// used as an index within the type to reference this session
+				uint64_t ClassInstanceID,		// check pointing this class instance
+			    uint32_t ClassMethodID,		// identifies class method
+				uint32_t ParamSize,			// instance specific parameter size
+				uint32_t InDataSize,			// instance specific input data size
+				uint32_t MaxOutDataSize,		// instance specific max expected output data for this method
+				uint8_t *pData)				// request parameters followed by input data
 {
-UINT32 ChkPtID;
+uint32_t ChkPtID;
 tsChkPtReqs *pChkPtReqs;
 tsChkPtReq *pChkPtReq;
 size_t MemUsed;
@@ -3836,7 +3836,7 @@ for(ChkPtID = 0; ChkPtID < m_MaxChkPtReqs; ChkPtID+=1)
 #endif
 		if(pChkPtReqs == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal, gszProcName,"CreateChkPtReqs: Memory allocation of %lld bytes failed - %s",(INT64)ReallocTo,strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal, gszProcName,"CreateChkPtReqs: Memory allocation of %lld bytes failed - %s",(int64_t)ReallocTo,strerror(errno));
 			return(eBSFerrMem);
 			}
 	    memset(pChkPtReqs,0,sizeof(tsChkPtReqs));
@@ -3852,7 +3852,7 @@ for(ChkPtID = 0; ChkPtID < m_MaxChkPtReqs; ChkPtID+=1)
 
 		ReallocTo = max(cChkPtsRespAllocSizeIncr,MaxOutDataSize + cChkPtsRespAllocSizeIncr/2);
 
-		if(pChkPtReqs->pRespData == NULL || pChkPtReqs->AllocRespData < (UINT32)ReallocTo)
+		if(pChkPtReqs->pRespData == NULL || pChkPtReqs->AllocRespData < (uint32_t)ReallocTo)
 			{
 			if(pChkPtReqs->pRespData != NULL)
 				{
@@ -3871,20 +3871,20 @@ for(ChkPtID = 0; ChkPtID < m_MaxChkPtReqs; ChkPtID+=1)
 			{ 
 
 #ifdef _WIN32
-			pChkPtReqs->pRespData = (UINT8 *) malloc(ReallocTo);	// initial and perhaps the only allocation
+			pChkPtReqs->pRespData = (uint8_t *) malloc(ReallocTo);	// initial and perhaps the only allocation
 #else
 				// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-			pChkPtReqs->pRespData = (UINT8 *) mmap(NULL,ReallocTo, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+			pChkPtReqs->pRespData = (uint8_t *) mmap(NULL,ReallocTo, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 			if(pChkPtReqs->pRespData == MAP_FAILED)
 				pChkPtReqs->pRespData = NULL;
 #endif
 			if(pChkPtReqs->pRespData == NULL)
 				{
-				gDiagnostics.DiagOut(eDLFatal, gszProcName,"CreateChkPtReqs: Memory allocation of %lld bytes failed - %s",(INT64)ReallocTo,strerror(errno));
+				gDiagnostics.DiagOut(eDLFatal, gszProcName,"CreateChkPtReqs: Memory allocation of %lld bytes failed - %s",(int64_t)ReallocTo,strerror(errno));
 				return(eBSFerrMem);
 				}
 			memset(pChkPtReqs->pRespData,0,ReallocTo);
-			pChkPtReqs->AllocRespData = (UINT32)ReallocTo;
+			pChkPtReqs->AllocRespData = (uint32_t)ReallocTo;
 			}
 
 		pChkPtReqs->UsedRespData = 0;		
@@ -3903,7 +3903,7 @@ return(0);
 }
 
 bool
-CBKSRequester::DeleteChkPtReqs(UINT32 ChkPtID)  // identifies check point list to be deleted, memory is not dealloc'd instead is marked as reusable
+CBKSRequester::DeleteChkPtReqs(uint32_t ChkPtID)  // identifies check point list to be deleted, memory is not dealloc'd instead is marked as reusable
 {
 tsChkPtReqs *pChkPtReqs;
 tsChkPtReq *pChkPtReq;
@@ -3930,18 +3930,18 @@ return(true);
 }
 
 bool			// true if request was successfully check pointed		
-CBKSRequester::AddChkPtReq(UINT32 ChkPtID,  // identifies check point list to extend with this request
-				UINT32 SessionID,			// uniquely identifying this session between service requester and provider
-			    UINT32 ClassMethodID,		// identifies class method
-				UINT32 ParamSize,			// instance specific parameter size
-				UINT32 InDataSize,			// instance specific input data size
-				UINT32 MaxOutDataSize,		// instance specific max expected output data for this method
-				UINT8 *pData)				// request parameters followed by input data
+CBKSRequester::AddChkPtReq(uint32_t ChkPtID,  // identifies check point list to extend with this request
+				uint32_t SessionID,			// uniquely identifying this session between service requester and provider
+			    uint32_t ClassMethodID,		// identifies class method
+				uint32_t ParamSize,			// instance specific parameter size
+				uint32_t InDataSize,			// instance specific input data size
+				uint32_t MaxOutDataSize,		// instance specific max expected output data for this method
+				uint8_t *pData)				// request parameters followed by input data
 {
 tsChkPtReqs *pChkPtReqs;
 tsChkPtReqs *pReallocd;
 tsChkPtReq *pChkPtReq;
-UINT8 *pReallocdResp;
+uint8_t *pReallocdResp;
 size_t AllocMem;
 size_t MemUsed;
 size_t ReallocTo;
@@ -3967,7 +3967,7 @@ if(MemUsed >= AllocMem)
 #endif
 	if(pReallocd == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName,"AddChkPtReq: Memory reallocation to %lld bytes failed - %s",(INT64)ReallocTo,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal, gszProcName,"AddChkPtReq: Memory reallocation to %lld bytes failed - %s",(int64_t)ReallocTo,strerror(errno));
 		return(false);
 		}
 	pChkPtReqs = pReallocd;
@@ -3980,22 +3980,22 @@ if(MaxOutDataSize >= pChkPtReqs->AllocRespData)
 	ReallocTo = MaxOutDataSize + cChkPtsRespAllocSizeIncr/2;
 	AllocMem = pChkPtReqs->AllocRespData;
 #ifdef _WIN32
-	pReallocdResp = (UINT8 *)realloc(pChkPtReqs->pRespData,ReallocTo);
+	pReallocdResp = (uint8_t *)realloc(pChkPtReqs->pRespData,ReallocTo);
 #else
-	pReallocdResp = (UINT8 *)mremap(pChkPtReqs->pRespData,AllocMem,ReallocTo,MREMAP_MAYMOVE);
+	pReallocdResp = (uint8_t *)mremap(pChkPtReqs->pRespData,AllocMem,ReallocTo,MREMAP_MAYMOVE);
 	if(pReallocd == MAP_FAILED)
 		pReallocd = NULL;
 #endif
 	if(pReallocdResp == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName,"AddChkPtReq: Memory reallocation to %lld bytes failed - %s",(INT64)ReallocTo,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal, gszProcName,"AddChkPtReq: Memory reallocation to %lld bytes failed - %s",(int64_t)ReallocTo,strerror(errno));
 		return(false);
 		}
-	pChkPtReqs->AllocRespData = (UINT32)ReallocTo;
+	pChkPtReqs->AllocRespData = (uint32_t)ReallocTo;
 	pChkPtReqs->pRespData = pReallocdResp;
 	}
 
-pChkPtReq = (tsChkPtReq *)((UINT8 *)pChkPtReqs + pChkPtReqs->UsedMem);
+pChkPtReq = (tsChkPtReq *)((uint8_t *)pChkPtReqs + pChkPtReqs->UsedMem);
 pChkPtReq->ClassMethodID = ClassMethodID;
 pChkPtReq->ParamSize = ParamSize;
 pChkPtReq->InDataSize = InDataSize;
@@ -4007,14 +4007,14 @@ return(true);
 }
 
 bool			// true if response was successfully updated		
-CBKSRequester::AddChkPtResp(UINT32 ChkPtID,  // identifies check point list to update with this response
-				UINT32 SessionID,			// uniquely identifying this session between service requester and provider
-				UINT32 JobRslt,				// job processing result as returned by service provider
-				UINT32 RespSize,			// response size
-				UINT8 *pData)				// response data
+CBKSRequester::AddChkPtResp(uint32_t ChkPtID,  // identifies check point list to update with this response
+				uint32_t SessionID,			// uniquely identifying this session between service requester and provider
+				uint32_t JobRslt,				// job processing result as returned by service provider
+				uint32_t RespSize,			// response size
+				uint8_t *pData)				// response data
 {
 tsChkPtReqs *pChkPtReqs;
-UINT8 *pReallocdResp;
+uint8_t *pReallocdResp;
 size_t ReallocTo;
 size_t AllocMem;
 if(m_ppChkPtReqs == NULL || ChkPtID == 0 || ChkPtID > m_MaxChkPtReqs)
@@ -4029,18 +4029,18 @@ if(RespSize >= pChkPtReqs->AllocRespData)
 	ReallocTo = RespSize + cChkPtsRespAllocSizeIncr/2;
 	AllocMem = pChkPtReqs->AllocRespData;
 #ifdef _WIN32
-	pReallocdResp = (UINT8 *)realloc(pChkPtReqs->pRespData,ReallocTo);
+	pReallocdResp = (uint8_t *)realloc(pChkPtReqs->pRespData,ReallocTo);
 #else
-	pReallocdResp = (UINT8 *)mremap(pChkPtReqs->pRespData,AllocMem,ReallocTo,MREMAP_MAYMOVE);
+	pReallocdResp = (uint8_t *)mremap(pChkPtReqs->pRespData,AllocMem,ReallocTo,MREMAP_MAYMOVE);
 	if(pReallocdResp == MAP_FAILED)
 		pReallocdResp = NULL;
 #endif
 	if(pReallocdResp == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName,"AddChkPtResp: Memory reallocation to %lld bytes failed - %s",(INT64)ReallocTo,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal, gszProcName,"AddChkPtResp: Memory reallocation to %lld bytes failed - %s",(int64_t)ReallocTo,strerror(errno));
 		return(false);
 		}
-	pChkPtReqs->AllocRespData = (UINT32)ReallocTo;
+	pChkPtReqs->AllocRespData = (uint32_t)ReallocTo;
 	pChkPtReqs->pRespData = pReallocdResp;
 	}
 

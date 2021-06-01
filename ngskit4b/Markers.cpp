@@ -161,7 +161,7 @@ m_LSER = cDfltLSER;
 m_NumThreads = 1;
 }
 
-UINT16											// returned species identifier (1..cMaxSpecies)
+uint16_t											// returned species identifier (1..cMaxSpecies)
 CMarkers::AddSpecies(char *pszSpecies,bool IsRefSpecies)	// cultivar or species name
 {
 int SpeciesID;
@@ -212,7 +212,7 @@ return(pSpecies->SpeciesID);
 }
 
 char *
-CMarkers::SpeciesIDtoName(UINT16 SpeciesID)
+CMarkers::SpeciesIDtoName(uint16_t SpeciesID)
 {
 if(SpeciesID < 1 || SpeciesID > m_NumSpecies)
 	return(NULL);
@@ -220,14 +220,14 @@ return((char *)&m_Species[SpeciesID-1].szSpecies[0]);
 }
 
 bool
-CMarkers::IsRefSpecies(UINT16 SpeciesID)
+CMarkers::IsRefSpecies(uint16_t SpeciesID)
 {
 if(SpeciesID < 1 || SpeciesID > m_NumSpecies || m_RefSpeciesID < 1)
 	return(false);
 return(m_RefSpeciesID == SpeciesID);
 }
 
-UINT16					// returned species identifier for specified name, returns 0 if name not previously added with AddSpecies)
+uint16_t					// returned species identifier for specified name, returns 0 if name not previously added with AddSpecies)
 CMarkers::NameToSpeciesID(char *pszSpecies)
 {
 int SpeciesID;
@@ -253,25 +253,25 @@ return(0);
 }
 
 char *								// returned sequence name
-CMarkers::SeqIDtoName(UINT32 SeqID)	// sequence identifier (1..m_NumSeqNames) for which name is to be returned
+CMarkers::SeqIDtoName(uint32_t SeqID)	// sequence identifier (1..m_NumSeqNames) for which name is to be returned
 {
 tsSeqName *pSeqName;
-UINT8 *pSeqNames;
-UINT64 Ofs;
+uint8_t *pSeqNames;
+uint64_t Ofs;
 if(SeqID < 1 || SeqID > m_NumSeqNames)
 	return(NULL);
 Ofs = m_pAllocSeqNameIDsOfs[SeqID-1];
-pSeqNames = (UINT8 *)m_pAllocSeqNames;
+pSeqNames = (uint8_t *)m_pAllocSeqNames;
 pSeqName = (tsSeqName *)&pSeqNames[Ofs];
 return((char *)pSeqName->szSeqName);
 }
 
-UINT32 
+uint32_t 
 CMarkers::NameToSeqID(char *pszSeqName) // returned sequence identifier for specified name, returns 0 if name not previously added with AddTargSeq)
 {
-UINT16 Hash;
-UINT64 SeqNameOfs;
-UINT64 NxtSeqOfs;
+uint16_t Hash;
+uint64_t SeqNameOfs;
+uint64_t NxtSeqOfs;
 tsSeqName *pSeqName;
 
 if(m_pSeqNameHashArray == NULL || m_pAllocSeqNames == NULL || m_NumSeqNames == 0)
@@ -283,7 +283,7 @@ if(m_szCurSeqName[0] != '\0' && !stricmp(pszSeqName,(char *)m_szCurSeqName))
 Hash = CUtility::GenHash16(pszSeqName);
 SeqNameOfs = m_pSeqNameHashArray[Hash];	// SeqNameOfs will be 0 if this is a new hash not previously processed
 
-UINT8 *pSeqNames = (UINT8 *)m_pAllocSeqNames;	// used as a convenience instead of requiring many casts when subsequently deriving pSeqName
+uint8_t *pSeqNames = (uint8_t *)m_pAllocSeqNames;	// used as a convenience instead of requiring many casts when subsequently deriving pSeqName
 
 if(SeqNameOfs == 0)	// no sequence name with this hash previously added?
 	return(0);
@@ -304,25 +304,25 @@ while(SeqNameOfs != 0)
 return(0);
 }
 
-UINT32										// returned sequence identifier (1..cMaxSeqID)
+uint32_t										// returned sequence identifier (1..cMaxSeqID)
 CMarkers::AddTargSeq(char *pszSeqName)	// sequence name - could be a chrom, contig, transcript name
 {
 int SeqNameLen;
-UINT16 Hash;
-UINT64 SeqNameOfs;
-UINT64 NxtSeqOfs;
+uint16_t Hash;
+uint64_t SeqNameOfs;
+uint64_t NxtSeqOfs;
 tsSeqName *pSeqName;
 
 // allocate for 16bit name hashes
 if(m_pSeqNameHashArray == NULL)
 	{
-	if((m_pSeqNameHashArray = new UINT64 [0x010001])==NULL)	// allowing for case whereby hash was generated exceeding 16bits!!!!!
+	if((m_pSeqNameHashArray = new uint64_t [0x010001])==NULL)	// allowing for case whereby hash was generated exceeding 16bits!!!!!
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddTargSeq: Memory allocation of %lld bytes - %s",(INT64)0x010001 * sizeof(UINT64),strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddTargSeq: Memory allocation of %lld bytes - %s",(int64_t)0x010001 * sizeof(uint64_t),strerror(errno));
 		return(eBSFerrMem);
 		}
 	m_UsedNameHashArray = 0;
-	memset((size_t *)m_pSeqNameHashArray,0,(size_t)(sizeof(UINT64) * 0x010001));
+	memset((size_t *)m_pSeqNameHashArray,0,(size_t)(sizeof(uint64_t) * 0x010001));
 	}
 
 if(m_pAllocSeqNames == NULL)		// initial allocation?
@@ -333,7 +333,7 @@ if(m_pAllocSeqNames == NULL)		// initial allocation?
 	m_pAllocSeqNames = (tsSeqName *) malloc(memreq);	// initial and perhaps the only allocation
 	if(m_pAllocSeqNames == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddTargSeq: Memory allocation of %lld bytes - %s",(INT64)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddTargSeq: Memory allocation of %lld bytes - %s",(int64_t)memreq,strerror(errno));
 		return(eBSFerrMem);
 		}
 #else
@@ -341,12 +341,12 @@ if(m_pAllocSeqNames == NULL)		// initial allocation?
 	m_pAllocSeqNames = (tsSeqName *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pAllocSeqNames == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddTargSeq: Memory allocation of %lld bytes through mmap()  failed - %s",(INT64)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddTargSeq: Memory allocation of %lld bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
 		m_pAllocSeqNames = NULL;
 		return(eBSFerrMem);
 		}
 #endif
-	m_AllocMemSeqNames = (UINT64)cAllocMemSeqNames;
+	m_AllocMemSeqNames = (uint64_t)cAllocMemSeqNames;
 	m_UsedMemSeqNames = 0;
 	m_NumSeqNames = 0;
 	}
@@ -365,7 +365,7 @@ else
 #endif
 		if(pSeqName == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddTargSeq: Sequence names memory re-allocation to %lld from %lld bytes - %s",(INT64)memreq,m_AllocMemSeqNames,strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddTargSeq: Sequence names memory re-allocation to %lld from %lld bytes - %s",(int64_t)memreq,m_AllocMemSeqNames,strerror(errno));
 			return(eBSFerrMem);
 			}
 		m_pAllocSeqNames = pSeqName;
@@ -376,49 +376,49 @@ else
 
 if(m_pAllocSeqNameIDsOfs == NULL)		// initial allocation?
 	{
-	size_t memreq = cAllocSeqNames * sizeof(UINT64);
+	size_t memreq = cAllocSeqNames * sizeof(uint64_t);
 
 #ifdef _WIN32
-	m_pAllocSeqNameIDsOfs = (UINT64 *) malloc(memreq);	// initial and perhaps the only allocation
+	m_pAllocSeqNameIDsOfs = (uint64_t *) malloc(memreq);	// initial and perhaps the only allocation
 	if(m_pAllocSeqNameIDsOfs == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddTargSeq: Memory allocation to %lld bytes - %s",(INT64)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddTargSeq: Memory allocation to %lld bytes - %s",(int64_t)memreq,strerror(errno));
 		return(eBSFerrMem);
 		}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-	m_pAllocSeqNameIDsOfs = (UINT64 *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+	m_pAllocSeqNameIDsOfs = (uint64_t *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pAllocSeqNameIDsOfs == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddTargSeq: Memory allocation of %lld bytes through mmap()  failed - %s",(INT64)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddTargSeq: Memory allocation of %lld bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
 		m_pAllocSeqNameIDsOfs = NULL;
 		return(eBSFerrMem);
 		}
 #endif
-	m_AllocMemSeqNameIDsOfs = (UINT64)memreq;
+	m_AllocMemSeqNameIDsOfs = (uint64_t)memreq;
 	}
 else
 	{
-	if(m_AllocMemSeqNameIDsOfs <= ((m_NumSeqNames + 10) * sizeof(UINT64)))	// play safe and increase allocation?
+	if(m_AllocMemSeqNameIDsOfs <= ((m_NumSeqNames + 10) * sizeof(uint64_t)))	// play safe and increase allocation?
 		{
-		UINT64 *pRealloc;
+		uint64_t *pRealloc;
 		size_t memreq;
-		memreq = (size_t)(m_AllocMemSeqNames + (cAllocSeqNames * sizeof(UINT64)));
-		gDiagnostics.DiagOut(eDLInfo,gszProcName,"AddTargSeq: memory re-allocation to %lld from %lld bytes",(INT64)memreq,m_AllocMemSeqNameIDsOfs);
+		memreq = (size_t)(m_AllocMemSeqNames + (cAllocSeqNames * sizeof(uint64_t)));
+		gDiagnostics.DiagOut(eDLInfo,gszProcName,"AddTargSeq: memory re-allocation to %lld from %lld bytes",(int64_t)memreq,m_AllocMemSeqNameIDsOfs);
 
 #ifdef _WIN32
-		pRealloc = (UINT64 *) realloc(m_pAllocSeqNameIDsOfs,memreq);
+		pRealloc = (uint64_t *) realloc(m_pAllocSeqNameIDsOfs,memreq);
 #else
-		pRealloc = (UINT64 *)mremap(m_pAllocSeqNameIDsOfs,m_AllocMemSeqNameIDsOfs,memreq,MREMAP_MAYMOVE);
+		pRealloc = (uint64_t *)mremap(m_pAllocSeqNameIDsOfs,m_AllocMemSeqNameIDsOfs,memreq,MREMAP_MAYMOVE);
 		if(pRealloc == MAP_FAILED)
 			pRealloc = NULL;
 #endif
 		if(pRealloc == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddTargSeq: Sequence name idex memory re-allocation to %lld from %lld bytes - %s",(INT64)memreq,m_AllocMemSeqNameIDsOfs,strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddTargSeq: Sequence name idex memory re-allocation to %lld from %lld bytes - %s",(int64_t)memreq,m_AllocMemSeqNameIDsOfs,strerror(errno));
 			return(eBSFerrMem);
 			}
-		m_pAllocSeqNameIDsOfs = (UINT64 *)pRealloc;
+		m_pAllocSeqNameIDsOfs = (uint64_t *)pRealloc;
 		m_AllocMemSeqNameIDsOfs = memreq;
 		}
 	}
@@ -431,7 +431,7 @@ if(m_szCurSeqName[0] != '\0' && !stricmp(pszSeqName,(char *)m_szCurSeqName))
 Hash = CUtility::GenHash16(pszSeqName);
 SeqNameOfs = m_pSeqNameHashArray[Hash];	// SeqNameOfs will be 0 if this is a new hash not previously processed
 
-UINT8 *pSeqNames = (UINT8 *)m_pAllocSeqNames;	// used as a convenience instead of requiring many casts when subsequently deriving pSeqName
+uint8_t *pSeqNames = (uint8_t *)m_pAllocSeqNames;	// used as a convenience instead of requiring many casts when subsequently deriving pSeqName
 
 if(SeqNameOfs == 0)	// no sequence name with this hash previously added?
 	{
@@ -456,7 +456,7 @@ else
 	}
 pSeqName = (tsSeqName *)&pSeqNames[m_UsedMemSeqNames];
 SeqNameLen = (int)min(cMaxLenName-1,strlen(pszSeqName));
-pSeqName->Len = (UINT8)(sizeof(tsSeqName) + SeqNameLen);
+pSeqName->Len = (uint8_t)(sizeof(tsSeqName) + SeqNameLen);
 strncpy((char *)pSeqName->szSeqName,pszSeqName,SeqNameLen);
 pSeqName->szSeqName[SeqNameLen] = '\0';
 pSeqName->SeqID = m_NumSeqNames + 1;
@@ -469,18 +469,18 @@ return(pSeqName->SeqID);
 }
 
 int
-CMarkers::PreAllocEstSNPs(INT64 EstNumSNPS)	// estimating will be required to process this many SNP loci
+CMarkers::PreAllocEstSNPs(int64_t EstNumSNPS)	// estimating will be required to process this many SNP loci
 {
 size_t memreq; 
-INT64 AllocdAlignLoci;
+int64_t AllocdAlignLoci;
 
-AllocdAlignLoci = ((99 + EstNumSNPS) * (INT64)125) / (INT64)100;  // allowing for an extra 25% to reduce probability of a realloc being subsequently required if estimate was a little low
+AllocdAlignLoci = ((99 + EstNumSNPS) * (int64_t)125) / (int64_t)100;  // allowing for an extra 25% to reduce probability of a realloc being subsequently required if estimate was a little low
 memreq = (size_t)AllocdAlignLoci * sizeof(tsAlignLoci); 
 #ifdef _WIN32
 m_pAllocAlignLoci = (tsAlignLoci *) malloc(memreq);	// initial and perhaps the only allocation
 if(m_pAllocAlignLoci == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"PreAllocSNPs: Memory allocation of %lld bytes - %s",(INT64)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"PreAllocSNPs: Memory allocation of %lld bytes - %s",(int64_t)memreq,strerror(errno));
 	return(eBSFerrMem);
 	}
 #else
@@ -488,7 +488,7 @@ if(m_pAllocAlignLoci == NULL)
 m_pAllocAlignLoci = (tsAlignLoci *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pAllocAlignLoci == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"PreAllocSNPs: Memory allocation of %lld bytes through mmap()  failed - %s",(INT64)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"PreAllocSNPs: Memory allocation of %lld bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
 	m_pAllocAlignLoci = NULL;
 	return(eBSFerrMem);
 	}
@@ -539,7 +539,7 @@ if ((TotalRefImputed + 100) > m_AllocAlignLoci)	// play safe when increasing all
 	{
 	size_t memreq;
 	memreq = (TotalRefImputed+100) * sizeof(tsAlignLoci);
-	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Memory re-allocation to %lld from %lld bytes for estimated %lld SNPs", (INT64)memreq, (INT64)m_AllocMemAlignLoci, (INT64)TotalRefImputed);
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Memory re-allocation to %lld from %lld bytes for estimated %lld SNPs", (int64_t)memreq, (int64_t)m_AllocMemAlignLoci, (int64_t)TotalRefImputed);
 
 #ifdef _WIN32
 	pCurLoci = (tsAlignLoci*)realloc(m_pAllocAlignLoci, memreq);
@@ -550,7 +550,7 @@ if ((TotalRefImputed + 100) > m_AllocAlignLoci)	// play safe when increasing all
 #endif
 	if (pCurLoci == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "PreAllocImpunedSNPs: Memory re-allocation to %lld bytes - %s", (INT64)memreq, strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "PreAllocImpunedSNPs: Memory re-allocation to %lld bytes - %s", (int64_t)memreq, strerror(errno));
 		return(eBSFerrMem);
 		}
 	m_pAllocAlignLoci = pCurLoci;
@@ -560,25 +560,25 @@ if ((TotalRefImputed + 100) > m_AllocAlignLoci)	// play safe when increasing all
 return(eBSFSuccess);
 }
 
-INT64 
+int64_t 
 CMarkers::NumAlignLoci(void)					// returns current number of alignment/SNP loci
 {
 return(m_UsedAlignLoci);
 }
 
-INT64 
-CMarkers::AddLoci(UINT16 TargSpeciesID,	// reads were aligned to this cultivar or species
-				UINT32 TargSeqID,		// alignments to this sequence - could be a chrom/contig/transcript - from pszSpecies
-				UINT32 TargLoci,		// loci within target sequence at which SNPs observed
+int64_t 
+CMarkers::AddLoci(uint16_t TargSpeciesID,	// reads were aligned to this cultivar or species
+				uint32_t TargSeqID,		// alignments to this sequence - could be a chrom/contig/transcript - from pszSpecies
+				uint32_t TargLoci,		// loci within target sequence at which SNPs observed
 				etSeqBase TargRefBase,	// loci has this reference base
-				UINT16 ProbeSpeciesID,	// reads were aligned from this cultivar or species
-				UINT32 ProbeCntA,		// number instances probe base A aligned to TargRefBase 
-				UINT32 ProbeCntC,		// number instances probe base C aligned to TargRefBase
-				UINT32 ProbeCntG,		// number instances probe base G aligned to TargRefBase
-				UINT32 ProbeCntT,		// number instances probe base T aligned to TargRefBase
-				UINT32 ProbeCntN,		// number instances probe base U aligned to TargRefBase
+				uint16_t ProbeSpeciesID,	// reads were aligned from this cultivar or species
+				uint32_t ProbeCntA,		// number instances probe base A aligned to TargRefBase 
+				uint32_t ProbeCntC,		// number instances probe base C aligned to TargRefBase
+				uint32_t ProbeCntG,		// number instances probe base G aligned to TargRefBase
+				uint32_t ProbeCntT,		// number instances probe base T aligned to TargRefBase
+				uint32_t ProbeCntN,		// number instances probe base U aligned to TargRefBase
 				double LSER,			// local sequencing error rate
-				UINT16 Flags)			// any loci associated flags
+				uint16_t Flags)			// any loci associated flags
 {
 tsAlignLoci *pLoci;
 
@@ -590,7 +590,7 @@ if(m_pAllocAlignLoci == NULL)		// initial allocation?
 	m_pAllocAlignLoci = (tsAlignLoci *) malloc(memreq);	// initial and perhaps the only allocation
 	if(m_pAllocAlignLoci == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddLoci: Memory allocation of %lld bytes - %s",(INT64)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddLoci: Memory allocation of %lld bytes - %s",(int64_t)memreq,strerror(errno));
 		return(eBSFerrMem);
 		}
 #else
@@ -598,7 +598,7 @@ if(m_pAllocAlignLoci == NULL)		// initial allocation?
 	m_pAllocAlignLoci = (tsAlignLoci *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pAllocAlignLoci == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddLoci: Memory allocation of %lld bytes through mmap()  failed - %s",(INT64)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddLoci: Memory allocation of %lld bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
 		m_pAllocAlignLoci = NULL;
 		return(eBSFerrMem);
 		}
@@ -615,7 +615,7 @@ else
 		size_t AllocTo;
 		AllocTo = ((size_t)cReAllocAlignPerc * m_AllocAlignLoci)/100;
 		memreq = ((AllocTo + 1) * sizeof(tsAlignLoci));
-		gDiagnostics.DiagOut(eDLInfo,gszProcName,"AddLoci: memory re-allocation to %lld from %lld bytes",(INT64)memreq,(INT64)m_AllocMemAlignLoci);
+		gDiagnostics.DiagOut(eDLInfo,gszProcName,"AddLoci: memory re-allocation to %lld from %lld bytes",(int64_t)memreq,(int64_t)m_AllocMemAlignLoci);
 
 #ifdef _WIN32
 		pLoci = (tsAlignLoci *) realloc(m_pAllocAlignLoci,memreq);
@@ -626,7 +626,7 @@ else
 #endif
 		if(pLoci == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddLoci: Memory re-allocation to %lld bytes - %s",(INT64)memreq,strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddLoci: Memory re-allocation to %lld bytes - %s",(int64_t)memreq,strerror(errno));
 			return(eBSFerrMem);
 			}
 		m_pAllocAlignLoci = pLoci;
@@ -655,23 +655,23 @@ return(m_UsedAlignLoci);
 
 // AddLoci
 // Add loci on target which has identified SNP when aligned to from probe sequences
-INT64  
+int64_t  
 CMarkers::AddLoci(char *pszTargSpecies,	// reads were aligned to this cultivar or species
 				char *pszTargSeq,		// alignments to this sequence - could be a chrom/contig/transcript - from pszSpecies
-				UINT32 TargLoci,			// loci within target sequence at which SNPs observed
+				uint32_t TargLoci,			// loci within target sequence at which SNPs observed
 				etSeqBase TargRefBase,	// loci has this reference base
 				char *pszProbeSpecies,	// reads were aligned from this cultivar or species
-				UINT32 ProbeCntA,		// number instances probe base A aligned to TargRefBase 
-				UINT32 ProbeCntC,		// number instances probe base C aligned to TargRefBase
-				UINT32 ProbeCntG,		// number instances probe base G aligned to TargRefBase
-				UINT32 ProbeCntT,		// number instances probe base T aligned to TargRefBase
-				UINT32 ProbeCntN,		// number instances probe base U aligned to TargRefBase
+				uint32_t ProbeCntA,		// number instances probe base A aligned to TargRefBase 
+				uint32_t ProbeCntC,		// number instances probe base C aligned to TargRefBase
+				uint32_t ProbeCntG,		// number instances probe base G aligned to TargRefBase
+				uint32_t ProbeCntT,		// number instances probe base T aligned to TargRefBase
+				uint32_t ProbeCntN,		// number instances probe base U aligned to TargRefBase
 				double LSER)				// local sequencing error rate
 {
-UINT16 TargID;
-UINT16 ProbeID;
-UINT32 TargSeqID;
-INT64 Rslt;
+uint16_t TargID;
+uint16_t ProbeID;
+uint32_t TargSeqID;
+int64_t Rslt;
 
 TargID = AddSpecies(pszTargSpecies,true);
 if(TargID == 0 || TargID != m_RefSpeciesID)
@@ -732,9 +732,9 @@ if((Rslt=pCSV->Open(pszSNPFile))!=eBSFSuccess)
 
 // fix for reported issue whereby all SNPs were filtered out from this SNP file
 // and thus probe or query was not being registered
-UINT16 TargID;
-UINT16 ProbeID;
-UINT32 TargSeqID;
+uint16_t TargID;
+uint16_t ProbeID;
+uint32_t TargSeqID;
 
 TargID = AddSpecies(pszRefSpecies, true);
 if (TargID == 0 || TargID != m_RefSpeciesID)
@@ -880,7 +880,7 @@ return(NumElsParsed - NumFilteredOut);
 // AddImputedAlignments
 // Add alignments for species where no snp was called but other species do have snp called
 // The call could be because there were none or insufficient reads covering the loci, or there was coverage but no snp!
-INT64 
+int64_t 
 CMarkers::AddImputedAlignments(int MinBases,			// must be at least this number of reads covering the SNP loci
 					  char *pszRefSpecies,				// this is the reference species 
 					char *pszProbeSpecies,				// this species reads were aligned to the reference species from which SNPs were called 
@@ -891,13 +891,13 @@ CMarkers::AddImputedAlignments(int MinBases,			// must be at least this number o
 					int EstSeqLen)						// estimated mean sequence length (0 if no estimate)           			
 {
 int Rslt;
-INT64 Rslt64;
+int64_t Rslt64;
 int NumEls;
-UINT16 RefSpeciesID;
-UINT16 ProbeSpeciesID;
+uint16_t RefSpeciesID;
+uint16_t ProbeSpeciesID;
 int MinLength = 50;
 int MaxLength = 1000;
-UINT16 ImputFlags;
+uint16_t ImputFlags;
 CHyperEls *pHypers;
 
 if((ProbeSpeciesID = NameToSpeciesID(pszProbeSpecies)) < 1)
@@ -999,25 +999,25 @@ gDiagnostics.DiagOut(eDLInfo,gszProcName,"Loaded and parsed %d elements",NumEls)
 
 // try to find overlaps on to SNPs called on other species where this probe species is not represented!
 bool bProbeAligned;
-INT64 AlignIdx;
-INT64 UsedAlignLoci;
+int64_t AlignIdx;
+int64_t UsedAlignLoci;
 tsAlignLoci *pAlign;
-UINT32 CurTargSeqID;
-UINT32 CurTargLociLoci;
-UINT32 PrevTargSeqID;
+uint32_t CurTargSeqID;
+uint32_t CurTargLociLoci;
+uint32_t PrevTargSeqID;
 int NumOverlapping;
 int HyperChromID;
 char *pszTargSeq;
 etSeqBase TargRefBase;
 
-INT64 TotNonOverlapping;
-INT64 TotOverlapping;
+int64_t TotNonOverlapping;
+int64_t TotOverlapping;
 
-UINT32 ProbeCntA;		// number instances probe base A aligned to TargRefBase 
-UINT32 ProbeCntC;		// number instances probe base C aligned to TargRefBase
-UINT32 ProbeCntG;		// number instances probe base G aligned to TargRefBase
-UINT32 ProbeCntT;		// number instances probe base T aligned to TargRefBase
-UINT32 ProbeCntN;		// number instances probe base U aligned to TargRefBase
+uint32_t ProbeCntA;		// number instances probe base A aligned to TargRefBase 
+uint32_t ProbeCntC;		// number instances probe base C aligned to TargRefBase
+uint32_t ProbeCntG;		// number instances probe base G aligned to TargRefBase
+uint32_t ProbeCntT;		// number instances probe base T aligned to TargRefBase
+uint32_t ProbeCntN;		// number instances probe base U aligned to TargRefBase
 
 TotOverlapping = 0;
 TotNonOverlapping = 0;
@@ -1215,16 +1215,16 @@ return(TotOverlapping);
 // 
 // AddSimulatedAlignments
 // Add simulated alignments for when no actual alignments were available, just SNP calls
-INT64 
+int64_t 
 CMarkers::AddSimulatedAlignments(int MinBases,			// using this as the simulated number of reads covering the SNP loci
 					  char *pszRefSpecies,				// this is the reference species 
 					char *pszProbeSpecies)				// this species reads were aligned to the reference species from which SNPs were called 
 {
-INT64 Rslt64;
-UINT16 RefSpeciesID;
-UINT16 ProbeSpeciesID;
-UINT16 ImputFlags;
-INT64 TotSimulated = 0;
+int64_t Rslt64;
+uint16_t RefSpeciesID;
+uint16_t ProbeSpeciesID;
+uint16_t ImputFlags;
+int64_t TotSimulated = 0;
 
 if((ProbeSpeciesID = NameToSpeciesID(pszProbeSpecies)) < 1)
 	{
@@ -1239,18 +1239,18 @@ if((RefSpeciesID = NameToSpeciesID(pszRefSpecies)) < 1)
 
 ImputFlags = cFlgImputCnts;
 
-INT64 AlignIdx;
-INT64 UsedAlignLoci;
+int64_t AlignIdx;
+int64_t UsedAlignLoci;
 tsAlignLoci *pAlign;
 
-UINT32 ProbeCntA;		// number instances probe base A aligned to TargRefBase 
-UINT32 ProbeCntC;		// number instances probe base C aligned to TargRefBase
-UINT32 ProbeCntG;		// number instances probe base G aligned to TargRefBase
-UINT32 ProbeCntT;		// number instances probe base T aligned to TargRefBase
-UINT32 ProbeCntN;		// number instances probe base U aligned to TargRefBase
-UINT32 SimAlignLoci;	
-UINT32 SimTargSeqID;
-UINT8 SimRefBase;
+uint32_t ProbeCntA;		// number instances probe base A aligned to TargRefBase 
+uint32_t ProbeCntC;		// number instances probe base C aligned to TargRefBase
+uint32_t ProbeCntG;		// number instances probe base G aligned to TargRefBase
+uint32_t ProbeCntT;		// number instances probe base T aligned to TargRefBase
+uint32_t ProbeCntN;		// number instances probe base U aligned to TargRefBase
+uint32_t SimAlignLoci;	
+uint32_t SimTargSeqID;
+uint8_t SimRefBase;
 bool bSNPCalled = false;
 AlignIdx = 0;
 UsedAlignLoci = m_NumSSNPLoci;
@@ -1348,7 +1348,7 @@ CMarkers::IdentSpeciesSpec(int AltMaxCnt,				// max count allowed for base being
 						int MinSpeciesTotCntThres)		// individual species must have at least this number of total bases at SNP loci - 0 if no threshold
 
 {
-INT64 AlignIdx;
+int64_t AlignIdx;
 tsAlignLoci *pAlign;
 tsAlignLoci *pAlignSpecies;
 tsAlignLoci *pAlignSpeciesA;
@@ -1366,8 +1366,8 @@ SortTargSeqLociSpecies();
 
 time_t Then = time(NULL);
 time_t Now;
-INT64 NumLociProc = 0;
-INT64 PutSNPLoci = m_UsedAlignLoci / (INT64)(m_NumSpecies - 1);
+int64_t NumLociProc = 0;
+int64_t PutSNPLoci = m_UsedAlignLoci / (int64_t)(m_NumSpecies - 1);
 pAlign = &m_pAllocAlignLoci[0];
 for(AlignIdx = 0; AlignIdx < m_UsedAlignLoci; AlignIdx += NumSpecies, pAlign += NumSpecies)
 	{
@@ -1386,7 +1386,7 @@ for(AlignIdx = 0; AlignIdx < m_UsedAlignLoci; AlignIdx += NumSpecies, pAlign += 
 	for(SpeciesIdx = 0; SpeciesIdx < NumSpecies; SpeciesIdx++,pAlignSpecies += 1)
 		{
 		pAlignSpecies->TotBases = pAlignSpecies->ProbeBaseCnts[0]+pAlignSpecies->ProbeBaseCnts[1]+pAlignSpecies->ProbeBaseCnts[2]+pAlignSpecies->ProbeBaseCnts[3]+pAlignSpecies->ProbeBaseCnts[4];
-		if(pAlignSpecies->TotBases == 0 || (UINT32)MinSpeciesTotCntThres > pAlignSpecies->TotBases)
+		if(pAlignSpecies->TotBases == 0 || (uint32_t)MinSpeciesTotCntThres > pAlignSpecies->TotBases)
 			{
 			pAlignSpecies->CultSpecBase = eBaseN;
 			if(pAlignSpecies->LSER < cFloorLSER)
@@ -1403,7 +1403,7 @@ for(AlignIdx = 0; AlignIdx < m_UsedAlignLoci; AlignIdx += NumSpecies, pAlign += 
 		for(BaseIdx = 0; BaseIdx < 4; BaseIdx++)
 			{
 			CurConf = ((pAlignSpecies->ProbeBaseCnts[BaseIdx] + 1) / (double)pAlignSpecies->TotBases);
-			if(pAlignSpecies->ProbeBaseCnts[BaseIdx] >= (UINT32)MinCnt && (CurConf >= SNPMmajorPC))
+			if(pAlignSpecies->ProbeBaseCnts[BaseIdx] >= (uint32_t)MinCnt && (CurConf >= SNPMmajorPC))
 				{
 				bAcceptSpec = true;
 				pAlignSpeciesA = pAlign;
@@ -1412,7 +1412,7 @@ for(AlignIdx = 0; AlignIdx < m_UsedAlignLoci; AlignIdx += NumSpecies, pAlign += 
 					if(SpeciesIdxA == SpeciesIdx)
 						continue;
 
-					if(AltMaxCnt > 0 && pAlignSpeciesA->ProbeBaseCnts[BaseIdx] >= (UINT32)AltMaxCnt)
+					if(AltMaxCnt > 0 && pAlignSpeciesA->ProbeBaseCnts[BaseIdx] >= (uint32_t)AltMaxCnt)
 						{
 						bAcceptSpec = false;
 						break;
@@ -1443,7 +1443,7 @@ return(0);
 }
 
 const int cRptBuffSize = 0x03fffff;          // will allocate this sized reporting buffer
-INT64 
+int64_t 
 CMarkers::Report(char *pszRefGenome,		// reference genome assembly against which other species were aligned
 			int NumRelGenomes,				// number of relative genome names
 			char *pszRelGenomes[],			// relative genome names
@@ -1453,16 +1453,16 @@ CMarkers::Report(char *pszRefGenome,		// reference genome assembly against which
 			bool bSloughRefOnly,			// do not report if no inter-cultivar SNP marker, i.e if cultivars all same with the polymorphic site relative to reference only
 			bool bSloughNonHetero)			// do not report unless all cultivars are relative heterozygotic - no two cultivars have same base 
 {
-UINT32 Idx;
+uint32_t Idx;
 char cBase;
 tsAlignLoci *pAlign;
 tsAlignLoci *pTmpAlign;
-UINT16 ChkIdx;
+uint16_t ChkIdx;
 char *pszTargSeq;
-UINT32 NumCultivars;
-UINT32 PrevTargSeqID;
-INT64 NumSloughed;
-INT64 NumReported;
+uint32_t NumCultivars;
+uint32_t PrevTargSeqID;
+int64_t NumSloughed;
+int64_t NumReported;
 char szBEDReportFile[_MAX_PATH+1];
 
 SortTargSeqLociSpecies();
@@ -1556,9 +1556,9 @@ NumSloughed = 0;
 NumReported = 0;
 time_t Then = time(NULL);
 time_t Now;
-INT64 LociIdx;
-INT64 NumLociProc = 0;
-INT64 PutSNPLoci = m_UsedAlignLoci / (INT64)NumCultivars;
+int64_t LociIdx;
+int64_t NumLociProc = 0;
+int64_t PutSNPLoci = m_UsedAlignLoci / (int64_t)NumCultivars;
 for(LociIdx = 0; LociIdx < m_UsedAlignLoci; LociIdx += NumCultivars)
 	{
 	if((NumLociProc % 10000)==0)
@@ -1597,7 +1597,7 @@ for(LociIdx = 0; LociIdx < m_UsedAlignLoci; LociIdx += NumCultivars)
 	if(bSloughNonHetero)
 		{
 		pTmpAlign = pAlign;
-		UINT8 CultBase = 0x0ff;
+		uint8_t CultBase = 0x0ff;
 		for(ChkIdx = 0; ChkIdx < NumCultivars; ChkIdx++,pTmpAlign++)
 			{
 			if(!pTmpAlign->FiltLowTotBases)
@@ -1650,7 +1650,7 @@ for(LociIdx = 0; LociIdx < m_UsedAlignLoci; LociIdx += NumCultivars)
 	if(m_hBEDOutFile != -1)
 		m_BEDBuffIdx += sprintf(&m_pszBEDBuff[m_BEDBuffIdx],"%s\t%u\t%u\t", pszTargSeq, pTmpAlign->TargLoci, pTmpAlign->TargLoci + 1);
 
-	for(ChkIdx = 0; ChkIdx < (UINT16)NumCultivars; ChkIdx++, pTmpAlign++)
+	for(ChkIdx = 0; ChkIdx < (uint16_t)NumCultivars; ChkIdx++, pTmpAlign++)
 		{
 		switch(pTmpAlign->CultSpecBase) {
 				case eBaseA:
@@ -1876,7 +1876,7 @@ CMarkers::ReleaseLock(bool bExclusive)
 
 static tsAlignLoci *gpAllocAlignLoci;		// as allocated to hold alignment loci;
 
-INT64
+int64_t
 CMarkers::SortTargSeqLociSpecies(void)	
 {
 // check if anything to sort ....

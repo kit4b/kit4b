@@ -1413,9 +1413,9 @@ CSNPs2pgSNPs::ProcessKalignSNPs(void)
 {
 int Rslt;
 int NumFields;
-UINT32 EstNumSNPs;
-UINT32 NumSNPsParsed;
-UINT32 RowNumber;
+uint32_t EstNumSNPs;
+uint32_t NumSNPsParsed;
+uint32_t RowNumber;
 bool bMarkerFormat;
 int ExpNumFields;
 int BaseCntsIdx;
@@ -1781,7 +1781,7 @@ while ((Rslt = m_pCSV->NextLine()) > 0)				// onto next line containing fields
 		m_pIsolateFeatSNPs = (tsIsolateFeatSNPs*)malloc(memreq);	// initial and perhaps the only allocation
 		if(m_pIsolateFeatSNPs == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "IsolateFeatSNPs: Initial memory allocation of %lld bytes - %s", (INT64)memreq, strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "IsolateFeatSNPs: Initial memory allocation of %lld bytes - %s", (int64_t)memreq, strerror(errno));
 			Reset();
 			return(eBSFerrMem);
 			}
@@ -1790,7 +1790,7 @@ while ((Rslt = m_pCSV->NextLine()) > 0)				// onto next line containing fields
 		m_pIsolateFeatSNPs = (tsIsolateFeatSNPs *)mmap(NULL, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 		if(m_pIsolateFeatSNPs == MAP_FAILED)
 			{
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "IsolateFeatSNPs: Memory allocation of %lld bytes through mmap()  failed - %s", (INT64)memreq, strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "IsolateFeatSNPs: Memory allocation of %lld bytes through mmap()  failed - %s", (int64_t)memreq, strerror(errno));
 			m_pIsolateFeatSNPs = NULL;
 			Reset();
 			return(eBSFerrMem);

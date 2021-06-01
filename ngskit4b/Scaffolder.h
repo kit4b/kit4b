@@ -80,31 +80,31 @@ typedef struct TAG_sSeqEdge {
 	tSeqID TargetSeqID;			// target sequence which has been overlapped, will always be a SE
 	tVertID TargetSeqVertID;	// targets vertice
 	int TargetLen;				// target sequence length
-	UINT16 FlgIsPE2:1;			// if edge is from PE1, 1 if edge is from PE2 of the PE
-	UINT16 FlgRevCpltd:1;		// probe sequence has been reverse complemented
-	UINT16 FlgSlough:1;			// slough this edge when scoring
-	INT32 zFlankLen;			// sequence 5' offset at which overlap starts
-	INT32 zOverlapLen;			// FlgFlankLen sequence overlaps by this many bases
-	INT32 NumSubs;				// number of subs required
+	uint16_t FlgIsPE2:1;			// if edge is from PE1, 1 if edge is from PE2 of the PE
+	uint16_t FlgRevCpltd:1;		// probe sequence has been reverse complemented
+	uint16_t FlgSlough:1;			// slough this edge when scoring
+	int32_t zFlankLen;			// sequence 5' offset at which overlap starts
+	int32_t zOverlapLen;			// FlgFlankLen sequence overlaps by this many bases
+	int32_t NumSubs;				// number of subs required
 } tsSeqEdge;
 
 
 // sequence graph vertex, references a SE contig with edge linkages to other contigs
 typedef struct TAG_sSeqVertex {
 	tVertID SeqVertID;			// uniquely identifies this vertex
-	UINT16 FlgSenseChkd:1;		// set if this vertex has been checked for relative sense against the reference vertex
-	UINT16 FlgReqRevCpl:1;		// set true if this vertex is to be RevCpl to make it's sense same as reference vertex
-	UINT16 FlgCircChkd:1;		// true if this vertex has been checked for circular references
-	UINT16 FlgPathed:1;			// if already commited into a path then can't be scored into a new path
+	uint16_t FlgSenseChkd:1;		// set if this vertex has been checked for relative sense against the reference vertex
+	uint16_t FlgReqRevCpl:1;		// set true if this vertex is to be RevCpl to make it's sense same as reference vertex
+	uint16_t FlgCircChkd:1;		// true if this vertex has been checked for circular references
+	uint16_t FlgPathed:1;			// if already commited into a path then can't be scored into a new path
 
 	tSeqID SeqID;				// sequence identifier
-	UINT32 SeqLen;				// sequence length
+	uint32_t SeqLen;				// sequence length
 	tSeqID PredSeqID;			// predecessor sequence identifier
-	UINT16 PredNumPEs;			// number of supporting PEs linking relative to this sequence
-	INT16 PredScore;			// linkage score - negative if predecessor is antisense to this SeqID, positive if sense, higher absolute scores reflect higher confidence
+	uint16_t PredNumPEs;			// number of supporting PEs linking relative to this sequence
+	int16_t PredScore;			// linkage score - negative if predecessor is antisense to this SeqID, positive if sense, higher absolute scores reflect higher confidence
 	tSeqID SuccSeqID;			// successor sequence identifier
-	UINT16 SuccNumPEs;			// number of supporting PEs linking relative to this sequence
-	INT16 SuccScore;			// linkage score - negative if successor is antisense to this SeqID, positive if sense, higher absolute scores reflect higher confidence
+	uint16_t SuccNumPEs;			// number of supporting PEs linking relative to this sequence
+	int16_t SuccScore;			// linkage score - negative if successor is antisense to this SeqID, positive if sense, higher absolute scores reflect higher confidence
 } tsSeqVertex;
 
 typedef struct TAG_sThreadProcScaffoldsPars {
@@ -133,20 +133,20 @@ typedef struct TAG_sThreadProcScaffoldsPars {
 	
 	bool bPESeqsRevCpl;				// true if PE1 and PE2 sequences are currently revcpl'd
 	
-	UINT32 AllocProbeSeqLen;		// memory allocated to pProbeSeq
-	UINT32 MaxProbeSeqWrds;			// pProbeSeq allocated to hold at most this many tSeqWrds
+	uint32_t AllocProbeSeqLen;		// memory allocated to pProbeSeq
+	uint32_t MaxProbeSeqWrds;			// pProbeSeq allocated to hold at most this many tSeqWrds
 	void *pProbeSeqWrds;			// to hold copy of probe sequence 
 	void *pRevCplProbeSeqWrds;		// to hold revcpl copy of probe sequence
 
-	UINT32 AllocMateSeqLen;			// memory allocated to pMateSeq
-	UINT32 MaxMateSeqWrds;			// pMateSeq allocated to hold at most this many tSeqWrds
+	uint32_t AllocMateSeqLen;			// memory allocated to pMateSeq
+	uint32_t MaxMateSeqWrds;			// pMateSeq allocated to hold at most this many tSeqWrds
 	void *pMateSeqWrds;				// to hold copy of mate end sequence 
 	void *pRevCplMateSeqWrds;		// to hold revcpl copy of mate end sequence 
 	
-	UINT32 NumProcessed;			// number processed
-	UINT64 NumOverlapped;			// number of sequences determined as being overlapped
-	UINT32 NumPE1Overlapping;		// number of PE1 sequences which overlapped other sequences
-	UINT32 NumPE2Overlapping;		// number of PE2 sequences which overlapped other sequences
+	uint32_t NumProcessed;			// number processed
+	uint64_t NumOverlapped;			// number of sequences determined as being overlapped
+	uint32_t NumPE1Overlapping;		// number of PE1 sequences which overlapped other sequences
+	uint32_t NumPE2Overlapping;		// number of PE2 sequences which overlapped other sequences
 } tsThreadProcScaffoldsPars;
 
 #pragma pack()
@@ -160,18 +160,18 @@ class CScaffolder : public CdeNovoAssemb
 	tSeqID m_HighestEdgeFromSeqID;				// highest numbered FromSeqID in m_pSeqEdges
 	tSeqID m_LowestEdgeToSeqID;					// lowest numbered ToSeqID in m_pSeqEdges 
 	tSeqID m_HighestEdgeToSeqID;				// highest numbered ToSeqID in m_pSeqEdges
-	UINT32 m_NumPEOverlapping;					// number of PE overlapping other sequences
-	UINT32 m_NumSEOverlapping;					// number of SE overlapping other sequences
-	UINT32 m_NumPEOverlapped;					// number of PE which are overlapped by other sequences
-	UINT32 m_NumSEOverlapped;					// number of SE which are overlapped by other sequences
+	uint32_t m_NumPEOverlapping;					// number of PE overlapping other sequences
+	uint32_t m_NumSEOverlapping;					// number of SE overlapping other sequences
+	uint32_t m_NumPEOverlapped;					// number of PE which are overlapped by other sequences
+	uint32_t m_NumSEOverlapped;					// number of SE which are overlapped by other sequences
 
-	UINT64 m_NumSeqEdges;					// number of edges between vertices currently in m_pSeqEdges
+	uint64_t m_NumSeqEdges;					// number of edges between vertices currently in m_pSeqEdges
 	size_t m_AllocMemSeqEdges;				// mem allocated for holding overlap edges
 	tsSeqEdge *m_pSeqEdges;					// allocated to hold all overlap edges (normally indexed by FromSeqID ascending, FromLen descending)
 	size_t m_AllocMemToSeqEdges;			// mem allocated for holding overlap edge ToSeqID ptrs
 	tsSeqEdge **m_ppToSeqEdges;				// ptrs into m_pSeqEdges (m_pSeqEdges[] is ordered by FromSeqID) which are ordered by ToSeqID ascending, ToLen descending
 
-	UINT32 m_NumSeqVertices;				// number of sequence vertices currently in m_pSeqVertices
+	uint32_t m_NumSeqVertices;				// number of sequence vertices currently in m_pSeqVertices
 	size_t m_AllocMemSeqVertices;			// mem allocated for holding sequence vertices
 	tsSeqVertex *m_pSeqVertices;			// allocated to hold all sequence vertices
 
@@ -181,13 +181,13 @@ class CScaffolder : public CdeNovoAssemb
 	int m_AllocScaffoldBuff;				// scaffold sequence buffer allocation size
 	char *m_pszScaffoldBuff;				// allocated to hold buffer scaffold sequences which are to be written to file
 
-	UINT32 m_NumScaffoldSets;				// number of scaffold sets processed
-	UINT32 m_ScaffoldSetScore;				// score for current scaffold set
-	UINT32 m_ScaffoldSetGaps;				// number of gaps in current scaffold set
+	uint32_t m_NumScaffoldSets;				// number of scaffold sets processed
+	uint32_t m_ScaffoldSetScore;				// score for current scaffold set
+	uint32_t m_ScaffoldSetGaps;				// number of gaps in current scaffold set
 
 	int m_MinScaffoldedSeqLen;				// reported scaffolded sequences are to be at least this length
-	UINT32 m_AcceptedScaffolds;				// there were this number of scaffolds writen to file
-	UINT32 m_UnderlenScaffolds;				// there were this number of underlength scaffolds not writen to file
+	uint32_t m_AcceptedScaffolds;				// there were this number of scaffolds writen to file
+	uint32_t m_UnderlenScaffolds;				// there were this number of underlength scaffolds not writen to file
 
 
 	int

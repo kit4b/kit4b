@@ -25,31 +25,31 @@ Original 'BioKanga' copyright notice has been retained and immediately follows t
 
 #include "./kit4bdna.h"
 
-const UINT32 cMaxNumVertices = 0x080000000;			// graphs are limited to at most 2 billion vertices
-const UINT32 cMaxNumEdges    = 0x0fffffffe;			// graphs are limited to at most just under 4 billion edges
+const uint32_t cMaxNumVertices = 0x080000000;			// graphs are limited to at most 2 billion vertices
+const uint32_t cMaxNumEdges    = 0x0fffffffe;			// graphs are limited to at most just under 4 billion edges
 
 #ifdef _DEBUG
 #ifdef _WIN32
-const UINT32 cInitialAllocVertices =10000000;		// initially allocate for this many vertices
+const uint32_t cInitialAllocVertices =10000000;		// initially allocate for this many vertices
 #else
-const UINT32 cInitialAllocVertices =50000000;		// initially allocate for this many vertices
+const uint32_t cInitialAllocVertices =50000000;		// initially allocate for this many vertices
 #endif
 #else
-const UINT32 cInitialAllocVertices =50000000;		// initially allocate for this many vertices
+const uint32_t cInitialAllocVertices =50000000;		// initially allocate for this many vertices
 #endif
 
 const double cReallocVertices   =   0.3;	    // then, as may be required, realloc in increments of this proportion of existing vertices
-const UINT32 cInitialAllocEdges =  (cInitialAllocVertices * 2);	// initially allocate for this many outgoing edges
+const uint32_t cInitialAllocEdges =  (cInitialAllocVertices * 2);	// initially allocate for this many outgoing edges
 const double cReallocEdges      =   0.3;		// then, as may be required, realloc in increments of this proportion pf existing outgoing edges
-const UINT32 cInitalComponentsAlloc   = 2000000;			// hopefully there will not be too many assemblies with more than 2M components - will realloc as may be required
+const uint32_t cInitalComponentsAlloc   = 2000000;			// hopefully there will not be too many assemblies with more than 2M components - will realloc as may be required
 const double cReallocComponents  = 0.3;		// realloc as may be required in this proportion of existing components
 
-const UINT32 cTransitStackAlloc   =    5000000;		// initially allocate for transition stack to hold this many entries
+const uint32_t cTransitStackAlloc   =    5000000;		// initially allocate for transition stack to hold this many entries
 const double cReallocTransitStack =    0.3;		// realloc by this proportion of existing stack entries
 
 
 
-const UINT32 cMaxDiscRemaps = 1000;					// remap disconnected graph identifiers list limit
+const uint32_t cMaxDiscRemaps = 1000;					// remap disconnected graph identifiers list limit
 
 typedef enum TAG_eVerticesSortOrder {
 	eVSOUnsorted = 0,	//  unsorted or sort order indeterminate
@@ -60,7 +60,7 @@ typedef enum TAG_eVerticesSortOrder {
 
 #pragma pack(1)
 
-typedef UINT32 tDiscGraphID;	// to contain disconnected subgraph identifiers, 1..D
+typedef uint32_t tDiscGraphID;	// to contain disconnected subgraph identifiers, 1..D
 
 
 // graph consists of vertices (representing sequences) and connecting edges (overlaying sequences) between adjacent vertices
@@ -75,11 +75,11 @@ typedef struct TAG_sGraphVertex {
 		tEdgeID OutEdgeID;		// m_pGraphOutEdges[OutEdgeID-1] at which outgoing edges from this vertex start, 0 if none
 		tEdgeID InEdgeID;		// m_pGraphInEdges[InEdgeID-1] identifying incoming edges to this vertex start, 0 if none
 		tSeqID SeqID;			// identifies the sequence being represented by this vertex
-		UINT32 SeqLen;			//  sequence is this length
+		uint32_t SeqLen;			//  sequence is this length
 		tDiscGraphID DiscGraphID; // vertex is a member of this disconnected component
-		UINT32 DegreeOut:4;		// number of outgoing edges from this vertex to any adjacent vertices, clamped to max 15
-		UINT32 DegreeIn:4;		// number of incoming edges from any adjacent vertices, clamped to max 15
-		UINT32 flgEmitted:1;	// sequence has been emitted as part of a fragment;	
+		uint32_t DegreeOut:4;		// number of outgoing edges from this vertex to any adjacent vertices, clamped to max 15
+		uint32_t DegreeIn:4;		// number of incoming edges from any adjacent vertices, clamped to max 15
+		uint32_t flgEmitted:1;	// sequence has been emitted as part of a fragment;	
 	} tsGraphVertex;
 
 
@@ -89,15 +89,15 @@ typedef struct TAG_sGraphVertex {
 typedef struct TAG_sGraphOutEdge {
 	tVertID FromVertexID;	// edge is outgoing (overlapping) from this vertex 
 	tVertID ToVertexID;	// edge is incoming (overlapped) to this Vertex
-	UINT16 SeqOfs;			// overlap of FromVertexID onto ToVertexID starts at this base relative to FromVertexID 5' start
-	UINT16 bSeqIDisPE2:1;	// if set then FromVertexID is PE2 of a paired end, reset if single ended or PE1 of paired end
-	UINT16 bDnSeqIDisPE2:1;	// if set then FromVertexID is PE2 of a paired end, reset if single ended or PE1 of paired end
-	UINT16 Contains:1;		// set if FromVertexID completely contains ToVertexID
-	UINT16 OverlapSense:2;	// 0 FromVertexID sense overlaps ToVertexID sense, 1 FromVertexID antisense overlaps ToVertexID sense, 2 FromVertexID sense overlaps ToVertexID antisense
-	UINT16 bRemove:1;		// set if this vertex marked for removal
-	UINT16 TravFwd:1;		// set after this edge has been traversed from FromVertexID to ToVertexID
-	UINT16 TravRev:1;		// set after this edge has been traversed from ToVertexID to FromVertexID
-	UINT16 AuxFlgs:8;		// currently unassigned (ensure flags total to 16 so as to all fit within 16bits)
+	uint16_t SeqOfs;			// overlap of FromVertexID onto ToVertexID starts at this base relative to FromVertexID 5' start
+	uint16_t bSeqIDisPE2:1;	// if set then FromVertexID is PE2 of a paired end, reset if single ended or PE1 of paired end
+	uint16_t bDnSeqIDisPE2:1;	// if set then FromVertexID is PE2 of a paired end, reset if single ended or PE1 of paired end
+	uint16_t Contains:1;		// set if FromVertexID completely contains ToVertexID
+	uint16_t OverlapSense:2;	// 0 FromVertexID sense overlaps ToVertexID sense, 1 FromVertexID antisense overlaps ToVertexID sense, 2 FromVertexID sense overlaps ToVertexID antisense
+	uint16_t bRemove:1;		// set if this vertex marked for removal
+	uint16_t TravFwd:1;		// set after this edge has been traversed from FromVertexID to ToVertexID
+	uint16_t TravRev:1;		// set after this edge has been traversed from ToVertexID to FromVertexID
+	uint16_t AuxFlgs:8;		// currently unassigned (ensure flags total to 16 so as to all fit within 16bits)
 	} tsGraphOutEdge;
 
 typedef struct TAG_sOverlappedSeq {
@@ -112,7 +112,7 @@ typedef struct TAG_sOverlappedSeq {
 typedef struct TAG_sComponent {
 	tDiscGraphID ComponentID;			// identifies this component
 	tVertID VertexID;					// one of the vertices which is in this component
-	UINT32 NumVertices;					// there are this many vertices in this component
+	uint32_t NumVertices;					// there are this many vertices in this component
 } tsComponent;
 
 
@@ -130,33 +130,33 @@ class CAssembGraph
 	bool m_bTerminate;				// if set true then all threads should terminate processing
 	eVerticesSortOrder m_VerticesSortOrder; // current graph vertex sort order
 	bool m_bVertexEdgeSet;				// true if InEdgeID/OutEdgeID have been initialised
-	UINT32 m_UsedGraphVertices;			// number of graph vertices currently used
-	UINT32 m_AllocGraphVertices;		// number of graph vertices allocated
+	uint32_t m_UsedGraphVertices;			// number of graph vertices currently used
+	uint32_t m_AllocGraphVertices;		// number of graph vertices allocated
 	tsGraphVertex *m_pGraphVertices;   // allocated to hold array of graph vertices
 
 	bool m_bOutEdgeSorted;				// true if m_pGraphOutEdges has been sorted in ascending FromVertexID.ToVertexOrder
-	UINT32 m_UsedGraphOutEdges;			// number of forward graph edges currently used
-	UINT32 m_AllocGraphOutEdges;		// number of forward graph edges allocated
+	uint32_t m_UsedGraphOutEdges;			// number of forward graph edges currently used
+	uint32_t m_AllocGraphOutEdges;		// number of forward graph edges allocated
 	tsGraphOutEdge *m_pGraphOutEdges;	// allocated to hold array of forward edges
 
 	bool m_bInEdgeSorted;				// true if m_pGraphInEdges has been sorted in ascending ToVertexOrder.FromVertexID
-	UINT32 m_UsedGraphInEdges;			// number of inbound graph edges currently used
-	UINT32 m_AllocGraphInEdges;			// number of inbound graph edges allocated
+	uint32_t m_UsedGraphInEdges;			// number of inbound graph edges currently used
+	uint32_t m_AllocGraphInEdges;			// number of inbound graph edges allocated
 	tEdgeID *m_pGraphInEdges;			// index onto m_pGraphOutEdges which is sorted in ToVertexID.FwdVertexID ascending order
 
-	UINT32 m_UsedComponents;			// number of components
-	UINT32 m_AllocComponents;			// number of components allocated
+	uint32_t m_UsedComponents;			// number of components
+	uint32_t m_AllocComponents;			// number of components allocated
 	tsComponent *m_pComponents;			// allocated to hold array of identified components
 
-	UINT32 m_CurTransitDepth;			// current transition depth
-	UINT32 m_MaxTransitDepth;			// deepest transition required
-	UINT32 m_AllocTransitStack;			// allocation is for this many transition entries 
+	uint32_t m_CurTransitDepth;			// current transition depth
+	uint32_t m_MaxTransitDepth;			// deepest transition required
+	uint32_t m_AllocTransitStack;			// allocation is for this many transition entries 
 	tVertID *m_pTransitStack;			// allocated to hold transition entries
 
 
-	UINT32 m_NumDiscRemaps;			// number of disconnected graph identifiers requiring remaps
+	uint32_t m_NumDiscRemaps;			// number of disconnected graph identifiers requiring remaps
 	tsRemapDiscGraphID m_DiscRemaps[cMaxDiscRemaps];	// to hold disconnected graph identifiers requiring remaps
-	UINT32 m_NumReducts;			// number of graph node reductions
+	uint32_t m_NumReducts;			// number of graph node reductions
 	bool m_bReduceEdges;			// if true then attempt to reduce extraneous graph edges when current graph is full and more node memory needs to be allocated  
 
 	void AcquireSerialise(void);
@@ -193,10 +193,10 @@ class CAssembGraph
 		LocateDnSeqIDSeq(tSeqID DnSeqID,	// match this DnSeqID
 				  tSeqID SeqID);			// with this SeqID
 
-	UINT32			// index+1 in m_pFwdGraphEdges of first matching FromVertexID, or 0 if non matching				
+	uint32_t			// index+1 in m_pFwdGraphEdges of first matching FromVertexID, or 0 if non matching				
 		LocateFirstVertID(tVertID FromVertexID);	// find first matching 
 	
-	UINT32			// index+1 in m_pFwdGraphEdges of first matching DnSeqID, or 0 if non matching				
+	uint32_t			// index+1 in m_pFwdGraphEdges of first matching DnSeqID, or 0 if non matching				
 		LocateFirstDnSeqID(tSeqID DnSeqID);		// find first matching 
 
 
@@ -206,11 +206,11 @@ class CAssembGraph
 	tsGraphVertex *			// ptr to vertex corresponding to VertixID , or NULL if unable to locate				
 			LocateVertex(tVertID VertixID);		// match this VertixID
 
-	UINT32					// number of replacements
+	uint32_t					// number of replacements
 		ReplaceDiscGraphID(tDiscGraphID ToReplaceID,		// replace existing disconnected graph identifiers 
 							tDiscGraphID ReplaceID);		// with this identifier
 
-	UINT32					// number of replacements
+	uint32_t					// number of replacements
 		ReplaceDiscGraphIDs(void);
 
 	int CreateMutexes(void);
@@ -222,12 +222,12 @@ class CAssembGraph
 	tVertID PeekTransitStack(void);				// peeked VertexID or 0 if stack empty
 	void ClearTransitStack(void);					// remove all entries from stack
 
-	UINT32							// number of vertices with both inbound and outboud edges
+	uint32_t							// number of vertices with both inbound and outboud edges
 		VertexConnections(void);		// identify and mark vertices which have multiple inbound edges
-	UINT32 GenSeqFragment(tsGraphVertex *pVertex);		// initial seed vectex
-	UINT32  TransitIdentDiscGraph(tVertID VertexID,tDiscGraphID DiscGraphID);
-	UINT32  ClearEdgeTravFwdRevs(void);
-	UINT32	ClearDiscCompIDs(void);
+	uint32_t GenSeqFragment(tsGraphVertex *pVertex);		// initial seed vectex
+	uint32_t  TransitIdentDiscGraph(tVertID VertexID,tDiscGraphID DiscGraphID);
+	uint32_t  ClearEdgeTravFwdRevs(void);
+	uint32_t	ClearDiscCompIDs(void);
 
 public:
 	CAssembGraph(void);
@@ -238,15 +238,15 @@ public:
 
 	teBSFrsltCodes SetNumThreads(int maxThreads = 4);	// use 4 threads as the default 
 
-	UINT32								// returned vertex identifier
-		AddVertex(UINT32 SeqLen,		// sequence length
+	uint32_t								// returned vertex identifier
+		AddVertex(uint32_t SeqLen,		// sequence length
 				  tSeqID SeqID,			// allocates and initialises a new graph vertex which references this sequence
 				  tSeqID PESeqID=0);	// if paired end assembly then the paired (partner) sequence identifier, 0 if no paired end
 
-	UINT32								// 0 if errors else number of vertices finalised
+	uint32_t								// 0 if errors else number of vertices finalised
 		FinaliseVertices(void);			// added vertices are sorted ready for graph edges to be added
 
-	UINT32								// number of edges removed	 
+	uint32_t								// number of edges removed	 
 		ReduceEdges(void);				// reduce graph by detecting and removing extraneous edges
 
 
@@ -261,7 +261,7 @@ public:
 		AddEdges(int NumSeqs,				// number of overlapped sequences
 				tsOverlappedSeq *pOverlappedSeqs); // overlapped sequences
 
-	UINT32									// 0 if errors else number of edges finalised
+	uint32_t									// 0 if errors else number of edges finalised
 		FinaliseEdges(void);
 	
 	teBSFrsltCodes	 
@@ -283,18 +283,18 @@ public:
 					bool bContains,			// true if SeqID completely contains DnSeqID
 					bool bAntisense);		// true if SeqID is antisense to DnSeqID 
 	
-	UINT32 GetNumGraphVertices(void);		// returns current number of graph vertices
+	uint32_t GetNumGraphVertices(void);		// returns current number of graph vertices
 
-	UINT32 GetNumGraphOutEdges(void);		// returns current number of graph forward edges
+	uint32_t GetNumGraphOutEdges(void);		// returns current number of graph forward edges
 
-	UINT32 GetNumReducts(void);				// returns current number of edge reductions
+	uint32_t GetNumReducts(void);				// returns current number of edge reductions
 
-	UINT32 IdentifyDiscComponent(tVertID VertexID, // start component traversal from this vertex
+	uint32_t IdentifyDiscComponent(tVertID VertexID, // start component traversal from this vertex
 				tDiscGraphID DiscGraphID);			 // mark all traversed vertices as members of this component
 
-	UINT32	IdentifyDisconnectedSubGraphs(void);
+	uint32_t	IdentifyDisconnectedSubGraphs(void);
 
-	UINT64 WriteContigs(char *pszOutFile);  // write assembled contigs to this output file
+	uint64_t WriteContigs(char *pszOutFile);  // write assembled contigs to this output file
 };
 
 

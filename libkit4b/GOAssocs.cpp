@@ -542,7 +542,7 @@ if(!m_FileHdr.GOGenesCnt)	// any genes and associations in file to load?
 // allocate all memory up front before loading from file
 if(m_FileHdr.GOIdentsCnt)
 	{
-	if((m_pszGOIdents = (char *)new unsigned char [m_FileHdr.GOIdentsSize])==NULL)
+	if((m_pszGOIdents = (char *)new uint8_t [m_FileHdr.GOIdentsSize])==NULL)
 		return(eBSFerrMem);
 	}
 m_GOIdentsCnt =	m_FileHdr.GOIdentsCnt;
@@ -551,7 +551,7 @@ m_MaxAllocGOIdents = m_FileHdr.GOIdentsSize;
 
 if(m_FileHdr.GeneIdentsCnt)
 	{
-	if((m_pszGeneIdents = (char *)new unsigned char [m_FileHdr.GeneIdentsSize])==NULL)
+	if((m_pszGeneIdents = (char *)new uint8_t [m_FileHdr.GeneIdentsSize])==NULL)
 		return(eBSFerrMem);
 	}
 m_GeneIdentsCnt =	m_FileHdr.GeneIdentsCnt;
@@ -560,7 +560,7 @@ m_MaxAllocGeneIdents = m_FileHdr.GeneIdentsSize;
 
 if(m_FileHdr.GOGenesCnt)
 	{
-	if((m_pGenes = (tsGOGene *)new unsigned char [m_FileHdr.GOGenesSize])==NULL)
+	if((m_pGenes = (tsGOGene *)new uint8_t [m_FileHdr.GOGenesSize])==NULL)
 		return(eBSFerrMem);
 	}
 m_GOGenesCnt =	m_FileHdr.GOGenesCnt;
@@ -568,7 +568,7 @@ m_MaxAllocGOGene = m_FileHdr.GOGenesCnt;
 
 if(m_FileHdr.GOAssocsCnt)
 	{
-	if((m_pAssocs = (tsGOAssoc *)new unsigned char [m_FileHdr.GOAssocsSize])==NULL)
+	if((m_pAssocs = (tsGOAssoc *)new uint8_t [m_FileHdr.GOAssocsSize])==NULL)
 		return(eBSFerrMem);
 	}
 m_GOAssocCnt =	m_FileHdr.GOAssocsCnt;
@@ -622,7 +622,7 @@ return(Rslt);
 // ReadDisk
 // Reads block of size 'Len' from disk starting at 'DiskOfs' into preallocated memory at 'pTo'
 teBSFrsltCodes
-CGOAssocs::ReadDisk(INT64 DiskOfs,int Len,void *pTo)
+CGOAssocs::ReadDisk(int64_t DiskOfs,int Len,void *pTo)
 {
 if(_lseeki64(m_hFile,DiskOfs,SEEK_SET)!=DiskOfs)
 	{

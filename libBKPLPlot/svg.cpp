@@ -99,7 +99,7 @@ static int svg_family_check( PLStream * );
 
 static void poly_line( PLStream *, short *, short *, PLINT, short );
 static void gradient( PLStream *, short *, short *, PLINT );
-static void write_hex( FILE *, unsigned char );
+static void write_hex( FILE *, uint8_t );
 static void write_unicode( FILE *, PLUNICODE );
 static void specify_font( FILE *, PLUNICODE );
 
@@ -1152,10 +1152,10 @@ int svg_family_check( PLStream *pls )
 //--------------------------------------------------------------------------
 // write_hex ()
 //
-// writes a unsigned char as an appropriately formatted hex value
+// writes a uint8_t as an appropriately formatted hex value
 //--------------------------------------------------------------------------
 
-void write_hex( FILE *svgFile, unsigned char val )
+void write_hex( FILE *svgFile, uint8_t val )
 {
     if ( val < 16 )
     {

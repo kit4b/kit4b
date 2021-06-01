@@ -472,7 +472,7 @@ if((Rslt = pBioseq->Open(pszInSeqFile))!=eBSFSuccess)
 	return(Rslt);
 	}
 
-if((pElSeqBuff = (etSeqBase *)new unsigned char[cSeqAllocLen])==NULL)
+if((pElSeqBuff = (etSeqBase *)new uint8_t[cSeqAllocLen])==NULL)
 	{
 	printf("\nUnable to allocate %d bytes as a sequence buffer",cSeqAllocLen);
 	delete pCSV;

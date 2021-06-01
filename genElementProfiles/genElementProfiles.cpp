@@ -23,8 +23,8 @@
 #endif
 
 const int cChromSeqReAlloc = 5000000;	// realloc chrom sequence size
-const UINT32 cMaxAccumCnt= 0x07ffffff;  // truncate accumulated counts to be at most this value
-const UINT32 cRetainCnt  = 0x08000000;  // accumulated counts >= this value are counts marked as being to be retained
+const uint32_t cMaxAccumCnt= 0x07ffffff;  // truncate accumulated counts to be at most this value
+const uint32_t cRetainCnt  = 0x08000000;  // accumulated counts >= this value are counts marked as being to be retained
 
 const int cMinFlankLen   = 0;			// minimum user specified flank length
 const int cDfltFlankLen  = 2000;		// default flank length
@@ -115,7 +115,7 @@ typedef struct TAG_sChromCnts {
 	int AllocCovCnts;							// allocated to hold cnts for this sized chromosome
 	int StartOfs;								// pCovCnts[offset] of first coverage cnt
 	int EndOfs;									// pCovCnts[offset] of last coverage cnt
-	UINT32 *pCovCnts;							// coverage counts
+	uint32_t *pCovCnts;							// coverage counts
 } tsChromCnts;
 
 tsChromCnts m_ChromCnts[cMaxChromCov];
@@ -594,7 +594,7 @@ if(m_NumChromsCov > 0)
 			free(m_ChromCnts[ChromIdx].pCovCnts);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
 #else
 			if(m_ChromCnts[ChromIdx].pCovCnts != MAP_FAILED)
-				munmap(m_ChromCnts[ChromIdx].pCovCnts,m_ChromCnts[ChromIdx].AllocCovCnts * sizeof(UINT32));
+				munmap(m_ChromCnts[ChromIdx].pCovCnts,m_ChromCnts[ChromIdx].AllocCovCnts * sizeof(uint32_t));
 #endif
 			m_ChromCnts[ChromIdx].pCovCnts = NULL;
 			}
@@ -618,7 +618,7 @@ BuildReadCoverage(etReadProfile ReadProfile,		// profile for: 0 read density, 1:
 tsChromCnts *pChrom;
 int ChromIdx;
 int AllocCovCnts;
-UINT32 *pCovCnts;
+uint32_t *pCovCnts;
 size_t ReallocTo;
 
 if(pszChrom == NULL || pszChrom[0] == '\0')
@@ -667,21 +667,21 @@ if(ChromIdx == m_NumChromsCov)	// if a new or first chrom
 	pChrom->StartOfs = StartOfs;
 	pChrom->EndOfs = EndOfs;
 	AllocCovCnts = EndOfs + cAllocCovCnts;
-	ReallocTo =  AllocCovCnts * sizeof(UINT32);
+	ReallocTo =  AllocCovCnts * sizeof(uint32_t);
 #ifdef _WIN32
-	pChrom->pCovCnts = (UINT32 *) malloc(ReallocTo);	// initial and perhaps the only allocation
+	pChrom->pCovCnts = (uint32_t *) malloc(ReallocTo);	// initial and perhaps the only allocation
 	if(pChrom->pCovCnts == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"BuildReadCoverage: Memory allocation of %lld bytes - %s",(INT64)ReallocTo,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"BuildReadCoverage: Memory allocation of %lld bytes - %s",(int64_t)ReallocTo,strerror(errno));
 		Reset();
 		return(eBSFerrMem);
 		}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-	pChrom->pCovCnts = (UINT32 *)mmap(NULL,ReallocTo, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+	pChrom->pCovCnts = (uint32_t *)mmap(NULL,ReallocTo, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(pChrom->pCovCnts == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"BuildReadCoverage: Memory allocation of %lld bytes through mmap()  failed - %s",(INT64)ReallocTo,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"BuildReadCoverage: Memory allocation of %lld bytes through mmap()  failed - %s",(int64_t)ReallocTo,strerror(errno));
 		pChrom->pCovCnts = NULL;
 		Reset();
 		return(eBSFerrMem);
@@ -696,11 +696,11 @@ if(ChromIdx == m_NumChromsCov)	// if a new or first chrom
 if(EndOfs >= pChrom->AllocCovCnts)
 	{
 	AllocCovCnts = EndOfs + cAllocCovCnts;
-	ReallocTo = AllocCovCnts * sizeof(UINT32);
+	ReallocTo = AllocCovCnts * sizeof(uint32_t);
 #ifdef _WIN32
-	pCovCnts = (UINT32 *) realloc(pChrom->pCovCnts,ReallocTo);
+	pCovCnts = (uint32_t *) realloc(pChrom->pCovCnts,ReallocTo);
 #else
-	pCovCnts = (UINT32 *)mremap(pChrom->pCovCnts,pChrom->AllocCovCnts * sizeof(UINT32),ReallocTo,MREMAP_MAYMOVE);
+	pCovCnts = (uint32_t *)mremap(pChrom->pCovCnts,pChrom->AllocCovCnts * sizeof(uint32_t),ReallocTo,MREMAP_MAYMOVE);
 	if(pCovCnts == MAP_FAILED)
 		pCovCnts = NULL;
 #endif
@@ -711,7 +711,7 @@ if(EndOfs >= pChrom->AllocCovCnts)
 		return(eBSFerrMem);
 		}
 	pChrom->pCovCnts = pCovCnts;
-	memset(&pChrom->pCovCnts[pChrom->AllocCovCnts],0,(AllocCovCnts - pChrom->AllocCovCnts) * sizeof(UINT32));
+	memset(&pChrom->pCovCnts[pChrom->AllocCovCnts],0,(AllocCovCnts - pChrom->AllocCovCnts) * sizeof(uint32_t));
 	pChrom->AllocCovCnts = AllocCovCnts;
 	}
 
@@ -726,8 +726,8 @@ if(ReadProfile != eRPdensity)		// if using read starts instead of the default ov
 	{
 	if(Strand == '-')
 		pCovCnts = &pChrom->pCovCnts[EndOfs];
-	if((cMaxAccumCnt - *pCovCnts) > (UINT32)Cnt)
-		*pCovCnts += (UINT32)Cnt;
+	if((cMaxAccumCnt - *pCovCnts) > (uint32_t)Cnt)
+		*pCovCnts += (uint32_t)Cnt;
 	else
 		*pCovCnts = cMaxAccumCnt;
 	}
@@ -736,8 +736,8 @@ else
 	while(StartOfs++ <= EndOfs)
 		{
 		// clamp accumulated cnts to be no greater than cMaxAccumCnt
-		if((cMaxAccumCnt - *pCovCnts) > (UINT32)Cnt)
-			*pCovCnts += (UINT32)Cnt;
+		if((cMaxAccumCnt - *pCovCnts) > (uint32_t)Cnt)
+			*pCovCnts += (uint32_t)Cnt;
 		else
 			*pCovCnts = cMaxAccumCnt;
 		pCovCnts += 1;
@@ -760,7 +760,7 @@ RetainReadCoverage(char *pszChrom,		// filtering is onto this chrom
 {
 tsChromCnts *pChrom;
 int ChromIdx;
-UINT32 *pCovCnts;
+uint32_t *pCovCnts;
 
 if(pszChrom == NULL || pszChrom[0] == '\0')
 	{
@@ -824,9 +824,9 @@ WriteRegions(char *pszSrcFile,				// file from which read loci were sourced
 int BuffIdx;
 char szLineBuff[8096];
 tsChromCnts *pChrom;
-UINT32 *pCnts;
+uint32_t *pCnts;
 int Cnts;
-UINT32 SumCnts;
+uint32_t SumCnts;
 int ChromIdx;
 int SeqIdx;
 int StartOfRegion;
@@ -883,7 +883,7 @@ for(ChromIdx = 0 ; ChromIdx < m_NumChromsCov; ChromIdx++,pChrom++)
 						{
 						// output region here!!	
 						NumRegions += 1;
-						Score = SumCnts/(UINT32)TotRegionLen;
+						Score = SumCnts/(uint32_t)TotRegionLen;
 						switch(FMode) {
 							case eFMdefault:
 								BuffIdx+=sprintf(&szLineBuff[BuffIdx],"%d,\"ROI\",\"%s\",\"%s\",%d,%d,%d,\"%c\"\n",NumRegions,pszTitle,pChrom->szChrom,StartOfRegion,EndOfRegion,TotRegionLen,Strand);
@@ -1165,7 +1165,7 @@ ReportCenteredAt(etReadProfile ReadProfile,		// profile for: 0 read density, 1: 
 				 int NumExons,			// number of exons
 				 char Strand,			// on this strand
 				 char *pszChrom,		// is on this chrom	
-				 UINT32 LociOfInterest,	// loci of interest (TSS or TES)
+				 uint32_t LociOfInterest,	// loci of interest (TSS or TES)
  				 int NumBins,			// profile counts into this many bins
 				 int IntergenicLen,		// profiling counts for this length intergenic
 				 int IntragenicLen,		// profiling counts for this length intergenic
@@ -1177,9 +1177,9 @@ int BinIdx;
 int ChromIdx;
 tsChromCnts *pChrom;
 int TotFlankLen;
-UINT32 *pCnts;
-UINT32 *pWinCnts;
-UINT32 BinCnts[cMaxNumBins];
+uint32_t *pCnts;
+uint32_t *pWinCnts;
+uint32_t BinCnts[cMaxNumBins];
 char szOutBuff[cMaxNumBins*8];
 int BuffIdx;
 int TotCnts;
@@ -1210,7 +1210,7 @@ if(ChromIdx == m_NumChromsCov)	// not an existing chrom so no reporting required
 	return(eBSFSuccess);
 
 TotFlankLen = IntergenicLen + IntragenicLen;
-memset(BinCnts,0,NumBins * sizeof(UINT32));
+memset(BinCnts,0,NumBins * sizeof(uint32_t));
 TotCnts = 0;
 TotBinCnts = 0;
 PeakWinCnts = 0;
@@ -1322,9 +1322,9 @@ int Start;
 int End;
 int CurIntron;
 int TransIdx;
-UINT32 *pCnts;
-UINT32 *pWinCnts;
-UINT32 BinCnts[cMaxNumBins];
+uint32_t *pCnts;
+uint32_t *pWinCnts;
+uint32_t BinCnts[cMaxNumBins];
 char szOutBuff[cMaxNumBins*8];
 int BuffIdx;
 int TotCnts;
@@ -1359,7 +1359,7 @@ if(m_NumChromsCov > 0)
 if(ChromIdx == m_NumChromsCov)	// not an existing chrom so no reporting required
 	return(eBSFSuccess);
 
-memset(BinCnts,0,NumBins * sizeof(UINT32));
+memset(BinCnts,0,NumBins * sizeof(uint32_t));
 
 if((m_NumIntrons = m_pBEDFile->GetNumIntrons(CurFeatureID)) > 0)
 	{

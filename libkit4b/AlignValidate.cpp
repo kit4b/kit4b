@@ -500,7 +500,7 @@ if(ChromID < 1 || ChromID > m_NumChroms)
 return(m_pChroms[ChromID-1].ChromLen);
 }
 
-INT64 
+int64_t 
 CAlignValidate::GetSpeciesLen(int SpeciesID)	// returns sum of all chromosome lengths for species
 {
 if(SpeciesID < 1 || SpeciesID > m_NumSpecies)

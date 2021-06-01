@@ -350,9 +350,9 @@ c_plscol0a( PLINT icol0, PLINT r, PLINT g, PLINT b, PLFLT alpha )
         return;
     }
 
-    m_plsc->cmap0[icol0].r = (unsigned char) r;
-    m_plsc->cmap0[icol0].g = (unsigned char) g;
-    m_plsc->cmap0[icol0].b = (unsigned char) b;
+    m_plsc->cmap0[icol0].r = (uint8_t) r;
+    m_plsc->cmap0[icol0].g = (uint8_t) g;
+    m_plsc->cmap0[icol0].b = (uint8_t) b;
     m_plsc->cmap0[icol0].a = alpha;
 
     if ( m_plsc->level > 0 )
@@ -465,9 +465,9 @@ c_plscmap0( const PLINT *r, const PLINT *g, const PLINT *b, PLINT ncol0 )
             return;
         }
 
-        m_plsc->cmap0[i].r = (unsigned char) r[i];
-        m_plsc->cmap0[i].g = (unsigned char) g[i];
-        m_plsc->cmap0[i].b = (unsigned char) b[i];
+        m_plsc->cmap0[i].r = (uint8_t) r[i];
+        m_plsc->cmap0[i].g = (uint8_t) g[i];
+        m_plsc->cmap0[i].b = (uint8_t) b[i];
         m_plsc->cmap0[i].a = 1.0;
     }
 
@@ -508,9 +508,9 @@ c_plscmap0a( const PLINT *r, const PLINT *g, const PLINT *b, const PLFLT *alpha,
             return;
         }
 
-        m_plsc->cmap0[i].r = (unsigned char) r[i];
-        m_plsc->cmap0[i].g = (unsigned char) g[i];
-        m_plsc->cmap0[i].b = (unsigned char) b[i];
+        m_plsc->cmap0[i].r = (uint8_t) r[i];
+        m_plsc->cmap0[i].g = (uint8_t) g[i];
+        m_plsc->cmap0[i].b = (uint8_t) b[i];
         m_plsc->cmap0[i].a = alpha[i];
     }
 
@@ -548,9 +548,9 @@ c_plscmap1( const PLINT *r, const PLINT *g, const PLINT *b, PLINT ncol1 )
             plabort( buffer );
             return;
         }
-        m_plsc->cmap1[i].r = (unsigned char) r[i];
-        m_plsc->cmap1[i].g = (unsigned char) g[i];
-        m_plsc->cmap1[i].b = (unsigned char) b[i];
+        m_plsc->cmap1[i].r = (uint8_t) r[i];
+        m_plsc->cmap1[i].g = (uint8_t) g[i];
+        m_plsc->cmap1[i].b = (uint8_t) b[i];
         m_plsc->cmap1[i].a = 1.0;
     }
 
@@ -590,9 +590,9 @@ c_plscmap1a( const PLINT *r, const PLINT *g, const PLINT *b, const PLFLT *alpha,
             plabort( buffer );
             return;
         }
-        m_plsc->cmap1[i].r = (unsigned char) r[i];
-        m_plsc->cmap1[i].g = (unsigned char) g[i];
-        m_plsc->cmap1[i].b = (unsigned char) b[i];
+        m_plsc->cmap1[i].r = (uint8_t) r[i];
+        m_plsc->cmap1[i].g = (uint8_t) g[i];
+        m_plsc->cmap1[i].b = (uint8_t) b[i];
         m_plsc->cmap1[i].a = alpha[i];
     }
 
@@ -871,9 +871,9 @@ plcmap1_calc( void )
 
             c_plhlsrgb( h, l, s, &r, &g, &b );
 
-            m_plsc->cmap1[i].r = (unsigned char) MAX( 0, MIN( 255, (int) ( 256. * r ) ) );
-            m_plsc->cmap1[i].g = (unsigned char) MAX( 0, MIN( 255, (int) ( 256. * g ) ) );
-            m_plsc->cmap1[i].b = (unsigned char) MAX( 0, MIN( 255, (int) ( 256. * b ) ) );
+            m_plsc->cmap1[i].r = (uint8_t) MAX( 0, MIN( 255, (int) ( 256. * r ) ) );
+            m_plsc->cmap1[i].g = (uint8_t) MAX( 0, MIN( 255, (int) ( 256. * g ) ) );
+            m_plsc->cmap1[i].b = (uint8_t) MAX( 0, MIN( 255, (int) ( 256. * b ) ) );
             m_plsc->cmap1[i].a = a;
         }
     }
@@ -2638,9 +2638,9 @@ plcol_interp( PLStream *pls, PLColor *newcolor, int i, int ncol )
     }
     else
     {
-        newcolor->r = (unsigned char) ( ( 1. - delta ) * pls->cmap1[il].r + delta * pls->cmap1[ir].r );
-        newcolor->g = (unsigned char) ( ( 1. - delta ) * pls->cmap1[il].g + delta * pls->cmap1[ir].g );
-        newcolor->b = (unsigned char) ( ( 1. - delta ) * pls->cmap1[il].b + delta * pls->cmap1[ir].b );
+        newcolor->r = (uint8_t) ( ( 1. - delta ) * pls->cmap1[il].r + delta * pls->cmap1[ir].r );
+        newcolor->g = (uint8_t) ( ( 1. - delta ) * pls->cmap1[il].g + delta * pls->cmap1[ir].g );
+        newcolor->b = (uint8_t) ( ( 1. - delta ) * pls->cmap1[il].b + delta * pls->cmap1[ir].b );
         newcolor->a = ( 1. - delta ) * pls->cmap1[il].a + delta * pls->cmap1[ir].a;
     }
 }

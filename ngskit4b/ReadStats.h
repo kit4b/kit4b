@@ -23,15 +23,15 @@ Original 'BioKanga' copyright notice has been retained and immediately follows t
 
 #pragma once
 
-const UINT32 cMinRSSeqLen = 16;						// raw sequences must be at least this length after any end timming to be acceptable for processing
-const UINT32 cMaxRSSeqLen = cMaxReadLen;			// can accept read sequences upto this length
+const uint32_t cMinRSSeqLen = 16;						// raw sequences must be at least this length after any end timming to be acceptable for processing
+const uint32_t cMaxRSSeqLen = cMaxReadLen;			// can accept read sequences upto this length
 
 const int cDfltPhredScore = 30;						// if no quality scores available in input reads then use this as the default quality score
 
 const int cMinBasePhredScore = 10;					// if processing for minimum mean Phred scores then this is the minimum which can be specified, and any individual base must have at least this Phred
 
-const UINT32 cMaxContamSeqs = 250;					// max of this many contaminant sequences allowed
-const UINT32 cReAllocContamSeqs = 64;				// initially allocate then realloc as needed for this many contaminate sequences
+const uint32_t cMaxContamSeqs = 250;					// max of this many contaminant sequences allowed
+const uint32_t cReAllocContamSeqs = 64;				// initially allocate then realloc as needed for this many contaminate sequences
 
 const int cMaxKMerLen = 12;							// can process maximal sized K-mers of this length
 
@@ -46,9 +46,9 @@ const int cRSDMaxDupInstances = 2500;				// report instance counts up this max n
 const int cRSDMaxWorkerThreads = 64;				// can handle at most 64 threads
 const int cRSDMaxInFileSpecs = 125;					// allow up to this many input files each for PE1 (or single ended) and PE2, 250 total max
 
-const UINT32 cHashMask =       0x0fffff;			// hashing is over 10 bases
-const UINT32 cMaxHashArrayEntries = (cHashMask + 1);        // alloc hash array to hold this many entries, must be at least 1 + maximal sized sized hash
-const UINT32 cReallocPackedWrds = (((cMaxRSSeqLen+3)/4) * 1000);	// if needing to realloc memory for holding packed sampled reads then realloc this many additional words 
+const uint32_t cHashMask =       0x0fffff;			// hashing is over 10 bases
+const uint32_t cMaxHashArrayEntries = (cHashMask + 1);        // alloc hash array to hold this many entries, must be at least 1 + maximal sized sized hash
+const uint32_t cReallocPackedWrds = (((cMaxRSSeqLen+3)/4) * 1000);	// if needing to realloc memory for holding packed sampled reads then realloc this many additional words 
 
 // processing mode enumerations
 typedef enum TAG_eRSDMode
@@ -61,27 +61,27 @@ typedef enum TAG_eRSDMode
 
 
 typedef struct TAG_sSampledSeq {
-	UINT32 NxtSeq;			// index+1 into m_pSampledSeqs[] at which next sampled sequence with same hash starts or 0 if no same hashed sequence 
-	UINT32 NumInstances;		// number of instances of this sequence, or if PE then both sequences concatenated
-	UINT32 NumRevCplInstances;	// number of instances where the match was with a reverse complemented SE or PE probe only
-	UINT16 PE1ReadLen;		// PE1 sequence length
-	UINT16 PE2ReadLen;		// if PE processing then PE2 sequence length
-	UINT16 NumPackedWrds;	// number of UINT32s in PackedSeqs
-	UINT16 Flags:16;		// to hold sundry flags
-	UINT32 PackedSeqs[1];	// to contain the packed sequences, 16 bases per UINT32
+	uint32_t NxtSeq;			// index+1 into m_pSampledSeqs[] at which next sampled sequence with same hash starts or 0 if no same hashed sequence 
+	uint32_t NumInstances;		// number of instances of this sequence, or if PE then both sequences concatenated
+	uint32_t NumRevCplInstances;	// number of instances where the match was with a reverse complemented SE or PE probe only
+	uint16_t PE1ReadLen;		// PE1 sequence length
+	uint16_t PE2ReadLen;		// if PE processing then PE2 sequence length
+	uint16_t NumPackedWrds;	// number of UINT32s in PackedSeqs
+	uint16_t Flags:16;		// to hold sundry flags
+	uint32_t PackedSeqs[1];	// to contain the packed sequences, 16 bases per uint32_t
 	} tsSampledSeq;
 
 typedef struct TAG_sSeqCharacteristics {
-	INT64 NumReads;				// number of reads processed
+	int64_t NumReads;				// number of reads processed
 	int MeanReadLen;			// mean read length
 	int MinReadLen;				// minimum read length
 	int MaxReadLen;				// maximum read length
-	INT64 NumSampled;			// number of reads sampled for duplicates and off target alignments
-	INT64 NumCntd;				// number of reads which were counted in duplicate counts
-	INT64 NumNoneCntd;			// number of reads which were processed for duplicate counts but not contributing towards these counts
-	INT64 NotProcUL;			// number of reads not accepted for processing because after any end trimming they were < cMinRawSeqLen
-	INT64 NotProcNs;			// number of reads not accepted for duplicate processing because they contained indeterminate bases
-	INT64 NotProcQS;			// number of reads not accepted for duplicate processing because of low quality scoring
+	int64_t NumSampled;			// number of reads sampled for duplicates and off target alignments
+	int64_t NumCntd;				// number of reads which were counted in duplicate counts
+	int64_t NumNoneCntd;			// number of reads which were processed for duplicate counts but not contributing towards these counts
+	int64_t NotProcUL;			// number of reads not accepted for processing because after any end trimming they were < cMinRawSeqLen
+	int64_t NotProcNs;			// number of reads not accepted for duplicate processing because they contained indeterminate bases
+	int64_t NotProcQS;			// number of reads not accepted for duplicate processing because of low quality scoring
 	int MinScore;				// minimum phred or quality score
 	int MeanQScore;				// mean quality score
 	int MaxScore;				// maximum phred or quality score
@@ -112,19 +112,19 @@ typedef struct TAG_sThreadNGSQCPars {
 	int Rslt;						// returned result code
 	int ProcessingID;				// processing instance identifier, used if processing eRSDindependent to identify output file instances
 	int PE1RawReadLen;				// current length of read being buffered in PE1RawReadsBuff
-	UINT8 PE1RawReadsBuff[cMaxRSSeqLen + 16];		// holds PE1 raw read sequence (16 is for a small safety margin!)
+	uint8_t PE1RawReadsBuff[cMaxRSSeqLen + 16];		// holds PE1 raw read sequence (16 is for a small safety margin!)
 	int PE2RawReadLen;				// current length of read being buffered in PE2RawReadsBuff
-	UINT8 PE2RawReadsBuff[cMaxRSSeqLen + 16];		// holds PE2 raw read sequence
+	uint8_t PE2RawReadsBuff[cMaxRSSeqLen + 16];		// holds PE2 raw read sequence
 	int PE1QScoresLen;				// current length of quality scores buffered in PE1QScoresBuff
-	UINT8 PE1QScoresBuff[cMaxRSSeqLen + 16];		// holds PE1 raw read quality scores
+	uint8_t PE1QScoresBuff[cMaxRSSeqLen + 16];		// holds PE1 raw read quality scores
 	int PE2QScoresLen;				// current length of quality scores buffered in PE2QScoresBuff
-	UINT8 PE2QScoresBuff[cMaxRSSeqLen + 16];		// holds PE2 raw read quality scores
+	uint8_t PE2QScoresBuff[cMaxRSSeqLen + 16];		// holds PE2 raw read quality scores
 
 	int NumInputFilesProcessed;		// number of input read files processed by this thread
-	INT64 TotNumSEReads;			// total number of SE reads processed by this thread
-	INT64 TotNumPEReads;			// total number of PE reads processed by this thread
+	int64_t TotNumSEReads;			// total number of SE reads processed by this thread
+	int64_t TotNumPEReads;			// total number of PE reads processed by this thread
 	tsSeqCharacteristics SeqCharacteristics; // sequence characteristics for all reads processed by this thread
-	UINT32 KMerCntOfs[cMaxRSSeqLen * cMaxKMerLen];  // each thread buffers offsets into m_pKMerCnts[] untill all K-mers in a read have been identified then updates m_pKMerCnts as an atomic block 
+	uint32_t KMerCntOfs[cMaxRSSeqLen * cMaxKMerLen];  // each thread buffers offsets into m_pKMerCnts[] untill all K-mers in a read have been identified then updates m_pKMerCnts as an atomic block 
 } tsThreadNGSQCPars;
 
 typedef struct TAG_sThreadIndependentNGSQCPars {
@@ -170,18 +170,18 @@ class CReadStats
 	int m_MaxKMerLen;			// processing is for upto this KMer length inclusive
 	int m_KMerCCC;				// concordance correlation coefficient measure KMer length
 
-	UINT32 *m_pBaseNs;			// to hold indeterminates Ns counts at each offset 5' to 3' along read length 
-	UINT32 *m_pScores;			// to hold Phred scores at each offset 5' to 3' along read length
+	uint32_t *m_pBaseNs;			// to hold indeterminates Ns counts at each offset 5' to 3' along read length 
+	uint32_t *m_pScores;			// to hold Phred scores at each offset 5' to 3' along read length
 	int m_EstMaxSeqLen;			// estimated maximum read lengths 
 	int m_AllocdMaxReadLen;		// current K-mer count allocations are for these maximal length reads
 	int m_KMerCntsEls;			// total number of count elements per base
 	size_t m_AllocdKMerCntsMem;	// allocated memory for K-mer counts
-	UINT32 *m_pKMerCnts;		// to contain all K-mer counts along lengths of reads
+	uint32_t *m_pKMerCnts;		// to contain all K-mer counts along lengths of reads
 
 	int m_MinReadLen;			// minimum length read processed
 	int m_MaxReadLen;			// maximum length read processed
-	UINT32 m_ReadLenDist[cMaxRSSeqLen+2]; // read length distributions, includes count m_ReadLenDist[cMaxRSSeqLen+1] of reads which were truncated to cMaxRSSeqLen
-	UINT64 m_ProbNoReadErrDist[100];	// probabilities of read being error free distributions 
+	uint32_t m_ReadLenDist[cMaxRSSeqLen+2]; // read length distributions, includes count m_ReadLenDist[cMaxRSSeqLen+1] of reads which were truncated to cMaxRSSeqLen
+	uint64_t m_ProbNoReadErrDist[100];	// probabilities of read being error free distributions 
 
 	int m_hReadLenDistRptFile;		// file handle for read length distributions report file
 	char m_szReadLenDistRptFile[_MAX_PATH];	//  read length distributions report file
@@ -228,18 +228,18 @@ class CReadStats
 	int m_MinContamLen;			// accept contaminant overlaps if overlap at least this many bases 
 	CContaminants *m_pContaminates; // contaminants class for processing of contaminate sequences
 
-	UINT32 m_NumChkdPE1ContamHits;	// number of PE1 sequences checked for contaminant hits
-	UINT32 m_NumPE1ContamHits;	// number of PE1 sequences with contaminate hits
-	UINT32 m_NumChkdPE2ContamHits;	// number of PE2 sequences checked for contaminant hits
-	UINT32 m_NumPE2ContamHits;	// number of PE2 sequences with contaminate hits
+	uint32_t m_NumChkdPE1ContamHits;	// number of PE1 sequences checked for contaminant hits
+	uint32_t m_NumPE1ContamHits;	// number of PE1 sequences with contaminate hits
+	uint32_t m_NumChkdPE2ContamHits;	// number of PE2 sequences checked for contaminant hits
+	uint32_t m_NumPE2ContamHits;	// number of PE2 sequences with contaminate hits
 
-	UINT32 m_NumSeqHashes;		// number of hashes in m_pSeqHashes
-	UINT32 *m_pSeqHashes;		// array, indexed by sampled sequence hashes, holding offsets into packed sequence samples
+	uint32_t m_NumSeqHashes;		// number of hashes in m_pSeqHashes
+	uint32_t *m_pSeqHashes;		// array, indexed by sampled sequence hashes, holding offsets into packed sequence samples
 
-	UINT32 m_AllocdSampledSeqWrds;  // this many sampled sequence words have been allocated
-	UINT32 m_UsedSampledSeqWrds;	// this many sampled sequence words have been used 
+	uint32_t m_AllocdSampledSeqWrds;  // this many sampled sequence words have been allocated
+	uint32_t m_UsedSampledSeqWrds;	// this many sampled sequence words have been used 
 	size_t m_AllocdSampledSeqMem;	// allocation for this many bytes
-	UINT32 *m_pSampledSeqs;		// allocated to hold sampled sequences
+	uint32_t *m_pSampledSeqs;		// allocated to hold sampled sequences
 
 
 	char *m_pszOutDistFile;		// where to write distributions CSV file
@@ -294,7 +294,7 @@ class CReadStats
 			FinaliseContaminants(void);
 
 	int
-		AddContamHash(UINT32 Hash, int SeqOf, int ContamSeq);
+		AddContamHash(uint32_t Hash, int SeqOf, int ContamSeq);
 
 	int				// <0 if errors, 0 if no matches, >0 at least one contaminant sequence overlapping
 		LocateContaminentMatch(int SeqLen,				// targ sequence is of this length
@@ -304,35 +304,35 @@ class CReadStats
 	int				// returns 0 if not accepted as read instance, 1 if this is the first instance of an accepted sampled read, 2..N if multiple instances exist
 		AddReadInst(tsThreadNGSQCPars *pThread, // thread specific processing state and context
 				int PE1ReadLen,			// number of bases in PE1 read
-				UINT8 *pPE1RawRead,		// PE1 read sequence
+				uint8_t *pPE1RawRead,		// PE1 read sequence
 				int PE2ReadLen,			// number of bases in PE2 read
-				UINT8 *pPE2RawRead);	// PE2 read sequence
+				uint8_t *pPE2RawRead);	// PE2 read sequence
 
 	teBSFrsltCodes
 		AnalyseReads(tsThreadNGSQCPars *pThread, // thread specific processing state and context
 				int PE1ReadLen,			// number of bases in PE1 read
-				UINT8 *pPE1RawRead,		// PE1 read sequence
+				uint8_t *pPE1RawRead,		// PE1 read sequence
 				int PE1QScoreLen,		// number of quality scores in PE1 read (0 if no associated quality scores)
-				UINT8 *pPE1QScores,		// PE1 read quality scores
+				uint8_t *pPE1QScores,		// PE1 read quality scores
 				tsInReadsFile *pPE1File,// file containing PE1 or SE reads
 				int PE2ReadLen = 0,		// number of bases in PE2 read
-				UINT8 *pPE2RawRead = NULL,	// PE2 read sequence
+				uint8_t *pPE2RawRead = NULL,	// PE2 read sequence
 				int PE2QScoreLen = 0,		// number of quality scores in PE2 read (0 if no associated quality scores)
-				UINT8 *pPE2QScores = NULL,	// PE2 read quality scores
+				uint8_t *pPE2QScores = NULL,	// PE2 read quality scores
 				tsInReadsFile *pPE2File = NULL);	// file containing PE2
 
 	int				// minimum score at any offset within the sequence
 		AccumQScores(tsThreadNGSQCPars *pThread, // thread specific processing state and context
 				int QSSchema,					// quality scoring schema - guestimated scoring schema - 0: no scoring, 1: Solexa, 2: Illumina 1.3+, 3: Illumina 1.5+, 4: Illumina 1.8+ or Sanger 
 				int ReadLen,					// number of bases in read
-				UINT8 *pRawRead,				// read sequence
-				UINT8 *pQScores = NULL);			// read quality scores (NULL if no associated quality scores)
+				uint8_t *pRawRead,				// read sequence
+				uint8_t *pQScores = NULL);			// read quality scores (NULL if no associated quality scores)
 
 	// accumulate K-mer counts at each base offset along the read length
 	int				
 		AccumKMers(tsThreadNGSQCPars *pThread, // thread specific processing state and context
 				int ReadLen,					// number of bases in read
-				UINT8 *pSeq);					// read sequence
+				uint8_t *pSeq);					// read sequence
 
 	teBSFrsltCodes
 		ProcessReads(tsThreadNGSQCPars *pThread, // thread specific processing state and context
@@ -341,8 +341,8 @@ class CReadStats
 
 	double									// returned Pearson
 		Pearsons(int KMerLen,				// KMer length for which counts were accumulated 
-					UINT32 *pCtrlKMerCnts,  // KMer counts for control
-					UINT32 *pExprKMerCnts);	// KMer counts for experiment	
+					uint32_t *pCtrlKMerCnts,  // KMer counts for control
+					uint32_t *pExprKMerCnts);	// KMer counts for experiment	
 
 public:
 	CReadStats();

@@ -46,24 +46,24 @@ Reset();
 // Assumes CSV rows are reasonably inter-row field populated
 const int cEstChrsBuff = 500000;		// 1st 500K chars from file should contain sufficient rows to give reasonable estimate for total rows in file
 
-UINT32									// returns estimated number of rows, 0 if unable to estimate
+uint32_t									// returns estimated number of rows, 0 if unable to estimate
 CCSVFile::CSVEstSizes(char *pszFile,	// CSV file path+name to estimate sizes
-			  INT64 *pFileSize,			// file is this size on disk
-			  INT32 *pMaxNumFields,		// with this max number of fields in any row
-			  INT32 *pMeanNumFields,	// mean number of fields (should be same as MaxFields)
-			  INT32 *pMaxNumChrsRow,	// and this maximal number of chars in any row
-			  INT32 *pMeanNumChrsRow)	// mean number of chars per row
+			  int64_t *pFileSize,			// file is this size on disk
+			  int32_t *pMaxNumFields,		// with this max number of fields in any row
+			  int32_t *pMeanNumFields,	// mean number of fields (should be same as MaxFields)
+			  int32_t *pMaxNumChrsRow,	// and this maximal number of chars in any row
+			  int32_t *pMeanNumChrsRow)	// mean number of chars per row
 {
 int hFile;
-INT64 FileSize;
+int64_t FileSize;
 int NumInBuff;
 int BuffSize;
-UINT8 *pBuff;
+uint8_t *pBuff;
 char *pChr;
 int NumChrsParsed;
 char Chr;
-UINT32 TotNumRows;
-UINT32 EstTotNumRows;
+uint32_t TotNumRows;
+uint32_t EstTotNumRows;
 int MaxNumFields;
 int NumFieldsThisRow;
 int TotNumFieldsAllRows;
@@ -93,7 +93,7 @@ if((StatRslt=_stat64(pszFile,&st))==0)
 struct stat64 st;
 if((StatRslt = stat64(pszFile,&st)) == 0)
 #endif
-	FileSize = (INT64)st.st_size;
+	FileSize = (int64_t)st.st_size;
 else
 	FileSize = 0;
 
@@ -112,8 +112,8 @@ if(FileSize < 10)		// arbitrary minimum CSV file size...
 	return(0);
 	}
 
-BuffSize = (int)min(FileSize+100,(INT64)cEstChrsBuff);
-if((pBuff = new UINT8 [BuffSize])==NULL)
+BuffSize = (int)min(FileSize+100,(int64_t)cEstChrsBuff);
+if((pBuff = new uint8_t [BuffSize])==NULL)
 	{
 	gDiagnostics.DiagOut(eDLWarn,gszProcName,"CSVEstSizes: Unable to allocate %d memory for file '%s'",BuffSize,pszFile);
 	return(0);
@@ -236,11 +236,11 @@ if(pMaxNumChrsRow != NULL)
 if(NumChrsParsed == FileSize)
 	EstTotNumRows = TotNumRows;
 else
-	EstTotNumRows = (UINT32)(((TotNumRows + 1) * FileSize)/(UINT64)NumChrsParsed);	// better to slightly over estimate than underestimate..
+	EstTotNumRows = (uint32_t)(((TotNumRows + 1) * FileSize)/(uint64_t)NumChrsParsed);	// better to slightly over estimate than underestimate..
 return(EstTotNumRows);
 }
 
-UINT32						// returns an estimate of the number of rows in currently opened CSV file
+uint32_t						// returns an estimate of the number of rows in currently opened CSV file
 CCSVFile::EstNumRows(void)
 {
 return(m_EstNumRows);
@@ -274,7 +274,7 @@ if(m_hFile == -1)
 	return(Rslt);
 	}
 
-m_MaxBuffered = (int)min(m_StatFileSize+1,(INT64)cMaxAllocInBuff);
+m_MaxBuffered = (int)min(m_StatFileSize+1,(int64_t)cMaxAllocInBuff);
 
 strcpy(m_szFileName,pszFileName);
 m_pBuffer = new char[m_MaxBuffered + 16];		// additional 16 as a safety margin
@@ -821,7 +821,7 @@ return(errno == ERANGE ? eBSFerrNumRange : eBSFSuccess);
 }
 
 int 
-CCSVFile::GetInt64(int FieldID,INT64 *pRetInt64) 
+CCSVFile::GetInt64(int FieldID,int64_t *pRetInt64) 
 {
 if(FieldID < 1 || FieldID > m_CurNumFields)
 	return(eBSFerrFieldID);

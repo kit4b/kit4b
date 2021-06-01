@@ -61,7 +61,7 @@ public:
 	int StartRsltSet(unsigned int TargEntryID, char *pszTarget,	// descriptive text about the target
 						 unsigned int ProbeEntryID, char *pszProbe);// descriptive text about the probe
 	
-	int EndRsltSet(unsigned int ProbeLen,unsigned char *pProbeSeq);
+	int EndRsltSet(unsigned int ProbeLen,uint8_t *pProbeSeq);
 
 	int	AddMatch(unsigned int ProbePsn,
 					 unsigned int TargPsn,

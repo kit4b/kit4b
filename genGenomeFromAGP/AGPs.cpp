@@ -105,7 +105,7 @@ m_pAGPentries = (tsAGPentry *) malloc(memreq);	// initial and perhaps the only a
 
 if(m_pAGPentries == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessAGP: Memory allocation of %lld bytes - %s",(INT64)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessAGP: Memory allocation of %lld bytes - %s",(int64_t)memreq,strerror(errno));
 	Reset();
 	return(eBSFerrMem);
 	}
@@ -114,7 +114,7 @@ if(m_pAGPentries == NULL)
 m_pAGPentries = (tsAGPentry *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pAGPentries == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessAGP: Memory allocation of %lld bytes through mmap()  failed - %s",(INT64)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessAGP: Memory allocation of %lld bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
 	m_pAGPentries = NULL;
 	Reset();
 	return(eBSFerrMem);
@@ -295,7 +295,7 @@ return(Rslt);
 tsAGPentry *
 CAGPs::LocateCompID(char *pszCompID)
 {
-UINT32 Idx;
+uint32_t Idx;
 tsAGPentry *pEntry = m_pAGPentries;
 if(!m_NumAGPentries || pszCompID == NULL || pszCompID[0] == '\0')
 	return(NULL);
@@ -321,7 +321,7 @@ return(&m_pAGPentries[pPrev->EntryID]);
 }
 
 tsAGPentry *
-CAGPs::Entry(UINT32 EntryID)
+CAGPs::Entry(uint32_t EntryID)
 {
 if(!m_NumAGPentries)
 	return(NULL);

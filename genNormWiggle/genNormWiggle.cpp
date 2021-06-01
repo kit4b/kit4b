@@ -56,9 +56,9 @@ char gszProcName[_MAX_FNAME];			// process name
 
 #pragma pack(1)
 typedef struct TAG_sKMerDist {
-	UINT32 Insts;		// number of instances of this K-mer with more than 1 count
-	UINT32 Cnts;		// total number of read counts observed for this K-mer
-	UINT32 Dist[cMaxDistLog2];	// distribution of instance counts
+	uint32_t Insts;		// number of instances of this K-mer with more than 1 count
+	uint32_t Cnts;		// total number of read counts observed for this K-mer
+	uint32_t Dist[cMaxDistLog2];	// distribution of instance counts
 } tsKMerDist;
 
 // element distributions 
@@ -66,11 +66,11 @@ const int cMaxKMerInstCnts = 25;	   // allow upto this many K-mer instances in a
 
 typedef struct TAG_sKMerElDist {
 	int FeatID;			// element identifier from the biobed file
-	UINT64 KMerID;		// identifies this specific K-mer (UINT64 allows for K <= 31)
-	UINT32 Insts;		// number of instances of this K-mer with at least 1 count within element
-	UINT32 Cnts;		// total number of read counts observed for this K-mer within element
-	UINT32 Min;			// minimum count observed for this K-mer within element
-	UINT32 Max;			// maximum count observed for this K-mer within element
+	uint64_t KMerID;		// identifies this specific K-mer (uint64_t allows for K <= 31)
+	uint32_t Insts;		// number of instances of this K-mer with at least 1 count within element
+	uint32_t Cnts;		// total number of read counts observed for this K-mer within element
+	uint32_t Min;			// minimum count observed for this K-mer within element
+	uint32_t Max;			// maximum count observed for this K-mer within element
 	double Mean;		// mean number of counts
 	double Variance;	// count variance
 	double StdDev;		// stddev of this K-mer within element
@@ -113,7 +113,7 @@ typedef struct TAG_sChromCnts {
 	int AllocCovCnts;							// allocated to hold cnts for this sized chromosome
 	int StartOfs;								// pCovCnts[offset] of first coverage cnt
 	int EndOfs;									// pCovCnts[offset] of last coverage cnt
-	UINT16 *pCovCnts;							// coverage counts
+	uint16_t *pCovCnts;							// coverage counts
 } tsChromCnts;
 
 tsChromCnts m_ChromCnts[cMaxChromCov];
@@ -468,7 +468,7 @@ if(m_NumChromsCov > 0)
 			free(m_ChromCnts[ChromIdx].pCovCnts);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
 #else
 			if(m_ChromCnts[ChromIdx].pCovCnts != MAP_FAILED)
-				munmap(m_ChromCnts[ChromIdx].pCovCnts,m_ChromCnts[ChromIdx].AllocCovCnts * sizeof(UINT16));
+				munmap(m_ChromCnts[ChromIdx].pCovCnts,m_ChromCnts[ChromIdx].AllocCovCnts * sizeof(uint16_t));
 #endif
 			m_ChromCnts[ChromIdx].pCovCnts = NULL;
 			}
@@ -483,11 +483,11 @@ if(m_NumChromsCov > 0)
 // Generates a sequence index for specified sequence of length SeqLen
 // Max length sequence is 31
 // Returns -1 if sequence contains any indeterminate or non a,c,g,t bases
-INT64
+int64_t
 GenSeqIdx(int SeqLen,etSeqBase *pSeq)
 {
 int Idx;
-UINT64 SeqIdx;
+uint64_t SeqIdx;
 int Base;
 if(SeqLen > 31)
 	return(-1);
@@ -504,7 +504,7 @@ return(SeqIdx);
 }
 
 char *
-StepIdx2Seq(int SeqLen,INT64 SeqIdx)
+StepIdx2Seq(int SeqLen,int64_t SeqIdx)
 {
 static char szSeqBuff[256];
 char *pChr;
@@ -578,7 +578,7 @@ BuildReadCoverage(bool bStartOnly,		// if true then only process for read starts
 tsChromCnts *pChrom;
 int ChromIdx;
 int AllocCovCnts;
-UINT16 *pCovCnts;
+uint16_t *pCovCnts;
 size_t ReallocTo;
 
 if(pszChrom == NULL || pszChrom[0] == '\0')
@@ -627,21 +627,21 @@ if(ChromIdx == m_NumChromsCov)	// if a new or first chrom
 	pChrom->StartOfs = StartOfs;
 	pChrom->EndOfs = EndOfs;
 	AllocCovCnts = EndOfs + cAllocCovCnts;
-	ReallocTo =  AllocCovCnts * sizeof(UINT16);
+	ReallocTo =  AllocCovCnts * sizeof(uint16_t);
 #ifdef _WIN32
-	pChrom->pCovCnts = (UINT16 *) malloc(ReallocTo);	// initial and perhaps the only allocation
+	pChrom->pCovCnts = (uint16_t *) malloc(ReallocTo);	// initial and perhaps the only allocation
 	if(pChrom->pCovCnts == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"BuildReadCoverage: Memory allocation of %lld bytes - %s",(INT64)ReallocTo,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"BuildReadCoverage: Memory allocation of %lld bytes - %s",(int64_t)ReallocTo,strerror(errno));
 		Reset();
 		return(eBSFerrMem);
 		}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-	pChrom->pCovCnts = (UINT16 *)mmap(NULL,ReallocTo, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+	pChrom->pCovCnts = (uint16_t *)mmap(NULL,ReallocTo, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(pChrom->pCovCnts == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"BuildReadCoverage: Memory allocation of %lld bytes through mmap()  failed - %s",(INT64)ReallocTo,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"BuildReadCoverage: Memory allocation of %lld bytes through mmap()  failed - %s",(int64_t)ReallocTo,strerror(errno));
 		pChrom->pCovCnts = NULL;
 		Reset();
 		return(eBSFerrMem);
@@ -656,11 +656,11 @@ if(ChromIdx == m_NumChromsCov)	// if a new or first chrom
 if(EndOfs >= pChrom->AllocCovCnts)
 	{
 	AllocCovCnts = EndOfs + cAllocCovCnts;
-	ReallocTo = AllocCovCnts * sizeof(UINT16);
+	ReallocTo = AllocCovCnts * sizeof(uint16_t);
 #ifdef _WIN32
-	pCovCnts = (UINT16 *) realloc(pChrom->pCovCnts,ReallocTo);
+	pCovCnts = (uint16_t *) realloc(pChrom->pCovCnts,ReallocTo);
 #else
-	pCovCnts = (UINT16 *)mremap(pChrom->pCovCnts,pChrom->AllocCovCnts * sizeof(UINT16),ReallocTo,MREMAP_MAYMOVE);
+	pCovCnts = (uint16_t *)mremap(pChrom->pCovCnts,pChrom->AllocCovCnts * sizeof(uint16_t),ReallocTo,MREMAP_MAYMOVE);
 	if(pCovCnts == MAP_FAILED)
 		pCovCnts = NULL;
 #endif
@@ -671,7 +671,7 @@ if(EndOfs >= pChrom->AllocCovCnts)
 		return(eBSFerrMem);
 		}
 	pChrom->pCovCnts = pCovCnts;
-	memset(&pChrom->pCovCnts[pChrom->AllocCovCnts],0,(AllocCovCnts - pChrom->AllocCovCnts) * sizeof(UINT16));
+	memset(&pChrom->pCovCnts[pChrom->AllocCovCnts],0,(AllocCovCnts - pChrom->AllocCovCnts) * sizeof(uint16_t));
 	pChrom->AllocCovCnts = AllocCovCnts;
 	}
 
@@ -710,7 +710,7 @@ WriteReadsWig(char *pszSrcFile,char *pszRsltsFile)
 int BuffIdx;
 char szLineBuff[8096];
 tsChromCnts *pChrom;
-UINT16 *pCnts;
+uint16_t *pCnts;
 int ChromIdx;
 int SeqIdx;
 bool bStartRegion;
@@ -787,7 +787,7 @@ AddFeatCounts(int FeatID,		// cnts are for this feature
 			  int KMerLen,etSeqBase *pSeq)
 {
 int Idx;
-INT64 KMerID;
+int64_t KMerID;
 tsKMerElDist *pElDist; 
 size_t ReallocTo;
 
@@ -802,7 +802,7 @@ if(m_pKMerElDist == NULL)
 	pElDist = (tsKMerElDist *) malloc(ReallocTo);	// initial and perhaps the only allocation
 	if(pElDist == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"BuildReadCoverage: Memory allocation of %lld bytes - %s",(INT64)ReallocTo,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"BuildReadCoverage: Memory allocation of %lld bytes - %s",(int64_t)ReallocTo,strerror(errno));
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -811,7 +811,7 @@ if(m_pKMerElDist == NULL)
 	pElDist = (tsKMerElDist *)mmap(NULL,ReallocTo, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(pElDist == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"BuildReadCoverage: Memory allocation of %lld bytes through mmap()  failed - %s",(INT64)ReallocTo,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"BuildReadCoverage: Memory allocation of %lld bytes through mmap()  failed - %s",(int64_t)ReallocTo,strerror(errno));
 		pElDist = NULL;
 		Reset();
 		return(eBSFerrMem);
@@ -863,9 +863,9 @@ if(!m_NumKMerElDistInsts || Idx == m_NumKMerElDistInsts)			// need to extend and
 
 pElDist->Insts += 1;
 pElDist->Cnts += Cnts;
-if(pElDist->Min > (UINT32)Cnts)
+if(pElDist->Min > (uint32_t)Cnts)
 	pElDist->Min = Cnts;
-if(pElDist->Max < (UINT32)Cnts)
+if(pElDist->Max < (uint32_t)Cnts)
 	pElDist->Max = Cnts;
 
 if(pElDist->Insts <= cMaxKMerInstCnts)
@@ -882,7 +882,7 @@ GenFeatCountVariance(int FeatID,		// cnts are for this feature
 					int Cnts,int KMerLen,etSeqBase *pSeq)
 {
 int Idx;
-INT64 KMerID;
+int64_t KMerID;
 tsKMerElDist *pElDist; 
 
 // determine KMer identifier
@@ -963,7 +963,7 @@ int CurEntryID;
 
 int ChromSeqLen;
 tsChromCnts *pChrom;
-UINT16 *pCnts;
+uint16_t *pCnts;
 int ChromIdx;
 int SeqIdx;
 etSeqBase *pSeq;
@@ -1079,7 +1079,7 @@ for(KMerIdx = 0; KMerIdx <  (int)m_KMerDists; KMerIdx++)
 					m_pChromSeq = NULL;
 					}
 				m_AllocdChromSeq = 0;
-				if((m_pChromSeq = new UINT8 [ChromSeqLen])==NULL)
+				if((m_pChromSeq = new uint8_t [ChromSeqLen])==NULL)
 					{
 					gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory '%d' for chrom sequence",ChromSeqLen);
 					Reset();
@@ -1205,7 +1205,7 @@ int CurEntryID;
 
 int ChromSeqLen;
 tsChromCnts *pChrom;
-UINT16 *pCnts;
+uint16_t *pCnts;
 int ChromIdx;
 int SeqIdx;
 etSeqBase *pSeq;
@@ -1316,7 +1316,7 @@ while((CurFeatID = m_pBEDElFile->GetNextFeatureID(CurFeatID)) > 0)
 				m_pChromSeq = NULL;
 				}
 			m_AllocdChromSeq = 0;
-			if((m_pChromSeq = new UINT8 [ChromSeqLen])==NULL)
+			if((m_pChromSeq = new uint8_t [ChromSeqLen])==NULL)
 				{
 				gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory '%d' for chrom sequence",ChromSeqLen);
 				Reset();
@@ -1387,7 +1387,7 @@ while((CurFeatID = m_pBEDElFile->GetNextFeatureID(CurFeatID)) > 0)
 		tsKMerElDist *pElDist = m_pKMerElDist; 
 		for(KMerIdx = 0; KMerIdx < m_NumKMerElDistInsts; KMerIdx++,pElDist++)
 			{
-			if(pElDist->FeatID != CurFeatID || pElDist->Insts < (UINT32)KMerInstsThres)
+			if(pElDist->FeatID != CurFeatID || pElDist->Insts < (uint32_t)KMerInstsThres)
 				continue;
 
 			// can now report the stats for this element with the requested KMer
@@ -1448,7 +1448,7 @@ int Idx;
 int CurEntryID;
 int ChromSeqLen;
 tsChromCnts *pChrom;
-UINT16 *pCnts;
+uint16_t *pCnts;
 int ChromIdx;
 int SeqIdx;
 etSeqBase *pSeq;
@@ -1497,7 +1497,7 @@ for(ChromIdx = 0 ; ChromIdx < m_NumChromsCov; ChromIdx++,pChrom++)
 			m_pChromSeq = NULL;
 			}
 		m_AllocdChromSeq = 0;
-		if((m_pChromSeq = new UINT8 [ChromSeqLen])==NULL)
+		if((m_pChromSeq = new uint8_t [ChromSeqLen])==NULL)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory '%d' for chrom sequence",ChromSeqLen);
 			Reset();
@@ -1533,7 +1533,7 @@ pKMer = m_pKMerDist;
 BuffIdx = 0;
 for(KMerIdx = 0; KMerIdx < (int)m_KMerDists; KMerIdx++,pKMer++)
 	{
-	if(pKMer->Insts < (UINT32)KMerInstsThres)
+	if(pKMer->Insts < (uint32_t)KMerInstsThres)
 		continue;
 	pszSeq = StepIdx2Seq(KMerLen,KMerIdx);
 	BuffIdx += sprintf(&szLineBuff[BuffIdx],"%d,\"%s\",%d,%d,%f",KMerIdx + 1,pszSeq,pKMer->Insts, pKMer->Cnts,

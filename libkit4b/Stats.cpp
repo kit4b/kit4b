@@ -232,9 +232,9 @@ CStats::FishersExactTest(int R1C1,		// sample1 true
 double Num,PValue;
 int R1T,R2T,C1T,C2T,TotalN;
 double *pLogFact;
-INT64 Row1Tot;
-INT64 Row2Tot;
-INT64 TargCnt;int tmp1,tmp2;
+int64_t Row1Tot;
+int64_t Row2Tot;
+int64_t TargCnt;int tmp1,tmp2;
 int Idx;
 
 // sanity check
@@ -256,8 +256,8 @@ while((R1C1 + R1C2 + R2C1 + R2C2) > cMaxTotSampleCnt)
 			TargCnt = cMaxTotSampleCnt - Row2Tot;
 		else
 			TargCnt = cMaxTotSampleCnt / 2;
-		R1C1 = (int)(((INT64)R1C1 * TargCnt)/Row1Tot);
-		R1C2 = (int)(((INT64)R1C2 * TargCnt)/Row1Tot);
+		R1C1 = (int)(((int64_t)R1C1 * TargCnt)/Row1Tot);
+		R1C2 = (int)(((int64_t)R1C2 * TargCnt)/Row1Tot);
 		}
 	else
 		{
@@ -265,8 +265,8 @@ while((R1C1 + R1C2 + R2C1 + R2C2) > cMaxTotSampleCnt)
 			TargCnt = cMaxTotSampleCnt - Row1Tot;
 		else
 			TargCnt = cMaxTotSampleCnt / 2;
-		R2C1 = (int)(((INT64)R2C1 * TargCnt)/Row2Tot);
-		R2C2 = (int)(((INT64)R2C2 * TargCnt)/Row2Tot);
+		R2C1 = (int)(((int64_t)R2C1 * TargCnt)/Row2Tot);
+		R2C2 = (int)(((int64_t)R2C2 * TargCnt)/Row2Tot);
 		}
 	}
 
@@ -297,9 +297,9 @@ if(R1C1 > R2C1)						// need to exchange rows?
 // surely with minimum counts of 1000000+ then user should be using chi-square
 if(R1C1 > 100000)
 	{
-	R1C2 = (int)(((INT64)1000000 * R1C2)/R1C1);
-	R2C1 = (int)(((INT64)1000000 * R2C1)/R1C1);
-	R2C2 = (int)(((INT64)1000000 * R2C2)/R1C1);
+	R1C2 = (int)(((int64_t)1000000 * R1C2)/R1C1);
+	R2C1 = (int)(((int64_t)1000000 * R2C1)/R1C1);
+	R2C2 = (int)(((int64_t)1000000 * R2C2)/R1C1);
 	R1C1 = 1000000;
 	}
 
@@ -380,7 +380,7 @@ return(PValue);
 // and returns the probability of these being random
 double
 NumbRuns(int SeqLen,	// length of sequence to process for runs
-		UINT8 *pSeq)	// sequence containing one or more runs of 0 and 1, any other values will be skipped
+		uint8_t *pSeq)	// sequence containing one or more runs of 0 and 1, any other values will be skipped
 {
 CStats Stats;
 int SeqIdx;
@@ -486,13 +486,13 @@ return(PrLessEqlR);
 
 // Calculates nCk = n! / (n-k)!k!
 double
-CStats::Calc_nCk(UINT32 n, UINT32 k) 
+CStats::Calc_nCk(uint32_t n, uint32_t k) 
 {
 long double accum;
-UINT32 Idx;
-UINT64 nFactorial;
-UINT64 kFactorial;
-UINT64 nkFactorial;
+uint32_t Idx;
+uint64_t nFactorial;
+uint64_t kFactorial;
+uint64_t nkFactorial;
 
 if (k > n)
 	return(0.0);
@@ -527,13 +527,13 @@ return((double)accum);
  * Calculates Pr(K = k) = nCk * p^k * q^(n-k)
  */
 double 
-CStats::ProbKeqlk(UINT32 n, UINT32 k, double p)
+CStats::ProbKeqlk(uint32_t n, uint32_t k, double p)
 {
 if(p < 0 || p > 1)
 	return -1;
 double nCk = Calc_nCk(n, k);
-double p2pow = pow(p, (INT32)k);
-double q2pow = pow(1 - p, (INT32)(n - k));
+double p2pow = pow(p, (int32_t)k);
+double q2pow = pow(1 - p, (int32_t)(n - k));
 return (nCk * p2pow * q2pow);
 }
 

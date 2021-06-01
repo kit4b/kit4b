@@ -303,7 +303,7 @@ else
 		pFeature = (tsFeatureEl *) malloc(memreq);	// initial and perhaps the only allocation
 		if(pFeature == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddFeature: Memory allocation of %lld bytes - %s",(INT64)memreq,strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddFeature: Memory allocation of %lld bytes - %s",(int64_t)memreq,strerror(errno));
 			Reset();
 			return(eBSFerrMem);
 			}
@@ -312,7 +312,7 @@ else
 		pFeature = (tsFeatureEl *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 		if(pFeature == MAP_FAILED)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddFeature: Memory allocation of %lld bytes through mmap()  failed - %s",(INT64)memreq,strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddFeature: Memory allocation of %lld bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
 			Reset();
 			return(eBSFerrMem);
 			}
@@ -640,10 +640,10 @@ gDiagnostics.DiagOut(eDLInfo,gszProcName,szBuff);
 }
 
 int
-CChromFeatures::ReportMergedFeat(UINT32 FeatID,				// uniquely identifies this merged feature
+CChromFeatures::ReportMergedFeat(uint32_t FeatID,				// uniquely identifies this merged feature
 								 char *pszChrom,			// feature is on this chrom
-								 UINT32 MergeStartLoci,		// starting at this loci
-								 UINT32 MergeEndLoci,		// ending at this loci
+								 uint32_t MergeStartLoci,		// starting at this loci
+								 uint32_t MergeEndLoci,		// ending at this loci
 								 char Strand)				// and is on this strand
 {
 if((m_LineBuffIdx + 100) > sizeof(m_LineBuff))
@@ -666,12 +666,12 @@ CChromFeatures::MergeFeatures(char *pszOutFile,			// file to which merged featur
 {
 int StrandIdx;					// current strand index into ElDepth, MergeStartLoci and MergeEndLoci
 int ElDepth[2];					// current overlap depth for each strand
-UINT32 MergeStartLoci[2];		// current merge start for each strand
-UINT32 MergeEndLoci[2];			// current merge end for each strand
+uint32_t MergeStartLoci[2];		// current merge start for each strand
+uint32_t MergeEndLoci[2];			// current merge end for each strand
 bool bJoinFeats[2];				// true if features are separated by at most MaxSep and thus are being joined
 char Strand;					// report merge as being on this strand
 
-UINT32 NumMerged;
+uint32_t NumMerged;
 int ChromIdx;
 int FeatIdx;
 tsChromFeatures *pChrom;
@@ -748,7 +748,7 @@ for(ChromIdx = 0; ChromIdx < m_NumChroms; ChromIdx++,pChrom++)
 							{
 							if(bStrandSpecific && pFeatSep->Strand != Strand)
 								continue;
-							if((pFeatSep->Loci - pFeat->Loci) <= (UINT32)MaxSep)
+							if((pFeatSep->Loci - pFeat->Loci) <= (uint32_t)MaxSep)
 								bJoinFeats[StrandIdx] = true;
 							break;
 							}
@@ -756,7 +756,7 @@ for(ChromIdx = 0; ChromIdx < m_NumChroms; ChromIdx++,pChrom++)
 							continue;
 						}
 					MergeEndLoci[StrandIdx] = pFeat->Loci;
-					if((1 + MergeEndLoci[StrandIdx] - MergeStartLoci[StrandIdx]) >= (UINT32)MinLen)
+					if((1 + MergeEndLoci[StrandIdx] - MergeStartLoci[StrandIdx]) >= (uint32_t)MinLen)
 						ReportMergedFeat(++NumMerged,pChrom->szChrom,MergeStartLoci[StrandIdx],MergeEndLoci[StrandIdx],Strand);
 					}
 				ElDepth[StrandIdx] -= 1;

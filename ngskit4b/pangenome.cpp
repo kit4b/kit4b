@@ -885,7 +885,7 @@ m_AllocdSAMlociMem = (size_t)cAllocNumSAMloci * sizeof(tsSAMloci);
 m_pSAMloci = (tsSAMloci*)malloc(m_AllocdSAMlociMem);
 if (m_pSAMloci == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenBinnedWiggle: Memory allocation of %lld bytes failed", (INT64)m_AllocdSAMlociMem);
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenBinnedWiggle: Memory allocation of %lld bytes failed", (int64_t)m_AllocdSAMlociMem);
 	m_AllocdSAMlociMem = 0;
 	Reset();
 	return(eBSFerrMem);
@@ -895,7 +895,7 @@ if (m_pSAMloci == NULL)
 m_pSAMloci = (tsSAMloci*)mmap(NULL, m_AllocdSAMlociMem, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 if (m_pSAMloci == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenBinnedWiggle: Memory allocation of %lld bytes through mmap()  failed", (INT64)m_AllocdSAMlociMem, strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenBinnedWiggle: Memory allocation of %lld bytes through mmap()  failed", (int64_t)m_AllocdSAMlociMem, strerror(errno));
 	m_pSAMloci = NULL;
 	m_AllocdSAMlociMem = 0;
 	Reset();
@@ -972,7 +972,7 @@ while(Rslt >= eBSFSuccess && (LineLen = m_pSAMfile->GetNxtSAMline((char *)m_pInB
 #endif
 		if (pTmp == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenBinnedWiggle: Memory re-allocation to %lld bytes - %s", (INT64)(memreq), strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenBinnedWiggle: Memory re-allocation to %lld bytes - %s", (int64_t)(memreq), strerror(errno));
 			Reset();
 			return(eBSFerrMem);
 			}

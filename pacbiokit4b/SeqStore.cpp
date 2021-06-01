@@ -138,16 +138,16 @@ return(eBSFSuccess);
 
 
 tSeqID									// identifier by which this sequence can later be retrieved (0 if unable to add sequence)
-CSeqStore::AddSeq(UINT32 Flags,			// any flags associated with this sequence
+CSeqStore::AddSeq(uint32_t Flags,			// any flags associated with this sequence
 			   char *pszDescr,			// sequence descriptor
-			   UINT32 SeqLen,			// sequence is this length
+			   uint32_t SeqLen,			// sequence is this length
 			   etSeqBase *pSeq)			// sequence to add
 {
 int DescrLen;
 size_t memreq;
 void *pAllocd;
 tsSeqHdr *pSeqHdr;
-UINT8 *pDescrSeq;
+uint8_t *pDescrSeq;
 char szDescr[cMaxDescrIDLen+1];
 
 if(pSeq == NULL || SeqLen < cMinSeqStoreLen || SeqLen > cMaxSeqStoreLen || m_NumStoredSeqs == cMaxStoredSeqs)
@@ -187,7 +187,7 @@ if(m_pSeqHdrs == NULL)
 	m_pSeqHdrs = (tsSeqHdr *) malloc(m_AllocdSeqHdrSize);
 	if(m_pSeqHdrs == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for sequence headers",(INT64)m_AllocdSeqHdrSize);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for sequence headers",(int64_t)m_AllocdSeqHdrSize);
 		return(0);
 		}
 #else
@@ -195,7 +195,7 @@ if(m_pSeqHdrs == NULL)
 	m_pSeqHdrs = (tsSeqHdr *)mmap(NULL,m_AllocdSeqHdrSize, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pSeqHdrs == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for sequence headers",(INT64)m_AllocdSeqHdrSize);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for sequence headers",(int64_t)m_AllocdSeqHdrSize);
 		m_pSeqHdrs = NULL;
 		m_AllocdSeqHdrSize = 0;
 		return(0);
@@ -231,18 +231,18 @@ if(m_pDescrSeqs == NULL)
 	m_UsedDescrSeqsMem = 0;
 	m_AllocdDescrSeqsSize = max(memreq+1,cAllocDescrSeqMem);
 #ifdef _WIN32
-	m_pDescrSeqs = (UINT8 *) malloc(m_AllocdDescrSeqsSize);
+	m_pDescrSeqs = (uint8_t *) malloc(m_AllocdDescrSeqsSize);
 	if(m_pDescrSeqs == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for sequences",(INT64)m_AllocdDescrSeqsSize);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for sequences",(int64_t)m_AllocdDescrSeqsSize);
 		return(0);
 		}
 #else
 	// gnu malloc is still in the 32bit world and seems to have issues if more than 2GB allocation
-	m_pDescrSeqs = (UINT8 *)mmap(NULL,m_AllocdDescrSeqsSize, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+	m_pDescrSeqs = (uint8_t *)mmap(NULL,m_AllocdDescrSeqsSize, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pDescrSeqs == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for sequence headers",(INT64)m_AllocdDescrSeqsSize);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for sequence headers",(int64_t)m_AllocdDescrSeqsSize);
 		m_pDescrSeqs = NULL;
 		m_AllocdDescrSeqsSize = 0;
 		return(0);
@@ -267,7 +267,7 @@ else
 			return(0);
 			}
 		m_AllocdDescrSeqsSize = memreq;
-		m_pDescrSeqs = (UINT8 *)pAllocd;
+		m_pDescrSeqs = (uint8_t *)pAllocd;
 		}
 	}
 
@@ -276,7 +276,7 @@ pSeqHdr = &m_pSeqHdrs[m_NumStoredSeqs++];
 pSeqHdr->SeqID = m_NumStoredSeqs;
 pSeqHdr->Flags = Flags;
 pSeqHdr->SeqLen = SeqLen;
-pSeqHdr->DescrLen = (UINT8)DescrLen;
+pSeqHdr->DescrLen = (uint8_t)DescrLen;
 pSeqHdr->DescrSeqOfs = m_UsedDescrSeqsMem;
 pDescrSeq = &m_pDescrSeqs[m_UsedDescrSeqsMem]; 
 memcpy(pDescrSeq,pszDescr,DescrLen);
@@ -297,28 +297,28 @@ static CSeqStore *pThis;        // qsort references this instance
 int
 CSeqStore::GenSeqDescrIdx(void) // generate index over all sequence descriptors, index used when retrieving sequence identifier for given descriptor by GetSeqID()
 {
-UINT32 *pSeqDescrIdx;
-UINT32 Idx;
+uint32_t *pSeqDescrIdx;
+uint32_t Idx;
 
 if(m_NumStoredSeqs == 0)		// can't index if no sequence descriptors!
 	return(eBSFerrFastaDescr);
 
 m_NumSeqDescrIdxd = 0;
-m_AllocdSeqDescrIdxSize = sizeof(UINT32) * (m_NumStoredSeqs + 1000);	// allocating more than actually required to reduce potential for future realloc's 
+m_AllocdSeqDescrIdxSize = sizeof(uint32_t) * (m_NumStoredSeqs + 1000);	// allocating more than actually required to reduce potential for future realloc's 
 #ifdef _WIN32
-m_pSeqDescrIdx = (UINT32 *) malloc(m_AllocdSeqDescrIdxSize);
+m_pSeqDescrIdx = (uint32_t *) malloc(m_AllocdSeqDescrIdxSize);
 if(m_pSeqDescrIdx == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for sequences",(INT64)m_AllocdSeqDescrIdxSize);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for sequences",(int64_t)m_AllocdSeqDescrIdxSize);
 	m_AllocdSeqDescrIdxSize = 0;
 	return(eBSFerrMem);
 	}
 #else
 // gnu malloc is still in the 32bit world and seems to have issues if more than 2GB allocation
-m_pSeqDescrIdx = (UINT32 *)mmap(NULL,m_AllocdSeqDescrIdxSize, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+m_pSeqDescrIdx = (uint32_t *)mmap(NULL,m_AllocdSeqDescrIdxSize, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pSeqDescrIdx == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for sequence headers",(INT64)m_AllocdSeqDescrIdxSize);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for sequence headers",(int64_t)m_AllocdSeqDescrIdxSize);
 	m_pSeqDescrIdx = NULL;
 	m_AllocdSeqDescrIdxSize = 0;
 	return(eBSFerrMem);
@@ -330,15 +330,15 @@ for(Idx = 1; Idx <= m_NumSeqDescrIdxd; Idx++, pSeqDescrIdx += 1)
 	*pSeqDescrIdx = Idx;
 m_MTqsort.SetMaxThreads(cDfltSortThreads);
 pThis = this;
-m_MTqsort.qsort(m_pSeqDescrIdx,(INT64)m_NumSeqDescrIdxd,sizeof(UINT32),SortSeqDescr);
+m_MTqsort.qsort(m_pSeqDescrIdx,(int64_t)m_NumSeqDescrIdxd,sizeof(uint32_t),SortSeqDescr);
 return(eBSFSuccess);
 }
 
 int
 CSeqStore::SortSeqDescr(const void *arg1, const void *arg2)
 {
-UINT32 Idx1 = *(UINT32 *)arg1;
-UINT32 Idx2 = *(UINT32 *)arg2;
+uint32_t Idx1 = *(uint32_t *)arg1;
+uint32_t Idx2 = *(uint32_t *)arg2;
 
 tsSeqHdr *pHd1;
 tsSeqHdr *pHd2;
@@ -352,11 +352,11 @@ char *pDescr2 = (char *)&pThis->m_pDescrSeqs[pHd2->DescrSeqOfs];
 return(stricmp(pDescr1,pDescr2));
 }
 
-UINT32									// previous flags
+uint32_t									// previous flags
 CSeqStore::SetFlags(tSeqID SeqID,		// set flags associated with sequence identified by SeqID
-					UINT32 Flags)		// flags to be associated with this sequence
+					uint32_t Flags)		// flags to be associated with this sequence
 {
-UINT32 PrevFlags;
+uint32_t PrevFlags;
 tsSeqHdr *pSeqHdr;
 SeqID &= cSeqIDMsk;
 if(m_pSeqHdrs == NULL || m_pDescrSeqs == NULL || SeqID < 1 || SeqID > m_NumStoredSeqs)
@@ -411,7 +411,7 @@ while(Hi >= Lo) {
 return(0);
 }
 
-UINT32								// returned number of currently stored sequences
+uint32_t								// returned number of currently stored sequences
 CSeqStore::GetNumSeqs(void)			// get number of currently stored sequences
 {
 if(m_pSeqHdrs == NULL || m_pDescrSeqs == NULL)
@@ -420,7 +420,7 @@ return(m_NumStoredSeqs);
 }
 
 
-UINT32								// returned max length of any currently stored sequence
+uint32_t								// returned max length of any currently stored sequence
 CSeqStore::GetMaxSeqLen(void)		// get max length of any currently stored sequence
 {
 if(m_pSeqHdrs == NULL || m_pDescrSeqs == NULL)
@@ -428,7 +428,7 @@ if(m_pSeqHdrs == NULL || m_pDescrSeqs == NULL)
 return(m_MaxSeqLen);
 }
 
-UINT32								// returned min length of any currently stored sequence
+uint32_t								// returned min length of any currently stored sequence
 CSeqStore::GetMinSeqLen(void)		// get min length of any currently stored sequence
 {
 if(m_pSeqHdrs == NULL || m_pDescrSeqs == NULL)
@@ -444,7 +444,7 @@ if(m_pSeqHdrs == NULL || m_pDescrSeqs == NULL || m_NumStoredSeqs == 0)
 return(m_TotStoredSeqsLen);
 }
 
-UINT32									// returned sequence length
+uint32_t									// returned sequence length
 CSeqStore::GetLen(tSeqID SeqID)		// get sequence length identified by SeqID
 {
 SeqID &= cSeqIDMsk;
@@ -453,7 +453,7 @@ if(m_pSeqHdrs == NULL || m_pDescrSeqs == NULL || SeqID < 1 || SeqID > m_NumStore
 return(m_pSeqHdrs[SeqID - 1].SeqLen);
 }
 
-UINT32									// returned flags
+uint32_t									// returned flags
 CSeqStore::GetFlags(tSeqID SeqID)		// get flags associated with sequence identified by SeqID
 {
 SeqID &= cSeqIDMsk;
@@ -462,13 +462,13 @@ if(m_pSeqHdrs == NULL || m_pDescrSeqs == NULL || SeqID < 1 || SeqID > m_NumStore
 return(m_pSeqHdrs[SeqID - 1].Flags);
 }
 
-UINT32									// returned flags
+uint32_t									// returned flags
 CSeqStore::GetDescr(tSeqID SeqID,		// get descriptor associated with sequence identified by SeqID
 					int MaxDescrLen,	// return at most this many descriptor chars copied into
 					char *pszDescr)		// this returned sequence descriptor
 {
 tsSeqHdr *pSeqHdr;
-UINT8 *pDescrSeq;
+uint8_t *pDescrSeq;
 SeqID &= cSeqIDMsk;
 if(pszDescr == NULL || MaxDescrLen == 0 || m_pSeqHdrs == NULL || m_pDescrSeqs == NULL || SeqID < 1 || SeqID > m_NumStoredSeqs)
 	return(0);
@@ -481,15 +481,15 @@ return(pSeqHdr->Flags);
 }
 
 
-UINT32									// returned sequence copied into pRetSeq is this length; 0 if errors
+uint32_t									// returned sequence copied into pRetSeq is this length; 0 if errors
 CSeqStore::GetSeq(tSeqID SeqID,			// get sequence identified by SeqID
-				UINT32 StartOfs,		// starting from this sequence offset
-				UINT32 MaxSeqSize,		// return at most this many sequence bases  
+				uint32_t StartOfs,		// starting from this sequence offset
+				uint32_t MaxSeqSize,		// return at most this many sequence bases  
 				etSeqBase *pRetSeq)		// copy sequence into this caller allocated buffer 
 {
 tsSeqHdr *pSeqHdr;
-UINT8 *pDescrSeq;
-UINT32 SeqLen;
+uint8_t *pDescrSeq;
+uint32_t SeqLen;
 SeqID &= cSeqIDMsk;
 if(m_pSeqHdrs == NULL || m_pDescrSeqs == NULL || SeqID < 1 || SeqID > m_NumStoredSeqs)
 	return(0);
@@ -499,7 +499,7 @@ if(StartOfs >= pSeqHdr->SeqLen)
 	return(0);
 SeqLen = min(MaxSeqSize,pSeqHdr->SeqLen - StartOfs);
 
-pDescrSeq = &m_pDescrSeqs[pSeqHdr->DescrSeqOfs + (UINT64)(pSeqHdr->DescrLen + 1 + StartOfs)];
+pDescrSeq = &m_pDescrSeqs[pSeqHdr->DescrSeqOfs + (uint64_t)(pSeqHdr->DescrLen + 1 + StartOfs)];
 memcpy(pRetSeq,pDescrSeq,SeqLen);
 return(SeqLen);
 }

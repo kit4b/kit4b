@@ -36,7 +36,7 @@ typedef struct TAG_sPBQuerySeq {
     int SeqID;						// monotonically increasing unique sequence identifier
 	char szQueryIdent[cMaxPBQuerySeqIdentLen+1];	// fasta identifier
 	int QuerySeqLen;				// query sequence length
-	UINT8 *pQuerySeq;				// allocated to hold sequence 
+	uint8_t *pQuerySeq;				// allocated to hold sequence 
 } tsPBQuerySeq;
 
 typedef struct TAG_sLoadPBQuerySeqsThreadPars {
@@ -75,7 +75,7 @@ class CPacBioUtility
 	bool m_bAsyncLoading;				// true if async loading still being processed and not yrt completed
 	bool m_bMutexesCreated;				// set true if synchronisation mutexes etc created
 
-	UINT8 m_TermBackgoundThreads;		// if non-zero then all background threads are to immediately terminate processing
+	uint8_t m_TermBackgoundThreads;		// if non-zero then all background threads are to immediately terminate processing
 
 	int m_TotSeqIDs;				// total number of query sequences which have been parsed and enqueued
 	int m_NumQuerySeqs;				// number of query sequences currently in m_pQuerySeqs
@@ -98,7 +98,7 @@ class CPacBioUtility
 	int										// returned enqueued query identifier
 		EnqueueQuerySeq(char *pszQueryIdent,    // query identifier
 			int QuerySeqLen,				// query sequence length
-			UINT8 *pQuerySeq);				// query sequence
+			uint8_t *pQuerySeq);				// query sequence
 
 	int CreateMutexes(void);
 	void DeleteMutexes(void);
@@ -128,7 +128,7 @@ public:
 									char **ppszInputFiles,		// names (wildcards allowed) of input files containing reads to be filtered
 									int MaxReadahead = cMaxPBReadAheadQuerySeqs);	 // read ahead for at most this number of sequences
 
-	UINT8 *										// returned dequeued sequence, caller is responsible for deleting memory allocated to hold the returned sequence (delete pRetSeq;)
+	uint8_t *										// returned dequeued sequence, caller is responsible for deleting memory allocated to hold the returned sequence (delete pRetSeq;)
 		DequeueQuerySeq(int WaitSecs,		// if no sequences available to be dequeued then wait at most this many seconds for a sequence to become available
 			int MaxLenQueryIdent,			// maximum length query identifier
 			int *pSeqID,					// returned sequence identifier

@@ -67,7 +67,7 @@ void
 CStopWatch::Stop(void)
 {
 #ifdef _WIN32
-INT64 Now;
+int64_t Now;
 if(m_StartCnt && m_StartCnt-- == 1)	// if startcnt is decremented down to 0 then accumulate time difference
 	{
 	QueryPerformanceCounter((LARGE_INTEGER *)&Now);
@@ -78,7 +78,7 @@ struct tms Times;
 clock_t Now;
 if(m_StartCnt && m_StartCnt-- == 1)     // if startcnt is decremented down to 0 then accumulate time difference
         {
-        Now = (INT64)times(&Times);
+        Now = (int64_t)times(&Times);
         m_Elapsed += Now - m_Started;
         }
 #endif
@@ -106,8 +106,8 @@ unsigned long		// returned number of seconds
 CStopWatch::ReadUSecs(unsigned long *pMicroSecs) // optional microsecs (secs.microsecs == elapsed time)
 {
 #ifdef _WIN32
-INT64 Now;
-INT64 Elapsed;
+int64_t Now;
+int64_t Elapsed;
 unsigned long Secs;
 Elapsed = m_Elapsed;
 if(m_StartCnt)			// if still timing...
@@ -117,22 +117,22 @@ if(m_StartCnt)			// if still timing...
 	}
 Secs = (unsigned long)(Elapsed / m_Freq);	// unlikely that any process would stay up for ulong secs!
 if(pMicroSecs != NULL)
-	*pMicroSecs = (unsigned long)(((Elapsed - ((INT64)Secs * m_Freq)) * (INT64)1000000)/m_Freq);
+	*pMicroSecs = (unsigned long)(((Elapsed - ((int64_t)Secs * m_Freq)) * (int64_t)1000000)/m_Freq);
 return(Secs);
 #else
 struct tms Times;
-INT64 Now;
-INT64 Elapsed;
+int64_t Now;
+int64_t Elapsed;
 unsigned long Secs;
 Elapsed = m_Elapsed;
 if(m_StartCnt)                  // if still timing...
         {
-        Now = (INT64)times(&Times);
+        Now = (int64_t)times(&Times);
         Elapsed += Now - m_Started;
         }
 Secs = (unsigned long)(Elapsed / m_Freq);       // unlikely that any process would stay up for ulong secs!
 if(pMicroSecs != NULL)
-        *pMicroSecs = (unsigned long)(((Elapsed - ((INT64)Secs * m_Freq)) * (INT64)1000000)/m_Freq);
+        *pMicroSecs = (unsigned long)(((Elapsed - ((int64_t)Secs * m_Freq)) * (int64_t)1000000)/m_Freq);
 return(Secs);
 #endif
 }

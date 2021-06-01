@@ -53,7 +53,7 @@ Process(ePMBSAlign PMode,					// bootstrap processing mode
 				char *pszTargAssembFile,	// file containing fasta assembly to be bootstrap sampled for target sequences with same length distributions as sequences in pszTargSeqsFile
 				char *pszQRsltsFile,		// summary number of query hits onto at least one target bootstrap results to this file 
 				char *pszTRsltsFile,		// summary number of targets hit by at least one query bootstrap results to this file  
-			    int NumThreads);			// number of worker threads to use
+				int NumThreads);			// number of worker threads to use
 
 
 
@@ -151,23 +151,23 @@ if(argerrors >= 0)
 /* special case: '--help' takes precedence over error reporting */
 /* special case: '--help' takes precedence over error reporting */
 if (help->count > 0)
-        {
+		{
 		printf("\n%s %s %s, Version %s\nOptions ---\n", gszProcName,gpszSubProcess->pszName,gpszSubProcess->pszFullDescr,kit4bversion);
-        arg_print_syntax(stdout,argtable,"\n");
-        arg_print_glossary(stdout,argtable,"  %-25s %s\n");
+		arg_print_syntax(stdout,argtable,"\n");
+		arg_print_glossary(stdout,argtable,"  %-25s %s\n");
 		printf("\nNote: Parameters can be entered into a parameter file, one parameter per line.");
 		printf("\n      To invoke this parameter file then precede its name with '@'");
 		printf("\n      e.g. %s %s @myparams.txt\n",gszProcName,gpszSubProcess->pszName);
 		printf("\nPlease report any issues regarding usage of %s at https://github.com/kit4b/issues\n\n",gszProcName);
 		return(1);
-        }
+		}
 
-    /* special case: '--version' takes precedence error reporting */
+	/* special case: '--version' takes precedence error reporting */
 if (version->count > 0)
-        {
+		{
 		printf("\n%s %s Version %s\n",gszProcName,gpszSubProcess->pszName,kit4bversion);
 		return(1);
-        }
+		}
 
 
 if (!argerrors)
@@ -293,7 +293,7 @@ if (!argerrors)
 	if(RandSeed <= 0)
 		{
 #ifdef _WIN32
-		INT64 Now;		
+		int64_t Now;		
 		QueryPerformanceCounter((LARGE_INTEGER *)&Now);
 		RandSeed = (int)(Now & 0x07fffffff);
 #else
@@ -437,7 +437,7 @@ if (!argerrors)
 	}
 else
 	{
-    printf("\n%s %s %s, Version %s\n", gszProcName,gpszSubProcess->pszName,gpszSubProcess->pszFullDescr,kit4bversion);
+	printf("\n%s %s %s, Version %s\n", gszProcName,gpszSubProcess->pszName,gpszSubProcess->pszFullDescr,kit4bversion);
 	arg_print_errors(stdout,end,gszProcName);
 	arg_print_syntax(stdout,argtable,"\nUse '-h' to view option and parameter usage\n");
 	exit(1);
@@ -460,7 +460,7 @@ Process(ePMBSAlign PMode,					// bootstrap processing mode
 				char *pszTargAssembFile,	// file containing assembly to be bootstrap sampled for target sequences with same length distributions as sequences in pszTargSeqsFile
 				char *pszQRsltsFile,		// summary number of query hits onto target bootstrap results to this file 
 				char *pszTRsltsFile,		// summary number of targets hit by at least one query bootstrap results to this file  
-			    int NumThreads)				// number of worker threads to use
+				int NumThreads)				// number of worker threads to use
 {
 int Rslt;
 CAlignsBootstrap *pBootstrapper;
@@ -614,7 +614,7 @@ for(SrcIdx = 0; SrcIdx < ePMBSSrcPlaceholder; SrcIdx++,pSeq++)
 	pSeq->pSeqDescrs = (tsSeqDescr *) malloc(memreq);	// initial and perhaps the only allocation
 	if(pSeq->pSeqDescrs == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Init: Memory allocation of %lld bytes for sequence descriptors failed - %s",(INT64)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Init: Memory allocation of %lld bytes for sequence descriptors failed - %s",(int64_t)memreq,strerror(errno));
 		return(eBSFerrMem);
 		}
 #else
@@ -622,7 +622,7 @@ for(SrcIdx = 0; SrcIdx < ePMBSSrcPlaceholder; SrcIdx++,pSeq++)
 	pSeq->pSeqDescrs = (tsSeqDescr *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(pSeq->pSeqDescrs == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Init: Memory allocation of %lld bytes for sequence descriptors failed - %s",(INT64)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Init: Memory allocation of %lld bytes for sequence descriptors failed - %s",(int64_t)memreq,strerror(errno));
 		pSeq->pSeqDescrs = NULL;
 		return(eBSFerrMem);
 		}
@@ -636,7 +636,7 @@ for(SrcIdx = 0; SrcIdx < ePMBSSrcPlaceholder; SrcIdx++,pSeq++)
 	pSeq->pSeqBlocks = (tsSeqBlock *) malloc(memreq);	// initial and perhaps the only allocation
 	if(pSeq->pSeqBlocks == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Init: Memory allocation of %lld bytes for sequence blocks failed - %s",(INT64)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Init: Memory allocation of %lld bytes for sequence blocks failed - %s",(int64_t)memreq,strerror(errno));
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -645,7 +645,7 @@ for(SrcIdx = 0; SrcIdx < ePMBSSrcPlaceholder; SrcIdx++,pSeq++)
 	pSeq->pSeqBlocks = (tsSeqBlock *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(pSeq->pSeqBlocks == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Init: Memory allocation of %lld bytes for sequence blocks failed - %s",(INT64)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Init: Memory allocation of %lld bytes for sequence blocks failed - %s",(int64_t)memreq,strerror(errno));
 		pSeq->pSeqBlocks = NULL;
 		Reset();
 		return(eBSFerrMem);
@@ -661,7 +661,7 @@ for(SrcIdx = 0; SrcIdx < ePMBSSrcPlaceholder; SrcIdx++,pSeq++)
 	pSeq->pSeqs = (etSeqBase *) malloc(memreq);	// initial and perhaps the only allocation
 	if(pSeq->pSeqs == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Init: Memory allocation of %lld bytes for sequence bases failed - %s",(INT64)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Init: Memory allocation of %lld bytes for sequence bases failed - %s",(int64_t)memreq,strerror(errno));
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -670,7 +670,7 @@ for(SrcIdx = 0; SrcIdx < ePMBSSrcPlaceholder; SrcIdx++,pSeq++)
 	pSeq->pSeqs = (etSeqBase *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(pSeq->pSeqs == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Init: Memory allocation of %lld bytes for sequence bases failed - %s",(INT64)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Init: Memory allocation of %lld bytes for sequence bases failed - %s",(int64_t)memreq,strerror(errno));
 		pSeq->pSeqs = NULL;
 		Reset();
 		return(eBSFerrMem);
@@ -684,7 +684,7 @@ for(SrcIdx = 0; SrcIdx < ePMBSSrcPlaceholder; SrcIdx++,pSeq++)
 if(RandSeed <= 0)
 	{
 #ifdef _WIN32
-	INT64 Now;		
+	int64_t Now;		
 	QueryPerformanceCounter((LARGE_INTEGER *)&Now);
 	RandSeed = (int)(Now & 0x07fffffff);
 #else
@@ -701,8 +701,8 @@ return(eBSFSuccess);
 int
 CAlignsBootstrap::AddSeq(ePMBSSeqSrc SeqSrc,     // descriptor source - 0: query seqs, 1: target sequences, 2: query assembly, 3: target assembly
 			 char *pszDescr,		// '\0' terminated sequence descriptor
-			 UINT32 SeqLen,			// sequence is this length
-			 UINT8 *pSeqBuff)		// sequence
+			 uint32_t SeqLen,			// sequence is this length
+			 uint8_t *pSeqBuff)		// sequence
 {
 size_t memreq;
 int DescrLen;
@@ -728,7 +728,7 @@ if(pSeqAllocs->AllocdSeqDescrsSize <= (pSeqAllocs->UsedSeqDescrsSize + sizeof(ts
 #endif
 	if(pSeqDescrs == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddSeq: Memory reallocation to %lld bytes for sequence descriptors failed - %s",(INT64)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddSeq: Memory reallocation to %lld bytes for sequence descriptors failed - %s",(int64_t)memreq,strerror(errno));
 		return(eBSFerrMem);
 		}
 	pSeqAllocs->AllocdSeqDescrsSize = memreq;
@@ -748,7 +748,7 @@ if(pSeqAllocs->SeqBlocksAllocSize <= pSeqAllocs->UsedSeqBlocksSize + sizeof(tsSe
 #endif
 	if(pSeqBlocks == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddSeq: Memory reallocation to %lld bytes for sequence blocks failed - %s",(INT64)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddSeq: Memory reallocation to %lld bytes for sequence blocks failed - %s",(int64_t)memreq,strerror(errno));
 		return(eBSFerrMem);
 		}
 	pSeqAllocs->SeqBlocksAllocSize = memreq;
@@ -768,7 +768,7 @@ if(pSeqAllocs->AllocdSeqsSize <= pSeqAllocs->UsedSeqsSize + (sizeof(etSeqBase) *
 #endif
 	if(pSeqs == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddSeq: Memory reallocation to %lld bytes for sequence bases failed - %s",(INT64)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddSeq: Memory reallocation to %lld bytes for sequence bases failed - %s",(int64_t)memreq,strerror(errno));
 		return(eBSFerrMem);
 		}
 	pSeqAllocs->AllocdSeqsSize = memreq;
@@ -776,8 +776,8 @@ if(pSeqAllocs->AllocdSeqsSize <= pSeqAllocs->UsedSeqsSize + (sizeof(etSeqBase) *
 	}
 
 pSeqs = &pSeqAllocs->pSeqs[pSeqAllocs->UsedSeqsSize];
-pSeqDescrs = (tsSeqDescr *)((UINT8 *)pSeqAllocs->pSeqDescrs + pSeqAllocs->UsedSeqDescrsSize);
-pSeqBlocks = (tsSeqBlock *)((UINT8 *)pSeqAllocs->pSeqBlocks + pSeqAllocs->UsedSeqBlocksSize);
+pSeqDescrs = (tsSeqDescr *)((uint8_t *)pSeqAllocs->pSeqDescrs + pSeqAllocs->UsedSeqDescrsSize);
+pSeqBlocks = (tsSeqBlock *)((uint8_t *)pSeqAllocs->pSeqBlocks + pSeqAllocs->UsedSeqBlocksSize);
 
 memcpy(pSeqs,pSeqBuff,SeqLen);
 pSeqs[SeqLen] = eBaseEOS;
@@ -810,20 +810,20 @@ CAlignsBootstrap::LoadFastaSeqs(ePMBSSeqSrc SeqSrc,     // descriptor source - 0
 			char *pszFastaFile)							// fasta file to load from
 {
 int Rslt;
-UINT32 SeqIdx;
-UINT8 *pSeqBase;
+uint32_t SeqIdx;
+uint8_t *pSeqBase;
 size_t BuffOfs;
 size_t AllocdBuffSize;
 size_t AvailBuffSize;
-UINT8 *pSeqBuff;
+uint8_t *pSeqBuff;
 char szName[cBSFSourceSize];
 char szDescription[cBSFDescriptionSize];
-UINT32 SeqLen;
+uint32_t SeqLen;
 int MaxSeqLen;
 int Descrlen;
 int SeqID;
-UINT32 NumSeqsUnderlength;
-UINT32 NumSeqsOverlength;
+uint32_t NumSeqsUnderlength;
+uint32_t NumSeqsOverlength;
 bool bFirstEntry;
 bool bEntryCreated;
 CFasta Fasta;
@@ -843,7 +843,7 @@ switch(SeqSrc) {
 		break;
 	}
 
-if((Rslt=Fasta.Open(pszFastaFile,true,(UINT32)cMaxAssembSeqLen * 2))!=eBSFSuccess)
+if((Rslt=Fasta.Open(pszFastaFile,true,(uint32_t)cMaxAssembSeqLen * 2))!=eBSFSuccess)
 	{
 	if(Rslt != eBSFerrNotFasta)
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadFastaSeqs: Unable to open '%s' [%s] %s",pszFastaFile,Fasta.ErrText((teBSFrsltCodes)Rslt),Fasta.GetErrMsg());
@@ -852,9 +852,9 @@ if((Rslt=Fasta.Open(pszFastaFile,true,(UINT32)cMaxAssembSeqLen * 2))!=eBSFSucces
 
 AllocdBuffSize = (size_t)cMaxAssembSeqLen;
 // note malloc is used as can then simply realloc to expand as may later be required
-if((pSeqBuff = (unsigned char *)malloc(AllocdBuffSize)) == NULL)
+if((pSeqBuff = (uint8_t *)malloc(AllocdBuffSize)) == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadFastaSeqs:- Unable to allocate memory (%u bytes) for sequence buffer",(UINT32)AllocdBuffSize);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadFastaSeqs:- Unable to allocate memory (%u bytes) for sequence buffer",(uint32_t)AllocdBuffSize);
 	Fasta.Close();
 	return(eBSFerrMem);
 	}
@@ -879,7 +879,7 @@ while((Rslt = SeqLen = Fasta.ReadSequence(&pSeqBuff[BuffOfs],(int)min(AvailBuffS
 				if(BuffOfs > (size_t)MaxSeqLen)
 					NumSeqsOverlength += 1;
 				else
-					if((Rslt=AddSeq(SeqSrc,szName,(UINT32)BuffOfs,pSeqBuff)) < eBSFSuccess)
+					if((Rslt=AddSeq(SeqSrc,szName,(uint32_t)BuffOfs,pSeqBuff)) < eBSFSuccess)
 						{
 						gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadFastaSeqs - AddSeq error %d",Rslt);
 						break;
@@ -932,7 +932,7 @@ if(Rslt >= eBSFSuccess && bEntryCreated && BuffOfs > 0)			// close entry
 			}
 		else
 			{
-			if((Rslt=AddSeq(SeqSrc,szName,(UINT32)BuffOfs,pSeqBuff)) < eBSFSuccess)
+			if((Rslt=AddSeq(SeqSrc,szName,(uint32_t)BuffOfs,pSeqBuff)) < eBSFSuccess)
 				gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadFastaSeqs - AddSeq error %d",Rslt);
 			else
 				Rslt = eBSFSuccess;
@@ -945,36 +945,36 @@ if(NumSeqsUnderlength > 0 || NumSeqsOverlength > 0)
 return(Rslt);
 }
 
-INT64		// returned random number will be at most 60bits (2^60)
-CAlignsBootstrap::GenRand60(INT64 Limit)	// generate random number between 0 and Limit inclusive where Limit is <= 2^60
+int64_t		// returned random number will be at most 60bits (2^60)
+CAlignsBootstrap::GenRand60(int64_t Limit)	// generate random number between 0 and Limit inclusive where Limit is <= 2^60
 {
 int RandomLo;
 int RandomHi;
 
 if(Limit <= 0x7fffffff)
-	return((INT64)m_pRandomMersenne->IRandom(0,(int)Limit));
+	return((int64_t)m_pRandomMersenne->IRandom(0,(int)Limit));
 
 RandomLo = m_pRandomMersenne->IRandom(0,(int)(Limit & 0x3fffffff));
 RandomHi = m_pRandomMersenne->IRandom(0,(int)((Limit >> 30) & 0x3fffffff));
 
-return((INT64)RandomHi << 30 | (INT64)RandomLo);
+return((int64_t)RandomHi << 30 | (int64_t)RandomLo);
 }
 
 
 int
-CAlignsBootstrap::GenBootstrap(UINT32 MaxBootstrapAttempts, // allow at most this many attempts at bootstrapping a set of samples before returning error
-					UINT32 MaxSampleAttempts,				// allow at most this many attempts at randomly locating a sample before restarting the bootstrap
+CAlignsBootstrap::GenBootstrap(uint32_t MaxBootstrapAttempts, // allow at most this many attempts at bootstrapping a set of samples before returning error
+					uint32_t MaxSampleAttempts,				// allow at most this many attempts at randomly locating a sample before restarting the bootstrap
 					bool bTargs,						// false: generate bootstrap sampling from query assembly sequences, true: bootstrap sampling from target assembling sequences
 					bool bWithoutReplacement,			// false: sampling with replacement, true: sampling without replacement (currently not implemented)
 					bool bNonOverlapping)				// false: samples may be overlapping, true: samples must be non-overlapping (currently not implemented)
 {
-UINT8 Base;
-UINT32 CurSampleAttempt;
-UINT32 CurBootstrapAttempt;
-UINT32 SampleIdx;
-UINT32 Len;
-INT64 PopSeqOfs;
-UINT8 *pSeq;
+uint8_t Base;
+uint32_t CurSampleAttempt;
+uint32_t CurBootstrapAttempt;
+uint32_t SampleIdx;
+uint32_t Len;
+int64_t PopSeqOfs;
+uint8_t *pSeq;
 tsSeqBlock *pSeqBlock;
 tsSeqAllocs *pPopulation;
 tsSeqAllocs *pSample;
@@ -1055,30 +1055,30 @@ return(-1); // failure to bootstrap
 
 int			// index, -1 if no matches, at which Query matched onto target with at most MaxSubs
 CAlignsBootstrap::AlignQueriesToTargs(bool bSenseOnly,	// true if to align sense only, default is to align both sense and antisense
-						UINT32 StartQuerySeqIdx,		// alignments starting with this query sequence
-						UINT32 EndQuerySeqIdx,			// through to this query sequence inclusive
+						uint32_t StartQuerySeqIdx,		// alignments starting with this query sequence
+						uint32_t EndQuerySeqIdx,			// through to this query sequence inclusive
 						int MaxSubs)				// accepting at most this percentage of bases of query length to be mismatches
 {
-UINT8 RevCplQBases[cABMaxQuerySeqLen +1];
+uint8_t RevCplQBases[cABMaxQuerySeqLen +1];
 tsSeqAllocs *pQSeqs;
 tsSeqAllocs *pQAssemb;	
 tsSeqBlock *pQBlock;
 tsSeqAllocs *pTSeqs;
 tsSeqAllocs *pTAssemb;	
 tsSeqBlock *pTBlock;
-UINT8 *pQBases;
-UINT8 *pQWBase;
+uint8_t *pQBases;
+uint8_t *pQWBase;
 int QLen;
-UINT8 *pTBases;
-UINT8 *pTWBases;
-UINT8 *pTWBase;
+uint8_t *pTBases;
+uint8_t *pTWBases;
+uint8_t *pTWBase;
 int TLen;
 int BaseIdx;
 int WinIdx;
 int MMCnt;
 int MaxMMCnt;
-UINT32 CurQueryIdx;
-UINT32 CurTargIdx;
+uint32_t CurQueryIdx;
+uint32_t CurTargIdx;
 int MaxNumPasses;
 int CurPass;
 int NumQueryHits;
@@ -1168,10 +1168,10 @@ int
 CAlignsBootstrap::AlignBootstrap(int NumRepeats)  // number of times current set of counts are to be reported
 {
 int RepeatIdx;
-UINT32 NumQueryHits;
-UINT32 NumTargHits;
-UINT32 QueryHitIdx;
-UINT32 TargHitIdx;
+uint32_t NumQueryHits;
+uint32_t NumTargHits;
+uint32_t QueryHitIdx;
+uint32_t TargHitIdx;
 tsQueryHit *pQueryHit;
 tsSeqBlock *pTargHit;
 tsSeqAllocs *pTargSeqs;
@@ -1237,16 +1237,16 @@ int RsltsFileLen;
 char szSeqsFile[_MAX_PATH];
 tsSeqAllocs *pSeqs;
 tsSeqAllocs *pAssemb;	
-UINT32 SeqLen;
-UINT8 *pBases;
+uint32_t SeqLen;
+uint8_t *pBases;
 tsSeqBlock *pBlock;
 
-UINT8 *pSeqBuff;
+uint8_t *pSeqBuff;
 char szLineBuff[100];
 int CurSeqBuffIdx;
-UINT32 CurIdx;
+uint32_t CurIdx;
 
-pSeqBuff = new UINT8 [cMaxTargSeqLen+1];
+pSeqBuff = new uint8_t [cMaxTargSeqLen+1];
 
 hFile = -1;
 CurSeqBuffIdx = 0;
@@ -1626,13 +1626,13 @@ pthread_exit(NULL);
 
 // initialise and start pool of worker threads
 int
-CAlignsBootstrap::StartWorkerThreads(UINT32 NumThreads,		// there are this many threads in pool
-									UINT32 NumQuerySeqs)	// which will be processing a total of this many query sequences
+CAlignsBootstrap::StartWorkerThreads(uint32_t NumThreads,		// there are this many threads in pool
+									uint32_t NumQuerySeqs)	// which will be processing a total of this many query sequences
 {
-UINT32 MaxWait;
-UINT32 StartQuerySeqIdx;
-UINT32 ThreadIdx;
-UINT32 StartedInstances;
+uint32_t MaxWait;
+uint32_t StartQuerySeqIdx;
+uint32_t ThreadIdx;
+uint32_t StartedInstances;
 tsWorkerInstance *pThreadPar;
 m_TermAllThreads = 0;
 
@@ -1651,7 +1651,7 @@ for(ThreadIdx = 0; ThreadIdx < NumThreads; ThreadIdx++,pThreadPar++)
 #endif
 	pThreadPar->AlignReqID = 0;
 	pThreadPar->StartQuerySeqIdx = StartQuerySeqIdx;		// alignments starting with this query sequence
-	pThreadPar->EndQuerySeqIdx = (UINT32)((((float)NumQuerySeqs * (ThreadIdx+1))/(float)NumThreads)-1.0);			// through to this query sequence inclusive
+	pThreadPar->EndQuerySeqIdx = (uint32_t)((((float)NumQuerySeqs * (ThreadIdx+1))/(float)NumThreads)-1.0);			// through to this query sequence inclusive
 	StartQuerySeqIdx = pThreadPar->EndQuerySeqIdx+1;
 	}
 
@@ -1696,7 +1696,7 @@ return(StartedInstances);
 bool // true if any worker threads in pool to start alignments, false if no worker threads 
 CAlignsBootstrap::StartAlignments(void) // signal worker pool of threads that there is a new bootstrap set to be aligned
 {
-UINT32 StartedInstances;
+uint32_t StartedInstances;
 
 #ifdef WIN32
 StartedInstances = InterlockedCompareExchange(&m_NumWorkerInsts,0,0);
@@ -1720,10 +1720,10 @@ return(true);
 bool
 CAlignsBootstrap::WaitAlignments(int WaitSecs)	// allow at most this many seconds for pool of worker threads to complete aligning current bootstrap set
 {
-INT64 WaitMS;
-WaitMS = (INT64)WaitSecs * 1000;
+int64_t WaitMS;
+WaitMS = (int64_t)WaitSecs * 1000;
 
-UINT32 CompletedInstances;
+uint32_t CompletedInstances;
 do {
 	CUtility::SleepMillisecs(20);
 #ifdef WIN32
@@ -1743,8 +1743,8 @@ int
 CAlignsBootstrap::TerminateWorkerThreads(int WaitSecs)				// alow at most this many seconds before force terminating worker pool threads
 {
 int NumForceTerminated;
-UINT32 Idx;
-UINT32 StartedInstances; 
+uint32_t Idx;
+uint32_t StartedInstances; 
 tsWorkerInstance *pThreadPar;
 time_t Then;
 time_t Now;
@@ -1781,7 +1781,7 @@ for(Idx = 0; Idx < StartedInstances; Idx++, pThreadPar += 1)
 #ifdef WIN32
 	if(pThreadPar->threadHandle != NULL)
 		{
-		if(WAIT_TIMEOUT == WaitForSingleObject(pThreadPar->threadHandle, (UINT32)Now * 1000))
+		if(WAIT_TIMEOUT == WaitForSingleObject(pThreadPar->threadHandle, (uint32_t)Now * 1000))
 			{
 			NumForceTerminated += 1;
 			TerminateThread(pThreadPar->threadHandle,0);
@@ -1819,7 +1819,7 @@ return(NumForceTerminated);
 int
 CAlignsBootstrap::ProcWorkerThread(tsWorkerInstance *pThreadPar)	// worker thread parameters
 {
-UINT32 AlignReqID;
+uint32_t AlignReqID;
 
 // this thread has started, one more worker thread
 #ifdef WIN32

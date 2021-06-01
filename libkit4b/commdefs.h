@@ -1,40 +1,8 @@
 #pragma once
 
-#ifndef INT64
-#ifdef _WIN32
-typedef __int64 INT64;
-typedef unsigned __int64 UINT64;
-#else
-typedef long long INT64;
-typedef unsigned long long UINT64;
-#endif
-#endif
-
-#ifndef INT32
-#ifdef _WIN32
-typedef __int32 INT32;
-typedef unsigned __int32 UINT32;
-#else
-typedef int INT32;
-typedef unsigned int UINT32;
-#endif
-#endif
-
-#ifndef INT16
-#ifdef _WIN32
-typedef __int16 INT16;
-typedef unsigned __int16 UINT16;
-#else
-typedef short int INT16;
-typedef unsigned short int UINT16;
-#endif
-#endif
-
 #ifndef _WIN32
 #define min(a,b) ((a) < (b) ? (a) : (b))
 #define max(a,b) ((a) > (b) ? (a) : (b))
-typedef char INT8;
-typedef unsigned char UINT8;
 #endif
 
 #ifdef _WIN32
@@ -116,11 +84,11 @@ typedef enum eSeqBase {
 	eBaseEOS,			// end of sequence marker
 	eBaseEOG = 0x0f  	// end of genome marker
 	} teSeqBases;
-typedef unsigned char etSeqBase; // type used to hold teSeqBases
+typedef uint8_t etSeqBase; // type used to hold teSeqBases
 // following is combined with each eSeqBase
-const unsigned char cRptMskFlg = 0x08;			// used to flag base as part of a repeat masked sequence
-const unsigned char cMarkMskFlg = 0x10;			// used to flag that this base has been marked resulting from internal processing
-const unsigned char cMarkConChngFlg = 0x20;			// used to flag that this base has been marked as a changed consensus base 
+const uint8_t cRptMskFlg = 0x08;			// used to flag base as part of a repeat masked sequence
+const uint8_t cMarkMskFlg = 0x10;			// used to flag that this base has been marked resulting from internal processing
+const uint8_t cMarkConChngFlg = 0x20;			// used to flag that this base has been marked as a changed consensus base 
 
 const int cMaxAutoSeq2Ascii = 0x7fff;			// maximum number of seq2ascii autotranslated
 
@@ -150,10 +118,10 @@ typedef enum eOntologies {
 #pragma pack()
 
 // typedefs to make it easy to change common identifier types
-typedef INT32 tGeneID;			// gene identifier
-typedef INT32 tChromID;			// chromosome identifier
-typedef INT32 tAlignBlockID;	// alignment block identifier
-typedef UINT8 tSpeciesID;		// species identifier
+typedef int32_t tGeneID;			// gene identifier
+typedef int32_t tChromID;			// chromosome identifier
+typedef int32_t tAlignBlockID;	// alignment block identifier
+typedef uint8_t tSpeciesID;		// species identifier
 
 #ifdef _SHORTMAXREADLEN_
 const int cMaxReadLen = 2048;				// can process reads (if more than this length then must be sequences!) of up to this length
@@ -178,46 +146,46 @@ extern char gszProcName[_MAX_FNAME];			// process name using this library
 
 #pragma pack(1)
 typedef struct TAG_sBSFRdsHdr {
-	unsigned char Magic[4];			 		// magic chars to identify this file as a biosequence reads file
-	INT64 RdsOfs;							// where concatenated reads start on disk
-	INT64 TotReadsLen;						// total memory space required to hold descriptors + packed read/quality sequences
-	INT32 Version;							// file structure version
-	INT32 NumRds;							// number of reads in this file after filtering
-	INT8 PMode;								// processing mode used when rds file created
-	INT8 QMode;								// original fastq quality scoring method
-	INT8 Trim5;								// trimmed this many bases off leading sequence 5' end
-	INT8 Trim3;								// trimmed this many bases off trailing sequence 3' end
-	INT8 NumFiles;							// number of source files in FileNames[]
-	INT8 FileNames[8196];					// source file names concatenated with '\0' separators - if too many to fit then overflow names simply sloughed
-	INT32 OrigNumReads;						// number of reads originally processed before any deduping or other filtering
-	UINT32 FlagsK:1;						// processing flag - bit representing '-k' flag
-	UINT32 FlagsCS:1;						// processing flag - bit representing that reads were processed from SOLiD (colorspace)	
-	UINT32 FlagsPR:1;						// processing flags - bit representing that contained reads are paired				
+	uint8_t Magic[4];			 		// magic chars to identify this file as a biosequence reads file
+	int64_t RdsOfs;							// where concatenated reads start on disk
+	int64_t TotReadsLen;						// total memory space required to hold descriptors + packed read/quality sequences
+	int32_t Version;							// file structure version
+	int32_t NumRds;							// number of reads in this file after filtering
+	int8_t PMode;								// processing mode used when rds file created
+	int8_t QMode;								// original fastq quality scoring method
+	int8_t Trim5;								// trimmed this many bases off leading sequence 5' end
+	int8_t Trim3;								// trimmed this many bases off trailing sequence 3' end
+	int8_t NumFiles;							// number of source files in FileNames[]
+	int8_t FileNames[8196];					// source file names concatenated with '\0' separators - if too many to fit then overflow names simply sloughed
+	int32_t OrigNumReads;						// number of reads originally processed before any deduping or other filtering
+	uint32_t FlagsK:1;						// processing flag - bit representing '-k' flag
+	uint32_t FlagsCS:1;						// processing flag - bit representing that reads were processed from SOLiD (colorspace)	
+	uint32_t FlagsPR:1;						// processing flags - bit representing that contained reads are paired				
 } tsBSFRdsHdr;
 
 
 
 // V5 raw reads structure
 typedef struct TAG_sRawReadV5 {
-	UINT32 ReadID;				// unique read identifier
-	UINT32 PairReadID;			// this read's paired raw read identifier (0 if not a paired read) bit32 reset if 5' fwd read, bit32 set if 3' read of pair
-	UINT16 NumReads;			// number of source reads merged into this read
-	UINT8 FileID;				// identifies file from which this read was parsed
-	UINT8 DescrLen;				// descriptor length - starts at &Read[0]
-	UINT16 ReadLen;				// length of following packed read and quality scores (starts at &Read[DescrLen])
-	UINT8  Read[1];				// descriptor followed by packed read + phred score (read in bits 0..2, phred in 3..7)
+	uint32_t ReadID;				// unique read identifier
+	uint32_t PairReadID;			// this read's paired raw read identifier (0 if not a paired read) bit32 reset if 5' fwd read, bit32 set if 3' read of pair
+	uint16_t NumReads;			// number of source reads merged into this read
+	uint8_t FileID;				// identifies file from which this read was parsed
+	uint8_t DescrLen;				// descriptor length - starts at &Read[0]
+	uint16_t ReadLen;				// length of following packed read and quality scores (starts at &Read[DescrLen])
+	uint8_t  Read[1];				// descriptor followed by packed read + phred score (read in bits 0..2, phred in 3..7)
 } tsRawReadV5;
 
 // V6 raw reads structure
 // Only difference from V5 is that NumReads range has been expanded to 32bits from 16bits in V5
 typedef struct TAG_sRawReadV6 {
-	UINT32 ReadID;				// unique read identifier
-	UINT32 PairReadID;			// this read's paired raw read identifier (0 if not a paired read) bit32 reset if 5' fwd read, bit32 set if 3' read of pair
-	UINT32 NumReads;			// number of source reads merged into this read
-	UINT8 FileID;				// identifies file from which this read was parsed
-	UINT8 DescrLen;				// descriptor length - starts at &Read[0]
-	UINT16 ReadLen;				// length of following packed read and quality scores (starts at &Read[DescrLen])
-	UINT8  Read[1];				// descriptor followed by packed read + phred score (read in bits 0..2, phred in 3..7)
+	uint32_t ReadID;				// unique read identifier
+	uint32_t PairReadID;			// this read's paired raw read identifier (0 if not a paired read) bit32 reset if 5' fwd read, bit32 set if 3' read of pair
+	uint32_t NumReads;			// number of source reads merged into this read
+	uint8_t FileID;				// identifies file from which this read was parsed
+	uint8_t DescrLen;				// descriptor length - starts at &Read[0]
+	uint16_t ReadLen;				// length of following packed read and quality scores (starts at &Read[DescrLen])
+	uint8_t  Read[1];				// descriptor followed by packed read + phred score (read in bits 0..2, phred in 3..7)
 } tsRawReadV6;
 
 const int cMaxWorkerThreads = 128;			// limiting max number of threads to this many

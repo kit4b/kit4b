@@ -300,7 +300,7 @@ CBEDfile *m_pBiobed;				// BED file containing features/genes
 etPMode m_PMode;					// processing mode
 char m_Strand;						// strand to filter (retain) on
 int m_RegRegionLen;					// regulatory region length
-UINT32 m_NumEls;					// total number of elements to be processed
+uint32_t m_NumEls;					// total number of elements to be processed
 
 int m_hRsltsFile;
 
@@ -404,7 +404,7 @@ int AccumFeatures;
 int NumFeatsOverlap;
 int FeatMsk;
 int FeatIdx;
-UINT32 ElID;
+uint32_t ElID;
 int FeatID;
 int NxtFeatID;
 int NxtFeatStart;

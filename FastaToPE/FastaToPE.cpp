@@ -258,8 +258,8 @@ int ReadLen;
 char szDescr[120];
 char szP1File[_MAX_PATH];
 char szP2File[_MAX_PATH];
-UINT8 ConcatSeq[(cMaxReadSeqLen + 100) * 2];
-UINT8 ReadSeq[cMaxReadSeqLen + 1];
+uint8_t ConcatSeq[(cMaxReadSeqLen + 100) * 2];
+uint8_t ReadSeq[cMaxReadSeqLen + 1];
 
 Init();
 
@@ -353,8 +353,8 @@ while((Rslt = ConcatLen = m_pInFasta->ReadSequence(ConcatSeq,sizeof(ConcatSeq)-1
 		}
 
 	ReadLen = ConcatLen/2;
-	UINT8 *pInBase = ConcatSeq;
-	UINT8 *pOutBase = ReadSeq;
+	uint8_t *pInBase = ConcatSeq;
+	uint8_t *pOutBase = ReadSeq;
 	int BaseIdx;
 	for(BaseIdx = 0; BaseIdx < ReadLen; BaseIdx++,pInBase++,pOutBase++)
 		{

@@ -63,7 +63,7 @@ static eTarch GetEndian(void)
 eTarch Architecture;                  // conversion to float depends on computer architecture
 
   // detect computer architecture
-union {double f; UINT32 i[3];} convert;
+union {double f; uint32_t i[3];} convert;
 
 convert.i[2] = 0;
 convert.f = 1.0;
@@ -80,7 +80,7 @@ else
 return(Architecture);
 }
 
-static double ToDouble(UINT32 x)
+static double ToDouble(uint32_t x)
 {
    // The fastest way to convert random bits to floating point is as follows:
   // Set the binary exponent of a floating point number to 1+bias and set
@@ -91,7 +91,7 @@ static double ToDouble(UINT32 x)
   // in the variable Architecture. The following switch statement can be
   // omitted if the architecture is known. (generally an Intel  PC running Windows or Linux uses
   // LITTLE_ENDIAN1 architecture):
-union {double f; UINT32 i[3];} convert;
+union {double f; uint32_t i[3];} convert;
   convert.f = 1.0;
   switch (GetEndian()) {
 	  case EXTENDEDPRECISIONLITTLEENDIAN:		// 80bit
@@ -114,7 +114,7 @@ union {double f; UINT32 i[3];} convert;
 	} 
   // This somewhat slower method works for all architectures, including 
   // non-IEEE floating point representation:
-  return (double)x * (1.0/((double)(UINT32)(-1L)+1.0));
+  return (double)x * (1.0/((double)(uint32_t)(-1L)+1.0));
 }
 
 void CRandomMersenne::Init0(int seed) {

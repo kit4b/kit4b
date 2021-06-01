@@ -4,7 +4,7 @@ const int cFiltLociAllocChunk = 10000;	// allocate for loci in this many instanc
 
 typedef struct TAG_sLociChrom {
 	int ChromID;							// unique identifier for this chromosome
-	UINT16 Hash;							// hash over chromosome name
+	uint16_t Hash;							// hash over chromosome name
 	char szChrom[cMaxDatasetSpeciesChrom];	// chromosome
 } tsLociChrom;
 
@@ -29,7 +29,7 @@ class CFilterLoci  : public CCSVFile
 	int LocateChrom(char *pszChrom);
 	int AddChrom(char *pszChrom);
 
-	UINT16 GenNameHash(char *pszName);
+	uint16_t GenNameHash(char *pszName);
 	static int SortLocii( const void *arg1, const void *arg2);
 public:
 	CFilterLoci(void);

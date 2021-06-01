@@ -43,8 +43,8 @@ Original 'BioKanga' copyright notice has been retained and immediately follows t
 #include "MergeReadPairs.h"
 
 // a couple of macros for packing both sense and antisense fixed length barcodes
-#define PACKEDBARCODE(b1,b2,b3,b4,b5,b6) (UINT32)((b1 << 10) | (b2 << 8) | (b3 << 6) | (b4 << 4) | (b5 << 2) | b6)
-#define REVCPLPACKEDBARCODE(b1,b2,b3,b4,b5,b6) (UINT32)(((0x03 ^ b6) << 10) | ((0x03 ^ b5) << 8) | ((0x03 ^ b4) << 6) | ((0x03 ^ b3) << 4) | ((0x03 ^ b2) << 2) | (0x03 ^ b1))
+#define PACKEDBARCODE(b1,b2,b3,b4,b5,b6) (uint32_t)((b1 << 10) | (b2 << 8) | (b3 << 6) | (b4 << 4) | (b5 << 2) | b6)
+#define REVCPLPACKEDBARCODE(b1,b2,b3,b4,b5,b6) (uint32_t)(((0x03 ^ b6) << 10) | ((0x03 ^ b5) << 8) | ((0x03 ^ b4) << 6) | ((0x03 ^ b3) << 4) | ((0x03 ^ b2) << 2) | (0x03 ^ b1))
 
 static tsBarcode Barcodes[] = { // default hardcoded barcodes 
 		// column barcodes
@@ -437,8 +437,8 @@ int							// returned well number (1..96) or 0 if unable to identify well from t
 CMergeReadPairs::MapSEBarcodesToWell(int SeqLen,		// num bases in SE pSeq
 				etSeqBase *pSeq)	// map barcodes at 5' and 3' end of this SE sequence to the well
 {
-UINT32 Pack5;		// to hold the 5' extracted assumed barcode from pSeq
-UINT32 Pack3;		// to hold the 3' extracted assumed barcode from pSeq
+uint32_t Pack5;		// to hold the 5' extracted assumed barcode from pSeq
+uint32_t Pack3;		// to hold the 3' extracted assumed barcode from pSeq
 int Idx;
 etSeqBase *pBase;
 tsBarcode *pBarcode;
@@ -510,8 +510,8 @@ CMergeReadPairs::MapPEBarcodesToWell(int SeqLen,		//minimum length of either p5S
 								   etSeqBase *pPE1Seq,// map barcodes at 5' of this sequence
 								   etSeqBase *pPE2Seq)// and barcodes at 5'of this sequence to the well
 {
-	UINT32 Pack5;		// to hold the 5' extracted assumed barcode from pSeq
-	UINT32 Pack3;		// to hold the 3' extracted assumed barcode from pSeq
+	uint32_t Pack5;		// to hold the 5' extracted assumed barcode from pSeq
+	uint32_t Pack3;		// to hold the 3' extracted assumed barcode from pSeq
 	int Idx;
 	etSeqBase *pBase;
 	tsBarcode *pBarcode;
@@ -1177,18 +1177,18 @@ int Idx;
 
 int WellIdx;
 
-UINT8 PE5Seq[ccMaxFastQSeqLen+1];
-UINT8 PE5Qual[ccMaxFastQSeqLen+1];
-UINT8 PE3Seq[ccMaxFastQSeqLen+1];
-UINT8 PE3Qual[ccMaxFastQSeqLen+1];
+uint8_t PE5Seq[ccMaxFastQSeqLen+1];
+uint8_t PE5Qual[ccMaxFastQSeqLen+1];
+uint8_t PE3Seq[ccMaxFastQSeqLen+1];
+uint8_t PE3Qual[ccMaxFastQSeqLen+1];
 char szPE5DescrBuff[cMaxReadDesrLen+1];
 char szPE3DescrBuff[cMaxReadDesrLen+1];
-UINT8 MSeq[(2*ccMaxFastQSeqLen)+1];
-UINT8 szMSeq[(2*ccMaxFastQSeqLen)+1];
-UINT8 szMQual[(2*ccMaxFastQSeqLen)+1];
+uint8_t MSeq[(2*ccMaxFastQSeqLen)+1];
+uint8_t szMSeq[(2*ccMaxFastQSeqLen)+1];
+uint8_t szMQual[(2*ccMaxFastQSeqLen)+1];
 int PlateCell;
 
-UINT64 Spacer1 = 0;
+uint64_t Spacer1 = 0;
 int PE5DescrLen;
 int PE3DescrLen;
 
@@ -1201,10 +1201,10 @@ int OverlapDistCnts[ccMaxFastQSeqLen];
 int OverlapDistSubs[cMaxOverlapPercSubs+1];
 
 int MergeIdx;
-UINT8 *pMSeq;
-UINT8 *pMSeqQual;
-UINT8 *pSeq5Qual;
-UINT8 *pSeq3Qual;
+uint8_t *pMSeq;
+uint8_t *pMSeqQual;
+uint8_t *pSeq5Qual;
+uint8_t *pSeq3Qual;
 etSeqBase *pSeq5;
 etSeqBase *pSeq3;
 etSeqBase Base5;

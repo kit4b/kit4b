@@ -15,7 +15,7 @@
 
 #include "HomozyReduce.h"
 
-static UINT8 *m_xpConcatSeqs;
+static uint8_t *m_xpConcatSeqs;
 
 teBSFrsltCodes
 CHomozyReduce::Disk2Hdr(tsBSFRdsHdr *pRdsHeader,	// load header into this
@@ -79,7 +79,7 @@ bool bIsFastq;
 int ReadLen;
 
 int DescrLen;
-UINT8 szDescrBuff[1024];
+uint8_t szDescrBuff[1024];
 
 int NumInvalValues = 0;
 int NumUnsupportedBases = 0;
@@ -87,8 +87,8 @@ int NumUnderlength = 0;
 int NumExcessNs = 0;
 
 etSeqBase *pSeq;
-UINT8 *pRawContigsBuff;
-if((pRawContigsBuff = new UINT8 [cAllocRawSeqLen]) == NULL)
+uint8_t *pRawContigsBuff;
+if((pRawContigsBuff = new uint8_t [cAllocRawSeqLen]) == NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory for raw reads buffering...");
 	Reset(false);
@@ -116,7 +116,7 @@ bIsFastq = Fasta.IsFastq();
 
 // get file size and alloc for expected total sequences up front to try and reduce the number of reallocs which are required
 // may end up allocating more memory than actually needed but on Windows HPC seems to result in a significant throughput improvement
-UINT64 ReqAllocSize = Fasta.InitialFileSize();
+uint64_t ReqAllocSize = Fasta.InitialFileSize();
 if(bIsFastq)
 	ReqAllocSize /= 2;			// quality scores effectively double the file size relative to the actual sequences
 
@@ -125,20 +125,20 @@ if(m_pSeqs2Assemb == NULL)
 	{
 	m_AllocMemSeqs2Assemb = (size_t)ReqAllocSize;
 #ifdef _WIN32
-	m_pSeqs2Assemb = (UINT8 *) malloc((size_t)m_AllocMemSeqs2Assemb);
+	m_pSeqs2Assemb = (uint8_t *) malloc((size_t)m_AllocMemSeqs2Assemb);
 	if(m_pSeqs2Assemb == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadContigs: Concatenated sequences memory allocation of %lld bytes - %s",(INT64)m_AllocMemSeqs2Assemb,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadContigs: Concatenated sequences memory allocation of %lld bytes - %s",(int64_t)m_AllocMemSeqs2Assemb,strerror(errno));
 		m_AllocMemConcat = 0;
 		Reset(false);
 		return(eBSFerrMem);
 		}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-	m_pSeqs2Assemb = (UINT8 *)mmap(NULL,m_AllocMemSeqs2Assemb, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+	m_pSeqs2Assemb = (uint8_t *)mmap(NULL,m_AllocMemSeqs2Assemb, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pSeqs2Assemb == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadContigs: Concatenated sequences memory of %lld bytes through mmap()  failed - %s",(INT64)m_AllocMemSeqs2Assemb,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadContigs: Concatenated sequences memory of %lld bytes through mmap()  failed - %s",(int64_t)m_AllocMemSeqs2Assemb,strerror(errno));
 		m_pSeqs2Assemb = NULL;
 		Reset(false);
 		return(eBSFerrMem);
@@ -149,15 +149,15 @@ if(m_pSeqs2Assemb == NULL)
 	}
 else
 	{
-	UINT8 *pDstSeq;
+	uint8_t *pDstSeq;
 	size_t memreq;
 	if((m_Seqs2AssembLen + ReqAllocSize + 100) >= m_AllocMemSeqs2Assemb)		// 100 as a small safety margin!
 		{
 		memreq = (size_t)(m_Seqs2AssembLen + ReqAllocSize);
 #ifdef _WIN32
-		pDstSeq = (UINT8 *) realloc(m_pSeqs2Assemb,memreq);
+		pDstSeq = (uint8_t *) realloc(m_pSeqs2Assemb,memreq);
 #else
-		pDstSeq = (UINT8 *)mremap(m_pSeqs2Assemb,m_AllocMemSeqs2Assemb,memreq,MREMAP_MAYMOVE);
+		pDstSeq = (uint8_t *)mremap(m_pSeqs2Assemb,m_AllocMemSeqs2Assemb,memreq,MREMAP_MAYMOVE);
 		if(pDstSeq == MAP_FAILED)
 			pDstSeq = NULL;
 #endif
@@ -311,7 +311,7 @@ int SizeOfRawRead;
 int CurReadLen;
 int CurDescrLen;
 
-UINT8 ReadBuff[0x0ffff];				// used to buffer pre-processed reads
+uint8_t ReadBuff[0x0ffff];				// used to buffer pre-processed reads
 
 etSeqBase *pSeq;
 int ReadLen;
@@ -319,7 +319,7 @@ int NumAcceptedContigs;
 
 int BuffLen;
 int BuffOfs;
-UINT8 *pSrcSeq;							// used when copying read sequence (src) into concatenated sequence (dst)
+uint8_t *pSrcSeq;							// used when copying read sequence (src) into concatenated sequence (dst)
 tsBSFRdsHdr RdsHdr;
 
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Loading sequences from: %s",pszFile);
@@ -507,12 +507,12 @@ CHomozyReduce::GenSfxdSeqs(void)			// generates concatenated sequences into m_pC
 int Idx;
 size_t MemReq;
 tsSfxdSeq *pRead;				// current read
-UINT8 *pDstSeq;
-UINT64 XFormID;
-UINT32 SeqIdx;
-UINT8 *pSeq;
-UINT8 *pNxtSeq;
-UINT32 SeqLen;
+uint8_t *pDstSeq;
+uint64_t XFormID;
+uint32_t SeqIdx;
+uint8_t *pSeq;
+uint8_t *pNxtSeq;
+uint32_t SeqLen;
 
 m_NumSfxdSeqs = 0;
 m_RdsSfxHdr.SumReadLens = 0;
@@ -524,12 +524,12 @@ if(m_pSeqs2Assemb == NULL || m_Seqs2AssembLen == 0 || m_NumSeqs2Assemb == 0)
 if(m_pSfxdSeqs == NULL)					// if first time then memory needs to be allocated
 	{
 	m_AllocdNumSfxdSeqs = m_NumSeqs2Assemb + 10;		// small safety margin
-	m_AllocdMemSfxdSeqs = ((UINT64)m_AllocdNumSfxdSeqs * sizeof(tsSfxdSeq));
+	m_AllocdMemSfxdSeqs = ((uint64_t)m_AllocdNumSfxdSeqs * sizeof(tsSfxdSeq));
 #ifdef _WIN32
 	m_pSfxdSeqs = (tsSfxdSeq *) malloc((size_t)m_AllocdMemSfxdSeqs);
 	if(m_pSfxdSeqs == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenSfxdSeqs: Initial reads memory allocation of %lld bytes - %s",(INT64)m_AllocdMemSfxdSeqs,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenSfxdSeqs: Initial reads memory allocation of %lld bytes - %s",(int64_t)m_AllocdMemSfxdSeqs,strerror(errno));
 		Reset(false);
 		return(eBSFerrMem);
 		}
@@ -538,7 +538,7 @@ if(m_pSfxdSeqs == NULL)					// if first time then memory needs to be allocated
 	m_pSfxdSeqs = (tsSfxdSeq *)mmap(NULL,m_AllocdMemSfxdSeqs, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pSfxdSeqs == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEntry: Initial reads memory allocation of %lld bytes through mmap()  failed - %s",(INT64)m_AllocdMemSfxdSeqs,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEntry: Initial reads memory allocation of %lld bytes through mmap()  failed - %s",(int64_t)m_AllocdMemSfxdSeqs,strerror(errno));
 		m_pSfxdSeqs = NULL;
 		Reset(false);
 		return(eBSFerrMem);
@@ -549,7 +549,7 @@ else
 	{
 	if(m_NumSeqs2Assemb >=  m_AllocdNumSfxdSeqs || ((m_NumSfxdSeqs * 11) < (m_AllocdNumSfxdSeqs * 10)))
 		{
-		MemReq = (size_t)((UINT64)(m_NumSeqs2Assemb + 10) * sizeof(tsSfxdSeq));
+		MemReq = (size_t)((uint64_t)(m_NumSeqs2Assemb + 10) * sizeof(tsSfxdSeq));
 	#ifdef _WIN32
 		pRead = (tsSfxdSeq *) realloc(m_pSfxdSeqs,(size_t)MemReq);
 	#else
@@ -568,25 +568,25 @@ else
 		}
 	}
 
-MemReq = (size_t)((UINT64)m_NumSeqs2Assemb * 6) + m_Seqs2AssembLen;
+MemReq = (size_t)((uint64_t)m_NumSeqs2Assemb * 6) + m_Seqs2AssembLen;
 if(m_pConcatSeqs == NULL)
 	{
 	m_AllocMemConcat = MemReq;
 #ifdef _WIN32
-	m_pConcatSeqs = (UINT8 *) malloc((size_t)m_AllocMemConcat);
+	m_pConcatSeqs = (uint8_t *) malloc((size_t)m_AllocMemConcat);
 	if(m_pConcatSeqs == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenSfxdSeqs: Concatenated sequences memory allocation of %lld bytes - %s",(INT64)m_AllocMemConcat,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenSfxdSeqs: Concatenated sequences memory allocation of %lld bytes - %s",(int64_t)m_AllocMemConcat,strerror(errno));
 		m_AllocMemConcat = 0;
 		Reset(false);
 		return(eBSFerrMem);
 		}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-	m_pConcatSeqs = (UINT8 *)mmap(NULL,m_AllocMemConcat, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+	m_pConcatSeqs = (uint8_t *)mmap(NULL,m_AllocMemConcat, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pConcatSeqs == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenSfxdSeqs: Concatenated sequences memory of %lld bytes through mmap()  failed - %s",(INT64)m_AllocMemConcat,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenSfxdSeqs: Concatenated sequences memory of %lld bytes through mmap()  failed - %s",(int64_t)m_AllocMemConcat,strerror(errno));
 		m_pConcatSeqs = NULL;
 		Reset(false);
 		return(eBSFerrMem);
@@ -599,9 +599,9 @@ else
 	if(MemReq >= m_AllocMemConcat || (MemReq * 11 < m_AllocMemConcat * 10))
 		{
 #ifdef _WIN32
-		pDstSeq = (UINT8 *) realloc(m_pConcatSeqs,MemReq);
+		pDstSeq = (uint8_t *) realloc(m_pConcatSeqs,MemReq);
 #else
-		pDstSeq = (UINT8 *)mremap(m_pConcatSeqs,m_AllocMemConcat,MemReq,MREMAP_MAYMOVE);
+		pDstSeq = (uint8_t *)mremap(m_pConcatSeqs,m_AllocMemConcat,MemReq,MREMAP_MAYMOVE);
 		if(pDstSeq == MAP_FAILED)
 			pDstSeq = NULL;
 #endif
@@ -623,8 +623,8 @@ pNxtSeq = m_pSeqs2Assemb;
 for(SeqIdx = 0; SeqIdx < m_NumSeqs2Assemb; SeqIdx++)
 	{
 	pSeq = pNxtSeq;
-	SeqLen = *(UINT32 *)pSeq;
-	pSeq += sizeof(UINT32);
+	SeqLen = *(uint32_t *)pSeq;
+	pSeq += sizeof(uint32_t);
 	pNxtSeq = pSeq + SeqLen;
 
 	pRead = &m_pSfxdSeqs[m_NumSfxdSeqs++];
@@ -641,9 +641,9 @@ for(SeqIdx = 0; SeqIdx < m_NumSeqs2Assemb; SeqIdx++)
 	m_RdsSfxHdr.ConcatSeqLen += 1;
 	pRead->ConcatSeqOfs = m_RdsSfxHdr.ConcatSeqLen;
 	XFormID = IDtoXForm(pRead->SeqID);
-	*(UINT32 *)pDstSeq = (UINT32)XFormID;
-	pDstSeq += sizeof(UINT32);
-	*pDstSeq++ = (UINT8)(XFormID >> 32);
+	*(uint32_t *)pDstSeq = (uint32_t)XFormID;
+	pDstSeq += sizeof(uint32_t);
+	*pDstSeq++ = (uint8_t)(XFormID >> 32);
 	m_RdsSfxHdr.ConcatSeqLen += 5;
 
 	for(Idx = 0; Idx < (int)SeqLen; Idx++)
@@ -674,11 +674,11 @@ return((teBSFrsltCodes)m_NumSfxdSeqs);
 // Add sequences which are to be subsequently suffix indexed and assembled
 teBSFrsltCodes
 CHomozyReduce::AddSeq(int SeqLen,				// sequence length
-						UINT8 *pSeq)			// ptr to sequence
+						uint8_t *pSeq)			// ptr to sequence
 {
 int Idx;
 size_t memreq;
-UINT8 *pDstSeq;
+uint8_t *pDstSeq;
 if(SeqLen < 1 || pSeq == NULL)
 	{
 	gDiagnostics.DiagOut(eDLWarn,gszProcName,"AddSeq: SeqLen: %d pSeq is %s",SeqLen,pSeq == NULL ? "NULL" : "none-null");
@@ -690,20 +690,20 @@ if(m_pSeqs2Assemb == NULL)
 	{
 	m_AllocMemSeqs2Assemb = (size_t)cReallocConcatSeqs;
 #ifdef _WIN32
-	m_pSeqs2Assemb = (UINT8 *) malloc((size_t)m_AllocMemSeqs2Assemb);
+	m_pSeqs2Assemb = (uint8_t *) malloc((size_t)m_AllocMemSeqs2Assemb);
 	if(m_pSeqs2Assemb == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadContigs: Concatenated sequences memory allocation of %lld bytes - %s",(INT64)m_AllocMemSeqs2Assemb,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadContigs: Concatenated sequences memory allocation of %lld bytes - %s",(int64_t)m_AllocMemSeqs2Assemb,strerror(errno));
 		m_AllocMemConcat = 0;
 		Reset(false);
 		return(eBSFerrMem);
 		}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-	m_pSeqs2Assemb = (UINT8 *)mmap(NULL,m_AllocMemSeqs2Assemb, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+	m_pSeqs2Assemb = (uint8_t *)mmap(NULL,m_AllocMemSeqs2Assemb, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pSeqs2Assemb == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadContigs: Concatenated sequences memory of %lld bytes through mmap()  failed - %s",(INT64)m_AllocMemSeqs2Assemb,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadContigs: Concatenated sequences memory of %lld bytes through mmap()  failed - %s",(int64_t)m_AllocMemSeqs2Assemb,strerror(errno));
 		m_pSeqs2Assemb = NULL;
 		Reset(false);
 		return(eBSFerrMem);
@@ -717,9 +717,9 @@ if((m_Seqs2AssembLen + SeqLen + 100) >= m_AllocMemSeqs2Assemb)		// 100 as a smal
 	{
 	memreq = (size_t)(m_Seqs2AssembLen + cReallocConcatSeqs);
 #ifdef _WIN32
-	pDstSeq = (UINT8 *) realloc(m_pSeqs2Assemb,memreq);
+	pDstSeq = (uint8_t *) realloc(m_pSeqs2Assemb,memreq);
 #else
-	pDstSeq = (UINT8 *)mremap(m_pSeqs2Assemb,m_AllocMemSeqs2Assemb,memreq,MREMAP_MAYMOVE);
+	pDstSeq = (uint8_t *)mremap(m_pSeqs2Assemb,m_AllocMemSeqs2Assemb,memreq,MREMAP_MAYMOVE);
 	if(pDstSeq == MAP_FAILED)
 		pDstSeq = NULL;
 #endif
@@ -733,11 +733,11 @@ if((m_Seqs2AssembLen + SeqLen + 100) >= m_AllocMemSeqs2Assemb)		// 100 as a smal
 	}
 
 pDstSeq = &m_pSeqs2Assemb[m_Seqs2AssembLen];
-*(UINT32 *)pDstSeq = SeqLen;
-pDstSeq += sizeof(UINT32);
+*(uint32_t *)pDstSeq = SeqLen;
+pDstSeq += sizeof(uint32_t);
 for(Idx = 0; Idx < SeqLen; Idx++)
 	*pDstSeq++ = *pSeq++ & 0x07;
-m_Seqs2AssembLen += SeqLen + sizeof(UINT32);
+m_Seqs2AssembLen += SeqLen + sizeof(uint32_t);
 
 m_NumSeqs2Assemb += 1;
 m_TotSeqs2AssembBases += SeqLen;
@@ -750,35 +750,35 @@ teBSFrsltCodes
 CHomozyReduce::GenRdsSfx(void)
 {
 int ElSize;
-UINT64 MaxSuffixEls;
-UINT32 *pTmp;
+uint64_t MaxSuffixEls;
+uint32_t *pTmp;
 MaxSuffixEls = m_RdsSfxHdr.ConcatSeqLen;
-ElSize = sizeof(UINT32);
+ElSize = sizeof(uint32_t);
 if(MaxSuffixEls > cMaxSfxBlkEls)
 	ElSize += 1;
 
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"GenRdsSfx: Now generating suffix array with %lld index elements size %d bytes..",MaxSuffixEls,ElSize);
 
 size_t ReqAllocMem;
-ReqAllocMem = (size_t)((MaxSuffixEls + 10) * (INT64)ElSize);
+ReqAllocMem = (size_t)((MaxSuffixEls + 10) * (int64_t)ElSize);
 if(m_pSuffixArray == NULL || m_AllocMemSfx == 0)
 	{
 	m_AllocMemSfx = ReqAllocMem;
 #ifdef _WIN32
-	m_pSuffixArray = (UINT32 *) malloc((size_t)m_AllocMemSfx);
+	m_pSuffixArray = (uint32_t *) malloc((size_t)m_AllocMemSfx);
 	if(m_pSuffixArray == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenRdsSfx: Suffix array memory allocation of %lld bytes - %s",(INT64)m_AllocMemSfx,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenRdsSfx: Suffix array memory allocation of %lld bytes - %s",(int64_t)m_AllocMemSfx,strerror(errno));
 		m_AllocMemSfx = 0;
 		Reset(false);
 		return(eBSFerrMem);
 		}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-	m_pSuffixArray = (UINT32 *)mmap(NULL,m_AllocMemSfx, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+	m_pSuffixArray = (uint32_t *)mmap(NULL,m_AllocMemSfx, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pSuffixArray == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenRdsSfx: Suffix array memory allocation of %lld bytes through mmap()  failed - %s",(INT64)m_AllocMemSfx,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenRdsSfx: Suffix array memory allocation of %lld bytes through mmap()  failed - %s",(int64_t)m_AllocMemSfx,strerror(errno));
 		m_pSuffixArray = NULL;
 		m_AllocMemSfx = 0;
 		Reset(false);
@@ -794,15 +794,15 @@ else
 	if(ReqAllocMem >  (size_t)m_AllocMemSfx || ((ReqAllocMem * 10) <  ((size_t)m_AllocMemSfx * 11)))
 		{
 #ifdef _WIN32
-		pTmp = (UINT32 *) realloc(m_pSuffixArray,ReqAllocMem);
+		pTmp = (uint32_t *) realloc(m_pSuffixArray,ReqAllocMem);
 #else
-		pTmp = (UINT32 *)mremap(m_pSuffixArray,m_AllocMemSfx,ReqAllocMem,MREMAP_MAYMOVE);
+		pTmp = (uint32_t *)mremap(m_pSuffixArray,m_AllocMemSfx,ReqAllocMem,MREMAP_MAYMOVE);
 		if(pTmp == MAP_FAILED)
 			pTmp = NULL;
 #endif
 		if(pTmp == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenRdsSfx: Memory re-allocation to %ld bytes - %s",ReqAllocMem,strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenRdsSfx: Memory re-allocation to %lld bytes - %s",ReqAllocMem,strerror(errno));
 			return(eBSFerrMem);
 			}
 		m_AllocMemSfx = ReqAllocMem;
@@ -814,22 +814,22 @@ else
 
 if(ElSize == 5)
 	{
-	UINT8 *pArr5 = (UINT8 *)m_pSuffixArray;
-	for(UINT64 El = 0; El < MaxSuffixEls; El++)
+	uint8_t *pArr5 = (uint8_t *)m_pSuffixArray;
+	for(uint64_t El = 0; El < MaxSuffixEls; El++)
 		pArr5 = Pack5(El,pArr5);
 	*pArr5 = cCSeqEOS;
 	m_xpConcatSeqs = &m_pConcatSeqs[1];
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"GenRdsSfx: Now sorting...");
-	m_MTqsort.qsort(m_pSuffixArray,(INT64)MaxSuffixEls,5,Sfx5SortFunc);
+	m_MTqsort.qsort(m_pSuffixArray,(int64_t)MaxSuffixEls,5,Sfx5SortFunc);
 	}
 else
 	{
-	for(UINT32 El = 0; El < MaxSuffixEls; El++)
+	for(uint32_t El = 0; El < MaxSuffixEls; El++)
 		m_pSuffixArray[El] = El;
 	m_pConcatSeqs[MaxSuffixEls] = cCSeqEOS;
 	m_xpConcatSeqs = &m_pConcatSeqs[1];
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"GenRdsSfx: Now sorting...");
-	m_MTqsort.qsort(m_pSuffixArray,(INT64)MaxSuffixEls,sizeof(UINT32),SfxSortFunc);
+	m_MTqsort.qsort(m_pSuffixArray,(int64_t)MaxSuffixEls,sizeof(uint32_t),SfxSortFunc);
 	}
 
 m_NumSuffixEls = MaxSuffixEls;
@@ -848,24 +848,24 @@ return(eBSFSuccess);
 // ChunkedWrite
 // Seeks to specified 64bit file offset and writes to disk as chunks of no more than INT_MAX/16
 teBSFrsltCodes
-CHomozyReduce::ChunkedWrite(INT64 WrtOfs,UINT8 *pData,INT64 WrtLen)
+CHomozyReduce::ChunkedWrite(int64_t WrtOfs,uint8_t *pData,int64_t WrtLen)
 {
 return(ChunkedWrite(m_hOutFile,m_szOutFile,WrtOfs,pData,WrtLen));
 }
 
 teBSFrsltCodes
-CHomozyReduce::ChunkedWrite(int hFile,char *pszFile,INT64 WrtOfs,UINT8 *pData,INT64 WrtLen)
+CHomozyReduce::ChunkedWrite(int hFile,char *pszFile,int64_t WrtOfs,uint8_t *pData,int64_t WrtLen)
 {
 int BlockLen;
 if(_lseeki64(hFile,WrtOfs,SEEK_SET) != WrtOfs)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to seek to %ld on file %s - error %s",WrtOfs,pszFile,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to seek to %lld on file %s - error %s",WrtOfs,pszFile,strerror(errno));
 	return(eBSFerrFileAccess);
 	}
 
 while(WrtLen)
 	{
-	BlockLen = WrtLen > (INT64)(INT_MAX/16) ? (INT_MAX/16) : (int)WrtLen;
+	BlockLen = WrtLen > (int64_t)(INT_MAX/16) ? (INT_MAX/16) : (int)WrtLen;
 	WrtLen -= BlockLen;
 	if(write(hFile,pData,BlockLen)!=BlockLen)
 		{
@@ -880,7 +880,7 @@ return(eBSFSuccess);
 // ChunkedRead
 // Seeks to specified 64bit file offset and reads from disk as chunks of no more than INT_MAX/32
 teBSFrsltCodes
-CHomozyReduce::ChunkedRead(INT64 RdOfs,UINT8 *pData,INT64 RdLen)
+CHomozyReduce::ChunkedRead(int64_t RdOfs,uint8_t *pData,int64_t RdLen)
 {
 return(ChunkedRead(m_hInFile,m_szInFile,RdOfs,pData,RdLen));
 }
@@ -888,18 +888,18 @@ return(ChunkedRead(m_hInFile,m_szInFile,RdOfs,pData,RdLen));
 // ChunkedRead
 // Seeks to specified 64bit file offset and reads from disk as chunks of no more than INT_MAX/32
 teBSFrsltCodes
-CHomozyReduce::ChunkedRead(int hFile,char *pszFile,INT64 RdOfs,UINT8 *pData,INT64 RdLen)
+CHomozyReduce::ChunkedRead(int hFile,char *pszFile,int64_t RdOfs,uint8_t *pData,int64_t RdLen)
 {
 int BlockLen;
 if(_lseeki64(hFile,RdOfs,SEEK_SET) != RdOfs)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to seek to %ld on file - error %s",RdOfs,pszFile,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to seek to %lld on file - error %s",RdOfs,pszFile,strerror(errno));
 	return(eBSFerrFileAccess);
 	}
 
 while(RdLen)
 	{
-	BlockLen = RdLen > (INT64)(INT_MAX/32) ? (INT_MAX/32) : (int)RdLen;
+	BlockLen = RdLen > (int64_t)(INT_MAX/32) ? (INT_MAX/32) : (int)RdLen;
 	RdLen -= BlockLen;
 	if(read(hFile,pData,BlockLen)!=BlockLen)
 		{
@@ -917,29 +917,29 @@ return(eBSFSuccess);
 teBSFrsltCodes
 CHomozyReduce::SortContigsByLen(void)
 {
-UINT32 ReadSeqID;
+uint32_t ReadSeqID;
 tsSfxdSeq *pRead;
-UINT8 *pSeq;
-UINT64 XFormID;
+uint8_t *pSeq;
+uint64_t XFormID;
 
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Sorting %d sequences ready for duplicate detection ...",m_NumSfxdSeqs);
 
 	// first sort the reads
 m_xpConcatSeqs = &m_pConcatSeqs[1];
-m_MTqsort.qsort(m_pSfxdSeqs,(INT64)m_NumSfxdSeqs,sizeof(tsSfxdSeq),ContigsSortFunc);
+m_MTqsort.qsort(m_pSfxdSeqs,(int64_t)m_NumSfxdSeqs,sizeof(tsSfxdSeq),ContigsSortFunc);
 
 	// next assign ReadSeqID's
-UINT64 TotReadLens = 0;
+uint64_t TotReadLens = 0;
 pRead = m_pSfxdSeqs;
 for(ReadSeqID = 1; ReadSeqID <= m_NumSfxdSeqs; ReadSeqID += 1, pRead += 1)
 	{
 	pRead->SeqID = ReadSeqID;
-	TotReadLens += (UINT64)pRead->ReadLen;
+	TotReadLens += (uint64_t)pRead->ReadLen;
 	pSeq = &m_pConcatSeqs[pRead->ConcatSeqOfs];
 	XFormID = IDtoXForm(pRead->SeqID);
-	*(UINT32 *)pSeq = (UINT32)XFormID;
-	pSeq += sizeof(UINT32);
-	*pSeq = (UINT8)(XFormID >> 32);
+	*(uint32_t *)pSeq = (uint32_t)XFormID;
+	pSeq += sizeof(uint32_t);
+	*pSeq = (uint8_t)(XFormID >> 32);
 	}
 
 m_MeanReadLen = (int)(TotReadLens / m_NumSfxdSeqs);
@@ -950,19 +950,19 @@ return(eBSFSuccess);
 
 
 
-int  // SfxSortFunc for UINT32 suffix elements
+int  // SfxSortFunc for uint32_t suffix elements
 CHomozyReduce::SfxSortFunc(const void *arg1, const void *arg2)
 {
 etSeqBase Base1;
 etSeqBase Base2;
-UINT8 Byte1;
-UINT8 Byte2;
+uint8_t Byte1;
+uint8_t Byte2;
 int MaxCmpLen = cAbsMaxCoreLen * 500;
 
-UINT8 *pSeq1;
-UINT8 *pSeq2;
-UINT32 SeqIdx1 = *(UINT32 *)arg1;
-UINT32 SeqIdx2 = *(UINT32 *)arg2;
+uint8_t *pSeq1;
+uint8_t *pSeq2;
+uint32_t SeqIdx1 = *(uint32_t *)arg1;
+uint32_t SeqIdx2 = *(uint32_t *)arg2;
 pSeq1 = &m_xpConcatSeqs[SeqIdx1];
 pSeq2 = &m_xpConcatSeqs[SeqIdx2];
 do {
@@ -987,14 +987,14 @@ CHomozyReduce::Sfx5SortFunc(const void *arg1, const void *arg2)
 {
 etSeqBase Base1;
 etSeqBase Base2;
-UINT8 Byte1;
-UINT8 Byte2;
+uint8_t Byte1;
+uint8_t Byte2;
 int MaxCmpLen = cAbsMaxCoreLen * 500;
 
-UINT8 *pSeq1;
-UINT8 *pSeq2;
-UINT64 SeqIdx1 = Unpack5((UINT8 *)arg1);
-UINT64 SeqIdx2 = Unpack5((UINT8 *)arg2);
+uint8_t *pSeq1;
+uint8_t *pSeq2;
+uint64_t SeqIdx1 = Unpack5((uint8_t *)arg1);
+uint64_t SeqIdx2 = Unpack5((uint8_t *)arg2);
 pSeq1 = &m_xpConcatSeqs[SeqIdx1];
 pSeq2 = &m_xpConcatSeqs[SeqIdx2];
 do {
@@ -1023,13 +1023,13 @@ tsSfxdSeq *pR1 = (tsSfxdSeq *)arg1;
 tsSfxdSeq *pR2 = (tsSfxdSeq *)arg2;
 etSeqBase Base1;
 etSeqBase Base2;
-UINT8 Byte1;
-UINT8 Byte2;
+uint8_t Byte1;
+uint8_t Byte2;
 
-UINT8 *pSeq1;
-UINT8 *pSeq2;
-UINT64 SeqIdx1 = pR1->ConcatSeqOfs;
-UINT64 SeqIdx2 = pR2->ConcatSeqOfs;
+uint8_t *pSeq1;
+uint8_t *pSeq2;
+uint64_t SeqIdx1 = pR1->ConcatSeqOfs;
+uint64_t SeqIdx2 = pR2->ConcatSeqOfs;
 pSeq1 = &m_xpConcatSeqs[SeqIdx1 + 5];			// pts to 1st base of sequence
 pSeq2 = &m_xpConcatSeqs[SeqIdx2 + 5];			// pts to 1st base of sequence
 do {

@@ -49,12 +49,12 @@ class CMarkerSeq
 	CHyperEls *m_pHypers;		// used to contain accepted loci
 	CFasta *m_pFasta;			// multifasta file containing assembly sequences from which markers are to be processed
 
-	UINT8 *m_pSeq;				// allocated to hold sequences read from input multifasta file
+	uint8_t *m_pSeq;				// allocated to hold sequences read from input multifasta file
 	size_t m_AllocdSeqMem;		// this size allocation to m_pSeq;
 
-	UINT8 *m_pMarkerBuff;		// allocated to buffer marker sequences to be written out to file
+	uint8_t *m_pMarkerBuff;		// allocated to buffer marker sequences to be written out to file
 	size_t m_AllocdMarkerBuff;	// this size allocation to m_pSeq;
-	UINT32 MarkerBuffOfs;		// offset in m_pMarkerBuff to next write 
+	uint32_t MarkerBuffOfs;		// offset in m_pMarkerBuff to next write 
 
 public:
 	CMarkerSeq(void);

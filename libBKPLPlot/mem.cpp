@@ -101,7 +101,7 @@ plD_line_mem( PLStream *pls, short x1a, short y1a, short x2a, short y2a )
     int           x1 = x1a, y1 = y1a, x2 = x2a, y2 = y2a;
     PLINT         x1b, y1b, x2b, y2b;
     PLFLT         length, fx, fy, dx, dy;
-    unsigned char *mem = (unsigned char *) pls->dev;
+    uint8_t *mem = (uint8_t *) pls->dev;
     PLINT         xm   = pls->phyxma;
     PLINT         ym   = pls->phyyma;
 

@@ -3,9 +3,9 @@
 class CStopWatch  
 {
 	char m_szDuration[30];			// used to return stopwatch as a formatted string - "h:mm:ss.ms seconds\n"
-	INT64 m_Freq;					// stopwatch cnt freq in ticks/sec
-	INT64 m_Elapsed;				// total elapsed ticks since stopwatch intially started
-	INT64 m_Started;				// when stopwatch was initially started
+	int64_t m_Freq;					// stopwatch cnt freq in ticks/sec
+	int64_t m_Elapsed;				// total elapsed ticks since stopwatch intially started
+	int64_t m_Started;				// when stopwatch was initially started
 	int m_StartCnt;					// keeps count of starts w/o corresponding stop 
 public:
 	CStopWatch();

@@ -133,8 +133,8 @@ public:
     virtual void setColor( int r, int g, int b, double alpha );
     virtual void setBackgroundColor( int /* r */, int /* g */, int /* b */, double /* alpha */ ){}
     virtual void setGradient( int x1, int x2, int y1, int y2,
-                              unsigned char *r, unsigned char *g,
-                              unsigned char *b, PLFLT *alpha, PLINT ncol1 );
+                              uint8_t *r, uint8_t *g,
+                              uint8_t *b, PLFLT *alpha, PLINT ncol1 );
     virtual void setWidthF( PLFLT w );
     // Set pen to draw solid strokes (called after drawing dashed strokes)
     virtual void setSolid();
@@ -182,7 +182,7 @@ public:
         setDotsPerMeterY( (int) ( ( dotsPerInch / 25.4 ) * 1000. ) );
     }
     // used by the memqt driver
-    unsigned char *memory;
+    uint8_t *memory;
 
 protected:
     char    format[5];
@@ -326,8 +326,8 @@ public:
     void setColor( int r, int g, int b, double alpha );
     void setBackgroundColor( int r, int g, int b, double alpha );
     void setGradient( int x1, int x2, int y1, int y2,
-                      unsigned char *r, unsigned char *g,
-                      unsigned char *b, PLFLT *alpha, PLINT ncol1 );
+                      uint8_t *r, uint8_t *g,
+                      uint8_t *b, PLFLT *alpha, PLINT ncol1 );
     void setWidthF( PLFLT r );
     void drawText( EscText* txt );
     void flush();

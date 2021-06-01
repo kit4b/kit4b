@@ -81,7 +81,7 @@ typedef struct TAG_sSNPs {
 	int ChromID;				// on which chromosome is this SNP is located
 	int StartOfs;				// locii start (0..n) on chromosome
 	char Strand;				// on which strand
-	unsigned char PMs;			// bitmap of observed polymorphisms
+	uint8_t PMs;			// bitmap of observed polymorphisms
 } tsSNPs;
 
 

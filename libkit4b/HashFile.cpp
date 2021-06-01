@@ -336,9 +336,9 @@ while(SeqLen >= WindowSize)
 m_CurHashHeader.NumHashes = NxtHashID;
 
 m_CurHashHeader.EntryID = CBioSeqFile::CreateEntry(pszSource,pszDescription,eBinDataType);
-CBioSeqFile::AddData(sizeof(tsHashHeader),(unsigned char *)&m_CurHashHeader);
-CBioSeqFile::AddData(m_CurHashHeader.HashSlots * sizeof(tsHashArraySlot),(unsigned char *)m_pSlots);
-CBioSeqFile::AddData(m_CurHashHeader.NumHashes * sizeof(tsHashEntry),(unsigned char *)m_pHashes);
+CBioSeqFile::AddData(sizeof(tsHashHeader),(uint8_t *)&m_CurHashHeader);
+CBioSeqFile::AddData(m_CurHashHeader.HashSlots * sizeof(tsHashArraySlot),(uint8_t *)m_pSlots);
+CBioSeqFile::AddData(m_CurHashHeader.NumHashes * sizeof(tsHashEntry),(uint8_t *)m_pHashes);
 CBioSeqFile::AddData(m_CurHashHeader.SeqLen,pSeq);
 CBioSeqFile::SealEntry();
 AddErrMsg("CHashFile::AddEntry","Max number entries for any hash slot was: %d",MaxEntries);
@@ -356,7 +356,7 @@ if(m_CurHashHeader.EntryID == EntryID)
 DataReq = sizeof(tsHashHeader);
 if((DataLen = GetDataLen(EntryID)) < DataReq)
 	return(NULL);
-if(DataReq != GetData(EntryID,eBinDataType,0,(unsigned char *)&m_CurHashHeader,DataReq))
+if(DataReq != GetData(EntryID,eBinDataType,0,(uint8_t *)&m_CurHashHeader,DataReq))
 	return(NULL);
 return(&m_CurHashHeader);
 }
@@ -394,7 +394,7 @@ if(m_pSlots == NULL)
 	m_MaxNumSlots = m_CurHashHeader.HashSlots;
 	}
 
-if(GetData(EntryID,eBinDataType,DataOfs,(unsigned char *)m_pSlots,DataReq) != DataReq)
+if(GetData(EntryID,eBinDataType,DataOfs,(uint8_t *)m_pSlots,DataReq) != DataReq)
 	return(NULL);
 m_SlotsEntryID = EntryID;
 return(m_pSlots);
@@ -433,14 +433,14 @@ if(m_pHashes == NULL)
 	m_MaxNumHashes = m_CurHashHeader.NumHashes;
 	}
 
-if(GetData(EntryID,eBinDataType,DataOfs,(unsigned char *)m_pHashes,DataReq) != DataReq)
+if(GetData(EntryID,eBinDataType,DataOfs,(uint8_t *)m_pHashes,DataReq) != DataReq)
 	return(NULL);
 m_HashesEntryID = EntryID;
 return(m_pHashes);
 }
 
 
-unsigned char *
+uint8_t *
 CHashFile::LoadSeq(unsigned int EntryID)
 {
 unsigned int DataOfs;
@@ -467,7 +467,7 @@ if(m_pSeq != NULL && m_MaxSeqLen < m_CurHashHeader.SeqLen)
 
 if(m_pSeq == NULL)
 	{
-	m_pSeq = new unsigned char[m_CurHashHeader.SeqLen];
+	m_pSeq = new uint8_t[m_CurHashHeader.SeqLen];
 	if(m_pSeq == NULL)
 		return(NULL);
 	m_MaxSeqLen = m_CurHashHeader.SeqLen;

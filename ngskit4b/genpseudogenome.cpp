@@ -357,10 +357,10 @@ if (!argerrors)
 		{
 		int ParamID;
 		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTText,(int)strlen(szLogFile),"log",szLogFile);
-		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,sizeof(INT32),"mode",&PMode);
-		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,sizeof(INT32),"format",&FMode);
-		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,sizeof(INT32),"lennseps",&LenNSeps);
-		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,sizeof(INT32),"NumInputFiles",&NumInputFiles);
+		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,sizeof(int32_t),"mode",&PMode);
+		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,sizeof(int32_t),"format",&FMode);
+		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,sizeof(int32_t),"lennseps",&LenNSeps);
+		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,sizeof(int32_t),"NumInputFiles",&NumInputFiles);
 		for(Idx = 0; Idx < NumInputFiles; Idx++)
 			ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTText,(int)strlen(pszInfileSpecs[Idx]),"in",pszInfileSpecs[Idx]);
 		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTText,(int)strlen(szOutGenomeFile),"out",szOutGenomeFile);
@@ -408,13 +408,13 @@ const int cAllocInFasta = 300000000;			// buffer fasta input as being the maxima
 const int cAllocOutFasta = 1000000;				// buffer output gene (BED) file
 const int cAllocInBED = 1000000;				// buffer output gene (BED) file
 
-UINT8 *m_pInFastaBuff;							// allocd to hold input fasta
+uint8_t *m_pInFastaBuff;							// allocd to hold input fasta
 char *m_pOutFastaBuff;							// allocd to hold buffered output fasta
 char *m_pOutBEDBuff;							// allocd to hold buffred output BED 
 int m_OutFastaOfs;								// bytes used m_pOutFastaBuff
 int m_OutBEDOfs;								// bytes used m_pOutFastaBuff
 
-UINT32 m_PsuedoGenomeLen;								// total pseudo genome length
+uint32_t m_PsuedoGenomeLen;								// total pseudo genome length
 int m_TotEntries;								// total number of contigs or scaffolds in pseudo genome
 etSeqBase m_100Ns[cMaxNSeps];					// to hold upto 100 eBaseNs used to separate contigs/scaffolds in output pseudo genome
 int m_CurFastaCol;								// next fasta col to write into
@@ -507,8 +507,8 @@ int
 OutputGene(char *pszGenome,
 			char *pszName,
            char Strand,
-		   UINT32 GeneStart,
-		   UINT32 GeneLen)
+		   uint32_t GeneStart,
+		   uint32_t GeneLen)
 {
 
 if(m_OutBEDOfs + 1000  > cAllocInBED)
@@ -531,7 +531,7 @@ LoadFasta(int LenNSeps,					// generate with this number of 'N' bases separating
 CFasta Fasta;
 char szName[cBSFSourceSize];
 char szDescription[cBSFDescriptionSize];
-UINT32 GeneStart;
+uint32_t GeneStart;
 
 int SeqLen;
 int Descrlen;
@@ -634,7 +634,7 @@ if((m_hOutGeneFile = open(pszOutGeneFile,O_RDWR | O_CREAT |O_TRUNC, S_IREAD | S_
 	return(false);
 	}
 
-if((m_pInFastaBuff = new unsigned char [cAllocInFasta]) == NULL)
+if((m_pInFastaBuff = new uint8_t [cAllocInFasta]) == NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessFastaFile:- Unable to allocate memory (%d bytes) for sequence buffer",cAllocInFasta);
 	GPGReset();

@@ -735,7 +735,7 @@ if((Rslt=pBioSeq->Open(pszGenomeFile))<0)
 	return(Rslt);
 	}
 
-if((pProcParams->pSeq = new unsigned char [cChromSeqLen])==NULL)
+if((pProcParams->pSeq = new uint8_t [cChromSeqLen])==NULL)
 	{
 	pBioSeq->Close();
 	delete pBioSeq;
@@ -785,7 +785,7 @@ while((CurEntryID = pBioSeq->Next(CurEntryID))>0)
 	if(ReqLen > pProcParams->AllocdDataLen)
 		{
 		delete pProcParams->pSeq;
-		if((pProcParams->pSeq = new unsigned char [ReqLen+0x07fff])==NULL)
+		if((pProcParams->pSeq = new uint8_t [ReqLen+0x07fff])==NULL)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to alloc memory (%d requested) for holding raw sequence data",ReqLen+0x07fff);
 			Rslt = eBSFerrMem;
@@ -870,7 +870,7 @@ if((Rslt=pBioSeq->Open(pszGenomeFile))<0)
 	return(Rslt);
 	}
 
-if((pProcParams->pSeq = new unsigned char [cChromSeqLen])==NULL)
+if((pProcParams->pSeq = new uint8_t [cChromSeqLen])==NULL)
 	{
 	pBioSeq->Close();
 	delete pBioSeq;
@@ -936,7 +936,7 @@ while((CurEntryID = pBioSeq->Next(CurEntryID))>0)
 	if(ReqLen > pProcParams->AllocdDataLen)
 		{
 		delete pProcParams->pSeq;
-		if((pProcParams->pSeq = new unsigned char [ReqLen+0x07fff])==NULL)
+		if((pProcParams->pSeq = new uint8_t [ReqLen+0x07fff])==NULL)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to alloc memory (%d requested) for holding raw sequence data\n",ReqLen+0x07fff);
 			Rslt = eBSFerrMem;
@@ -1173,7 +1173,7 @@ ProcParams.OnStrand = OnStrand;
 
 for(Idx = 0; Idx < NumSpecies; Idx++)
 	{
-	if((ProcParams.pSeqs[Idx] = new unsigned char [cMALineSize])==NULL)
+	if((ProcParams.pSeqs[Idx] = new uint8_t [cMALineSize])==NULL)
 		{
 		delete pCntStepCnts;
 		CloseBedfiles(&ProcParams);

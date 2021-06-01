@@ -442,10 +442,10 @@ CRepAssemb::LoadKalignSNPs(char *pszSNPFiles)	// load and parse kalign generated
 int Rslt;
 char *pszSNPFile;
 int NumFields;
-UINT32 EstNumSNPs;
-UINT32 NumSNPsAccepted;
-UINT32 NumSNPsParsed;
-UINT32 RowNumber;
+uint32_t EstNumSNPs;
+uint32_t NumSNPsAccepted;
+uint32_t NumSNPsParsed;
+uint32_t RowNumber;
 uint32_t ReadsetSiteId;
 
 int ExpNumFields;
@@ -664,7 +664,7 @@ for(int FileIdx = 0;FileIdx < m_NumSNPFiles; FileIdx++)
 			m_pSNPSites = (tsSNPSite*)malloc(memreq);	// initial and perhaps the only allocation
 			if(m_pSNPSites == NULL)
 				{
-				gDiagnostics.DiagOut(eDLFatal, gszProcName, "SNPs: Initial memory allocation of %lld bytes - %s", (INT64)memreq, strerror(errno));
+				gDiagnostics.DiagOut(eDLFatal, gszProcName, "SNPs: Initial memory allocation of %lld bytes - %s", (int64_t)memreq, strerror(errno));
 				Reset();
 				return(eBSFerrMem);
 				}
@@ -673,7 +673,7 @@ for(int FileIdx = 0;FileIdx < m_NumSNPFiles; FileIdx++)
 			m_pSNPSites = (tsSNPSite *)mmap(NULL, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 			if(m_pSNPSites == MAP_FAILED)
 				{
-				gDiagnostics.DiagOut(eDLFatal, gszProcName, "SNPs: Memory allocation of %lld bytes through mmap()  failed - %s", (INT64)memreq, strerror(errno));
+				gDiagnostics.DiagOut(eDLFatal, gszProcName, "SNPs: Memory allocation of %lld bytes through mmap()  failed - %s", (int64_t)memreq, strerror(errno));
 				m_pSNPSites = NULL;
 				Reset();
 				return(eBSFerrMem);
@@ -796,7 +796,7 @@ if(m_pASegments == NULL)
 	m_pASegments = (tsASegment*)malloc(memreq);	// initial and perhaps the only allocation
 	if(m_pASegments == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "MergeASegs: Initial memory allocation of %lld bytes - %s", (INT64)memreq, strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "MergeASegs: Initial memory allocation of %lld bytes - %s", (int64_t)memreq, strerror(errno));
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -805,7 +805,7 @@ if(m_pASegments == NULL)
 	m_pASegments = (tsASegment *)mmap(NULL, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	if(m_pASegments == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "MergeASegs: Memory allocation of %lld bytes through mmap()  failed - %s", (INT64)memreq, strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "MergeASegs: Memory allocation of %lld bytes through mmap()  failed - %s", (int64_t)memreq, strerror(errno));
 		m_pASegments = NULL;
 		Reset();
 		return(eBSFerrMem);
@@ -1007,7 +1007,7 @@ memreq = (size_t)cAllocAssembFastaMem;
 m_pSeqBuffer = (uint8_t *)malloc(memreq);	// initial and perhaps the only allocation
 if(m_pSeqBuffer == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Initial memory allocation of %lld bytes - %s", (INT64)memreq, strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Initial memory allocation of %lld bytes - %s", (int64_t)memreq, strerror(errno));
 	Reset();
 	return(eBSFerrMem);
 	}
@@ -1016,7 +1016,7 @@ if(m_pSeqBuffer == NULL)
 m_pSeqBuffer = (uint8_t *)mmap(NULL, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 if(m_pSeqBuffer == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Assembly: Memory allocation of %lld bytes through mmap()  failed - %s", (INT64)memreq, strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Assembly: Memory allocation of %lld bytes through mmap()  failed - %s", (int64_t)memreq, strerror(errno));
 	m_pSeqBuffer = NULL;
 	Reset();
 	return(eBSFerrMem);

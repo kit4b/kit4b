@@ -244,8 +244,8 @@ ValidateFastaFile(char *pszFastaFile,
 int Rslt;
 CFasta *pFasta;
 CBioSeqFile *pSeqFile;
-unsigned char *pFastaSeqBuff;
-unsigned char *pBioSeqBuff;
+uint8_t *pFastaSeqBuff;
+uint8_t *pBioSeqBuff;
 unsigned int BioEntryDataLen;
 unsigned int CurSeqOfs;
 unsigned int TestBuffSize;
@@ -290,7 +290,7 @@ if((Rslt=pSeqFile->Exists(EntryID))!= eBSFSuccess)
 	}
 
 
-if((pFastaSeqBuff = new unsigned char [cGBSMaxAllocBuffChunk])==NULL)
+if((pFastaSeqBuff = new uint8_t [cGBSMaxAllocBuffChunk])==NULL)
 	{
 	pFasta->Close();
 	pSeqFile->Close();
@@ -299,7 +299,7 @@ if((pFastaSeqBuff = new unsigned char [cGBSMaxAllocBuffChunk])==NULL)
 	return(eBSFerrMem);
 	}
 
-if((pBioSeqBuff = new unsigned char [cGBSMaxAllocBuffChunk])==NULL)
+if((pBioSeqBuff = new uint8_t [cGBSMaxAllocBuffChunk])==NULL)
 	{
 	delete pFastaSeqBuff;
 	pFasta->Close();
@@ -357,7 +357,7 @@ bool ProcessFastaFile(char *pszFile,
 				 void *pParams)			
 {
 CFasta Fasta;
-unsigned char *pSeqBuff;
+uint8_t *pSeqBuff;
 char szName[cBSFSourceSize];
 char szDescription[cBSFDescriptionSize];
 int SeqLen;
@@ -369,7 +369,7 @@ int Rslt;
 int SeqID;
 bool bCapsSoftMask;
 
-if((pSeqBuff = new unsigned char [cGBSMaxAllocBuffChunk]) == NULL)
+if((pSeqBuff = new uint8_t [cGBSMaxAllocBuffChunk]) == NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessFastaFile:- Unable to allocate memory (%d bytes) for sequence buffer", cGBSMaxAllocBuffChunk);
 	return(false);

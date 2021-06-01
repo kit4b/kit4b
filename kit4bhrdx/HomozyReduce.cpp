@@ -360,11 +360,11 @@ CHomozyReduce *pThis;
 int Idx;
 tsAssembThreadPars *pPars = (tsAssembThreadPars *)pThreadPars; // makes it easier not having to deal with casts!
 tsProbesBlock ProbesBlock;
-UINT32 ProbeSeqID;
+uint32_t ProbeSeqID;
 tsSfxdSeq *pSfxdSeq;
 
-UINT16 ProbeLen;
-UINT8 *pProbeSeq;
+uint16_t ProbeLen;
+uint8_t *pProbeSeq;
 int NumNonReduced;
 int NumReduced;
 
@@ -387,8 +387,8 @@ while(pThis->ThreadedIterProbes(&ProbesBlock))
 		pProbeSeq = &pThis->m_pConcatSeqs[pSfxdSeq->ConcatSeqOfs+5];	// returns ptr to first base of concatenated sequence
 		ProbeLen = pSfxdSeq->ReadLen;					
 
-		UINT32 TargSeqID = 0;
-		UINT32 MergeLen = 0;
+		uint32_t TargSeqID = 0;
+		uint32_t MergeLen = 0;
 		etSeqBase *pMergeSeq = NULL;
 
 		Rslt =  pThis->MarkHomozygoticRegions(ProbeSeqID,	// identifies probe sequence
@@ -496,10 +496,10 @@ m_ProcessingStartSecs = m_StopWatch.ReadUSecs();
 
 
 // Returns the number of reads thus far aligned 
-UINT32
+uint32_t
 CHomozyReduce::ApproxNumContigsAligned(void)
 {
-UINT32 NumAligned;
+uint32_t NumAligned;
 AcquireLock(false);
 NumAligned = m_NumSeqsProc;
 ReleaseLock(false);
@@ -512,14 +512,14 @@ return(NumAligned);
 bool	// returns false if no more reads available for processing by calling thread
 CHomozyReduce::ThreadedIterProbes(tsProbesBlock *pRetBlock)	// iterate and return blocks of read probes to be processed by each thread
 {
-UINT32 NumContigsLeft;
-UINT32 MaxContigs2Proc;
+uint32_t NumContigsLeft;
+uint32_t MaxContigs2Proc;
 pRetBlock->NumContigs = 0;
 
 AcquireSerialise();
 
 if(m_pSfxdSeqs == NULL || 
-	m_AllocdNumSfxdSeqs == 0 || (UINT32)m_NumSeqsProc >= m_NumSfxdSeqs) // if all sequences processed then time to move onto next processing phase
+	m_AllocdNumSfxdSeqs == 0 || (uint32_t)m_NumSeqsProc >= m_NumSfxdSeqs) // if all sequences processed then time to move onto next processing phase
 	{
 	pRetBlock->NumContigs = 0;
 	ReleaseSerialise();
@@ -533,12 +533,12 @@ NumContigsLeft = m_NumSfxdSeqs - m_NumSeqsProc;
 if(NumContigsLeft < cMaxProbesPerBlock/8)	// if < cMaxProbesPerBlock/8 yet to be processed then give it all to the one thread
 	MaxContigs2Proc = NumContigsLeft;
 else
-	MaxContigs2Proc = min((UINT32)pRetBlock->MaxContigs,10 + (NumContigsLeft / (UINT32)m_NumThreads));
+	MaxContigs2Proc = min((uint32_t)pRetBlock->MaxContigs,10 + (NumContigsLeft / (uint32_t)m_NumThreads));
 MaxContigs2Proc = min(MaxContigs2Proc,NumContigsLeft);
 if(!m_NumSeqsProc)			   // 0 if first
 	m_NxtReadProcSeqID = 1;
 
-while(MaxContigs2Proc && (UINT32)m_NumSeqsProc < m_NumSfxdSeqs)
+while(MaxContigs2Proc && (uint32_t)m_NumSeqsProc < m_NumSfxdSeqs)
 	{
 	// check if this read sequence is still available to be aligned
 	if(!(m_pSfxdSeqs[m_NxtReadProcSeqID-1].Flags & (cFlagNA | cFlagMerged)))	// no lock required as only single byte thus always consistent
@@ -550,7 +550,7 @@ while(MaxContigs2Proc && (UINT32)m_NumSeqsProc < m_NumSfxdSeqs)
 	m_NumSeqsProc += 1;
 	}
 
-if((UINT32)m_NumSeqsProc > m_NumSfxdSeqs)
+if((uint32_t)m_NumSeqsProc > m_NumSfxdSeqs)
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ThreadedIterProbes: unexpected iteration, please report to stuart.stephen@csiro.au");
 
 ReleaseSerialise();
@@ -592,7 +592,7 @@ if(bRslt == false && (m_WorkingSetSizeRejected++ > 5))
 					ReqMinSize,ReqMaxSize,m_WinPageSize);
 	}
 if(bRslt)
-	m_CurMaxMemWorkSetBytes = (UINT64)ReqMaxSize;
+	m_CurMaxMemWorkSetBytes = (uint64_t)ReqMaxSize;
 return(bRslt > 0 || m_WorkingSetSizeRejected < 5 ? true : false);
 #else
 return(true);	
@@ -613,12 +613,12 @@ int Rslt;
 int ThreadIdx;
 tsAssembThreadPars WorkerThreads[cMaxWorkerThreads];
 
-UINT8 *pProbe;
+uint8_t *pProbe;
 
 int PrevNumContigsAligned;
 int CurNumContigsAligned;
 
-UINT32 NumAcceptedAsMerged;
+uint32_t NumAcceptedAsMerged;
 
 int CurMaxIter;
 
@@ -683,7 +683,7 @@ if(m_pszLineBuff == NULL)
 	{
 	if((m_pszLineBuff = new char [cAllocLineBuffLen]) == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: output buffering allocation of %lld bytes - %s",(INT64)cAllocLineBuffLen,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: output buffering allocation of %lld bytes - %s",(int64_t)cAllocLineBuffLen,strerror(errno));
 		Reset(false);
 		return(eBSFerrMem);
 		}
@@ -773,7 +773,7 @@ for(ThreadIdx = 0; ThreadIdx < m_NumThreads; ThreadIdx++)
 	WorkerThreads[ThreadIdx].MaxHomozySubs = m_MaxHomozySubs;
 	WorkerThreads[ThreadIdx].MinHomozyLen = m_MinHomozyLen;
 
-	if((WorkerThreads[ThreadIdx].pProbeSeq = new UINT8 [cAllocMergerSeqLen+10])==NULL)
+	if((WorkerThreads[ThreadIdx].pProbeSeq = new uint8_t [cAllocMergerSeqLen+10])==NULL)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory for probe sequences...");
 		exit(1);
@@ -842,7 +842,7 @@ if(m_pSuffixArray != NULL)
 	m_pSuffixArray = NULL;
 	}
 
-UINT32 SumNumContigsProc = 0;				// returned number of reads processed
+uint32_t SumNumContigsProc = 0;				// returned number of reads processed
 
 tsAssembThreadPars *pThread;
 pThread = WorkerThreads;
@@ -850,22 +850,22 @@ pThread = WorkerThreads;
 // reduction ended
 // iterate over sequences and output to file as contigs those sequence regions not marked as being homozygotic
 // if a region is less than 100bp then extend flanks of that region until at least 100bp
-UINT32 Idx;
-UINT32 SeqIdx;
-UINT32 SeqLen;
-UINT32 MarkedLen;
-UINT32 UnmarkedLen;
-UINT32 UnmarkedStartIdx;
-UINT32 FlankLen;
+uint32_t Idx;
+uint32_t SeqIdx;
+uint32_t SeqLen;
+uint32_t MarkedLen;
+uint32_t UnmarkedLen;
+uint32_t UnmarkedStartIdx;
+uint32_t FlankLen;
 tsSfxdSeq *pSfxdSeq;
-UINT8 *pSeq;
-UINT8 *pUnmarkedSeq;
+uint8_t *pSeq;
+uint8_t *pUnmarkedSeq;
 for(Idx = 0; Idx < m_NumSfxdSeqs; Idx++)
 	{
 	pSfxdSeq = &m_pSfxdSeqs[Idx];
 	pSeq = &m_pConcatSeqs[pSfxdSeq->ConcatSeqOfs+5];
 	SeqLen = pSfxdSeq->ReadLen;
-	if(SeqLen < (UINT32)MinCtgLen)
+	if(SeqLen < (uint32_t)MinCtgLen)
 		continue;
 
 	MarkedLen = 0;
@@ -876,11 +876,11 @@ for(Idx = 0; Idx < m_NumSfxdSeqs; Idx++)
 		{
 		if((*pSeq & 0xf0) == cMarkMskFlg)		// has been marked?
 			{
-			if(UnmarkedLen >= (UINT32)MinHetrozyLen)		// has to be worth the effort!
+			if(UnmarkedLen >= (uint32_t)MinHetrozyLen)		// has to be worth the effort!
 				{
-				if(UnmarkedLen < (UINT32)MinCtgLen)
+				if(UnmarkedLen < (uint32_t)MinCtgLen)
 					{
-					FlankLen = ((UINT32)MinCtgLen - UnmarkedLen)/2;
+					FlankLen = ((uint32_t)MinCtgLen - UnmarkedLen)/2;
 					if(UnmarkedStartIdx >= FlankLen)
 						UnmarkedStartIdx -= FlankLen;
 					else
@@ -907,11 +907,11 @@ for(Idx = 0; Idx < m_NumSfxdSeqs; Idx++)
 			UnmarkedLen += 1;
 			}
 		}
-	if(UnmarkedLen >= (UINT32)MinHetrozyLen)
+	if(UnmarkedLen >= (uint32_t)MinHetrozyLen)
 		{
-		if(UnmarkedLen < (UINT32)MinCtgLen)
+		if(UnmarkedLen < (uint32_t)MinCtgLen)
 			{
-			FlankLen = ((UINT32)MinCtgLen - UnmarkedLen)/2;
+			FlankLen = ((uint32_t)MinCtgLen - UnmarkedLen)/2;
 			if(UnmarkedStartIdx >= FlankLen)
 				UnmarkedStartIdx -= FlankLen;
 			else
@@ -946,10 +946,10 @@ m_hOutFile = -1;
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"%d homozygotic region reduced contigs were generated covering %lld bases",m_NumGenContigs,m_TotLenCovered);
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Contig Nx lengths:");
 
-INT64 NxLens[11];	// to hold contig lengths for all Nx where Nx varies from 10 to 100 in increments of N10
-INT64 SumCtgLens;
-INT64 NxSum;
-INT64 *pNxLens;
+int64_t NxLens[11];	// to hold contig lengths for all Nx where Nx varies from 10 to 100 in increments of N10
+int64_t SumCtgLens;
+int64_t NxSum;
+int64_t *pNxLens;
 int CtgLenIdx;
 int CtgNxIdx;
 int *pCnts;
@@ -960,7 +960,7 @@ pCnts = m_pContigLengths;
 for(CtgLenIdx = 0; CtgLenIdx < m_NumGenContigs; CtgLenIdx++,pCnts++)
 	SumCtgLens += *pCnts;
 
-m_MTqsort.qsort(m_pContigLengths,(UINT64)m_NumGenContigs,sizeof(int),SortByContigLen);
+m_MTqsort.qsort(m_pContigLengths,(uint64_t)m_NumGenContigs,sizeof(int),SortByContigLen);
 
 pNxLens = NxLens;
 for(CtgNxIdx = 1; CtgNxIdx <= 10; CtgNxIdx++,pNxLens++)
@@ -998,8 +998,8 @@ return(eBSFSuccess);
 // To start from first read then pass in NULL as pCurSeq
 // pCurSeq must pointing to the XFormID for the current sequence, this sequence is iterated until the next cCSeqSep and ptr to the XFormID is returned
 // Returns NULL if all read hits have been iterated (cCSeqEOS encountered starting next sequence)
-UINT8 *
-CHomozyReduce::IterConcatSeqs(UINT8 *pCurSeq)
+uint8_t *
+CHomozyReduce::IterConcatSeqs(uint8_t *pCurSeq)
 {
 if(pCurSeq == NULL)
 	return(&m_pConcatSeqs[1]); // skip over initial cCSeqBOS, returns ptr to the XFormID for the first sequence
@@ -1015,8 +1015,8 @@ return(pCurSeq+1);			  // returns ptr to the XFormID for the returned sequence
 // Returns ptr to marker terminating current sequence ptd at by pSeq
 // *pSeq must be pointing to the sequence and not to the separator or XFormID
 // Returns ptr to separator or NULL if errors
-UINT8 *
-CHomozyReduce::GetpConcatSeqMarker(UINT8 *pSeq)
+uint8_t *
+CHomozyReduce::GetpConcatSeqMarker(uint8_t *pSeq)
 {
 if(pSeq == NULL || *pSeq >= cCSeqSep)
 	return(NULL);
@@ -1028,8 +1028,8 @@ return(&pSeq[-1]);
 // Get sequence identifier for concatenated sequence ptd to by pSeq
 // *pSeq must be pointing to the sequence or XFormID
 // Returns sequence identifier or -1 if errors
-INT32
-CHomozyReduce::GetConcatSeqID(UINT8 *pSeq)
+int32_t
+CHomozyReduce::GetConcatSeqID(uint8_t *pSeq)
 {
 if(pSeq == NULL)
 	return(-1);
@@ -1037,7 +1037,7 @@ while(*pSeq < cCSeqSep)			// backup pSeq until pointing into the XForm'd sequenc
 	pSeq -= 1;					
 while(pSeq[1] >= cCSeqSep)      // forward until last byte of XForm'd sequence separator  
 	pSeq++;
-return(XFormToID(*(UINT64 *)(pSeq-4) & 0x0fffffffff));
+return(XFormToID(*(uint64_t *)(pSeq-4) & 0x0fffffffff));
 }
 
 // GetConcatSeqLen
@@ -1045,7 +1045,7 @@ return(XFormToID(*(UINT64 *)(pSeq-4) & 0x0fffffffff));
 // *pSeq must be pointing to the XFormID or into the sequence
 // Returns sequence length or -1 if errors
 int    
-CHomozyReduce::GetConcatSeqLen(UINT8 *pSeq)
+CHomozyReduce::GetConcatSeqLen(uint8_t *pSeq)
 {
 int SeqLen;
 if(pSeq == NULL)
@@ -1062,7 +1062,7 @@ return(SeqLen);
 }
 
 etSeqBase *
-CHomozyReduce::GetConcatSeqStart(UINT8 *pSeq)			// returns ptr to first base of concatenated sequence
+CHomozyReduce::GetConcatSeqStart(uint8_t *pSeq)			// returns ptr to first base of concatenated sequence
 {
 if(pSeq == NULL)
 	return(NULL);
@@ -1078,7 +1078,7 @@ return(pSeq);
 // *pSeq must be pointing to the sequence and not to the separator or XFormID
 // Returns offset or -1 if errors
 int    
-CHomozyReduce::GetConcatSeqOfs(UINT8 *pSeq)
+CHomozyReduce::GetConcatSeqOfs(uint8_t *pSeq)
 {
 int SeqOfs;
 if(pSeq == NULL || *pSeq >= cCSeqSep)
@@ -1110,34 +1110,34 @@ for(Psn=0; Psn < Len; Psn++,pEl1++,pEl2++)
 return(0);
 }
 
-UINT64			// index+1 in pSfxArray of first exactly matching probe or 0 if no match				
+uint64_t			// index+1 in pSfxArray of first exactly matching probe or 0 if no match				
 CHomozyReduce::LocateFirstExact(int ElSize,		// sizeof elements in pSfxArray - currently will be either 4 or 5 bytes
 				  etSeqBase *pProbe,			// pts to probe sequence
 				  int ProbeLen,					// probe length to exactly match over
 				  etSeqBase *pTarg,				// target sequence
-				  UINT8 *pSfxArray,				// target sequence suffix array
-				  UINT64 TargStart,				// position in pTarg (0..n) corresponding to start of suffix array
-				  UINT64 SfxLo,					// low index in pSfxArray
-				  UINT64 SfxHi)					// high index in pSfxArray
+				  uint8_t *pSfxArray,				// target sequence suffix array
+				  uint64_t TargStart,				// position in pTarg (0..n) corresponding to start of suffix array
+				  uint64_t SfxLo,					// low index in pSfxArray
+				  uint64_t SfxHi)					// high index in pSfxArray
 {
 etSeqBase *pEl1;
 etSeqBase *pEl2;
-UINT8 El1;
-UINT8 El2;
-UINT8 Byte;
+uint8_t El1;
+uint8_t El2;
+uint8_t Byte;
 
 int CmpRslt;
 int Ofs;
-UINT64 Mark;
-UINT64 TargPsn;
-UINT64 TargEl;
+uint64_t Mark;
+uint64_t TargPsn;
+uint64_t TargEl;
 
 do {
 	pEl1 = pProbe;
-	TargPsn = ((UINT64)SfxLo + SfxHi) / 2L;
+	TargPsn = ((uint64_t)SfxLo + SfxHi) / 2L;
 	TargEl = (TargPsn + TargStart) * ElSize;
 	if(ElSize == 4)
-		pEl2 = &pTarg[*(UINT32 *)&pSfxArray[TargEl]];
+		pEl2 = &pTarg[*(uint32_t *)&pSfxArray[TargEl]];
 	else
 		pEl2 = &pTarg[Unpack5(&pSfxArray[TargEl])];
 
@@ -1176,11 +1176,11 @@ do {
 					return(Mark+1);
 				SfxHi = TargPsn - 1;
 				}	
-			TargPsn = ((UINT64)SfxLo + SfxHi) / 2L;
+			TargPsn = ((uint64_t)SfxLo + SfxHi) / 2L;
 
 			TargEl = (TargPsn + TargStart) * ElSize;
 			if(ElSize == 4)
-				pEl2 = &pTarg[*(UINT32 *)&pSfxArray[TargEl]];
+				pEl2 = &pTarg[*(uint32_t *)&pSfxArray[TargEl]];
 			else
 				pEl2 = &pTarg[Unpack5(&pSfxArray[TargEl])];
 
@@ -1230,32 +1230,32 @@ return(0);	// unable to locate any instance of pProbe
 }
 
 
-UINT64			// index+1 in pSfxArray of last exactly matching probe or 0 if no match					
+uint64_t			// index+1 in pSfxArray of last exactly matching probe or 0 if no match					
 CHomozyReduce::LocateLastExact(int ElSize,		// sizeof elements in pSfxArray - currently will be either 4 or 5 bytes
 				  etSeqBase *pProbe,			// pts to probe sequence
 				  int ProbeLen,					// probe length to exactly match over
 				  etSeqBase *pTarg,				// target sequence
-				  UINT8 *pSfxArray,				// target sequence suffix array
-				  UINT64 TargStart,				// position in pTarg (0..n) corresponding to start of suffix array
-				  UINT64 SfxLo,					// low index in pSfxArray
-				  UINT64 SfxHi,					// high index in pSfxArray
-				  UINT32 Limit)					// if non-zero then need only iterate towards last exactly matching this for this Limit iterations
+				  uint8_t *pSfxArray,				// target sequence suffix array
+				  uint64_t TargStart,				// position in pTarg (0..n) corresponding to start of suffix array
+				  uint64_t SfxLo,					// low index in pSfxArray
+				  uint64_t SfxHi,					// high index in pSfxArray
+				  uint32_t Limit)					// if non-zero then need only iterate towards last exactly matching this for this Limit iterations
 {
 etSeqBase *pEl1;
 etSeqBase *pEl2;
-UINT8 El1;
-UINT8 El2;
-UINT8 Byte;
+uint8_t El1;
+uint8_t El2;
+uint8_t Byte;
 
 int CmpRslt;
 int Ofs;
 
-UINT64 TargEl;
-UINT64 Mark;
-UINT64 TargPsn;
-UINT64 LoTargPsn = TargStart;
-UINT64 SfxHiMax = SfxHi;
-UINT64 SfxLoMax = SfxLo;
+uint64_t TargEl;
+uint64_t Mark;
+uint64_t TargPsn;
+uint64_t LoTargPsn = TargStart;
+uint64_t SfxHiMax = SfxHi;
+uint64_t SfxLoMax = SfxLo;
 
 if(Limit > 0)					// Limit is a soft limit so add a few more on 
 	Limit += 10;
@@ -1266,7 +1266,7 @@ do {
 	TargEl = (TargPsn + TargStart) * ElSize;
 
 	if(ElSize == 4)
-		pEl2 = &pTarg[*(UINT32 *)&pSfxArray[TargEl]];
+		pEl2 = &pTarg[*(uint32_t *)&pSfxArray[TargEl]];
 	else
 		pEl2 = &pTarg[Unpack5(&pSfxArray[TargEl])];
 
@@ -1306,11 +1306,11 @@ do {
 					return(Mark+1);
 				SfxLo = TargPsn + 1;
 				}	
-			TargPsn = ((UINT64)SfxLo + SfxHi) / 2L;
+			TargPsn = ((uint64_t)SfxLo + SfxHi) / 2L;
 
 			TargEl = (TargPsn + TargStart) * ElSize;
 			if(ElSize == 4)
-				pEl2 = &pTarg[*(UINT32 *)&pSfxArray[TargEl]];
+				pEl2 = &pTarg[*(uint32_t *)&pSfxArray[TargEl]];
 			else
 				pEl2 = &pTarg[Unpack5(&pSfxArray[TargEl])];
 
@@ -1364,7 +1364,7 @@ return(0);	// unable to locate any instance of pProbe
 // Locate and mark homozygotic regions shared between contigs except for one instance of each region
 // These marked regions will be subsequently removed resulting in contigs which are more consensus representative
 tLOTRslt						// < 0 if errors, eLOTnone or eLOTprobe or eLOTtarg if no matches, eLOThit if overlap onto target accepted 
-CHomozyReduce::MarkHomozygoticRegions(UINT32 ProbeSeqID,// identifies probe sequence
+CHomozyReduce::MarkHomozygoticRegions(uint32_t ProbeSeqID,// identifies probe sequence
 						 etSeqBase *pProbeSeq,			// probe sequence 
 						 int ProbeLen,					// probe length 
 						 tsAssembThreadPars *pPars)	    // calling thread parameters
@@ -1380,39 +1380,39 @@ int CurMMCnt;					// current number of mismatches for current target sequence be
 
 etSeqBase *pProbeBase;
 etSeqBase *pTargBase;
-UINT64 TargIdx;
+uint64_t TargIdx;
 
 int CoreDelta;					// core window offset increment (1..n)
 int CoreLen;					// core window length 
 
 int Ofs;
-UINT8 Base1;
-UINT8 Base2;
+uint8_t Base1;
+uint8_t Base2;
 etSeqBase *pEl1;
 etSeqBase *pEl2;
 
-UINT32 NumTargSeqProc;
+uint32_t NumTargSeqProc;
 
-UINT32 TargSeqID;
+uint32_t TargSeqID;
 
 bool bFirstIter;				// set false after the first subsequence core returned by LocateFirstExact has been processed
 
-UINT64 LastTargIdx;
-UINT32 NumCopies;
+uint64_t LastTargIdx;
+uint32_t NumCopies;
 
 int TargMatchLen;
 
-UINT64 SfxElOfs;
-UINT64 SfxElVal;
+uint64_t SfxElOfs;
+uint64_t SfxElVal;
 
-UINT8 ProbeBase;
-UINT8 TargBase;
+uint8_t ProbeBase;
+uint8_t TargBase;
 
 int CurCoreDelta;
 
 etSeqBase *pTarg;			// target sequence
-UINT8 *pSfxArray;			// target sequence suffix array
-UINT64 SfxLen;				// number of suffixs in pSfxArray
+uint8_t *pSfxArray;			// target sequence suffix array
+uint64_t SfxLen;				// number of suffixs in pSfxArray
 
 tsSfxdSeq *pTargSfxdSeq;
 tsSfxdSeq *pProbeSfxdSeq;
@@ -1423,7 +1423,7 @@ int AllowedMismatches;
 int Passes;
 bool bRevCpl;
 
-UINT8 SubWin[100];			// used to hold aligner induced substutions over last 100 aligned bases
+uint8_t SubWin[100];			// used to hold aligner induced substutions over last 100 aligned bases
 int SubWinIdx;		    	// index into SubWin of next psn to write probe to target match
 int SubsInWin;				// current number of substitutions within SubWin
 
@@ -1441,8 +1441,8 @@ if(m_pSuffixArray == NULL || m_NumSuffixEls == 0)
 	}
 
 pTarg = (etSeqBase *)&m_pConcatSeqs[1];
-pSfxArray = (UINT8 *)m_pSuffixArray;
-SfxLen = (UINT64)m_NumSuffixEls;
+pSfxArray = (uint8_t *)m_pSuffixArray;
+SfxLen = (uint64_t)m_NumSuffixEls;
 
 CoreLen = min(cAbsMaxCoreLen,max(cAbsMinCoreLen, pPars->CoreLen));
 CoreDelta = CoreLen;
@@ -1456,11 +1456,11 @@ if(pPars->bStrand)
 else
 	Passes = 2;				
 
-if(pPars->AllocProbeSeq < (UINT32)ProbeLen + 100)	// safety margin!
+if(pPars->AllocProbeSeq < (uint32_t)ProbeLen + 100)	// safety margin!
 	{
 	delete pPars->pProbeSeq;
 	pPars->AllocProbeSeq = ProbeLen + 10000; 
-	if((pPars->pProbeSeq = new UINT8 [pPars->AllocProbeSeq]) == NULL)
+	if((pPars->pProbeSeq = new uint8_t [pPars->AllocProbeSeq]) == NULL)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"MarkHomozygoticRegions: Memory allocation for pPars->pProbeSeq of %d bytes through new() failed, ProbeLen = %d",pPars->AllocProbeSeq,ProbeLen);
 		return((tLOTRslt)eBSFerrMem);
@@ -1517,7 +1517,7 @@ while(Passes--)
 
 				SfxElOfs = (TargIdx+1) * ElSize;
 				if(ElSize == 4)
-					SfxElVal = (UINT64)*(UINT32 *)&pSfxArray[SfxElOfs];
+					SfxElVal = (uint64_t)*(uint32_t *)&pSfxArray[SfxElOfs];
 				else
 					SfxElVal = Unpack5(&pSfxArray[SfxElOfs]);
 
@@ -1528,9 +1528,9 @@ while(Passes--)
 				if(IterCnt == cChkIterDepth && !NumCopies)
 					{
 					// check how many more exact copies there are of the current probe subsequence, if too many then don't bother exploring these
-					LastTargIdx = LocateLastExact(ElSize,&pPars->pProbeSeq[CurCoreSegOfs],CoreLen,pTarg,pSfxArray,0,TargIdx-1,SfxLen-1,(UINT32)pPars->CurMaxIter+1);
-					NumCopies = (UINT32)(LastTargIdx > 0 ? 1 + LastTargIdx - TargIdx : 0);
-					if(pPars->CurMaxIter && NumCopies > (UINT32)pPars->CurMaxIter)		// only checking at the cChkIterDepth iteration is not too cpu resource intensive
+					LastTargIdx = LocateLastExact(ElSize,&pPars->pProbeSeq[CurCoreSegOfs],CoreLen,pTarg,pSfxArray,0,TargIdx-1,SfxLen-1,(uint32_t)pPars->CurMaxIter+1);
+					NumCopies = (uint32_t)(LastTargIdx > 0 ? 1 + LastTargIdx - TargIdx : 0);
+					if(pPars->CurMaxIter && NumCopies > (uint32_t)pPars->CurMaxIter)		// only checking at the cChkIterDepth iteration is not too cpu resource intensive
 						break;
 					}
 
@@ -1565,7 +1565,7 @@ while(Passes--)
 			bFirstIter = false;
 			SfxElOfs = TargIdx * ElSize;
 			if(ElSize == 4)
-				SfxElVal = (UINT64)*(UINT32 *)&pSfxArray[SfxElOfs];
+				SfxElVal = (uint64_t)*(uint32_t *)&pSfxArray[SfxElOfs];
 			else
 				SfxElVal = Unpack5(&pSfxArray[SfxElOfs]);
 
@@ -1598,7 +1598,7 @@ while(Passes--)
 			// confirmed as not being a self hit
 			// check target and slough target hits which are shorter than probe or if same length have identifier less than probe
 			pTargSfxdSeq = &m_pSfxdSeqs[TargSeqID - 1];
-			if(pTargSfxdSeq->Flags & cFlagNA || (pTargSfxdSeq->ReadLen < (UINT32)ProbeLen || (pTargSfxdSeq->ReadLen == (UINT32)ProbeLen && TargSeqID < ProbeSeqID)))
+			if(pTargSfxdSeq->Flags & cFlagNA || (pTargSfxdSeq->ReadLen < (uint32_t)ProbeLen || (pTargSfxdSeq->ReadLen == (uint32_t)ProbeLen && TargSeqID < ProbeSeqID)))
 				continue;
 
 			TargMatchLen = ProbeLen; 
@@ -1754,10 +1754,10 @@ void
 CHomozyReduce::DumpContigSeqs(char *pszDescr)
 {
 // iterate and output..
-UINT32 Idx;
+uint32_t Idx;
 tsSfxdSeq *pContigSeq;
 etSeqBase *pSeq;
-UINT32 ReadLen;
+uint32_t ReadLen;
 for(Idx = 0; Idx < m_NumSfxdSeqs; Idx++)
 	{
 	pContigSeq = &m_pSfxdSeqs[Idx];

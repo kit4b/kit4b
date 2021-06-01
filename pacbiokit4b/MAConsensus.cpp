@@ -97,8 +97,8 @@ m_bStartedMultiAlignments = false;
 
 
 int													// eBSFSuccess or error code 
-CMAConsensus::Init(UINT32 NumRefSeqs,				// max number of reference sequences which will be added
-				UINT64 TotRefSeqLen)				// max total bases of all reference sequences which will be added
+CMAConsensus::Init(uint32_t NumRefSeqs,				// max number of reference sequences which will be added
+				uint64_t TotRefSeqLen)				// max total bases of all reference sequences which will be added
 {
 size_t memreq;
 if(NumRefSeqs < 1 || NumRefSeqs > cMaxNumRefSeqs || TotRefSeqLen < (NumRefSeqs * cMinRefSeqLen) || TotRefSeqLen > cMaxTotRefSeqLens)
@@ -124,7 +124,7 @@ if(m_pMACols == NULL || memreq > m_AllocMAColsSize)
 	m_pMACols = (tsMAlignConCol *) malloc(memreq);
 	if(m_pMACols == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for multialignment",(INT64)memreq);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for multialignment",(int64_t)memreq);
 		return(eBSFerrMem);
 		}
 #else
@@ -132,7 +132,7 @@ if(m_pMACols == NULL || memreq > m_AllocMAColsSize)
 	m_pMACols = (tsMAlignConCol *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pMACols == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for multialignment",(INT64)memreq);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for multialignment",(int64_t)memreq);
 		m_pMACols = NULL;
 		return(eBSFerrMem);
 		}
@@ -140,7 +140,7 @@ if(m_pMACols == NULL || memreq > m_AllocMAColsSize)
 	m_AllocMAColsSize = memreq;	
 	}
 
-m_AllocMACols = (UINT64)(m_AllocMAColsSize/sizeof(tsMAlignConCol)); 
+m_AllocMACols = (uint64_t)(m_AllocMAColsSize/sizeof(tsMAlignConCol)); 
 memset(m_pMACols,0,m_AllocMAColsSize);
 m_MACurCols = 0;
 
@@ -156,14 +156,14 @@ memset(m_pRefSeqs,0,sizeof(tsMARefSeq) * m_AllocdRefSeqs);
 return(eBSFSuccess);
 }
 
-UINT32												// returned reference sequence indentifier to be used when adding alignments to this reference sequence
-CMAConsensus::AddRefSeq(UINT32 SeqLen,				// reference sequence to which other sequences are aligned is this length
+uint32_t												// returned reference sequence indentifier to be used when adding alignments to this reference sequence
+CMAConsensus::AddRefSeq(uint32_t SeqLen,				// reference sequence to which other sequences are aligned is this length
 					etSeqBase *pRefSeq)			// reference sequence
 {
-UINT32 Idx;
-UINT32 Idy;
+uint32_t Idx;
+uint32_t Idy;
 tsMARefSeq *psRefSeq;
-UINT8 *pBase;
+uint8_t *pBase;
 tsMAlignConCol *pCol;
 
 if(pRefSeq == NULL || SeqLen < cMinRefSeqLen || SeqLen > cMaxRefSeqLen || (SeqLen +  m_MACurTotRefSeqLen) > m_MATotRefSeqLen)
@@ -204,19 +204,19 @@ return(m_NumRefSeqs);
 
 
 int
-CMAConsensus::AddMultiAlignment(UINT32 RefSeqID,	// alignment is against this sequence
-					  UINT32 RefStartOfs,			// alignment starts at this reference sequence offset (1..n)
-					  UINT32 RefEndOfs,				// alignment ends at this reference sequence offset inclusive
-					  UINT32 ProbeStartOfs,			// alignment starts at this probe sequence offset (1..n)
-					  UINT32 ProbeEndOfs,			// alignment ends at this probe sequence offset inclusive
+CMAConsensus::AddMultiAlignment(uint32_t RefSeqID,	// alignment is against this sequence
+					  uint32_t RefStartOfs,			// alignment starts at this reference sequence offset (1..n)
+					  uint32_t RefEndOfs,				// alignment ends at this reference sequence offset inclusive
+					  uint32_t ProbeStartOfs,			// alignment starts at this probe sequence offset (1..n)
+					  uint32_t ProbeEndOfs,			// alignment ends at this probe sequence offset inclusive
 					  etSeqBase *pProbeSeq,			// alignment probe sequence
-					  UINT32 NumMAAlignOps,			// number of alignment operators
+					  uint32_t NumMAAlignOps,			// number of alignment operators
 					   tMAOp *pMAAlignOps)			// alignment operators
 {
 tsMARefSeq *pRefSeq;
 tMAOp Op;
 tMAOp *pAlignOps;
-UINT32 NumAlignOps;
+uint32_t NumAlignOps;
 int Idy;
 tsMAlignConCol *pNewCol;
 tsMAlignConCol *pCol;
@@ -299,7 +299,7 @@ int *pCnts;
 int *pNxtCnts;
 int XAbundIdxs;
 int TotBaseCnts;
-UINT32 *pBaseCnts;
+uint32_t *pBaseCnts;
 int BaseIdx;
 tsMAlignConCol *pCol;
 
@@ -349,7 +349,7 @@ return(eBSFSuccess);
 }
 
 tsMAlignConCol *										// inserted column or NULL if errors inserting
-CMAConsensus::InsertCol(UINT64 PrevCol)				// allocate and insert new column after Prev
+CMAConsensus::InsertCol(uint64_t PrevCol)				// allocate and insert new column after Prev
 {
 tsMAlignConCol *pCol;
 tsMAlignConCol *pPrevCol;
@@ -359,7 +359,7 @@ if(m_MACurCols + 10 >= m_AllocMACols)			// need to extend previously allocated c
 	{
 	size_t memreq;
 	void *pAllocd;
-	UINT64 AllocMACols;
+	uint64_t AllocMACols;
 	AllocMACols = (m_AllocMACols * 11) / 10;   // increase allocated cols by 10%
 	memreq = (size_t)AllocMACols * sizeof(tsMAlignConCol);
 
@@ -396,7 +396,7 @@ return(pCol);
 
 
 int												// number of bases in consensus 
-CMAConsensus::GetConsensus(UINT32 RefSeqID)	// for this reference sequence identifier
+CMAConsensus::GetConsensus(uint32_t RefSeqID)	// for this reference sequence identifier
 {
 int ConsensusLen;
 tsMARefSeq *pRefSeq;
@@ -421,9 +421,9 @@ return(ConsensusLen);
 }
 
 int												// number of bases returned in pRetBases 
-CMAConsensus::GetConsensus(UINT32 RefSeqID,		// consensus sequence for this reference identifier
-					    UINT32 RefStartOfs,		// starting offset 1..N
-						UINT32 RefLen,			// return at most this many bases
+CMAConsensus::GetConsensus(uint32_t RefSeqID,		// consensus sequence for this reference identifier
+					    uint32_t RefStartOfs,		// starting offset 1..N
+						uint32_t RefLen,			// return at most this many bases
 						etSeqBase *pRetBases)	// where to return bases
 {
 int ConsensusLen;

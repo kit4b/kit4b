@@ -499,9 +499,9 @@ typedef struct
 
 typedef struct
 {
-    unsigned char r;            // red
-    unsigned char g;            // green
-    unsigned char b;            // blue
+    uint8_t r;            // red
+    uint8_t g;            // green
+    uint8_t b;            // blue
     PLFLT         a;            // alpha (or transparency)
     const char    *name;
 } PLColor;

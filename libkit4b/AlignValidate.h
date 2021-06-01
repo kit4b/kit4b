@@ -10,7 +10,7 @@ const int cAllocSpeciesNamesIncr = 50;		// alloc memory for m_pSpecies in this s
 
 typedef struct TAG_sASspeciesname {
 	char SpeciesID;							// uniquely identifies this species
-	INT64	AssembLen;						// total length of all species specific chromosomes 
+	int64_t	AssembLen;						// total length of all species specific chromosomes 
 	unsigned short int Hash;				// hash on szName
 	char szName[cMaxDatasetSpeciesChrom];			// place holder for species name
 	} tsASspeciesname;
@@ -101,7 +101,7 @@ public:
 	int GetChromID(int SpeciesID,char *pszChrom);
 	int GetSpeciesID(char *pszSpecies);
 	int GetChromLen(int ChromID);
-	INT64 GetSpeciesLen(int SpeciesID);	// returns sum of all chromosome lengths for species
+	int64_t GetSpeciesLen(int SpeciesID);	// returns sum of all chromosome lengths for species
 	int AXTStrand2Other(char *pszSpecies,char *pszChrom,int Psn);
 	int AXTStrand2Other(int ChromID,int Psn);
 	int MAFStrand2Other(char *pszSpecies,char *pszChrom,int Psn);

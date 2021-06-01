@@ -76,7 +76,7 @@ typedef struct TAG_sCoreLoci {
 typedef struct TAG_sCoreChrom {
 	int ChromID;							// unique identifier for this chromosome
 	tsCoreLoci *pCoreLoci;					// pts to first core on this chromosome
-	UINT16 Hash;								// hash over chromosome name
+	uint16_t Hash;								// hash over chromosome name
 	char szChrom[cMaxDatasetSpeciesChrom];			// core chromosome
 } tsCoreChrom;
 
@@ -119,7 +119,7 @@ typedef struct TAG_sProcParams
 	int PhylipLen;					// current length of each Phylip sequence
 	int MaxPhylipSeqLen;			// Phylip sequences can contain at most this many bases before being truncated
 	int PhylipBlockStart;			// length when block was started - used for checkpointing in case rollback required
-	unsigned char *pPhylipSeqs[cMaxAlignedSpecies];  // ptrs to each Phylip sequence
+	uint8_t *pPhylipSeqs[cMaxAlignedSpecies];  // ptrs to each Phylip sequence
 	bool bPhylipLenTrunc;			// true if concatenated Phylip sequences are being truncated because overlength 
 
 	int MaxSeqAlignLen;				// max length alignment which can be processed (how much mem was alloc'd to pSeq[n])			
@@ -285,7 +285,7 @@ tsCoreLoci *GetLociOverlaps(char *pszChrom,	// reference species chromosome
 				tsCoreLoci *pPrevCoreLoci, // previous loci or NULL if none
 				tsProcParams *pProcParams); // global processing parameters
 
-UINT16 GenNameHash(char *pszName);
+uint16_t GenNameHash(char *pszName);
 
 int WritePhylipFile(char *pszOutputFile,tsProcParams *pProcParams);
 
@@ -1129,7 +1129,7 @@ switch(LociFileType) {
 ProcParams.MaxSeqAlignLen = cMAtotMaxSeqAlignLen/ProcParams.MaxNumSpecies;
 for(Idx = 0; Idx < ProcParams.MaxNumSpecies; Idx++)
 	{
-	if((ProcParams.pSeqs[Idx] = new unsigned char [ProcParams.MaxSeqAlignLen])==NULL)
+	if((ProcParams.pSeqs[Idx] = new uint8_t [ProcParams.MaxSeqAlignLen])==NULL)
 		{
 	    CleanupResources(&ProcParams);
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory (%d bytes) for holding species sequences",ProcParams.MaxSeqAlignLen);
@@ -1141,7 +1141,7 @@ for(Idx = 0; Idx < ProcParams.MaxNumSpecies; Idx++)
 ProcParams.MaxPhylipSeqLen = cMaxTotPhylipSeqLen/ProcParams.MaxNumSpecies;
 for(Idx = 0; Idx < ProcParams.MaxNumSpecies; Idx++)
 	{
-	if((ProcParams.pPhylipSeqs[Idx] = new unsigned char [ProcParams.MaxPhylipSeqLen])==NULL)
+	if((ProcParams.pPhylipSeqs[Idx] = new uint8_t [ProcParams.MaxPhylipSeqLen])==NULL)
 		{
 	    CleanupResources(&ProcParams);
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory (%d bytes) for holding Phylip sequences",ProcParams.MaxPhylipSeqLen);
@@ -1181,7 +1181,7 @@ AddChrom(char *pszChrom,tsProcParams *pParams)
 {
 tsCoreChrom *pChrom;
 int Idx;
-UINT16 Hash;
+uint16_t Hash;
 Hash = GenNameHash(pszChrom);
 
 if(pParams->pCoreChroms != NULL && pParams->NumCoreChroms)
@@ -2377,14 +2377,14 @@ return(true);
 
 // GenNameHash
 // Generates a 16bit hash on specified lowercased name
-UINT16 
+uint16_t 
 GenNameHash(char *pszName)
 {
 unsigned long hash = 5381;
 char Chr;
 while (Chr = *pszName++)
 	hash = ((hash << 5) + hash) + tolower(Chr);
-return ((UINT16)hash);
+return ((uint16_t)hash);
 }
 
 
@@ -2393,7 +2393,7 @@ LocateCoreChrom(char *pszChrom,
 				tsProcParams *pProcParams) // global processing parameters
 {
 tsCoreChrom *pChrom;
-UINT16 Hash;
+uint16_t Hash;
 int Idx;
 if(pProcParams->pCoreChroms == NULL || pProcParams->NumCoreChroms < 1)
 	return(NULL);
@@ -2703,8 +2703,8 @@ OutputAlignColumn(int SeqIdx,tsProcParams *pProcParams)
 int Idx;
 etSeqBase SeqBase;
 etSeqBase *pSeq;
-unsigned char Base;
-unsigned char *pPhylip;
+uint8_t Base;
+uint8_t *pPhylip;
 
 if(pProcParams->PhylipLen >= (pProcParams->MaxPhylipSeqLen-1))
 	{

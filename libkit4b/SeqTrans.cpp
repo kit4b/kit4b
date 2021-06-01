@@ -332,8 +332,8 @@ CSeqTrans::MapAscii2Sense(char *pAscii,
 							etSeqBase *pSense,
 							bool RptMskUpperCase)   // if true then uppercase represents softmasked repeats
 {
-static unsigned char sAscii2SeqBuff[cMaxAutoSeq2Ascii+1];
-unsigned char *pSeq;
+static uint8_t sAscii2SeqBuff[cMaxAutoSeq2Ascii+1];
+uint8_t *pSeq;
 
 if(AsciiLen < 0 || pAscii == NULL || *pAscii == '\0')
 	return(NULL);
@@ -404,8 +404,8 @@ CSeqTrans::MapAscii2Antisense(char *pAscii,
 							etSeqBase *pAntisense,
 							bool RptMskUpperCase)   // if true then uppercase represents softmasked repeats
 {
-static unsigned char sAscii2SeqBuff[cMaxAutoSeq2Ascii+1];
-unsigned char *pSeq;
+static uint8_t sAscii2SeqBuff[cMaxAutoSeq2Ascii+1];
+uint8_t *pSeq;
 
 if(AsciiLen < 0 || pAscii == NULL || *pAscii == '\0')
 	return(NULL);

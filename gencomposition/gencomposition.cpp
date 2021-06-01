@@ -53,7 +53,7 @@ typedef struct TAG_sFiltState {
 
 typedef struct TAG_sElChrom {
 	int ChromID;							// unique identifier for this chromosome
-	UINT16 Hash;							// hash over chromosome name
+	uint16_t Hash;							// hash over chromosome name
 	char szChrom[cMaxDatasetSpeciesChrom];	// chromosome
 } tsElChrom;
 
@@ -90,7 +90,7 @@ typedef struct TAG_sProcParams
 	int AllocdSeqLen;			// currently allocated for subsequences
 	etSeqBase *pSeq;			// memory to hold loci subsequence loaded from pBioSeq
 
-	INT64 *pCntStepCnts;		// array of stats counters organised in [Step] order
+	int64_t *pCntStepCnts;		// array of stats counters organised in [Step] order
 	int NumCntSteps;				// number of steps in pCntStepCnts
 	int NumRegions;					// number of regions per step
 	int CntStepOfs[cMaxNMerLen];	// ofs into pCntStepCnts for each NMer length
@@ -170,7 +170,7 @@ tsExcludeEl *LocateExclude(char *pszChrom,tsProcParams *pParams);
 bool AddExcludeHistory(char *pszChrom,bool bExclude,tsProcParams *pParams);
 int FilterCSV(tsProcParams *pProcParams);
 int ProcessSequence(tsProcParams *pParams);
-UINT16 GenNameHash(char *pszName);
+uint16_t GenNameHash(char *pszName);
 tsElChrom *LocateElChrom(char *pszChrom,tsProcParams *pProcParams);
 int AddChrom(char *pszChrom,tsProcParams *pParams);
 int GenSeqIdx(int SeqLen,etSeqBase *pSeq);
@@ -290,21 +290,21 @@ argerrors = CUtility::arg_parsefromfile(argc,(char **)argv,&pAllArgs);
 if(argerrors >= 0)
 	argerrors = arg_parse(argerrors,pAllArgs,argtable);
 
-    /* special case: '--help' takes precedence over error reporting */
+	/* special case: '--help' takes precedence over error reporting */
 if (help->count > 0)
-        {
+		{
 		printf("Usage: %s ", gszProcName);
-        arg_print_syntax(stdout,argtable,"\n");
-        arg_print_glossary(stdout,argtable,"  %-25s %s\n");
+		arg_print_syntax(stdout,argtable,"\n");
+		arg_print_glossary(stdout,argtable,"  %-25s %s\n");
 		exit(1);
-        }
+		}
 
-    /* special case: '--version' takes precedence error reporting */
+	/* special case: '--version' takes precedence error reporting */
 if (version->count > 0)
-        {
+		{
 			printf("\n%s Version: %s\n",gszProcName, kit4bversion);
 		exit(1);
-        }
+		}
 if (!argerrors)
 	{
 	iScreenLogLevel = ScreenLogLevel->count ? ScreenLogLevel->ival[0] : eDLInfo;
@@ -1175,7 +1175,7 @@ if((Rslt = ProcParams.pBioseq->Open(pszInSeqFile))!=eBSFSuccess)
 	return(Rslt);
 	}
 
-if((ProcParams.pSeq = new unsigned char [cDfltAllocSeqLen])==NULL)
+if((ProcParams.pSeq = new uint8_t [cDfltAllocSeqLen])==NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory (%d bytes) for bioseq assembly subsequence",cDfltAllocSeqLen);
 	Cleanup(&ProcParams);
@@ -1195,13 +1195,13 @@ for(Idx = 0; Idx < MaxNMerLen; Idx++)
 	NumCnts += RegionCnts;
 	}
 	
-if((ProcParams.pCntStepCnts = new INT64[NumCnts])==NULL)
+if((ProcParams.pCntStepCnts = new int64_t[NumCnts])==NULL)
 	{
 	Cleanup(&ProcParams);
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"nUnable to allocate memory (%d bytes) for holding composition statistics",sizeof(int) * NumCnts);
 	return(eBSFerrMem);
 	}
-memset(ProcParams.pCntStepCnts,0,NumCnts * sizeof(INT64));
+memset(ProcParams.pCntStepCnts,0,NumCnts * sizeof(int64_t));
 ProcParams.NumCntSteps = NumCnts;
 
 if(pszRsltsFile != NULL && pszRsltsFile[0] != '\0')
@@ -1272,7 +1272,7 @@ int InRefIDs = 0;
 NumElsRead =0;		// number of elements before filtering
 NumElsAccepted =0;	// number of elements accepted after filtering
 NumElsRejected = 0; // number of elements rejected
-memset(pParams->pCntStepCnts,0,pParams->NumCntSteps * sizeof(INT64));
+memset(pParams->pCntStepCnts,0,pParams->NumCntSteps * sizeof(int64_t));
 while((!bUseCSV && NumSeqEntries) || (bUseCSV && (Rslt=pParams->pCSV->NextLine()) > 0))	// onto next line containing fields
 	{
 	if(bUseCSV)
@@ -1402,7 +1402,7 @@ while((!bUseCSV && NumSeqEntries) || (bUseCSV && (Rslt=pParams->pCSV->NextLine()
 			{
 			if(pParams->pSeq != NULL)
 				delete pParams->pSeq;
-			if((pParams->pSeq = new unsigned char [Len + cDfltAllocSeqLen])==NULL)
+			if((pParams->pSeq = new uint8_t [Len + cDfltAllocSeqLen])==NULL)
 				{
 				gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory (%d bytes) for bioseq assembly subsequence",Len + cDfltAllocSeqLen);
 				return(eBSFerrMem);
@@ -1428,7 +1428,7 @@ while((!bUseCSV && NumSeqEntries) || (bUseCSV && (Rslt=pParams->pCSV->NextLine()
 		pParams->CurRegion = Region; 
 
 		if(pParams->ProcMode == eProcModeNMerDistPerSeq) 
-			memset(pParams->pCntStepCnts,0,pParams->NumCntSteps * sizeof(INT64));
+			memset(pParams->pCntStepCnts,0,pParams->NumCntSteps * sizeof(int64_t));
 		if((Rslt=ProcessSequence(pParams)) < 0)
 			return(Rslt);
 		if(pParams->ProcMode == eProcModeNMerDistPerSeq && 
@@ -1472,7 +1472,7 @@ return(Rslt);
 int
 ProcessSequence(tsProcParams *pParams)
 {
-INT64 *pCnt;
+int64_t *pCnt;
 int Idx;
 int SeqIdx;
 int CurSeqIdxLen;
@@ -1499,9 +1499,9 @@ int
 OutputResults(tsProcParams *pParams)
 {
 char szLineBuff[cMaxReadLen];
-INT64 *pCnt;
+int64_t *pCnt;
 
-INT64 Tot;
+int64_t Tot;
 int Len;
 int NumSteps;
 int StepIdx;
@@ -1528,7 +1528,11 @@ for(Idx = 0; Idx < pParams->MaxNMerLen; Idx++)
 		{
 		if(!*pCnt)
 			continue;
+#ifdef _WIN32
 		Len = sprintf(szLineBuff,"\"%s\",%d,%d,\"%s\",%lld,%.10g",
+#else
+		Len = sprintf(szLineBuff,"\"%s\",%d,%d,\"%s\",%ld,%.10g",
+#endif
 			pParams->ProcMode == eProcModeNMerDistAllSeqs ? pParams->pszInLociFile : pParams->pszCurChrom,
 				Idx+1,StepIdx+1,StepIdx2Seq(Idx+1,StepIdx),*pCnt,*pCnt/(double)Tot);
 		Len += sprintf(&szLineBuff[Len],"\n");

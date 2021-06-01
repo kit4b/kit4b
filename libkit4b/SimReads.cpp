@@ -278,7 +278,7 @@ int NumSubs2Induce;
 etSeqBase *pSeq;
 double Thres;
 
-UINT8 *pSubd;
+uint8_t *pSubd;
 
 if(m_SEMode == eSRSEPnone)
 	return(0);
@@ -343,7 +343,7 @@ if(pProfile != NULL)
 else
 	NumSubs2Induce = (int)m_DynProbErr;
 
-pSubd = new UINT8 [SeqLen+10];
+pSubd = new uint8_t [SeqLen+10];
 memset(pSubd,0,SeqLen);
 RandSubs = 0;
 
@@ -665,7 +665,7 @@ int
 CSimReads::LoadFasta(size_t *pTotLen,int MinChromLen,char *pszFastaFile)
 {
 CFasta Fasta;
-unsigned char *pSeqBuff;
+uint8_t *pSeqBuff;
 char szName[cBSFSourceSize];
 char szDescription[cBSFDescriptionSize];
 int SeqLen;
@@ -675,7 +675,7 @@ bool bEntryCreated;
 int Rslt;
 int SeqID;
 tsSRChromSeq *pChromSeq;
-UINT8 *pSeq;
+uint8_t *pSeq;
 int ChromID;
 int SeqOfs;
 int NumLenWarnings;
@@ -695,7 +695,7 @@ m_AllocdChromSize = sizeof(tsSRChromSeq) * cSRAllocNumChroms;
 m_pChromSeqs = (tsSRChromSeq *) malloc((size_t)m_AllocdChromSize);
 if(m_pChromSeqs == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadFasta: Memory allocation of %lld bytes failed",(INT64)m_AllocdChromSize);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadFasta: Memory allocation of %lld bytes failed",(int64_t)m_AllocdChromSize);
 	m_AllocdChromSize = 0;
 	Reset(false);
 	return(eBSFerrMem);
@@ -705,7 +705,7 @@ if(m_pChromSeqs == NULL)
 m_pChromSeqs = (tsSRChromSeq *)mmap(NULL,(size_t)m_AllocdChromSize, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pChromSeqs == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadFasta: Memory allocation of %lld bytes through mmap()  failed",(INT64)m_AllocdChromSize,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadFasta: Memory allocation of %lld bytes through mmap()  failed",(int64_t)m_AllocdChromSize,strerror(errno));
 	m_pChromSeqs = NULL;
 	m_AllocdChromSize = 0;
 	Reset(false);
@@ -717,19 +717,19 @@ memset(m_pChromSeqs,0,m_AllocdChromSize);
 
 m_AllocdGenomeMem = cSRMaxAllocBuffChunk;		// an initial allocation to hold the assembly sequence, will be extended as may be required
 #ifdef _WIN32
-m_pGenomeSeq = (UINT8 *) malloc((size_t)m_AllocdGenomeMem);
+m_pGenomeSeq = (uint8_t *) malloc((size_t)m_AllocdGenomeMem);
 if(m_pGenomeSeq == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadFasta: Memory allocation of %lld bytes failed",(INT64)m_AllocdGenomeMem);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadFasta: Memory allocation of %lld bytes failed",(int64_t)m_AllocdGenomeMem);
 	Reset(false);
 	return(eBSFerrMem);
 	}
 #else
 // gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-m_pGenomeSeq = (UINT8 *)mmap(NULL,(size_t)m_AllocdGenomeMem, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+m_pGenomeSeq = (uint8_t *)mmap(NULL,(size_t)m_AllocdGenomeMem, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pGenomeSeq == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadFasta: Memory allocation of %lld bytes through mmap()  failed",(INT64)m_AllocdGenomeMem,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadFasta: Memory allocation of %lld bytes through mmap()  failed",(int64_t)m_AllocdGenomeMem,strerror(errno));
 	m_pGenomeSeq = NULL;
 	Reset(false);
 	return(eBSFerrMem);
@@ -737,7 +737,7 @@ if(m_pGenomeSeq == MAP_FAILED)
 #endif
 
 
-if((pSeqBuff = new unsigned char [cSRMaxAllocBuffChunk]) == NULL)
+if((pSeqBuff = new uint8_t [cSRMaxAllocBuffChunk]) == NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessFastaFile:- Unable to allocate memory (%d bytes) for sequence buffer",cSRMaxAllocBuffChunk);
 	Reset(false);
@@ -783,7 +783,7 @@ while((Rslt = SeqLen = Fasta.ReadSequence(pSeqBuff,cSRMaxAllocBuffChunk-1,true,f
 #endif
 			if(pTmp == NULL)
 				{
-				gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadFasta: Memory re-allocation to %lld bytes - %s",(INT64)(memreq),strerror(errno));
+				gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadFasta: Memory re-allocation to %lld bytes - %s",(int64_t)(memreq),strerror(errno));
 				delete pSeqBuff;
 				return(eBSFerrMem);
 				}
@@ -803,7 +803,7 @@ while((Rslt = SeqLen = Fasta.ReadSequence(pSeqBuff,cSRMaxAllocBuffChunk-1,true,f
 		pChromSeq->szChromName[50] = '\0';	  // limiting chrom names to be at most 50 chars as additional detail will later be appended		
 		pChromSeq->Strand = '*';
 		pChromSeq->RelDensity = 1000;
-		pChromSeq->SeqOfs = (UINT32)m_GenomeLen;
+		pChromSeq->SeqOfs = (uint32_t)m_GenomeLen;
 		bEntryCreated = true;
 		bFirstEntry = false;
 		SeqOfs = 0;
@@ -812,19 +812,19 @@ while((Rslt = SeqLen = Fasta.ReadSequence(pSeqBuff,cSRMaxAllocBuffChunk-1,true,f
 		}
 
 	// realloc m_pGenomeSeq as and when required
-	if((m_GenomeLen + SeqOfs + SeqLen + 100) >= (INT64)m_AllocdGenomeMem)
+	if((m_GenomeLen + SeqOfs + SeqLen + 100) >= (int64_t)m_AllocdGenomeMem)
 		{
 		memreq = m_AllocdGenomeMem + SeqLen + cSRMaxAllocBuffChunk;
 #ifdef _WIN32
-		pSeq = (UINT8 *) realloc(m_pGenomeSeq,memreq);
+		pSeq = (uint8_t *) realloc(m_pGenomeSeq,memreq);
 #else
-		pSeq = (UINT8 *)mremap(m_pGenomeSeq,m_AllocdGenomeMem,memreq,MREMAP_MAYMOVE);
+		pSeq = (uint8_t *)mremap(m_pGenomeSeq,m_AllocdGenomeMem,memreq,MREMAP_MAYMOVE);
 		if(pSeq == MAP_FAILED)
 			pSeq = NULL;
 #endif
 		if(pSeq == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadFasta: Memory re-allocation to %lld bytes - %s",(INT64)(memreq),strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadFasta: Memory re-allocation to %lld bytes - %s",(int64_t)(memreq),strerror(errno));
 			delete pSeqBuff;
 			return(eBSFerrMem);
 			}
@@ -907,7 +907,7 @@ m_AllocdChromSize = sizeof(tsSRChromSeq) * m_AllocdChromSeqs;
 m_pChromSeqs = (tsSRChromSeq *) malloc((size_t)m_AllocdChromSize);
 if(m_pChromSeqs == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadAssembly: Memory allocation of %lld bytes failed",(INT64)m_AllocdChromSize);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadAssembly: Memory allocation of %lld bytes failed",(int64_t)m_AllocdChromSize);
 	Reset(false);
 	return(eBSFerrMem);
 	}
@@ -916,7 +916,7 @@ if(m_pChromSeqs == NULL)
 m_pChromSeqs = (tsSRChromSeq *)mmap(NULL,(size_t)m_AllocdChromSize, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pChromSeqs == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadAssembly: Memory allocation of %lld bytes through mmap()  failed",(INT64)m_AllocdChromSize,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadAssembly: Memory allocation of %lld bytes through mmap()  failed",(int64_t)m_AllocdChromSize,strerror(errno));
 	m_pChromSeqs = NULL;
 	Reset(false);
 	return(eBSFerrMem);
@@ -936,26 +936,26 @@ while((ChromID = m_pBioSeqFile->Next(ChromID)) > 0) {
 	Len = m_pBioSeqFile->GetDataLen(ChromID);
 	if(Len < MinChromLen && NumLenWarnings++ < 10)
 		gDiagnostics.DiagOut(eDLWarn,gszProcName,"LoadAssembly: Chrom '%s' of length %d may be too short from which to reliably sample simulated reads...",pChromSeq->szChromName,Len);
-	m_GenomeLen += (INT64)Len + 1;		// allow for a concatenation separator
+	m_GenomeLen += (int64_t)Len + 1;		// allow for a concatenation separator
 	pChromSeq->Len = Len;
 	pChromSeq->SeqOfs = 0;
 	pChromSeq->ChromSeqID = ++m_NumChromSeqs;
 	}
 m_AllocdGenomeMem = (size_t)m_GenomeLen;
 #ifdef _WIN32
-m_pGenomeSeq = (UINT8 *) malloc((size_t)m_AllocdGenomeMem);
+m_pGenomeSeq = (uint8_t *) malloc((size_t)m_AllocdGenomeMem);
 if(m_pGenomeSeq == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadAssembly: Memory allocation of %lld bytes failed",(INT64)m_AllocdGenomeMem);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadAssembly: Memory allocation of %lld bytes failed",(int64_t)m_AllocdGenomeMem);
 	Reset(false);
 	return(eBSFerrMem);
 	}
 #else
 // gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-m_pGenomeSeq = (UINT8 *)mmap(NULL,(size_t)m_AllocdGenomeMem, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+m_pGenomeSeq = (uint8_t *)mmap(NULL,(size_t)m_AllocdGenomeMem, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pGenomeSeq == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadAssembly: Memory allocation of %lld bytes through mmap()  failed",(INT64)m_AllocdGenomeMem,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadAssembly: Memory allocation of %lld bytes through mmap()  failed",(int64_t)m_AllocdGenomeMem,strerror(errno));
 	m_pGenomeSeq = NULL;
 	Reset(false);
 	return(eBSFerrMem);
@@ -967,7 +967,7 @@ TotLen = 0;
 pSeq = m_pGenomeSeq;
 while((ChromID = m_pBioSeqFile->Next(ChromID)) > 0) {
 	pChromSeq = &m_pChromSeqs[ChromID-1];
-	pChromSeq->SeqOfs = (UINT32)(UINT64)(pSeq - m_pGenomeSeq);
+	pChromSeq->SeqOfs = (uint32_t)(uint64_t)(pSeq - m_pGenomeSeq);
 	TotLen += pChromSeq->Len;
 	m_pBioSeqFile->GetData(ChromID,eSeqBaseType,0,pSeq,pChromSeq->Len);
 	pSeq += pChromSeq->Len;
@@ -1002,12 +1002,12 @@ if((Rslt = LoadBioseq(&TotLen,MinChromLen,pszBioSeqFile)) != eBSFSuccess)
 
 // assembly or multifasta sequences now loaded
 LenSCF = (double)INT_MAX/(double)TotLen;
-m_GenomeScaledLen = TotLen >= (INT64)INT_MAX ? (long)(TotLen * LenSCF) : (long)TotLen;
+m_GenomeScaledLen = TotLen >= (int64_t)INT_MAX ? (long)(TotLen * LenSCF) : (long)TotLen;
 CurScaledStart = 0;
 pChromSeq = &m_pChromSeqs[0];
 for(ChromID = 0; ChromID < m_NumChromSeqs; ChromID++,pChromSeq++)
 	{
-	pChromSeq->ScaledLen = TotLen >= (INT64)INT_MAX ? (int)(pChromSeq->Len * LenSCF) : pChromSeq->Len;
+	pChromSeq->ScaledLen = TotLen >= (int64_t)INT_MAX ? (int)(pChromSeq->Len * LenSCF) : pChromSeq->Len;
 	pChromSeq->ScaledStart = CurScaledStart;
 	CurScaledStart += pChromSeq->ScaledLen;
 	}
@@ -1096,7 +1096,7 @@ while((FeatID = m_pBEDFile->GetNextFeatureID(FeatID)) > 0) {
 		Len = m_pBEDFile->GetTranscribedLen(FeatID);			// get transcribed length for gene
 	else
 		Len = m_pBEDFile->GetFeatLen(FeatID);
-	m_GenomeLen += (INT64)Len + 1;		// allow for a concatenation separator
+	m_GenomeLen += (int64_t)Len + 1;		// allow for a concatenation separator
 	pChromSeq->Len = Len;
 	pChromSeq->SeqOfs = 0;
 	pChromSeq->ChromSeqID = ++m_NumChromSeqs;
@@ -1115,19 +1115,19 @@ while((FeatID = m_pBEDFile->GetNextFeatureID(FeatID)) > 0) {
 
 // now know the feature sequence lengths, alloc to hold all sequences
 #ifdef _WIN32
-m_pGenomeSeq = (UINT8 *) malloc((size_t)m_GenomeLen);
+m_pGenomeSeq = (uint8_t *) malloc((size_t)m_GenomeLen);
 if(m_pGenomeSeq == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadTranscriptome: Memory allocation of %lld bytes failed",(INT64)m_GenomeLen);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadTranscriptome: Memory allocation of %lld bytes failed",(int64_t)m_GenomeLen);
 	Reset(false);
 	return(eBSFerrMem);
 	}
 #else
 // gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-m_pGenomeSeq = (UINT8 *)mmap(NULL,(size_t)m_GenomeLen, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+m_pGenomeSeq = (uint8_t *)mmap(NULL,(size_t)m_GenomeLen, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pGenomeSeq == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadAssembly: Memory allocation of %lld bytes through mmap()  failed",(INT64)m_GenomeLen,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadAssembly: Memory allocation of %lld bytes through mmap()  failed",(int64_t)m_GenomeLen,strerror(errno));
 	m_pGenomeSeq = NULL;
 	Reset(false);
 	return(eBSFerrMem);
@@ -1165,7 +1165,7 @@ while((CurFeatureID = m_pBEDFile->GetNextFeatureID(CurFeatureID)) > 0) {
 		}
 
 	pChromSeq = &m_pChromSeqs[CurFeatureID-1];
-	pChromSeq->SeqOfs = (UINT32)(UINT64)(pSeq - m_pGenomeSeq);
+	pChromSeq->SeqOfs = (uint32_t)(uint64_t)(pSeq - m_pGenomeSeq);
 	TotLen += pChromSeq->Len;
 	CurRegionLen = 0;
 	if(pChromSeq->Len > 0)
@@ -1207,12 +1207,12 @@ delete m_pBioSeqFile;
 m_pBioSeqFile = NULL;
 
 LenSCF = (double)INT_MAX/(double)TotLen;
-m_GenomeScaledLen = TotLen >= (INT64)INT_MAX ? (long)(TotLen * LenSCF) : (long)TotLen;
+m_GenomeScaledLen = TotLen >= (int64_t)INT_MAX ? (long)(TotLen * LenSCF) : (long)TotLen;
 CurScaledStart = 0;
 pChromSeq = &m_pChromSeqs[0];
 for(ChromID = 0; ChromID < m_NumChromSeqs; ChromID++,pChromSeq++)
 	{
-	pChromSeq->ScaledLen = TotLen >= (INT64)INT_MAX ? (int)(pChromSeq->Len * LenSCF) : pChromSeq->Len;
+	pChromSeq->ScaledLen = TotLen >= (int64_t)INT_MAX ? (int)(pChromSeq->Len * LenSCF) : pChromSeq->Len;
 	pChromSeq->ScaledStart = CurScaledStart;
 	CurScaledStart += pChromSeq->ScaledLen;
 	}
@@ -1415,7 +1415,7 @@ CSimReads::ShowDupSeqs(int ReadLen,tsSRSimRead *pRead1,tsSRSimRead *pRead2)
 {
 int Idx;
 etSeqBase *pSeq;
-UINT8 Seq[2000];
+uint8_t Seq[2000];
 char szSeq[2000];
 pSeq = pRead1->pSeq;
 for(Idx = 0; Idx < ReadLen; Idx++,pSeq++)
@@ -2022,7 +2022,7 @@ MaxReadsPerBatch *= NumThreads;
 // when deduping the reads the deduping needs to be over all reads and not just the reads in the current checkpointed batch
 if(bDedupe)			// if will be deduping then generate some extra reads assuming that a few will be dups and thus be removed
 	{
-	NumReadsReq = (int)(((INT64)m_TotReqReads * 120)/100);
+	NumReadsReq = (int)(((int64_t)m_TotReqReads * 120)/100);
 	m_NumReadsAllocd = NumReadsReq + 100;
 	}
 else
@@ -2031,12 +2031,12 @@ else
 	m_NumReadsAllocd = MaxReadsPerBatch + 100;
 	}
 
-m_AllocdMemReads = (INT64)m_NumReadsAllocd * sizeof(tsSRSimRead);
+m_AllocdMemReads = (int64_t)m_NumReadsAllocd * sizeof(tsSRSimRead);
 #ifdef _WIN32
 m_pSimReads = (tsSRSimRead *) malloc((size_t)m_AllocdMemReads);
 if(m_pSimReads == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for simulated reads failed",(INT64)m_AllocdMemReads);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for simulated reads failed",(int64_t)m_AllocdMemReads);
 	Reset(false);
 	return(eBSFerrMem);
 	}
@@ -2045,7 +2045,7 @@ if(m_pSimReads == NULL)
 m_pSimReads = (tsSRSimRead *)mmap(NULL,(size_t)m_AllocdMemReads, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pSimReads == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for simulated reads through mmap()  failed",(INT64)m_AllocdMemReads,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for simulated reads through mmap()  failed",(int64_t)m_AllocdMemReads,strerror(errno));
 	m_pSimReads = NULL;
 	Reset(false);
 	return(eBSFerrMem);
@@ -2080,7 +2080,7 @@ do {
 		}
 	else
 		{
-		ReadsCnt = min((int)(((INT64)(m_TotReqReads - TotReportedReads) * 105)/100),MaxReadsPerBatch);
+		ReadsCnt = min((int)(((int64_t)(m_TotReqReads - TotReportedReads) * 105)/100),MaxReadsPerBatch);
 		if(ReadsCnt < 10000 && (ReadsOfs + 10000) < m_NumReadsAllocd)
 			ReadsCnt = 10000;
 		}
@@ -2267,7 +2267,7 @@ etSeqBase *pSeqSite;
 int TargPsn;
 int IdxLo;
 int IdxHi;
-UINT64 NumChromIters;
+uint64_t NumChromIters;
 
 CurNumGenReads = 0;
 NumChromIters = 0;
@@ -2277,7 +2277,7 @@ pWorkerPars->bMaxIters = false;
 TRandomCombined<CRandomMother,CRandomMersenne> RG(pWorkerPars->RandSeed);
 while(pWorkerPars->NumGenReads < pWorkerPars->NumReqReads)
 	{
-	if(NumChromIters++ > ((UINT64)m_NumChromSeqs * 50))
+	if(NumChromIters++ > ((uint64_t)m_NumChromSeqs * 50))
 		{
 		pWorkerPars->bMaxIters = true;			// flag this thread is terminating because it has exhusted attempts to find chrom from which read can be simulated
 		break;

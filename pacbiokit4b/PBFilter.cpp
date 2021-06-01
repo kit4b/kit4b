@@ -742,9 +742,9 @@ else
 		return(eBSFerrInternal);
 		}
 
-	UINT32 DeltaCoreOfs;				// ranges between 1 and 4
-	UINT32 CoreSeqLen;                  // ranges between 10 and 25
-	UINT32 MinNumCores;                 // ranges between 5 and 50 
+	uint32_t DeltaCoreOfs;				// ranges between 1 and 4
+	uint32_t CoreSeqLen;                  // ranges between 10 and 25
+	uint32_t MinNumCores;                 // ranges between 5 and 50 
 	int MaxInitiatePathOfs;	// require SW paths to have started within this many bp (0 to disable) on either the probe or target - effectively anchoring the SW 
 	int OverlapFloat;		// with this overlap float
 
@@ -892,7 +892,7 @@ if(ThreadIdx != NumOvlpThreads)	// any errors whilst allocating memory?
 	while(ThreadIdx >= 0);
 	delete pThreadPutOvlps;
 	Reset();
-	return((INT64)eBSFerrMem);
+	return((int64_t)eBSFerrMem);
 	}
 
 
@@ -1022,7 +1022,7 @@ CPBFilter::PBFilterReads(tsThreadPBFilter *pThreadPar)
 int Rslt;
 int SeqID;
 char szQuerySeqIdent[100];
-UINT8 *pQuerySeq;
+uint8_t *pQuerySeq;
 int QuerySeqLen;
 
 int TrimStartOfs;

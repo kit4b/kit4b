@@ -83,13 +83,13 @@ typedef struct TAG_sCSVEl {
 
 typedef struct TAG_sElChrom {
 	int ChromID;							// unique identifier for this chromosome
-	UINT16 Hash;							// hash over chromosome name
+	uint16_t Hash;							// hash over chromosome name
 	char szChrom[cMaxDatasetSpeciesChrom];	// chromosome
 } tsElChrom;
 
 typedef struct TAG_sElSpecies {
 	int SpeciesID;							// unique identifier for this species
-	UINT16 Hash;							// hash over species name
+	uint16_t Hash;							// hash over species name
 	char szSpecies[cMaxDatasetSpeciesChrom];	// species
 } tsElSpecies;
 
@@ -230,7 +230,7 @@ tsExcludeEl *LocateExclude(char *pszSpecies,char *pszChrom,tsProcParams *pParams
 bool AddExcludeHistory(char *pszSpecies,char *pszChrom,bool bExclude,tsProcParams *pParams);
 int FilterCSV(tsProcParams *pProcParams);
 
-UINT16 GenNameHash(char *pszName);
+uint16_t GenNameHash(char *pszName);
 tsElChrom *LocateElChrom(char *pszChrom,tsProcParams *pProcParams);
 int AddChrom(char *pszChrom,tsProcParams *pParams);
 
@@ -1488,14 +1488,14 @@ return(Rslt);
 
 // GenNameHash
 // Generates a 16bit hash on specified lowercased name
-UINT16 
+uint16_t 
 GenNameHash(char *pszName)
 {
 unsigned long hash = 5381;
 char Chr;
 while (Chr = *pszName++)
 	hash = ((hash << 5) + hash) + tolower(Chr);
-return ((UINT16)hash);
+return ((uint16_t)hash);
 }
 
 
@@ -1504,7 +1504,7 @@ LocateElChrom(char *pszChrom,
 				tsProcParams *pProcParams) // global processing parameters
 {
 tsElChrom *pChrom;
-UINT16 Hash;
+uint16_t Hash;
 int Idx;
 if(pProcParams->pElChroms == NULL || pProcParams->NumElChroms < 1)
 	return(NULL);
@@ -1536,7 +1536,7 @@ AddChrom(char *pszChrom,tsProcParams *pParams)
 {
 tsElChrom *pChrom;
 int Idx;
-UINT16 Hash;
+uint16_t Hash;
 Hash = GenNameHash(pszChrom);
 
 if(pParams->pElChroms != NULL && pParams->NumElChroms)
@@ -1587,7 +1587,7 @@ AddSpecies(char *pszSpecies,tsProcParams *pParams)
 {
 tsElSpecies *pSpecies;
 int Idx;
-UINT16 Hash;
+uint16_t Hash;
 Hash = GenNameHash(pszSpecies);
 
 if(pParams->pElSpecies != NULL && pParams->NumElSpecies)
@@ -1748,7 +1748,7 @@ int ChkOverlaps;
 
 	if(pParams->pElChrBuff == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"FilterCSV: Memory allocation of %lld bytes - %s",(INT64)cElChrAllocChunk,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"FilterCSV: Memory allocation of %lld bytes - %s",(int64_t)cElChrAllocChunk,strerror(errno));
 		Cleanup(pParams);
 		return(eBSFerrMem);
 		}
@@ -1757,7 +1757,7 @@ int ChkOverlaps;
 	pParams->pElChrBuff = (char *)mmap(NULL,cElChrAllocChunk, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(pParams->pElChrBuff == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"FilterCSV: Memory allocation of %lld bytes through mmap()  failed - %s",(INT64)cElChrAllocChunk,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"FilterCSV: Memory allocation of %lld bytes through mmap()  failed - %s",(int64_t)cElChrAllocChunk,strerror(errno));
 		pParams->pElChrBuff = NULL;
 		Cleanup(pParams);
 		return(eBSFerrMem);
@@ -1771,7 +1771,7 @@ int ChkOverlaps;
 
 	if(pParams->pElLocs == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"FilterCSV: Memory allocation of %lld bytes - %s",(INT64)cElLociAllocChunk * sizeof(tsCSVEl),strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"FilterCSV: Memory allocation of %lld bytes - %s",(int64_t)cElLociAllocChunk * sizeof(tsCSVEl),strerror(errno));
 		Cleanup(pParams);
 		return(eBSFerrMem);
 		}
@@ -1780,7 +1780,7 @@ int ChkOverlaps;
 	pParams->pElLocs = (tsCSVEl *)mmap(NULL,cElLociAllocChunk * sizeof(tsCSVEl), PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(pParams->pElLocs == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"FilterCSV: Memory allocation of %lld bytes through mmap()  failed - %s",(INT64)cElLociAllocChunk * sizeof(tsCSVEl),strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"FilterCSV: Memory allocation of %lld bytes through mmap()  failed - %s",(int64_t)cElLociAllocChunk * sizeof(tsCSVEl),strerror(errno));
 		pParams->pElLocs = NULL;
 		Cleanup(pParams);
 		return(eBSFerrMem);

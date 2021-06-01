@@ -424,7 +424,7 @@ while((Rslt=pCSV->NextLine()) > 0)	// onto next line containing fields
 		if(pElSeqBuff != NULL)
 			delete pElSeqBuff;
 		ReqAllocLen += 10000;		  // a little extra to reduce number of potential subsequent reallocations
-		if((pElSeqBuff = (etSeqBase *)new unsigned char[ReqAllocLen])==NULL)
+		if((pElSeqBuff = (etSeqBase *)new uint8_t[ReqAllocLen])==NULL)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate %s bytes as a sequence buffer",ReqAllocLen);
 			Rslt = eBSFerrMem;

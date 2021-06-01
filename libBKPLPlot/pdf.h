@@ -25,7 +25,7 @@
 // Some unsigned types
 
 #ifndef U_CHAR
-#define U_CHAR    unsigned char
+#define U_CHAR    uint8_t
 #endif
 
 #ifndef U_SHORT
@@ -47,7 +47,7 @@
 typedef struct
 {
     FILE          *file;                // Filesystem
-    unsigned char *buffer;              // Memory buffer
+    uint8_t *buffer;              // Memory buffer
     size_t        bp, bufmax;           // Buffer pointer and max size
 } PDFstrm;
 

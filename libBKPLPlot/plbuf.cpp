@@ -31,7 +31,7 @@
 
 #include <string.h>
 
-typedef unsigned char U_CHAR;
+typedef uint8_t U_CHAR;
 
 // Function prototypes
 void * plbuf_save( PLStream *pls, void *state );

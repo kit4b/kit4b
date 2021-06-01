@@ -134,7 +134,7 @@ return(true);
 // Probe sequence is used as the row increment
 // Only restriction is that the length must be in the range of cNWMinProbeTargLen to cNWMaxProbeTargLen
 bool 
-CNeedlemanWunsch::SetProbe(UINT32 Len,etSeqBase *pSeq)
+CNeedlemanWunsch::SetProbe(uint32_t Len,etSeqBase *pSeq)
 {
 if(Len < cNWMinProbeOrTargLen || Len > cNWMaxProbeOrTargLen || pSeq == NULL) 	// can't be bothered with very short probes!
 	return(false);
@@ -177,7 +177,7 @@ return(true);
 // Target sequence is used as the column increment
 // Only restriction is that the length must be in the range of cNWMinProbeTargLen to cNWMaxProbeTargLen
 bool 
-CNeedlemanWunsch::SetTarg(UINT32 Len,etSeqBase *pSeq)
+CNeedlemanWunsch::SetTarg(uint32_t Len,etSeqBase *pSeq)
 {
 if(Len < cNWMinProbeOrTargLen || Len > cNWMaxProbeOrTargLen || pSeq == NULL)	// can't be bothered with very short targets!
 	return(false);
@@ -211,9 +211,9 @@ return(true);
 int									// peak score of all subsequence alignments
 CNeedlemanWunsch::Align(void)
 {
-UINT32 IdxP;						// current index into m_Probe[]
-UINT32 IdxT;						// current index into m_Targ[]
-UINT32 NumCells;					// m_ProbeLen * m_TargLen - total number of cells
+uint32_t IdxP;						// current index into m_Probe[]
+uint32_t IdxT;						// current index into m_Targ[]
+uint32_t NumCells;					// m_ProbeLen * m_TargLen - total number of cells
 int NewScore;
 int DiagScore;							// putative diagonal score
 int LeftScore;							// putative left score
@@ -232,12 +232,12 @@ tNWTrcBckCell *pPrevCell;
 bool bMatch;
 
 m_bAligned = false;
-if(m_ProbeLen < cNWMinProbeOrTargLen || m_TargLen < cNWMinProbeOrTargLen || ((INT64)m_ProbeLen * (INT64)m_TargLen > (INT64)cNWMaxCells))
+if(m_ProbeLen < cNWMinProbeOrTargLen || m_TargLen < cNWMinProbeOrTargLen || ((int64_t)m_ProbeLen * (int64_t)m_TargLen > (int64_t)cNWMaxCells))
 	return(eBSFerrMaxEntries);	
 
 NumCells = m_ProbeLen * m_TargLen;
 
-if(m_pTrcBckCells == NULL || m_TrcBckCellsAllocd < NumCells || ((UINT64)m_TrcBckCellsAllocd > (UINT64)NumCells * 2))
+if(m_pTrcBckCells == NULL || m_TrcBckCellsAllocd < NumCells || ((uint64_t)m_TrcBckCellsAllocd > (uint64_t)NumCells * 2))
 	{
 	NumCells += 100;						// small overallocation as a saftety margin
 	if(m_pTrcBckCells != NULL)
@@ -255,7 +255,7 @@ if(m_pTrcBckCells == NULL || m_TrcBckCellsAllocd < NumCells || ((UINT64)m_TrcBck
 	m_pTrcBckCells = (tNWTrcBckCell *) malloc(m_TrcBckCellsAllocdSize);
 	if(m_pTrcBckCells == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for traceback cells",(INT64)m_TrcBckCellsAllocdSize);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for traceback cells",(int64_t)m_TrcBckCellsAllocdSize);
 		m_TrcBckCellsAllocdSize = 0;
 		m_TrcBckCellsAllocd = 0;
 		return(eBSFerrMem);
@@ -265,7 +265,7 @@ if(m_pTrcBckCells == NULL || m_TrcBckCellsAllocd < NumCells || ((UINT64)m_TrcBck
 	m_pTrcBckCells = (tNWTrcBckCell *)mmap(NULL,m_TrcBckCellsAllocdSize, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pTrcBckCells == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for traceback cells",(INT64)m_TrcBckCellsAllocdSize);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for traceback cells",(int64_t)m_TrcBckCellsAllocdSize);
 		m_TrcBckCellsAllocdSize = 0;
 		m_TrcBckCellsAllocd = 0;
 		return(eBSFerrMem);
@@ -385,8 +385,8 @@ CNeedlemanWunsch::GetNumAlignedBases(void)	 // get number of bases which align (
 {
 tNWTrcBckCell TrcBckDir;
 tNWTrcBckCell *pPeakCell;
-UINT32 ProbeIdx;
-UINT32 TargIdx;
+uint32_t ProbeIdx;
+uint32_t TargIdx;
 
 if(!m_bAligned)
 	return(0);
@@ -463,14 +463,14 @@ return(m_NumBasesAligned);
 
 
 int 
-CNeedlemanWunsch::GetProbeAlign(UINT32 Len, etSeqBase *pBuff) // get probe alignment
+CNeedlemanWunsch::GetProbeAlign(uint32_t Len, etSeqBase *pBuff) // get probe alignment
 {
 tNWTrcBckCell TrcBckDir;
 tNWTrcBckCell *pPeakCell;
 etSeqBase *pProbe;
 etSeqBase *pProbeStart;
-UINT32 ProbeIdx;
-UINT32 TargIdx;
+uint32_t ProbeIdx;
+uint32_t TargIdx;
 
 if(!GetNumAlignedBases())
 	return(0);
@@ -539,14 +539,14 @@ return(m_NumBasesAligned + m_NumProbeInserts + m_NumTargInserts);
 
 
 int 
-CNeedlemanWunsch::GetTargAlign(UINT32 Len, etSeqBase *pBuff) // get target alignment
+CNeedlemanWunsch::GetTargAlign(uint32_t Len, etSeqBase *pBuff) // get target alignment
 {
 tNWTrcBckCell TrcBckDir;
 tNWTrcBckCell *pPeakCell;
 etSeqBase *pTarg;
 etSeqBase *pTargStart;
-UINT32 ProbeIdx;
-UINT32 TargIdx;
+uint32_t ProbeIdx;
+uint32_t TargIdx;
 
 if(!GetNumAlignedBases())
 	return(0);
@@ -613,10 +613,10 @@ return(m_NumBasesAligned + m_NumProbeInserts + m_NumTargInserts);
 
 
 int												// returned total alignment length between probe and target including InDels
-CNeedlemanWunsch::GetAlignStats(UINT32 *pNumAlignedBases,			// returned number of bases aligning between probe and target
-				 UINT32 *pNumExactBases,           // of the aligning bases there were this many exact matches, remainder were substitutions
-				 UINT32 *pNumProbeInsertBases,     // this many bases were inserted into the probe relative to the target
-				 UINT32 *pNumTargInsertBases)		// this many bases were inserted into the target relative to the probe
+CNeedlemanWunsch::GetAlignStats(uint32_t *pNumAlignedBases,			// returned number of bases aligning between probe and target
+				 uint32_t *pNumExactBases,           // of the aligning bases there were this many exact matches, remainder were substitutions
+				 uint32_t *pNumProbeInsertBases,     // this many bases were inserted into the probe relative to the target
+				 uint32_t *pNumTargInsertBases)		// this many bases were inserted into the target relative to the probe
 {
 if(!GetNumAlignedBases())
 	return(-1);
@@ -635,8 +635,8 @@ return(m_NumBasesAligned + m_NumProbeInserts + m_NumTargInserts);
 // Helper functions for Band cell dereferencing
 
 tNWTrcBckCell *						// returns ptr to newly allocated cell  or NULL if errors
-CNeedlemanWunsch::AllocBandCell(UINT32 ProbeBasePsn,	// current probe base position 1..m_ProbeLen
-							  UINT32 TargBasePsn)		// current target base position 1..m_TargLen 
+CNeedlemanWunsch::AllocBandCell(uint32_t ProbeBasePsn,	// current probe base position 1..m_ProbeLen
+							  uint32_t TargBasePsn)		// current target base position 1..m_TargLen 
 {
 tsNWColBand *pNWColBand;
 tNWTrcBckCell *pTrcBckCell;
@@ -649,9 +649,9 @@ if((ProbeBasePsn - 1) > m_ColBandsUsed || ProbeBasePsn < m_ColBandsUsed)
 if(m_TrcBckCellsUsed == m_TrcBckCellsAllocd)			// need to allocate more?
 	{
 	size_t ReallocSize;
-	UINT32 EstReqCells;
+	uint32_t EstReqCells;
 	tNWTrcBckCell *pRealloc;
-	EstReqCells = 10000 + (UINT32)(((double)m_ProbeLen / ProbeBasePsn) * m_TrcBckCellsAllocd); 
+	EstReqCells = 10000 + (uint32_t)(((double)m_ProbeLen / ProbeBasePsn) * m_TrcBckCellsAllocd); 
 	ReallocSize = sizeof(tNWTrcBckCell) * EstReqCells;
 #ifdef _WIN32
 	pRealloc = (tNWTrcBckCell *)realloc(m_pTrcBckCells,ReallocSize);
@@ -662,7 +662,7 @@ if(m_TrcBckCellsUsed == m_TrcBckCellsAllocd)			// need to allocate more?
 #endif
 	if(pRealloc == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocBandCell: traceback cell memory re-allocation to %lld bytes - %s",(INT64)ReallocSize,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocBandCell: traceback cell memory re-allocation to %lld bytes - %s",(int64_t)ReallocSize,strerror(errno));
 		return(NULL);
 		}
 	m_TrcBckCellsAllocdSize = ReallocSize;
@@ -691,10 +691,10 @@ return(pTrcBckCell);
 }
 
 tNWTrcBckCell *					// returns ptr to cell or NULL if errors
-CNeedlemanWunsch::DerefBandCell(UINT32 ProbeBasePsn,	// current probe base position 1..m_ProbeLen
-							  UINT32 TargBasePsn)		// current target base position 1..m_TargLen
+CNeedlemanWunsch::DerefBandCell(uint32_t ProbeBasePsn,	// current probe base position 1..m_ProbeLen
+							  uint32_t TargBasePsn)		// current target base position 1..m_TargLen
 {
-UINT32 BandIdx;
+uint32_t BandIdx;
 tsNWColBand *pNWColBand;
 if(m_ColBandsUsed == 0 || ProbeBasePsn == 0 || ProbeBasePsn > m_ColBandsUsed || TargBasePsn == 0 || TargBasePsn > m_TargLen)
 	return(NULL);
@@ -706,10 +706,10 @@ return(&m_pTrcBckCells[BandIdx]);
 }
 
 tNWTrcBckCell *					// returns ptr to cell  or NULL if errors
-CNeedlemanWunsch::DerefBandCellLeft(UINT32 ProbeBasePsn,	// current probe base position 1..m_ProbeLen
-							  UINT32 TargBasePsn)		// current target base position 1..m_TargLen
+CNeedlemanWunsch::DerefBandCellLeft(uint32_t ProbeBasePsn,	// current probe base position 1..m_ProbeLen
+							  uint32_t TargBasePsn)		// current target base position 1..m_TargLen
 {
-UINT32 BandIdx;
+uint32_t BandIdx;
 tsNWColBand *pNWColBand;
 if(m_ColBandsUsed == 0 || ProbeBasePsn < 2 || ProbeBasePsn > m_ColBandsUsed || TargBasePsn == 0 || TargBasePsn > m_TargLen)
 	return(NULL);
@@ -721,10 +721,10 @@ return(&m_pTrcBckCells[BandIdx]);
 }
 
 tNWTrcBckCell *					// returns ptr to cell  or NULL if errors
-CNeedlemanWunsch::DerefBandCellDiag(UINT32 ProbeBasePsn,	// current probe base position 1..m_ProbeLen
-							  UINT32 TargBasePsn)		// current target base position 1..m_TargLen
+CNeedlemanWunsch::DerefBandCellDiag(uint32_t ProbeBasePsn,	// current probe base position 1..m_ProbeLen
+							  uint32_t TargBasePsn)		// current target base position 1..m_TargLen
 {
-UINT32 BandIdx;
+uint32_t BandIdx;
 tsNWColBand *pNWColBand;
 if(m_ColBandsUsed == 0 || ProbeBasePsn < 2 || ProbeBasePsn > m_ColBandsUsed || TargBasePsn < 2 || TargBasePsn > m_TargLen)
 	return(NULL);
@@ -737,10 +737,10 @@ return(&m_pTrcBckCells[BandIdx]);
 }
 
 tNWTrcBckCell *					// returns ptr to cell  or NULL if errors
-CNeedlemanWunsch::DerefBandCellDown(UINT32 ProbeBasePsn,	// current probe base position 1..m_ProbeLen
-							  UINT32 TargBasePsn)		// current target base position 1..m_TargLen
+CNeedlemanWunsch::DerefBandCellDown(uint32_t ProbeBasePsn,	// current probe base position 1..m_ProbeLen
+							  uint32_t TargBasePsn)		// current target base position 1..m_TargLen
 {
-UINT32 BandIdx;
+uint32_t BandIdx;
 tsNWColBand *pNWColBand;
 if(m_ColBandsUsed == 0 || ProbeBasePsn == 0 || ProbeBasePsn > m_ColBandsUsed || TargBasePsn == 0 || TargBasePsn > m_TargLen)
 	return(NULL);
@@ -760,15 +760,15 @@ CNeedlemanWunsch::DumpScores(char *pszFile,		// dump Smith-Waterman matrix to th
 {
 char *pszBuff;
 char *pRow;
-UINT32 BuffIdx;
-UINT32 TargIdx;
-UINT32 ProbeIdx;
+uint32_t BuffIdx;
+uint32_t TargIdx;
+uint32_t ProbeIdx;
 tNWTrcBckCell TrcBckDir;
 int TrcBckScore;
 int hDumpFile;
 tNWTrcBckCell *pCell;
 
-UINT32 EstDumpLen;
+uint32_t EstDumpLen;
 
 if(m_bBanded)
 	{
@@ -779,7 +779,7 @@ if(m_bBanded)
 if(!m_bAligned || pszFile == NULL || pszFile[0] == '\0')
 	return(eBSFerrParams);
 
-EstDumpLen = (UINT32)min((UINT64)m_TargLen * m_ProbeLen * 10,(UINT64)0x03ffff);
+EstDumpLen = (uint32_t)min((uint64_t)m_TargLen * m_ProbeLen * 10,(uint64_t)0x03ffff);
 if((pszBuff = new char [EstDumpLen])==NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate dump buffer memory %d bytes",EstDumpLen);

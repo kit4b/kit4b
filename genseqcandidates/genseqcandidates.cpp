@@ -75,7 +75,7 @@ typedef struct TAG_sSeqBlock {
 	int StartLoci;			// starts at this loci
 	int EndLoci;			// ends at this loci
 	int SeqLen;				// and is of this length
-	UINT8 Seq[cMaxSeqBlockLen];		// block sequence, low order bits contain bases, bit 5 marks if this base is from a sequence of interest, bit 6 marks if containing window is none-unique
+	uint8_t Seq[cMaxSeqBlockLen];		// block sequence, low order bits contain bases, bit 5 marks if this base is from a sequence of interest, bit 6 marks if containing window is none-unique
 } tsSeqBlock;
 
 
@@ -462,7 +462,7 @@ if((Rslt = LoadRegions(pszRegionsFile,OfsLoci,DeltaLen,TruncLength,MinLength,Num
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Processing %d regions into contigous blocks of size %d...",m_NumRegions,BlockSeqLen);
 
 tsSeqBlock *pBlock;
-UINT8 *pSeq;
+uint8_t *pSeq;
 tsRegion *pRegion;
 tsRegion *pRegion1;
 int RegionIdx;
@@ -1127,7 +1127,7 @@ int ProbeIdx;							// index into BlockSeq[] and RCBlockSeq[] of cuurent subsequ
 int NumMatches;							// sum of matches for all bases in current subsequence
 int SeqIdx;
 
-UINT8 *pSeqVal;
+uint8_t *pSeqVal;
 etSeqBase *pSeq;
 
 int AccumReadHits;
@@ -1135,7 +1135,7 @@ int AccumReadHits;
 unsigned int CurHitLoci;
 unsigned int HitLoci;
 unsigned int HitChrom;
-INT64 HitIdx;
+int64_t HitIdx;
 char HitStrand;
 
 CurTargEntry = 0;

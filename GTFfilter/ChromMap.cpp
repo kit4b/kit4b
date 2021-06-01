@@ -115,7 +115,7 @@ m_pChromMaps = (tsChromMap *) malloc(memreq);	// initial and perhaps the only al
 
 if(m_pChromMaps == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadChromMap: Memory allocation of %lld bytes - %s",(INT64)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadChromMap: Memory allocation of %lld bytes - %s",(int64_t)memreq,strerror(errno));
 	Reset();
 	return(eBSFerrMem);
 	}
@@ -124,7 +124,7 @@ if(m_pChromMaps == NULL)
 m_pChromMaps = (tsChromMap *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pChromMaps == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadChromMap::Load: Memory allocation of %lld bytes through mmap()  failed - %s",(INT64)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadChromMap::Load: Memory allocation of %lld bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
 	m_pChromMaps = NULL;
 	Reset();
 	return(eBSFerrMem);

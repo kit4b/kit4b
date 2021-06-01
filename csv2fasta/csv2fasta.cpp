@@ -942,7 +942,7 @@ while((Rslt=pCSV->NextLine()) > 0)	// onto next line containing fields
 		if(pElSeqBuff != NULL)
 			delete pElSeqBuff;
 		ReqAllocLen += 10000;		  // a little extra to reduce number of potential subsequent reallocations
-		if((pElSeqBuff = (etSeqBase *)new unsigned char[ReqAllocLen])==NULL)
+		if((pElSeqBuff = (etSeqBase *)new uint8_t[ReqAllocLen])==NULL)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate %s bytes as a sequence buffer",ReqAllocLen);
 			Rslt = eBSFerrMem;
@@ -1123,7 +1123,7 @@ bool ProcessFastaFile(char *pszFile,
 				 void *pParams)			
 {
 CFasta Fasta;
-unsigned char *pSeqBuff;
+uint8_t *pSeqBuff;
 char szName[cBSFSourceSize];
 char szDescription[cBSFDescriptionSize];
 int SeqLen;
@@ -1135,7 +1135,7 @@ int Rslt;
 int SeqID;
 bool bCapsSoftMask;
 
-if((pSeqBuff = new unsigned char [cMaxAllocBuffChunk]) == NULL)
+if((pSeqBuff = new uint8_t [cMaxAllocBuffChunk]) == NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessFastaFile:- Unable to allocate memory (%d bytes) for sequence buffer",cMaxAllocBuffChunk);
 	return(false);

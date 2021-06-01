@@ -89,7 +89,7 @@ int
 text2num( const char *text, char end, PLUNICODE *num );
 
 int
-text2fci( const char *text, unsigned char *hexdigit, unsigned char *hexpower );
+text2fci( const char *text, uint8_t *hexdigit, uint8_t *hexpower );
 
 //--------------------------------------------------------------------------
 // Driver Interface
@@ -553,10 +553,10 @@ int text2num( const char *text, char end, PLUNICODE *num )
 }
 
 //--------------------------------------------------------------------------
-//  int text2fci( char *text, unsigned char *hexdigit, unsigned char *hexpower)
+//  int text2fci( char *text, uint8_t *hexdigit, uint8_t *hexpower)
 //       char *text - pointer to the text to be parsed
-//       unsigned char *hexdigit - pointer to hex value that is stored.
-//       unsigned char *hexpower - pointer to hex power (left shift) that is stored.
+//       uint8_t *hexdigit - pointer to hex value that is stored.
+//       uint8_t *hexpower - pointer to hex power (left shift) that is stored.
 //
 //    Function takes a pointer to a string, which is looked up in a table
 //    to determine the corresponding FCI (font characterization integer)
@@ -570,13 +570,13 @@ int text2num( const char *text, char end, PLUNICODE *num )
 //    impossible value, and the function returns 0.
 //--------------------------------------------------------------------------
 
-int text2fci( const char *text, unsigned char *hexdigit, unsigned char *hexpower )
+int text2fci( const char *text, uint8_t *hexdigit, uint8_t *hexpower )
 {
     typedef struct
     {
         const char    *ptext;
-        unsigned char hexdigit;
-        unsigned char hexpower;
+        uint8_t hexdigit;
+        uint8_t hexpower;
     }
     TextLookupTable;
     // This defines the various font control commands and the corresponding
@@ -641,7 +641,7 @@ plP_text( PLINT base, PLFLT just, PLFLT *xform, PLINT x, PLINT y,
             PLINT         ig;
             PLUNICODE     fci;
             PLUNICODE     orig_fci;
-            unsigned char hexdigit, hexpower;
+            uint8_t hexdigit, hexpower;
 
             // Now process the text string
 
@@ -1168,34 +1168,34 @@ utf8_to_ucs4( const char *ptr, PLUNICODE *unichar )
         {
             isFirst = 0;
             // Determine length of sequence
-            if ( (unsigned char) ( tmp & 0x80 ) == 0x00 ) // single char
+            if ( (uint8_t) ( tmp & 0x80 ) == 0x00 ) // single char
             {
                 *unichar = (unsigned int) tmp & 0x7F;
                 cnt      = 0;
             }
-            else if ( (unsigned char) ( tmp & 0xE0 ) == 0xC0 ) // 2 chars
+            else if ( (uint8_t) ( tmp & 0xE0 ) == 0xC0 ) // 2 chars
             {
                 *unichar = (unsigned int) tmp & 0x1F;
                 cnt      = 1;
             }
-            else if ( (unsigned char) ( tmp & 0xF0 ) == 0xE0 ) // 3 chars
+            else if ( (uint8_t) ( tmp & 0xF0 ) == 0xE0 ) // 3 chars
             {
-                *unichar = (unsigned char) tmp & 0x0F;
+                *unichar = (uint8_t) tmp & 0x0F;
                 cnt      = 2;
             }
-            else if ( (unsigned char) ( tmp & 0xF8 ) == 0xF0 ) // 4 chars
+            else if ( (uint8_t) ( tmp & 0xF8 ) == 0xF0 ) // 4 chars
             {
-                *unichar = (unsigned char) tmp & 0x07;
+                *unichar = (uint8_t) tmp & 0x07;
                 cnt      = 3;
             }
-            else if ( (unsigned char) ( tmp & 0xFC ) == 0xF8 ) // 5 chars
+            else if ( (uint8_t) ( tmp & 0xFC ) == 0xF8 ) // 5 chars
             {
-                *unichar = (unsigned char) tmp & 0x03;
+                *unichar = (uint8_t) tmp & 0x03;
                 cnt      = 4;
             }
-            else if ( (unsigned char) ( tmp & 0xFE ) == 0xFC ) // 6 chars
+            else if ( (uint8_t) ( tmp & 0xFE ) == 0xFC ) // 6 chars
             {
-                *unichar = (unsigned char) tmp & 0x01;
+                *unichar = (uint8_t) tmp & 0x01;
                 cnt      = 5;
             }
             else  // Malformed
@@ -1206,7 +1206,7 @@ utf8_to_ucs4( const char *ptr, PLUNICODE *unichar )
         }
         else   // Subsequent char in UTF8 sequence
         {
-            if ( (unsigned char) ( tmp & 0xC0 ) == 0x80 )
+            if ( (uint8_t) ( tmp & 0xC0 ) == 0x80 )
             {
                 *unichar = ( *unichar << 6 ) | ( (unsigned int) tmp & 0x3F );
                 cnt--;
@@ -1225,44 +1225,44 @@ utf8_to_ucs4( const char *ptr, PLUNICODE *unichar )
 int
 ucs4_to_utf8( PLUNICODE unichar, char *ptr )
 {
-    unsigned char *tmp;
+    uint8_t *tmp;
     int           len;
 
-    tmp = (unsigned char *) ptr;
+    tmp = (uint8_t *) ptr;
 
     if ( ( unichar & 0xffff80 ) == 0 ) // single byte
     {
-        *tmp = (unsigned char) unichar;
+        *tmp = (uint8_t) unichar;
         tmp++;
         len = 1;
     }
     else if ( ( unichar & 0xfff800 ) == 0 ) // two bytes
     {
-        *tmp = (unsigned char) 0xc0 | (unsigned char) ( unichar >> 6 );
+        *tmp = (uint8_t) 0xc0 | (uint8_t) ( unichar >> 6 );
         tmp++;
-        *tmp = (unsigned char) ( 0x80 | (unsigned char) ( unichar & (PLUINT) 0x3f ) );
+        *tmp = (uint8_t) ( 0x80 | (uint8_t) ( unichar & (PLUINT) 0x3f ) );
         tmp++;
         len = 2;
     }
     else if ( ( unichar & 0xff0000 ) == 0 ) // three bytes
     {
-        *tmp = (unsigned char) 0xe0 | (unsigned char) ( unichar >> 12 );
+        *tmp = (uint8_t) 0xe0 | (uint8_t) ( unichar >> 12 );
         tmp++;
-        *tmp = (unsigned char) ( 0x80 | (unsigned char) ( ( unichar >> 6 ) & 0x3f ) );
+        *tmp = (uint8_t) ( 0x80 | (uint8_t) ( ( unichar >> 6 ) & 0x3f ) );
         tmp++;
-        *tmp = (unsigned char) ( 0x80 | ( (unsigned char) unichar & 0x3f ) );
+        *tmp = (uint8_t) ( 0x80 | ( (uint8_t) unichar & 0x3f ) );
         tmp++;
         len = 3;
     }
     else if ( ( unichar & 0xe0000 ) == 0 ) // four bytes
     {
-        *tmp = (unsigned char) 0xf0 | (unsigned char) ( unichar >> 18 );
+        *tmp = (uint8_t) 0xf0 | (uint8_t) ( unichar >> 18 );
         tmp++;
-        *tmp = (unsigned char) ( 0x80 | (unsigned char) ( ( unichar >> 12 ) & 0x3f ) );
+        *tmp = (uint8_t) ( 0x80 | (uint8_t) ( ( unichar >> 12 ) & 0x3f ) );
         tmp++;
-        *tmp = (unsigned char) ( 0x80 | (unsigned char) ( ( unichar >> 6 ) & 0x3f ) );
+        *tmp = (uint8_t) ( 0x80 | (uint8_t) ( ( unichar >> 6 ) & 0x3f ) );
         tmp++;
-        *tmp = (unsigned char) ( 0x80 | (unsigned char) ( unichar & 0x3f ) );
+        *tmp = (uint8_t) ( 0x80 | (uint8_t) ( unichar & 0x3f ) );
         tmp++;
         len = 4;
     }
@@ -3438,7 +3438,7 @@ c_plgfci( PLUNICODE *p_fci )
 // into pre-existing FCI.
 //
 void
-plP_hex2fci( unsigned char hexdigit, unsigned char hexpower, PLUNICODE *pfci )
+plP_hex2fci( uint8_t hexdigit, uint8_t hexpower, PLUNICODE *pfci )
 {
     PLUNICODE mask;
     hexpower = hexpower & PL_FCI_HEXPOWER_MASK;
@@ -3451,12 +3451,12 @@ plP_hex2fci( unsigned char hexdigit, unsigned char hexpower, PLUNICODE *pfci )
 // Retrieve hex digit value from FCI that is masked out and shifted to the
 // right by hexpower hexadecimal digits.
 void
-plP_fci2hex( PLUNICODE fci, unsigned char *phexdigit, unsigned char hexpower )
+plP_fci2hex( PLUNICODE fci, uint8_t *phexdigit, uint8_t hexpower )
 {
     PLUNICODE mask;
     hexpower   = hexpower & PL_FCI_HEXPOWER_MASK;
     mask       = ( ( (PLUNICODE) PL_FCI_HEXPOWER_MASK ) << ( (PLUNICODE) ( 4 * hexpower ) ) );
-    *phexdigit = (unsigned char) ( ( fci & mask ) >>
+    *phexdigit = (uint8_t) ( ( fci & mask ) >>
                                    ( (PLUNICODE) ( 4 * hexpower ) ) );
 }
 

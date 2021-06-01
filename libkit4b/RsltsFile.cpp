@@ -188,7 +188,7 @@ return(eBSFerrClosed);
 
 int
 CRsltsFile::EndRsltSet(unsigned int ProbeLen,
-					   unsigned char *pProbeSeq)	// NULL if no sequence to be output
+					   uint8_t *pProbeSeq)	// NULL if no sequence to be output
 {
 char szBuff[cMaxMatchSeqSeq * 2];
 char szTargSeq[cMaxMatchSeqSeq+1];

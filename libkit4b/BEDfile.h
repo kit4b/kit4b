@@ -1,8 +1,8 @@
 #pragma once
 #include "./commdefs.h"
 
-const UINT32 cBSFeatVersion = 12;		// increment each time the file structure is changed
-const UINT32 cBSFFeatVersionBack = 11;	// can handle all versions starting from this minimum supported version
+const uint32_t cBSFeatVersion = 12;		// increment each time the file structure is changed
+const uint32_t cBSFFeatVersionBack = 11;	// can handle all versions starting from this minimum supported version
 
 const int cMaxNumChroms   = 50000000;		 // maximum number of chromosomes or contigs supported
 const int cMaxFeatNameLen = cMaxGeneNameLen;	// max feature name length
@@ -45,8 +45,8 @@ const int cAnyFeatBits = cFeatBitUpstream | cFeatBit5UTR | cFeatBitCDS | cFeatBi
 const int cRegionFeatBits = cFeatBitUpstream | cFeatBit5UTR | cFeatBitCDS | cFeatBitIntrons | cFeatBit3UTR | cFeatBitDnstream;
 const int cOverlaysSpliceSites = cIntronExonSpliceSite | cExonIntronSpliceSite;
 
-const UINT32 cFeatFiltIn = 0x01;		// this feature is returned when locating features from chromosome offsets
-const UINT32 cFeatFiltOut = 0x02;		// this feature is excluded when locating feature bits
+const uint32_t cFeatFiltIn = 0x01;		// this feature is returned when locating features from chromosome offsets
+const uint32_t cFeatFiltOut = 0x02;		// this feature is excluded when locating feature bits
 
 typedef enum eBEDFeatureType {
 	eBTGeneExons = 1,					// BED file contains features which are genes + exons. e.g knowngenes or refseq
@@ -58,42 +58,42 @@ typedef enum eBEDFeatureType {
 #pragma pack(1)
 
 typedef struct TAG_sUnsortToSortID {    // used whilst intialising feature to chrom identifier mapping
-	UINT32 OldID;		// previous identifier
-	UINT32 NewID;		// which is this new identifier
+	uint32_t OldID;		// previous identifier
+	uint32_t NewID;		// which is this new identifier
 } tsUnsortToSortID;
 
 typedef struct TAG_sBEDchromname {
-	INT32 ChromID;							// uniquely identifies this chromosome name
-	INT32 NumFeatures;						// number of features on this chromosome
-	INT32 FirstStartID;						// identifier of of first feature (by start) on this chromosome (also used as a temp ref to next chrom same hash)
-	INT32 LastStartID;						// identifier of of last feature (by start) on this chromosome
-	INT32 MaxFeatLen;						// maximum size of any feature on this chromosome
-	UINT32 Hash;							// 24bit hash on szName
+	int32_t ChromID;							// uniquely identifies this chromosome name
+	int32_t NumFeatures;						// number of features on this chromosome
+	int32_t FirstStartID;						// identifier of of first feature (by start) on this chromosome (also used as a temp ref to next chrom same hash)
+	int32_t LastStartID;						// identifier of of last feature (by start) on this chromosome
+	int32_t MaxFeatLen;						// maximum size of any feature on this chromosome
+	uint32_t Hash;							// 24bit hash on szName
 	char szName[cMaxDatasetSpeciesChrom];	// place holder for chromosome name
 	} tsBEDchromname;
 
 // supplemental information known to be genes with exon info (eBTGeneExons) is parsed into the following structure
 // Note: if gene is on '-' strand then starts will be > ends as offsets are normalised to the '+' strand
 typedef struct TAG_sGeneStruct {
-	INT32 Size;							// size of this instance
-	INT32	NumExons;						// number of exons in this gene
-	INT32 thickStart;						// where coding starts 
-	INT32 thickEnd;						// where coding ends
-	INT32 ExonStartEnds[cMaxNumExons * 2]; // array of exon starts+exon ends
+	int32_t Size;							// size of this instance
+	int32_t	NumExons;						// number of exons in this gene
+	int32_t thickStart;						// where coding starts 
+	int32_t thickEnd;						// where coding ends
+	int32_t ExonStartEnds[cMaxNumExons * 2]; // array of exon starts+exon ends
 	} tsGeneStructure;
 
 typedef struct TAG_sBEDfeature {
-	INT32 FeatureID;					// uniquely identifies this feature
-	INT32 Size;							// size in bytes of this instance when concatenated
-	INT32 UserClass;					// user application feature classification (0 if unclassified)
-	UINT32 FiltFlags;					// used when filtering features in/out from feature bit processing
-	INT32 NameInst;						// name instance (1..n)
+	int32_t FeatureID;					// uniquely identifies this feature
+	int32_t Size;							// size in bytes of this instance when concatenated
+	int32_t UserClass;					// user application feature classification (0 if unclassified)
+	uint32_t FiltFlags;					// used when filtering features in/out from feature bit processing
+	int32_t NameInst;						// name instance (1..n)
 	tChromID ChromID;					// feature is on this chromosome
-	INT32 Start;						// feature starts at this chromosome offset (0..n)				
-	INT32 End;							// feature ends at this chromosome offset (Start + Len -1)
-	INT32 Score;						// feature score
-	UINT32 Hash;						// hash on szName
-	UINT8 FeatNameLen;					// strlen(szName)
+	int32_t Start;						// feature starts at this chromosome offset (0..n)				
+	int32_t End;							// feature ends at this chromosome offset (Start + Len -1)
+	int32_t Score;						// feature score
+	uint32_t Hash;						// hash on szName
+	uint8_t FeatNameLen;					// strlen(szName)
 	char Strand;						// which strand feature is located on
 	char szName[1];						// place holder for feature name + '\0' which is followed by any supplemental information e.g tsGeneStructure  
 } tsBEDfeature;
@@ -102,22 +102,22 @@ typedef struct TAG_sBEDfeature {
 
 #pragma pack(8)
 typedef struct TAG_sBEDFileHdr {
-	UINT8 Magic[4];						// magic chars to identify this file as a biosequence file
-	UINT64 FileLen;						// current file length
-	INT64 ChromNamesOfs;				// file offset to chromosome names
-	INT64 FeaturesOfs;					// file offset to features
-	INT64 FeatureNamesOfs;				// file offset to sorted (by name->chrom->start->end)
-	INT64 FeatureChromStartsOfs;		// file offset to sorted (by chrom->start->end)
-	UINT32 Type;						// biosequence file type 
-	UINT32 Version;						// header version, incremented if structure changes with later releases
-	UINT32 SizeOfHdr;					// total size of this header
-	INT32 MaxChroms;					// maximum number of chromosomes supported
-	INT32 NumChroms;					// actual number of chromosomes
-	INT32 MaxFeatures;					// maximum number of features supported
-	INT32 NumFeatures;					// actual number of features
-	INT32 FeatType;						// what type of features are in this file
-	UINT32 FeaturesSize;					// disk/memory space required to hold concatenated Features
-	INT32 ChromNamesSize;				// disk/memory space required to hold concatenated chromosome names
+	uint8_t Magic[4];						// magic chars to identify this file as a biosequence file
+	uint64_t FileLen;						// current file length
+	int64_t ChromNamesOfs;				// file offset to chromosome names
+	int64_t FeaturesOfs;					// file offset to features
+	int64_t FeatureNamesOfs;				// file offset to sorted (by name->chrom->start->end)
+	int64_t FeatureChromStartsOfs;		// file offset to sorted (by chrom->start->end)
+	uint32_t Type;						// biosequence file type 
+	uint32_t Version;						// header version, incremented if structure changes with later releases
+	uint32_t SizeOfHdr;					// total size of this header
+	int32_t MaxChroms;					// maximum number of chromosomes supported
+	int32_t NumChroms;					// actual number of chromosomes
+	int32_t MaxFeatures;					// maximum number of features supported
+	int32_t NumFeatures;					// actual number of features
+	int32_t FeatType;						// what type of features are in this file
+	uint32_t FeaturesSize;					// disk/memory space required to hold concatenated Features
+	int32_t ChromNamesSize;				// disk/memory space required to hold concatenated chromosome names
 	char szDescription[cMBSFFileDescrLen];// describes contents of file
 	char szTitle[cMBSFShortFileDescrLen];	// short title by which this file can be distingished from other files in dropdown lists etc
 }tsBEDFileHdr;
@@ -144,7 +144,7 @@ class CBEDfile  : protected CEndian, public CErrorCodes
 	size_t  m_AllocChromNamesSize;		// disk/memory space required to hold concatenated chromosome names
 	
 	tsBEDchromname *m_pChromNames;		// pts to array of tsBEDchromname's
-	UINT32 *m_pChromHashes;				// used to hold chrom name hash indexes into m_pChromNames
+	uint32_t *m_pChromHashes;				// used to hold chrom name hash indexes into m_pChromNames
 	
 	size_t m_AllocFeaturesSize;			// disk/memory space required to hold concatenated Features
 	tsBEDfeature *m_pFeatures;			// pts to  array of tsBEDfeature's - note that features vary in size so can't use m_pFeatures[x]!!!
@@ -164,7 +164,7 @@ class CBEDfile  : protected CEndian, public CErrorCodes
 	teBSFrsltCodes Hdr2Disk(void);			// write header to disk
 
 	tsUnsortToSortID *					// matching or NULL if unable to locate OldID
-		LocateU2S(UINT32 OldID,			// original feature chromid to locate
+		LocateU2S(uint32_t OldID,			// original feature chromid to locate
 				  int NumOldIDs,		// number of old chromids to binary search over
 					tsUnsortToSortID *pSortedU2s); // sorted old to new chrom id mappings
 
@@ -175,7 +175,7 @@ class CBEDfile  : protected CEndian, public CErrorCodes
 	tsBEDfeature *LocateFeature(char *pszFeatName);
 
 	teBSFrsltCodes LoadFeatures(bool bCloseFile = true);
-	teBSFrsltCodes ReadDisk(INT64 DiskOfs,int Len,void *pTo);
+	teBSFrsltCodes ReadDisk(int64_t DiskOfs,int Len,void *pTo);
 	teBSFrsltCodes Flush2Disk(void);
 	teBSFrsltCodes SortFeatures(void);
 	int	LocateStart(int ChromID, // feature is on which chromosome
@@ -228,10 +228,10 @@ public:
 					 char *pszSuppInfo);		// supplementary information
 
 
-	teBSFrsltCodes SetFilter(char *pszFeatName,UINT32 FiltFlags = cFeatFiltIn);	// sets specified feature to have FiltFlags
-	teBSFrsltCodes SetFilter(int FeatID,UINT32 FiltFlags = cFeatFiltIn);	// sets specified feature to have FiltFlags
-	teBSFrsltCodes SetFilters(UINT32 FiltFlags = cFeatFiltIn);			// sets all features to have specified FiltFlags
-	bool Filter(int FeatID,UINT32 FiltFlags);								// returns true if feature has any of specified FiltFlags set
+	teBSFrsltCodes SetFilter(char *pszFeatName,uint32_t FiltFlags = cFeatFiltIn);	// sets specified feature to have FiltFlags
+	teBSFrsltCodes SetFilter(int FeatID,uint32_t FiltFlags = cFeatFiltIn);	// sets specified feature to have FiltFlags
+	teBSFrsltCodes SetFilters(uint32_t FiltFlags = cFeatFiltIn);			// sets all features to have specified FiltFlags
+	bool Filter(int FeatID,uint32_t FiltFlags);								// returns true if feature has any of specified FiltFlags set
 	bool SetStrand(char Strand);				// sets which strand features must be on in subsequent processing '+'/'-' or '*' for either
 
 	bool ContainsGeneDetail(void);			// returns true if file contains gene detail (utr/cds/intron etc)

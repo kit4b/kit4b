@@ -540,7 +540,7 @@ int Len;
 char *pszStrand;
 char Strand;
 int openopts;
-INT64 FileLen;
+int64_t FileLen;
 
 int LineLen;
 int hFile;

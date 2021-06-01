@@ -29,7 +29,7 @@ Original 'BioKanga' copyright notice has been retained and immediately follows t
 
 CEndian::CEndian(void)
 {
-INT16 EndianTest = 0x4321;
+int16_t EndianTest = 0x4321;
 m_bIsBigEndian = (*(char *)&EndianTest == 0x21) ? false : true;
 }
 
@@ -38,26 +38,26 @@ CEndian::~CEndian(void)
 }
 
 // Swaps 16bit (2byte) endian order
-UINT16 
-CEndian::SwapUI16Endians(UINT16 Val)
+uint16_t 
+CEndian::SwapUI16Endians(uint16_t Val)
 {
 return (((Val&0x00FF)<< 8)+((Val&0xFF00)>>8));
 }
 
 // Swaps 32bit (4byte) endian order
-UINT32 
-CEndian::SwapUI32Endians(UINT32 Val)
+uint32_t 
+CEndian::SwapUI32Endians(uint32_t Val)
 {
 return (((Val&0x000000FF)<<24)+((Val&0x0000FF00)<<8)+
    ((Val&0x00FF0000)>>8)+((Val&0xFF000000)>>24));
 }
 
 // Swaps 64bit (8byte) endian order
-UINT64 
-CEndian::SwapUI64Endians(UINT64 Val)
+uint64_t 
+CEndian::SwapUI64Endians(uint64_t Val)
 {
-UINT32 LoInt = SwapUI32Endians((UINT32)(Val >> 32));
-UINT32 HiInt = SwapUI32Endians((UINT32)Val);
-return(((UINT64)HiInt << 32) + (UINT64)LoInt);
+uint32_t LoInt = SwapUI32Endians((uint32_t)(Val >> 32));
+uint32_t HiInt = SwapUI32Endians((uint32_t)Val);
+return(((uint64_t)HiInt << 32) + (uint64_t)LoInt);
 }
 

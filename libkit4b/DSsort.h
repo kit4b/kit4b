@@ -11,8 +11,8 @@ class CDSsort
 {
 /* ------- node of blind trie -------- */ 
 typedef struct nodex {
-  INT32 skip;
-  unsigned char key;  
+  int32_t skip;
+  uint8_t key;  
   struct nodex  *down;      // first child
   struct nodex *right;      // next brother
 	} node;
@@ -20,94 +20,94 @@ typedef struct nodex {
 
 		void *m_pFreeArray[cDSSFREESIZE];
 		node *m_pBufn;
-		INT32 m_bufn_num;
-		INT32 m_free_num;
-		INT32 m_Aux_written;
-		INT32 *m_pAux;
+		int32_t m_bufn_num;
+		int32_t m_free_num;
+		int32_t m_Aux_written;
+		int32_t *m_pAux;
 		node **m_ppStack;
 		int m_Stack_size;
-		INT32 m_Cmp_done;
-		INT32  m_Text_size;           // size of input string 
-		unsigned char  *m_pText;        // input string+ overshoot
-		INT32  *m_pSuffixArray;       // suffix array
-		unsigned char  *m_pEndOfText;   // m_pText+m_Text_size
-		INT32  *m_pAnchorRank;        // rank (in the sorted suffixes of the  
+		int32_t m_Cmp_done;
+		int32_t  m_Text_size;           // size of input string 
+		uint8_t  *m_pText;        // input string+ overshoot
+		int32_t  *m_pSuffixArray;       // suffix array
+		uint8_t  *m_pEndOfText;   // m_pText+m_Text_size
+		int32_t  *m_pAnchorRank;        // rank (in the sorted suffixes of the  
 									// anchor points (-1 if rank is unknown))
-		UINT16  *m_pAnchorOffset;     // offset (wrt to the anchor) of the suffix
+		uint16_t  *m_pAnchorOffset;     // offset (wrt to the anchor) of the suffix
 									// whose rank is in m_pAnchorRank. 
-		INT32 m_NumAnchorPts;           // number of anchor points
-		INT32 m_FtabArray[65537];   
-		INT32 m_RunningOrderArray[256];
+		int32_t m_NumAnchorPts;           // number of anchor points
+		int32_t m_FtabArray[65537];   
+		int32_t m_RunningOrderArray[256];
 
-		unsigned char m_BucketRankedArray[65536];
+		uint8_t m_BucketRankedArray[65536];
 
-		INT32 m_AnchorDist;                // distance between anchors
-		INT32 m_DsVerbose;                // how verbose it the algorithm?
-		INT32 m_DsWordSize;              // # of bytes in word in mkqs
-		INT32 m_MkQsThresh;               // recursion limit for mk quicksort:
-		INT32 m_MaxPseudoAnchorOffset; // maximum offset considered when 
+		int32_t m_AnchorDist;                // distance between anchors
+		int32_t m_DsVerbose;                // how verbose it the algorithm?
+		int32_t m_DsWordSize;              // # of bytes in word in mkqs
+		int32_t m_MkQsThresh;               // recursion limit for mk quicksort:
+		int32_t m_MaxPseudoAnchorOffset; // maximum offset considered when 
 										// searching a pseudo anchor
-		INT32 m_B2gRratio;                // maximum ratio bucket_size/group_size
+		int32_t m_B2gRratio;                // maximum ratio bucket_size/group_size
 										// accepted for pseudo anchor_sorting
-		INT32 m_UpdateAnchorRanks;      // if!=0 update anchor ranks when determining
+		int32_t m_UpdateAnchorRanks;      // if!=0 update anchor ranks when determining
 										// rank for pseudo-sorting
-		INT32 m_BlindSortRatio;         // blind sort is used for groups of size 
+		int32_t m_BlindSortRatio;         // blind sort is used for groups of size 
 										// <= m_Text_size/m_BlindSortRatio
 
-		INT32 m_Calls2HelpedSort;     
-		INT32 m_Calls2AnchorSortForw;     
-		INT32 m_Calls2AnchorSortBbackw;    
-		INT32 m_Calls2PseudoAnchorSortForw;      
-		INT32 m_Calls2DeepSort;     
-		INT32 m_ShallowLimit;						// Max depth for shallow sorting
-		unsigned char *m_pShallowTextLimit;         // m_pText+m_ShallowLimit
-		INT32 m_CmpLeft;
-		INT32 m_LCPAuxArray[1+cDSSMax_thresh];
-		INT32 *m_pLCP; 
+		int32_t m_Calls2HelpedSort;     
+		int32_t m_Calls2AnchorSortForw;     
+		int32_t m_Calls2AnchorSortBbackw;    
+		int32_t m_Calls2PseudoAnchorSortForw;      
+		int32_t m_Calls2DeepSort;     
+		int32_t m_ShallowLimit;						// Max depth for shallow sorting
+		uint8_t *m_pShallowTextLimit;         // m_pText+m_ShallowLimit
+		int32_t m_CmpLeft;
+		int32_t m_LCPAuxArray[1+cDSSMax_thresh];
+		int32_t *m_pLCP; 
 
 
 
-	void blind_ssort(INT32 *a, INT32 n, INT32 depth);
-	node *find_companion(node *head, unsigned char *s);
+	void blind_ssort(int32_t *a, int32_t n, int32_t depth);
+	node *find_companion(node *head, uint8_t *s);
 	node *get_leaf(node *head);
 	inline node *new_node__blind_ssort(void);
-	void insert_suffix(node *h, INT32 suf, int n, unsigned char mmchar);
+	void insert_suffix(node *h, int32_t suf, int n, uint8_t mmchar);
 	void traverse_trie(node *h);
-	inline INT32 get_lcp_unrolled(unsigned char *b1, unsigned char *b2, INT32 cmp_limit);
-	INT32 compare_suffixes(INT32 suf1, INT32 suf2, INT32 depth);
+	inline int32_t get_lcp_unrolled(uint8_t *b1, uint8_t *b2, int32_t cmp_limit);
+	int32_t compare_suffixes(int32_t suf1, int32_t suf2, int32_t depth);
 	static int neg_integer_cmp(const void *a, const void *b);
 	static int integer_cmp(const void *a, const void *b);
-	inline INT32 cmp_unrolled_lcp(unsigned char *b1, unsigned char *b2);
-	void qs_unrolled_lcp(INT32 *a, int n, int depth, int blind_limit);
-	void deep_sort(INT32 *a, INT32 n, INT32 depth);
+	inline int32_t cmp_unrolled_lcp(uint8_t *b1, uint8_t *b2);
+	void qs_unrolled_lcp(int32_t *a, int n, int depth, int blind_limit);
+	void deep_sort(int32_t *a, int32_t n, int32_t depth);
 	void calc_running_order(void);
 	void set_global_variables(void);
 	int compute_overshoot(void);
 	void pretty_putchar(int c);
-	int scmp3(unsigned char *p, unsigned char *q, int *l, int maxl);
-	void helped_sort(INT32 *a, int n, int depth);
-	void pseudo_or_deep_sort(INT32 *a, INT32 n, INT32 depth);
-	void pseudo_anchor_sort(INT32 *a,INT32 n,INT32 pseudo_anchor_pos, INT32 offset);
-	void general_anchor_sort(INT32 *a, INT32 n,INT32 anchor_pos, INT32 anchor_rank, INT32 offset);
-	INT32 get_rank(INT32 pos);
-	INT32 get_rank_update_anchors(INT32 pos);
-	void update_anchors(INT32 *a, INT32 n);
-	INT32 split_group(INT32 *a, int n, int depth,int offset,INT32 pivot,int *first);
-	void shallow_sort(INT32 *a, int n);
-	inline void vecswap2(INT32 *a, INT32 *b, int n);
-	inline INT32 *med3func(INT32 *a, INT32 *b, INT32 *c, unsigned char *text_depth);
-	void shallow_mkq(INT32 *a, int n, unsigned char *text_depth);
-	void shallow_mkq16(INT32 *a, int n, unsigned char *text_depth);
-	void shallow_mkq32(INT32 *a, int n, unsigned char *text_depth);
+	int scmp3(uint8_t *p, uint8_t *q, int *l, int maxl);
+	void helped_sort(int32_t *a, int n, int depth);
+	void pseudo_or_deep_sort(int32_t *a, int32_t n, int32_t depth);
+	void pseudo_anchor_sort(int32_t *a,int32_t n,int32_t pseudo_anchor_pos, int32_t offset);
+	void general_anchor_sort(int32_t *a, int32_t n,int32_t anchor_pos, int32_t anchor_rank, int32_t offset);
+	int32_t get_rank(int32_t pos);
+	int32_t get_rank_update_anchors(int32_t pos);
+	void update_anchors(int32_t *a, int32_t n);
+	int32_t split_group(int32_t *a, int n, int depth,int offset,int32_t pivot,int *first);
+	void shallow_sort(int32_t *a, int n);
+	inline void vecswap2(int32_t *a, int32_t *b, int n);
+	inline int32_t *med3func(int32_t *a, int32_t *b, int32_t *c, uint8_t *text_depth);
+	void shallow_mkq(int32_t *a, int n, uint8_t *text_depth);
+	void shallow_mkq16(int32_t *a, int n, uint8_t *text_depth);
+	void shallow_mkq32(int32_t *a, int n, uint8_t *text_depth);
 	int check_global_variables(void);
-	inline INT32 cmp_unrolled_shallow_lcp(unsigned char *b1, unsigned char *b2);
-	void shallow_inssort_lcp(INT32 *a, INT32 n, unsigned char *text_depth);
+	inline int32_t cmp_unrolled_shallow_lcp(uint8_t *b1, uint8_t *b2);
+	void shallow_inssort_lcp(int32_t *a, int32_t n, uint8_t *text_depth);
 	void free_node_mem(void);
 public:
 	CDSsort(void);
 	~CDSsort(void);
-	void ds_ssort(unsigned char *pToSort,	// string to sort suffixes on (NOTE: must have additional allocated memory past end for holding overshoot)
-				  INT32 *pSuffixArray,	// sort into this prealloc'd suffix array
-				  INT32 ToSortLen);		// string length (NOTE: excludes additional memory at end of pToSort allocated for overshoot)
+	void ds_ssort(uint8_t *pToSort,	// string to sort suffixes on (NOTE: must have additional allocated memory past end for holding overshoot)
+				  int32_t *pSuffixArray,	// sort into this prealloc'd suffix array
+				  int32_t ToSortLen);		// string length (NOTE: excludes additional memory at end of pToSort allocated for overshoot)
 	int init_ds_ssort(int adist = 500, int bs_ratio = 2000); // returns required overshoot memory size
 };

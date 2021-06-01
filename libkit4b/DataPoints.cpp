@@ -143,7 +143,7 @@ CDataPoints::Open(char *pszFile,	// specifies file to open or create
 			   bool bCreate)	// create file or truncate if it already exists
 {
 int AllocLen;
-INT64 FileOfs;
+int64_t FileOfs;
 int Len;
 
 Close();						// reset context in case file still opened
@@ -189,7 +189,7 @@ if(bCreate)
 	{
 	// allocate memory to hold segment directory
 	AllocLen = (1 + m_FileHdr.MaxDirEls) * sizeof(sDSFDirEl);	// additional is for safety
-	if((m_pDirEls = (sDSFDirEl *)new unsigned char [AllocLen])==NULL)
+	if((m_pDirEls = (sDSFDirEl *)new uint8_t [AllocLen])==NULL)
 		{
 		AddErrMsg("CDataPoints::Open","Unable to alloc memory (%d byte) for data segments directory from file %s ",AllocLen,pszFile);
 		Close();
@@ -259,7 +259,7 @@ else // else opening existing file
 
 	// allocate memory to hold segment directory
 	AllocLen = m_FileHdr.NumDirEls * sizeof(sDSFDirEl);	
-	if((m_pDirEls = (sDSFDirEl *)new unsigned char [AllocLen])==NULL)
+	if((m_pDirEls = (sDSFDirEl *)new uint8_t [AllocLen])==NULL)
 		{
 		AddErrMsg("CDataPoints::Open","Unable to alloc memory (%d byte) for data segments directory from opened file %s ",AllocLen,pszFile);
 		Close();
@@ -654,7 +654,7 @@ if(m_FileHdr.DataPtType == eDPTPackedBases)
 			Num2Alloc = 100000;
 		if(Num2Alloc > 1000000)
 			Num2Alloc = PackedBytes;
-		if((m_pCachedDataset = new unsigned char [Num2Alloc])==NULL)
+		if((m_pCachedDataset = new uint8_t [Num2Alloc])==NULL)
 			{
 			AddErrMsg("CDataPoints::AddDataseg","Unable to alloc memory (%d byte) for packed base segment cache in file %s ",Num2Alloc,m_szFile);
 			return(eBSFerrMem);
@@ -665,7 +665,7 @@ if(m_FileHdr.DataPtType == eDPTPackedBases)
 	PackBases(NumPts,				// unpacked sequence length 
 		(etSeqBase *)pDataPts,		// pts to sequence to pack from
 		0,							// nibble to start pack into (0..SeqLen-1)
-		(unsigned char *)m_pCachedDataset);	// where to pack into
+		(uint8_t *)m_pCachedDataset);	// where to pack into
 
 	DataSegLen = PackedBytes;
 	pData2Save = m_pCachedDataset;
@@ -711,8 +711,8 @@ pDirEl->RelChromOfs = RelChromOfs;
 pDirEl->RelStrand = RelStrand == '+' ? 0 : 1;
 pDirEl->RelDatasetID = RelDatasetID;
 pDirEl->NumPts = NumPts;
-pDirEl->LoFileOfs= (UINT32)(m_FileHdr.FileLen & 0x0ffffffff);
-pDirEl->HiFileOfs= (UINT8)((m_FileHdr.FileLen >> 32L) & 0x0ff);
+pDirEl->LoFileOfs= (uint32_t)(m_FileHdr.FileLen & 0x0ffffffff);
+pDirEl->HiFileOfs= (uint8_t)((m_FileHdr.FileLen >> 32L) & 0x0ff);
 
 if(DataSegLen > (int)m_FileHdr.DataSegSize)
 	m_FileHdr.DataSegSize = DataSegLen;
@@ -793,9 +793,9 @@ int
 CDataPoints::FillDataPts(void *pDataPts,void *pFiller,int DataPtSize,int NumDataPts)
 {
 double *pDouble;
-UINT32 *pInt;
+uint32_t *pInt;
 unsigned short *pShort;
-unsigned char *pByte;
+uint8_t *pByte;
 if(pDataPts == NULL || !DataPtSize || !NumDataPts)
 	return(eBSFerrParams);
 if(pFiller == NULL) // nothing to do - treat as success
@@ -803,7 +803,7 @@ if(pFiller == NULL) // nothing to do - treat as success
 
 switch(DataPtSize) {
 	case 1:				// do a memset
-		memset((unsigned char *)pDataPts,*(unsigned char *)pFiller,NumDataPts);
+		memset((uint8_t *)pDataPts,*(uint8_t *)pFiller,NumDataPts);
 		break;
 
 	case 2:				 
@@ -813,9 +813,9 @@ switch(DataPtSize) {
 		break;
 
 	case 4:
-		pInt = (UINT32 *)pDataPts;
+		pInt = (uint32_t *)pDataPts;
 		while(NumDataPts--)
-			*pInt++ = *(UINT32 *)pFiller;
+			*pInt++ = *(uint32_t *)pFiller;
 		break;
 
 	case 8:
@@ -825,7 +825,7 @@ switch(DataPtSize) {
 		break;
 
 	default:
-		pByte = (unsigned char *)pDataPts;
+		pByte = (uint8_t *)pDataPts;
 		while(NumDataPts--)
 			{
 			memmove(pByte,pFiller,DataPtSize);
@@ -1056,7 +1056,7 @@ CDataPoints::GetShuffledValuesBase(int RelDatasetID,// relative dataset identifi
 					  int RefChromID,		// reference chromosome identifier
 					  int RefChromOfs,		// start on reference chromosome (0..n) 
 					  int NumPts,			// number of points to return
-					  unsigned char *pToRet,	// where to return etSeqBases
+					  uint8_t *pToRet,	// where to return etSeqBases
 					  etSeqBase MissingMarker)	// value to use if missing datapoints
 {
 int Rslt;
@@ -1069,7 +1069,7 @@ Rslt = GetValuesBase(RelDatasetID,RefChromID,RefChromOfs,NumPts,pToRet,MissingMa
 if(Rslt < eBSFSuccess)
 	return(Rslt);
 
-srand((UINT32)RefChromOfs);
+srand((uint32_t)RefChromOfs);
 SegStart = SegLen = 0;
 pSeg = pToRet;
 for(Psn =  0; Psn < NumPts; Psn++,pSeg++)
@@ -1128,7 +1128,7 @@ CDataPoints::GetValuesBase(int RelDatasetID,// relative dataset identifier
 					  int RefChromID,		// reference chromosome identifier
 					  int RefChromOfs,		// start on reference chromosome (0..n) 
 					  int NumPts,			// number of points to return
-					  unsigned char *pToRet,	// where to return etSeqBases
+					  uint8_t *pToRet,	// where to return etSeqBases
 					  etSeqBase MissingMarker)	// value to use if missing datapoints
 {
 int Idx;
@@ -1163,21 +1163,21 @@ switch(m_FileHdr.DataPtType) {
 		pWord = (short *)m_pCachedDataset;
 		pWord += Ofs;
 		for(Idx = 0; Idx < NumPts; Idx++,pWord++)
-			pToRet[Idx] = *(unsigned char *)pWord;
+			pToRet[Idx] = *(uint8_t *)pWord;
 		break;
 
 	case eDPTdword:				// 32 bit
 		pDWord = (int *)m_pCachedDataset;
 		pDWord += Ofs;
 		for(Idx = 0; Idx < NumPts; Idx++,pDWord++)
-			pToRet[Idx] = *(unsigned char *)pDWord;
+			pToRet[Idx] = *(uint8_t *)pDWord;
 		break;
 
 	case eDPTdouble:			// double
 		pDouble = (double *)m_pCachedDataset;
 		pDouble += Ofs;
 		for(Idx = 0; Idx < NumPts; Idx++,pDouble++)
-			pToRet[Idx] = *(unsigned char *)pDouble;
+			pToRet[Idx] = *(uint8_t *)pDouble;
 		break;
 
 	default:
@@ -1219,28 +1219,28 @@ switch(m_FileHdr.DataPtType) {
 		pChar = (char *)m_pCachedDataset;
 		pChar += Ofs;
 		for(Idx = 0; Idx < NumPts; Idx++,pChar++)
-			pToRet[Idx] = *(unsigned char *)pChar;
+			pToRet[Idx] = *(uint8_t *)pChar;
 		break;
 
 	case eDPTword:				// 16 bit
 		pWord = (short *)m_pCachedDataset;
 		pWord += Ofs;
 		for(Idx = 0; Idx < NumPts; Idx++,pWord++)
-			pToRet[Idx] = *(unsigned char *)pWord;
+			pToRet[Idx] = *(uint8_t *)pWord;
 		break;
 
 	case eDPTdword:				// 32 bit
 		pDWord = (int *)m_pCachedDataset;
 		pDWord += Ofs;
 		for(Idx = 0; Idx < NumPts; Idx++,pDWord++)
-			pToRet[Idx] = *(unsigned char *)pDWord;
+			pToRet[Idx] = *(uint8_t *)pDWord;
 		break;
 
 	case eDPTdouble:			// double
 		pDouble = (double *)m_pCachedDataset;
 		pDouble += Ofs;
 		for(Idx = 0; Idx < NumPts; Idx++,pDouble++)
-			pToRet[Idx] = (unsigned char)(int)*pDouble;
+			pToRet[Idx] = (uint8_t)(int)*pDouble;
 		break;
 
 	default:
@@ -1508,8 +1508,8 @@ switch(m_FileHdr.DataPtType) {
 		break;
 
 	case eDPTbyte:				// 8 bit byte or char
-		bNewMarker = *(unsigned char *)pMarker != m_LoadedDataMarker.Byte ? true : false;
-		m_LoadedDataMarker.Byte = *(unsigned char *)pMarker;
+		bNewMarker = *(uint8_t *)pMarker != m_LoadedDataMarker.Byte ? true : false;
+		m_LoadedDataMarker.Byte = *(uint8_t *)pMarker;
 		break;
 
 	case eDPTword:				// 16 bit
@@ -1518,8 +1518,8 @@ switch(m_FileHdr.DataPtType) {
 		break;
 
 	case eDPTdword:				// 32 bit
-		bNewMarker = *(UINT32 *)pMarker != m_LoadedDataMarker.DWord ? true : false;
-		m_LoadedDataMarker.DWord = *(UINT32 *)pMarker;
+		bNewMarker = *(uint32_t *)pMarker != m_LoadedDataMarker.DWord ? true : false;
+		m_LoadedDataMarker.DWord = *(uint32_t *)pMarker;
 		break;
 
 	case eDPTdouble:			// double
@@ -1552,7 +1552,7 @@ if(m_pCachedDataset == NULL || Mem2Hold > m_AllocdCacheSize)
 	if(Num2Alloc > 1000000)
 		Num2Alloc = NumPts;
 	Mem2Hold = Num2Alloc * m_FileHdr.DataPtSize;
-	if((m_pCachedDataset = new unsigned char [Mem2Hold])==NULL)
+	if((m_pCachedDataset = new uint8_t [Mem2Hold])==NULL)
 		{
 		AddErrMsg("CDataPoints::PreloadDataset","Unable to alloc memory (%d byte) for packed base segment cache in file %s ",Mem2Hold,m_szFile);
 		return(eBSFerrMem);
@@ -1585,9 +1585,9 @@ CDataPoints::GetDataPoints(int RelDatasetID,	// relative dataset identifier
 						void *pMissingMarker)	// value to use if there are missing datapoints
 {
 sDSFDirEl *pDirEl;
-unsigned char *pByte = (unsigned char *)pRetDataPts;			// just to make it a little easier instead of constant type casts..
+uint8_t *pByte = (uint8_t *)pRetDataPts;			// just to make it a little easier instead of constant type casts..
 
-INT64 FileOfs;
+int64_t FileOfs;
 int Len;
 int Num2Read;
 int Num2Skip;
@@ -1627,7 +1627,7 @@ while(NumPts) {
 	if(Num2Read > NumPts)
 		Num2Read = NumPts;
 
-	FileOfs = (INT64)(UINT64)pDirEl->LoFileOfs + ((UINT64)pDirEl->HiFileOfs << 32L);
+	FileOfs = (int64_t)(uint64_t)pDirEl->LoFileOfs + ((uint64_t)pDirEl->HiFileOfs << 32L);
 
 	if(m_FileHdr.DataPtType != eDPTPackedBases)
 		{
@@ -1672,10 +1672,10 @@ return(eBSFSuccess);
 // unpack (packed into nibbles) from pPacked into pUnpack
 // if pUnpacked pts to pPacked then inplace unpacking will be performed
 int
-CDataPoints::UnpackBases(UINT32 SeqLen,	// unpacked sequence length 
+CDataPoints::UnpackBases(uint32_t SeqLen,	// unpacked sequence length 
 		  etSeqBase *pUnpacked,				// pts to sequence to unpack into
-		  UINT32 NibbleOfs,			// nibble to start unpack from (0..1)
-		  unsigned char *pPacked)			// where to unpack from
+		  uint32_t NibbleOfs,			// nibble to start unpack from (0..1)
+		  uint8_t *pPacked)			// where to unpack from
 {
 bool bEndHi=false;			// true if last base is to be unpacked from hi nibble
 bool bStartLo=false;		// true if first base is to be unpacked from lo nibble
@@ -1725,12 +1725,12 @@ return(eBSFSuccess);
 // Pack bases (pUnpacked) into nibbles (pPacked) with bits 0..3 holding pUnpacked[n] and bits 4..7 holding pUnpacked[n+1]
 // if pUnpacked pts to pPacked then inplace packing will be performed
 int
-CDataPoints::PackBases(UINT32 SeqLen,	// unpacked sequence length 
+CDataPoints::PackBases(uint32_t SeqLen,	// unpacked sequence length 
 		  etSeqBase *pUnpacked,				// pts to sequence to pack from
-		  UINT32 NibbleOfs,			// nibble to start pack into (0..SeqLen-1)
-		  unsigned char *pPacked)			// where to pack
+		  uint32_t NibbleOfs,			// nibble to start pack into (0..SeqLen-1)
+		  uint8_t *pPacked)			// where to pack
 {
-unsigned char byte;
+uint8_t byte;
 bool bStartHi=false;	// true if first base is to be packed into hi nibble
 bool bEndLo=false;		// true id last base is to be packed into lo nibble
 

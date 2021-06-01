@@ -65,7 +65,7 @@ if(m_pSfxArray != NULL)
 
 if(m_pSWInstances != NULL)
 	{
-	UINT32 InstIdx;
+	uint32_t InstIdx;
 	tsPBSSWInstance *pSWInstance;
 	pSWInstance = m_pSWInstances;
 	for(InstIdx = 0; InstIdx < m_NumSWInstances; InstIdx++,pSWInstance++)
@@ -204,14 +204,14 @@ pthread_rwlock_unlock(&m_hRwLock);
 
 
 int 
-CSWAlign::Initialise(UINT32 MaxSWAInstances,	// initialise for this many instances
-			UINT32 MinOverlapLen,				// the putative overlap would be of at least this length
-			UINT32 MaxSeedCoreDepth,			// only further extend a seed core if there are no more than this number of matching cores in all targeted sequences
-			UINT32 DeltaCoreOfs,				// offset core windows of coreSeqLen along the probe sequence when checking for overlaps 
-			UINT32 CoreSeqLen,					// putative overlaps are explored if there are cores of at least this length in any putative overlap
-			UINT32 MinNumCores,					// and if the putative overlap contains at least this many cores
-			UINT32 MaxAcceptHitsPerSeedCore,	// limit accepted hits per seed core to no more than this many
-			UINT32 DfltMaxProbeSeqLen)			// initially allocate for this length probe sequence to be aligned, will be realloc'd as may be required
+CSWAlign::Initialise(uint32_t MaxSWAInstances,	// initialise for this many instances
+			uint32_t MinOverlapLen,				// the putative overlap would be of at least this length
+			uint32_t MaxSeedCoreDepth,			// only further extend a seed core if there are no more than this number of matching cores in all targeted sequences
+			uint32_t DeltaCoreOfs,				// offset core windows of coreSeqLen along the probe sequence when checking for overlaps 
+			uint32_t CoreSeqLen,					// putative overlaps are explored if there are cores of at least this length in any putative overlap
+			uint32_t MinNumCores,					// and if the putative overlap contains at least this many cores
+			uint32_t MaxAcceptHitsPerSeedCore,	// limit accepted hits per seed core to no more than this many
+			uint32_t DfltMaxProbeSeqLen)			// initially allocate for this length probe sequence to be aligned, will be realloc'd as may be required
 {
 Reset();
 CreateLocks();
@@ -243,10 +243,10 @@ CSWAlign::LoadTargetSeqs(int MinSeqLen,	// only accept target sequences of at le
 int Rslt;
 int NumEntries;
 int NumDupEntries;
-UINT32 DupEntries[20];
+uint32_t DupEntries[20];
 char szDupEntry[100];
 
-INT64 SumFileSizes;
+int64_t SumFileSizes;
 SumFileSizes = 0;
 #ifdef _WIN32
 struct _stat64 st;
@@ -255,8 +255,8 @@ if(!_stat64(pszTargSeqsFile,&st))
 struct stat64 st;
 if(!stat64(pszTargSeqsFile,&st))
 #endif
-	SumFileSizes = (INT64)st.st_size;
-if(SumFileSizes < (INT64)MinSeqLen)
+	SumFileSizes = (int64_t)st.st_size;
+if(SumFileSizes < (int64_t)MinSeqLen)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Loading target sequences, unable to access '%s' or contaminate sequence length smaller than %d",pszTargSeqsFile,MinSeqLen);
 	Reset();
@@ -411,7 +411,7 @@ m_OverlapFloat = OverlapFloat;
 return(true);
 }
 
-UINT32			// returned instance identifier
+uint32_t			// returned instance identifier
 CSWAlign::InitInstance(void)
 {
 tsPBSSWInstance *pSWInstance;
@@ -486,15 +486,15 @@ CSWAlign::LoadTargFastaFile(int MinSeqLen,		// only accept for indexing sequence
 				int Flags)							// default is for flags = cFlgLCSeq used with PacBio read sequences
 {
 CFasta Fasta;
-unsigned char *pSeqBuff;
-unsigned char *pMskBase;
-UINT32 MskIdx;
+uint8_t *pSeqBuff;
+uint8_t *pMskBase;
+uint32_t MskIdx;
 size_t BuffOfs;
 size_t AllocdBuffSize;
 size_t AvailBuffSize;
 char szName[cBSFSourceSize];
 char szDescription[cBSFDescriptionSize];
-UINT32 SeqLen;
+uint32_t SeqLen;
 int Descrlen;
 bool bFirstEntry;
 bool bEntryCreated;
@@ -502,7 +502,7 @@ int Rslt;
 int SeqID;
 int NumSeqsAccepted;
 size_t TotAcceptedLen;
-UINT32 NumSeqsUnderlength;
+uint32_t NumSeqsUnderlength;
 
 if((Rslt=Fasta.Open(pszFile,true))!=eBSFSuccess)
 	{
@@ -513,9 +513,9 @@ if((Rslt=Fasta.Open(pszFile,true))!=eBSFSuccess)
 
 AllocdBuffSize = (size_t)cAllocTargetSeqSize * 16;
 // note malloc is used as can then simply realloc to expand as may later be required
-if((pSeqBuff = (unsigned char *)malloc(AllocdBuffSize)) == NULL)
+if((pSeqBuff = (uint8_t *)malloc(AllocdBuffSize)) == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessFastaFile:- Unable to allocate memory (%u bytes) for sequence buffer",(UINT32)AllocdBuffSize);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessFastaFile:- Unable to allocate memory (%u bytes) for sequence buffer",(uint32_t)AllocdBuffSize);
 	Fasta.Close();
 	return(eBSFerrMem);
 	}
@@ -541,7 +541,7 @@ while((Rslt = SeqLen = Fasta.ReadSequence(&pSeqBuff[BuffOfs],(int)min(AvailBuffS
 				NumSeqsUnderlength += 1;
 			else
 				{
-				if((Rslt=m_pSfxArray->AddEntry(szName,pSeqBuff,(UINT32)BuffOfs,Flags)) < eBSFSuccess)
+				if((Rslt=m_pSfxArray->AddEntry(szName,pSeqBuff,(uint32_t)BuffOfs,Flags)) < eBSFSuccess)
 					{
 					gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessFastaFile - error %d %s",Rslt,m_pSfxArray->GetErrMsg());
 					break;
@@ -606,10 +606,10 @@ while((Rslt = SeqLen = Fasta.ReadSequence(&pSeqBuff[BuffOfs],(int)min(AvailBuffS
 	if(AvailBuffSize < (size_t)(cAllocTargetSeqSize / 8))
 		{
 		size_t NewSize = (size_t)cAllocTargetSeqSize + AllocdBuffSize;
-		unsigned char *pTmp;
-		if((pTmp = (unsigned char *)realloc(pSeqBuff,NewSize))==NULL)
+		uint8_t *pTmp;
+		if((pTmp = (uint8_t *)realloc(pSeqBuff,NewSize))==NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessFastaFile:- Unable to reallocate memory (%u bytes) for sequence buffer",(UINT32)NewSize);
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessFastaFile:- Unable to reallocate memory (%u bytes) for sequence buffer",(uint32_t)NewSize);
 			return(eBSFerrMem);
 			}
 		pSeqBuff = pTmp;
@@ -632,7 +632,7 @@ if(Rslt >= eBSFSuccess && bEntryCreated && BuffOfs > 0)			// close entry
 		}
 	else
 		{
-		if((Rslt=m_pSfxArray->AddEntry(szName,pSeqBuff,(UINT32)BuffOfs,Flags)) < eBSFSuccess)
+		if((Rslt=m_pSfxArray->AddEntry(szName,pSeqBuff,(uint32_t)BuffOfs,Flags)) < eBSFSuccess)
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessFastaFile - error %d %s",Rslt,m_pSfxArray->GetErrMsg());
 		else
 			{
@@ -652,14 +652,14 @@ return(Rslt);
 int					// returns 0 if core overlapped (uses a non-exhaustive search) a previously added core, index 1..N of just added core hit or -1 if errors
 CSWAlign::AddCoreHit(tsPBSSWInstance *pInstance,		// using this instance
 				bool bRevCpl,					// true if core sequence was revcpl'd before matching
-			   UINT32 ProbeOfs,                 // hit started at this probe offset
-			   UINT32 TargSeqID,                // probe core matched onto this target sequence
-			   UINT32 TargOfs,                  // probe core matched starting at this target loci
-			   UINT32 HitLen)					// hit was of this length
+			   uint32_t ProbeOfs,                 // hit started at this probe offset
+			   uint32_t TargSeqID,                // probe core matched onto this target sequence
+			   uint32_t TargOfs,                  // probe core matched starting at this target loci
+			   uint32_t HitLen)					// hit was of this length
 {
-UINT32 ExpdHitLen;
-UINT32 NumHits2Chk;
-UINT32 HitsChkd;
+uint32_t ExpdHitLen;
+uint32_t NumHits2Chk;
+uint32_t HitsChkd;
 tsPBSSWACoreHit *pCurCoreHit;
 
 if((pInstance->NumCoreHits + 5) > pInstance->AllocdCoreHits)	// need to realloc memory to hold additional cores?
@@ -668,7 +668,7 @@ if((pInstance->NumCoreHits + 5) > pInstance->AllocdCoreHits)	// need to realloc 
 	int coresreq;
 	size_t memreq;
 	void *pAllocd;
-	coresreq = (int)(((INT64)pInstance->AllocdCoreHits * 125) / (INT64)100);
+	coresreq = (int)(((int64_t)pInstance->AllocdCoreHits * 125) / (int64_t)100);
 	memreq = coresreq * sizeof(tsPBSSWACoreHit);
 
 #ifdef _WIN32
@@ -724,7 +724,7 @@ CSWAlign::RemoveAddedCoreHits(tsPBSSWInstance *pInstance,		// using this instanc
 				int NumToRemove)                   // removing the last NumToRemove AddCoreHit() added
 {
 
-if(pInstance->NumCoreHits > (UINT32)NumToRemove)
+if(pInstance->NumCoreHits > (uint32_t)NumToRemove)
 	{
 	pInstance->NumCoreHits -= NumToRemove;
 	memset(&pInstance->pCoreHits[pInstance->NumCoreHits],0,sizeof(tsPBSSWACoreHit));	// ensuring that used cores are always terminated with a marker end of cores initialised to 0
@@ -738,21 +738,21 @@ return(-1);
 int
 CSWAlign::IdentifyCoreHits(tsPBSSWInstance *pInstance,		// using this instance
 				bool bRevCpl,		// true if probe sequence to be reverse complemented
-				UINT32 MinTargLen,		// minimum accepted target length
-				UINT32 MaxTargLen)		// maximum accepted target length
+				uint32_t MinTargLen,		// minimum accepted target length
+				uint32_t MaxTargLen)		// maximum accepted target length
 {
-INT64 PrevHitIdx;
-INT64 NextHitIdx;
-UINT32 HitEntryID;
-UINT32 HitLoci;
-UINT32 HitsThisCore;
-UINT32 HighHitsThisCore;
-UINT32 TotHitsAllCores;
-UINT32 ProbeOfs;
-UINT32 LastProbeOfs;
+int64_t PrevHitIdx;
+int64_t NextHitIdx;
+uint32_t HitEntryID;
+uint32_t HitLoci;
+uint32_t HitsThisCore;
+uint32_t HighHitsThisCore;
+uint32_t TotHitsAllCores;
+uint32_t ProbeOfs;
+uint32_t LastProbeOfs;
 
-UINT32 ChkOvrLapCoreProbeOfs;
-UINT32 LastCoreProbeOfs;
+uint32_t ChkOvrLapCoreProbeOfs;
+uint32_t LastCoreProbeOfs;
 int ChkOvrLapCoreStartIdx;
 
 int TooManyHits = 0;
@@ -808,65 +808,65 @@ return(pInstance->NumCoreHits);
 }
 
 int												    // 0 if probe aligns to no target sequence, otherwise the target sequence ID
-CSWAlign::AlignProbeSeq(UINT32 SWAInstance,         // alignment instance
-						UINT32 ProbeSeqLen,			// sequence to align is this length
+CSWAlign::AlignProbeSeq(uint32_t SWAInstance,         // alignment instance
+						uint32_t ProbeSeqLen,			// sequence to align is this length
 						etSeqBase *pProbeSeq,       // probe sequence to align
-						UINT32 MinTargLen,          // aligned to targets must be at least this long
-						UINT32 MaxTargLen,			// and if > 0 then target no longer than this many bp
+						uint32_t MinTargLen,          // aligned to targets must be at least this long
+						uint32_t MaxTargLen,			// and if > 0 then target no longer than this many bp
 						bool bSenseOnly,		   // true if to align probe sense only, false to align both sense and antisense	
     					tsSSWCell *pRetMatched)    // optional (if not NULL) returned match detail
 
 {
 tsPBSSWInstance *pSWAInstance;
 
-UINT32 TargLen;
-UINT32 CurTargCoreHitCnts;
+uint32_t TargLen;
+uint32_t CurTargCoreHitCnts;
 
-UINT32 ProbeAlignLength;
-UINT32 TargAlignLength;
-UINT32 TargSeqLen;
-UINT32 LongSAligns;
-UINT32 LongAAligns;
+uint32_t ProbeAlignLength;
+uint32_t TargAlignLength;
+uint32_t TargSeqLen;
+uint32_t LongSAligns;
+uint32_t LongAAligns;
 tsSSWCell *pPeakMatchesCell;
 tsSSWCell PeakMatchesCell;
 #ifdef _PEAKSCOREACCEPT
 tsSSWCell PeakScoreCell;
 #endif
 bool bTargSense;
-UINT32 Idx;
-UINT32 CurSummaryHitCnts;
-UINT32 LowestSummaryHitCnts;
+uint32_t Idx;
+uint32_t CurSummaryHitCnts;
+uint32_t LowestSummaryHitCnts;
 sPBSSWCoreHitCnts *pLowestSummaryHitCnts;
-UINT32 HitIdx;
+uint32_t HitIdx;
 
 tsPBSSWACoreHit *pCoreHit;
-UINT32 CurTargSeqID;
+uint32_t CurTargSeqID;
 
-UINT32 CurTargHitOfs;
-UINT32 CurProbeHitOfs;
-UINT32 CurSEntryIDHits;
-UINT32 CurAEntryIDHits;
-UINT32	CurSTargStartOfs;
-UINT32	CurSTargEndOfs;
-UINT32	CurATargStartOfs;
-UINT32	CurATargEndOfs;
-UINT32	CurSProbeStartOfs;
-UINT32	CurSProbeEndOfs;
-UINT32	CurAProbeStartOfs;
-UINT32	CurAProbeEndOfs;
-UINT32 ProvOverlapping;
-UINT32 ProvOverlapped;
-UINT32 ProvContained;
-UINT32 ProvArtefact;
-UINT32 ProvSWchecked;
-UINT32 MinOverlapLen;
-UINT32 AdjOverlapFloat;
+uint32_t CurTargHitOfs;
+uint32_t CurProbeHitOfs;
+uint32_t CurSEntryIDHits;
+uint32_t CurAEntryIDHits;
+uint32_t	CurSTargStartOfs;
+uint32_t	CurSTargEndOfs;
+uint32_t	CurATargStartOfs;
+uint32_t	CurATargEndOfs;
+uint32_t	CurSProbeStartOfs;
+uint32_t	CurSProbeEndOfs;
+uint32_t	CurAProbeStartOfs;
+uint32_t	CurAProbeEndOfs;
+uint32_t ProvOverlapping;
+uint32_t ProvOverlapped;
+uint32_t ProvContained;
+uint32_t ProvArtefact;
+uint32_t ProvSWchecked;
+uint32_t MinOverlapLen;
+uint32_t AdjOverlapFloat;
 
 tsPBSSWACoreHit *pFirstCoreHit;
 tsPBSSWACoreHit *pNxtCoreHit;
 tsPBSSWACoreHit *pMaxCoreHit;
-UINT32 MaxWinSize;
-UINT32 RelWinSize;
+uint32_t MaxWinSize;
+uint32_t RelWinSize;
 bool bFirstHitNewTargSeq;
 
 sPBSSWCoreHitCnts *pSummaryCnts;
@@ -961,11 +961,11 @@ if(pSWAInstance->NumCoreHits >= m_MinNumCores)
 	// process and mark these probable artifact hits by identifying the most spatially related cluster of hits; hits outside of
 	// the most spatially related cluster are marked as being artefactual 
 
-	UINT32 PrevAcceptedProbeOfs;
-	UINT32 PrevAcceptedTargOfs;
-	UINT32 MaxNoHitGapLen;
-	UINT32 NumNoHitGaps;
-	UINT32 SumNoHitGapLens;
+	uint32_t PrevAcceptedProbeOfs;
+	uint32_t PrevAcceptedTargOfs;
+	uint32_t MaxNoHitGapLen;
+	uint32_t NumNoHitGaps;
+	uint32_t SumNoHitGapLens;
 
 	MaxNoHitGapLen = 1000;                 // expecting cores to be distributed such that there shouldn't be many separated by more than this intercore bp gap
 	CurTargSeqID = 0;
@@ -1027,7 +1027,7 @@ if(pSWAInstance->NumCoreHits >= m_MinNumCores)
 
 				if(pFirstCoreHit->WinHits >= m_MinNumCores && ((PrevAcceptedProbeOfs + MaxNoHitGapLen) > ProbeSeqLen || (PrevAcceptedTargOfs + MaxNoHitGapLen) > TargSeqLen))
 					{
-					UINT32 PutativeOverlapLen = PrevAcceptedProbeOfs - pFirstCoreHit->ProbeOfs;
+					uint32_t PutativeOverlapLen = PrevAcceptedProbeOfs - pFirstCoreHit->ProbeOfs;
 					if(((SumNoHitGapLens * 100) / PutativeOverlapLen) <= 20)		// only accepting if no more than 20% of alignment sums to gaps > MaxNoHitGapLen
 						{
 						if (pMaxCoreHit == NULL || pFirstCoreHit->WinHits > pMaxCoreHit->WinHits)
@@ -1248,7 +1248,7 @@ if(pSWAInstance->NumCoreHits >= m_MinNumCores)
 				}
 			else
 				{
-				UINT32 Xchg;
+				uint32_t Xchg;
 				Xchg = pSummaryCnts->AProbeStartOfs;
 				pSummaryCnts->AProbeStartOfs = ProbeSeqLen - (pSummaryCnts->AProbeEndOfs + 1);
 				pSummaryCnts->AProbeEndOfs = ProbeSeqLen - (Xchg + 1);
@@ -1409,8 +1409,8 @@ CSWAlign::SortCoreHitsDescending(const void *arg1, const void *arg2)
 sPBSSWCoreHitCnts *pEl1 = (sPBSSWCoreHitCnts *)arg1;
 sPBSSWCoreHitCnts *pEl2 = (sPBSSWCoreHitCnts *)arg2;
 
-UINT32 El1NumHits;
-UINT32 El2NumHits;
+uint32_t El1NumHits;
+uint32_t El2NumHits;
 El1NumHits = max(pEl1->NumSHits,pEl1->NumAHits);
 El2NumHits = max(pEl2->NumSHits,pEl2->NumAHits);
 if(El1NumHits > El2NumHits)

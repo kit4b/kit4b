@@ -222,7 +222,7 @@ CContaminants::LoadContaminantsFile(char *pszContaminantFile)		// load contamina
 {
 int Rslt;
 CFasta Fasta;
-UINT8 *pSeqBase;
+uint8_t *pSeqBase;
 int SeqIdx;
 char szName[cMaxGeneNameLen + 50];				// additional is to allow for user name concatened contaminant codes
 int Idx;
@@ -244,7 +244,7 @@ bool b3PE1RC;			// (7) true if Contaminant after RevCpl is valid for overlaps on
 bool b3PE2RC;			// (8) true if Contaminant after RevCpl is valid for overlaps onto 3' PE2 sequences
 bool bIsVector;			
 
-if((m_pSeqBuff = new UINT8 [cMaxVectorSeqLen+1]) == NULL)
+if((m_pSeqBuff = new uint8_t [cMaxVectorSeqLen+1]) == NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "LoadContaminantsFile: Unable to allocate %d bytes memory",cMaxVectorSeqLen);
 	Reset();
@@ -544,7 +544,7 @@ CContaminants::AddVectContam(bool bPE1Sense,// check for PE1 contained sense
 etSeqBase ContamBase;
 etSeqBase  *pContamBase;
 tsVectContam *pVect;
-INT32 *pSfxIdx;
+int32_t *pSfxIdx;
 int VectIdx;
 int Idx;
 
@@ -619,7 +619,7 @@ pVect->FlgPE2Sense = bPE2Sense;
 pVect->FlgPE2Antisense = bPE2Antisense;
 pVect->HitTot = 0;
 pVect->ContamLen = ContamLen;
-if((pVect->pBases = new UINT8 [ContamLen+1])==NULL)
+if((pVect->pBases = new uint8_t [ContamLen+1])==NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddVectContam: unable to allocate for vector sequence memory %d", ContamLen+1);
 	Reset();
@@ -639,7 +639,7 @@ for(VectIdx=0;VectIdx <= ContamLen; VectIdx++)
 	*pSfxIdx++ = VectIdx;
 m_pCurVector2Index = pVect;
 m_mtqsort.SetMaxThreads(8);
-m_mtqsort.qsort(pVect->pSfxIdx,ContamLen,sizeof(UINT32),IndexVectorSeq);
+m_mtqsort.qsort(pVect->pSfxIdx,ContamLen,sizeof(uint32_t),IndexVectorSeq);
 
 return(pVect->ContamID);
 }
@@ -818,8 +818,8 @@ return(pFlankContam->ContamID);
 
 int 
 CContaminants::IndexContamSeq(teContamType Type,	// contaminant sequence is of this overlay type
-					 UINT16 ContamID,		// identifies contaminant sequence
-					 UINT8 SeqLen,			// contaminant sequence is of this length
+					 uint16_t ContamID,		// identifies contaminant sequence
+					 uint8_t SeqLen,			// contaminant sequence is of this length
 					 etSeqBase *pSeq)		// contaminant sequence
 {
 size_t AllocMem;
@@ -1380,7 +1380,7 @@ if(m_NumVectContaminates == 0)
 return(m_MinFlankContamSeqLen <= m_MaxVectContamSeqLen ? m_MinFlankContamSeqLen : m_MaxVectContamSeqLen);
 }
 
-UINT32 
+uint32_t 
 CContaminants::NumChecks(teContamType Type)				// returns number of times this contaminant type was checked for an overlap onto a target sequence
 {
 if(m_TotNumContaminants == 0 || Type < eAOF5PE1Targ || Type > eAOFVector)
@@ -1624,7 +1624,7 @@ if(m_CacheContamID == ContamID)
 			{
 			if(LenCnts > m_pContaminants[m_CacheContamIDIdx].ContamLen)
 				 LenCnts = m_pContaminants[m_CacheContamIDIdx].ContamLen;
-			memcpy(pCnts,&m_pContaminants[m_CacheContamIDIdx].HitDist[1],LenCnts * sizeof(UINT32));
+			memcpy(pCnts,&m_pContaminants[m_CacheContamIDIdx].HitDist[1],LenCnts * sizeof(uint32_t));
 			}
 		return(m_pContaminants[m_CacheContamIDIdx].HitTot);
 		}
@@ -1644,7 +1644,7 @@ if(m_NumFlankContaminates)
 				{
 				if(LenCnts > pFlankContam->ContamLen)
 					 LenCnts = pFlankContam->ContamLen;
-				memcpy(pCnts,&pFlankContam->HitDist[1],LenCnts * sizeof(UINT32));
+				memcpy(pCnts,&pFlankContam->HitDist[1],LenCnts * sizeof(uint32_t));
 				}
 			m_CacheContamID = pFlankContam->ContamID;
 			m_CacheContamIDClass = eCCFlankContam;
@@ -1679,8 +1679,8 @@ CContaminants::LocateFirstExact(etSeqBase *pProbe,  // pts to probe sequence
 {
 etSeqBase *pEl1;
 etSeqBase *pEl2;
-UINT8 El1;
-UINT8 El2;
+uint8_t El1;
+uint8_t El2;
 
 int CmpRslt;
 int Ofs;
@@ -1688,7 +1688,7 @@ int Mark;
 int TargPsn;
 do {
 	pEl1 = pProbe;
-	TargPsn = (int)(((INT64)SfxLo + SfxHi) / 2L);
+	TargPsn = (int)(((int64_t)SfxLo + SfxHi) / 2L);
 	pEl2 = &pTarg[pSfxArray[TargPsn]];
 	CmpRslt = 0;
 	for(Ofs=0; Ofs < ProbeLen; Ofs++)
@@ -1725,7 +1725,7 @@ do {
 					return(1);
 				SfxHi = TargPsn - 1;
 				}
-			TargPsn = (int)(((INT64)SfxLo + SfxHi) / 2L);
+			TargPsn = (int)(((int64_t)SfxLo + SfxHi) / 2L);
 			pEl2 = &pTarg[pSfxArray[TargPsn]];
 
 			pEl1 = pProbe;
@@ -1783,8 +1783,8 @@ CContaminants::LocateLastExact(etSeqBase *pProbe, // pts to probe sequence
 {
 etSeqBase *pEl1;
 etSeqBase *pEl2;
-UINT8 El1;
-UINT8 El2;
+uint8_t El1;
+uint8_t El2;
 
 int CmpRslt;
 int Ofs;
@@ -1794,7 +1794,7 @@ int SfxHiMax = SfxHi;
 int SfxLoMax = SfxLo;
 do {
 	pEl1 = pProbe;
-	TargPsn = (int)(((INT64)SfxLo + SfxHi) / 2L);
+	TargPsn = (int)(((int64_t)SfxLo + SfxHi) / 2L);
 	pEl2 = &pTarg[pSfxArray[TargPsn]];
 	CmpRslt = 0;
 	for(Ofs=0; Ofs < ProbeLen; Ofs++)
@@ -1831,7 +1831,7 @@ do {
 					return(Mark+1);
 				SfxLo = TargPsn + 1;
 				}
-			TargPsn = (int)(((INT64)SfxLo + SfxHi) / 2L);
+			TargPsn = (int)(((int64_t)SfxLo + SfxHi) / 2L);
 			pEl2 = &pTarg[pSfxArray[TargPsn]];
 
 			pEl1 = pProbe;
@@ -1935,14 +1935,14 @@ tsVectContam *CContaminants::m_pCurVector2Index; // current vector sequence to i
 int
 CContaminants::IndexVectorSeq(const void *arg1, const void *arg2)
 {
-UINT8 *pSeq1;
-UINT8 *pSeq2;
+uint8_t *pSeq1;
+uint8_t *pSeq2;
 etSeqBase b1;
 etSeqBase b2;
 if(m_pCurVector2Index == NULL)
 	return(0);
-pSeq1 = &m_pCurVector2Index->pBases[*(INT32 *)arg1];
-pSeq2 = &m_pCurVector2Index->pBases[*(INT32 *)arg2];
+pSeq1 = &m_pCurVector2Index->pBases[*(int32_t *)arg1];
+pSeq2 = &m_pCurVector2Index->pBases[*(int32_t *)arg2];
 
 while(1)
 	{

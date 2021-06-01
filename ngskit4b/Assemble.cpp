@@ -415,15 +415,15 @@ if (!argerrors)
 	if(!bNoAutoOvlp)
 		{
 		CFasta Fasta;
-		UINT32 PE1EstNumSeqs;
-		INT32 PE1EstMaxSeqLen;
-		INT32 PE1EstMeanSeqLen;
-		UINT32 PE2EstNumSeqs;
-		INT32 PE2EstMaxSeqLen;
-		INT32 PE2EstMeanSeqLen;
-		UINT32 SEEstNumSeqs;
-		INT32 SEEstMaxSeqLen;
-		INT32 SEEstMeanSeqLen;
+		uint32_t PE1EstNumSeqs;
+		int32_t PE1EstMaxSeqLen;
+		int32_t PE1EstMeanSeqLen;
+		uint32_t PE2EstNumSeqs;
+		int32_t PE2EstMaxSeqLen;
+		int32_t PE2EstMeanSeqLen;
+		uint32_t SEEstNumSeqs;
+		int32_t SEEstMaxSeqLen;
+		int32_t SEEstMeanSeqLen;
 
 		PE1EstNumSeqs = 0;
 		PE1EstMaxSeqLen = 0;
@@ -906,8 +906,8 @@ deNovoAssemble(etdeNovoPMode PMode,			// processing mode, currently either eAMEA
 {
 int Rslt;
 int SeqWrdBytes;
-INT64 CumulativeMemory;
-UINT32 CumulativeSequences;
+int64_t CumulativeMemory;
+uint32_t CumulativeSequences;
 
 CdeNovoAssemb *pAssemble;
 pAssemble = new CdeNovoAssemb();

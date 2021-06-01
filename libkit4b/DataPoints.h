@@ -24,42 +24,42 @@ typedef enum TAG_etDataPtType {
 } etDataPtType;
 
 typedef struct TAG_sFDSChromDataset {
-	INT32 NumDatasegs;				// number of datasegs in this dataset on this chromosome
-	INT32 ChromOfs;					// lowest offset of any dataseg in this dataset on this chromosome
-	INT32 NumPts;					// total number of datapoints covered by all datasegs including between datasegs
+	int32_t NumDatasegs;				// number of datasegs in this dataset on this chromosome
+	int32_t ChromOfs;					// lowest offset of any dataseg in this dataset on this chromosome
+	int32_t NumPts;					// total number of datapoints covered by all datasegs including between datasegs
 } sFDSChromDataset;
 
 typedef struct TAG_sFDSRelChrom {
-		INT32 ChromLen;				// chromosome length (1..n) or 0 if length unknown
-		INT32 ChromID;				// globally unique (1..n) chromosome identifier
-		INT16 DatasetID;			// to which dataset this chromosome belongs
-		UINT16 Hash;				// hash used to quickly eliminate chromosome names that can't match in searches
-	    INT32 NxtChromID;			// identifier of next chromosome having same hashed name or 0 if none
+		int32_t ChromLen;				// chromosome length (1..n) or 0 if length unknown
+		int32_t ChromID;				// globally unique (1..n) chromosome identifier
+		int16_t DatasetID;			// to which dataset this chromosome belongs
+		uint16_t Hash;				// hash used to quickly eliminate chromosome names that can't match in searches
+	    int32_t NxtChromID;			// identifier of next chromosome having same hashed name or 0 if none
 		char szName[cMaxDatasetSpeciesChrom]; // chromosome name
 } tsFDSRelChrom;
 
 typedef struct TAG_sFDSRefChrom {
-		INT32 NumDatasets;			// number of datasets (ref + rel) on this chromosome	
-		INT32 NumDatasegs;			// number of datasegs in all datasets on this chromosome
-		INT32 ChromOfs;				// lowest offset of any dataseg in any dataset on this chromosome
-		INT32 NumPts;				// total number of datapoints covered by all datasegs including between datasegs
-		INT32 ChromID;				// matches chromosome identifier in tsFDSRelChrom
+		int32_t NumDatasets;			// number of datasets (ref + rel) on this chromosome	
+		int32_t NumDatasegs;			// number of datasegs in all datasets on this chromosome
+		int32_t ChromOfs;				// lowest offset of any dataseg in any dataset on this chromosome
+		int32_t NumPts;				// total number of datapoints covered by all datasegs including between datasegs
+		int32_t ChromID;				// matches chromosome identifier in tsFDSRelChrom
 		sFDSChromDataset Datasets[cDSFMaxDatasets]; // all dataset start/ends on this chromosome
 } tsFDSRefChrom;
 
 typedef struct TAG_sFDSDataset {
-		INT32 NumSegs;						// total number of segments in this dataset
-		INT32 NumChroms;					// total number of chromosomes in this dataset
-		INT16 DatasetID;					// globally unique (1..n) dataset identifier
-		UINT16 Hash;						// hash used to quickly eliminate names that can't match in searches
+		int32_t NumSegs;						// total number of segments in this dataset
+		int32_t NumChroms;					// total number of chromosomes in this dataset
+		int16_t DatasetID;					// globally unique (1..n) dataset identifier
+		uint16_t Hash;						// hash used to quickly eliminate names that can't match in searches
 	    char szName[cMaxDatasetSpeciesChrom];	// dataset name
 } tsFDSDataset;
 
 typedef struct TAG_sDSFileHdr {
-	unsigned char Magic[4];				// magic chars to identify this file as a biosequence file
+	uint8_t Magic[4];				// magic chars to identify this file as a biosequence file
 	unsigned int Type;					// biosequence file type 
 	unsigned int Version;				// header version, incremented if structure changes with later releases
-	UINT64 FileLen;					    // current file length
+	uint64_t FileLen;					    // current file length
 	unsigned int SizeOfHdr;				// total size of this header - alignment blocks (sAlignBlocks) immediately follow
 	int MaxChroms;						// max number of chromosomes supported
 	int MaxDatasets;					// max number of datasets supported
@@ -73,7 +73,7 @@ typedef struct TAG_sDSFileHdr {
 	int NumRefChroms;					// number of reference chromosomes in RefChroms
 	etDataPtType DataPtType;			// data point type for all datapoints in this file
 	int DataPtSize;						// number of bytes per DataPtType - note that eDPTPackedBases == 1 
-	INT64 DirElOfs;					// file offset to dataseg directory
+	int64_t DirElOfs;					// file offset to dataseg directory
 	tsFDSDataset Datasets[cDSFMaxDatasets];	 // directory of all datasets - reference + relative
 	tsFDSRelChrom Chroms[cDSFMaxTotalChroms];// directory of all chromosomes
 	tsFDSRefChrom RefChroms[cDSFMaxChromsDataset];	 // directory of all reference chromosome datasets
@@ -84,15 +84,15 @@ typedef struct TAG_sDSFileHdr {
 }tsDSFileHdr;
 
 typedef struct TAG_sDSFDirEl {
-	UINT32	LoFileOfs;				// low 32bits of where on disk the associated data points are
-	UINT8	HiFileOfs;				// high 8 bits of where on disk the associated data points are
-	INT32 RefChromOfs;				// (sort order 3) starting offset on reference dataset chromosome
-	INT32 NumPts;					// (sort order 4) number of data point values
-	INT8  RelDatasetID;				// (sort order 1) relative dataset identifer
-	INT8  RefChromID;				// (sort order 2) maps to this reference dataset chromosome
-	INT32 RelChromOfs;				// starting offset on relative dataset chromosome
-	UINT32 RelChromID:30;			// is from this relative dataset chromosome
-	UINT32 RelStrand:1;				// relative strand '+' (0) or '-' (1)
+	uint32_t	LoFileOfs;				// low 32bits of where on disk the associated data points are
+	uint8_t	HiFileOfs;				// high 8 bits of where on disk the associated data points are
+	int32_t RefChromOfs;				// (sort order 3) starting offset on reference dataset chromosome
+	int32_t NumPts;					// (sort order 4) number of data point values
+	int8_t  RelDatasetID;				// (sort order 1) relative dataset identifer
+	int8_t  RefChromID;				// (sort order 2) maps to this reference dataset chromosome
+	int32_t RelChromOfs;				// starting offset on relative dataset chromosome
+	uint32_t RelChromID:30;			// is from this relative dataset chromosome
+	uint32_t RelStrand:1;				// relative strand '+' (0) or '-' (1)
 } sDSFDirEl;
 
 typedef struct TAG_sDSFCtx {
@@ -103,7 +103,7 @@ typedef struct TAG_sDSFCtx {
 	int m_LoadedDataNumPts;
 	union {							// union to contain current default loaded data marker value
 		  etSeqBase Base;
-		  unsigned char Byte;
+		  uint8_t Byte;
 		  unsigned short Word;
 		  unsigned int DWord;
 		  double Double;
@@ -120,7 +120,7 @@ class CDataPoints : public CConformation
 	tsDSFileHdr m_FileHdr;			// file header
 	sDSFDirEl *m_pDirEls;			// array of data segment directory elements
 
-	INT32 m_ChromHashes[0x0ffff];	// hashed indexes into chromosomes
+	int32_t m_ChromHashes[0x0ffff];	// hashed indexes into chromosomes
 
 	int m_AllocdCacheSize;
 	void *m_pCachedDataset;			// used when returning structure conformation datapoints
@@ -130,7 +130,7 @@ class CDataPoints : public CConformation
 	int m_LoadedDataNumPts;
 	union {							// union to contain current default loaded data marker value
 		  etSeqBase Base;
-		  unsigned char Byte;
+		  uint8_t Byte;
 		  unsigned short Word;
 		  unsigned int DWord;
 		  double Double;
@@ -148,12 +148,12 @@ protected:
 	int UnpackBases(unsigned int SeqLen,	// unpacked sequence length 
 		  etSeqBase *pUnpacked,				// pts to sequence to unpack into
 		  unsigned int NibbleOfs,			// nibble to start unpack from (0..1)
-		  unsigned char *pPacked);			// where to unpack from
+		  uint8_t *pPacked);			// where to unpack from
 
 	int PackBases(unsigned int SeqLen,	// unpacked sequence length 
 		  etSeqBase *pUnpacked,				// pts to sequence to pack from
 		  unsigned int NibbleOfs,			// nibble to start pack into (0..SeqLen-1)
-		  unsigned char *pPacked);			// where to pack
+		  uint8_t *pPacked);			// where to pack
 
 	tsFDSRelChrom *GetRelChrom(int RelChromID);
 	tsFDSRefChrom *GetRefChrom(int RefChromID);
@@ -238,14 +238,14 @@ public:
 					  int RefChromID,		// reference chromosome identifier
 					  int RefChromOfs,		// start on reference chromosome (0..n) 
 					  int NumPts,			// number of points to return
-					  unsigned char *pToRet,	// where to return etSeqBases
+					  uint8_t *pToRet,	// where to return etSeqBases
 					  etSeqBase MissingMarker = eBaseUndef);	// value to use if missing datapoints
 	
 	int GetShuffledValuesBase(int RelDatasetID,// relative dataset identifier
 					  int RefChromID,		// reference chromosome identifier
 					  int RefChromOfs,		// start on reference chromosome (0..n) 
 					  int NumPts,			// number of points to return
-					  unsigned char *pToRet,	// where to return etSeqBases
+					  uint8_t *pToRet,	// where to return etSeqBases
 					  etSeqBase MissingMarker = eBaseUndef);	// value to use if missing datapoints
 
 	void ShuffleDinucs(etSeqBase *pSeq,int SeqLen);

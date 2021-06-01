@@ -55,7 +55,7 @@ typedef struct {
 	int errcode:16, is_write:2, compress_level:14;
 	int cache_size;
     int block_length, block_offset;
-    INT64 block_address;
+    int64_t block_address;
     void *uncompressed_block, *compressed_block;
 	void *cache; // a pointer to a hash table
 	void *fp; // actual file handler; FILE* on writing; FILE* or knetFile* on reading
@@ -144,7 +144,7 @@ extern "C" {
 	 * @param whence must be SEEK_SET
 	 * @return       0 on success and -1 on error
 	 */
-	INT64 bgzf_seek(BGZF *fp, INT64 pos, int whence);
+	int64_t bgzf_seek(BGZF *fp, int64_t pos, int whence);
 
 	/**
 	 * Check if the BGZF end-of-file (EOF) marker is present

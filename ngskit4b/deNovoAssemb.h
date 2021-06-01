@@ -35,7 +35,7 @@ typedef enum TAG_edeNovoPMode {
 #pragma pack(1)
 
 typedef struct TAG_sSeqBlock {
-	UINT32 NumSeqIDs;			    // number of sequence identifiers in this block
+	uint32_t NumSeqIDs;			    // number of sequence identifiers in this block
 	tSeqID StartID;					// starting sequence identifier in this block
 	tSeqID NxtID;					// next sequence identifier to be processed from this block
 	tSeqID EndID;					// ending sequence identifier in this block
@@ -84,38 +84,38 @@ typedef struct TAG_sThreadOverlapExtendPars {
 	bool bPESeqs;					// sequences include paired end reads (could also include SE/contigs); if reset then only SE/contig sequences
 	
 	tSeqID PE1ProbeSeqID;			// probe sequence identifier for PE1
-	UINT16 PE1ProbeSeqFlags;		// probe sequence flags for PE1
+	uint16_t PE1ProbeSeqFlags;		// probe sequence flags for PE1
 	int PE1ProbeSeqLen;				// initial probe sequence PE1 length
-	UINT32 AllocPE1Seq;				// memory allocated to pPE1Seq
-	UINT32 MaxPE1SeqWrds;			// pPE1Seq allocated to hold at most this many tSeqWrds
+	uint32_t AllocPE1Seq;				// memory allocated to pPE1Seq
+	uint32_t MaxPE1SeqWrds;			// pPE1Seq allocated to hold at most this many tSeqWrds
 	void *pPE1Seq;					// to hold an extended packed PE1 sequence
 	 
 	tSeqID PE2ProbeSeqID;			// probe sequence identifier for PE2
-	UINT16 PE2ProbeSeqFlags;		// probe sequence flags for PE2
+	uint16_t PE2ProbeSeqFlags;		// probe sequence flags for PE2
 	int PE2ProbeSeqLen;				// initial probe sequence PE2 length
-	UINT32 AllocPE2Seq;				// memory allocated to pPE2Seq
-	UINT32 MaxPE2SeqWrds;			// pPE2Seq is allocated to hold at most this many tSeqWrds
+	uint32_t AllocPE2Seq;				// memory allocated to pPE2Seq
+	uint32_t MaxPE2SeqWrds;			// pPE2Seq is allocated to hold at most this many tSeqWrds
 	void *pPE2Seq;					// to hold an extended packed PE2 sequence
 
 	bool bPESeqsRevCpl;				// true if PE1 and PE2 sequences are currently revcpl'd
 	
-	UINT32 AllocOverlapSeq;			// memory allocated to pOverlapSeq
-	UINT32 MaxOverlapSeqWrds;		// pOverlapSeq allocated to hold at most this many tSeqWrds
+	uint32_t AllocOverlapSeq;			// memory allocated to pOverlapSeq
+	uint32_t MaxOverlapSeqWrds;		// pOverlapSeq allocated to hold at most this many tSeqWrds
 	void *pOverlapSeq;				// to hold sequence to be overlapped
 	
-	UINT32 AllocTmpPE1Seq;			// memory allocated to pTmpPE1Seq
-	UINT32 MaxTmpPE1SeqWrds;		// pTmpPE1Seq allocated to hold at most this many tSeqWrds
+	uint32_t AllocTmpPE1Seq;			// memory allocated to pTmpPE1Seq
+	uint32_t MaxTmpPE1SeqWrds;		// pTmpPE1Seq allocated to hold at most this many tSeqWrds
 	void *pTmpPE1Seq;				// used for temp holding sequences whilst processing
 
-	UINT32 AllocTmpPE2Seq;			// memory allocated to pTmpPE2Seq
-	UINT32 MaxTmpPE2SeqWrds;		// pTmpPE2Seq allocated to hold at most this many tSeqWrds
+	uint32_t AllocTmpPE2Seq;			// memory allocated to pTmpPE2Seq
+	uint32_t MaxTmpPE2SeqWrds;		// pTmpPE2Seq allocated to hold at most this many tSeqWrds
 	void *pTmpPE2Seq;				// used for temp holding sequences whilst processing
 
-	UINT32 NumProcessed;			// number processed
-	UINT64 NumAlreadyClaimed;		// number of overlaps which failed because already claimed by some other thread
-	UINT64 NumOverlapped;			// number of sequences determined as being overlapped
-	UINT32 NumPE1Overlapping;		// number of PE1 sequences which overlapped other sequences
-	UINT32 NumPE2Overlapping;		// number of PE2 sequences which overlapped other sequences
+	uint32_t NumProcessed;			// number processed
+	uint64_t NumAlreadyClaimed;		// number of overlaps which failed because already claimed by some other thread
+	uint64_t NumOverlapped;			// number of sequences determined as being overlapped
+	uint32_t NumPE1Overlapping;		// number of PE1 sequences which overlapped other sequences
+	uint32_t NumPE2Overlapping;		// number of PE2 sequences which overlapped other sequences
 } tsThreadOverlapExtendPars;
 
 #pragma pack()
@@ -130,8 +130,8 @@ class CdeNovoAssemb : public CKit4bdna
 	bool m_bTermPass;					// true if current overlap processing pass is to be early terminated 
 	double m_EarlyOverlapTermThres;		// terminate current overlap processing pass if overlap rate drops below this threshold for 3 minutes
 
-	UINT32 m_NxtSeqs2BlockAlloc;		// allocate next thread sequence block starting with this sequence
-	UINT32 m_SeqsPerThreadBlk;			// nominal number of sequences per thread processing block
+	uint32_t m_NxtSeqs2BlockAlloc;		// allocate next thread sequence block starting with this sequence
+	uint32_t m_SeqsPerThreadBlk;			// nominal number of sequences per thread processing block
 	tsSeqBlock m_ThreadSeqBlocks[cMaxWorkerThreads];	// blocks of sequence identifiers to be processed by each thread
 
 	size_t m_AllocdThreadSeqsSize;		// m_pAllocdThreadSeqs was allocated to hold this many bytes
@@ -146,9 +146,9 @@ class CdeNovoAssemb : public CKit4bdna
 	
 	int				// 0 if all returned, 1 if PE1 only, 2 if both PE1 and PE2
 			GetSeqProc(tSeqID *pPE1SeqID,	// returned SE or PE1 sequence identifier
-					  UINT32 *pPE1SeqFlags, // SE or PE1 flags
+					  uint32_t *pPE1SeqFlags, // SE or PE1 flags
 					  tSeqID *pPE2SeqID,	// if PE then PE2 sequence identifier
-					  UINT32 *pPE2SeqFlags, // if PE then PE2 flags
+					  uint32_t *pPE2SeqFlags, // if PE then PE2 flags
 					  int ThreadIdx);		// uniquely identifies calling thread, 1..NumThreads
 
 		int					// if > 0 then length of merged sequence returned in pRetMerged

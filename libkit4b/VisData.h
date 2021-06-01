@@ -14,8 +14,8 @@ const int cMaxVizChromNameLen = 25;			// max length of any chromosome name
 
 // Datasets may be sparse and hence are represented as segments - a dataset contains at least one segment
 typedef struct TAG_sDataseg {
-	INT64 Nxt;							// file offset of next related tsDataseg 
-	INT64 Prv;							// file offset of previous related tsDataseg
+	int64_t Nxt;							// file offset of next related tsDataseg 
+	int64_t Prv;							// file offset of previous related tsDataseg
 	unsigned int Size;						// total size of this instance
 	unsigned __int16 DatasetID;				// which dataset
 	unsigned __int16 ChromID;				// chromosome
@@ -28,8 +28,8 @@ typedef struct TAG_sDataseg {
 typedef struct TAG_sDataset {
 	unsigned int DatasetID;					// identifies the dataset
 	unsigned int NumSegs;					// total number of segments
-	INT64	 FirstSeg;						// file offset of first dataseg in this dataset
-	INT64  LastSeg;						// file offset of last dataseg in this dataset
+	int64_t	 FirstSeg;						// file offset of first dataseg in this dataset
+	int64_t  LastSeg;						// file offset of last dataseg in this dataset
 	unsigned int FirstChromOfs;				// first chromosome offset at which any segment starts
 	unsigned int LastChromOfs;				// last chromosome offset at which any segment starts
 } tsDataset;
@@ -51,10 +51,10 @@ typedef struct TAG_sVisDataset {
 } tsVisDatasetName;
 
 typedef struct TAG_sVisHdr {
-	unsigned char Magic[4];				// magic chars to identify this file as a biosequence file
+	uint8_t Magic[4];				// magic chars to identify this file as a biosequence file
 	unsigned __int32 Type;				// biosequence file type 
 	unsigned __int32 Version;			// header version, incremented if structure changes with later releases
-	UINT64 FileLen;						// current file length
+	uint64_t FileLen;						// current file length
 	unsigned __int32 SizeOfHdr;			// total size of this header - alignment blocks (sAlignBlocks) immediately follow
 	teDataType DataType;				// datatype of values
 	unsigned __int16 MaxChroms;			// max number of chromosomes supported
@@ -105,7 +105,7 @@ public:
 	unsigned __int16 GetDatasetID(TCHAR *pszDataset);
 	unsigned __int16 GetChromID(TCHAR *pszChromName);
 
-	bool LoadDataseg(INT64 FilePsn,tsDataseg *pSeg,bool bNoDataPts = false);
+	bool LoadDataseg(int64_t FilePsn,tsDataseg *pSeg,bool bNoDataPts = false);
 
 	bool AddDataseg(TCHAR *pszDataset,			// dataset name
 					 TCHAR *pszChromName,

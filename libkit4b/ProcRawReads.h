@@ -34,20 +34,20 @@ typedef enum TAG_eFQMethod {
 class CProcRawReads  : public CErrorCodes
 {
 
-	UINT32 m_NumDescrReads;					// number of tsDescrRead's
+	uint32_t m_NumDescrReads;					// number of tsDescrRead's
 	size_t m_DataBuffAllocMem;				// total memory allocated 
 	size_t m_DataBuffOfs;					// offset at which to next write
-	UINT8 *m_pDataBuff;							// NOTE - memory for holding reads is allocated and reallocated using C's alloc() and realloc() not c++'s new()!!!!!
+	uint8_t *m_pDataBuff;							// NOTE - memory for holding reads is allocated and reallocated using C's alloc() and realloc() not c++'s new()!!!!!
 												// reason for this is that it reduces memory requirements when resizing this buffer
 
 	tsBSFRdsHdr m_FileHdr;						// processed reads file header
 
-	UINT32 *m_pDimerCnts;						// counts of all dimers
-	UINT32 *m_pTrimerCnts;						// counts of all trimers
-	UINT32 *m_pTetramerCnts;					// counts of all tetramers
-	UINT32 *m_pDistQualScores;					// quality score distributions
-	UINT8 *m_pWrtBuff;							// used to buffer output writes to file
-	UINT8 *m_pRdsBuff;							// used to buffer reads
+	uint32_t *m_pDimerCnts;						// counts of all dimers
+	uint32_t *m_pTrimerCnts;						// counts of all trimers
+	uint32_t *m_pTetramerCnts;					// counts of all tetramers
+	uint32_t *m_pDistQualScores;					// quality score distributions
+	uint8_t *m_pWrtBuff;							// used to buffer output writes to file
+	uint8_t *m_pRdsBuff;							// used to buffer reads
 
 	size_t m_ReadsIdxBuffAllocMem;				// size of memory allocated for holding the reads index
 	tsRawReadV6 **m_ppReadsIdx;					// reads index
@@ -65,12 +65,12 @@ class CProcRawReads  : public CErrorCodes
 
 	int
 		AddEntry(bool bIsPairRead,		// true if this is the paired read
-				 UINT32 PairReadID,		// identifies partner of this read if paired read processing
-				 UINT8 FileID,			// identifies file from which this read was parsed
+				 uint32_t PairReadID,		// identifies partner of this read if paired read processing
+				 uint8_t FileID,			// identifies file from which this read was parsed
 				 int DescrLen,			// length of following descriptor
 				 char *pszReadDescr,	// copy of descriptor upto first space char, used to pair reads with matching descriptors
 				 int ReadLen,			// length of following read
-				 UINT8 *pszReadBuff);	// packed read + phred score
+				 uint8_t *pszReadBuff);	// packed read + phred score
 
 	int CompareRead(tsRawReadV6 *pRead1,tsRawReadV6 *pRead2);
 
@@ -90,7 +90,7 @@ public:
 
 	teBSFrsltCodes
 	LoadAndProcessReads(etPRRMode PMode,		// processing mode
-		UINT32 NumReadsLimit,				// limit processing to this many reads
+		uint32_t NumReadsLimit,				// limit processing to this many reads
 		bool bKeepDups,						// true if duplicate reads not to be filtered out
 		etFQMethod Quality,					// fastq quality value method
 		int Trim5,							// trim this many bases off leading sequence 5' end
@@ -102,7 +102,7 @@ public:
 
 	teBSFrsltCodes
 		LoadAndProcessReadsDE(etPRRMode PMode,						// processing mode
-		UINT32 NumReadsLimit,				// limit processing to this many reads
+		uint32_t NumReadsLimit,				// limit processing to this many reads
 		int Trim5,							// trim this many bases off leading sequence 5' end
 		int Trim3,							// trim this many bases off trailing sequence 3' end
 		int	MinSampleCnts,					// minimum sample counts
@@ -134,8 +134,8 @@ public:
 
 
 	teBSFrsltCodes LoadReads(bool bIsPairRead,	// true if this file to process contains the paired reads
-						UINT32 PairReadID,	// if non-zero then start paired reads identifiers from this value and increment after each read processed
-						 UINT32 NumReadsLimit,				// limit to at most this number of reads, 0 if no limit
+						uint32_t PairReadID,	// if non-zero then start paired reads identifiers from this value and increment after each read processed
+						 uint32_t NumReadsLimit,				// limit to at most this number of reads, 0 if no limit
 						 etFQMethod Quality,				// fastq quality value method
 				 		 int Trim5,							// trim this many bases off leading sequence 5' end
 						 int Trim3,							// trim this many bases off trailing sequence 3' end

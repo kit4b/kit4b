@@ -39,26 +39,26 @@ typedef enum TAG_eAGPcompOrient {
 } teAGPcompOrient;
 
 typedef struct TAG_sAGPgap {
-		UINT32 GapLen;		// gap length 
+		uint32_t GapLen;		// gap length 
 		teAGPgapType GapType;		// gap type
 		bool bLinkage;		// true if there is evidence of linkage between the adjacent lines
 		char szEvidence[cMaxLinkageEvidence];	// evidence of linkage
 } tsAGPgap;
 
 typedef struct TAG_sAGPcomp {
-	UINT32 Start;		// start offset in component
-	UINT32 End;			// end offset in component
+	uint32_t Start;		// start offset in component
+	uint32_t End;			// end offset in component
 	teAGPcompOrient Orientation;	// component orientation relative to object
 	char szCompID[cMaxOjCompLen];			// component identifier
 } tsAGPcomp;
 
 
 typedef struct TAG_sAGPentry {
-	UINT32 EntryID;			// uniquely identifies this entry (1..m_NumAGPentries)
+	uint32_t EntryID;			// uniquely identifies this entry (1..m_NumAGPentries)
 	char szObjIdent[cMaxOjCompLen];	// identifer of object being assembled
-	UINT32 Start;			// object start loci (1 based)
-	UINT32 End;				// object end loci
-	UINT32 PartNum;			// identifies this entry line for object (1..n)
+	uint32_t Start;			// object start loci (1 based)
+	uint32_t End;				// object end loci
+	uint32_t PartNum;			// identifies this entry line for object (1..n)
 	teAGPseqStatus Type;		// component type - A,D,F,G,N,O,P,U,W
 	union {
 		tsAGPgap Gap;		// if Type is N or U
@@ -69,8 +69,8 @@ typedef struct TAG_sAGPentry {
 
 class CAGPs
 {
-	UINT32 m_NumAGPentries;		// current number of AGP entries ptd at by m_pAGPentries
-	UINT32 m_AllocAGPentries;		// number of AGP entries allocated
+	uint32_t m_NumAGPentries;		// current number of AGP entries ptd at by m_pAGPentries
+	uint32_t m_AllocAGPentries;		// number of AGP entries allocated
 	size_t m_AllocdAGPMem;		// size of memory allocated to hold AGP entries
 	tsAGPentry *m_pAGPentries;  // used to hold parsed AGP entries
 
@@ -83,7 +83,7 @@ public:
 	~CAGPs(void);
 	void Reset(void);
 	int LoadAGPs(char *pszAGPFile);		 // load AGPs from specified file
-	tsAGPentry *Entry(UINT32 EntryID);	 // returns specified entry
+	tsAGPentry *Entry(uint32_t EntryID);	 // returns specified entry
 	tsAGPentry *LocateCompID(char *pszCompID); // returns entry with specified component identifier
 	tsAGPentry *Next(tsAGPentry *pPrev); // returns next entry (NULL if none) after pPrev. If pPrev == NULL then returns first
 

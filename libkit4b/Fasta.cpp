@@ -87,7 +87,7 @@ m_CurFastQParseLine = 0;
 m_NumMissingSequences = 0;
 }
 
-UINT64
+uint64_t
 CFasta::InitialFileSize(void)				// file size when initially opened for reading
 {
 return(m_StatFileSize);
@@ -118,7 +118,7 @@ if(!_stat64(pszFile,&st))
 struct stat64 st;
 if(!stat64(pszFile,&st))
 #endif
-	m_StatFileSize = (INT64)st.st_size;
+	m_StatFileSize = (int64_t)st.st_size;
 else
 	m_StatFileSize = 0;
 
@@ -199,13 +199,13 @@ else			// write
 	m_StatFileSize = 0;
 	}
 
-if((UINT64)BufferSize > (m_StatFileSize+100))			// a little additional never hurts!
-	BufferSize = (UINT32)(m_StatFileSize + 100);
+if((uint64_t)BufferSize > (m_StatFileSize+100))			// a little additional never hurts!
+	BufferSize = (uint32_t)(m_StatFileSize + 100);
 
 memset(m_FastaBlocks, 0, sizeof(m_FastaBlocks));
 
 m_pCurFastaBlock = &m_FastaBlocks[0];
-m_pCurFastaBlock->pBlock = new UINT8[BufferSize];
+m_pCurFastaBlock->pBlock = new uint8_t[BufferSize];
 if (m_pCurFastaBlock->pBlock == NULL)
 	{
 	AddErrMsg("CFasta::Open", "Memory allocation of %d bytes for %s- %s", BufferSize, pszFile, strerror(errno));
@@ -217,7 +217,7 @@ if (m_bRead && cNumFastaBlocks > 1)
 	{
 	for (int Idx = 1; Idx < cNumFastaBlocks; Idx++)
 		{
-		m_FastaBlocks[Idx].pBlock = new UINT8[BufferSize];
+		m_FastaBlocks[Idx].pBlock = new uint8_t[BufferSize];
 		if (m_FastaBlocks[Idx].pBlock == NULL)
 			{
 			AddErrMsg("CFasta::Open", "Memory allocation of %d bytes for %s- %s", BufferSize, pszFile, strerror(errno));
@@ -239,17 +239,17 @@ return(eBSFSuccess);
 // Generally suitable only for NGS read dataset size estimates
 const int cEstChrsBuff = 0x03fffff;					// base estimates on the first 4M chars of file
 
-UINT32								// returns estimated number of sequences in fata/fastq file
+uint32_t								// returns estimated number of sequences in fata/fastq file
 CFasta::FastaEstSizes(char *pszFile,				// fasta or fastq file path+name to estimate sizes
-			  INT64 *pFileSize,						// file is this size on disk
-			  INT32 *pEstMaxDescrLen,				// with estimated maximum descriptor length
-			  INT32 *pEstMeanDescrLen,				// estimated mean descriptor length
-			  INT32 *pEstMaxSeqLen,					// and estimated maximum sequence length
-			  INT32 *pEstMeanSeqLen,				// estimated mean sequence length
-			  INT32 *pEstScoreSchema)				// guestimated scoring schema - 0: no scoring, 1: Solexa, 2: Illumina 1.3+, 3: Illumina 1.5+, 4: Illumina 1.8+ or could be Sanger 
+			  int64_t *pFileSize,						// file is this size on disk
+			  int32_t *pEstMaxDescrLen,				// with estimated maximum descriptor length
+			  int32_t *pEstMeanDescrLen,				// estimated mean descriptor length
+			  int32_t *pEstMaxSeqLen,					// and estimated maximum sequence length
+			  int32_t *pEstMeanSeqLen,				// estimated mean sequence length
+			  int32_t *pEstScoreSchema)				// guestimated scoring schema - 0: no scoring, 1: Solexa, 2: Illumina 1.3+, 3: Illumina 1.5+, 4: Illumina 1.8+ or could be Sanger 
 {
-INT64 FileSize;
-UINT32 NumSeqs;
+int64_t FileSize;
+uint32_t NumSeqs;
 char MaxScoreChr;		// max score char in any of the reads, used for reasonable guestimate of scoring schema utilised
 char MinScoreChr;		// min score char in any of the reads, used for reasonable guestimate of scoring schema utilised
 
@@ -260,7 +260,7 @@ long FileOfs;
 
 int BuffSize;
 int NumInBuff;
-UINT8 *pBuff;
+uint8_t *pBuff;
 char Chr;
 char *pChr;
 int NumChrsParsed;
@@ -275,7 +275,7 @@ int MaxSeqLen;
 int TotSeqLen;
 int MaxDescrLen;
 int TotDescrLen;
-UINT32 EstNumSeqs;
+uint32_t EstNumSeqs;
 
 MaxScoreChr = 0;
 MinScoreChr = 0;
@@ -300,7 +300,7 @@ if(!_stat64(pszFile,&st))
 struct stat64 st;
 if(!stat64(pszFile,&st))
 #endif
-	FileSize = (INT64)st.st_size;
+	FileSize = (int64_t)st.st_size;
 else
 	FileSize = 0;
 
@@ -319,7 +319,7 @@ if(FileSize < 10)		// arbitary minimum Fasta file size, allows for short descrip
 	return(0);
 	}
 
-if((pBuff = new UINT8 [BuffSize+10])==NULL)			// allows for trailing '\0's
+if((pBuff = new uint8_t [BuffSize+10])==NULL)			// allows for trailing '\0's
 	{
 	gDiagnostics.DiagOut(eDLWarn,gszProcName,"FastaEstSizes: Unable to allocate %d memory for file '%s'",BuffSize,pszFile);
 	return(0);
@@ -458,19 +458,19 @@ delete pBuff;
 
 if(!bIsGZ)
 	{
-	if((INT64)NumChrsParsed == FileSize)
+	if((int64_t)NumChrsParsed == FileSize)
 		EstNumSeqs = NumSeqs;
 	else
-		EstNumSeqs = (UINT32)(((NumSeqs + 1) * FileSize)/(UINT64)NumChrsParsed);	// better to slightly over estimate than underestimate..
+		EstNumSeqs = (uint32_t)(((NumSeqs + 1) * FileSize)/(uint64_t)NumChrsParsed);	// better to slightly over estimate than underestimate..
 	}
 else
 	{
 	double ComprRatio = (double)NumChrsParsed/FileOfs;
-	INT64 UncomprFileSize = (INT64)(FileSize * ComprRatio);
-	if((INT64)NumChrsParsed >= UncomprFileSize)
+	int64_t UncomprFileSize = (int64_t)(FileSize * ComprRatio);
+	if((int64_t)NumChrsParsed >= UncomprFileSize)
 		EstNumSeqs = NumSeqs;
 	else
-		EstNumSeqs = (UINT32)(((NumSeqs + 1) * UncomprFileSize)/(UINT64)NumChrsParsed);	// better to slightly over estimate than underestimate..
+		EstNumSeqs = (uint32_t)(((NumSeqs + 1) * UncomprFileSize)/(uint64_t)NumChrsParsed);	// better to slightly over estimate than underestimate..
 	}
 
 
@@ -600,7 +600,7 @@ for(BuffIdx = 0; BuffIdx < BuffCnt; BuffIdx++,pChr++)
 		ChrPsn = 0;
 	else
 		ChrPsn += 1;
-	if(!isspace(*pChr) && (*pChr < 0x20 || (unsigned char)*pChr > 0x7f))
+	if(!isspace(*pChr) && (*pChr < 0x20 || (uint8_t)*pChr > 0x7f))
 		{
 		AddErrMsg("CFasta::CheckIsFasta","Errors whilst reading file near line %d#%d - '%s' - illegal chr 0x%x", CurLineNum,ChrPsn, m_szFile,*pChr);
 		delete pszBuff;	
@@ -871,11 +871,11 @@ return(m_bIscsfasta);
 // Resets context to that immediately following an Open() with file seek to FileOfs
 // NOTE: gzip library can't handle file offsets which are greater than 2^31 - 1
 int
-CFasta::Reset(INT64 FileOfs)
+CFasta::Reset(int64_t FileOfs)
 {
 if(m_hFile == -1 && m_gzFile == NULL)
 	return(eBSFerrClosed);		
-INT64 SeekPsn;
+int64_t SeekPsn;
 if(m_hFile != -1)
 	SeekPsn = _lseeki64(m_hFile,FileOfs,SEEK_SET);
 else
@@ -915,7 +915,7 @@ return(eBSFSuccess);
 //    < 0				error
 // 
 //  
-UINT8 CFasta::m_SOLiDmap[5][5] = {
+uint8_t CFasta::m_SOLiDmap[5][5] = {
 	{'a','c','g','t','n'},	 
 	{'c','a','t','g','n'},		
 	{'g','t','a','c','n'},
@@ -932,7 +932,7 @@ CFasta::ReadSequence(void *pRetSeq,		// where to return sequence, can be NULL if
 bool bInDescriptor;		// true whilst processing descriptor or fastq sequence identifier characters
 bool bMoreToDo;
 char Chr;
-INT64 FileOfs;			// will contain file offset corresponding to last buffer read from file
+int64_t FileOfs;			// will contain file offset corresponding to last buffer read from file
 int SeqLen = 0;
 char *pAscii = (char *)pRetSeq;
 int Rslt;
@@ -1009,10 +1009,10 @@ while(bMoreToDo) {
 		Chr = m_pCurFastaBlock->pBlock[m_pCurFastaBlock->BuffIdx++];
 		// ensure reading an ascii text file - only allow whitespace and chrs >= 0x20 and <= 0x7f
 		// note that if within a descriptor line then chars > 0x7f are tolerated but will be substituted with '?' 
-		if(bInDescriptor && (unsigned char)Chr > 0x7f)
+		if(bInDescriptor && (uint8_t)Chr > 0x7f)
 			Chr = '?';
 		
-		if((Chr < 0x20 || (unsigned char)Chr > 0x7f) && !(Chr == '\n' || Chr == '\r' || Chr == '\t' || Chr == ' '))
+		if((Chr < 0x20 || (uint8_t)Chr > 0x7f) && !(Chr == '\n' || Chr == '\r' || Chr == '\t' || Chr == ' '))
 			{
 			AddErrMsg("CFasta::ReadSequence","Errors whilst reading file - '%s' - illegal chr 0x%x", m_szFile,Chr);
 			return(eBSFerrFileAccess);
@@ -1230,7 +1230,7 @@ int
 CFasta::ParseFastQblockQ(void)	
 {
 char Chr;
-INT64 FileOfs;			// will contain file offset corresponding to last buffer read from file
+int64_t FileOfs;			// will contain file offset corresponding to last buffer read from file
 int ParseState;
 int SeqLen = 0;
 bool bIsFastQSOLiD;	// some fastq files (from NCBA SRA SRP000191) have SOLiD sequences
@@ -1271,7 +1271,7 @@ while(ParseState < 6) {
 			m_CurFastQParseLine += 1;
 
 		// ensure reading an ascii text file - only allow whitespace and chrs >= 0x20 and <= 0x7f
-		if(!isspace(Chr) &&  (Chr < 0x20 || (unsigned char)Chr > 0x7f))
+		if(!isspace(Chr) &&  (Chr < 0x20 || (uint8_t)Chr > 0x7f))
 			{
 			AddErrMsg("CFasta::ParseFastQblockQ","Errors whilst reading file - '%s' - near line %d, illegal chr 0x%x", m_szFile,m_CurFastQParseLine+1,Chr);
 			return(eBSFerrFastqChr);
@@ -1707,7 +1707,7 @@ return(m_FastqSeqQLen);
 
 
 // returns file offset at which descriptor returned by ReadDescriptor() was parsed from
-INT64 
+int64_t 
 CFasta::GetDescrFileOfs(void)				
 {
 return(m_FileReadDescrOfs);
@@ -1791,7 +1791,7 @@ Len = strlen(pszDescriptor);
 if(Len > cMaxFastaDescrLen)
 	Len = cMaxFastaDescrLen;
 
-if (m_pCurFastaBlock->BuffIdx >= m_pCurFastaBlock->AllocSize - (INT32)Len - 16)  // 16 is a safety margin to allow for nl's etc
+if (m_pCurFastaBlock->BuffIdx >= m_pCurFastaBlock->AllocSize - (int32_t)Len - 16)  // 16 is a safety margin to allow for nl's etc
 	{
 	NumWritten = write(m_hFile, m_pCurFastaBlock->pBlock, m_pCurFastaBlock->BuffIdx);
 	if (NumWritten != m_pCurFastaBlock->BuffIdx)

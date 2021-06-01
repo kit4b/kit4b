@@ -6,8 +6,8 @@ const int cAllocChromMaps = 1000;	// allocate for chrom maps in this many increm
 typedef struct TAG_sChromMap {
 	char szChrom[cMaxGeneNameLen];
 	char szContig[cMaxGeneNameLen];
-	UINT32 Start;
-	UINT32 End;
+	uint32_t Start;
+	uint32_t End;
 } tsChromMap;
 
 class CChromMap

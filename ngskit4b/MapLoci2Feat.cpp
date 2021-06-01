@@ -132,7 +132,7 @@ CMapLoci2Feat::MapLoci2Features(char *pszRsltsFile)
 	int NumFeatsOverlap;
 	int FeatMsk;
 	int FeatIdx;
-	UINT32 ElID;
+	uint32_t ElID;
 	int FeatID;
 	int NxtFeatID;
 	int NxtFeatStart;
