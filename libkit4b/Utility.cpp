@@ -820,7 +820,7 @@ return(pText);
 }
 
 
-const int cMaxNumOptions = 32000;		// allow at most this many options in option file, increased from original 1024 because snpmarkers needs to handle up to 20000 different isolates 
+const int cMaxNumOptions = 60100;		// allow at most this many options in option file, increased from original 1024 because snpmarkers needs to handle up to 20000 (max of 3 params per isolate) different isolates 
 const int cMaxOptionLen  = 1024;		// any single option can be of this length
 const int cMaxOptionLineLen = 8196;		// allow for option lines to be upto this length, one line can contain multiple options
 const int cMaxTotOptionsLen = (cMaxNumOptions * 101);	// allow for options to total at most this many chars - assumes options average 100 chars incl '\0' separators
@@ -857,6 +857,8 @@ NumOptns = 0;
 NxtOptnsBuffIdx = 0;
 for(int OptnCnt = 0; OptnCnt < argc; OptnCnt++)
 	{
+	if(NumOptns == cMaxNumOptions)
+		break;
 	if(*argv[OptnCnt] == '@')
 		{
 		pszOptnFile = TrimWhitespc(argv[OptnCnt]+1);
@@ -930,6 +932,8 @@ for(int OptnCnt = 0; OptnCnt < argc; OptnCnt++)
 				if(NumOptns == cMaxNumOptions)
 					break;
 				}
+			if(NumOptns == cMaxNumOptions)
+				break;
 			}
 
 		fclose(pOptStream);

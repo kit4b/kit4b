@@ -26,7 +26,7 @@ Original 'BioKanga' copyright notice has been retained and immediately follows t
 const int cBSFRdsVersion = 6;			// latest file header version which can be handled
 const int cBSFRdsVersionBack= 5;		// backward compatible to this version
 
-const unsigned int cMaxInFileSpecs = 100;	// allow user to specify upto this many input file specs
+const unsigned int cMaxInFileSpecs = 15000;	// allow user to specify upto this many input file specs - allowing for situations whereby pools of readsets are being aligned
 
 const int cMaxReadsPerBlock = 20000;	// max number of reads allocated for processing per thread as a block (could increase but may end up with 1 thread doing more than fair share of workload)
 
