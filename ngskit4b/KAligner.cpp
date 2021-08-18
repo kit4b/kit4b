@@ -834,7 +834,7 @@ m_hDiSNPfile = -1;
 m_hTriSNPfile = -1;
 m_hMarkerFile = -1;	
 m_hSNPCentsfile = -1;
-m_hCoverageSegmentsfile = -1;
+m_hWIGSpansFile = -1;
 m_hPackedBaseAllelesFile = -1;
 m_bPackedBaseAlleles = false;
 m_gzOutFile = NULL;
@@ -848,7 +848,9 @@ m_gzSNPCentsfile = NULL;
 m_bgzOutFile = false;
 m_bgzNoneAlignFile = false;
 m_bgzMultiAlignFile = false;
-
+m_AllocdCovSegBuff = 0;
+m_CovSegBuffIdx = 0;
+m_pszCovSegBuff = NULL;
 m_pReadHits = NULL;
 m_ppReadHitsIdx = NULL;
 m_ppReadHitsIdx = NULL;
@@ -867,6 +869,10 @@ m_pLenDist = NULL;
 m_pSNPCentroids = NULL;
 m_pConstraintLoci = NULL; 
 m_pContaminants = NULL;
+m_WIGChromID = 0;
+m_WIGSpanLoci = 0;
+m_WIGSpanLen = 0;
+m_WIGSpanCnts = 0;
 m_NumConstraintLoci = 0;
 m_NumConstrainedChroms = 0;
 m_ConstrainedChromIDs[0] = 0;
@@ -1112,16 +1118,16 @@ if(m_hTriSNPfile != -1)
 	m_hTriSNPfile = -1;
 	}
 
-if(m_hCoverageSegmentsfile != -1)
+if(m_hWIGSpansFile != -1)
 	{
 	if(bSync)
 #ifdef _WIN32
-		_commit(m_hCoverageSegmentsfile);
+		_commit(m_hWIGSpansFile);
 #else
-		fsync(m_hCoverageSegmentsfile);
+		fsync(m_hWIGSpansFile);
 #endif
-	close(m_hCoverageSegmentsfile);
-	m_hCoverageSegmentsfile = -1;
+	close(m_hWIGSpansFile);
+	m_hWIGSpansFile = -1;
 	}
 
 if(m_hPackedBaseAllelesFile != -1)
@@ -1324,6 +1330,12 @@ if(m_pContaminants != NULL)
 	{
 	delete m_pContaminants;
 	m_pContaminants = NULL;
+	}
+
+if(m_pszCovSegBuff != NULL)
+	{
+	delete []m_pszCovSegBuff;
+	m_pszCovSegBuff = NULL;
 	}
 
 DeleteMutexes();
@@ -4398,6 +4410,24 @@ if(m_bPackedBaseAlleles)
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: unable to create/truncate loci base classification binary output file '%s'",m_pszOutFile);
 		return(eBSFerrCreateFile);
 		}
+
+	CUtility::AppendFileNameSuffix(m_szCoverageSegmentsFile, m_pszOutFile, (char*)".covsegs.wig",'.');
+
+#ifdef _WIN32
+	m_hWIGSpansFile = open(m_szCoverageSegmentsFile,( O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC),(_S_IREAD | _S_IWRITE) );
+#else
+	if((m_hWIGSpansFile = open(m_szCoverageSegmentsFile,O_WRONLY | O_CREAT,S_IREAD | S_IWRITE))!=-1)
+		if(ftruncate(m_hWIGSpansFile,0)!=0)
+			{
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to truncate coverage segments file  %s - %s",m_szCoverageSegmentsFile,strerror(errno));
+			return(eBSFerrCreateFile);
+			}
+#endif
+	if(m_hWIGSpansFile < 0)
+		{
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: unable to create/truncate coverage segments output file '%s'",m_szCoverageSegmentsFile);
+		return(eBSFerrCreateFile);
+		}
 	return(eBSFSuccess);
 	}
 
@@ -4552,19 +4582,19 @@ if(m_pszSNPRsltsFile != NULL && m_pszSNPRsltsFile[0] != '\0' && m_MinSNPreads > 
 		return(eBSFerrCreateFile);
 		}
 
-	CUtility::AppendFileNameSuffix(m_szCoverageSegmentsFile, m_pszSNPRsltsFile, (char*)".covsegs.bed",'.');
+	CUtility::AppendFileNameSuffix(m_szCoverageSegmentsFile, m_pszSNPRsltsFile, (char*)".covsegs.wig",'.');
 
 #ifdef _WIN32
-	m_hCoverageSegmentsfile = open(m_szCoverageSegmentsFile,( O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC),(_S_IREAD | _S_IWRITE) );
+	m_hWIGSpansFile = open(m_szCoverageSegmentsFile,( O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC),(_S_IREAD | _S_IWRITE) );
 #else
-	if((m_hCoverageSegmentsfile = open(m_szCoverageSegmentsFile,O_WRONLY | O_CREAT,S_IREAD | S_IWRITE))!=-1)
-		if(ftruncate(m_hCoverageSegmentsfile,0)!=0)
+	if((m_hWIGSpansFile = open(m_szCoverageSegmentsFile,O_WRONLY | O_CREAT,S_IREAD | S_IWRITE))!=-1)
+		if(ftruncate(m_hWIGSpansFile,0)!=0)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to truncate coverage segments file  %s - %s",m_szCoverageSegmentsFile,strerror(errno));
 			return(eBSFerrCreateFile);
 			}
 #endif
-	if(m_hCoverageSegmentsfile < 0)
+	if(m_hWIGSpansFile < 0)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: unable to create/truncate coverage segments output file '%s'",m_szCoverageSegmentsFile);
 		return(eBSFerrCreateFile);
@@ -7057,6 +7087,101 @@ for(int HitIdx = 0; HitIdx < NumHits; HitIdx++,pHit++)
 return(NumHits);
 }
 
+void
+CKAligner::InitialiseWIGSpan(void) // initialise WIG span vars to values corresponding to no spans having been previously reported
+{
+m_WIGChromID = 0;
+m_WIGRptdChromID = 0;
+m_WIGSpanLoci = 0;
+m_WIGSpanLen = 0;
+m_WIGRptdSpanLen = 0;
+m_WIGSpanCnts = 0;
+}
+
+int
+CKAligner::CompleteWIGSpan(bool bWrite)				// close off any current WIG span ready to start any subsequent span
+{
+char szChromName[cMaxDatasetSpeciesChrom + 1];
+
+	// if existing span then write that span out
+if(m_WIGChromID != 0 && m_WIGSpanLen > 0 && m_WIGSpanLoci > 0 && m_WIGSpanCnts > 0)
+	{
+	// has chrom and/or span changed since previously writing out a span?
+	if(m_WIGChromID != m_WIGRptdChromID || m_WIGSpanLen != m_WIGRptdSpanLen)
+		{
+		m_pSfxArray->GetIdentName(m_WIGChromID, sizeof(szChromName), szChromName);
+		m_CovSegBuffIdx += sprintf(&m_pszCovSegBuff[m_CovSegBuffIdx],"variableStep chrom=%s span=%d\n",szChromName,m_WIGSpanLen);
+		m_WIGRptdChromID = m_WIGChromID;
+		m_WIGRptdSpanLen = m_WIGSpanLen;
+		}
+	m_CovSegBuffIdx += sprintf(&m_pszCovSegBuff[m_CovSegBuffIdx],"%d %d\n",m_WIGSpanLoci,(uint32_t)((m_WIGSpanCnts + m_WIGSpanLen-1)/m_WIGSpanLen));
+	}
+if((bWrite && m_CovSegBuffIdx) || (m_CovSegBuffIdx + 500) >  m_AllocdCovSegBuff)
+	{
+	if(!CUtility::RetryWrites(m_hWIGSpansFile, m_pszCovSegBuff, m_CovSegBuffIdx))
+		{
+		gDiagnostics.DiagOut(eDLInfo,gszProcName,"RetryWrites() error");
+		return(eBSFerrWrite);
+		}
+	m_CovSegBuffIdx=0;
+	}
+m_WIGSpanLoci = 0;
+m_WIGSpanLen = 0;
+m_WIGSpanCnts = 0;
+return(eBSFSuccess);
+}
+
+
+
+int
+CKAligner::AccumWIGCnts(uint32_t ChromID,	// accumulate wiggle counts into variableStep spans over this chromosome
+			uint32_t Loci,		// this loci - starts from 1 not 0!
+			uint32_t Cnts,		 // has this many counts attributed
+			uint32_t MaxSpanLen) // allow WIG spans to be this maximal length
+{
+	int Rslt;
+	uint32_t Meanx100;
+	if(ChromID != m_WIGChromID || m_WIGSpanLen >= MaxSpanLen || Cnts == 0)		// onto a different chromosome, or current span is at maximal length?
+	{
+		if(m_WIGChromID != 0)
+		{
+			if((Rslt = CompleteWIGSpan()) < 0)
+				return(Rslt);
+		}
+		if(Cnts > 0)
+		{
+			m_WIGChromID = ChromID;
+			m_WIGSpanLoci = Loci;
+			m_WIGSpanLen = 1;
+			m_WIGSpanCnts = Cnts;
+		}
+		return(eBSFSuccess);
+	}
+
+	if(m_WIGSpanLen == 0 || m_WIGSpanCnts == 0)
+	{
+		m_WIGSpanLoci = Loci;
+		m_WIGSpanLen = 1;
+		m_WIGSpanCnts = (uint64_t)Cnts;
+		return(eBSFSuccess);
+	}
+
+	Meanx100 = 100 * (uint32_t)(m_WIGSpanCnts / (uint64_t)m_WIGSpanLen);
+	if((Cnts <= 5 && (Cnts * 100) != Meanx100) || (Meanx100 < (Cnts * 75) || Meanx100 >= (Cnts * 125)))
+	{
+		// write current span out
+		if((Rslt = CompleteWIGSpan()) < 0)
+			return(Rslt);
+		m_WIGSpanLoci = Loci;
+		m_WIGSpanLen = 1;
+		m_WIGSpanCnts = Cnts;
+		return(eBSFSuccess);
+	}
+	m_WIGSpanCnts += Cnts;
+	m_WIGSpanLen = Loci - m_WIGSpanLoci + 1;
+	return(eBSFSuccess);
+}
+
 
 // OutputSNPs
 // Currently can't process for SNPs in InDels or splice junctions
@@ -7070,69 +7195,75 @@ return(NumHits);
 int
 CKAligner::OutputSNPs(void)
 {
-	double PValue;
-	double GlobalSeqErrRate;
-	double LocalSeqErrRate;
-	tsSNPcnts* pSNP;
-	uint32_t Loci;
+int Rslt;
+double PValue;
+double GlobalSeqErrRate;
+double LocalSeqErrRate;
+tsSNPcnts* pSNP;
+uint32_t Loci;
 
-	char szCovSegBuff[4000];
-	uint32_t PrevScaledLociCoverage;
-	uint32_t	CoverageSegLen;
-	uint32_t	StartCoverageSegLoci;
-	int CovSegBuffIdx;
-	int Idx;
-	int NumSNPs;
-	int TotBases;
-	char szChromName[cMaxDatasetSpeciesChrom + 1];
-	int LineLen;
-	double Proportion;
-	double AdjPValue;
-	int RelRank;
-	tsLociPValues* pLociPValues;
-	size_t memreq;
-	tsSNPcnts* pSNPWinL;
-	tsSNPcnts* pSNPWinR;
-	uint32_t LocalBkgndRateWindow;
-	uint32_t LocalBkgndRateWinFlank;
-	uint32_t LocalTotMismatches;
-	uint32_t LocalTotMatches;
-	uint32_t LocTMM;
-	uint32_t LocTM;
-	CStats Stats;
-	uint8_t *pPackedBaseAlleles;
-	uint8_t PackedBaseAlleles;
+uint32_t PrevScaledLociCoverage;
+uint32_t	CoverageSegLen;
+uint32_t	StartCoverageSegLoci;
 
-	tsMonoSNP sMonoSNP;
-	tsDiSNP sDiSNP;
-	tsTriSNP sTriSNP;
+int Idx;
+int NumSNPs;
+int TotBases;
+char szChromName[cMaxDatasetSpeciesChrom + 1];
+int LineLen;
+double Proportion;
+double AdjPValue;
+int RelRank;
+tsLociPValues* pLociPValues;
+size_t memreq;
+tsSNPcnts* pSNPWinL;
+tsSNPcnts* pSNPWinR;
+uint32_t LocalBkgndRateWindow;
+uint32_t LocalBkgndRateWinFlank;
+uint32_t LocalTotMismatches;
+uint32_t LocalTotMatches;
+uint32_t LocTMM;
+uint32_t LocTM;
+CStats Stats;
+uint8_t *pPackedBaseAlleles;
+uint8_t PackedBaseAlleles;
 
-	tsSNPcnts PrevSNPs[3]; // to hold counts for prev 2 plus currrent SNP - used when reporting Di/TriSNPs
+tsMonoSNP sMonoSNP;
+tsDiSNP sDiSNP;
+tsTriSNP sTriSNP;
 
-	int CurDiSNPLoci;
-	int PrevDiSNPLoci;
-	int DiSNPBuffIdx;
-	char szDiSNPs[4000];
+tsSNPcnts PrevSNPs[3]; // to hold counts for prev 2 plus currrent SNP - used when reporting Di/TriSNPs
 
-	int CurTriSNPLoci;
-	int PrevTriSNPLoci;
-	int FirstTriSNPLoci;
-	int TriSNPBuffIdx;
-	char szTriSNPs[4000];
-	int TotNumDiSNPs;
-	int TotNumTriSNPs;
+int CurDiSNPLoci;
+int PrevDiSNPLoci;
+int DiSNPBuffIdx;
+char szDiSNPs[4000];
 
-	uint8_t SNPFlanks[9];
-	uint8_t* pSNPFlank;
-	int SNPFlankIdx;
-	int SNPCentroidIdx;
-	uint8_t Base;
-	tsSNPCentroid* pCentroid;
-	int NumCovReads;
+int CurTriSNPLoci;
+int PrevTriSNPLoci;
+int FirstTriSNPLoci;
+int TriSNPBuffIdx;
+char szTriSNPs[4000];
+int TotNumDiSNPs;
+int TotNumTriSNPs;
+
+uint8_t SNPFlanks[9];
+uint8_t* pSNPFlank;
+int SNPFlankIdx;
+int SNPCentroidIdx;
+uint8_t Base;
+tsSNPCentroid* pCentroid;
+int NumCovReads;
 
 m_pSfxArray->GetIdentName(m_pChromSNPs->ChromID, sizeof(szChromName), szChromName);
+if(m_pszCovSegBuff == NULL)
+	{
+	m_pszCovSegBuff = new char [cAllocCovSegSize];
+	m_AllocdCovSegBuff = cAllocCovSegSize;
+	}
+m_CovSegBuffIdx = 0;
 
-if(!m_bPackedBaseAlleles)
+if(!m_bPackedBaseAlleles)			
 	{
 	if (m_pLociPValues == NULL)					// will be NULL first time in
 		{
@@ -7159,7 +7290,7 @@ if(!m_bPackedBaseAlleles)
 		}
 	}
 else
-	{
+	{ // this code block contains the PBA processing
 	if (m_pPackedBaseAlleles == NULL)					// will be NULL first time in
 		{
 		memreq = (m_pChromSNPs->ChromLen + 10000) * sizeof(uint8_t);
@@ -7220,11 +7351,14 @@ else
 	pPackedBaseAlleles += 4;
 	m_NumPackedBaseAlleles = (uint32_t)(pPackedBaseAlleles - m_pPackedBaseAlleles);
 	pSNP = &m_pChromSNPs->Cnts[0];
+	InitialiseWIGSpan();
 	for (Loci = 0; Loci < m_pChromSNPs->ChromLen; Loci++, pSNP++,pPackedBaseAlleles++,m_NumPackedBaseAlleles++)
 		{
 		// iterate over each base and score according to proportion of total at this loci
 		PackedBaseAlleles = 0;			// assume no coverage
-		uint32_t Coverage = pSNP->NumNonRefBases + pSNP->NumRefBases - pSNP->NonRefBaseCnts[4];	// coverage excludes indeterminates
+		uint32_t Coverage = pSNP->NumNonRefBases + pSNP->NumRefBases - pSNP->NonRefBaseCnts[4];	// coverage excludes indeterminate bases - 'N'
+		if((Rslt=AccumWIGCnts(m_pChromSNPs->ChromID,Loci+1,Coverage))!=eBSFSuccess) // WIG loci start from 1
+			return(Rslt);
 		double AlleleProp;
 		if(Coverage > 0)
 			{
@@ -7258,7 +7392,7 @@ else
 			}
 		*pPackedBaseAlleles = PackedBaseAlleles;
 		}
-
+	CompleteWIGSpan(true);
 	if(m_hPackedBaseAllelesFile != -1)
 		{
 		if(m_NumPackedBaseAlleles > 0)
@@ -7272,7 +7406,7 @@ else
 			}
 		}
 	return(eBSFSuccess);
-	}
+	}	// completed PBA processing
 
 	// NOTE: set a floor on the global (whole chromosome) sequencing error rate
 	GlobalSeqErrRate = max(cMinSeqErrRate, (double)m_pChromSNPs->TotMismatch / (double)(1 + m_pChromSNPs->TotMatch + m_pChromSNPs->TotMismatch));
@@ -7301,8 +7435,8 @@ else
 	PrevScaledLociCoverage = 0;
 	CoverageSegLen = 0;
 	StartCoverageSegLoci = 0;
-	CovSegBuffIdx = 0;
 	m_MaxDiSNPSep = min((int)cDfltMaxDiSNPSep, m_pChromSNPs->MeanReadLen);
+	InitialiseWIGSpan();
 	for (Loci = 0; Loci < m_pChromSNPs->ChromLen; Loci++, pSNP++)
 		{
 		// determine background expected error rate from window surrounding the current loci
@@ -7330,50 +7464,7 @@ else
 			m_LociBasesCoverage += TotBases;
 			}
 
-		// scale current read coverage
-		// scaling is intended such that segments of very low coverage are easily identified
-		// coverage => BED score
-		// 0 => 0
-		// 1 => 100
-		// 2..3 => 200
-		// 4..7 => 300
-		// 8..15 => 400
-		// 16..31 => 500
-		// 32..63 => 600
-		// 64..127 => 700
-		// 128..255 => 800
-		// 256..511 => 900
-		// 512+     => 999
-		uint32_t CurScaledLociCoverage = 0;
-		uint32_t CurLociCoverage = TotBases;
-		while(CurLociCoverage)
-			{
-			CurScaledLociCoverage+=1;
-			CurLociCoverage >>= 1;
-			}
-		CurScaledLociCoverage *=100;		
-		if(CurScaledLociCoverage > 999)
-			CurScaledLociCoverage = 999;
-		if(CurScaledLociCoverage == PrevScaledLociCoverage)		// same coverage, extending segment?
-			CoverageSegLen++;
-		else							// change in coverage so report segment and start a new segment
-			{
-			if(CoverageSegLen > 0 && PrevScaledLociCoverage > 0)
-				CovSegBuffIdx+=sprintf(&szCovSegBuff[CovSegBuffIdx],"\n%s\t%u\t%u\tScaled:%u\t%u",szChromName,StartCoverageSegLoci,StartCoverageSegLoci+CoverageSegLen,PrevScaledLociCoverage,PrevScaledLociCoverage);
-			StartCoverageSegLoci = Loci;
-			PrevScaledLociCoverage = CurScaledLociCoverage;
-			CoverageSegLen = 1;
-			}
-
-		if((CovSegBuffIdx + 100) > (uint32_t)sizeof(szCovSegBuff))
-			{
-			if(!CUtility::RetryWrites(m_hCoverageSegmentsfile, szCovSegBuff, CovSegBuffIdx))
-				{
-				gDiagnostics.DiagOut(eDLInfo,gszProcName,"RetryWrites() error");
-				return(eBSFerrWrite);
-				}
-			CovSegBuffIdx = 0;
-			}
+		AccumWIGCnts(m_pChromSNPs->ChromID,Loci,TotBases);
 
 		if (TotBases < m_MinSNPreads) // if not meeting threshold for SNP calling coverage at current loci then iterate onto next loci after recording loci base classification
 			continue;
@@ -7588,21 +7679,21 @@ else
 
 	if (m_NumLociPValues == 0)
 		{
-		if(m_hCoverageSegmentsfile != -1)
+		if(m_hWIGSpansFile != -1)
 			{
 			if(CoverageSegLen > 0 && PrevScaledLociCoverage > 0)
 				{
-				CovSegBuffIdx+=sprintf(&szCovSegBuff[CovSegBuffIdx],"\n%s\t%u\t%u\tScaled:%u\t%u",szChromName,StartCoverageSegLoci,StartCoverageSegLoci+CoverageSegLen,PrevScaledLociCoverage,PrevScaledLociCoverage);
+				m_CovSegBuffIdx+=sprintf(&m_pszCovSegBuff[m_CovSegBuffIdx],"\n%s\t%u\t%u\tScaled:%u\t%u",szChromName,StartCoverageSegLoci,StartCoverageSegLoci+CoverageSegLen,PrevScaledLociCoverage,PrevScaledLociCoverage);
 				CoverageSegLen = 0;
 				}
-			if(CovSegBuffIdx > 0)
+			if(m_CovSegBuffIdx > 0)
 				{
-				if(!CUtility::RetryWrites(m_hCoverageSegmentsfile, szCovSegBuff, CovSegBuffIdx))
+				if(!CUtility::RetryWrites(m_hWIGSpansFile, m_pszCovSegBuff, m_CovSegBuffIdx))
 					{
 					gDiagnostics.DiagOut(eDLInfo,gszProcName,"RetryWrites() error");
 					return(eBSFerrWrite);
 					}
-				CovSegBuffIdx = 0;
+				m_CovSegBuffIdx = 0;
 				}
 			}
 
@@ -8133,23 +8224,7 @@ else
 			}
 		}
 	}
-
-if(m_hCoverageSegmentsfile != -1)
-	{
-	if(CoverageSegLen > 0 && PrevScaledLociCoverage > 0)
-		CovSegBuffIdx+=sprintf(&szCovSegBuff[CovSegBuffIdx],"\n%s\t%u\t%u\tScaled:%u\t%u",szChromName,StartCoverageSegLoci,StartCoverageSegLoci+CoverageSegLen,PrevScaledLociCoverage,PrevScaledLociCoverage);
-	CoverageSegLen = 0;
-	if(CovSegBuffIdx > 0)
-		{
-		if(!CUtility::RetryWrites(m_hCoverageSegmentsfile, szCovSegBuff, CovSegBuffIdx))
-			{
-			gDiagnostics.DiagOut(eDLInfo,gszProcName,"RetryWrites() error");
-			return(eBSFerrWrite);
-			}
-		CovSegBuffIdx = 0;
-		}
-	}
-
+CompleteWIGSpan(true);
 
 if (m_hDiSNPfile != -1 && DiSNPBuffIdx > 0)
 	{
@@ -8255,10 +8330,10 @@ if(!m_bPackedBaseAlleles)
 		LineLen = 0;
 		}
 
-	if(m_hCoverageSegmentsfile != -1)
+	if(m_hWIGSpansFile != -1)
 		{
-		LineLen = sprintf(m_pszLineBuff,"track type=bed name=\"Coverage\" description=\"Alignment Segment Coverage\" useScore=1");
-		if(!CUtility::RetryWrites(m_hCoverageSegmentsfile,m_pszLineBuff,LineLen))
+		LineLen = sprintf(m_pszLineBuff,"track type=wiggle_0 name=\"Coverage\" description=\"Alignment Segment Coverage\" useScore=1\n");
+		if(!CUtility::RetryWrites(m_hWIGSpansFile,m_pszLineBuff,LineLen))
 			{
 			gDiagnostics.DiagOut(eDLInfo,gszProcName,"RetryWrites() error");
 			return(eBSFerrWrite);
@@ -8624,15 +8699,15 @@ if(!m_bPackedBaseAlleles)
 		m_hTriSNPfile = -1;
 		}
 
-	if(m_hCoverageSegmentsfile != -1)
+	if(m_hWIGSpansFile != -1)
 		{
 	#ifdef _WIN32
-		_commit(m_hCoverageSegmentsfile);
+		_commit(m_hWIGSpansFile);
 	#else
-		fsync(m_hCoverageSegmentsfile);
+		fsync(m_hWIGSpansFile);
 	#endif
-		close(m_hCoverageSegmentsfile);
-		m_hCoverageSegmentsfile = -1;
+		close(m_hWIGSpansFile);
+		m_hWIGSpansFile = -1;
 		}
 	
 

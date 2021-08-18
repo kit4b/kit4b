@@ -4423,7 +4423,7 @@ for(PermIter = 0; PermIter < MaxNumPerms; PermIter++,pPearson++,pFeatFoldChanges
 	if(CurPearson > Pearson)
 		Supportive += 1;
 
-	// Poissson the total library counts
+	// Poisson the total library counts
 	uint32_t PoissonCtrlLibCnts;
 	uint32_t PoissonExprLibCnts;
 	PoissonExprLibCnts = (uint32_t)RandPoisson(pThreadInst,m_NumNormExprReads - SumFeatExprPoissonCnts);

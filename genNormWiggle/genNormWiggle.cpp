@@ -46,7 +46,7 @@ Process(etPMode PMode,					// processing mode
 		char *pszProcElsFile,			// optional input BED file containing elements over which K-mer deviations to be reported
 		char *pszInBioseqFile,			// bioseq genome file
 		char *pszRsltsFile,				// optional output UCSC wiggle file
-	    char *pszKMerRsltsFile);		// output K-mer distributions file
+		char *pszKMerRsltsFile);		// output K-mer distributions file
 
 char *Conf2Txt(teOctStructStats ConfParam); // returns short description of specified conformational characteristic
 
@@ -193,24 +193,24 @@ argerrors = CUtility::arg_parsefromfile(argc,(char **)argv,&pAllArgs);
 if(argerrors >= 0)
 	argerrors = arg_parse(argerrors,pAllArgs,argtable);
 
-    /* special case: '--help' takes precedence over error reporting */
+	/* special case: '--help' takes precedence over error reporting */
 if (help->count > 0)
-        {
+		{
 		printf("\n%s a component of the K-mer Adaptive Next Generation Aligner toolset, Version %s\nOptions ---\n", gszProcName,kit4bversion);
-        arg_print_syntax(stdout,argtable,"\n");
-        arg_print_glossary(stdout,argtable,"  %-25s %s\n");
+		arg_print_syntax(stdout,argtable,"\n");
+		arg_print_glossary(stdout,argtable,"  %-25s %s\n");
 		printf("\nNote: Parameters can be entered into a parameter file, one parameter per line.");
 		printf("\n      To invoke this parameter file then precede its name with '@'");
 		printf("\n      e.g. %s @myparams.txt\n",gszProcName);
 		printf("\nPlease report any issues regarding usage of %s to https://github.com/kit4b/kit4b/issues\n\n",gszProcName);
-        }
+		}
 
-    /* special case: '--version' takes precedence error reporting */
+	/* special case: '--version' takes precedence error reporting */
 if (version->count > 0)
-        {
+		{
 		printf("\n%s Version %s\n",gszProcName,kit4bversion);
 		exit(1);
-        }
+		}
 if (!argerrors)
 	{
 	if(FileLogLevel->count && !LogFile->count)
@@ -419,7 +419,7 @@ if(m_pChromSeq != NULL)
 
 if(m_pKMerDist != NULL)
 	{
-    delete m_pKMerDist;
+	delete m_pKMerDist;
 	m_pKMerDist = NULL;
 	}
 m_KMerDists = 0;
@@ -1664,8 +1664,8 @@ while(Rslt == eBSFSuccess && (CurFeatureID = m_pBEDFile->GetNextFeatureID(CurFea
 				szChrom,				// where to return chromosome name
 				&StartLoci,				// where to return feature start on chromosome (0..n) 
 				&EndLoci,				// where to return feature end on chromosome
- 				&Score,					// where to return score
- 				&Strand);				// where to return strand
+				&Score,					// where to return score
+				&Strand);				// where to return strand
 
 	if(CurFeatureID == 1 || stricmp(szChrom,szPrevChrom))	// if new chromosome then reset IntergenicStart
 		{
@@ -1694,7 +1694,7 @@ Process(etPMode PMode,					// processing mode
 		char *pszProcElsFile,			// optional input BED file containing elements over which K-mer deviations to be reported
 		char *pszInBioseqFile,			// bioseq genome file
 		char *pszRsltsFile,				// optional output UCSC wiggle file
-	    char *pszKMerRsltsFile)			// output K-mer distributions file
+		char *pszKMerRsltsFile)			// output K-mer distributions file
 {
 int Rslt;
 int Pwr;

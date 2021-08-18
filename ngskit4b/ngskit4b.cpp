@@ -94,6 +94,7 @@ extern int repassemb(int argc, char *argv[]);
 extern int sarscov2ml(int argc, char *argv[]);
 extern int kalignerPBA(int argc, char *argv[]);
 extern int callhaplotypes(int argc, char *argv[]);
+extern int gbsmapsnps(int argc, char *argv[]);
 
 
 // inplace text cleaning; any leading/trailing or internal quote characters are removed; excessive whitespace is reduced to single
@@ -172,7 +173,8 @@ tsSubProcess SubProcesses[] = {
 	{"repassemb","repurpose assembly","Repurpose fasta assembly sequences with SNP loci bases replaced by SNP call major allele bases",repassemb},
 	{"sarscov2ml","ML SARS-CoV-2","SARS-CoV-2 ML feature classification",sarscov2ml},
 	{"genpba","","Align readsets against a target assembly and report alignments to a packed base alleles (PBA) file",kalignerPBA},
-	{"callhaplotypes","Call skim Haplotypes","Call skim read haplotypes using packed base alleles (PBA) files",callhaplotypes}
+	{"callhaplotypes","Call skim Haplotypes","Call skim read haplotypes using packed base alleles (PBA) files",callhaplotypes},
+	{"gbsmapbins","GBS map","Count GBS SNP loci into fixed sized window bins",gbsmapsnps},
 
 };
 const int cNumSubProcesses = (sizeof(SubProcesses) / sizeof(tsSubProcess));

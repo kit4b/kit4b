@@ -127,6 +127,8 @@ const double cScorePBA1MinProp = 0.20;		// score PBA as 1 if allele proportion o
 const double cScorePBA2MinLCProp = 0.70;		// score PBA as 2 if allele proportion of all counts is >= this threshold and coverage is < 5
 const double cScorePBA1MinLCProp = 0.30;		// score PBA as 1 if allele proportion of all counts is >= this threshold and coverage is < 5
 
+const int cAllocCovSegSize = 0x0ffffff;		// allocation size for buffering segment coverage reporting
+
 #pragma pack(1)
 
 // each read will be marked with the reason as to why that read was not accepted as being aligned
@@ -548,6 +550,17 @@ class CKAligner
 	tsLociPValues *m_pLociPValues; // allocated to hold putative SNP loci and their associated PValues
 	double m_QValue;				// QValue used in
 
+	uint32_t m_WIGChromID;				// current WIG span is on this chromosome
+	uint32_t m_WIGRptdChromID;			// previously reported WIG chrom
+	uint32_t m_WIGSpanLoci;				// current WIG span starts at this loci
+	uint32_t m_WIGSpanLen;				// current span is this length
+	uint32_t m_WIGRptdSpanLen;			// previously reported WIG span length
+	uint64_t m_WIGSpanCnts;				// current span has accumulated this many counts
+
+	uint32_t m_CovSegBuffIdx;		// currently using this many chars in m_pszCovSegBuff;
+	uint32_t m_AllocdCovSegBuff;	// allocation size for WIG output buffering	
+	char *m_pszCovSegBuff;			// will be allocated for buffering WIG output 
+
 	size_t m_AllocPackedBaseAllelesMem;   // total memory currently allocated to m_pPackedBaseAlleles
 	uint32_t m_NumPackedBaseAlleles;		// current number of loci base classifications
 	uint8_t *m_pPackedBaseAlleles;		// allocated to hold loci base classifications
@@ -637,7 +650,7 @@ class CKAligner
 	int m_hSNPfile;			// file handle used if SNPs are being processed
 	int m_hDiSNPfile;       // file handle used if DiSNPs are being processed
 	int m_hTriSNPfile;       // file handle used if TriSNPs are being processed
-	int m_hCoverageSegmentsfile; // file handle used if coverage segments are being processed
+	int m_hWIGSpansFile;	 // file handle used if coverage segment spans are being processed (WIG format)
 	int m_hPackedBaseAllelesFile;	 // file handle used when loci base classification binary file is being generated
 	int m_hSNPCentsfile;	// file handle used if SNP centroids are being processed
 
@@ -932,6 +945,13 @@ class CKAligner
 
 	int OutputSNPs(void);	// if true then processing is for packed base alleles, no SNP calling
 	int ProcessSNPs(void);	// if true then processing is for packed base alleles, no SNP calling
+
+	void InitialiseWIGSpan(void);				// initialise WIG span vars to values corresponding to no spans having been previously reported
+	int CompleteWIGSpan(bool bWrite = false);	// close off any current WIG span ready to start any subsequent span, if bWrite is true then write to disk 
+	int AccumWIGCnts(uint32_t ChromID,	// accumulate wiggle counts into variableStep spans over this chromosome
+			uint32_t Loci,		// this loci
+			uint32_t Cnts,		// has this many counts attributed
+			uint32_t MaxSpanLen = 100000); // allow WIG spans to be this maximal length
 
 	int ProcessSiteProbabilites(int RelSiteStartOfs); // offset the site octamer by this relative start offset (read start base == 0)
 	int WriteSitePrefs(void);
