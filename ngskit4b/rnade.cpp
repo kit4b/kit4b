@@ -81,11 +81,11 @@ const int cMaxConfidenceIterations = 10000;	// max number of iterations when cal
 const int cMaxExclZones = 1000;			// max allowed number of exclusion zones within which reads are to be excluded
 
 // following thresholds are used for characterisation of differential transcription state
-// characterisation is into high, moderate, low and none with none including both negatively corelated and corelections less than cLoPeason
-const double cHiPearsonThres = 0.8;					// >= this Pearson if control and experiment highly corelated in their reads distributions
-const double cModPearsonThes = 0.5;					// >= this Pearson if control and experiment moderately corelated
-const double cLoPearsonThres = 0.3;					// >= this Pearson if control and experiment have low corelation
-const double cNoPearsonThres = cLoPearsonThres;		// < this Pearson if control and experiment have either negative or no corelation
+// characterisation is into high, moderate, low and none with none including both negatively correlated and corelections less than cLoPeason
+const double cHiPearsonThres = 0.8;					// >= this Pearson if control and experiment highly correlated in their reads distributions
+const double cModPearsonThes = 0.5;					// >= this Pearson if control and experiment moderately correlated
+const double cLoPearsonThres = 0.3;					// >= this Pearson if control and experiment have low correlated
+const double cNoPearsonThres = cLoPearsonThres;		// < this Pearson if control and experiment have either negative or no correlated
 
 const double cNoFoldChange = 1.25;				// if less than this fold change then characterise as none
 const double cLoFoldChange = 1.50;				// if less than this fold change then characterise as low
@@ -110,17 +110,17 @@ typedef enum TAG_eProcPhase {
 
 typedef enum TAG_ePearsonScore {
 	ePSIndeterminate = 0,						// insufficent counts, or other filtering criteria, by which Pearson can be calculated
-	ePSNone,									// control and experiment have either negative or corelation below that of cLoPearsonThres
-	ePSLow,										// lowly corelated Pearsons (cLoPearsonThres)
-	ePSMod,										// moderately corelated Pearsons (cModPearsonThres)
-	ePSHi										// highly corelated Pearsons (cHiPearsonThres)
+	ePSNone,									// control and experiment have either negative or correlated below that of cLoPearsonThres
+	ePSLow,										// lowly correlated Pearsons (cLoPearsonThres)
+	ePSMod,										// moderately correlated Pearsons (cModPearsonThres)
+	ePSHi										// highly correlated Pearsons (cHiPearsonThres)
 } etPearsonScore;
 
 typedef enum TAG_eCntsScore {
 	eDEIndeterminate = 0,						// insufficent counts, or other filtering criteria, by which foldchange can be calculated
 	eDEHi = 1,									// high changes in DE counts (cHiFoldChange)
 	eDESMod,									// moderate changes in DE counts (cModFoldChange)
-	eDSElow,									// low change in DE lowly corelated Pearsons (cLoFoldChange)
+	eDSElow,									// low change in DE lowly correlated Pearsons (cLoFoldChange)
 	eDESNone,									// no or very little change in DE counts (cNoFoldChange)
 } etCntsScore;
 

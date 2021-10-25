@@ -175,6 +175,7 @@
     <ClInclude Include="ArtefactReduce.h" />
     <ClInclude Include="AssembGraph.h" />
     <ClInclude Include="Benchmarker.h" />
+    <ClInclude Include="haps2genotype.h" />
     <ClInclude Include="CallHaplotypes.h" />
     <ClInclude Include="GBSmapSNPs.h" />
     <ClInclude Include="seghaplotypes.h" />
@@ -213,6 +214,7 @@
     <ClCompile Include="AssembGraph.cpp" />
     <ClCompile Include="Assemble.cpp" />
     <ClCompile Include="Benchmarker.cpp" />
+    <ClCompile Include="haps2genotype.cpp" />
     <ClCompile Include="CallHaplotypes.cpp" />
     <ClCompile Include="GBSmapSNPs.cpp" />
     <ClCompile Include="seghaplotypes.cpp" />

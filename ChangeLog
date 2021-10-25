@@ -73,4 +73,5 @@ Release 1.5.3 - 'seghaplotypes' updated default parameters to give increased wei
 Release 1.6.3 - General value types cleanup - INT32/INT64's refactored to be standard int32_t and int64_t's. Additional module 'callhaplotypes' utilising allelic alignments.
 Release 1.6.5 - 'kalign' can now align pooled readsets (multiple readsets treated as if reads from a single set) up to a maximum of 16,000 PE readsets. Immediate application has been for mutational trend discovery in SARS-CoV-2 readsets.
 Release 1.7.0 - General code cleanup and optimisations.
+Release 1.7.7 - 'callhaplotypes' refactored to report each haplotype loci instead of the original (Release 1.7.0) counts of haplotypes within a fixed sized window. 
    

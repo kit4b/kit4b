@@ -17,12 +17,10 @@
 
 // forward declaration
 int
-Process(eModeGBSMapSNPs PMode,			// processing mode
-						int BinSize,					// SNP loci counts are accumulated into this sized (Kbp) non-overlapping bins
-						char *pszGBSName,				// column name referencing the GBS readset which is to be processed
-						char *pszInNMFile,		// processing chromosome name mapping from this file
-						char *pszInGBSFile,	// processing GBS SNP calls from this file
-						char *pszOutFile);		// windowed GBS SNP calls output file
+Process(eModeGBSMapSNPs PMode,							// processing mode
+						char *pszInNMFile,				// processing chromosome name mapping from this file
+						char *pszInGBSFile,				// processing GBS SNP calls from this file
+						char *pszOutFile);				// GBS haplotype calls output file
 
 #ifdef _WIN32
 int gbsmapsnps(int argc, char *argv[])
@@ -43,29 +41,23 @@ gbsmapsnps(int argc, char **argv)
 	int NumberOfProcessors;		// number of installed CPUs
 
 	 eModeGBSMapSNPs PMode;			// processing mode
-	int BinSize;					// SNP loci counts are accumulated into this sized (Kbp) non-overlapping bins
-	char szGBSName[80];				// column name referencing the GBS readset which is to be processed
 	char szInNMFile[_MAX_PATH];		// processing chromosome name mapping from this file
 	char szInGBSFile[_MAX_PATH];	// processing GBS SNP calls from this file
-	char szOutFile[_MAX_PATH];		// windowed GBS SNP calls output file
+	char szOutFile[_MAX_PATH];		// GBS haplotype calls output file
 
 	struct arg_lit *help = arg_lit0 ("h", "help", "print this help and exit");
 	struct arg_lit *version = arg_lit0 ("v", "version,ver", "print version information and exit");
 	struct arg_int *FileLogLevel = arg_int0 ("f", "FileLogLevel", "<int>", "Level of diagnostics written to screen and logfile 0=fatal,1=errors,2=info,3=diagnostics,4=debug");
 	struct arg_file *LogFile = arg_file0 ("F", "log", "<file>", "diagnostics log file");
 
-	struct arg_int *pmode = arg_int0 ("m", "mode", "<int>", "processing mode: 0 default");
-
-	struct arg_int *accumbinsize = arg_int0 ("b", "binsize", "<int>", "SNP loci counts accumulated into non-overlapping bins of this size in Kbp (defaults to 100Kbp)");
-	struct arg_str *gbsname = arg_str1("r","gbsname","<str>","header field name referencing the GBS readset which is to be processed");
-
-	struct arg_file *incnmapfile = arg_file1("I", "cnmap", "<file>", "chromosome name mappings from this file (CSV format)");
-	struct arg_file *ingbsfile = arg_file1("i", "in", "<file>", "processing GBS SNP calls from this file (CSV format)");
-	struct arg_file *outfile = arg_file1("o", "out", "<file>", "windowed GBS SNP loci counts output file (CSV format)");
+	struct arg_int *pmode = arg_int0 ("m", "mode", "<int>", "processing mode: 0 Map SNP GBS to PBA GBS haplotypes, 1: Compare 2 PBA haplotype matrices for consistency");
+	struct arg_file *incnmapfile = arg_file1("I", "cnmap", "<file>", "-m0 mode: chromosome name mappings from this file, -m1 mode: processing haplotype matrix M2 (CSV format)");
+	struct arg_file *ingbsfile = arg_file1("i", "in", "<file>", "-m0 mode: processing GBS SNP calls from this file, -m1 mode: processing haplotype matrix M1  (CSV format)");
+	struct arg_file *outfile = arg_file1("o", "out", "<file>", "GBS haplotype calls output file (CSV format)");
 	struct arg_end *end = arg_end (200);
 
 	void *argtable[] = { help,version,FileLogLevel,LogFile,
-						pmode,accumbinsize,gbsname,incnmapfile,ingbsfile,outfile,end };
+						pmode,incnmapfile,ingbsfile,outfile,end };
 
 	char **pAllArgs;
 	int argerrors;
@@ -133,35 +125,12 @@ gbsmapsnps(int argc, char **argv)
 		gProcessID = 0;
 		gProcessingID = 0;
 
-		PMode = pmode->count ? (eModeGBSMapSNPs)pmode->ival[0] : eMGBSMdefault;
-		if(PMode < eMGBSMdefault || PMode > eMGBSMdefault)
+		PMode = pmode->count ? (eModeGBSMapSNPs)pmode->ival[0] : eMGBSMDefault;
+		if(PMode < eMGBSMDefault || PMode >= eMGBSMPlaceholder)
 			{
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Error: Currently only the one processing mode is supported '-m0'\n");
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Error: Processing mode is not supported '-m'\n");
 			exit(1);
 			}
-
-
-		BinSize = accumbinsize->count ? accumbinsize->ival[0] : 100;
-		if(BinSize < 10 || BinSize > 2000)
-			{
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Error: Accumulating non-overlapping bin size '-b%dKbp' specified outside of range 10..2000 Kbp\n", BinSize);
-			exit(1);
-			}
-
-		szGBSName[0] = '\0';
-		if(gbsname->count)
-			{
-			strncpy(szGBSName, gbsname->sval[0], 80);
-			szGBSName[79] = '\0';
-			CUtility::TrimQuotedWhitespcExtd(szGBSName);
-			CUtility::CleanText(szGBSName);
-			}
-		if(szGBSName[0] == '\0')
-			{
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Error: GBS readset name is empty after whitespace trimming, must be specified with '-r<readset>'\n", BinSize);
-			exit(1);
-			}
-
 
 // show user current resource limits
 #ifndef _WIN32
@@ -197,7 +166,7 @@ gbsmapsnps(int argc, char **argv)
 	CUtility::TrimQuotedWhitespcExtd (szOutFile);
 	if(szOutFile[0] == '\0')
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Error: After removal of whitespace, no output windowed GBS SNP loci output file specified with '-o<filespec>' option)\n");
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Error: After removal of whitespace, no output GBS haplotype output file specified with '-o<filespec>' option)\n");
 		exit(1);
 		}
 
@@ -205,17 +174,16 @@ gbsmapsnps(int argc, char **argv)
 	gDiagnostics.DiagOut (eDLInfo, gszProcName, "Processing parameters:");
 	const char *pszDescr;
 	switch (PMode) {
-		case eMGBSMdefault:
-			pszDescr = "Binning input GBS SNP loci into fixed size windowed bins as loci counts";
+		case eMGBSMDefault:
+			pszDescr = "Map SNP GBS to PBA GBS haplotypes";
 			break;
+		case eMGBSMConsistency:
+			pszDescr = "Compare 2 PBA GBS matrices for haplotype consistency";
 		}
 
-	gDiagnostics.DiagOutMsgOnly (eDLInfo, "Accumulating counts in non-overlapping windowed bins of size : %dKbp", BinSize);
-	gDiagnostics.DiagOutMsgOnly (eDLInfo, "Filtering for GBS readsets : '%s'", szGBSName);
-	
 	gDiagnostics.DiagOutMsgOnly (eDLInfo, "Using chromosome name mappings from this input file : '%s'", szInNMFile);
 	gDiagnostics.DiagOutMsgOnly (eDLInfo, "Processing GBS SNP calls from this input file : '%s'", szInGBSFile);
-	gDiagnostics.DiagOutMsgOnly (eDLInfo, "Writing windowed GBS SNP loci counts to this output file : '%s'", szOutFile);
+	gDiagnostics.DiagOutMsgOnly (eDLInfo, "Writing GBS haplotypes to this output file : '%s'", szOutFile);
 
 #ifdef _WIN32
 	SetPriorityClass (GetCurrentProcess (), BELOW_NORMAL_PRIORITY_CLASS);
@@ -223,11 +191,9 @@ gbsmapsnps(int argc, char **argv)
 	gStopWatch.Start ();
 	Rslt = 0;
 	Rslt = Process(PMode,			// processing mode
-						BinSize,					// SNP loci counts are accumulated into this sized (Kbp) non-overlapping bins
-						szGBSName,				// column name referencing the GBS readset which is to be processed
 						szInNMFile,		// processing chromosome name mapping from this file
 						szInGBSFile,	// processing GBS SNP calls from this file
-						szOutFile);		// windowed GBS SNP calls output file
+						szOutFile);		// GBS haplotypes calls output file
 
 	Rslt = Rslt >= 0 ? 0 : 1;
 	gStopWatch.Stop ();
@@ -246,11 +212,9 @@ else
 
 int
 Process(eModeGBSMapSNPs PMode,			// processing mode
-						int BinSize,					// SNP loci counts are accumulated into this sized (Kbp) non-overlapping bins
-						char *pszGBSName,				// column name referencing the GBS readset which is to be processed
 						char *pszInNMFile,		// processing chromosome name mapping from this file
 						char *pszInGBSFile,	// processing GBS SNP calls from this file
-						char *pszOutFile)		// windowed GBS SNP calls output file
+						char *pszOutFile)		// GBS haplotypes output file
 {
 int Rslt;
 CGBSmapSNPs* pGBSmapSNPs;
@@ -260,7 +224,7 @@ if((pGBSmapSNPs = new CGBSmapSNPs) == NULL)
 	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Unable to instantiate instance of CGBSmapSNPs");
 	return(eBSFerrObj);
 	}
-Rslt = pGBSmapSNPs->Process(PMode,BinSize,pszGBSName,pszInNMFile,pszInGBSFile,pszOutFile);
+Rslt = pGBSmapSNPs->Process(PMode,pszInNMFile,pszInGBSFile,pszOutFile);
 delete pGBSmapSNPs;
 return(Rslt);
 }
@@ -272,7 +236,7 @@ m_hOutFile = -1;
 m_pInNMFile = NULL;
 m_pInGBSFile = NULL;
 m_pChromMappings = NULL;
-m_pWinBins = NULL;
+m_pProgenyFndrAligns = NULL;
 m_pszOutBuffer = NULL;
 Reset();
 }
@@ -287,10 +251,17 @@ if(m_pInGBSFile != NULL)
 	delete m_pInGBSFile;
 if(m_pChromMappings != NULL)
 	delete m_pChromMappings;
-if(m_pWinBins != NULL)
-	delete m_pWinBins;
 if(m_pszOutBuffer != NULL)
 	delete []m_pszOutBuffer;
+if(m_pProgenyFndrAligns != NULL)
+	{
+#ifdef _WIN32
+	free(m_pProgenyFndrAligns);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
+#else
+	if(m_pProgenyFndrAligns != MAP_FAILED)
+		munmap(m_pProgenyFndrAligns, m_AllocdProgenyFndrAlignsMem);
+#endif
+	}
 }
 
 void 
@@ -318,29 +289,44 @@ if(m_pChromMappings != NULL)
 	}
 m_NumChromMappings = 0;
 
-if(m_pWinBins != NULL)
-	{
-	delete m_pWinBins;
-	m_pWinBins = NULL;
-	}
 if(m_pszOutBuffer != NULL)
 	{
 	delete []m_pszOutBuffer;
 	m_pszOutBuffer = NULL;
 	}
 
+if(m_pProgenyFndrAligns != NULL)
+	{
+#ifdef _WIN32
+	free(m_pProgenyFndrAligns);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
+#else
+	if(m_pProgenyFndrAligns != MAP_FAILED)
+		munmap(m_pProgenyFndrAligns, m_AllocdProgenyFndrAlignsMem);
+#endif
+	m_pProgenyFndrAligns = NULL;
+	}
+
+m_UsedProgenyFndrAligns = 0;
+m_AllocdProgenyFndrAligns = 0;
+m_AllocdProgenyFndrAlignsMem = 0;
 
 m_OutBuffIdx = 0;
 m_AllocOutBuff = 0;
-
-m_NumWinBins = 0;
-m_BinSize = 0;
-m_PMode = eMGBSMdefault;
-m_BinSize = 0;
-m_pszGBSName = NULL;
+m_PMode = eMGBSMDefault;
 m_pszInNMFile = NULL;
 m_pszInGBSFile = NULL;
 m_pszOutFile = NULL;
+
+m_NumFounders = 0;
+memset(m_FndrIDs,0,sizeof(m_FndrIDs));
+
+m_NumProgenies = 0;
+memset(m_ProgenyIDs,0,sizeof(m_ProgenyIDs));
+
+m_LAReadsetNameID = 0;
+m_NumReadsetNames = 0;
+m_NxtszReadsetIdx = 0;
+m_szReadsetNames[0] = '\0';
 
 m_LAChromNameID=0;
 m_NumChromNames=0;
@@ -422,10 +408,6 @@ int32_t CurLineNumber;
 uint32_t MapFromChromID;
 uint32_t MapToChromID;
 uint32_t ChromSize;
-uint32_t StartLoci;
-uint32_t ReqBins;
-uint32_t CMIdx;
-tsWinBin *pBin;
 char *pszFromChrom;
 char *pszToChrom;
 
@@ -455,7 +437,6 @@ if(m_pChromMappings == NULL)
 		}
 	}
 
-ReqBins = 0;
 CurLineNumber = 0;
 while ((Rslt = m_pInNMFile->NextLine()) > 0)				// onto next line containing fields
 	{
@@ -487,35 +468,107 @@ while ((Rslt = m_pInNMFile->NextLine()) > 0)				// onto next line containing fie
 	pChromMapping->AliasChromID = MapFromChromID;
 	pChromMapping->RefChromID = MapToChromID;
 	pChromMapping->Size = ChromSize;
-	ReqBins += (pChromMapping->Size+m_BinSize-1) / m_BinSize;
 	}
 delete m_pInNMFile;
 m_pInNMFile = NULL;
 
-m_pWinBins = new tsWinBin [ReqBins];
-memset(m_pWinBins,0,sizeof(tsWinBin)*ReqBins);
 pChromMapping = m_pChromMappings;
-pBin = m_pWinBins;
-m_NumWinBins = 0;
-for(CMIdx = 0; CMIdx < m_NumChromMappings; CMIdx++,pChromMapping++)
-	{
-	pChromMapping->StartBinID = m_NumWinBins + 1;
-	StartLoci = 0;
-	while(StartLoci < pChromMapping->Size) {
-		pBin->BinID = ++m_NumWinBins;
-		pChromMapping->EndBinID = m_NumWinBins;
-		pBin->RefChromID = pChromMapping->RefChromID;
-		pBin->StartLoci = StartLoci;
-		StartLoci += m_BinSize-1;
-		if(StartLoci > pChromMapping->Size)
-			StartLoci = pChromMapping->Size - 1;
-		pBin->EndLoci = StartLoci;
-		StartLoci += 1;
-		pBin++;
-		}
-	}
+
 return(eBSFSuccess);
 }
+
+
+// NOTE: Readsets are checked for uniqueness as readsets must be unique within a given readetset type
+int32_t		// returned readset identifier, < 1 if unable to accept this readset name
+CGBSmapSNPs::AddReadset(char* pszReadset, // associate unique identifier with this readset name
+							uint8_t ReadsetType)	// 0: founder, 1: progeny, 2: control
+{
+int32_t ReadsetNameIdx;
+int ReadsetNameLen;
+char Type;
+char *pszLAname;
+Type = '0' + (char)ReadsetType;
+
+// with any luck the sequence name will be same as the last accessed
+if((pszLAname = LocateReadset(m_LAReadsetNameID)) != NULL)
+	{
+	if(pszLAname[-1] == Type &&	// prefixed with ReadsetType
+		!stricmp(pszReadset,pszLAname))
+			return(0); // non-unique within ReadsetType!
+	}
+	
+// iterate over all known readsets in case this readset to add is a duplicate
+for(ReadsetNameIdx = 0; ReadsetNameIdx < m_NumReadsetNames; ReadsetNameIdx++)
+	{
+	pszLAname = &m_szReadsetNames[m_szReadsetIdx[ReadsetNameIdx]];
+	if(*pszLAname++ != Type)
+		continue;
+	if(!stricmp(pszReadset, pszLAname))
+		{
+		m_LAReadsetNameID = ReadsetNameIdx + 1;
+		return(0); // non-unique within ReadsetType!
+		}
+	}
+
+// not a duplicate
+ReadsetNameLen = (int)strlen(pszReadset);
+if((m_NxtszReadsetIdx + ReadsetNameLen + 2) > (int)sizeof(m_szReadsetNames))
+	return(0);		// no more space to hold reeadset name, treating as if a non-unique!
+if(m_NumReadsetNames == (cMaxProgenyReadsets + cMaxFounderReadsets))
+	return(0);		// unable to hold any more readsets, treating as if a non-unique!
+
+m_szReadsetIdx[m_NumReadsetNames++] = m_NxtszReadsetIdx;
+pszLAname = &m_szReadsetNames[m_NxtszReadsetIdx];
+*pszLAname++ = Type;
+strcpy(pszLAname, pszReadset);
+m_NxtszReadsetIdx += ReadsetNameLen + 2;
+m_LAReadsetNameID = m_NumReadsetNames;
+return(m_LAReadsetNameID);
+}
+
+char* 
+CGBSmapSNPs::LocateReadset(int32_t ReadsetID)
+{
+int Idx;
+Idx = ReadsetID & 0x0fffffff;			// mask out any potential ReadsetType
+if(Idx < 1 || Idx > m_NumReadsetNames)
+	return(NULL);
+return(&(m_szReadsetNames[m_szReadsetIdx[Idx -1]+1])); // skipping lead char which is the ReadsetType
+}
+
+
+int32_t		// returned Readset identifier, < 1 if unable to locate this Readset name
+CGBSmapSNPs::LocateReadset(char* pszReadset, // return unique identifier associated with this Readset name
+							   uint8_t ReadsetType)	// 0: founder, 1: progeny, 2: control
+{
+int32_t ReadsetNameIdx;
+char Type;
+char *pszLAReadset;
+
+Type = '0'+ (char)ReadsetType;
+// with any luck the Readset name will be same as the last accessed
+if((pszLAReadset = LocateReadset(m_LAReadsetNameID)) != NULL)
+	{
+	if(pszLAReadset[-1] == Type &&	// prefixed with ReadsetType
+		!stricmp(pszReadset,pszLAReadset))
+			return(m_LAReadsetNameID);
+	}
+
+// iterate over all known Readsets
+for(ReadsetNameIdx = 0; ReadsetNameIdx < m_NumReadsetNames; ReadsetNameIdx++)
+	{
+	pszLAReadset = &m_szReadsetNames[m_szReadsetIdx[ReadsetNameIdx]];
+	if(*pszLAReadset++ != Type)		// readset must be that of ReadsetType
+		continue;
+	if(!stricmp(pszReadset, pszLAReadset))
+		{
+		m_LAReadsetNameID = ReadsetNameIdx + 1;
+		return(m_LAReadsetNameID);
+		}
+	}
+return(0);
+}
+
 
 // linear search through alias names checking for longest match on the prefix of pszChrom
 // can't do a simple exact match as sometimes there may be a suffix appended - could be SNP loci etc. - by the GBS SNP loci file generator. UGH, UGH ....
@@ -536,24 +589,43 @@ for(MapIdx = 0; MapIdx < m_NumChromMappings; MapIdx++,pChromMapping++)
 return(NULL);
 }
 
+// inplace modification of sample identifier ensuring that sample identifiers have a prefix of 'S0' where original identifier starts with 'S[1-9]'
+int32_t		// updated strlen()
+CGBSmapSNPs::MakeConsistentSampleName(char* pszSampleID)
+{
+char szUpdated[200];
+char CurChr;
+char *pszUpdated = szUpdated;
+char *pszOrig = pszSampleID;
+while((CurChr = *pszUpdated++ = *pszOrig++) != '\0')
+	{
+	if(CurChr == 'S')
+		{
+		if(*pszOrig >= '1' && *pszOrig <= '9')
+			*pszUpdated++ = '0';
+		}
+	}
+strcpy(pszSampleID,szUpdated);
+return((int32_t)strlen(szUpdated));
+}
+
 int
-CGBSmapSNPs::LoadGBSSNPs(char* pszGBSName,				// column name referencing the GBS readset which is to be processed
+CGBSmapSNPs::LoadHaplotypeMatrix(uint32_t MatrixID,			// identifies matrix source
 				char* pszInGBSFile)							// processing chromosome name mapping from this file)
 {
 int Rslt;
+int F4Idx;
 int ExptdNumFields;
 int CurNumFields;
 int CurLineNumber;
-char *pszAliasChrom;
-char *pszFa;
-char *pszFb;
-char *pszFaSNPs;
-char *pszFbSNPs;
+char *pszChrom;
+uint32_t RefChromID;
+int Haplotypes;
 int F4Field;
-char *pszF4SNPs;
 uint32_t SNPLoci;
-tsChromMapping *pChromMapping;
-tsWinBin *pWinBin;
+uint32_t NumProgenyAtLoci;
+uint32_t NumLoci;
+tsProgenyFndrAligns ProgenyFndrAligns;
 char *pszGBSReadset;
 
 if((m_pInGBSFile = new CCSVFile) == NULL)
@@ -569,10 +641,172 @@ if((Rslt = m_pInGBSFile->Open(pszInGBSFile)) != eBSFSuccess)
 	Reset();
 	return(Rslt);
 	}
-m_pInGBSFile->SetMaxFields(cMaxGBSF4s + 5);		// could be quite a few F4s!
+m_pInGBSFile->SetMaxFields(cMaxProgenyReadsets + 5);		// could be quite a few F4s!
+
+SNPLoci = 0;
+NumLoci = 0;
+ExptdNumFields = 0;
+CurNumFields = 0;
+CurLineNumber = 0;
+F4Field = 6;	// defaulting as the first F4
+
+while ((Rslt = m_pInGBSFile->NextLine()) > 0)				// onto next line containing fields
+	{
+	CurLineNumber++;
+	if(CurLineNumber == 1 && m_pInGBSFile->IsLikelyHeaderLine())
+		{
+		if((ExptdNumFields = m_pInGBSFile->GetCurFields()) < 4)		// expected to be at least 1 F4!
+			{
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "GBS SNP Genotyping matrix file '%s' expected to contain at least 4 fields at line %d",pszInGBSFile,CurLineNumber);
+			Reset();
+			return(eBSFerrParse);
+			}
+
+		// inside knowledge - GBS matrix file currently only has 2 founders!
+		// dummy founders used
+		if(!LocateReadset((char *)"Fa",0))
+			{
+			m_FndrIDs[m_NumFounders] = AddReadset((char *)"Fa",0);
+			m_Fndrs2Proc[m_NumFounders++] = 0x01;
+			}
+		if(!LocateReadset((char *)"Fb",0))
+			{
+			m_FndrIDs[m_NumFounders] = AddReadset((char *)"Fb",0);
+			m_Fndrs2Proc[m_NumFounders++] = 0x01;
+			}
+		// iterate over header fields and locate the F4 field, record it's index
+		int32_t CurReadset;
+		for(F4Field = 4,F4Idx=0; F4Field <= ExptdNumFields; F4Field++,F4Idx++)
+			{
+			m_pInGBSFile->GetText(F4Field, &pszGBSReadset);
+			// could be of the form 'S99693' or 'S099693' or 'Progeny:S99693' or 'Progeny:S099693' dependent on the source generator
+			// prefix sample identifiers with a leading 0, if missing, so as to maintain naming consistency
+			MakeConsistentSampleName(pszGBSReadset);
+			if((CurReadset = LocateReadset(pszGBSReadset,1)) == 0)
+				{
+				if(MatrixID == 2)
+					{
+					gDiagnostics.DiagOut(eDLFatal, gszProcName, "GBS Haplotype matrix file '%s' contains progeny '%s' not located in ....",pszInGBSFile,pszGBSReadset);
+					Reset();
+					return(eBSFerrEntry);
+					}
+				CurReadset = AddReadset(pszGBSReadset,1);
+				}
+			if(CurReadset != m_ProgenyIDs[F4Idx])
+				m_ProgenyIDs[F4Idx] = CurReadset;
+			}
+		if(m_NumProgenies > 0 && m_NumProgenies != F4Idx)
+			{
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "GBS Haplotype matrix file '%s' contains different progeny set",pszInGBSFile,pszGBSReadset);
+			Reset();
+			return(eBSFerrEntry);
+			}
+		m_NumProgenies = F4Idx;
+		continue;
+		}
+
+	if((CurNumFields = m_pInGBSFile->GetCurFields()) != ExptdNumFields)
+		{
+		if(ExptdNumFields == 0)
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "GBS haplotype matrix file '%s' expected to contain header line at line %",pszInGBSFile,CurLineNumber);
+		else
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "GBS haplotype matrix file '%s' expected to contain at %d fields (same number as header) at line %",pszInGBSFile,ExptdNumFields,CurLineNumber);
+		Reset();
+		return(eBSFerrParse);
+		}
+	memset(&ProgenyFndrAligns,0,sizeof(ProgenyFndrAligns));
+	// expectation is that -
+	// 	field 1 contains chrom name
+	//	field 2 contains loci
+	//	field 3..n contains F4n haplotype call, 0: no haplotype call, 1: Fa only, 2: Fb only, 3: Fa and Fb
+
+	m_pInGBSFile->GetText(1, &pszChrom);
+	RefChromID = AddChrom(pszChrom);
+	m_pInGBSFile->GetInt(2, (int*)&SNPLoci);
+
+	NumProgenyAtLoci = 0;
+	for(F4Field = 4,F4Idx=0; F4Field <= ExptdNumFields; F4Field++,F4Idx++)
+		{
+		memset(&ProgenyFndrAligns,0,sizeof(ProgenyFndrAligns));
+		ProgenyFndrAligns.ReadsetID = m_ProgenyIDs[F4Idx];
+		ProgenyFndrAligns.Loci = SNPLoci;
+		ProgenyFndrAligns.Source=MatrixID;
+		ProgenyFndrAligns.ChromID = RefChromID;
+		bool bFa = false;
+		bool bFb = false;
+		m_pInGBSFile->GetInt(F4Field, (int*)&Haplotypes);
+		if(Haplotypes == 0)
+			continue;
+		ProgenyFndrAligns.Alleles = 0;
+		if(Haplotypes & 0x01)
+			bFa = true;
+		if(Haplotypes & 0x02)
+			bFb = true;
+
+		if(bFa)
+			{
+			Bits256Set(0,ProgenyFndrAligns.ProgenyFounders);
+			ProgenyFndrAligns.NumProgenyFounders++;
+			}
+		if(bFb)
+			{
+			Bits256Set(1,ProgenyFndrAligns.ProgenyFounders);
+			ProgenyFndrAligns.NumProgenyFounders++;
+			}
+		AddProgenyFndrAligns(&ProgenyFndrAligns);
+		NumProgenyAtLoci++;
+		}
+	if(NumProgenyAtLoci)
+		NumLoci++;
+	}
+
+delete m_pInGBSFile;
+m_pInGBSFile = NULL;
+return(Rslt);
+}
+
+
+int
+CGBSmapSNPs::LoadGBSSNPs(uint32_t MatrixID,			// identifies matrix source
+				char* pszInGBSFile)							// processing chromosome name mapping from this file)
+{
+int Rslt;
+int F4Idx;
+int ExptdNumFields;
+int CurNumFields;
+int CurLineNumber;
+char *pszAliasChrom;
+char *pszFa;
+char *pszFb;
+char *pszFaSNPs;
+char *pszFbSNPs;
+int F4Field;
+char *pszF4SNPs;
+uint32_t SNPLoci;
+uint32_t NumProgenyAtLoci;
+uint32_t NumLoci;
+tsProgenyFndrAligns ProgenyFndrAligns;
+tsChromMapping *pChromMapping;
+char *pszGBSReadset;
+
+if((m_pInGBSFile = new CCSVFile) == NULL)
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to instantiate CCSVfile");
+	Reset();
+	return(eBSFerrObj);
+	}
+
+if((Rslt = m_pInGBSFile->Open(pszInGBSFile)) != eBSFSuccess)
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to open file: '%s'", pszInGBSFile);
+	Reset();
+	return(Rslt);
+	}
+m_pInGBSFile->SetMaxFields(cMaxProgenyReadsets + 5);		// could be quite a few F4s!
 
 pszAliasChrom = NULL;
 SNPLoci = 0;
+NumLoci = 0;
 ExptdNumFields = 0;
 CurNumFields = 0;
 CurLineNumber = 0;
@@ -585,33 +819,30 @@ while ((Rslt = m_pInGBSFile->NextLine()) > 0)				// onto next line containing fi
 		{
 		if((ExptdNumFields = m_pInGBSFile->GetCurFields()) < 6)		// expected to be at least 1 F4!
 			{
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "GBS SNP Genotyping file '%s' expected to contain at least 6 fields at line %",pszInGBSFile,CurLineNumber);
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "GBS SNP file '%s' expected to contain at least 6 fields at line %d",pszInGBSFile,CurLineNumber);
 			Reset();
 			return(eBSFerrParse);
 			}
 
+		m_NumFounders = 0;
 		// get Fa name
-		m_pInGBSFile->GetText(4, &pszFa);
-		strncpy(m_szFndrA,pszFa,sizeof(m_szFndrA)-1);
-		m_szFndrA[sizeof(m_szFndrA)-1] = '\0';
+		m_pInGBSFile->GetText(4, &pszFa);	// inside knowledge - GBS formated file only has 2 founders!
+		m_FndrIDs[m_NumFounders] = AddReadset(pszFa,0);
+		m_Fndrs2Proc[m_NumFounders++] = 0x01;
 		// get Fb name
 		m_pInGBSFile->GetText(5, &pszFb);
-		strncpy(m_szFndrB,pszFb,sizeof(m_szFndrB)-1);
-		m_szFndrB[sizeof(m_szFndrB)-1] = '\0';
-
+		m_FndrIDs[m_NumFounders] = AddReadset(pszFb,0);
+		m_Fndrs2Proc[m_NumFounders++] = 0x01;
+		
 		// iterate over header fields and locate the F4 field, record it's index
-		for(F4Field = 6; F4Field <= ExptdNumFields; F4Field++)
+		for(F4Field = 6,F4Idx=0; F4Field <= ExptdNumFields; F4Field++,F4Idx++)
 			{
 			m_pInGBSFile->GetText(F4Field, &pszGBSReadset);
-			if(!stricmp(pszGBSName,pszGBSReadset))
-				break;
+			// prefix sample identifiers with a leading 0, if missing, so as to maintain naming consistency
+
+			m_ProgenyIDs[F4Idx] = AddReadset(pszGBSReadset,1);
 			}
-		if(F4Field > ExptdNumFields)	// if can't locate field matching readset to report on...
-			{
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "GBS SNP Genotyping file '%s' has no header field matching requested GBS readset \"%s\" at line %",pszInGBSFile,pszInGBSFile,CurLineNumber);
-			Reset();
-			return(eBSFerrParse);
-			}
+		m_NumProgenies = F4Idx;
 		continue;
 		}
 
@@ -624,7 +855,7 @@ while ((Rslt = m_pInGBSFile->NextLine()) > 0)				// onto next line containing fi
 		Reset();
 		return(eBSFerrParse);
 		}
-
+	memset(&ProgenyFndrAligns,0,sizeof(ProgenyFndrAligns));
 	// expectation is that -
 	//	field 1 contains chrom name appended with loci
 	// 	field 2 contains chrom name
@@ -643,61 +874,78 @@ while ((Rslt = m_pInGBSFile->NextLine()) > 0)				// onto next line containing fi
 	if(SNPLoci > pChromMapping->Size)		// clamp
 		SNPLoci = pChromMapping->Size;
 
-	pWinBin = &m_pWinBins[pChromMapping->StartBinID + (SNPLoci / m_BinSize)-1];
-	pWinBin->LociCounts++;
-
+	uint8_t FaAlleles;
+	uint8_t FbAlleles;
+	
+	// requiring that Fa and Fb are single alleled - major - only so progeny parents can be differentiated
 	m_pInGBSFile->GetText(4, &pszFaSNPs);
+	if((FaAlleles = SNPs2Alleles(pszFaSNPs,true))==0)
+		continue;
 	m_pInGBSFile->GetText(5, &pszFbSNPs);
-	m_pInGBSFile->GetText(F4Field, &pszF4SNPs);
-	bool bFa = false;
-	bool bFb = false;
-	bool bFaFb = false;
-	bool bCntNA = true;
-	if(stricmp(pszF4SNPs,"NA"))	// ensure there was a F4 SNP call
+	if((FbAlleles = SNPs2Alleles(pszFbSNPs,true))==0)
+		continue;
+	if(FaAlleles == FbAlleles)	// if same alleles for Fa and Fb then can't differentiate
+		continue;
+
+	NumProgenyAtLoci = 0;
+	for(F4Field = 6,F4Idx=0; F4Field <= ExptdNumFields; F4Field++,F4Idx++)
 		{
-		if(!stricmp(pszF4SNPs,pszFaSNPs))	// F4 is exactly matching Fa and/or Fb?
+		memset(&ProgenyFndrAligns,0,sizeof(ProgenyFndrAligns));
+		ProgenyFndrAligns.ReadsetID = m_ProgenyIDs[F4Idx];
+		ProgenyFndrAligns.Loci = SNPLoci;
+		ProgenyFndrAligns.Source=MatrixID;
+		ProgenyFndrAligns.ChromID = pChromMapping->RefChromID;
+		bool bFa = false;
+		bool bFb = false;
+		m_pInGBSFile->GetText(F4Field, &pszF4SNPs);
+		ProgenyFndrAligns.Alleles = SNPs2Alleles(pszF4SNPs);
+		if(ProgenyFndrAligns.Alleles == 0)
+			continue;
+		if(ProgenyFndrAligns.Alleles == FaAlleles)	// F4 is exactly matching Fa and/or Fb?
 			bFa = true;
-		if(!stricmp(pszF4SNPs,pszFbSNPs))
+		if(ProgenyFndrAligns.Alleles == FbAlleles)
 			bFb = true;
 		if(!(bFa || bFb))		// if no exact match to either founder then check for match on allele
 			{
-			if(stricmp(pszFaSNPs,"NA"))
-				{
-				if(tolower(pszF4SNPs[0]) == tolower(pszFaSNPs[0]) ||	// F4 has an allele matching a Fa allele?
-					tolower(pszF4SNPs[1]) == tolower(pszFaSNPs[0]) ||
-					tolower(pszF4SNPs[0]) == tolower(pszFaSNPs[1]) ||
-					tolower(pszF4SNPs[1]) == tolower(pszFaSNPs[1]))
+			if(ProgenyFndrAligns.Alleles & 0x03 && FaAlleles  & 0x03)
+				bFa = true;
+			else
+				if(ProgenyFndrAligns.Alleles & 0x0c && FaAlleles  & 0x0c)
 					bFa = true;
-				}
-			if(stricmp(pszFbSNPs,"NA"))
-				{
-				if(tolower(pszF4SNPs[0]) == tolower(pszFbSNPs[0]) ||	// F4 has an allele matching a Fb allele?
-					tolower(pszF4SNPs[1]) == tolower(pszFbSNPs[0]) ||
-					tolower(pszF4SNPs[0]) == tolower(pszFbSNPs[1]) ||
-					tolower(pszF4SNPs[1]) == tolower(pszFbSNPs[1]))
+				else
+					if(ProgenyFndrAligns.Alleles & 0x30 && FaAlleles  & 0x30)
+						bFa = true;
+					else
+						if(ProgenyFndrAligns.Alleles & 0xc0 && FaAlleles  & 0xc0)
+							bFa = true;	
+			if(ProgenyFndrAligns.Alleles & 0x03 && FbAlleles  & 0x03)
+				bFb = true;
+			else
+				if(ProgenyFndrAligns.Alleles & 0x0c && FbAlleles  & 0x0c)
 					bFb = true;
-				}
+				else
+					if(ProgenyFndrAligns.Alleles & 0x30 && FbAlleles  & 0x30)
+						bFb = true;
+					else
+						if(ProgenyFndrAligns.Alleles & 0xc0 && FbAlleles  & 0xc0)
+							bFb = true;	
 			}
-		if(bFa || bFb)
-			bCntNA = false;
-		if(bFa && bFb)
-			{
-			bFaFb = true;
-			bFa = false;
-			bFb = false;
-			}
-		}
-	if(bCntNA)
-		pWinBin->CntNA++;
-	else
-		{
+
 		if(bFa)
-			pWinBin->CntExclFa++;
+			{
+			Bits256Set(0,ProgenyFndrAligns.ProgenyFounders);
+			ProgenyFndrAligns.NumProgenyFounders++;
+			}
 		if(bFb)
-			pWinBin->CntExclFb++;
-		if(bFaFb)
-			pWinBin->CntFaFb++;
+			{
+			Bits256Set(1,ProgenyFndrAligns.ProgenyFounders);
+			ProgenyFndrAligns.NumProgenyFounders++;
+			}
+		AddProgenyFndrAligns(&ProgenyFndrAligns);
+		NumProgenyAtLoci++;
 		}
+	if(NumProgenyAtLoci)
+		NumLoci++;
 	}
 
 delete m_pInGBSFile;
@@ -705,270 +953,403 @@ m_pInGBSFile = NULL;
 return(Rslt);
 }
 
-int
-CGBSmapSNPs::ReportBinCounts(char* pszOutFile,
-							char* pszGBSName)				// column name referencing the GBS readset which is to be processed)
-{
-uint32_t BinIdx;
-tsWinBin *pBin;
+uint8_t			// returned PBA alleles
+CGBSmapSNPs::SNPs2Alleles(char* pszSNPs,	// translate char representation of major/minor SNPs into it's packed byte allelic representation
+				bool bMajorOnly)	// true if only major/major single allele to be returned as PBA
 
+{
+uint8_t Alleles;
+char szlcSNPs[80];
+char *pDst;
+if(pszSNPs == NULL || pszSNPs[0] == '\0')
+	return(0);
+pDst = szlcSNPs;
+while((*pDst++ = tolower(*pszSNPs++))!= '\0');
+if(bMajorOnly && szlcSNPs[1] != '\0')
+	{
+	if(szlcSNPs[0] != szlcSNPs[1])
+		return(0);
+	}
+Alleles = 0;
+switch(szlcSNPs[0]) {
+		case 'a':
+			if(szlcSNPs[1] == 'a' || szlcSNPs[1] == '\0')
+				Alleles |= 0x03;
+			else
+				Alleles |= 0x02;
+			break;
+		case 'c':
+			if(szlcSNPs[1] == 'c' || szlcSNPs[1] == '\0')
+				Alleles |= 0x0c;
+			else
+				Alleles |= 0x08;
+			break;
+		case 'g':
+			if(szlcSNPs[1] == 'g' || szlcSNPs[1] == '\0')
+				Alleles |= 0x030;
+			else
+				Alleles |= 0x020;
+			break;
+		case 't':
+			if(szlcSNPs[1] == 't' || szlcSNPs[1] == '\0')
+				Alleles |= 0x0c0;
+			else
+				Alleles |= 0x080;
+			break;
+		default:
+			return(0);
+		}
+
+	switch(szlcSNPs[1]) {
+		case 'a':
+			if(szlcSNPs[0] == 'a')
+				Alleles |= 0x03;
+			else
+				Alleles |= 0x02;
+			break;
+		case 'c':
+			if(szlcSNPs[0] == 'c')
+				Alleles |= 0x0c;
+			else
+				Alleles |= 0x08;
+			break;
+		case 'g':
+			if(szlcSNPs[0] == 'g')
+				Alleles |= 0x030;
+			else
+				Alleles |= 0x020;
+			break;
+		case 't':
+			if(szlcSNPs[0] == 't')
+				Alleles |= 0x0c0;
+			else
+				Alleles |= 0x080;
+			break;
+		case '\0':
+			break;
+		default:
+			return(0);
+		}
+return(Alleles);
+}
+
+
+
+int			// success or otherwise ( >= 0 success, < 0 if processing failed
+CGBSmapSNPs::Process(eModeGBSMapSNPs PMode,			// processing mode
+					 char* pszInNMFile,		// processing chromosome name mapping from this file
+					 char* pszInGBSFile,	// processing GBS SNP calls from this file
+					 char* pszOutFile)		// GBS haplotype matrix output file
+{
+int Rslt;
+Reset();
+m_PMode = PMode;
+m_pszInNMFile = pszInNMFile;
+m_pszInGBSFile = pszInGBSFile;
+m_pszOutFile = pszOutFile;
+
+if(PMode == eMGBSMDefault)
+	{
+	// parse and load chromosome sizes and name mappings
+	if((Rslt = LoadNM(pszInNMFile)) < eBSFSuccess)
+		{
+		Reset();
+		return(Rslt);
+		}
+
+	// parse and load the GBS SNP loci file
+	if((Rslt = LoadGBSSNPs(0,pszInGBSFile)) < eBSFSuccess)
+		{
+		Reset();
+		return(Rslt);
+		}
+	// sort progeny allele stack overlaps by readset.chrom.loci ascending
+	m_mtqsort.SetMaxThreads(4);	// not expecting too many progeny loci so just use a few threads
+	m_mtqsort.qsort(m_pProgenyFndrAligns, (int64_t)m_UsedProgenyFndrAligns, sizeof(tsProgenyFndrAligns), SortProgenyFndrAligns);
+
+	// report haplotypes present for individual progenies
+	for(uint32_t ProgIdx = 0; ProgIdx < (uint32_t)m_NumProgenies; ProgIdx++)
+		ReportHaplotypesByProgeny(pszOutFile, m_ProgenyIDs[ProgIdx]);
+	}
+else // else must be consistency checking
+	{
+	if((Rslt = LoadHaplotypeMatrix(1,pszInGBSFile)) < eBSFSuccess)
+		{
+		Reset();
+		return(Rslt);
+		}
+	if((Rslt = LoadHaplotypeMatrix(2,pszInNMFile)) < eBSFSuccess)
+		{
+		Reset();
+		return(Rslt);
+		}
+
+	// sort progeny allele stack overlaps by readset.chrom.loci ascending
+	m_mtqsort.SetMaxThreads(4);	// not expecting too many progeny loci so just use a few threads
+	m_mtqsort.qsort(m_pProgenyFndrAligns, (int64_t)m_UsedProgenyFndrAligns, sizeof(tsProgenyFndrAligns), SortProgenyFndrAligns);
+
+	ReportConsistency(pszOutFile);
+	}
+
+// generate a matrix with chrom.loci (Y) by progeny (X)
+m_mtqsort.qsort(m_pProgenyFndrAligns, (int64_t)m_UsedProgenyFndrAligns, sizeof(tsProgenyFndrAligns), SortProgenyChromLociReadset);
+
+ReportMatrix(pszOutFile);
+
+Reset();
+return(Rslt);
+}
+
+int
+CGBSmapSNPs::ReportConsistency(char* pszRsltsFileBaseName)		// results are written to this file base name with '.consistency.csv' appended)
+{
+char szOutFile[_MAX_PATH];
+tsProgenyFndrAligns *pCurPFA;
+tsProgenyFndrAligns *pPrev2PFA;
+tsProgenyFndrAligns *pNxt2PFA;
+uint32_t PFAIdx;
+uint32_t PFANxt2Idx;
+int32_t CurReadsetID;
+int32_t CurChromID;
+uint32_t NumConsistent;
+uint32_t NumInconsistent;
+bool bFa;
+bool bFb;
 if(m_pszOutBuffer == NULL)
 	{
-	m_pszOutBuffer = new uint8_t [cMaxAllocRsltsBuff];
-	m_AllocOutBuff = cMaxAllocRsltsBuff;
+	if((m_pszOutBuffer = new uint8_t[cOutBuffSize]) == NULL)
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "ReportConsistency: Memory allocation of %u bytes for output buffering failed - %s", cOutBuffSize, strerror(errno));
+		Reset();
+		return(eBSFerrMem);
+		}
+	m_AllocOutBuff = cOutBuffSize;
 	}
 m_OutBuffIdx = 0;
+sprintf(szOutFile, "%s.consistency.csv", pszRsltsFileBaseName);
 
 #ifdef _WIN32
-m_hOutFile = open(pszOutFile,( O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC),(_S_IREAD | _S_IWRITE));
+m_hOutFile = open(szOutFile, (O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC), (_S_IREAD | _S_IWRITE));
 #else
-	if((m_hOutFile = open64(pszOutFile,O_WRONLY | O_CREAT,S_IREAD | S_IWRITE)) != -1)
-		if(ftruncate(m_hOutFile,0)!=0)
-			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate %s - %s",pszOutFile,strerror(errno));
-			Reset();
-			return(eBSFerrCreateFile);
-			}
-#endif
-if(m_hOutFile < 0)
+if((m_hOutFile = open64(szOutFile, O_WRONLY | O_CREAT, S_IREAD | S_IWRITE)) != -1)
+if(ftruncate(m_hOutFile, 0) != 0)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate %s - %s",pszOutFile,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to create/truncate %s - %s", szOutFile, strerror(errno));
 	Reset();
 	return(eBSFerrCreateFile);
 	}
-m_OutBuffIdx = sprintf((char *)m_pszOutBuffer,"\"Chrom\",\"Loci\",\"%s:Counts\",\"%s:NA\",\"%s\",\"%s\",\"%s:%s\"\n",pszGBSName,pszGBSName,m_szFndrA,m_szFndrB,m_szFndrA,m_szFndrB);
-pBin = m_pWinBins;
-for(BinIdx = 0; BinIdx < m_NumWinBins; BinIdx++,pBin++)
+#endif
+if(m_hOutFile < 0)
 	{
-	m_OutBuffIdx+=sprintf((char *)&m_pszOutBuffer[m_OutBuffIdx],"%s,%d,%d,%d,%d,%d,%d\n",LocateChrom(pBin->RefChromID),pBin->StartLoci,pBin->LociCounts,pBin->CntNA,pBin->CntExclFa,pBin->CntExclFb,pBin->CntFaFb);
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "ReportConsistency: Unable to create/truncate %s - %s", szOutFile, strerror(errno));
+	Reset();
+	return(eBSFerrCreateFile);
+	}
+m_OutBuffIdx = sprintf((char*)m_pszOutBuffer,"\"Progeny\",\"Consistent\",\"Inconsistent\"\n");
+
+pCurPFA = &m_pProgenyFndrAligns[0];
+pPrev2PFA = pCurPFA->Source == 2 ? pCurPFA : NULL;
+pNxt2PFA = NULL;
+CurReadsetID = pCurPFA->ReadsetID;
+CurChromID = pCurPFA->ChromID;
+NumConsistent = 0;
+NumInconsistent = 0;
+for(PFAIdx = 0; PFAIdx < m_UsedProgenyFndrAligns; PFAIdx++, pCurPFA++)
+	{
+	if(pCurPFA->ReadsetID != CurReadsetID)	// starting new progeny readset?
+		{
+		// report on consistency of the CurReadsetID here ...
+		m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx],"\"%s\",%d,%d\n",LocateReadset(CurReadsetID), NumConsistent, NumInconsistent);
+		if((m_OutBuffIdx + 1000) > m_AllocOutBuff)
+			{
+			if(!CUtility::RetryWrites(m_hOutFile, m_pszOutBuffer, m_OutBuffIdx))
+				{
+				gDiagnostics.DiagOut(eDLFatal, gszProcName, "ReportConsistency: Fatal error in RetryWrites()");
+				Reset();
+				return(eBSFerrFileAccess);
+				}
+			m_OutBuffIdx = 0;
+			}
+		CurReadsetID = pCurPFA->ReadsetID;
+		CurChromID = pCurPFA->ChromID;
+		pPrev2PFA = pCurPFA->Source == 2 ? pCurPFA : NULL;
+		pNxt2PFA = NULL;
+		NumConsistent = 0;
+		NumInconsistent = 0;
+		}
+
+	if(pCurPFA->Source == 2)
+		{
+		pPrev2PFA = pCurPFA;
+		CurChromID = pCurPFA->ChromID;
+		continue;
+		}
+
+	// have a loci for MatrixA
+	bFa = Bits256Test(0,pCurPFA->ProgenyFounders);
+	bFb = Bits256Test(1,pCurPFA->ProgenyFounders);
+	if(pPrev2PFA != NULL && pPrev2PFA->ChromID == CurChromID)
+		{
+		if(bFa == Bits256Test(0,pPrev2PFA->ProgenyFounders) && bFb == Bits256Test(1,pPrev2PFA->ProgenyFounders))
+			{
+			NumConsistent++;
+			continue;
+			}
+		}
+			// search forward for for next progeny loci sourced from MatrixB
+	pNxt2PFA = pCurPFA;
+	for(PFANxt2Idx = PFAIdx; PFANxt2Idx < m_UsedProgenyFndrAligns; PFANxt2Idx++, pNxt2PFA++)
+		{
+		if(pNxt2PFA->ReadsetID != CurReadsetID || pNxt2PFA->ChromID != CurChromID)
+			{
+			pNxt2PFA = NULL;
+			break;
+			}
+		if(pNxt2PFA->Source == 2)
+			break;
+		}
+	if(PFANxt2Idx == m_UsedProgenyFndrAligns)
+		pNxt2PFA = NULL;
+	if(pNxt2PFA == NULL)
+		{
+		NumInconsistent++;
+		continue;
+		}
+
+	if(bFa == Bits256Test(0,pNxt2PFA->ProgenyFounders) && bFb == Bits256Test(1,pNxt2PFA->ProgenyFounders))
+		NumConsistent++;
+	else
+		NumInconsistent++;
+	}
+
+m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx],"\"%s\",%d,%d\n",LocateReadset(CurReadsetID), NumConsistent, NumInconsistent);
+if(!CUtility::RetryWrites(m_hOutFile, m_pszOutBuffer, m_OutBuffIdx))
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "ReportConsistency: Fatal error in RetryWrites()");
+	Reset();
+	return(eBSFerrFileAccess);
+	}
+m_OutBuffIdx = 0;
+
+if(m_hOutFile != -1)
+	{
+// commit output file
+#ifdef _WIN32
+	_commit(m_hOutFile);
+#else
+	fsync(m_hOutFile);
+#endif
+	close(m_hOutFile);
+	m_hOutFile = -1;
+	}
+
+return(eBSFSuccess);
+}
+
+int 
+CGBSmapSNPs::ReportHaplotypesByProgeny(char* pszRsltsFileBaseName,		// haplotype results are written to this file base name with '.haplotypes.csv' appended
+											uint32_t ReadsetID)				// report on this progeny readset only, or if 0 then report on all progeny readsets
+{
+char szOutFile[_MAX_PATH];
+tsProgenyFndrAligns *pCurPFA;
+uint32_t PFAIdx;
+uint32_t FndrIdx;
+
+int32_t PrevReadsetID;
+int32_t PrevChromID;
+
+char *pszProgenyReadset;
+char *pszChrom;
+
+if(m_pszOutBuffer == NULL)
+	{
+	if((m_pszOutBuffer = new uint8_t[cOutBuffSize]) == NULL)
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "ReportHaplotypesByProgeny: Memory allocation of %u bytes for output buffering failed - %s", cOutBuffSize, strerror(errno));
+		Reset();
+		return(eBSFerrMem);
+		}
+	m_AllocOutBuff = cOutBuffSize;
+	}
+m_OutBuffIdx = 0;
+if(ReadsetID == 0)
+	sprintf(szOutFile, "%s.progeny.all.csv", pszRsltsFileBaseName);
+else
+	sprintf(szOutFile, "%s.progeny.%s.csv", pszRsltsFileBaseName, LocateReadset(ReadsetID));
+#ifdef _WIN32
+m_hOutFile = open(szOutFile, (O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC), (_S_IREAD | _S_IWRITE));
+#else
+if((m_hOutFile = open64(szOutFile, O_WRONLY | O_CREAT, S_IREAD | S_IWRITE)) != -1)
+if(ftruncate(m_hOutFile, 0) != 0)
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to create/truncate %s - %s", szOutFile, strerror(errno));
+	Reset();
+	return(eBSFerrCreateFile);
+	}
+#endif
+if(m_hOutFile < 0)
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "ReportHaplotypesByProgeny: Unable to create/truncate %s - %s", szOutFile, strerror(errno));
+	Reset();
+	return(eBSFerrCreateFile);
+	}
+
+// header line
+m_OutBuffIdx = sprintf((char*)m_pszOutBuffer, "\"Progeny\",\"Chrom\",\"Loci\"");
+for(FndrIdx = 0; FndrIdx < (uint32_t)m_NumFounders; FndrIdx++)
+	{
+	if(m_Fndrs2Proc[FndrIdx] & 0x01)
+		m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], ",\"Fndr:%s\"", LocateReadset(FndrIdx+1));
+	}
+m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], "\n");
+
+PrevReadsetID = 0;
+PrevChromID = 0;
+pCurPFA = &m_pProgenyFndrAligns[0];
+for(PFAIdx = 0; PFAIdx < m_UsedProgenyFndrAligns; PFAIdx++, pCurPFA++)
+	{
+	if(ReadsetID != 0 && pCurPFA->ReadsetID != ReadsetID)
+		continue;
+	if(pCurPFA->ReadsetID != PrevReadsetID || pCurPFA->ChromID != PrevChromID)
+		{
+		pszProgenyReadset = LocateReadset(pCurPFA->ReadsetID);
+		pszChrom = LocateChrom(pCurPFA->ChromID);
+		PrevReadsetID = pCurPFA->ReadsetID;
+		PrevChromID = pCurPFA->ChromID;
+		}
+
+	m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx],"\"%s\",\"%s\",%u", pszProgenyReadset, pszChrom, pCurPFA->Loci);
+	for(FndrIdx=0; FndrIdx < (uint32_t)m_NumFounders; FndrIdx++)
+		{
+		if(m_Fndrs2Proc[FndrIdx] & 0x01)
+			m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], ",%d", Bits256Test(FndrIdx, pCurPFA->ProgenyFounders) ? 1 : 0);
+		}
+	m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], "\n");
 	if((m_OutBuffIdx + 1000) > m_AllocOutBuff)
 		{
-		if (!CUtility::RetryWrites(m_hOutFile,m_pszOutBuffer,m_OutBuffIdx))
+		if(!CUtility::RetryWrites(m_hOutFile, m_pszOutBuffer, m_OutBuffIdx))
 			{
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "ReportBinCounts: Fatal error in RetryWrites()");
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "ReportMatrix: Fatal error in RetryWrites()");
 			Reset();
 			return(eBSFerrFileAccess);
 			}
 		m_OutBuffIdx = 0;
 		}
 	}
-if(m_OutBuffIdx != 0)
-	CUtility::RetryWrites(m_hOutFile,m_pszOutBuffer,m_OutBuffIdx);
-m_OutBuffIdx = 0;
-if(m_hOutFile != -1)
-	{
-	// commit output file
-#ifdef _WIN32
-	_commit(m_hOutFile);
-#else
-	fsync(m_hOutFile);
-#endif
-	close(m_hOutFile);
-	m_hOutFile = -1;
-	}
-return(eBSFSuccess);
-}
-
-
-void
-CGBSmapSNPs::InitialiseWIGSpan(void) // initialise WIG span vars to values corresponding to no spans having been previously reported
-{
-m_WIGChromID = 0;
-m_WIGRptdChromID = 0;
-m_WIGSpanLoci = 0;
-m_WIGSpanLen = 0;
-m_WIGRptdSpanLen = 0;
-m_WIGSpanCnts = 0;
-}
-
-int
-CGBSmapSNPs::CompleteWIGSpan(bool bWrite)				// close off any current WIG span ready to start any subsequent span
-{
-char *pszCurChrom;
-
-	// if existing span then write that span out
-if(m_WIGChromID != 0 && m_WIGSpanLen > 0 && m_WIGSpanLoci > 0 && m_WIGSpanCnts > 0)
-	{
-	// has chrom and/or span changed since previously writing out a span?
-	if(m_WIGChromID != m_WIGRptdChromID || m_WIGSpanLen != m_WIGRptdSpanLen)
-		{
-		pszCurChrom = LocateChrom(m_WIGChromID);
-		m_OutBuffIdx += sprintf((char *)&m_pszOutBuffer[m_OutBuffIdx],"variableStep chrom=%s span=%d\n",pszCurChrom,m_WIGSpanLen);
-		m_WIGRptdChromID = m_WIGChromID;
-		m_WIGRptdSpanLen = m_WIGSpanLen;
-		}
-	m_OutBuffIdx += sprintf((char *)&m_pszOutBuffer[m_OutBuffIdx],"%d %d\n",m_WIGSpanLoci,(uint32_t)((m_WIGSpanCnts + m_WIGSpanLen-1)/m_WIGSpanLen));
-	}
-if((bWrite && m_OutBuffIdx) || (m_OutBuffIdx + 1000) >  m_AllocOutBuff)
+if(m_OutBuffIdx && m_hOutFile != -1)
 	{
 	if(!CUtility::RetryWrites(m_hOutFile, m_pszOutBuffer, m_OutBuffIdx))
 		{
-		gDiagnostics.DiagOut(eDLInfo,gszProcName,"RetryWrites() error");
-		return(eBSFerrWrite);
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "ReportMatrix: Fatal error in RetryWrites()");
+		Reset();
+		return(eBSFerrFileAccess);
 		}
-	m_OutBuffIdx=0;
-	}
-m_WIGSpanLoci = 0;
-m_WIGSpanLen = 0;
-m_WIGSpanCnts = 0;
-return(eBSFSuccess);
-}
-
-int
-CGBSmapSNPs::AccumWIGBinCnts(uint32_t ChromID,	// accumulate wiggle counts into variableStep spans over this chromosome
-			uint32_t Loci,		// bin counts starting from this loci - WIG uses 1 based loci instead of the usual UCSC BED 0 based loci
-			uint32_t Cnts,		// bin has this many counts attributed
-			uint32_t BinLen)	// bin is this length
-{
-	int Rslt;
-	uint32_t Meanx100;
-	if(ChromID != m_WIGChromID || Cnts == 0)		// onto a different chromosome, or current span is at maximal length?
-	{
-		if(m_WIGChromID != 0)
-		{
-			if((Rslt = CompleteWIGSpan()) < 0)
-				return(Rslt);
-		}
-		if(Cnts > 0 && BinLen > 0)
-		{
-			m_WIGChromID = ChromID;
-			m_WIGSpanLoci = Loci;
-			m_WIGSpanLen = BinLen;
-			m_WIGSpanCnts = (uint64_t)Cnts * BinLen;
-		}
-		return(eBSFSuccess);
+	m_OutBuffIdx = 0;
 	}
 
-	if(m_WIGSpanLen == 0 || m_WIGSpanCnts == 0)
-	{
-		m_WIGSpanLoci = Loci;
-		m_WIGSpanLen = BinLen;
-		m_WIGSpanCnts = (uint64_t)Cnts * BinLen;
-		return(eBSFSuccess);
-	}
-
-	Meanx100 = 100 * (uint32_t)(m_WIGSpanCnts / (uint64_t)m_WIGSpanLen);
-	if((Cnts <= 5 && (Cnts * 100) != Meanx100) || (Meanx100 < (Cnts * 75) || Meanx100 >= (Cnts * 125)))
-	{
-	// write current span out
-		if((Rslt = CompleteWIGSpan()) < 0)
-			return(Rslt);
-		m_WIGSpanLoci = Loci;
-		m_WIGSpanLen = BinLen;
-		m_WIGSpanCnts = (uint64_t)Cnts * BinLen;
-		return(eBSFSuccess);
-	}
-	m_WIGSpanCnts += (uint64_t)Cnts * BinLen;
-	m_WIGSpanLen = Loci - m_WIGSpanLoci + BinLen;
-	return(eBSFSuccess);
-}
-
-
-int
-CGBSmapSNPs::AccumWIGCnts(uint32_t ChromID,	// accumulate wiggle counts into variableStep spans over this chromosome
-			uint32_t Loci,		// this loci  - WIG uses 1 based loci instead of the usual UCSC BED 0 based loci
-			uint32_t Cnts,		 // has this many counts attributed
-			uint32_t MaxSpanLen) // allow WIG spans to be this maximal length
-{
-	int Rslt;
-	uint32_t Meanx100;
-	if(ChromID != m_WIGChromID || m_WIGSpanLen >= MaxSpanLen || Cnts == 0)		// onto a different chromosome, or current span is at maximal length?
-	{
-		if(m_WIGChromID != 0)
-		{
-			if((Rslt = CompleteWIGSpan()) < 0)
-				return(Rslt);
-		}
-		if(Cnts > 0)
-		{
-			m_WIGChromID = ChromID;
-			m_WIGSpanLoci = Loci;
-			m_WIGSpanLen = 1;
-			m_WIGSpanCnts = Cnts;
-		}
-		return(eBSFSuccess);
-	}
-
-	if(m_WIGSpanLen == 0 || m_WIGSpanCnts == 0)
-	{
-		m_WIGSpanLoci = Loci;
-		m_WIGSpanLen = 1;
-		m_WIGSpanCnts = (uint64_t)Cnts;
-		return(eBSFSuccess);
-	}
-
-	Meanx100 = 100 * (uint32_t)(m_WIGSpanCnts / (uint64_t)m_WIGSpanLen);
-	if((Cnts <= 5 && (Cnts * 100) != Meanx100) || (Meanx100 < (Cnts * 75) || Meanx100 >= (Cnts * 125)))
-	{
-		// write current span out
-		if((Rslt = CompleteWIGSpan()) < 0)
-			return(Rslt);
-		m_WIGSpanLoci = Loci;
-		m_WIGSpanLen = 1;
-		m_WIGSpanCnts = Cnts;
-		return(eBSFSuccess);
-	}
-	m_WIGSpanCnts += Cnts;
-	m_WIGSpanLen = Loci - m_WIGSpanLoci + 1;
-	return(eBSFSuccess);
-}
-
-
-
-int
-CGBSmapSNPs::ReportCountsWIG(char* pszOutFile,
-							 bool bFb,						// false if founder Fa, true if founder Fb
-							 char* pszGBSName,				// column name referencing the GBS readset which is to be processed
-							 char *pszFounder)				// founder
-{
-uint32_t BinIdx;
-tsWinBin *pBin;
-
-if(m_pszOutBuffer == NULL)
-	{
-	m_pszOutBuffer = new uint8_t [cMaxAllocRsltsBuff];
-	m_AllocOutBuff = cMaxAllocRsltsBuff;
-	}
-m_OutBuffIdx = 0;
-
-#ifdef _WIN32
-m_hOutFile = open(pszOutFile,( O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC),(_S_IREAD | _S_IWRITE));
-#else
-	if((m_hOutFile = open64(pszOutFile,O_WRONLY | O_CREAT,S_IREAD | S_IWRITE)) != -1)
-		if(ftruncate(m_hOutFile,0)!=0)
-			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate %s - %s",pszOutFile,strerror(errno));
-			Reset();
-			return(eBSFerrCreateFile);
-			}
-#endif
-if(m_hOutFile < 0)
-	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate %s - %s",pszOutFile,strerror(errno));
-	Reset();
-	return(eBSFerrCreateFile);
-	}
-
-m_OutBuffIdx = sprintf((char *)m_pszOutBuffer,"track name=\"SNP GBS %s->Fndr %s\" description=\"SNP GBS readset %s aligned against Founder %s\" useScore=1\n", pszGBSName,pszFounder, pszGBSName,pszFounder);
-uint32_t CurChromID = 0;
-uint32_t CurBinSpan = 0;
-uint32_t PrevBinSpan = 0;
-InitialiseWIGSpan();
-pBin = m_pWinBins;
-for(BinIdx = 0; BinIdx < m_NumWinBins; BinIdx++,pBin++)
-	{
-	CurBinSpan = pBin->EndLoci-pBin->StartLoci+1;
-	AccumWIGBinCnts(pBin->RefChromID,pBin->StartLoci + 1,bFb ? pBin->CntExclFb :  pBin->CntExclFa,CurBinSpan); // WIG uses 1 based loci instead of the usual UCSC BED 0 based loci
-	}
-
-CompleteWIGSpan(true);
-
-if(m_OutBuffIdx != 0)
-	CUtility::RetryWrites(m_hOutFile,m_pszOutBuffer,m_OutBuffIdx);
-m_OutBuffIdx = 0;
 if(m_hOutFile != -1)
 	{
-	// commit output file
+// commit output file
 #ifdef _WIN32
 	_commit(m_hOutFile);
 #else
@@ -977,51 +1358,342 @@ if(m_hOutFile != -1)
 	close(m_hOutFile);
 	m_hOutFile = -1;
 	}
+
 return(eBSFSuccess);
 }
 
-int			// success or otherwise ( >= 0 success, < 0 if processing failed)
-CGBSmapSNPs::Process(eModeGBSMapSNPs PMode,			// processing mode
-					 int BinSize,					// SNP loci counts are accumulated into this sized (Kbp) non-overlapping bins
-					 char* pszGBSName,				// column name referencing the GBS readset which is to be processed
-					 char* pszInNMFile,		// processing chromosome name mapping from this file
-					 char* pszInGBSFile,	// processing GBS SNP calls from this file
-					 char* pszOutFile)		// windowed GBS SNP calls output file
+int
+CGBSmapSNPs::ReportMatrix(char* pszRsltsFileBaseName)		// matrix results are written to this file base name with 'matrix.csv' appended
 {
-int Rslt;
-Reset();
-m_PMode = PMode;
-m_BinSize = BinSize * 1000;	// parameter was in Kbp
-m_pszGBSName = pszGBSName;
-m_pszInNMFile = pszInNMFile;
-m_pszInGBSFile = pszInGBSFile;
-m_pszOutFile = pszOutFile;
+char szOutFile[_MAX_PATH];
+tsProgenyFndrAligns* pCurPFA;
+uint32_t PFAIdx;
+uint32_t FndrIdx;
+uint32_t ProgIdx;
+uint8_t ProgenyHaplotypes[cMaxProgenyReadsets];
+uint8_t ProgHaplotype;
+int32_t CurChromID;
+uint32_t CurLoci;
+bool bNewLoci;
 
-// parse and load chromosome sizes and name mappings
-if((Rslt = LoadNM(pszInNMFile)) < eBSFSuccess)
+char* pszChrom;
+
+if(m_pszOutBuffer == NULL)
+{
+	if((m_pszOutBuffer = new uint8_t[cOutBuffSize]) == NULL)
 	{
-	Reset();
-	return(Rslt);
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "ReportMatrix: Memory allocation of %u bytes for output buffering failed - %s", cOutBuffSize, strerror(errno));
+		Reset();
+		return(eBSFerrMem);
 	}
-
-// parse and load the GBS SNP loci file
-if((Rslt = LoadGBSSNPs(pszGBSName,pszInGBSFile)) < eBSFSuccess)
-	{
-	Reset();
-	return(Rslt);
-	}
-
-Rslt = ReportBinCounts(pszOutFile,pszGBSName);
-char szSuffixName[_MAX_FNAME];
-char szWIGFileName[_MAX_FNAME];
-sprintf(szSuffixName,".%s_%s.wig",pszGBSName,m_szFndrA);
-CUtility::AppendFileNameSuffix(szWIGFileName, m_pszOutFile, (char*)szSuffixName,'.');
-Rslt = ReportCountsWIG(szWIGFileName,false,pszGBSName,m_szFndrA);
-sprintf(szSuffixName,".%s_%s.wig",pszGBSName,m_szFndrB);
-CUtility::AppendFileNameSuffix(szWIGFileName, m_pszOutFile, (char*)szSuffixName,'.');
-Rslt = ReportCountsWIG(szWIGFileName,true,pszGBSName,m_szFndrB);
-
-Reset();
-return(Rslt);
+	m_AllocOutBuff = cOutBuffSize;
 }
+m_OutBuffIdx = 0;
+sprintf(szOutFile, "%s.matrix.csv", pszRsltsFileBaseName);
+#ifdef _WIN32
+	m_hOutFile = open(szOutFile, (O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC), (_S_IREAD | _S_IWRITE));
+#else
+if((m_hOutFile = open64(szOutFile, O_WRONLY | O_CREAT, S_IREAD | S_IWRITE)) != -1)
+	if(ftruncate(m_hOutFile, 0) != 0)
+	{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to create/truncate %s - %s", szOutFile, strerror(errno));
+		Reset();
+		return(eBSFerrCreateFile);
+	}
+#endif
+if(m_hOutFile < 0)
+{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "ReportMatrix: Unable to create/truncate %s - %s", szOutFile, strerror(errno));
+	Reset();
+	return(eBSFerrCreateFile);
+}
+
+// header line
+m_OutBuffIdx = sprintf((char*)m_pszOutBuffer, "\"Chrom\",\"Loci\",\"SourceID\"");
+
+for(ProgIdx = 0; ProgIdx < (uint32_t)m_NumProgenies; ProgIdx++)
+	m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], ",\"Progeny:%s\"", LocateReadset(m_ProgenyIDs[ProgIdx]));
+
+bNewLoci = false;
+CurLoci = 0;
+CurChromID = 0;
+pCurPFA = &m_pProgenyFndrAligns[0];
+for(PFAIdx = 0; PFAIdx < m_UsedProgenyFndrAligns; PFAIdx++, pCurPFA++)
+	{
+	if(pCurPFA->ChromID != CurChromID || pCurPFA->Loci != CurLoci)
+		{
+		if(bNewLoci)
+			{
+			m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], "\n\"%s\",%u,%u", pszChrom, CurLoci,pCurPFA->Source);
+			for(ProgIdx = 0; ProgIdx < (uint32_t)m_NumProgenies; ProgIdx++)
+				m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], ",%d", ProgenyHaplotypes[ProgIdx]);
+			if((m_OutBuffIdx + 10000) > m_AllocOutBuff)
+			{
+				if(!CUtility::RetryWrites(m_hOutFile, m_pszOutBuffer, m_OutBuffIdx))
+				{
+					gDiagnostics.DiagOut(eDLFatal, gszProcName, "ReportMatrix: Fatal error in RetryWrites()");
+					Reset();
+					return(eBSFerrFileAccess);
+				}
+				m_OutBuffIdx = 0;
+			}
+			bNewLoci = false;
+			}
+		CurLoci = pCurPFA->Loci;
+		CurChromID = pCurPFA->ChromID;
+		pszChrom = LocateChrom(CurChromID);
+		memset(ProgenyHaplotypes,0, m_NumProgenies);
+		}
+	bNewLoci = true;
+	// locate corresponding offset into ProgenyHaplotypes[] for the progeny readset
+	for(ProgIdx = 0; ProgIdx < (uint32_t)m_NumProgenies; ProgIdx++)
+		{
+		if(pCurPFA->ReadsetID == m_ProgenyIDs[ProgIdx])
+			break;
+		}
+	if(ProgIdx >= (uint32_t)m_NumProgenies)
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Error locating progeny identifier");
+		Reset();
+		return(eBSFerrInternal);
+		}
+
+	ProgHaplotype = 0;
+	for(FndrIdx = m_NumFounders; FndrIdx >= 1; FndrIdx--)
+		{
+		ProgHaplotype <<= 1;
+		if(m_Fndrs2Proc[FndrIdx-1] & 0x01)
+			ProgHaplotype |= Bits256Test(FndrIdx-1, pCurPFA->ProgenyFounders) ? 1 : 0;
+		}
+	ProgenyHaplotypes[ProgIdx] = ProgHaplotype;
+	}
+if(bNewLoci)
+	{
+	m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], "\n\"%s\",%u", pszChrom, CurLoci);
+	for(ProgIdx = 0; ProgIdx < (uint32_t)m_NumProgenies; ProgIdx++)
+		m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], ",%d", ProgenyHaplotypes[ProgIdx]);
+	}
+if(m_OutBuffIdx && m_hOutFile != -1)
+	{
+	if(!CUtility::RetryWrites(m_hOutFile, m_pszOutBuffer, m_OutBuffIdx))
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "ReportMatrix: Fatal error in RetryWrites()");
+		Reset();
+		return(eBSFerrFileAccess);
+		}
+	m_OutBuffIdx = 0;
+	}
+
+if(m_hOutFile != -1)
+	{
+// commit output file
+#ifdef _WIN32
+		_commit(m_hOutFile);
+#else
+		fsync(m_hOutFile);
+#endif
+		close(m_hOutFile);
+		m_hOutFile = -1;
+	}
+
+return(eBSFSuccess);
+}
+
+
+uint32_t									// returned index+1 into  m_pProgenyFndrAligns[] to allocated and initialised ProgenyFndrAligns, 0 if errors
+CGBSmapSNPs::AddProgenyFndrAligns(tsProgenyFndrAligns *pInitProgenyFndrAligns)	// allocated tsProgenyFndrAligns to be initialised with a copy of pInitProgenyFndrAligns
+{
+uint32_t ToAllocdProgenyFndrAligns;
+tsProgenyFndrAligns *pProgenyFndrAligns;
+size_t memreq;
+
+if (m_pProgenyFndrAligns == NULL)					// may be NULL first time in
+	{
+	memreq = cAllocProgenyFndrAligns * sizeof(tsProgenyFndrAligns);
+#ifdef _WIN32
+	m_pProgenyFndrAligns = (tsProgenyFndrAligns*)malloc((size_t)memreq);
+	if (m_pProgenyFndrAligns == NULL)
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddWinBinCnts: Memory allocation of %lld bytes failed", (int64_t)memreq);
+		return(0);
+		}
+#else
+	m_pProgenyFndrAligns = (tsProgenyFndrAligns*)mmap(NULL, (size_t)memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	if (m_pProgenyFndrAligns == MAP_FAILED)
+		{
+		m_pProgenyFndrAligns = NULL;
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddWinBinCnts: Memory allocation of %lld bytes through mmap()  failed", (int64_t)memreq, strerror(errno));
+		return(0);
+		}
+#endif
+	m_AllocdProgenyFndrAlignsMem = memreq;
+	m_AllocdProgenyFndrAligns = cAllocProgenyFndrAligns;
+	m_UsedProgenyFndrAligns = 0;
+	}
+else
+		// needing to allocate more memory?
+	if ((m_UsedProgenyFndrAligns) >= m_AllocdProgenyFndrAligns)
+		{
+		ToAllocdProgenyFndrAligns = m_UsedProgenyFndrAligns + cAllocProgenyFndrAligns;
+		size_t memreq = ToAllocdProgenyFndrAligns * sizeof(tsProgenyFndrAligns);
+#ifdef _WIN32
+		pProgenyFndrAligns = (tsProgenyFndrAligns*)realloc(m_pProgenyFndrAligns, memreq);
+		if (pProgenyFndrAligns == NULL)
+			{
+#else
+		pProgenyFndrAligns = (tsProgenyFndrAligns*)mremap(m_pProgenyFndrAligns, m_AllocdProgenyFndrAlignsMem, memreq, MREMAP_MAYMOVE);
+		if (pProgenyFndrAligns == MAP_FAILED)
+			{
+#endif
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddProgenyFndrAligns: Memory reallocation to %lld bytes failed - %s", memreq, strerror(errno));
+			return(0);
+			}
+		m_pProgenyFndrAligns = pProgenyFndrAligns;
+		m_AllocdProgenyFndrAlignsMem = memreq;
+		m_AllocdProgenyFndrAligns =ToAllocdProgenyFndrAligns;
+		}
+pProgenyFndrAligns = &m_pProgenyFndrAligns[m_UsedProgenyFndrAligns++];
+if(pInitProgenyFndrAligns != NULL)
+	*pProgenyFndrAligns = *pInitProgenyFndrAligns;
+else
+	memset(pProgenyFndrAligns,0,sizeof(tsProgenyFndrAligns));
+return(m_UsedProgenyFndrAligns);
+}
+
+inline void
+CGBSmapSNPs::Bits256Shl1(ts256Bits& Bits256)	// SHL 
+{
+uint64_t MSB;
+MSB = Bits256.Bits[2] >> 63; // MSB of word 2 into LSB of word 3 post SHL of word 3
+Bits256.Bits[3] <<= 1;
+Bits256.Bits[3] |= MSB & 0x01;
+MSB = Bits256.Bits[1] >> 63; // MSB of word 1 into LSB of word 2 post SHL of word 2
+Bits256.Bits[2] <<= 1;
+Bits256.Bits[2] |= MSB & 0x01;
+MSB = Bits256.Bits[0] >> 63; // MSB of word 0 into LSB of word 1 post SHL of word 1
+Bits256.Bits[1] <<= 1;
+Bits256.Bits[1] |= MSB & 0x01;
+Bits256.Bits[0] <<= 1;		  // LSB of word 0 will be set to 0 post the SHL
+}
+
+inline void
+CGBSmapSNPs::Bits256Set(uint8_t Bit,		// bit to set, range 0..255
+							ts256Bits& Bits256)
+{
+Bits256.Bits[Bit / 64] |= ((uint64_t)0x01 << (Bit % 64));
+}
+
+inline void
+CGBSmapSNPs::Bits256Reset(uint8_t Bit,		// bit to reset, range 0..255
+							  ts256Bits& Bits256)
+{
+Bits256.Bits[Bit / 64] &= ~((uint64_t)0x01 << (Bit % 64));
+}
+
+
+inline bool
+CGBSmapSNPs::Bits256Test(uint8_t Bit,		// bit to test, range 0..255
+							 ts256Bits& Bits256)
+{
+	return(Bits256.Bits[Bit / 64] & ((uint64_t)0x01 << (Bit % 64)) ? true : false);
+}
+
+inline void
+CGBSmapSNPs::Bits256Initialise(bool Set,			// if true then initialse all bits as set, otherwise initialise all bits as reset
+								   ts256Bits& Bits256)
+{
+uint64_t InitWith;
+if(Set)
+	InitWith = (uint64_t)(-1);
+else
+	InitWith = 0;
+Bits256.Bits[0] = InitWith;
+Bits256.Bits[1] = InitWith;
+Bits256.Bits[2] = InitWith;
+Bits256.Bits[3] = InitWith;
+}
+
+inline uint32_t
+CGBSmapSNPs::Bits256Count(ts256Bits& Bits256)		// count number of set bits
+{
+uint32_t Count = 0;
+uint64_t* pWord = Bits256.Bits;
+uint64_t Bit;
+for(uint32_t WordIdx = 0; WordIdx < 4; WordIdx++, pWord++)
+	{
+	for(Bit = 0x01; Bit != 0; Bit <<= 1)
+		if(*pWord & Bit)
+			Count++;
+	}
+return(Count);
+}
+
+inline uint32_t
+CGBSmapSNPs::Bits256Combine(ts256Bits& Bits256A, ts256Bits& Bits256B)		// combine (effective |= ) bits in Bits256A with Bits256B with Bits256A updated 
+{
+uint32_t Count = 0;
+uint64_t* pWordA = Bits256A.Bits;
+uint64_t* pWordB = Bits256B.Bits;
+uint64_t Bit;
+for(uint32_t WordIdx = 0; WordIdx < 4; WordIdx++, pWordA++, pWordB++)
+	{
+	*pWordA |= *pWordB;
+	for(Bit = 0x01; Bit != 0; Bit <<= 1)
+		if(*pWordA & Bit)
+			Count++;
+	}
+return(Count);
+}
+
+// sorting by ReadsetID.ChromID.StartLoci ascending
+int
+CGBSmapSNPs::SortProgenyFndrAligns(const void* arg1, const void* arg2)
+{
+tsProgenyFndrAligns* pEl1 = (tsProgenyFndrAligns*)arg1;
+tsProgenyFndrAligns* pEl2 = (tsProgenyFndrAligns*)arg2;
+if(pEl1->ReadsetID < pEl2->ReadsetID)
+	return(-1);
+if(pEl1->ReadsetID > pEl2->ReadsetID)
+return(1);
+if(pEl1->ChromID < pEl2->ChromID)
+	return(-1);
+if(pEl1->ChromID > pEl2->ChromID)
+	return(1);
+if(pEl1->Loci < pEl2->Loci)
+	return(-1);
+if(pEl1->Loci > pEl2->Loci)
+	return(1);
+if(pEl1->Source < pEl2->Source)
+	return(-1);
+if(pEl1->Source > pEl2->Source)
+	return(1);
+return(0);
+}
+
+// sorting by ChromID.StartLoci.Readset ascending
+int
+CGBSmapSNPs::SortProgenyChromLociReadset(const void* arg1, const void* arg2)
+{
+tsProgenyFndrAligns* pEl1 = (tsProgenyFndrAligns*)arg1;
+tsProgenyFndrAligns* pEl2 = (tsProgenyFndrAligns*)arg2;
+
+if(pEl1->ChromID < pEl2->ChromID)
+	return(-1);
+if(pEl1->ChromID > pEl2->ChromID)
+	return(1);
+if(pEl1->Loci < pEl2->Loci)
+	return(-1);
+if(pEl1->Loci > pEl2->Loci)
+	return(1);
+if(pEl1->ReadsetID < pEl2->ReadsetID)
+	return(-1);
+if(pEl1->ReadsetID > pEl2->ReadsetID)
+	return(1);
+if(pEl1->Source < pEl2->Source)
+	return(-1);
+if(pEl1->Source > pEl2->Source)
+	return(1);
+return(0);
+}
+
 

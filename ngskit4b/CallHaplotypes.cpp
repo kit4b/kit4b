@@ -17,27 +17,18 @@
 #include "CallHaplotypes.h"
 
 
-int CallHaplotypes(eModeSH PMode,	// processing mode 0: call observed haplotype counts, mode 1: call Skim haplotypes
-			int NChroms,			// debugging - limit processing: 0 All chromosomes, 1..n 1st to nTh chromosome
+int CallHaplotypes(eModeCSH PMode,	// processing mode 0: call observed haplotype counts, mode 1: GBS processing
 			char *pszTrackName,		// track name
 			char *pszTrackDescr,	// track descriptor
-			 int MinKmerSize,		// aligning founders using this minimum Kmer size
-			 int MaxKmerSize,				// aligning founders using this maximum Kmer size
-			int32_t MinAlignedScoringPBA,		// to be accepted as aligned and scored then PBAs in both founder and skim must be at least this PBA level
-			int32_t MinAlignedPBA,		// to be accepted as aligned ( < m_MinScoringPBA) with no penalty applied then PBAs in both founder and skim must be at least this PBA level
-			int32_t AlignedPBAScore,		// if PBA accepted for scoring (>= m_MinAlignedScoringPBA) then add this score to the summed Kmer alignment score
-			int32_t PenaltyPBAScore,		// if PBA not accepted as aligned ( < m_MinAlignedPBA) then apply this penalty to the summed Kmer alignment score
-			int32_t AcceptKmerMatchPerc,	// only accept Kmer alignment if at least this percentage of base alleles matched at >= m_MinAlignedPBA
-			int32_t MinKmerScoreDiff,		// must be at least this Kmer percentage score differential between highest scoring founders before accepting a founder as being a uniquely highest scoring
-			int AccumBinSize,		// counts are accumulated into this sized (bp) non-overlapping bins
-			int WinMeanBins,		// derive haplotype calls from mean of raw haplotypes in a sliding window containing this many bins
-			int MaxFndrHaps,		// process for reduction down to this maximum number of called haplotypes
-			int Ploidy,				// smoothed haplotypes for organism having this ploidy
-			char *pszMaskBPAFile,	// optional masking input BPA file, only process BPAs which are intersect of these BPAs and skim plus founder BPAs
+			uint32_t FndrTrim5,			// trim this many aligned PBAs from 5' end of founder aligned segments - reduces false alleles due to sequencing errors
+			uint32_t FndrTrim3,			// trim this many aligned PBAs from 3' end of founder aligned segments - reduces false alleles due to sequencing errors
+			uint32_t ProgTrim5,			// trim this many aligned PBAs from 5' end of progeny aligned segments - reduces false alleles due to sequencing errors
+			uint32_t ProgTrim3,			// trim this many aligned PBAs from 3' end of progeny aligned segments - reduces false alleles due to sequencing errors
+			char *pszMaskBPAFile,	// optional masking input BPA file, only process BPAs which are intersect of these BPAs and progeny plus founder BPAs
 			int NumFounderInputFiles,	// number of input founder file specs
 			char *pszFounderInputFiles[],	// names of input founder PBA files (wildcards allowed)
-			int NumSkimInputFiles,	// number of input skim file specs
-			char* pszSkimInputFiles[],		// names of input skim PBA files (wildcards allowed)
+			int NumProgenyInputFiles,	// number of input progeny file specs
+			char* pszProgenyInputFiles[],		// names of input progeny PBA files (wildcards allowed)
 			char* pszOutFile,		// Windowed haplotype calls output file (CSV format)
 			int NumThreads);		// number of worker threads to use
 
@@ -62,63 +53,45 @@ callhaplotypes(int argc, char **argv)
 
 	int Idx;
 
-	 eModeSH PMode;					// processing mode
-	 int NChroms;					// Limit processing: 0 All chromosomes, 1..n 1st to nTh chromosome
-	 int MinKmerSize;				// aligning founders using this minimum Kmer size
-	 int MaxKmerSize;				// aligning founders using this maximum Kmer size
-	int32_t MinAlignedScoringPBA;	// to be accepted as aligned and scored then PBAs in both founder and skim must be at least this PBA level
-	int32_t MinAlignedPBA;			// to be accepted as aligned ( < m_MinScoringPBA) with no penalty applied then PBAs in both founder and skim must be at least this PBA level
-	int32_t AlignedPBAScore;		// if PBA accepted for scoring (>= m_MinAlignedScoringPBA) then add this score to the summed Kmer alignment score
-	int32_t PenaltyPBAScore;		// if PBA not accepted as aligned ( < m_MinAlignedPBA) then apply this penalty to the summed Kmer alignment score
-	int32_t AcceptKmerMatchPerc;	// only accept Kmer alignment if at least this percentage of base alleles matched at >= m_MinAlignedPBA
-	int32_t MinKmerScoreDiff;		// must be at least this Kmer percentage score differential between highest scoring founders before accepting a founder as being a uniquely highest scoring
-	int AccumBinSize;				// counts are accumulated into this sized (Kbp) non-overlapping bins
-	int WinMeanBins;				// derive haplotype calls from mean of counts in a sliding window containing this many bins
-	int MaxFndrHaps;				// process for reduction down to this maximum number of called founder haplotypes
-	int Ploidy;						// smoothed haplotypes for organism having this ploidy
+	eModeCSH PMode;				// processing mode
+	 uint32_t FndrTrim5;		// trim this many aligned PBAs from 5' end of founder aligned segments - reduces false alleles due to sequencing errors
+	 uint32_t FndrTrim3;		// trim this many aligned PBAs from 3' end of founder aligned segments - reduces false alleles due to sequencing errors
+	 uint32_t ProgTrim5;		// trim this many aligned PBAs from 5' end of progeny aligned segments - reduces false alleles due to sequencing errors
+	 uint32_t ProgTrim3;		// trim this many aligned PBAs from 3' end of progeny aligned segments - reduces false alleles due to sequencing errors
 	 char szTrackName[_MAX_PATH];	// track name
 	 char szTrackDescr[_MAX_PATH];	// track description
 	 int NumFounderInputFiles;		// number of input founder BPA files
-	 char *pszFounderInputFiles[cMaxFounderReadsets];		// names of input founder BPA files (wildcards allowed)
-	 int NumSkimInputFiles;		// number of input skim BPA files
-	 char *pszSkimInputFiles[cMaxSkimReadsets];		// names of input skim BPA files (wildcards allowed)
+	 char *pszFounderInputFiles[cMaxFounderFileSpecs];		// names of input founder BPA files (wildcards allowed)
+	 int NumProgenyInputFiles;		// number of input progeny BPA files
+	 char *pszProgenyInputFiles[cMaxProgenyFileSpecs];		// names of input progeny BPA files (wildcards allowed)
 
-	 char szOutFile[_MAX_PATH];		// Windowed haplotype calls output file base name, skim readset identifier is appended to this base name
-	 char szMaskBPAFile[_MAX_PATH];	// optional masking input BPA file, only process BPAs which are intersect of these BPAs and skim plus founder BPAs
+	 char szOutFile[_MAX_PATH];		// Windowed haplotype calls output file base name, progeny readset identifier is appended to this base name
+	 char szMaskBPAFile[_MAX_PATH];	// optional masking input BPA file, only process BPAs which are intersect of these BPAs and progeny plus founder BPAs
 
 	struct arg_lit *help = arg_lit0 ("h", "help", "print this help and exit");
 	struct arg_lit *version = arg_lit0 ("v", "version,ver", "print version information and exit");
 	struct arg_int *FileLogLevel = arg_int0 ("f", "FileLogLevel", "<int>", "Level of diagnostics written to screen and logfile 0=fatal,1=errors,2=info,3=diagnostics,4=debug");
 	struct arg_file *LogFile = arg_file0 ("F", "log", "<file>", "diagnostics log file");
 
-	struct arg_int *pmode = arg_int0 ("m", "mode", "<int>", "processing mode: 0 generate haplotype bin counts over all chromosomes using skim BPAs compared with founder BPAs, 1: generate IGV for each input PBA");
-	struct arg_int *nchroms = arg_int0 ("n", "nchroms", "<int>","Limit processing: 0 All chromosomes, 1..n 1st to nTh chromosome");
-	struct arg_int *minkmersize = arg_int0 ("k", "minkmersize", "<int>", "allele alignments using this minimum sized Kmer (defaults to 50bp)");
-	struct arg_int *maxkmersize = arg_int0 ("K", "maxkmersize", "<int>", "allele alignments using this maximum sized Kmer (defaults to 10x minimum Kmer)");
+	struct arg_int *pmode = arg_int0 ("m", "mode", "<int>", "processing mode: 0 default");
 
-	struct arg_int *kmermatchperc = arg_int0 ("x", "kmermatchperc", "<int>", "only accept as extended Kmer alignment if at least this percentage of base alleles match over that Kmer(default 97)");
-	struct arg_int *minalignedscoringpba = arg_int0 ("a", "minalignedscoringpba", "<int>", "only aligned individual base PBAs scored if both founder and skim are at least this PBA level (default 2)");
-	struct arg_int *minalignedpba = arg_int0 ("A", "minalignedpba", "<int>", "individual base PBAs accepted as aligned if PBAs in both founder and skim are at least this PBA level (default 1)");
-	struct arg_int *alignedpbascore = arg_int0 ("s", "alignedpbascore", "<int>", "scored base PBAs alignment score (default 10)");
-	struct arg_int *penaltypbascore = arg_int0 ("S", "penaltypbascore", "<int>", "unaligned base PBAs penalty score (default -30)");
-	struct arg_int *minkmerscorediff = arg_int0 ("d", "minkmerscorediff", "<int>", "accumulated score differential between founder Kmers must be at least this percentage to accept as uniquely aligning (default 2)");
+	struct arg_int* fndrtrim5 = arg_int0("y", "fndrtrim5", "<int>", "trim this many aligned PBAs from 5' end of founder aligned segments (default 10)");
+	struct arg_int* fndrtrim3 = arg_int0("Y", "fndrtrim3", "<int>", "trim this many aligned PBAs from 3' end of founder aligned segments (default 10)");
+	struct arg_int* progtrim5 = arg_int0("w", "progtrim5", "<int>", "trim this many aligned PBAs from 5' end of progeny aligned segments (default 5)");
+	struct arg_int* progtrim3 = arg_int0("W", "progtrim3", "<int>", "trim this many aligned PBAs from 3' end of progeny aligned segments (default 5)");
 
-	struct arg_int *accumbinsize = arg_int0 ("b", "binsize", "<int>", "Kmer alignment counts accumulated into non-overlapping bins of this Kbp size (default 100Kbp)");
-	struct arg_int *winmeanbins = arg_int0 ("B", "binsmean", "<int>", "derive smoothed haplotype calls from raw haplotype calls in sliding window containing this many bins (defaults to 20)");
-	struct arg_int *maxfndrhaps = arg_int0 ("p", "maxfndrhaps", "<int>","process for reduction down to this maximum number of called founder haplotypes in any bin (default 2)");
-	struct arg_int *ploidy = arg_int0 ("P", "ploidy", "<int>","smoothed haplotypes for organism having this ploidy (default 2)");
 	struct arg_str *trackname = arg_str0("t","trackname","<str>","BED Track name");
-	struct arg_str *trackdescr = arg_str0("d","trackdescr","<str>","BED Track description");
-	struct arg_file *founderfiles = arg_filen("I", "founderfiles", "<file>", 0,cMaxFounderReadsets,"founder input BPA file(s), wildcards allowed, limit of 500 founders supported");
-	struct arg_file *skimfiles = arg_filen("i", "inskimfile", "<file>",0, cMaxSkimReadsets, "skim input BPA file(s), wildcards allowed, limit of 1000 skim filespecs supported");
-	struct arg_file *maskbpafile = arg_file0("c", "inmaskbpa", "<file>", "optional masking input BPA file, only process BPAs which are intersect of these BPAs and skim plus founder BPAs");
+	struct arg_str *trackdescr = arg_str0("D","trackdescr","<str>","BED Track description");
+	struct arg_file *founderfiles = arg_filen("I", "founderfiles", "<file>", 0,cMaxFounderFileSpecs,"founder input BPA file(s), wildcards allowed, limit of 100 founder filespecs supported");
+	struct arg_file *progenyfiles = arg_filen("i", "inprogenyfile", "<file>",0, cMaxProgenyFileSpecs, "progeny input BPA file(s), wildcards allowed, limit of 500 progeny filespecs supported");
+	struct arg_file *maskbpafile = arg_file0("c", "inmaskbpa", "<file>", "optional masking input BPA file, only process BPAs which are intersect of these BPAs and progeny plus founder BPAs");
 	struct arg_file *outfile = arg_file1("o", "out", "<file>", "Windowed haplotype calls output prefix (outputs CSV, BED and WIG format)");
 	struct arg_int *threads = arg_int0("T","threads","<int>","number of processing threads 0..64 (defaults to 0 which limits threads to maximum of 64 CPU cores)");
 	struct arg_end *end = arg_end (200);
 
 	void *argtable[] = { help,version,FileLogLevel,LogFile,
-						pmode,maxfndrhaps,ploidy,nchroms,minkmersize,maxkmersize,kmermatchperc,minalignedscoringpba,minalignedpba,alignedpbascore,penaltypbascore,minkmerscorediff,
-						accumbinsize,winmeanbins,trackname,trackdescr,maskbpafile,skimfiles,founderfiles, outfile,threads,end };
+						pmode,fndrtrim5,fndrtrim3,progtrim5,progtrim3,
+						trackname,trackdescr,maskbpafile,progenyfiles,founderfiles, outfile,threads,end };
 
 	char **pAllArgs;
 	int argerrors;
@@ -186,120 +159,40 @@ callhaplotypes(int argc, char **argv)
 		gProcessID = 0;
 		gProcessingID = 0;
 
-		PMode = pmode->count ? (eModeSH)pmode->ival[0] : eMSHDefault;
-		if(PMode < eMSHDefault || PMode >= eMSHPlaceHolder)
+		PMode = pmode->count ? (eModeCSH)pmode->ival[0] : eMCSHDefault;
+		if(PMode < eMCSHDefault || PMode >= eMCSHPlaceHolder)
 			{
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Error: Unsupported processing mode '-m%d'\n",PMode);
 			exit(1);
 			}
-		NChroms = nchroms->count ? nchroms->ival[0] : 0;
-		if(NChroms < 0)
-			NChroms = 0;
+
+		FndrTrim5 = fndrtrim5->count ? fndrtrim5->ival[0] : cDfltFndrTrim5;
+		if(FndrTrim5 < 0)
+			FndrTrim5 = 0;
 		else
-			if(NChroms > 1000)
-				NChroms = 1000;
+			if(FndrTrim5 > 1000)
+				FndrTrim5 = 1000;
 
-		if(PMode == eMSHDefault)
-			{
-			MinKmerSize = minkmersize->count ? minkmersize->ival[0] : cDfltMinKmerSize;
-			if(MinKmerSize < cMinKmerSize || MinKmerSize > cMaxKmerSize)
-				{
-				gDiagnostics.DiagOut(eDLFatal, gszProcName, "Error: minimum Kmer size '-k%d' specified outside of range %d .. %dbp\n", MinKmerSize,cMinKmerSize,cMaxKmerSize);
-				exit(1);
-				}
-
-
-			MaxKmerSize = maxkmersize->count ? maxkmersize->ival[0] : min(MinKmerSize*10,cMaxKmerSize);
-			if(MaxKmerSize < MinKmerSize || MaxKmerSize > cMaxKmerSize)
-				{
-				gDiagnostics.DiagOut(eDLFatal, gszProcName, "Error: maximum Kmer size '-K%d' specified outside of range %d .. %dbp\n", MaxKmerSize,MinKmerSize,cMaxKmerSize);
-				exit(1);
-				}
-
-			AcceptKmerMatchPerc = kmermatchperc->count ? kmermatchperc->ival[0] : cDfltAcceptKmerMatchPerc;
-			if(AcceptKmerMatchPerc < 90 || AcceptKmerMatchPerc > 100)
-				{
-				gDiagnostics.DiagOut(eDLFatal, gszProcName, "Error: Minimum Kmer allele match percentage '-K%d' specified outside of range 90.100\n", AcceptKmerMatchPerc);
-				exit(1);
-				}
-
-			MinAlignedScoringPBA = minalignedscoringpba->count ? minalignedscoringpba->ival[0] : cDfltMinAlignedScoringPBA;
-			if(MinAlignedScoringPBA < 1)
-				MinAlignedScoringPBA = 1;
-			else
-				if(MinAlignedScoringPBA > 3)
-					MinAlignedScoringPBA = 3;
-
-			MinAlignedPBA = minalignedpba->count ? minalignedpba->ival[0] : cDfltMinAlignedPBA;
-			if(MinAlignedPBA < 1)
-				MinAlignedPBA = 1;
-			else
-				if(MinAlignedPBA > MinAlignedScoringPBA)
-					MinAlignedPBA = MinAlignedScoringPBA;
-
-			AlignedPBAScore = alignedpbascore->count ? alignedpbascore->ival[0] : cDfltAlignedPBAScore;
-			if(AlignedPBAScore < 1)
-				AlignedPBAScore = 1;
-			else
-				if(AlignedPBAScore > 100)
-					AlignedPBAScore = 100;
-
-			PenaltyPBAScore = penaltypbascore->count ? penaltypbascore->ival[0] : cDfltPenaltyPBAScore;
-			if(PenaltyPBAScore > 0)
-				PenaltyPBAScore *= -1;	
-			if(PenaltyPBAScore < -1000)
-				PenaltyPBAScore = -1000;
-
-			MinKmerScoreDiff = minkmerscorediff->count ? minkmerscorediff->ival[0] : cDfltMinKmerScoreDiff;
-			if(MinKmerScoreDiff > 50)
-				MinKmerScoreDiff = 50;
-			else
-				if(MinKmerScoreDiff < 1)
-					MinKmerScoreDiff = 1;
-
-			AccumBinSize = accumbinsize->count ? accumbinsize->ival[0] : cDfltAccumBinSize;
-			if(AccumBinSize < 1 || AccumBinSize > 2000)
-				{
-				gDiagnostics.DiagOut(eDLFatal, gszProcName, "Error: Accumulating non-overlapping bin size '-b%dKbp' specified outside of range 1..2000 Kbp\n", AccumBinSize);
-				exit(1);
-				}
-
-			WinMeanBins = winmeanbins->count ? winmeanbins->ival[0] : cDfltNumMeanBins;
-			if(WinMeanBins < 1 || WinMeanBins >= 100)
-				{
-				gDiagnostics.DiagOut(eDLFatal, gszProcName, "Error: Mean of counts in '-B%d' bins specified outside of range 1..100\n", WinMeanBins);
-				exit(1);
-				}
-
-			MaxFndrHaps = maxfndrhaps->count ? maxfndrhaps->ival[0] : 2;
-			if(MaxFndrHaps < 1 || MaxFndrHaps > 5)
-				{
-				gDiagnostics.DiagOut(eDLFatal, gszProcName, "Error: Process for reduction down to '-p%d' founder haplotypes specified outside of range 1..5\n", MaxFndrHaps);
-				exit(1);
-				}
-
-			Ploidy = ploidy->count ? ploidy->ival[0] : 2;
-			if(Ploidy < 1 || Ploidy > MaxFndrHaps)
-				{
-				gDiagnostics.DiagOut(eDLFatal, gszProcName, "Error: Process for organism poidy  '-P%d' must not be more than maximum haplotypes 1..%d\n", MaxFndrHaps);
-				exit(1);
-				}
-			}
+		FndrTrim3 = fndrtrim3->count ? fndrtrim3->ival[0] : cDfltFndrTrim3;
+		if(FndrTrim3 < 0)
+			FndrTrim3 = 0;
 		else
-			{
-			MinKmerSize = cDfltMinKmerSize;
-			MaxKmerSize = min(cDfltMinKmerSize * 10,cMaxKmerSize);
-			AcceptKmerMatchPerc = cDfltAcceptKmerMatchPerc;
-			MinAlignedScoringPBA = cDfltMinAlignedScoringPBA;
-			MinAlignedPBA = cDfltMinAlignedPBA;
-			AlignedPBAScore = cDfltAlignedPBAScore;
-			PenaltyPBAScore = cDfltPenaltyPBAScore;
-			MinKmerScoreDiff = cDfltMinKmerScoreDiff;
-			AccumBinSize = cDfltAccumBinSize;
-			WinMeanBins = cDfltNumMeanBins;
-			MaxFndrHaps = 2;
-			Ploidy = 2;
-			}
+			if(FndrTrim3 > 1000)
+				FndrTrim3 = 1000;
+
+		ProgTrim5 = progtrim5->count ? progtrim5->ival[0] : cDfltProgTrim5;
+		if(ProgTrim5 < 0)
+			ProgTrim5 = 0;
+		else
+			if(ProgTrim5 > 1000)
+				ProgTrim5 = 1000;
+
+		ProgTrim3 = progtrim3->count ? progtrim3->ival[0] : cDfltProgTrim3;
+		if(ProgTrim3 < 0)
+			ProgTrim3 = 0;
+		else
+			if(ProgTrim3 > 1000)
+				ProgTrim3 = 1000;
 
 		if(trackname->count)
 		{
@@ -350,35 +243,34 @@ callhaplotypes(int argc, char **argv)
 		NumThreads = MaxAllowedThreads;
 		}
 
-	NumSkimInputFiles = 0;
-	if(PMode == eMSHDefault)
+	NumProgenyInputFiles = 0;
+
+	if(progenyfiles->count)
 		{
-		if(skimfiles->count)
+		for(Idx = 0; NumProgenyInputFiles < cMaxProgenyReadsets && Idx < progenyfiles->count; Idx++)
 			{
-			for(Idx = 0; NumSkimInputFiles < cMaxSkimReadsets && Idx < skimfiles->count; Idx++)
-				{
-				pszSkimInputFiles[Idx] = NULL;
-				if(pszSkimInputFiles[NumSkimInputFiles] == NULL)
-					pszSkimInputFiles[NumSkimInputFiles] = new char[_MAX_PATH];
-				strncpy(pszSkimInputFiles[NumSkimInputFiles], skimfiles->filename[Idx], _MAX_PATH);
-				pszSkimInputFiles[NumSkimInputFiles][_MAX_PATH - 1] = '\0';
-				CUtility::TrimQuotedWhitespcExtd(pszSkimInputFiles[NumSkimInputFiles]);
-				if(pszSkimInputFiles[NumSkimInputFiles][0] != '\0')
-					NumSkimInputFiles++;
-				}
+			pszProgenyInputFiles[Idx] = NULL;
+			if(pszProgenyInputFiles[NumProgenyInputFiles] == NULL)
+				pszProgenyInputFiles[NumProgenyInputFiles] = new char[_MAX_PATH];
+			strncpy(pszProgenyInputFiles[NumProgenyInputFiles], progenyfiles->filename[Idx], _MAX_PATH);
+			pszProgenyInputFiles[NumProgenyInputFiles][_MAX_PATH - 1] = '\0';
+			CUtility::TrimQuotedWhitespcExtd(pszProgenyInputFiles[NumProgenyInputFiles]);
+			if(pszProgenyInputFiles[NumProgenyInputFiles][0] != '\0')
+				NumProgenyInputFiles++;
 			}
 		}
 
-	if(PMode == eMSHDefault && !NumSkimInputFiles)
+
+	if(!NumProgenyInputFiles)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Error: After removal of whitespace, there are no input skim file(s) specified with '-i<filespec>' option)\n");
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Error: After removal of whitespace, there are no input progeny file(s) specified with '-i<filespec>' option)\n");
 		exit(1);
 		}
 
 	NumFounderInputFiles = 0;
 	if(founderfiles->count)
 		{
-		for(NumFounderInputFiles = Idx = 0; NumFounderInputFiles < cMaxFounderReadsets && Idx < founderfiles->count; Idx++)
+		for(NumFounderInputFiles = Idx = 0; NumFounderInputFiles < cMaxFounderFileSpecs && Idx < founderfiles->count; Idx++)
 			{
 			pszFounderInputFiles[Idx] = NULL;
 			if(pszFounderInputFiles[NumFounderInputFiles] == NULL)
@@ -397,7 +289,7 @@ callhaplotypes(int argc, char **argv)
 		exit(1);
 		}
 
-	if(PMode == eMSHDefault && maskbpafile->count)
+	if(PMode == eMCSHDefault && maskbpafile->count)
 		{
 		strcpy (szMaskBPAFile, maskbpafile->filename[0]);
 		CUtility::TrimQuotedWhitespcExtd (szMaskBPAFile);
@@ -421,45 +313,27 @@ callhaplotypes(int argc, char **argv)
 	gDiagnostics.DiagOut (eDLInfo, gszProcName, "Processing parameters:");
 	const char *pszDescr;
 	switch (PMode) {
-		case eMSHDefault:
-			pszDescr = "Calling haplotypes in skim PBAs through alignments with founder PBAs";
+		case eMCSHDefault:
+			pszDescr = "Generate founder unique allele stacks and process progeny alleles against founder allele stacks";
 			break;
-		case eMSHAlleles:
-			pszDescr = "Reporting PBA allele detail in founder PBAs";
-			break;
+
 		}
 
-	gDiagnostics.DiagOutMsgOnly (eDLInfo, "Segment haplotypes : '%s'", pszDescr);
-	if(NChroms > 0)
-		gDiagnostics.DiagOutMsgOnly (eDLInfo, "Debugging - only processing 1st %d chromosomes",NChroms);
+	gDiagnostics.DiagOutMsgOnly (eDLInfo, "Calling haplotypes : '%s'", pszDescr);
+	gDiagnostics.DiagOutMsgOnly(eDLInfo, "Trim this many aligned PBAs from 5' end of founder aligned segments: %d", FndrTrim5);
+	gDiagnostics.DiagOutMsgOnly(eDLInfo, "Trim this many aligned PBAs from 3' end of founder aligned segments: %d", FndrTrim3);
+	gDiagnostics.DiagOutMsgOnly(eDLInfo, "Trim this many aligned PBAs from 5' end of progeny aligned segments: %d", ProgTrim5);
+	gDiagnostics.DiagOutMsgOnly(eDLInfo, "Trim this many aligned PBAs from 3' end of progeny aligned segments: %d", ProgTrim3);
 
-	if(PMode == eMSHDefault)
-		{
-		gDiagnostics.DiagOutMsgOnly (eDLInfo, "Minimum Kmer size : %dbp", MinKmerSize);
-				gDiagnostics.DiagOutMsgOnly (eDLInfo, "Maximum Kmer size : %dbp", MaxKmerSize);
-		gDiagnostics.DiagOutMsgOnly(eDLInfo,"Only accepting as aligned if at least this percentage of base alleles over Kmer match: %d",AcceptKmerMatchPerc);
-
-		gDiagnostics.DiagOutMsgOnly(eDLInfo,"Bases scored if PBAs in both founder and skim are at least this PBA level: %d",MinAlignedScoringPBA);
-		gDiagnostics.DiagOutMsgOnly(eDLInfo,"Bases aligned if PBAs in both founder and skim are be at least this PBA level: %d",MinAlignedPBA);
-		gDiagnostics.DiagOutMsgOnly(eDLInfo,"Scoring base PBAs accumulate this score to the summed Kmer alignment score: %d",AlignedPBAScore);
-		gDiagnostics.DiagOutMsgOnly(eDLInfo,"Unaligned base PBAs have this penalty accumulated to the summed Kmer alignment score: %d",PenaltyPBAScore);
-		gDiagnostics.DiagOutMsgOnly(eDLInfo,"Kmer percentage score differential between highest scoring founders required before accepting as uniquely highest scoring: %d",MinKmerScoreDiff);
-
-		gDiagnostics.DiagOutMsgOnly (eDLInfo, "Accumulating Kmer alignments in non-overlapping bins of size : %dKbp", AccumBinSize);
-		gDiagnostics.DiagOutMsgOnly (eDLInfo, "Using mean of raw haplotypes in sliding window containing this many bins to derived smoothed haplotypes : %d", WinMeanBins);
-		gDiagnostics.DiagOutMsgOnly (eDLInfo, "Processing for reduction of founder haplotypes down to : %d",MaxFndrHaps);
-		gDiagnostics.DiagOutMsgOnly (eDLInfo, "Processing for organism having ploidy : %d",Ploidy);
-
-		if(szMaskBPAFile[0] != '\0')
-			gDiagnostics.DiagOutMsgOnly (eDLInfo, "Masking BPAs loaded from : '%s'", szMaskBPAFile);
-		}
+	if(szMaskBPAFile[0] != '\0')
+		gDiagnostics.DiagOutMsgOnly (eDLInfo, "Masking BPAs loaded from : '%s'", szMaskBPAFile);
+		
 
 	for(Idx = 0; Idx < NumFounderInputFiles; Idx++)
 		gDiagnostics.DiagOutMsgOnly (eDLInfo, "Founder file : '%s'", pszFounderInputFiles[Idx]);
 
-	if(PMode == eMSHDefault)
-		for(Idx = 0; Idx < NumSkimInputFiles; Idx++)
-			gDiagnostics.DiagOutMsgOnly (eDLInfo, "Skim file : '%s'", pszSkimInputFiles[Idx]);
+	for(Idx = 0; Idx < NumProgenyInputFiles; Idx++)
+		gDiagnostics.DiagOutMsgOnly (eDLInfo, "Progeny file : '%s'", pszProgenyInputFiles[Idx]);
 	gDiagnostics.DiagOutMsgOnly (eDLInfo, "Output file : '%s'", szOutFile);
 	gDiagnostics.DiagOutMsgOnly(eDLInfo,"number of threads : %d",NumThreads);
 
@@ -469,26 +343,17 @@ callhaplotypes(int argc, char **argv)
 	gStopWatch.Start ();
 	Rslt = 0;
 	Rslt = CallHaplotypes(PMode,			// processing mode
-					NChroms,				// debugging - limit processing: 0 All chromosomes, 1..n 1st to nTh chromosome
 					szTrackName,			// track name
 					szTrackDescr,			// track descriptor
-					MinKmerSize,			// aligning founders using this minimum Kmer size
-					MaxKmerSize,			// aligning founders using this maximum Kmer size
-					MinAlignedScoringPBA,		// to be accepted as aligned and scored then PBAs in both founder and skim must be at least this PBA level
-					MinAlignedPBA,			// to be accepted as aligned ( < m_MinScoringPBA) with no penalty applied then PBAs in both founder and skim must be at least this PBA level
-					AlignedPBAScore,		// if PBA accepted for scoring (>= m_MinAlignedScoringPBA) then add this score to the summed Kmer alignment score
-					PenaltyPBAScore,		// if PBA not accepted as aligned ( < m_MinAlignedPBA) then apply this penalty to the summed Kmer alignment score
-					AcceptKmerMatchPerc,	// only accept Kmer alignment if at least this percentage of base alleles matched at >= m_MinAlignedPBA
-					MinKmerScoreDiff,		// must be at least this Kmer percentage score differential between highest scoring founders before accepting a founder as being a uniquely highest scoring
-					AccumBinSize*1000,		// now use bp rather than Kbp! Counts are accumulated into this sized non-overlapping bins
-					WinMeanBins,			// derive haplotype calls from mean of counts in a sliding window containing this many bins
-					MaxFndrHaps,			// process for reduction down to this maximum number of called haplotypes
-					Ploidy,					// smoothed haplotypes for organism having this ploidy
-					szMaskBPAFile,			// optional input masking BPA file, only process BPAs which are intersect of these BPAs and skim plus founder BPAs
+					FndrTrim5,			// trim this many aligned PBAs from 5' end of founder aligned segments - reduces false alleles due to sequencing errors
+					FndrTrim3,			// trim this many aligned PBAs from 3' end of founder aligned segments - reduces false alleles due to sequencing errors
+					ProgTrim5,			// trim this many aligned PBAs from 5' end of progeny aligned segments - reduces false alleles due to sequencing errors
+					ProgTrim3,			// trim this many aligned PBAs from 3' end of progeny aligned segments - reduces false alleles due to sequencing errors
+					szMaskBPAFile,			// optional input masking BPA file, only process BPAs which are intersect of these BPAs and progeny plus founder BPAs
 					NumFounderInputFiles,	// number of input founder file specs
 					pszFounderInputFiles,	// names of input founder PBA files (wildcards allowed)
-					NumSkimInputFiles,		// number of input skim file specs
-					pszSkimInputFiles,		// names of input skim PBA files (wildcards allowed)
+					NumProgenyInputFiles,		// number of input progeny file specs
+					pszProgenyInputFiles,		// names of input progeny PBA files (wildcards allowed)
 					szOutFile,				// output to this file
 					NumThreads);			// number of worker threads to use
 	Rslt = Rslt >= 0 ? 0 : 1;
@@ -506,29 +371,20 @@ else
 	}
 }
 
-int CallHaplotypes(eModeSH PMode,	// processing mode
-			int NChroms,			// debugging - limit processing: 0 All chromosomes, 1..n 1st to nTh chromosome
-			char *pszTrackName,		// track name
-			char *pszTrackDescr,	// track descriptor
-			 int MinKmerSize,				// aligning founders using this minimum Kmer size
-			 int MaxKmerSize,				// aligning founders using this maximum Kmer size
-			int32_t MinAlignedScoringPBA,		// to be accepted as aligned and scored then PBAs in both founder and skim must be at least this PBA level
-			int32_t MinAlignedPBA,		// to be accepted as aligned ( < m_MinScoringPBA) with no penalty applied then PBAs in both founder and skim must be at least this PBA level
-			int32_t AlignedPBAScore,		// if PBA accepted for scoring (>= m_MinAlignedScoringPBA) then add this score to the summed Kmer alignment score
-			int32_t PenaltyPBAScore,		// if PBA not accepted as aligned ( < m_MinAlignedPBA) then apply this penalty to the summed Kmer alignment score
-			int32_t AcceptKmerMatchPerc,	// only accept Kmer alignment if at least this percentage of base alleles matched at >= m_MinAlignedPBA
-			int32_t MinKmerScoreDiff,		// must be at least this Kmer percentage score differential between highest scoring founders before accepting a founder as being a uniquely highest scoring
-			int AccumBinSize,		// accumulating counts into this sized (bp) non-overlapping bins
-			int WinMeanBins,		// derive haplotype calls from mean of counts in a sliding window containing this many bins
-			int MaxFndrHaps,		// process for reduction down to this maximum number of called haplotypes
-			int Ploidy,				// smoothed haplotypes for organism having this ploidy
-			char *pszMaskBPAFile,	// optional input masking BPA file, only process BPAs which are intersect of these BPAs and skim plus founder BPAs
-			int NumFounderInputFiles,	// number of input founder file specs
-			char *pszFounderInputFiles[],	// names of input founder PBA files (wildcards allowed)
-			int NumSkimInputFiles,	// number of input skim file specs
-			char* pszSkimInputFiles[],		// names of input skim PBA files (wildcards allowed)
-			char* pszOutFile,		// Windowed haplotype calls output file (CSV format)
-			int NumThreads)			// number of worker threads to use
+int CallHaplotypes(eModeCSH PMode,	// processing mode 0: call observed haplotype counts, mode 1: GBS processing
+				   char* pszTrackName,		// track name
+				   char* pszTrackDescr,	// track descriptor
+				   uint32_t FndrTrim5,			// trim this many aligned PBAs from 5' end of founder aligned segments - reduces false alleles due to sequencing errors
+				   uint32_t FndrTrim3,			// trim this many aligned PBAs from 3' end of founder aligned segments - reduces false alleles due to sequencing errors
+				   uint32_t ProgTrim5,			// trim this many aligned PBAs from 5' end of progeny aligned segments - reduces false alleles due to sequencing errors
+				   uint32_t ProgTrim3,			// trim this many aligned PBAs from 3' end of progeny aligned segments - reduces false alleles due to sequencing errors
+				   char* pszMaskBPAFile,	// optional masking input BPA file, only process BPAs which are intersect of these BPAs and progeny plus founder BPAs
+				   int NumFounderInputFiles,	// number of input founder file specs
+				   char* pszFounderInputFiles[],	// names of input founder PBA files (wildcards allowed)
+				   int NumProgenyInputFiles,	// number of input progeny file specs
+				   char* pszProgenyInputFiles[],		// names of input progeny PBA files (wildcards allowed)
+				   char* pszOutFile,		// Windowed haplotype calls output file (CSV format)
+				   int NumThreads)		// number of worker threads to use
 {
 int Rslt;
 CCallHaplotypes* pCallHaplotypes;
@@ -538,10 +394,9 @@ if((pCallHaplotypes = new CCallHaplotypes) == NULL)
 	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Unable to instantiate instance of CCallHaplotypes");
 	return(eBSFerrObj);
 	}
-Rslt = pCallHaplotypes->Process(PMode,NChroms,pszTrackName,pszTrackDescr,MinKmerSize,MaxKmerSize,
-				MinAlignedScoringPBA,MinAlignedPBA,AlignedPBAScore,PenaltyPBAScore,AcceptKmerMatchPerc,MinKmerScoreDiff,
-				AccumBinSize,WinMeanBins,MaxFndrHaps,Ploidy,pszMaskBPAFile,NumFounderInputFiles,
-				pszFounderInputFiles,NumSkimInputFiles,pszSkimInputFiles,pszOutFile,NumThreads);
+Rslt = pCallHaplotypes->Process(PMode,pszTrackName,pszTrackDescr, FndrTrim5, FndrTrim3, ProgTrim5, ProgTrim3, 
+				pszMaskBPAFile,NumFounderInputFiles,
+				pszFounderInputFiles,NumProgenyInputFiles,pszProgenyInputFiles,pszOutFile,NumThreads);
 delete pCallHaplotypes;
 return(Rslt);
 }
@@ -550,10 +405,11 @@ return(Rslt);
 CCallHaplotypes::CCallHaplotypes()
 {
 m_pChromMetadata = NULL;
-m_pWinBinCnts = NULL;
+m_pProgenyFndrAligns = NULL;
 m_pWorkQueueEls = NULL;
 m_pInBuffer = NULL;
 m_pszOutBuffer = NULL;
+m_pAlleleStacks = NULL;
 m_hOutFile = -1;
 m_hInFile = -1;
 m_bMutexesCreated = false;
@@ -595,13 +451,23 @@ if(m_pChromMetadata != NULL)
 #endif
 	}
 
-if(m_pWinBinCnts != NULL)
+if(m_pProgenyFndrAligns != NULL)
 	{
 #ifdef _WIN32
-	free(m_pWinBinCnts);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
+	free(m_pProgenyFndrAligns);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
 #else
-	if(m_pWinBinCnts != MAP_FAILED)
-		munmap(m_pWinBinCnts, m_AllocdWinBinCntsMem);
+	if(m_pProgenyFndrAligns != MAP_FAILED)
+		munmap(m_pProgenyFndrAligns, m_AllocdProgenyFndrAlignsMem);
+#endif
+	}
+
+if(m_pAlleleStacks != NULL)
+{
+#ifdef _WIN32
+	free(m_pAlleleStacks);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
+#else
+	if(m_pAlleleStacks != MAP_FAILED)
+		munmap(m_pAlleleStacks, m_AllocdAlleleStacksMem);
 #endif
 	}
 DeleteMutexes();
@@ -626,6 +492,7 @@ if(m_pWorkQueueEls != NULL)
 	delete []m_pWorkQueueEls;
 	m_pWorkQueueEls = NULL;
 	}
+m_AllocWorkQueueEls = 0;
 m_TotWorkQueueEls = 0;
 m_NumQueueElsProcessed = 0;
 
@@ -655,44 +522,56 @@ if(m_pChromMetadata != NULL)
 #endif
 		}
 
-	#ifdef _WIN32
+#ifdef _WIN32
 	free(m_pChromMetadata);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
-	#else
+#else
 	if(m_pChromMetadata != MAP_FAILED)
 		munmap(m_pChromMetadata, m_AllocdChromMetadataMem);
-	#endif
+#endif
 	m_pChromMetadata = NULL;
 	}
 m_UsedNumChromMetadata = 0;
 m_AllocdChromMetadata = 0;
 m_AllocdChromMetadataMem = 0;
 
-if(m_pWinBinCnts != NULL)
+if(m_pAlleleStacks != NULL)
 	{
 #ifdef _WIN32
-	free(m_pWinBinCnts);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
+	free(m_pAlleleStacks);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
 #else
-	if(m_pWinBinCnts != MAP_FAILED)
-		munmap(m_pWinBinCnts, m_AllocdWinBinCntsMem);
+	if(m_pAlleleStacks != MAP_FAILED)
+		munmap(m_pAlleleStacks, m_AllocdAlleleStacksMem);
 #endif
-	m_pWinBinCnts = NULL;
+	m_pAlleleStacks = NULL;
 	}
-m_UsedWinBinCnts = 0;
-m_AllocdWinBinCnts = 0;
-m_AllocdWinBinCntsMem = 0;
+m_AllocdAlleleStacksMem = 0;
+m_UsedAlleleStacks = 0;
+m_AllocdAlleleStacks = 0;
 
-m_NumFndrs = 0;
-m_NChroms = 0;
-m_Ploidy = 2;
-m_MinScoreKmerSize = cDfltMinKmerSize;
-m_MaxScoreKmerSize = min(cDfltMinKmerSize * 10,cMaxKmerSize);
 
-m_MinAlignedScoringPBA = cDfltMinAlignedScoringPBA;
-m_MinAlignedPBA = cDfltMinAlignedPBA;
-m_AlignedPBAScore = cDfltAlignedPBAScore;
-m_PenaltyPBAScore = cDfltPenaltyPBAScore;
-m_AcceptKmerMatchPerc = cDfltAcceptKmerMatchPerc;
-m_MinKmerScoreDiff = cDfltMinKmerScoreDiff;
+DeleteMutexes();
+if(m_pProgenyFndrAligns != NULL)
+	{
+#ifdef _WIN32
+	free(m_pProgenyFndrAligns);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
+#else
+	if(m_pProgenyFndrAligns != MAP_FAILED)
+		munmap(m_pProgenyFndrAligns, m_AllocdProgenyFndrAlignsMem);
+#endif
+	m_pProgenyFndrAligns = NULL;
+	}
+m_UsedProgenyFndrAligns = 0;
+m_AllocdProgenyFndrAligns = 0;
+m_AllocdProgenyFndrAlignsMem = 0;
+
+m_NumFounders = 0;
+m_NumProgenies = 0;
+
+m_FndrTrim5 = cDfltFndrTrim5;
+m_FndrTrim3 = cDfltFndrTrim3;
+m_ProgTrim5 = cDfltProgTrim5;
+m_ProgTrim3 = cDfltProgTrim3;
+
 m_InNumBuffered = 0;
 m_AllocInBuff = 0;
 
@@ -709,11 +588,7 @@ m_NumChromNames = 0;
 m_NxtszChromIdx = 0;
 m_szChromNames[0] = '\0';
 
-m_NumFndrs = 0;
-m_WinMeanBins = cDfltNumMeanBins;
-m_MaxFndrHaps = 2;
-m_AccumBinSize = cDfltAccumBinSize * 1000;
-
+m_NumFounders = 0;
 m_FndrsProcMap = (uint64_t)-1;
 
 if(m_bMutexesCreated)
@@ -784,29 +659,20 @@ pthread_mutex_unlock(&m_hSerialiseAccess);
 
 
 int
-CCallHaplotypes::Process(eModeSH PMode,	// processing mode
-			int NChroms,			// debugging - limit processing: 0 All chromosomes, 1..n 1st to nTh chromosome
-			char *pszTrackName,		// track name
-			char *pszTrackDescr,	// track descriptor
-			int MinKmerSize,				// aligning founders using this minimum Kmer size
-			int MaxKmerSize,				// aligning founders using this maximum Kmer size
-			int32_t MinAlignedScoringPBA,		// to be accepted as aligned and scored then PBAs in both founder and skim must be at least this PBA level
-			int32_t MinAlignedPBA,		// to be accepted as aligned ( < m_MinScoringPBA) with no penalty applied then PBAs in both founder and skim must be at least this PBA level
-			int32_t AlignedPBAScore,		// if PBA accepted for scoring (>= m_MinAlignedScoringPBA) then add this score to the summed Kmer alignment score
-			int32_t PenaltyPBAScore,		// if PBA not accepted as aligned ( < m_MinAlignedPBA) then apply this penalty to the summed Kmer alignment score
-			int32_t AcceptKmerMatchPerc,	// only accept Kmer alignment if at least this percentage of base alleles matched at >= m_MinAlignedPBA
-			int32_t MinKmerScoreDiff,		// must be at least this Kmer percentage score differential between highest scoring founders before accepting a founder as being a uniquely highest scoring
-			uint32_t AccumBinSize,	// accumulate counts into this sized (bp) non-overlapping bins
-			int WinMeanBins,		// derive haplotype calls from mean of counts in a sliding window containing this many bins
-			int MaxFndrHaps,		// process for reduction down to this maximum number of called haplotypes
-			int Ploidy,				// smoothed haplotypes for organism having this ploidy
-			char *pszMaskBPAFile,	// optional input masking BPA file, only process BPAs which are intersect of these BPAs and skim plus founder BPAs
-			int NumFounderInputFiles,	// number of input founder file specs
-			char *pszFounderInputFiles[],	// names of input founder PBA files (wildcards allowed)
-			int NumSkimInputFiles,	// number of input skim file specs
-			char* pszSkimInputFiles[],		// names of input skim PBA files (wildcards allowed)
-			char* pszOutFile,		// output to this files with this prefix
-			int NumThreads)			// number of worker threads to use
+CCallHaplotypes::Process(eModeCSH PMode,	// processing mode 0: call observed haplotype counts, mode 1: GBS processing
+				char* pszTrackName,		// track name
+				char* pszTrackDescr,	// track descriptor
+				uint32_t FndrTrim5,			// trim this many aligned PBAs from 5' end of founder aligned segments - reduces false alleles due to sequencing errors
+				uint32_t FndrTrim3,			// trim this many aligned PBAs from 3' end of founder aligned segments - reduces false alleles due to sequencing errors
+				uint32_t ProgTrim5,			// trim this many aligned PBAs from 5' end of progeny aligned segments - reduces false alleles due to sequencing errors
+				uint32_t ProgTrim3,			// trim this many aligned PBAs from 3' end of progeny aligned segments - reduces false alleles due to sequencing errors
+				char* pszMaskBPAFile,	// optional masking input BPA file, only process BPAs which are intersect of these BPAs and progeny plus founder BPAs
+				int NumFounderInputFiles,	// number of input founder file specs
+				char* pszFounderInputFiles[],	// names of input founder PBA files (wildcards allowed)
+				int NumProgenyInputFiles,	// number of input progeny file specs
+				char* pszProgenyInputFiles[],		// names of input progeny PBA files (wildcards allowed)
+				char* pszOutFile,		// Windowed haplotype calls output file (CSV format)
+				int NumThreads)		// number of worker threads to use
 {
 int Rslt;
 int NumFiles;
@@ -816,60 +682,25 @@ size_t memreq;
 Reset();
 
 CreateMutexes();
-m_MaxFndrHaps = MaxFndrHaps;
-m_Ploidy = Ploidy;
-m_AccumBinSize = AccumBinSize;
-m_WinMeanBins = WinMeanBins;
-m_MinScoreKmerSize = MinKmerSize;
-m_MaxScoreKmerSize = MaxKmerSize;
-m_MinAlignedScoringPBA = MinAlignedScoringPBA;		// to be accepted as aligned and scored then PBAs in both founder and skim must be at least this PBA level
-m_MinAlignedPBA = MinAlignedPBA;		// to be accepted as aligned ( < m_MinScoringPBA) with no penalty applied then PBAs in both founder and skim must be at least this PBA level
-m_AlignedPBAScore = AlignedPBAScore;		// if PBA accepted for scoring (>= m_MinAlignedScoringPBA) then add this score to the summed Kmer alignment score
-m_PenaltyPBAScore = PenaltyPBAScore;		// if PBA not accepted as aligned ( < m_MinAlignedPBA) then apply this penalty to the summed Kmer alignment score
-m_AcceptKmerMatchPerc = AcceptKmerMatchPerc;	// only accept Kmer alignment if at least this percentage of base alleles matched at >= m_MinAlignedPBA
-m_MinKmerScoreDiff = MinKmerScoreDiff;		// must be at least this Kmer percentage score differential between highest scoring founders before accepting a founder as being a uniquely highest scoring
+m_FndrTrim5 = FndrTrim5;
+m_FndrTrim3 = FndrTrim3;
+m_ProgTrim5 = ProgTrim5;
+m_ProgTrim3 = ProgTrim3;
 
 m_NumThreads = NumThreads;
-m_NChroms = NChroms;
 
-if(PMode == eMSHAlleles)
+if(NumFounderInputFiles > cMaxFounderFileSpecs)
 	{
-	Rslt = eBSFSuccess;		// assume success!
-	CSimpleGlob glob(SG_GLOB_FULLSORT);
-	int Idx;
-	char* pszInFile;
-	uint32_t ReadsetID = 0;
-	TotNumFiles = 0;
-	for(Idx = 0; Idx < NumFounderInputFiles; Idx++)	
-		{
-		glob.Init();
-		if(glob.Add(pszFounderInputFiles[Idx]) < SG_SUCCESS)
-			{
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Unable to glob '%s' PBA Allele reporting files", pszFounderInputFiles[Idx]);
-			Reset();
-			return(eBSFerrOpnFile);	// treat as though unable to open file
-			}
-		if((NumFiles = glob.FileCount()) <= 0)
-			{
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Unable to locate any PBA Allele file matching '%s", pszFounderInputFiles[Idx]);
-			Reset();
-			return(eBSFerrFileName);
-			}
-
-		Rslt = eBSFSuccess;
-		for(int FileID = 0; Rslt >= eBSFSuccess && FileID < NumFiles; ++FileID)
-			{
-			pszInFile = glob.File(FileID);
-			if((ReadsetID = PBAReportAlleles(pszInFile,pszOutFile)) < 0)
-				{
-				gDiagnostics.DiagOut(eDLInfo, gszProcName, "Process: Errors loading Allele reporting file '%s'",pszInFile);
-				Reset();
-				return(-1);
-				}
-			}
-		}
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Can accept at most %d founder wildcarded file specs for processing, %d requested", cMaxFounderFileSpecs, NumFounderInputFiles);
 	Reset();
-	return(0);
+	return(eBSFerrMem);
+	}
+
+if(NumProgenyInputFiles > cMaxProgenyFileSpecs)
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Can accept at most %d progeny wildcarded file specs for processing, %d requested", cMaxFounderFileSpecs, NumProgenyInputFiles);
+	Reset();
+	return(eBSFerrMem);
 	}
 
 if(pszMaskBPAFile == NULL || pszMaskBPAFile[0] == '\0')
@@ -877,12 +708,6 @@ if(pszMaskBPAFile == NULL || pszMaskBPAFile[0] == '\0')
 else
 	m_pszMaskBPAFile = pszMaskBPAFile;
 
-if(NumFounderInputFiles > cMaxFounderReadsets)
-	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Can accept at most %d founder readsets for processing, %d requested", cMaxFounderReadsets, NumFounderInputFiles);
-	Reset();
-	return(eBSFerrMem);
-	}
 
 if((m_pInBuffer = new uint8_t[cInBuffSize]) == NULL)
 	{
@@ -907,7 +732,7 @@ if(m_pChromMetadata == NULL)
 m_pChromMetadata = (tsChromMetadata *)mmap(NULL, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 if(m_pChromMetadata == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Assembly: Memory allocation of %lld bytes through mmap() for chromosome metadata failed - %s", (int64_t)memreq, strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Memory allocation of %lld bytes through mmap() for chromosome metadata failed - %s", (int64_t)memreq, strerror(errno));
 	m_pChromMetadata = NULL;
 	Reset();
 	return(eBSFerrMem);
@@ -918,35 +743,59 @@ m_UsedNumChromMetadata = 0;
 m_AllocdChromMetadata = cAllocChromMetadata;
 
 
-memreq = (size_t)cAllocWinBinCnts * sizeof(tsBinCnts);
+memreq = (size_t)cAllocProgenyFndrAligns * sizeof(tsProgenyFndrAligns);
 #ifdef _WIN32
-m_pWinBinCnts = (tsBinCnts *)malloc(memreq);	// initial and perhaps the only allocation
-if(m_pWinBinCnts == NULL)
+m_pProgenyFndrAligns = (tsProgenyFndrAligns*)malloc(memreq);	// initial and perhaps the only allocation
+if(m_pProgenyFndrAligns == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Initial memory allocation of %lld bytes for for chromosome windowed founder counts failed - %s", (int64_t)memreq, strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Initial memory allocation of %lld bytes for chromosome windowed founder counts failed - %s", (int64_t)memreq, strerror(errno));
 	Reset();
 	return(eBSFerrMem);
 	}
 #else
-m_pWinBinCnts = (tsBinCnts *)mmap(NULL, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-if(m_pWinBinCnts == MAP_FAILED)
+m_pProgenyFndrAligns = (tsProgenyFndrAligns*)mmap(NULL, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+if(m_pProgenyFndrAligns == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Assembly: Memory allocation of %lld bytes through mmap() for chromosome windowed founder counts failed - %s", (int64_t)memreq, strerror(errno));
-	m_pWinBinCnts = NULL;
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Memory allocation of %lld bytes through mmap() for chromosome windowed founder counts failed - %s", (int64_t)memreq, strerror(errno));
+	m_pProgenyFndrAligns = NULL;
 	Reset();
 	return(eBSFerrMem);
 	}
 #endif
-m_AllocdWinBinCntsMem = memreq;
-m_UsedWinBinCnts = 0;
-m_AllocdWinBinCnts = cAllocWinBinCnts;
+m_AllocdProgenyFndrAlignsMem = memreq;
+m_UsedProgenyFndrAligns = 0;
+m_AllocdProgenyFndrAligns = cAllocProgenyFndrAligns;
+
+
+memreq = (size_t)cAllocAlleleStacks * sizeof(tsAlleleStack);
+#ifdef _WIN32
+m_pAlleleStacks = (tsAlleleStack*)malloc(memreq);	// initial and perhaps the only allocation
+if(m_pAlleleStacks == NULL)
+{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Initial memory allocation of %lld bytes for allele stacks failed - %s", (int64_t)memreq, strerror(errno));
+	Reset();
+	return(eBSFerrMem);
+}
+#else
+m_pAlleleStacks = (tsAlleleStack*)mmap(NULL, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+if(m_pAlleleStacks == MAP_FAILED)
+{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Memory allocation of %lld bytes through mmap() for allele stacks failed - %s", (int64_t)memreq, strerror(errno));
+	m_pAlleleStacks = NULL;
+	Reset();
+	return(eBSFerrMem);
+}
+#endif
+m_AllocdAlleleStacksMem = memreq;
+m_UsedAlleleStacks = 0;
+m_AllocdAlleleStacks = cAllocAlleleStacks;
 
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "Process: Starting to load pool of founders");
 Rslt = eBSFSuccess;		// assume success!
 CSimpleGlob glob(SG_GLOB_FULLSORT);
 int Idx;
 char* pszInFile;
-uint32_t ReadsetID = 0;
+int32_t ReadsetID = 0;
 TotNumFiles = 0;
 for(Idx = 0; Idx < NumFounderInputFiles; Idx++)	
 	{
@@ -975,817 +824,199 @@ for(Idx = 0; Idx < NumFounderInputFiles; Idx++)
 	for(int FileID = 0; Rslt >= eBSFSuccess && FileID < NumFiles; ++FileID)
 		{
 		pszInFile = glob.File(FileID);
-		if((ReadsetID = LoadPBAFile(pszInFile,0)) == 0)
+		if((ReadsetID = LoadPBAFile(pszInFile,0)) <= 0)
 			{
 			gDiagnostics.DiagOut(eDLInfo, gszProcName, "Process: Errors loading pool file '%s'",pszInFile);
 			Reset();
-			return(-1);
+			return(ReadsetID);
 			}
+		m_Fndrs2Proc[ReadsetID-1] = 0x01;	// if loaded then assumption is that this founder will be processed
 		}
 	}
-m_NumFndrs = ReadsetID;
-gDiagnostics.DiagOut(eDLInfo, gszProcName, "Process: Completed loading founders (%d) pool",m_NumFndrs);
+m_NumFounders = (uint32_t)ReadsetID;
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "Process: Completed loading founders (%d) pool", m_NumFounders);
 
 // load the control PBA file if it has been specified
 m_MaskReadsetID = 0;
 if(m_pszMaskBPAFile != NULL)
 	{
 	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Process: Loading control PBA file '%s'",m_pszMaskBPAFile);
-	if((ReadsetID = LoadPBAFile(m_pszMaskBPAFile,2)) == 0)
+	if((ReadsetID = LoadPBAFile(m_pszMaskBPAFile,2)) <= 0)
 		{
 		gDiagnostics.DiagOut(eDLInfo, gszProcName, "Process: Errors loading control PBA file");
 		Reset();
-		return(-1);
+		return(ReadsetID);
 		}
-	m_MaskReadsetID = ReadsetID;
+	m_MaskReadsetID = (uint32_t)ReadsetID;
 	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Completed loading control PBA file");
 	}
 
-// next is to individually process each skim PBAs against the founder panel PBAs
-m_SkimReadsetID = 0;
-for(Idx = 0; Idx < NumSkimInputFiles; Idx++)	
+if((Rslt = GenAlleleStacks(m_NumFounders)) < 1)
+	{
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Process: No allele stacks generated");
+	Reset();
+	return(Rslt);
+	}
+
+// next is to individually process each progeny PBAs against the founder panel allele stacks
+TotNumFiles = 0;
+m_CurProgenyReadsetID = 0;
+for(Idx = 0; Idx < NumProgenyInputFiles; Idx++)	
 	{
 	glob.Init();
-	if(glob.Add(pszSkimInputFiles[Idx]) < SG_SUCCESS)
+	if(glob.Add(pszProgenyInputFiles[Idx]) < SG_SUCCESS)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Unable to glob skim '%s", pszSkimInputFiles[Idx]);
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Unable to glob progeny '%s", pszProgenyInputFiles[Idx]);
 		Reset();
 		return(eBSFerrOpnFile);	// treat as though unable to open file
 		}
 	if((NumFiles = glob.FileCount()) <= 0)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Unable to locate any skim PBA file matching '%s", pszSkimInputFiles[Idx]);
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Unable to locate any progeny PBA file matching '%s", pszProgenyInputFiles[Idx]);
 		Reset();
 		return(eBSFerrOpnFile);	// treat as though unable to open file
+		}
+
+	TotNumFiles += NumFiles;
+	if(TotNumFiles > cMaxProgenyReadsets)
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Can accept at most %d progeny readsets for processing, after wildcard file name expansions there are %d requested", cMaxProgenyReadsets, TotNumFiles);
+		Reset();
+		return(eBSFerrMem);
 		}
 
 	Rslt = eBSFSuccess;
 	for(int FileID = 0; Rslt >= eBSFSuccess && FileID < NumFiles; ++FileID)
 		{
 		pszInFile = glob.File(FileID);
-		if((Rslt = ProcessSkimPBAFile(pszInFile,pszOutFile)) < eBSFSuccess)
+		if((Rslt = ProcessProgenyPBAFile(pszInFile,pszOutFile)) < eBSFSuccess)
 			{
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Failed processing skim PBA file '%s", pszInFile);
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Failed processing progeny PBA file '%s", pszInFile);
 			Reset();
 			return(Rslt);
 			}
 		}
 	}
+if(m_UsedProgenyFndrAligns == 0)
+	{
+	gDiagnostics.DiagOut(eDLWarn, gszProcName, "Process: No progeny to  founder allele stack alignments");
+	Reset();
+	return(eBSFSuccess);
+	}
+
+// sort progeny allele stack overlaps by readset.chrom.loci ascending
+m_mtqsort.SetMaxThreads(m_NumThreads);
+m_mtqsort.qsort(m_pProgenyFndrAligns, (int64_t)m_UsedProgenyFndrAligns, sizeof(tsProgenyFndrAligns), SortProgenyFndrAligns);
+
+// report haplotypes present for individual progenies
+for(uint32_t ProgIdx = 0; ProgIdx < m_NumProgenies; ProgIdx++)
+	ReportHaplotypesByProgeny(pszOutFile, m_ProgenyIDs[ProgIdx]);
+
+// generate a matrix with chrom.loci (Y) by progeny (X)
+m_mtqsort.qsort(m_pProgenyFndrAligns, (int64_t)m_UsedProgenyFndrAligns, sizeof(tsProgenyFndrAligns), SortProgenyChromLociReadset);
+
+ReportMatrix(pszOutFile);
 
 Reset();
 return(Rslt);
 }
 
-int
-CCallHaplotypes::PBAReportAlleles(char* pszPBAFile,		// load and report allele details present in this PBA file
-						char *pszRsltsFileBaseName)		// results are written to this file base name with skim readset identifier and type appended
+
+int 
+CCallHaplotypes::ReportHaplotypesByProgeny(char* pszRsltsFileBaseName,		// haplotype results are written to this file base name with '.haplotypes.csv' appended
+											uint32_t ReadsetID)				// report on this progeny readset only, or if 0 then report on all progeny readsets
 {
-uint32_t ReadsetID;
-
-if(m_pInBuffer == NULL)
-	{
-	if((m_pInBuffer = new uint8_t[cInBuffSize]) == NULL)
-		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Memory allocation of %u bytes for input buffering failed - %s", cInBuffSize, strerror(errno));
-		Reset();
-		return(eBSFerrMem);
-		}
-	m_AllocInBuff = cInBuffSize;
-	}
-
-if(m_pChromMetadata == NULL)
-	{
-	// initial allocation, will be realloc'd as required if more memory required
-	size_t memreq = (size_t)cAllocChromMetadata * sizeof(tsChromMetadata);
-#ifdef _WIN32
-	m_pChromMetadata = (tsChromMetadata *)malloc(memreq);	// initial and perhaps the only allocation
-	if(m_pChromMetadata == NULL)
-		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Initial memory allocation of %lld bytes for chromosome metadata failed - %s", (int64_t)memreq, strerror(errno));
-		Reset();
-		return(eBSFerrMem);
-		}
-#else
-	m_pChromMetadata = (tsChromMetadata *)mmap(NULL, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-	if(m_pChromMetadata == MAP_FAILED)
-		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Assembly: Memory allocation of %lld bytes through mmap() for chromosome metadata failed - %s", (int64_t)memreq, strerror(errno));
-		m_pChromMetadata = NULL;
-		Reset();
-		return(eBSFerrMem);
-		}
-#endif
-	m_AllocdChromMetadataMem = memreq;
-	m_AllocdChromMetadata = cAllocChromMetadata;
-	}
-m_UsedNumChromMetadata = 0;
-m_InNumBuffered = 0;
-m_InNumProcessed = 0;
-m_LAReadsetNameID=0;
-m_NumReadsetNames=0;
-m_NxtszReadsetIdx=0;
-m_LAChromNameID=0;
-m_NumChromNames=0;
-m_NxtszChromIdx=0;
-
-if((ReadsetID = LoadPBAFile(pszPBAFile,0)) == 0)
-	{
-	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Process: Errors loading PBA file '%s'",pszPBAFile);
-	Reset();
-	return(-1);
-	}
-m_NumFndrs = ReadsetID;
-
-// iterate over each chromosome
-uint32_t CurChromMetadataIdx;
-tsReadsetMetadata *pReadsetMetadata;
-tsChromMetadata *pChromMetadata;
-uint32_t LociOfs;
-uint8_t *pPBAs;
-uint8_t *pPBA;
-int32_t SkimBaseAllele;
-uint32_t AlleleIdx;
-uint8_t AlleleMsk;
-uint32_t NumNonAligned;
-pReadsetMetadata = &m_Readsets[ReadsetID-1];
-CurChromMetadataIdx = pReadsetMetadata->StartChromMetadataIdx;
-
-for(uint32_t ChromIdx = 0; ChromIdx < pReadsetMetadata->NumChroms && CurChromMetadataIdx != 0; ChromIdx++)
-	{
-	pChromMetadata = &m_pChromMetadata[CurChromMetadataIdx - 1];
-	pPBA = pPBAs = LocatePBAfor(ReadsetID,pChromMetadata->ChromID);
-	NumNonAligned = 0;
-	for(LociOfs = 0; LociOfs < pChromMetadata->ChromLen; LociOfs++,pPBA++)
-		{
-		if(*pPBA == 0)
-			NumNonAligned++;
-		AlleleMsk = 0x03;
-		for(AlleleIdx = 0; AlleleIdx < 4; AlleleIdx++, AlleleMsk <<= 2)
-			{
-			SkimBaseAllele =  (*pPBA & AlleleMsk) >> (AlleleIdx * 2);
-			
-			}
-		}
-	CurChromMetadataIdx = pChromMetadata->NxtChromMetadataIdx;
-	}
-
- 
-
-if(m_hInFile != -1)
-	{
-	close(m_hInFile);
-	m_hInFile = -1;
-	}
-return(eBSFSuccess);
-}
-
-int
-CCallHaplotypes::ProcessSkimPBAFile(char* pszSkimPBAFile,	// load, process and call haplotypes for this skim PBA file against previously loaded panel founder PBAs
-						char *pszRsltsFileBaseName)			// results are written to this file base name with skim readset identifier and type appended
-{
-int Rslt;
 char szOutFile[_MAX_PATH];
-char *pszFndrReadset;
-uint32_t FounderID;
-// mark state so can be restored ready for next skim PBA to be loaded and processed
-uint32_t NumReadsetNames = m_NumReadsetNames;
-uint32_t NxtszReadsetIdx = m_NxtszReadsetIdx;
-uint32_t NumChromNames = m_NumChromNames;
-uint32_t NxtszChromIdx = m_NxtszChromIdx;
-uint32_t UsedNumChromMetadata = m_UsedNumChromMetadata;
-uint32_t UsedWinBinCnts = 0;
-m_SkimReadsetID = 0;
-m_LAChromNameID = 0;
-m_LAReadsetNameID = 0;
-if((m_SkimReadsetID = LoadPBAFile(pszSkimPBAFile,1)) <= 0)
-	{
-	gDiagnostics.DiagOut(eDLInfo, gszProcName, "ProcessSkimPBAFile: Errors loading skim PBA file '%s'",pszSkimPBAFile);
-	Reset();
-	return(-1);
-	}
-gDiagnostics.DiagOut(eDLInfo, gszProcName, "ProcessSkimPBAFile: Completed loading skim PBA file");
-
-if((m_pszOutBuffer = new uint8_t[cOutBuffSize]) == NULL)
-	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessSkimPBAFile: Memory allocation of %u bytes for output buffering failed - %s", cOutBuffSize, strerror(errno));
-	Reset();
-	return(eBSFerrMem);
-	}
-m_AllocOutBuff = cOutBuffSize;
-m_OutBuffIdx = 0;
-
-char *pszSkimReadset = LocateReadset(m_SkimReadsetID);
-sprintf(szOutFile,"%s_Skim.%s.csv",pszRsltsFileBaseName,pszSkimReadset);
-
-#ifdef _WIN32
-m_hOutFile = open(szOutFile,( O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC),(_S_IREAD | _S_IWRITE));
-#else
-	if((m_hOutFile = open64(szOutFile,O_WRONLY | O_CREAT,S_IREAD | S_IWRITE)) != -1)
-		if(ftruncate(m_hOutFile,0)!=0)
-			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate %s - %s",szOutFile,strerror(errno));
-			Reset();
-			return(eBSFerrCreateFile);
-			}
-#endif
-if(m_hOutFile < 0)
-	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessSkimPBAFile: Unable to create/truncate %s - %s",szOutFile,strerror(errno));
-	Reset();
-	return(eBSFerrCreateFile);
-	}
-
-tsReadsetMetadata *pSkim = &m_Readsets[m_SkimReadsetID-1];
-pSkim->StartWinBinCntsIdx = m_UsedWinBinCnts;
-pSkim->NumWinBins = 0;
-pSkim->LRAWinBinCntIdx = m_UsedWinBinCnts;
-Rslt = CountHaplotypes(m_SkimReadsetID,m_NumFndrs,m_MinScoreKmerSize,m_MaxScoreKmerSize,m_AccumBinSize);
-pSkim->NumWinBins = m_UsedWinBinCnts - pSkim->StartWinBinCntsIdx;
-gDiagnostics.DiagOut(eDLInfo,gszProcName,"ProcessSkimPBAFile: Calling haplotypes ...");
-ChooseHaplotypes();  // choose which set of haplotypes are most probable for each bin
-gDiagnostics.DiagOut(eDLInfo,gszProcName,"ProcessSkimPBAFile: Completed haplotype calling");
-// report
-
-m_OutBuffIdx=sprintf((char *)m_pszOutBuffer,"\"Chrom\",\"Loci\",\"Skim-NonUniques:%s\",\"Skim-Unaligned:%s\"",pszSkimReadset,pszSkimReadset);
-for(FounderID = 1; FounderID <= m_NumFndrs; FounderID++)
-	{
-	if(m_Fndrs2Proc[FounderID-1] &  0x01)
-		{
-		pszFndrReadset = LocateReadset(FounderID);
-		m_OutBuffIdx+=sprintf((char *)&m_pszOutBuffer[m_OutBuffIdx],",\"FndrUniques-%s:%s\"",pszSkimReadset,pszFndrReadset);
-		}
-	}
-
-for(FounderID = 1; FounderID <= m_NumFndrs; FounderID++)
-	{
-	if(m_Fndrs2Proc[FounderID-1] &  0x01)
-		{
-		pszFndrReadset = LocateReadset(FounderID);
-		m_OutBuffIdx+=sprintf((char *)&m_pszOutBuffer[m_OutBuffIdx],",\"SummedScore-%s:%s\"",pszSkimReadset,pszFndrReadset);
-		}
-	}
-
-for(FounderID = 1; FounderID <= m_NumFndrs; FounderID++)
-	{
-	if(m_Fndrs2Proc[FounderID-1] &  0x01)
-		{
-		pszFndrReadset = LocateReadset(FounderID);
-		m_OutBuffIdx+=sprintf((char *)&m_pszOutBuffer[m_OutBuffIdx],",\"RawHap-%s:%s\"",pszSkimReadset,pszFndrReadset);
-		}
-	}
-
-for(FounderID = 1; FounderID <= m_NumFndrs; FounderID++)
-	{
-	if(m_Fndrs2Proc[FounderID-1] &  0x01)
-		{
-		pszFndrReadset = LocateReadset(FounderID);
-		m_OutBuffIdx+=sprintf((char *)&m_pszOutBuffer[m_OutBuffIdx],",\"SmthdHap-%s:%s\"",pszSkimReadset,pszFndrReadset);
-		}
-	}
-
-tsBinCnts *pSkimWinBinCnts;
-uint32_t WndFndrCntsIdx;
-uint32_t NumWinBins = pSkim->NumWinBins;
-pSkimWinBinCnts = &m_pWinBinCnts[pSkim->StartWinBinCntsIdx];
-for(WndFndrCntsIdx = 0; WndFndrCntsIdx < NumWinBins; WndFndrCntsIdx++, pSkimWinBinCnts++)
-	{
-	m_OutBuffIdx+=sprintf((char *)&m_pszOutBuffer[m_OutBuffIdx],"\n\"%s\",%u,%u,%u",
-							LocateChrom(pSkimWinBinCnts->ChromID),pSkimWinBinCnts->StartLoci,pSkimWinBinCnts->MultiFounder,pSkimWinBinCnts->NoFounder);
-
-	for(FounderID = 1; FounderID <= m_NumFndrs; FounderID++)
-		if(m_Fndrs2Proc[FounderID-1] &  0x01)
-			m_OutBuffIdx+=sprintf((char *)&m_pszOutBuffer[m_OutBuffIdx],",%u",pSkimWinBinCnts->Uniques[FounderID-1]);
-
-	for(FounderID = 1; FounderID <= m_NumFndrs; FounderID++)
-		if(m_Fndrs2Proc[FounderID-1] &  0x01)
-			m_OutBuffIdx+=sprintf((char *)&m_pszOutBuffer[m_OutBuffIdx],",%lld",pSkimWinBinCnts->SummedScores[FounderID-1]);
-
-	for(FounderID = 1; FounderID <= m_NumFndrs; FounderID++)
-		if(m_Fndrs2Proc[FounderID-1] &  0x01)
-			m_OutBuffIdx+=sprintf((char *)&m_pszOutBuffer[m_OutBuffIdx],",%u",pSkimWinBinCnts->RawFndrHaps[FounderID-1]);
-	for(FounderID = 1; FounderID <= m_NumFndrs; FounderID++)
-		if(m_Fndrs2Proc[FounderID-1] &  0x01)
-			m_OutBuffIdx+=sprintf((char *)&m_pszOutBuffer[m_OutBuffIdx],",%u",pSkimWinBinCnts->SmthdFndrHaps[FounderID-1]);
-
-	if((m_OutBuffIdx + 1000) > m_AllocOutBuff)
-		{
-		if (!CUtility::RetryWrites(m_hOutFile,m_pszOutBuffer,m_OutBuffIdx))
-			{
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "ClassifyHaplotypes: Fatal error in RetryWrites()");
-			Reset();
-			return(eBSFerrFileAccess);
-			}
-		m_OutBuffIdx = 0;
-		}
-	}
-if(m_OutBuffIdx && m_hOutFile != -1)
-	{
-	if (!CUtility::RetryWrites(m_hOutFile,m_pszOutBuffer,m_OutBuffIdx))
-		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "ClassifyHaplotypes: Fatal error in RetryWrites()");
-		Reset();
-		return(eBSFerrFileAccess);
-		}
-	m_OutBuffIdx = 0;
-	}
-
-if(m_hOutFile != -1)
-	{
-	// commit output file
-#ifdef _WIN32
-	_commit(m_hOutFile);
-#else
-	fsync(m_hOutFile);
-#endif
-	close(m_hOutFile);
-	m_hOutFile = -1;
-	}
-
-// now for the BEDs, one for each founder
-for(FounderID = 1; FounderID <= m_NumFndrs; FounderID++)
-	{
-	if(m_Fndrs2Proc[FounderID-1] &  0x01)
-		{
-		pszFndrReadset = LocateReadset(FounderID);
-		sprintf(szOutFile,"%s_Haps.Skim_%s.Fndr_%s.bed",pszRsltsFileBaseName,pszSkimReadset,pszFndrReadset);
-		ReportHaplotypesBED(szOutFile,pszFndrReadset,pszSkimReadset,FounderID);
-		}
-	}
-
-	// generate WIGs enabling raw counts visualisations, one for each founder
-for(FounderID = 1; FounderID <= m_NumFndrs; FounderID++)
-	{
-	if(m_Fndrs2Proc[FounderID-1] &  0x01)
-		{
-		pszFndrReadset = LocateReadset(FounderID);
-		sprintf(szOutFile,"%s_Haps.Skim_%s.Fndr_%s.wig",pszRsltsFileBaseName,pszSkimReadset,pszFndrReadset);
-		ReportCountsWIG(szOutFile,pszFndrReadset,pszSkimReadset,FounderID);
-		}
-	}
-
-// restore state ready for next skim PBA to be loaded and processed
-m_NumReadsetNames = NumReadsetNames;
-m_NxtszReadsetIdx = NxtszReadsetIdx;
-m_NumReadsetNames = NumReadsetNames;
-m_NumChromNames = NumChromNames;
-m_NxtszChromIdx = NxtszChromIdx;
-m_UsedWinBinCnts = 0;
-if(m_UsedNumChromMetadata > UsedNumChromMetadata)
-	{
-	tsChromMetadata *pChromMetadata = &m_pChromMetadata[UsedNumChromMetadata];
-	for(uint32_t MetaIdx = UsedNumChromMetadata; MetaIdx < m_UsedNumChromMetadata; MetaIdx++,pChromMetadata++)
-		{
-		if(pChromMetadata->pPBAs != NULL)
-#ifdef _WIN32
-			free(pChromMetadata->pPBAs);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
-#else
-		if(pChromMetadata->pPBAs != MAP_FAILED)
-			munmap(pChromMetadata->pPBAs, pChromMetadata->ChromLen);
-#endif
-		pChromMetadata->pPBAs = NULL;
-		}
-	}
-m_UsedNumChromMetadata = UsedNumChromMetadata;
-m_LAChromNameID = 0;
-m_LAReadsetNameID = 0;
-m_SkimReadsetID = 0;
-return(eBSFSuccess);
-}
-
-
-
-int
-CCallHaplotypes::SmoothBinsHaps(int Ploidy)		// iterate over all window bins, smoothing using adjacent bins to resolve low confidence bins whilst further reducing number of haplotypes in a bin down to this ploidy
-{
-uint32_t CurChromID;
+tsProgenyFndrAligns *pCurPFA;
+uint32_t PFAIdx;
 uint32_t FndrIdx;
-uint32_t SkimBinIdx;
-uint32_t CurChromSkimBinIdx;
-uint32_t SumSkimBinIdx;
-uint32_t SmoothStartBinIdx;
-uint32_t SmoothEndBinIdx;
-uint32_t NumSmoothBins;
-uint32_t HapIdx;
-uint32_t NumAbsent;
-double MeanAllFndrHaps;
-uint32_t SumFndrHaps[cMaxFounderReadsets];
-tsFndrSmthdMean FndrSmthdMeans[cMaxFounderReadsets];
-uint8_t *pRawFndrHap;
-uint8_t *pSmthdFndrHap;
-tsReadsetMetadata *pSkim;
-tsBinCnts *pSkimWinBinCnts;
-tsBinCnts *pSumSkimWinBinCnts;
 
-memset(SumFndrHaps,0,sizeof(SumFndrHaps));
-pSkim = &m_Readsets[m_SkimReadsetID-1];
-pSkimWinBinCnts = &m_pWinBinCnts[pSkim->StartWinBinCntsIdx];
-CurChromID = 0;
-CurChromSkimBinIdx = 0;
-for(SkimBinIdx = 0; SkimBinIdx < pSkim->NumWinBins; SkimBinIdx++,pSkimWinBinCnts++)
-	{
-	if(CurChromID != pSkimWinBinCnts->ChromID)
-		{
-		CurChromID = pSkimWinBinCnts->ChromID;
-		CurChromSkimBinIdx = SkimBinIdx;
-		}
-	memset(SumFndrHaps,0,sizeof(SumFndrHaps));
-	NumSmoothBins=0;
-	MeanAllFndrHaps = 0;
-	SmoothStartBinIdx = (SkimBinIdx - CurChromSkimBinIdx) < (m_WinMeanBins)/2 ? CurChromSkimBinIdx : SkimBinIdx - (m_WinMeanBins)/2;
-	SmoothEndBinIdx = min(SkimBinIdx + (m_WinMeanBins+1)/2,m_UsedWinBinCnts-1);
-	pSumSkimWinBinCnts =  &m_pWinBinCnts[pSkim->StartWinBinCntsIdx + SmoothStartBinIdx];
-	for(SumSkimBinIdx = SmoothStartBinIdx; SumSkimBinIdx <= SmoothEndBinIdx; SumSkimBinIdx++,pSumSkimWinBinCnts++)
-		{
-		if(pSumSkimWinBinCnts->ChromID != CurChromID)
-			break;
-		NumSmoothBins++;
-		pRawFndrHap = pSumSkimWinBinCnts->RawFndrHaps;
-		for(FndrIdx = 0; FndrIdx < m_NumFndrs; FndrIdx++,pRawFndrHap++)
-			{
-			if(!(m_Fndrs2Proc[FndrIdx] & 0x01))
-				continue;
-			SumFndrHaps[FndrIdx] += (uint32_t)*pRawFndrHap;
-			MeanAllFndrHaps += (double)(uint32_t)*pRawFndrHap;
-			}
-		}
+int32_t PrevReadsetID;
+int32_t PrevChromID;
 
-	if(NumSmoothBins)
-		{
-		memset(FndrSmthdMeans,0,sizeof(tsFndrSmthdMean) * m_NumFndrsProcMap);
-		HapIdx = 0;
-		NumAbsent = 0;
-		for(FndrIdx = 0; FndrIdx < m_NumFndrs; FndrIdx++)
-			{
-			if(!(m_Fndrs2Proc[FndrIdx] & 0x01))
-				continue;
-			NumAbsent += pSkimWinBinCnts->RawFndrHaps[FndrIdx] == eHCAbsent ? 0 : 1;
-			FndrSmthdMeans[HapIdx].SmthdMean = (double)SumFndrHaps[FndrIdx] / NumSmoothBins;
-			FndrSmthdMeans[HapIdx++].FounderID = FndrIdx+1;
-			}
-		MeanAllFndrHaps /= (NumSmoothBins * m_NumFndrsProcMap);
-		if(m_NumFndrsProcMap > 1)
-			qsort(FndrSmthdMeans,m_NumFndrsProcMap,sizeof(FndrSmthdMeans[0]),SortFndrSmthdMeans);
-		uint32_t PloidyIdx;
-		for(PloidyIdx = 0;PloidyIdx < min((uint32_t)Ploidy,m_NumFndrsProcMap);PloidyIdx++)
-			{
-			pSmthdFndrHap = &pSkimWinBinCnts->SmthdFndrHaps[FndrSmthdMeans[PloidyIdx].FounderID-1];
-			if((FndrSmthdMeans[PloidyIdx].SmthdMean * 1.5) >= MeanAllFndrHaps && 
-					pSkimWinBinCnts->SummedScores[FndrSmthdMeans[PloidyIdx].FounderID-1]) // needing to identify as to if there was a deletion thus no haplotype even if smoothing!
-				*pSmthdFndrHap = eHCHiConf;
-			else
-				*pSmthdFndrHap = eHCAbsent;
-			}
-		}
-	}
-return(0);
-}
-
-
-int
-CCallHaplotypes::ChooseHaplotypes(void) // iterate over all the window bins and choose which haplotype to call for that bin interpolating those bins which were initially called as being indeterminate
-{
-// classify bins into haplotype/absence for each founder within individual bins
-ClassifyBinHaps(m_NumFndrsProcMap);
-
-// apply interpolation by smoothing over haplotypes
-SmoothBinsHaps(m_Ploidy);
-return(0);
-}
-
-int
-CCallHaplotypes::ReportHaplotypesBED(char *pszOutFile,		// BED file to generate
-							char *pszFounder,	// this was the founder haplotype
-							char *pszSkim,		// against which this skim readset was aligned
-					uint32_t FounderID)			// reporting on haplotypes for this founder
-{
-uint32_t NumWinBins;
-tsBinCnts *pWinBinCnts;
+char *pszProgenyReadset;
+char *pszChrom;
 
 if(m_pszOutBuffer == NULL)
 	{
 	if((m_pszOutBuffer = new uint8_t[cOutBuffSize]) == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Memory allocation of %u bytes for output buffering failed - %s", cOutBuffSize, strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "ReportHaplotypesByProgeny: Memory allocation of %u bytes for output buffering failed - %s", cOutBuffSize, strerror(errno));
 		Reset();
 		return(eBSFerrMem);
 		}
 	m_AllocOutBuff = cOutBuffSize;
 	}
 m_OutBuffIdx = 0;
-
-// NOTE: reusing output filehandle and buffering as these are not used concurrently with any other output file generation
-if(m_hOutFile != -1)
-	{
-	close(m_hOutFile);
-	m_hOutFile = -1;
-	}
+if(ReadsetID == 0)
+	sprintf(szOutFile, "%s.progeny.all.csv", pszRsltsFileBaseName);
+else
+	sprintf(szOutFile, "%s.progeny.%s.csv", pszRsltsFileBaseName, LocateReadset(ReadsetID));
 #ifdef _WIN32
-m_hOutFile = open(pszOutFile,( O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC),(_S_IREAD | _S_IWRITE));
+m_hOutFile = open(szOutFile, (O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC), (_S_IREAD | _S_IWRITE));
 #else
-	if((m_hOutFile = open64(pszOutFile,O_WRONLY | O_CREAT,S_IREAD | S_IWRITE)) != -1)
-		if(ftruncate(m_hOutFile,0)!=0)
-			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"ReportHaplotypesBED: Unable to create/truncate %s - %s",pszOutFile,strerror(errno));
-			Reset();
-			return(eBSFerrCreateFile);
-			}
-#endif
-if(m_hOutFile < 0)
+if((m_hOutFile = open64(szOutFile, O_WRONLY | O_CREAT, S_IREAD | S_IWRITE)) != -1)
+if(ftruncate(m_hOutFile, 0) != 0)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ReportHaplotypesBED: Unable to create/truncate %s - %s",pszOutFile,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to create/truncate %s - %s", szOutFile, strerror(errno));
 	Reset();
 	return(eBSFerrCreateFile);
 	}
-m_OutBuffIdx = sprintf((char *)m_pszOutBuffer,"track name=\"PBA Skim %s->Fndr %s\" description=\"PBA Skim readset %s aligned against PBA Founder %s\" useScore=0\n", pszSkim,pszFounder, pszSkim,pszFounder);
-
-NumWinBins = m_Readsets[m_SkimReadsetID-1].NumWinBins;
-pWinBinCnts = &m_pWinBinCnts[m_Readsets[m_SkimReadsetID-1].StartWinBinCntsIdx];
-char *pszCurChrom;
-
-uint32_t CurStartLoci;
-uint32_t WndFndrCntsIdx;
-uint32_t CurChromID = 0;
-uint32_t CurEndLoci = 0;
-for(WndFndrCntsIdx = 0; WndFndrCntsIdx < NumWinBins; WndFndrCntsIdx++, pWinBinCnts++)
+#endif
+if(m_hOutFile < 0)
 	{
-	// simple chrom\t\loci\t\endloci is all that is required
-	if(pWinBinCnts->ChromID != CurChromID) // starting a new chrom?
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "ReportHaplotypesByProgeny: Unable to create/truncate %s - %s", szOutFile, strerror(errno));
+	Reset();
+	return(eBSFerrCreateFile);
+	}
+
+// header line
+m_OutBuffIdx = sprintf((char*)m_pszOutBuffer, "\"Progeny\",\"Chrom\",\"Loci\"");
+for(FndrIdx = 0; FndrIdx < m_NumFounders; FndrIdx++)
+	{
+	if(m_Fndrs2Proc[FndrIdx] & 0x01)
+		m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], ",\"Fndr:%s\"", LocateReadset(FndrIdx+1));
+	}
+m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], "\n");
+
+PrevReadsetID = 0;
+PrevChromID = 0;
+pCurPFA = &m_pProgenyFndrAligns[0];
+for(PFAIdx = 0; PFAIdx < m_UsedProgenyFndrAligns; PFAIdx++, pCurPFA++)
+	{
+	if(ReadsetID != 0 && pCurPFA->ReadsetID != ReadsetID)
+		continue;
+	if(pCurPFA->ReadsetID != PrevReadsetID || pCurPFA->ChromID != PrevChromID)
 		{
-		if(CurEndLoci != 0)
-			m_OutBuffIdx+=sprintf((char *)&m_pszOutBuffer[m_OutBuffIdx],"%s\t%u\t%u\n",pszCurChrom,CurStartLoci,CurEndLoci);
-		CurEndLoci = 0;
-		CurChromID = pWinBinCnts->ChromID;
-		pszCurChrom = LocateChrom(CurChromID);
+		pszProgenyReadset = LocateReadset(pCurPFA->ReadsetID);
+		pszChrom = LocateChrom(pCurPFA->ChromID);
+		PrevReadsetID = pCurPFA->ReadsetID;
+		PrevChromID = pCurPFA->ChromID;
 		}
 
-	switch(pWinBinCnts->SmthdFndrHaps[FounderID-1]) {
-		case eHCHiConf:			// high confidence that founder has a haplotype
-			if(CurEndLoci == 0)
-				CurStartLoci = pWinBinCnts->StartLoci;
-			CurEndLoci = pWinBinCnts->EndLoci + 1;
-			break;
-
-		default:						// have either eHCAbsent or eHCLoConf in founder having a haplotype
-			if(CurEndLoci != 0)
-				{
-				m_OutBuffIdx+=sprintf((char *)&m_pszOutBuffer[m_OutBuffIdx],"%s\t%u\t%u\n",pszCurChrom,CurStartLoci,CurEndLoci);
-				CurEndLoci = 0;
-				}
-			break;
+	m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx],"\"%s\",\"%s\",%u", pszProgenyReadset, pszChrom, pCurPFA->Loci);
+	for(FndrIdx=0; FndrIdx < m_NumFounders; FndrIdx++)
+		{
+		if(m_Fndrs2Proc[FndrIdx] & 0x01)
+			m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], ",%d", Bits256Test(FndrIdx, pCurPFA->ProgenyFounders) ? 1 : 0);
 		}
-
+	m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], "\n");
 	if((m_OutBuffIdx + 1000) > m_AllocOutBuff)
 		{
-		if (!CUtility::RetryWrites(m_hOutFile,m_pszOutBuffer,m_OutBuffIdx))
+		if(!CUtility::RetryWrites(m_hOutFile, m_pszOutBuffer, m_OutBuffIdx))
 			{
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "ReportHaplotypesBED: Fatal error in RetryWrites()");
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "ReportMatrix: Fatal error in RetryWrites()");
 			Reset();
 			return(eBSFerrFileAccess);
 			}
 		m_OutBuffIdx = 0;
 		}
 	}
-if(CurEndLoci != 0)
-	{
-	m_OutBuffIdx+=sprintf((char *)&m_pszOutBuffer[m_OutBuffIdx],"%s\t%u\t%u\n",pszCurChrom,CurStartLoci,CurEndLoci);
-	CurEndLoci = 0;
-	}
-
 if(m_OutBuffIdx && m_hOutFile != -1)
-	{
-	if (!CUtility::RetryWrites(m_hOutFile,m_pszOutBuffer,m_OutBuffIdx))
-		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "ReportHaplotypesBED: Fatal error in RetryWrites()");
-		Reset();
-		return(eBSFerrFileAccess);
-		}
-	m_OutBuffIdx = 0;
-	}
-
-if(m_hOutFile != -1)
-	{
-	// commit output file
-#ifdef _WIN32
-	_commit(m_hOutFile);
-#else
-	fsync(m_hOutFile);
-#endif
-	close(m_hOutFile);
-	m_hOutFile = -1;
-	}
-return(eBSFSuccess);
-}
-
-void
-CCallHaplotypes::InitialiseWIGSpan(void) // initialise WIG span vars to values corresponding to no spans having been previously reported
-{
-m_WIGChromID = 0;
-m_WIGRptdChromID = 0;
-m_WIGSpanLoci = 0;
-m_WIGSpanLen = 0;
-m_WIGRptdSpanLen = 0;
-m_WIGSpanCnts = 0;
-}
-
-int
-CCallHaplotypes::CompleteWIGSpan(bool bWrite)				// close off any current WIG span ready to start any subsequent span
-{
-char *pszCurChrom;
-
-	// if existing span then write that span out
-if(m_WIGChromID != 0 && m_WIGSpanLen > 0 && m_WIGSpanLoci > 0 && m_WIGSpanCnts > 0)
-	{
-	// has chrom and/or span changed since previously writing out a span?
-	if(m_WIGChromID != m_WIGRptdChromID || m_WIGSpanLen != m_WIGRptdSpanLen)
-		{
-		pszCurChrom = LocateChrom(m_WIGChromID);
-		m_OutBuffIdx += sprintf((char *)&m_pszOutBuffer[m_OutBuffIdx],"variableStep chrom=%s span=%d\n",pszCurChrom,m_WIGSpanLen);
-		m_WIGRptdChromID = m_WIGChromID;
-		m_WIGRptdSpanLen = m_WIGSpanLen;
-		}
-	m_OutBuffIdx += sprintf((char *)&m_pszOutBuffer[m_OutBuffIdx],"%d %d\n",m_WIGSpanLoci,(uint32_t)((m_WIGSpanCnts + m_WIGSpanLen-1)/m_WIGSpanLen));
-	}
-if((bWrite && m_OutBuffIdx) || (m_OutBuffIdx + 1000) >  m_AllocOutBuff)
 	{
 	if(!CUtility::RetryWrites(m_hOutFile, m_pszOutBuffer, m_OutBuffIdx))
 		{
-		gDiagnostics.DiagOut(eDLInfo,gszProcName,"RetryWrites() error");
-		return(eBSFerrWrite);
-		}
-	m_OutBuffIdx=0;
-	}
-m_WIGSpanLoci = 0;
-m_WIGSpanLen = 0;
-m_WIGSpanCnts = 0;
-return(eBSFSuccess);
-}
-
-int
-CCallHaplotypes::AccumWIGBinCnts(uint32_t ChromID,	// accumulate wiggle counts into variableStep spans over this chromosome
-			uint32_t Loci,		// bin counts starting from this loci - WIG uses 1 based loci instead of the usual UCSC BED 0 based loci
-			uint32_t Cnts,		// bin has this many counts attributed
-			uint32_t BinLen)	// bin is this length
-{
-int Rslt;
-uint32_t Meanx100;
-if(ChromID != m_WIGChromID || Cnts == 0)		// onto a different chromosome, or current span is at maximal length?
-	{
-	if(m_WIGChromID != 0)
-		{
-		if((Rslt = CompleteWIGSpan()) < 0)
-			return(Rslt);
-		}
-	if(Cnts > 0 && BinLen > 0)
-		{
-		m_WIGChromID = ChromID;
-		m_WIGSpanLoci = Loci;
-		m_WIGSpanLen = BinLen;
-		m_WIGSpanCnts = (uint64_t)Cnts * BinLen;
-		}
-	return(eBSFSuccess);
-	}
-
-if(m_WIGSpanLen == 0 || m_WIGSpanCnts == 0)
-	{
-	m_WIGSpanLoci = Loci;
-	m_WIGSpanLen = BinLen;
-	m_WIGSpanCnts = (uint64_t)Cnts * BinLen;
-	return(eBSFSuccess);
-	}
-
-Meanx100 = 100 * (uint32_t)(m_WIGSpanCnts / (uint64_t)m_WIGSpanLen);
-if((Cnts <= 5 && (Cnts * 100) != Meanx100) || (Meanx100 < (Cnts * 75) || Meanx100 >= (Cnts * 125)))
-	{
-	// write current span out
-	if((Rslt = CompleteWIGSpan()) < 0)
-		return(Rslt);
-	m_WIGSpanLoci = Loci;
-	m_WIGSpanLen = BinLen;
-	m_WIGSpanCnts = (uint64_t)Cnts * BinLen;
-	return(eBSFSuccess);
-	}
-m_WIGSpanCnts += (uint64_t)Cnts * BinLen;
-m_WIGSpanLen = Loci - m_WIGSpanLoci + BinLen;
-return(eBSFSuccess);
-}
-
-
-int
-CCallHaplotypes::AccumWIGCnts(uint32_t ChromID,	// accumulate wiggle counts into variableStep spans over this chromosome
-			uint32_t Loci,		// this loci  - WIG uses 1 based loci instead of the usual UCSC BED 0 based loci
-			uint32_t Cnts,		 // has this many counts attributed
-			uint32_t MaxSpanLen) // allow WIG spans to be this maximal length
-{
-int Rslt;
-uint32_t Meanx100;
-if(ChromID != m_WIGChromID || m_WIGSpanLen >= MaxSpanLen || Cnts == 0)		// onto a different chromosome, or current span is at maximal length?
-	{
-	if(m_WIGChromID != 0)
-		{
-		if((Rslt = CompleteWIGSpan()) < 0)
-			return(Rslt);
-		}
-	if(Cnts > 0)
-		{
-		m_WIGChromID = ChromID;
-		m_WIGSpanLoci = Loci;
-		m_WIGSpanLen = 1;
-		m_WIGSpanCnts = Cnts;
-		}
-	return(eBSFSuccess);
-	}
-
-if(m_WIGSpanLen == 0 || m_WIGSpanCnts == 0)
-	{
-	m_WIGSpanLoci = Loci;
-	m_WIGSpanLen = 1;
-	m_WIGSpanCnts = (uint64_t)Cnts;
-	return(eBSFSuccess);
-	}
-
-Meanx100 = 100 * (uint32_t)(m_WIGSpanCnts / (uint64_t)m_WIGSpanLen);
-if((Cnts <= 5 && (Cnts * 100) != Meanx100) || (Meanx100 < (Cnts * 75) || Meanx100 >= (Cnts * 125)))
-{
-	// write current span out
-	if((Rslt = CompleteWIGSpan()) < 0)
-		return(Rslt);
-	m_WIGSpanLoci = Loci;
-	m_WIGSpanLen = 1;
-	m_WIGSpanCnts = Cnts;
-	return(eBSFSuccess);
-	}
-m_WIGSpanCnts += Cnts;
-m_WIGSpanLen = Loci - m_WIGSpanLoci + 1;
-return(eBSFSuccess);
-}
-
-
-int
-CCallHaplotypes::ReportCountsWIG(char *pszOutFile,	// WIG file to generate
-							char *pszFounder,	// this was the founder haplotype
-							char *pszSkim,		// against which this skim readset was aligned
-							uint32_t FounderID) // reporting on exclusive counts for this founder
-{
-uint32_t NumWinBins;
-tsBinCnts *pWinBinCnts;
-
-
-if(m_pszOutBuffer == NULL)
-	{
-	if((m_pszOutBuffer = new uint8_t[cOutBuffSize]) == NULL)
-		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Memory allocation of %u bytes for output buffering failed - %s", cOutBuffSize, strerror(errno));
-		Reset();
-		return(eBSFerrMem);
-		}
-	m_AllocOutBuff = cOutBuffSize;
-	}
-m_OutBuffIdx = 0;
-
-// NOTE: reusing output filehandle and buffering as these are not used concurrently with any other output file generation
-if(m_hOutFile != -1)
-	{
-	close(m_hOutFile);
-	m_hOutFile = -1;
-	}
-#ifdef _WIN32
-m_hOutFile = open(pszOutFile,( O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC),(_S_IREAD | _S_IWRITE));
-#else
-	if((m_hOutFile = open64(pszOutFile,O_WRONLY | O_CREAT,S_IREAD | S_IWRITE)) != -1)
-		if(ftruncate(m_hOutFile,0)!=0)
-			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate %s - %s",pszOutFile,strerror(errno));
-			Reset();
-			return(eBSFerrCreateFile);
-			}
-#endif
-if(m_hOutFile < 0)
-	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ReportHaplotypesWIG: Unable to create/truncate %s - %s",pszOutFile,strerror(errno));
-	Reset();
-	return(eBSFerrCreateFile);
-	}
-m_OutBuffIdx = sprintf((char *)m_pszOutBuffer,"track name=\"PBA Skim %s->Fndr %s\" description=\"PBA Skim readset %s aligned against PBA Founder %s\" useScore=1\n", pszSkim,pszFounder, pszSkim,pszFounder);
-
-NumWinBins = m_Readsets[m_SkimReadsetID-1].NumWinBins;
-pWinBinCnts = &m_pWinBinCnts[m_Readsets[m_SkimReadsetID-1].StartWinBinCntsIdx];
-
-uint32_t WndFndrCntsIdx;
-uint32_t CurChromID = 0;
-uint32_t CurBinSpan = 0;
-uint32_t PrevBinSpan = 0;
-InitialiseWIGSpan();
-for(WndFndrCntsIdx = 0; WndFndrCntsIdx < NumWinBins; WndFndrCntsIdx++, pWinBinCnts++)
-	{
-	CurBinSpan = pWinBinCnts->EndLoci-pWinBinCnts->StartLoci+1;
-	AccumWIGBinCnts(pWinBinCnts->ChromID,pWinBinCnts->StartLoci + 1,pWinBinCnts->Uniques[FounderID-1],CurBinSpan); // WIG uses 1 based loci instead of the usual UCSC BED 0 based loci
-	}
-CompleteWIGSpan(true);
-if(m_OutBuffIdx && m_hOutFile != -1)
-	{
-	if (!CUtility::RetryWrites(m_hOutFile,m_pszOutBuffer,m_OutBuffIdx))
-		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "ReportHaplotypesWIG: Fatal error in RetryWrites()");
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "ReportMatrix: Fatal error in RetryWrites()");
 		Reset();
 		return(eBSFerrFileAccess);
 		}
@@ -1794,7 +1025,7 @@ if(m_OutBuffIdx && m_hOutFile != -1)
 
 if(m_hOutFile != -1)
 	{
-	// commit output file
+// commit output file
 #ifdef _WIN32
 	_commit(m_hOutFile);
 #else
@@ -1803,44 +1034,241 @@ if(m_hOutFile != -1)
 	close(m_hOutFile);
 	m_hOutFile = -1;
 	}
+
 return(eBSFSuccess);
 }
 
-tsBinCnts *			// returned WinBinCnts if located in pReadset
-CCallHaplotypes::LocateWinBinCnts(tsBinCnts *pWinBinCnts,	// chrom and start loci in this bin are to be located
-								tsReadsetMetadata *pReadset)	// in this readset
+int
+CCallHaplotypes::ReportMatrix(char* pszRsltsFileBaseName)		// matrix results are written to this file base name with 'matrix.csv' appended
 {
-tsBinCnts *pCnts;
-uint32_t LRAWinBinCntIdx;
-uint32_t WinBinCntIdx;
-uint32_t NumWinBins;
-if(pReadset->LRAWinBinCntIdx >= m_UsedWinBinCnts)
-	pReadset->LRAWinBinCntIdx = pReadset->StartWinBinCntsIdx;
-pCnts = &m_pWinBinCnts[pReadset->LRAWinBinCntIdx];
-if(pCnts->ReadsetID != pReadset->ReadsetID ||			// check cnts are for correct readset
-	pCnts->ChromID > pWinBinCnts->ChromID ||			// WinBinCnts expected to have been sorted in ReadsetID.ChromID.Loci ascending order
-	(pCnts->ChromID == pWinBinCnts->ChromID && pCnts->StartLoci > pWinBinCnts->StartLoci))		// so if LRAWinBinCntIdx is ahead of pWinBinCnts then do a linear search from the start of bins for the readset
+char szOutFile[_MAX_PATH];
+tsProgenyFndrAligns* pCurPFA;
+uint32_t PFAIdx;
+uint32_t FndrIdx;
+uint32_t ProgIdx;
+uint8_t ProgenyHaplotypes[cMaxProgenyReadsets];
+uint8_t ProgHaplotype;
+int32_t CurChromID;
+uint32_t CurLoci;
+bool bNewLoci;
+
+char* pszChrom;
+
+if(m_pszOutBuffer == NULL)
+{
+	if((m_pszOutBuffer = new uint8_t[cOutBuffSize]) == NULL)
 	{
-	pReadset->LRAWinBinCntIdx = pReadset->StartWinBinCntsIdx;
-	pCnts = &m_pWinBinCnts[pReadset->StartWinBinCntsIdx];
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "ReportMatrix: Memory allocation of %u bytes for output buffering failed - %s", cOutBuffSize, strerror(errno));
+		Reset();
+		return(eBSFerrMem);
 	}
-LRAWinBinCntIdx = pReadset->LRAWinBinCntIdx;
-NumWinBins = pReadset->StartWinBinCntsIdx + pReadset->NumWinBins - LRAWinBinCntIdx;
-for(WinBinCntIdx = 0;WinBinCntIdx < NumWinBins;WinBinCntIdx++,LRAWinBinCntIdx++,pCnts++)
+	m_AllocOutBuff = cOutBuffSize;
+}
+m_OutBuffIdx = 0;
+sprintf(szOutFile, "%s.matrix.csv", pszRsltsFileBaseName);
+#ifdef _WIN32
+	m_hOutFile = open(szOutFile, (O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC), (_S_IREAD | _S_IWRITE));
+#else
+if((m_hOutFile = open64(szOutFile, O_WRONLY | O_CREAT, S_IREAD | S_IWRITE)) != -1)
+	if(ftruncate(m_hOutFile, 0) != 0)
 	{
-	if(pCnts->ReadsetID != pReadset->ReadsetID ||
-		pCnts->ChromID > pWinBinCnts->ChromID ||
-		(pCnts->ChromID == pWinBinCnts->ChromID && pCnts->StartLoci > pWinBinCnts->StartLoci))
-			break;
-	if(pCnts->ChromID == pWinBinCnts->ChromID && pCnts->StartLoci == pWinBinCnts->StartLoci)
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to create/truncate %s - %s", szOutFile, strerror(errno));
+		Reset();
+		return(eBSFerrCreateFile);
+	}
+#endif
+if(m_hOutFile < 0)
+{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "ReportMatrix: Unable to create/truncate %s - %s", szOutFile, strerror(errno));
+	Reset();
+	return(eBSFerrCreateFile);
+}
+
+// header line
+m_OutBuffIdx = sprintf((char*)m_pszOutBuffer, "\"Chrom\",\"Loci\"");
+
+for(ProgIdx = 0; ProgIdx < m_NumProgenies; ProgIdx++)
+	m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], ",\"Progeny:%s\"", LocateReadset(m_ProgenyIDs[ProgIdx]));
+
+bNewLoci = false;
+CurLoci = 0;
+CurChromID = 0;
+pCurPFA = &m_pProgenyFndrAligns[0];
+for(PFAIdx = 0; PFAIdx < m_UsedProgenyFndrAligns; PFAIdx++, pCurPFA++)
+	{
+	if(pCurPFA->ChromID != CurChromID || pCurPFA->Loci != CurLoci)
 		{
-		pReadset->LRAWinBinCntIdx = LRAWinBinCntIdx;
-		return(pCnts);
+		if(bNewLoci)
+			{
+			m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], "\n\"%s\",%u", pszChrom, CurLoci);
+			for(ProgIdx = 0; ProgIdx < m_NumProgenies; ProgIdx++)
+				m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], ",%d", ProgenyHaplotypes[ProgIdx]);
+			if((m_OutBuffIdx + 10000) > m_AllocOutBuff)
+			{
+				if(!CUtility::RetryWrites(m_hOutFile, m_pszOutBuffer, m_OutBuffIdx))
+				{
+					gDiagnostics.DiagOut(eDLFatal, gszProcName, "ReportMatrix: Fatal error in RetryWrites()");
+					Reset();
+					return(eBSFerrFileAccess);
+				}
+				m_OutBuffIdx = 0;
+			}
+			bNewLoci = false;
+			}
+		CurLoci = pCurPFA->Loci;
+		CurChromID = pCurPFA->ChromID;
+		pszChrom = LocateChrom(CurChromID);
+		memset(ProgenyHaplotypes,0, m_NumProgenies);
+		}
+	bNewLoci = true;
+	// locate corresponding offset into ProgenyHaplotypes[] for the progeny readset
+	for(ProgIdx = 0; ProgIdx < m_NumProgenies; ProgIdx++)
+		{
+		if(pCurPFA->ReadsetID == m_ProgenyIDs[ProgIdx])
+			break;
+		}
+	if(ProgIdx >= m_NumProgenies)
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Error locating progeny identifier");
+		Reset();
+		return(eBSFerrInternal);
+		}
+
+	ProgHaplotype = 0;
+	for(FndrIdx = m_NumFounders; FndrIdx >= 1; FndrIdx--)
+		{
+		ProgHaplotype <<= 1;
+		if(m_Fndrs2Proc[FndrIdx-1] & 0x01)
+			ProgHaplotype |= Bits256Test(FndrIdx-1, pCurPFA->ProgenyFounders) ? 1 : 0;
+		}
+	ProgenyHaplotypes[ProgIdx] = ProgHaplotype;
+	}
+if(bNewLoci)
+	{
+	m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], "\n\"%s\",%u", pszChrom, CurLoci);
+	for(ProgIdx = 0; ProgIdx < m_NumProgenies; ProgIdx++)
+		m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], ",%d", ProgenyHaplotypes[ProgIdx]);
+	}
+if(m_OutBuffIdx && m_hOutFile != -1)
+	{
+	if(!CUtility::RetryWrites(m_hOutFile, m_pszOutBuffer, m_OutBuffIdx))
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "ReportMatrix: Fatal error in RetryWrites()");
+		Reset();
+		return(eBSFerrFileAccess);
+		}
+	m_OutBuffIdx = 0;
+	}
+
+if(m_hOutFile != -1)
+	{
+// commit output file
+#ifdef _WIN32
+		_commit(m_hOutFile);
+#else
+		fsync(m_hOutFile);
+#endif
+		close(m_hOutFile);
+		m_hOutFile = -1;
+	}
+
+return(eBSFSuccess);
+}
+
+
+int
+CCallHaplotypes::ProcessProgenyPBAFile(char* pszProgenyPBAFile,	// load, process and call haplotypes for this progeny PBA file against previously loaded panel founder PBAs
+						char *pszRsltsFileBaseName)			// results are written to this file base name with progeny readset identifier and type appended
+{
+m_CurProgenyReadsetID = 0;
+m_LAChromNameID = 0;
+m_LAReadsetNameID = 0;
+if((m_CurProgenyReadsetID = LoadPBAFile(pszProgenyPBAFile,1)) <= 0)
+	{
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "ProcessProgenyPBAFile: Errors loading progeny PBA file '%s'",pszProgenyPBAFile);
+	Reset();
+	return(-1);
+	}
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "ProcessProgenyPBAFile: Completed loading progeny PBA file");
+m_ProgenyIDs[m_NumProgenies++] = m_CurProgenyReadsetID;
+if(m_pszOutBuffer == NULL)
+	{
+	if((m_pszOutBuffer = new uint8_t[cOutBuffSize]) == NULL)
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessProgenyPBAFile: Memory allocation of %u bytes for output buffering failed - %s", cOutBuffSize, strerror(errno));
+		Reset();
+		return(eBSFerrMem);
+		}
+	m_AllocOutBuff = cOutBuffSize;
+	}
+m_OutBuffIdx = 0;
+
+char *pszProgenyReadset = LocateReadset(m_CurProgenyReadsetID);
+
+tsReadsetMetadata *pProgeny = &m_Readsets[m_CurProgenyReadsetID -1];
+tsProgenyFndrAligns ProgenyFndrAligns;
+uint32_t NumOverlapping;
+uint8_t ProgenyAlleles;
+uint8_t Allele;
+bool bAlleleAccept;
+uint32_t AlleleStackIdx;
+tsAlleleStack *pCurAlleleStack;
+uint32_t AlleleIdx;
+uint8_t AlleleMsk;
+
+uint32_t NumBi = 0;
+uint32_t NumMono = 0;
+uint32_t NumFa = 0;
+uint32_t NumFb = 0;
+NumOverlapping = 0;
+pCurAlleleStack = m_pAlleleStacks;
+for(AlleleStackIdx = 0; AlleleStackIdx < m_UsedAlleleStacks; AlleleStackIdx++, pCurAlleleStack++)
+	{
+	ProgenyAlleles = LocateReadsetChromLociAlleles(m_CurProgenyReadsetID, pCurAlleleStack->ChromID,pCurAlleleStack->Loci);
+	if(ProgenyAlleles)
+		{
+		memset(&ProgenyFndrAligns, 0, sizeof(tsProgenyFndrAligns));
+		bAlleleAccept = false;
+		AlleleMsk = 0x03;
+		for(AlleleIdx = 0; AlleleIdx < 4; AlleleIdx++, AlleleMsk <<= 2)
+			{
+			Allele = (ProgenyAlleles & AlleleMsk) >> (AlleleIdx * 2);
+			if(Allele < 1)		// treating non-significant alleles as noise and discarding these
+				continue;
+			if(pCurAlleleStack->NumAlleleFndrs[AlleleIdx]==0) // if no founders having this allele then treat as introgression and treat as if no progeny allele
+				{
+				bAlleleAccept = false;
+				break;
+				}
+			ProgenyFndrAligns.NumProgenyFounders = Bits256Combine(ProgenyFndrAligns.ProgenyFounders, pCurAlleleStack->Alleles[AlleleIdx]);
+			bAlleleAccept = true;
+			}
+		if(!bAlleleAccept)
+			continue;
+
+		if(ProgenyFndrAligns.NumProgenyFounders == 2)
+			NumBi++;
+		else
+			NumMono++;
+
+		if(Bits256Test(0,ProgenyFndrAligns.ProgenyFounders))
+			NumFa++;
+		if(Bits256Test(1,ProgenyFndrAligns.ProgenyFounders))
+			NumFb++;
+
+		ProgenyFndrAligns.Alleles = ProgenyAlleles;
+		ProgenyFndrAligns.ChromID = pCurAlleleStack->ChromID;
+		ProgenyFndrAligns.Loci = pCurAlleleStack->Loci;
+		ProgenyFndrAligns.ReadsetID = m_CurProgenyReadsetID;
+		AddProgenyFndrAligns(&ProgenyFndrAligns);
+		NumOverlapping++;
 		}
 	}
-pReadset->LRAWinBinCntIdx = pReadset->StartWinBinCntsIdx;
-return(NULL);	// unable to locate
+
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "ProcessProgenyPBAFile: Located %d progeny loci overlapping %d founder AlleleStacks loci", NumOverlapping, m_UsedAlleleStacks);
+return(eBSFSuccess);
 }
+
 
 uint32_t				// returns number of unprocessed bytes in buffer
 CCallHaplotypes::FillInBuffer(uint32_t MinRequired) // try and fill input buffer with at least this many bytes reading from currently opened input file handle
@@ -1875,7 +1303,7 @@ return(m_InNumBuffered);
 
 int32_t					// returned readset identifier (1..n) or < 0 if errors
 CCallHaplotypes::LoadPBAFile(char* pszFile,	// load chromosome metadata and PBA data from this file
-							uint8_t ReadsetType)	// 0: founder, 1: skim, 2: control
+							uint8_t ReadsetType)	// 0: founder, 1: progeny, 2: control
 {
 int Rslt;
 int Version;
@@ -1939,7 +1367,7 @@ if(NumTags != 4 || Version != 1 || szExperimentID[0] == '\0' || szRefAssemblyID[
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "Metadata ExperimentID:%s, ReferenceID:%s, ReadsetID:%s",szExperimentID,szRefAssemblyID,szReadsetID);
 
 m_InNumProcessed += scanlen + 1;		// header tags were '\0' terminated 
-if((ReadsetID = AddReadset(szReadsetID))==0)
+if((ReadsetID = AddReadset(szReadsetID, ReadsetType))==0)
 	{
 	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Input file '%s' duplicates the ReadsetID '%s' of a previously loaded readset",pszFile,szReadsetID);
 	return(eBSFerrOpnFile);
@@ -1960,7 +1388,6 @@ char *pszChromName;
 uint32_t ChromLen;
 
 // iterate over all chromosomes
-// if m_NChroms > 0 then limit number of chroms accepted to m_NChroms
 
 PrevChromMetadataIdx = 0;
 while((m_InNumProcessed + 110) <= m_InNumBuffered)
@@ -2000,17 +1427,80 @@ while((m_InNumProcessed + 110) <= m_InNumBuffered)
 	pChromMetadata->ReadsetID = ReadsetID;
 	pChromMetadata->pPBAs = AllocPBAs(ChromLen);
 	memcpy(pChromMetadata->pPBAs, pBuff, ChromLen);
+	if(ReadsetType == 0)
+		TrimPBAs(m_FndrTrim5, m_FndrTrim3, ChromLen,pChromMetadata->pPBAs);
+	else // treating controls as if progeny when trimming
+		TrimPBAs(m_ProgTrim5, m_ProgTrim3, ChromLen, pChromMetadata->pPBAs);
 	m_InNumProcessed += ChromLen;
 	if((m_InNumBuffered - m_InNumProcessed) < 110 && FillInBuffer(ChromLen) == 0)
-		break;
-	if(m_NChroms > 0 && ChromID == m_NChroms)
 		break;
 	}
 
 close(m_hInFile);
 m_hInFile = -1;
-return(ReadsetID);
+return((int32_t)ReadsetID);
 }
+
+// trim 5' and 3' aligned segments within the PBAs attempting to reduce sequencing error induced false alleles
+int			// returns number of non-trimmed loci in the pPBAs
+CCallHaplotypes::TrimPBAs(uint32_t Trim5,	// trim 5' this many aligned PBA bases from each aligned segment
+		 uint32_t Trim3,	// trim 3' this many aligned PBA bases from each aligned segment
+		 uint32_t PBALen,	// pPBAs contains this many packed base alleles
+		uint8_t* pPBAs)		// packed base alleles to be processed
+{
+uint32_t NonTrimmed;
+uint32_t ToTrim;
+uint32_t Loci;
+uint8_t* pPBA;
+if(pPBAs == NULL || PBALen == 0)
+	return(0);
+if(Trim5 == 0 && Trim3 == 0)
+	return(PBALen);
+NonTrimmed = PBALen;
+
+// first the 5' trim
+if(Trim5)
+	{
+	ToTrim = Trim5;
+	pPBA = pPBAs;
+	for(Loci=0;Loci < PBALen;Loci++, pPBA++)
+		{
+		if(*pPBA == 0)
+			{
+			ToTrim = Trim5;
+			continue;
+			}
+		if(ToTrim)
+			{
+			ToTrim-=1;
+			NonTrimmed-=1;
+			*pPBA = 0;
+			}
+		}
+	}
+// then the 3' trim
+if(Trim3)
+	{
+	ToTrim = Trim3;
+	pPBA = &pPBAs[PBALen-1];
+	for(Loci = 0; Loci < PBALen; Loci++, pPBA--)
+		{
+		if(*pPBA == 0)
+			{
+			ToTrim = Trim3;
+			continue;
+			}
+		if(ToTrim)
+			{
+			NonTrimmed-=1;
+			ToTrim -= 1;
+			*pPBA = 0;
+			}
+		}
+	}
+return(NonTrimmed);
+}
+
 
 int
 CCallHaplotypes::AllocChromMetadata(void)
@@ -2112,65 +1602,127 @@ return(NULL);
 
 
 
-tsBinCnts *							// returned ptr to allocated and initialised windowed founder counts
-CCallHaplotypes::AddWinBinCnts(tsBinCnts *pInitWinBinCnts)	// allocated tsWinFnderCnts to be initialised with WinBinCnts
+uint32_t									// returned index+1 into  m_pProgenyFndrAligns[] to allocated and initialised ProgenyFndrAligns, 0 if errors
+CCallHaplotypes::AddProgenyFndrAligns(tsProgenyFndrAligns *pInitProgenyFndrAligns)	// allocated tsProgenyFndrAligns to be initialised with a copy of pInitProgenyFndrAligns
 {
-uint32_t ToAllocdWinBinCnts;
-tsBinCnts *pWinBinCnts;
+uint32_t ToAllocdProgenyFndrAligns;
+tsProgenyFndrAligns *pProgenyFndrAligns;
 size_t memreq;
 AcquireSerialise();
-if (m_pWinBinCnts == NULL)					// may be NULL first time in
+if (m_pProgenyFndrAligns == NULL)					// may be NULL first time in
 	{
-	memreq = cAllocWinBinCnts * sizeof(tsBinCnts);
+	memreq = cAllocProgenyFndrAligns * sizeof(tsProgenyFndrAligns);
 #ifdef _WIN32
-	m_pWinBinCnts = (tsBinCnts *)malloc((size_t)memreq);
-	if (m_pWinBinCnts == NULL)
+	m_pProgenyFndrAligns = (tsProgenyFndrAligns*)malloc((size_t)memreq);
+	if (m_pProgenyFndrAligns == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "AllocWinBinCnts: Memory allocation of %lld bytes failed", (int64_t)memreq);
-		return(NULL);
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddWinBinCnts: Memory allocation of %lld bytes failed", (int64_t)memreq);
+		return(0);
 		}
 #else
-	m_pWinBinCnts = (tsBinCnts *)mmap(NULL, (size_t)memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-	if (m_pWinBinCnts == MAP_FAILED)
+	m_pProgenyFndrAligns = (tsProgenyFndrAligns*)mmap(NULL, (size_t)memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	if (m_pProgenyFndrAligns == MAP_FAILED)
 		{
-		m_pWinBinCnts = NULL;
+		m_pProgenyFndrAligns = NULL;
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddWinBinCnts: Memory allocation of %lld bytes through mmap()  failed", (int64_t)memreq, strerror(errno));
-		return(NULL);
+		return(0);
 		}
 #endif
-	m_AllocdWinBinCntsMem = memreq;
-	m_AllocdWinBinCnts = cAllocWinBinCnts;
-	m_UsedWinBinCnts = 0;
+	m_AllocdProgenyFndrAlignsMem = memreq;
+	m_AllocdProgenyFndrAligns = cAllocProgenyFndrAligns;
+	m_UsedProgenyFndrAligns = 0;
 	}
 else
 		// needing to allocate more memory?
-	if ((m_UsedWinBinCnts) >= m_AllocdWinBinCnts)
+	if ((m_UsedProgenyFndrAligns) >= m_AllocdProgenyFndrAligns)
 		{
-		ToAllocdWinBinCnts = m_UsedWinBinCnts + cAllocWinBinCnts;
-		size_t memreq = ToAllocdWinBinCnts * sizeof(tsBinCnts);
+		ToAllocdProgenyFndrAligns = m_UsedProgenyFndrAligns + cAllocProgenyFndrAligns;
+		size_t memreq = ToAllocdProgenyFndrAligns * sizeof(tsProgenyFndrAligns);
 #ifdef _WIN32
-		pWinBinCnts = (tsBinCnts*)realloc(m_pWinBinCnts, memreq);
-		if (pWinBinCnts == NULL)
+		pProgenyFndrAligns = (tsProgenyFndrAligns*)realloc(m_pProgenyFndrAligns, memreq);
+		if (pProgenyFndrAligns == NULL)
 			{
 #else
-		pWinBinCnts = (tsBinCnts*)mremap(m_pWinBinCnts, m_AllocdWinBinCntsMem, memreq, MREMAP_MAYMOVE);
-		if (pWinBinCnts == MAP_FAILED)
+		pProgenyFndrAligns = (tsProgenyFndrAligns*)mremap(m_pProgenyFndrAligns, m_AllocdProgenyFndrAlignsMem, memreq, MREMAP_MAYMOVE);
+		if (pProgenyFndrAligns == MAP_FAILED)
 			{
 #endif
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "AllocWinBinCnts: Memory reallocation to %lld bytes failed - %s", memreq, strerror(errno));
-			return(NULL);
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddProgenyFndrAligns: Memory reallocation to %lld bytes failed - %s", memreq, strerror(errno));
+			return(0);
 			}
-		m_pWinBinCnts = pWinBinCnts;
-		m_AllocdWinBinCntsMem = memreq;
-		m_AllocdWinBinCnts=ToAllocdWinBinCnts;
+		m_pProgenyFndrAligns = pProgenyFndrAligns;
+		m_AllocdProgenyFndrAlignsMem = memreq;
+		m_AllocdProgenyFndrAligns =ToAllocdProgenyFndrAligns;
 		}
-pWinBinCnts = &m_pWinBinCnts[m_UsedWinBinCnts++];
-if(pInitWinBinCnts != NULL)
-	*pWinBinCnts = *pInitWinBinCnts;
+pProgenyFndrAligns = &m_pProgenyFndrAligns[m_UsedProgenyFndrAligns++];
+if(pInitProgenyFndrAligns != NULL)
+	*pProgenyFndrAligns = *pInitProgenyFndrAligns;
 else
-	memset(pWinBinCnts,0,sizeof(tsBinCnts));
+	memset(pProgenyFndrAligns,0,sizeof(tsProgenyFndrAligns));
 ReleaseSerialise();
-return(pWinBinCnts);
+return(m_UsedProgenyFndrAligns);
+}
+
+
+uint32_t									// returned index+1 into m_pAlleleStacks[] to allocated and initialised allele stack, 0 if errors
+CCallHaplotypes::AddAlleleStack(tsAlleleStack* pInitAlleleStack)	// allocated tsAlleleStack to be initialised with a copy of pInitAlleleStack
+{
+uint32_t ToAllocdAlleleStacks;
+tsAlleleStack* pAlleleStack;
+size_t memreq;
+AcquireSerialise();
+if(m_pAlleleStacks == NULL)					// may be NULL first time in
+	{
+	memreq = (size_t)cAllocAlleleStacks * sizeof(tsAlleleStack);
+#ifdef _WIN32
+	m_pAlleleStacks = (tsAlleleStack*)malloc((size_t)memreq);
+	if(m_pAlleleStacks == NULL)
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddAlleleStack: Memory allocation of %lld bytes failed", (int64_t)memreq);
+		return(0);
+		}
+#else
+	m_pAlleleStacks = (tsAlleleStack*)mmap(NULL, (size_t)memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	if(m_pAlleleStacks == MAP_FAILED)
+		{
+		m_pAlleleStacks = NULL;
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddAlleleStack: Memory allocation of %lld bytes through mmap()  failed", (int64_t)memreq, strerror(errno));
+		return(0);
+		}
+#endif
+	m_AllocdAlleleStacksMem = memreq;
+	m_AllocdAlleleStacks = cAllocAlleleStacks;
+	m_UsedAlleleStacks = 0;
+	}
+else
+		// needing to allocate more memory?
+	if((m_UsedAlleleStacks) >= m_AllocdAlleleStacks)
+		{
+		ToAllocdAlleleStacks = m_UsedAlleleStacks + cReallocAlleleStacks;
+		size_t memreq = (size_t)ToAllocdAlleleStacks * sizeof(tsAlleleStack);
+#ifdef _WIN32
+		pAlleleStack = (tsAlleleStack*)realloc(m_pAlleleStacks, memreq);
+		if(pAlleleStack == NULL)
+			{
+#else
+		pAlleleStack = (tsAlleleStack*)mremap(m_pAlleleStacks, m_AllocdAlleleStacksMem, memreq, MREMAP_MAYMOVE);
+		if(pAlleleStack == MAP_FAILED)
+			{
+#endif
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddAlleleStack: Memory reallocation to %lld bytes failed - %s", memreq, strerror(errno));
+			return(0);
+			}
+		m_pAlleleStacks = pAlleleStack;
+		m_AllocdAlleleStacksMem = memreq;
+		m_AllocdAlleleStacks = ToAllocdAlleleStacks;
+		}
+pAlleleStack = &m_pAlleleStacks[m_UsedAlleleStacks++];
+if(pInitAlleleStack != NULL)
+	*pAlleleStack = *pInitAlleleStack;
+else
+	memset(pAlleleStack, 0, sizeof(tsAlleleStack));
+ReleaseSerialise();
+return(m_UsedAlleleStacks);
 }
 
 
@@ -2242,9 +1794,9 @@ for (ThreadIdx = 1; ThreadIdx <= NumThreads; ThreadIdx++, pThreadPar++)
 MaxWait = 120;		// allowing at most 120 secs for threads to startup
 do {
 #ifdef WIN32
-	Sleep(1000);
+	Sleep(5000);
 #else
-	sleep(1);
+	sleep(5);
 #endif
 	AcquireSerialise();
 	StartedInstances = m_NumWorkerInsts;
@@ -2365,7 +1917,7 @@ while(Rslt >= 0) {
 	m_NumQueueElsProcessed++;
 	ReleaseSerialise();
 	pWorkQueueEl = &m_pWorkQueueEls[NumQueueElsProcessed];
-	Rslt = ClassifyChromHaplotypes(pWorkQueueEl->ReadsetID,pWorkQueueEl->ChromID,pWorkQueueEl->StartLoci,pWorkQueueEl->EndLoci,pWorkQueueEl->LociIncr,pWorkQueueEl->ChromLen,pWorkQueueEl->AccumBinSize,pWorkQueueEl->NumFndrs,pWorkQueueEl->pPBAs,pWorkQueueEl->pMskPBA);
+	Rslt = GenChromAlleleStacks(pWorkQueueEl->ChromID, pWorkQueueEl->ChromLen, pWorkQueueEl->StartLoci, pWorkQueueEl->MaxNumLoci, pWorkQueueEl->NumFndrs, pWorkQueueEl->pFounderPBAs, pWorkQueueEl->pMskPBA);
 	}
 
 AcquireSerialise();
@@ -2396,546 +1948,335 @@ return(CompletedInstances == NumWorkerInsts ? true : false);
 }
 
 
-int
-CCallHaplotypes::AlignPBAs(uint32_t ReadsetID,		// this is the readset being aligned to founders - could be a skim or founder
-									uint32_t NumFndrs,			// number of founders to be processed against
-									int MinKmerSize,			// aligning founders using this minimum Kmer size
-									int MaxKmerSize,			// aligning founders using this maximum Kmer size
-									uint32_t LociIncr,			// kmer loci starts are incremented by this submultiple of AccumBinSize, used when sampling. Typically 1, 2, 5, 10, 20, 25
-									uint32_t AccumBinSize,		// comparing ReadsetID's PBA against founder PBAs then counting using this bin size
-									uint32_t NumFndrsProc)		// this many founders in m_Fndrs2Proc
+int				// < 0 if errors, otherwise success
+CCallHaplotypes::GenChromAlleleStacks(uint32_t ChromID,	// processing is for this chromosome
+										  uint32_t ChromSize,		// chromosome is this size
+										  uint32_t Loci,			// processing for allele stacks starting from this loci
+										  uint32_t MaxNumLoci,		// processing for this maximum number of loci
+										  uint32_t NumFndrs,		// number of founders to be processed 1st PBA at *pPBAs[0]
+										  uint8_t* pFounderPBAs[],	// pPBAs[] pts to chromosome PBAs, for each of the chromosome founder PBAs
+										  uint8_t* pMskPBA)			// pts to optional masking PBA, scoring only for segments contained in mask which are non-zero and where progeny and founder PBAs also have an allele.
+																	// enables a founder to be processed as if a progeny, restricting scoring Kmers to be same as if a progeny
+
+{
+	uint32_t FounderIdx;
+	tsAlleleStack AlleleStack;
+	uint32_t NumAlleleStacks;
+	bool bFndrAllele;
+	uint32_t PrevAlleleIdx;
+	uint32_t NumFndrs2Proc;
+	uint8_t* pFndrLoci;
+	uint32_t AlleleIdx;
+	uint8_t AlleleMsk;
+	uint32_t AlleleLoci;
+	uint32_t FndrIdx;
+	uint32_t DivAlleles;
+
+	uint32_t LociFounders;
+	uint8_t FndrBaseAllele;
+	ts256Bits Fndrs2Proc;
+
+	if(NumFndrs < 1 || NumFndrs > 256)
+		return(-1);
+
+	// check that at least 1 founders actually has a PBAs
+	memset(&Fndrs2Proc, 0, sizeof(Fndrs2Proc));
+	NumFndrs2Proc = 0;
+	for(FounderIdx = 0; FounderIdx < NumFndrs; FounderIdx++)
+	{
+		if(!(m_Fndrs2Proc[FounderIdx] & 0x01))		// not interested as founder not marked for scoring?
+			continue;
+		if((pFndrLoci = pFounderPBAs[FounderIdx]) == NULL)	// can't score if no PBA for this founder
+			continue;
+		Bits256Set(NumFndrs2Proc, Fndrs2Proc);
+		NumFndrs2Proc++;							// can use this founder for generating an allelestack
+	}
+	if(NumFndrs2Proc < 1)							// must have at least 1 founder
+		return(-2);
+
+	uint32_t EndLoci = min(Loci + MaxNumLoci, ChromSize) - 1;
+
+	memset(&AlleleStack, 0, sizeof(AlleleStack));
+	AlleleStack.ChromID = ChromID;
+	AlleleStack.NumFndrs = NumFndrs;
+	AlleleStack.NumProcFndrs = NumFndrs2Proc;
+	memcpy(&AlleleStack.ProcFndrs, &Fndrs2Proc, sizeof(ts256Bits));
+
+	bFndrAllele = false;
+	NumAlleleStacks = 0;
+	for(AlleleLoci = Loci; AlleleLoci <= EndLoci; AlleleLoci++)
+	{
+		if(pMskPBA != NULL && pMskPBA[AlleleLoci] == 0)	// skipping over any loci in control which has no PBA
+			continue;
+
+	// build stack of alleles containing founder alleles at AlleleLoci which are at least level 2
+	// to be accepted as an allele stack there must be at least one founder having a level 2 allele unique to this founder only
+		AlleleStack.Loci = AlleleLoci;
+		memset(AlleleStack.NumAlleleFndrs, 0, sizeof(AlleleStack.NumAlleleFndrs));
+		memset(AlleleStack.Alleles, 0, sizeof(AlleleStack.Alleles));
+		LociFounders = 0;
+		PrevAlleleIdx = 0;
+		for(FndrIdx = 0; FndrIdx < NumFndrs; FndrIdx++)
+		{
+			if(!(m_Fndrs2Proc[FndrIdx] & 0x01))	// skip this founder?
+				continue;
+			bFndrAllele = false;
+			pFndrLoci = pFounderPBAs[FndrIdx] + AlleleLoci;
+			if(*pFndrLoci == 0)					// all founders must have alignment alleles at the AlleleLoci
+				break;							// founder has no allele - can't have had an alignment to reference at AlleleLoci
+
+			pFndrLoci = pFounderPBAs[FndrIdx] + AlleleLoci;
+			AlleleMsk = 0x03;					// differentiation is at the allele level
+			for(AlleleIdx = 0; AlleleIdx < 4; AlleleIdx++, AlleleMsk <<= 2)
+			{
+				FndrBaseAllele = (*pFndrLoci & AlleleMsk) >> (AlleleIdx * 2);
+				if(FndrBaseAllele == 0)		// no allele
+					continue;				// try next allele
+				if(bFndrAllele)				// founders must have a single unique allele
+				{
+					bFndrAllele = false;
+					break;
+				}
+				bFndrAllele = true;			// accepting this founder as having at least one allele, if more alleles then founder loci treated as having no alleles
+				AlleleStack.NumAlleleFndrs[AlleleIdx]++;
+				Bits256Set(FndrIdx, AlleleStack.Alleles[AlleleIdx]);
+			}
+			if(!bFndrAllele)				// if no alleles of required level for this founder then don't bother with other founders
+				break;
+		}
+
+		if(!bFndrAllele)				// if no alleles then process next loci
+			continue;
+
+			// is there diversity in alleles between all founders - need diversity in order to differentiate founder alleles in progeny
+		for(DivAlleles = AlleleIdx = 0; AlleleIdx < 4; AlleleIdx++)
+		{
+			if(AlleleStack.NumAlleleFndrs[AlleleIdx] > 0)
+				DivAlleles++;
+
+		}
+		if(DivAlleles <= 1)						// if no uniques then non-informative...
+			continue;
+
+		AddAlleleStack(&AlleleStack);
+		NumAlleleStacks++;
+	}
+	return(NumAlleleStacks);
+}
+
+
+int				// returns number of allele stacks generated
+CCallHaplotypes::AlignAlleleStacks(uint32_t NumFndrs,			// number of founders to be processed against
+									uint32_t MaxNumLoci)		// work queue items specify this number of loci for processing by threads
 {
 uint32_t FounderID;
 tsReadsetMetadata *pReadsetMetadata;
 tsChromMetadata *pChromMetadata;
 tsWorkQueueEl *pWorkQueueEl;
 uint32_t CurChromMetadataIdx;
-uint8_t *pPBAs[cMaxFounderReadsets+1];							// additional is to allow for the skim readset PBAs
+uint8_t *pPBAs[cMaxFounderReadsets+1];							// additional is to allow for the progeny readset PBAs
 uint8_t *pMskPBA;
-char *pszReadset = LocateReadset(ReadsetID);
-gDiagnostics.DiagOut(eDLInfo,gszProcName,"AlignPBAs: Starting to align '%s' against %d founders",pszReadset, NumFndrsProc);
-m_UsedWinBinCnts = 0;
-pReadsetMetadata = &m_Readsets[ReadsetID-1]; 
+uint32_t ChromIdx;
+uint32_t NumUnits;			// NumUnits is the total number of work units to be distributed over available threads for processing chromosomes
+uint32_t UnitSize;
+
+gDiagnostics.DiagOut(eDLInfo,gszProcName,"AlignAlleleStacks: Starting to generate allele stacks over %d founders ",NumFndrs);
+pReadsetMetadata = &m_Readsets[0];		// founders were loaded first so 1st founder will be here
 CurChromMetadataIdx = pReadsetMetadata->StartChromMetadataIdx;
-m_MinScoreKmerSize = MinKmerSize;
-m_MaxScoreKmerSize = MaxKmerSize;
-m_pWorkQueueEls = new tsWorkQueueEl [pReadsetMetadata->NumChroms * m_NumThreads * 2]; 
+if(m_pWorkQueueEls != NULL)				// ensuring only one work queue exists
+	delete []m_pWorkQueueEls;
+m_pWorkQueueEls = NULL;
+m_AllocWorkQueueEls = 0;
+pMskPBA = NULL;
+
+// determine maximal number of work queue elements required
+CurChromMetadataIdx = pReadsetMetadata->StartChromMetadataIdx;
+for(NumUnits = ChromIdx = 0; ChromIdx < pReadsetMetadata->NumChroms && CurChromMetadataIdx != 0; ChromIdx++)
+	{
+	pChromMetadata = &m_pChromMetadata[CurChromMetadataIdx - 1];
+	if(pChromMetadata->ChromLen >= MaxNumLoci)
+		NumUnits += (pChromMetadata->ChromLen + MaxNumLoci - 1) / MaxNumLoci;
+	NumUnits += 1; // safety - accounting for potential partial AccumBinSizes
+	CurChromMetadataIdx = pChromMetadata->NxtChromMetadataIdx;
+	}
+if(NumUnits == 0)
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "AlignAlleleStacks: Number of thread work units is 0");
+	return(0);
+	}
+// sizing work queue to contain a maximum of NumUnits elements
+m_AllocWorkQueueEls = NumUnits;
+m_pWorkQueueEls = new tsWorkQueueEl[m_AllocWorkQueueEls];
+memset(m_pWorkQueueEls, 0, sizeof(tsWorkQueueEl) * m_AllocWorkQueueEls);
 m_TotWorkQueueEls = 0;
 m_NumQueueElsProcessed = 0;
 pWorkQueueEl = m_pWorkQueueEls;
 
-
-// iterate along PBAs for skim readset and align Kmers of length KmerSize to all founder PBAs at same loci
-for(uint32_t ChromIdx = 0; ChromIdx < pReadsetMetadata->NumChroms && CurChromMetadataIdx != 0; ChromIdx++)
+// iterate along PBAs which are common to all founders, plus mask readset if present, and then initialise elements of work to be undertaken by each thread
+CurChromMetadataIdx = pReadsetMetadata->StartChromMetadataIdx;
+for(ChromIdx = 0; ChromIdx < pReadsetMetadata->NumChroms && CurChromMetadataIdx != 0; ChromIdx++)
 	{
 	pChromMetadata = &m_pChromMetadata[CurChromMetadataIdx - 1];
-	pPBAs[0] = pChromMetadata->pPBAs;
 
-	// all founders must have PBAs for same chromosome as the skim
+	// all founders, and mask readset if present, must have PBAs for same chromosome
 	for(FounderID = 1; FounderID <= NumFndrs; FounderID++)
 		{
-		if((pPBAs[FounderID] = LocatePBAfor(FounderID, pChromMetadata->ChromID)) == NULL)
+		if((pPBAs[FounderID-1] = LocatePBAfor(FounderID, pChromMetadata->ChromID)) == NULL)
 			{
 			char *pszChrom = LocateChrom(pChromMetadata->ChromID);
-			gDiagnostics.DiagOut(eDLInfo, gszProcName, "AlignPBAs: No PBA for chromosome '%s' in founder '%s', skipping this chromosome", pszChrom, LocateReadset(FounderID));
+			gDiagnostics.DiagOut(eDLInfo, gszProcName, "AlignAlleleStacks: No PBA for chromosome '%s' in at least one founder '%s', skipping this chromosome", pszChrom, LocateReadset(FounderID));
 			break;
 			}
 		}
 
-	if(m_MaskReadsetID == 0)
-		pMskPBA = NULL;
-	else
-		pMskPBA = LocatePBAfor(m_MaskReadsetID, pChromMetadata->ChromID);
-
-	CurChromMetadataIdx = pChromMetadata->NxtChromMetadataIdx;
-	if(FounderID <= NumFndrs || (m_MaskReadsetID != 0  && pMskPBA == NULL))
+	CurChromMetadataIdx = pChromMetadata->NxtChromMetadataIdx;		// ready for next iteration over the chromosomes
+	if(FounderID <= NumFndrs)	// true only if PBAs not common to progeny and all founders, including mask readset
 		continue;
 
-	// divide chroms into units of work, such that maximal number of threads can be utilised
-	uint32_t NumUnits;
-	uint32_t UnitSize;
-	// what is the maximal sized unit that a thread would be expected to process in this chromosome
-	if(pChromMetadata->ChromLen < 1000000)	// too much overhead if too many threads processing shorter chromosomes
-		{
-		UnitSize = pChromMetadata->ChromLen;
-		NumUnits = 1;
-		}
+	if(m_MaskReadsetID == 0)				// if masking then chromosome PBA for mask also required
+		pMskPBA = NULL;
 	else
-		{
-		// unit size has to be a multiple of WindowSize, except for last unit which can be shorter
-		NumUnits = (pChromMetadata->ChromLen + AccumBinSize - 1) / (AccumBinSize * m_NumThreads);
-		if(NumUnits < 2)
-			NumUnits = 2;
-		UnitSize = NumUnits * AccumBinSize;
-		}
+		if((pMskPBA = LocatePBAfor(m_MaskReadsetID, pChromMetadata->ChromID)) == NULL)
+			continue;
+
+	// what is the maximal sized unit that a thread would be expected to process in this chromosome
+	if(pChromMetadata->ChromLen < MaxNumLoci)	// too much overhead if too many threads processing shorter chromosomes
+		UnitSize = pChromMetadata->ChromLen; // a single thread to process this small chromosome
+	else
+		UnitSize = MaxNumLoci;
 
 	uint32_t StartLoci = 0;
-	uint32_t EndLoci = UnitSize - 1;
-	while(StartLoci < (pChromMetadata->ChromLen - MinKmerSize))
+	while(StartLoci < pChromMetadata->ChromLen)
 		{
-		pWorkQueueEl->ReadsetID = ReadsetID;
+		if(m_TotWorkQueueEls == m_AllocWorkQueueEls)
+			break;
 		pWorkQueueEl->NumFndrs = NumFndrs;
 		pWorkQueueEl->ChromID = pChromMetadata->ChromID;
 		pWorkQueueEl->StartLoci = StartLoci;
-		pWorkQueueEl->EndLoci = EndLoci;
-		pWorkQueueEl->LociIncr = LociIncr;
 		pWorkQueueEl->ChromLen = pChromMetadata->ChromLen;
-		pWorkQueueEl->AccumBinSize = AccumBinSize;
+		pWorkQueueEl->MaxNumLoci = min(MaxNumLoci, pChromMetadata->ChromLen - StartLoci);
 		pWorkQueueEl->pMskPBA = pMskPBA;
-		memcpy(pWorkQueueEl->pPBAs,pPBAs,(NumFndrs + 1) * sizeof(uint8_t *));
+		memcpy(pWorkQueueEl->pFounderPBAs,pPBAs,((size_t)NumFndrs * sizeof(uint8_t *)));
 		m_TotWorkQueueEls++;
 		pWorkQueueEl++;
 		StartLoci += UnitSize;
-		EndLoci = min(StartLoci + UnitSize - 1,pChromMetadata->ChromLen);
 		}
 	}
 
 // startup threads
 StartWorkerThreads(m_NumThreads,		// there are this many threads in pool
 					pReadsetMetadata->NumChroms);		// processing this number of chromosomes
-
 while(!WaitAlignments(60))
-	gDiagnostics.DiagOut(eDLInfo,gszProcName,"AlignPBAs: Aligning '%s' against %d founders",pszReadset, NumFndrsProc);
+	gDiagnostics.DiagOut(eDLInfo,gszProcName,"AlignAlleleStacks: Generating allele stacks over %d founders",NumFndrs);
 
-gDiagnostics.DiagOut(eDLInfo,gszProcName,"AlignPBAs: Completed alignment of '%s' against %d founders",pszReadset, NumFndrsProc);
+gDiagnostics.DiagOut(eDLInfo,gszProcName,"AlignAlleleStacks: Completed generating %u allele stacks over %d founders", m_UsedAlleleStacks,NumFndrs);
 if(m_pWorkQueueEls != NULL)
 	{
 	delete []m_pWorkQueueEls;
 	m_pWorkQueueEls = NULL;	
 	m_NumQueueElsProcessed = 0;
 	}
-return(eBSFSuccess);
-}
-
-
-
-int
-CCallHaplotypes::CountHaplotypes(uint32_t ReadsetID,			// this is the readset being aligned to founders - could be a skim or a founder used as a control
-									uint32_t NumFndrs,			// number of founders to be processed against
-									int MinKmerSize,			// aligning founders using this minimum Kmer size
-									int MaxKmerSize,			// aligning founders using this maximum Kmer size
-									uint32_t AccumBinSize)		// comparing ReadsetID's PBA against founder PBAs then counting using this bin size
-{
-uint32_t FounderIdx;
-uint32_t FounderID;
-uint32_t NumFndrsProc;
-uint32_t PrevNumFndrs;
-uint32_t LociIncr;
-int64_t WinBinIdx;
-tsBinCnts *pWinBinCnts;
-tsFndrTotUniqueCnts FndrUniqueCnts[cMaxFounderReadsets];
-char *pszReadset = LocateReadset(ReadsetID);
-gDiagnostics.DiagOut(eDLInfo,gszProcName,"CountHaplotypes: Aligning '%s' against pool of %d founders, reducing until maximum of %d founders remaining ...",pszReadset,NumFndrs,m_MaxFndrHaps);
-
-memset(m_Fndrs2Proc,0x01,sizeof(m_Fndrs2Proc));
-NumFndrsProc = NumFndrs;
-while(NumFndrsProc)
-	{
-	if(NumFndrsProc <= m_MaxFndrHaps)
-		LociIncr = 1;
-	else
-		LociIncr = 5;
-	AlignPBAs(ReadsetID,	// this is the readset being aligned to founders - could be a skim or founder
-		  NumFndrs,			// number of founders to be processed against
-		 MinKmerSize,		// aligning founders using this minimum Kmer size
-		 MaxKmerSize,		// aligning founders using this maximum Kmer size
-		 LociIncr,			// kmer loci starts are incremented by this submultiple of AccumBinSize, used when sampling. Typically 1, 2, 5, 10, 20, 25
-		 AccumBinSize,		// comparing ReadsetID's PBA against founder PBAs then counting using this bin size
-		 NumFndrsProc);		// this many founders remaining in m_Fndrs2Proc
-
-// report on number of unique alignments to each founder as a diagnostic aid
-	memset(FndrUniqueCnts,0,sizeof(FndrUniqueCnts));
-	pWinBinCnts = m_pWinBinCnts;
-	FounderIdx = 0;
-	for(WinBinIdx = 0; WinBinIdx < m_UsedWinBinCnts; WinBinIdx++,pWinBinCnts++)
-		{
-		FounderIdx = 0;
-		for(FounderID = 1; FounderID <= NumFndrs; FounderID++)
-			{
-			if(!(m_Fndrs2Proc[FounderID-1] & 0x01))
-				continue;
-			FndrUniqueCnts[FounderIdx].FounderID = FounderID;
-			FndrUniqueCnts[FounderIdx++].TotUniqueCnts += pWinBinCnts->Uniques[FounderID-1];
-			}
-		}
-	if(FounderIdx > 1)
-		qsort(FndrUniqueCnts,FounderIdx,sizeof(tsFndrTotUniqueCnts),SortFndrTotUniqueCnts);
-	for(FounderIdx = 0; FounderIdx < NumFndrsProc; FounderIdx++)
-		gDiagnostics.DiagOut(eDLInfo,gszProcName,"CountHaplotypes: Founder '%s' has %llu unique alignments",LocateReadset(FndrUniqueCnts[FounderIdx].FounderID),FndrUniqueCnts[FounderIdx].TotUniqueCnts);
-
-	if(NumFndrsProc <= m_MaxFndrHaps)	// allowing at most this many founders to be haplotyped on counts
-		{
-		m_NumFndrsProcMap = NumFndrsProc;
-		break;
-		}
-	// locate members of panel with highest number of uniques
-	memset(FndrUniqueCnts,0,sizeof(FndrUniqueCnts));
-	pWinBinCnts = m_pWinBinCnts;
-	FounderIdx = 0;
-	for(WinBinIdx = 0; WinBinIdx < m_UsedWinBinCnts; WinBinIdx++,pWinBinCnts++)
-		{
-		FounderIdx = 0;
-		for(FounderID = 1; FounderID <= NumFndrs; FounderID++)
-			{
-			if(!(m_Fndrs2Proc[FounderID-1] & 0x01))
-				continue;
-			FndrUniqueCnts[FounderIdx].FounderID = FounderID;
-			FndrUniqueCnts[FounderIdx++].TotUniqueCnts += pWinBinCnts->Uniques[FounderID-1];
-			}
-		}
-
-	if(FounderIdx > 1)
-		qsort(FndrUniqueCnts,FounderIdx,sizeof(tsFndrTotUniqueCnts),SortFndrTotUniqueCnts);
-
-	
-	if(FndrUniqueCnts[0].TotUniqueCnts == 0)
-		break;
-
-	
-	PrevNumFndrs = NumFndrsProc;
-	NumFndrsProc = 0;
-	memset(m_Fndrs2Proc,0,sizeof(m_Fndrs2Proc));
-	for(FounderIdx = 0; FounderIdx < NumFndrs; FounderIdx++)
-		{
-		if(NumFndrsProc >= m_MaxFndrHaps)
-			{
-			if(FndrUniqueCnts[FounderIdx].TotUniqueCnts == 0)
-				break;
-			if(FndrUniqueCnts[FounderIdx].TotUniqueCnts < (FndrUniqueCnts[0].TotUniqueCnts / 50))
-				break;
-			if((NumFndrsProc + 1) >= PrevNumFndrs)
-				break;
-			}
-		NumFndrsProc++;
-		m_Fndrs2Proc[FndrUniqueCnts[FounderIdx].FounderID-1] = 0x01;
-		}
-	}
-
-gDiagnostics.DiagOut(eDLInfo,gszProcName,"CountHaplotypes: Completed aligning '%s' against pool of %d founders, reduced down to %d founders",pszReadset,NumFndrs,m_MaxFndrHaps);
-m_mtqsort.SetMaxThreads(m_NumThreads);
-m_mtqsort.qsort(m_pWinBinCnts,(int64_t)m_UsedWinBinCnts,sizeof(tsBinCnts),SortWinBinCnts);
-return(eBSFSuccess);
+return(m_UsedAlleleStacks);
 }
 
 
 int
-CCallHaplotypes::ClassifyChromHaplotypes(uint32_t ReadsetID,			// this readset is used for identifying the readset being aligned to founders - could be a skim or founder
-										uint32_t ChromID,				// processing is for this chromosome
-										uint32_t StartLoci,				// starting from this loci inclusive
-										uint32_t EndLoci,				// and ending at this loci inclusive
-										uint32_t LociIncr,				// incrementing loci by this many bases - must be 1, 2, 5, 10, 20, 25 - of which AccumBinSize is a multiple. Used when sampling
-										uint32_t ChromLen,				// chromosome length
-										uint32_t AccumBinSize,			// accumulating counts into this sized non-overlapping bins
-										uint32_t NumFndrs,				// number of founders to be processed against the skim (or founder) PBA at *pPBAs[0]
-										uint8_t *pPBAs[],				// pPBAs[0] pts to chromosome skim PBA, followed by ptrs to each of the chromosome founder PBAs
-										uint8_t *pMskPBA)				// pts to optional chromosome masking PBA, scoring only for segments contained in mask which are non-zero and where skim and founder PBAs also have an allele.
-												// enables a founder to be processed as if a skim, restricting scoring Kmers to be same as if a skim
+CCallHaplotypes::GenAlleleStacks(uint32_t NumFndrs,			// number of founders to be processed against
+								 uint32_t MaxNumLoci)		// work queue items specify this number of loci for processing by threads
 {
 int Rslt;
-tsBinCnts WinBinCnts;
-uint32_t Loci;
-uint32_t NumWinBinCnts = 0;
-tsFndrsClassifications InferencedFounders;
-
-memset(&WinBinCnts,0,sizeof(WinBinCnts));
-WinBinCnts.ReadsetID = ReadsetID;
-WinBinCnts.ChromID = ChromID;
-WinBinCnts.StartLoci = StartLoci; 
-for(Loci = StartLoci; Loci <=  EndLoci && Loci <= (ChromLen - m_MinScoreKmerSize); Loci+=LociIncr)
-	{
-	if((Loci % AccumBinSize) == 0)	// starting a new window to integrate counts over
-		{
-		if(Loci != StartLoci)			// reporting counts for previous window
-			{
-			WinBinCnts.EndLoci = Loci-1;
-			AddWinBinCnts(&WinBinCnts);
-			NumWinBinCnts++;
-			memset(&WinBinCnts,0,sizeof(WinBinCnts));
-			WinBinCnts.ReadsetID = ReadsetID;
-			WinBinCnts.ChromID = ChromID;
-			WinBinCnts.StartLoci = Loci;
-			}
-		}
-
-	if((Rslt = ScorePBAKmer(ReadsetID,&WinBinCnts, Loci, ChromLen, m_MinScoreKmerSize, m_MaxScoreKmerSize,NumFndrs, pPBAs,&InferencedFounders,pMskPBA)) < eBSFSuccess)
-		return(Rslt);
-
-	// classify founders from alignment scores
-	if(Rslt == 0)	// only 0 if no PBA alignments were accepted for skim against any founder
-		WinBinCnts.NoFounder++;
-	else
-		{
-		uint32_t FounderID;
-		bool bUnique = false;
-		for(FounderID = 1; FounderID <= NumFndrs; FounderID++)
-			{
-			switch(InferencedFounders.Fndrs[FounderID-1] & 0x03)
-				{
-				case 0x03:		// uniquely aligned
-					WinBinCnts.Uniques[FounderID-1]++;
-					bUnique = true;
-					break;
-				case 0x02:		// shares top billing
-				case 0x01:		// was aligned, but not uniquely
-					WinBinCnts.NonUniques[FounderID-1]++;
-					break;
-				case 0x00:		// no alignments to this founder
-					break;
-				}
-			}
-		if(!bUnique)	// if none exclusively aligned then must have been alignments to multiple founders
-			WinBinCnts.MultiFounder++;
-		}
-	}
-// report here if partial AccumBinSize 
-if(WinBinCnts.StartLoci < Loci-1)
-	{
-	WinBinCnts.EndLoci = Loci-1;
-	AddWinBinCnts(&WinBinCnts);
-	NumWinBinCnts++;
-	}
-return(eBSFSuccess);
+if((Rslt = AlignAlleleStacks( NumFndrs,		// number of founders to be processed against
+		  MaxNumLoci)) < 1)	// comparing ReadsetID's PBA against founder PBAs then work queue items specify this number of loci for processing by threads
+	return(Rslt);
+m_mtqsort.SetMaxThreads(m_NumThreads);
+m_mtqsort.qsort(m_pAlleleStacks,(int64_t)m_UsedAlleleStacks,sizeof(tsAlleleStack), SortAlleleStacks);
+return(m_UsedAlleleStacks);
 }
 
 
-int				// < 0 if errors, otherwise success
-CCallHaplotypes::ScorePBAKmer(uint32_t ReadsetID,	// this readset is used for identifying the readset being aligned to founders - could be a skim or founder
-						tsBinCnts *pWinBinCnts,		// bin currently being processed, loci is contained within this bin
-						uint32_t Loci,			// processing for Kmer haplotypes starting from this loci
-						uint32_t SeqLen,		// sequence or chromosome is this length
-						uint32_t MinKmerSize,	// Kmer to score on is of this minimum size
-						uint32_t MaxKmerSize,	// Kmer to score on can be extended until this maximum size
-						uint32_t NumFndrs,		// number of founders to be processed against the skim (or founder) PBA at *pPBAs[0]
-						uint8_t *pPBAs[],		// pts to loci 0 of PBAs in readset order, pPBA[0] pts to the PBA to be scored by aligning against the founder PBAs
-						tsFndrsClassifications *pClassifications,		// returned classifications for each processed founder
-						uint8_t *pMskPBA)		// pts to optional masking PBA, scoring only for segments contained in mask which are non-zero and where skim and founder PBAs also have an allele.
-												// enables a founder to be processed as if a skim, restricting scoring Kmers to be same as if a skim
+inline void
+CCallHaplotypes::Bits256Shl1(ts256Bits &Bits256)	// SHL 
 {
-uint32_t FounderID;
-uint32_t NumFndrs2Proc;
-uint32_t NumFndrAligningAlleles;	// keeping count of number of scoring alleles for this founder so can determine if this founders proportion of scoring alleles reaches the acceptance threshold
-tsFndrsClassifications InferencedFounders;
-uint8_t *pScoreLoci;
-uint8_t *pFndrLoci;
-uint32_t AlleleIdx;
-uint8_t AlleleMsk;
-uint32_t KmerOfs;
-uint32_t KmerLoci;
+uint64_t MSB;
+MSB = Bits256.Bits[2] >> 63; // MSB of word 2 into LSB of word 3 post SHL of word 3
+Bits256.Bits[3] <<= 1;
+Bits256.Bits[3] |= MSB & 0x01;
+MSB = Bits256.Bits[1] >> 63; // MSB of word 1 into LSB of word 2 post SHL of word 2
+Bits256.Bits[2] <<= 1;
+Bits256.Bits[2] |= MSB & 0x01;
+MSB = Bits256.Bits[0] >> 63; // MSB of word 0 into LSB of word 1 post SHL of word 1
+Bits256.Bits[1] <<= 1;
+Bits256.Bits[1] |= MSB & 0x01;
+Bits256.Bits[0] <<= 1;		  // LSB of word 0 will be set to 0 post the SHL
+}
 
-// quick check for skim and all founders having called PBA at specified loci
-if( pPBAs[0] == NULL)	// must be a PBA to be scored
+inline void
+CCallHaplotypes::Bits256Set(uint8_t Bit,		// bit to set, range 0..255
+			ts256Bits & Bits256)
+{
+	Bits256.Bits[Bit / 64] |= ((uint64_t)0x01 << (Bit % 64));
+}
+
+inline void
+CCallHaplotypes::Bits256Reset(uint8_t Bit,		// bit to reset, range 0..255
+		   ts256Bits & Bits256)
+{
+	Bits256.Bits[Bit / 64] &= ~((uint64_t)0x01 << (Bit % 64));
+}
+
+
+inline bool
+CCallHaplotypes::Bits256Test(uint8_t Bit,		// bit to test, range 0..255
+			ts256Bits & Bits256)
+{
+return(Bits256.Bits[Bit / 64] & ((uint64_t)0x01 << (Bit % 64)) ? true : false);
+}
+
+inline void
+CCallHaplotypes::Bits256Initialise(bool Set,			// if true then initialse all bits as set, otherwise initialise all bits as reset
+				ts256Bits & Bits256)
+{
+uint64_t InitWith;
+if(Set)
+	InitWith = (uint64_t)(-1);
+else
+	InitWith = 0;
+Bits256.Bits[0] = InitWith;
+Bits256.Bits[1] = InitWith;
+Bits256.Bits[2] = InitWith;
+Bits256.Bits[3] = InitWith;
+}
+
+inline uint32_t
+CCallHaplotypes::Bits256Count(ts256Bits& Bits256)		// count number of set bits
+{
+uint32_t Count = 0;
+uint64_t *pWord = Bits256.Bits;
+uint64_t Bit;
+for(uint32_t WordIdx = 0; WordIdx < 4; WordIdx++, pWord++)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ScorePBAKmer: NULL PBA at pPBA[0]");
-	return(-1);
+	for(Bit = 0x01; Bit != 0; Bit <<= 1)
+		if(*pWord & Bit)
+			Count++;
 	}
-pScoreLoci = pPBAs[0] + Loci;
-if(*pScoreLoci == 0)	// will be 0 if no score allele aligned to starting Kmer Loci
-	return(0);			// can't score ...
+return(Count);
+}
 
-// all founders must have a PBA and alleles at initial Loci
-NumFndrs2Proc = 0;
-for(FounderID = 1; FounderID <= NumFndrs; FounderID++)
+inline uint32_t
+CCallHaplotypes::Bits256Combine(ts256Bits &Bits256A, ts256Bits& Bits256B)		// combine (effective |= ) bits in Bits256A with Bits256B with Bits256A updated 
+{
+uint32_t Count = 0;
+uint64_t* pWordA = Bits256A.Bits;
+uint64_t* pWordB = Bits256B.Bits;
+uint64_t Bit;
+for(uint32_t WordIdx = 0; WordIdx < 4; WordIdx++, pWordA++, pWordB++)
 	{
-	if(!(m_Fndrs2Proc[FounderID-1] & 0x01))
-		continue;
-	NumFndrs2Proc++;
-	if((pFndrLoci=pPBAs[FounderID]) == NULL)
-		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"ScorePBAKmer: NULL PBA founder at pPBA[%u] ...",FounderID);
-		return(-1);
-		}
-	if(*(pFndrLoci+Loci)==0)
-		return(0);
+	*pWordA |= *pWordB;
+	for(Bit = 0x01; Bit != 0; Bit <<= 1)
+		if(*pWordA & Bit)
+			Count++;
 	}
-if(!NumFndrs2Proc)
-	return(0);
-// if a mask PBA then check if it has an allele at initial loci
-if(pMskPBA != NULL && pMskPBA[Loci] == 0)
-	return(0);
-
-// use KmerSize as being a minimum, enabling extension out to a maximum of 10x KmerSize
-// if initial KmerSize containing PBAs discovered then allowing a gap which is of maximum 2x KmerSize providing it is followed by another min KmerSize of PBAs
-// intent here is to extend lengths to cover skims which are PE with non-overlapping inserts
-uint32_t SkimGapLen = 0;
-uint32_t SkimPBAsLen = 0;
-uint32_t MarkKmerOfs = 0;
-
-for(FounderID = 1; FounderID <= NumFndrs; FounderID++) 
-	{
-	if(!(m_Fndrs2Proc[FounderID-1] & 0x01))
-		continue;
-	pScoreLoci = pPBAs[0] + Loci;
-	pFndrLoci = pPBAs[FounderID] + Loci;
-	KmerOfs = 0;
-	MarkKmerOfs = 0;
-	SkimPBAsLen = 0;
-	SkimGapLen = 0;
-	for(KmerLoci = Loci, KmerOfs = 0; KmerLoci <= (SeqLen - MinKmerSize) && KmerOfs <= MaxKmerSize; KmerOfs++,KmerLoci++,pFndrLoci++,pScoreLoci++)
-		{
-		if(*pFndrLoci == 0)	// will be 0 if no fndr alleles aligned to this Loci within the Kmer
-			break;
-		if(pMskPBA != NULL && pMskPBA[KmerLoci] == 0)	// masks treated as if a founder
-			break;
-		if(*pScoreLoci == 0) // skims are allowed to have gaps as long as a gap follows a stretch of PBAs at least KmerSize'd	
-			{
-			SkimGapLen+=1;
-			if(SkimPBAsLen < MinKmerSize || SkimGapLen > MaxKmerSize)
-				break;
-			}
-		else
-			{
-			if(SkimGapLen > 0)
-				{
-				SkimGapLen = 0;
-				SkimPBAsLen = 0;
-				}
-			SkimPBAsLen += 1;
-			if(SkimPBAsLen >= MinKmerSize)
-				MarkKmerOfs = KmerOfs;
-			}
-		}
-	if(MarkKmerOfs < MinKmerSize)			// extension has to be at least original minimal KmerSize
-		return(0);
-	if(MarkKmerOfs < MaxKmerSize)		// reducing down to minimum extension of any founder or skim
-		MaxKmerSize = MarkKmerOfs + 1;
-	}
-if(MaxKmerSize < MinKmerSize)			// extension has to be at least original minimal KmerSize
-	return(0);
-MinKmerSize = MaxKmerSize; 
-
-bool bInGap;
-int32_t FounderScores[cMaxFounderReadsets];
-int32_t *pFounderScore;
-memset(FounderScores,0,sizeof(FounderScores));
-memset(&InferencedFounders,0,sizeof(InferencedFounders));
-
-pFounderScore = FounderScores;
-for(FounderID = 1; FounderID <= NumFndrs; FounderID++,pFounderScore++)
-	{
-	if(!(m_Fndrs2Proc[FounderID-1] & 0x01))
-		continue;
-	NumFndrAligningAlleles = 0;		
-	pFndrLoci = pPBAs[FounderID] + Loci;
-	pScoreLoci = pPBAs[0] + Loci;
-	bInGap = false;
-	KmerOfs = 0;
-	for(KmerLoci = Loci, KmerOfs = 0; KmerLoci <= (SeqLen - MinKmerSize) && KmerOfs < MinKmerSize; KmerOfs++,KmerLoci++,pScoreLoci++,pFndrLoci++)
-		{
-		if(pMskPBA != NULL && pMskPBA[KmerLoci] == 0)
-			break;
-		if(*pFndrLoci == 0)	// will be 0 if no alleles aligned to this Loci within the KmerSize
-			break;
-		if(*pScoreLoci == 0) // if PBA gap for skim then apply a very small gap opening penalty 
-			{
-			if(!bInGap)
-				{
-				*pFounderScore -= 1;
-				bInGap = true;
-				}
-			NumFndrAligningAlleles++;
-			continue;
-			}
-		bInGap = false;
-		AlleleMsk = 0x03;	
-		int32_t FndrBaseAllele;
-		int32_t SkimBaseAllele;
-		bool bAlleleScored = false;
-		bool bAlleleAligned = false;
-		for(AlleleIdx = 0; AlleleIdx < 4; AlleleIdx++, AlleleMsk <<= 2)
-			{
-			SkimBaseAllele =  (*pScoreLoci & AlleleMsk) >> (AlleleIdx * 2);
-			if(SkimBaseAllele < m_MinAlignedPBA)
-				continue;
-			FndrBaseAllele = (*pFndrLoci & AlleleMsk) >> (AlleleIdx * 2);
-			if(FndrBaseAllele < m_MinAlignedPBA)
-				continue;
-
-			bAlleleAligned = true;
-			if(SkimBaseAllele >= m_MinAlignedScoringPBA && FndrBaseAllele >= m_MinAlignedScoringPBA)
-				{
-				bAlleleScored = true;
-				if(SkimBaseAllele == 3 && FndrBaseAllele == 3)
-					{
-					*pFounderScore += m_AlignedPBAScore; // really reward dirac matches!	
-					break;
-					}
-				}
-			}
-
-		if(bAlleleAligned)
-			{
-			NumFndrAligningAlleles++;
-			if(bAlleleScored)
-				*pFounderScore += m_AlignedPBAScore;
-			}
-		else
-			*pFounderScore += m_PenaltyPBAScore;
-		}
-
-	// did this founder reach minimum proportion of required allele matches for score acceptance?
-	if((int32_t)(((NumFndrAligningAlleles * 100) + 99) / MinKmerSize) < m_AcceptKmerMatchPerc)
-		*pFounderScore = 0;
-	}
-
-// classify from alignment scores
-// if highest scorer then classify as 3
-// if equal highest then classify as 2
-// if not highest or equal highest, and accepted as aligned, then classify as 1
-// if not accepted as aligned then classify as 0
-uint8_t FndrHighest;
-uint8_t FndrNxtHighest;
-uint8_t FndrAccepted;
-int32_t NumAccepted;
-int32_t FndrHighestScore = 0;
-int32_t FndrNxtHighestScore = 0;
-
-// locate highest and second highest founder scores
-pFounderScore = FounderScores;
-for(FounderID = 1; FounderID <= NumFndrs; FounderID++,pFounderScore++)
-	{
-	if(!(m_Fndrs2Proc[FounderID-1] & 0x01))
-		continue;
-	if(*pFounderScore <= 0)			
-		continue;					
-	pWinBinCnts->SummedScores[FounderID-1] += *pFounderScore;
-
-	if(*pFounderScore > FndrHighestScore)
-		{
-		FndrNxtHighestScore = FndrHighestScore;		// next highest becomes the previous highest
-		FndrHighestScore = *pFounderScore;
-		}
-	else
-		if(*pFounderScore <= FndrHighestScore && *pFounderScore > FndrNxtHighestScore)
-			FndrNxtHighestScore = *pFounderScore;
-	}
-
-// requiring at least a m_MinKmerScoreDiff % differential between highest and next highest to reduce the impact of sequencing/alignment/noise artifacts, if less than m_MinKmerScoreDiff then treat as if equally scoring
-if(FndrHighestScore != FndrNxtHighestScore && ((FndrHighestScore * 100) < (FndrNxtHighestScore * (100 + m_MinKmerScoreDiff))))
-	FndrHighestScore = FndrNxtHighestScore;
-
-FndrHighest = 0x03;
-FndrNxtHighest = 0x02;
-FndrAccepted = 0x01;
-NumAccepted = 0;
-pFounderScore = FounderScores;
-for(FounderID = 1; FounderID <= NumFndrs;FounderID++,pFounderScore++)
-	{
-	InferencedFounders.Fndrs[FounderID-1]= 0;
-	if(!(m_Fndrs2Proc[FounderID-1] & 0x01))
-		continue;
-	if(*pFounderScore <= 0)
-		continue;
-	NumAccepted++;
-	if(FndrHighestScore != 0 && *pFounderScore >= FndrHighestScore && FndrHighestScore > FndrNxtHighestScore)
-		InferencedFounders.Fndrs[FounderID-1]= FndrHighest;
-	else
-		if(*pFounderScore >= FndrNxtHighestScore)
-			InferencedFounders.Fndrs[FounderID-1] = FndrNxtHighest;
-		else
-			InferencedFounders.Fndrs[FounderID-1] = FndrAccepted;
-	}
-*pClassifications = InferencedFounders;
-return(NumAccepted);
+return(Count);
 }
 
 
@@ -2955,68 +2296,6 @@ for(int Row = 0; Row < NumRows; Row++, pExp++, pObs++)
 	}
 return(Sum);
 }
-
-int						
-CCallHaplotypes::ClassifyBinHaps(int MaxHaps)  // classify each window bin as containing a combination of this number of maximum haplotypes in that bin
-{
-uint32_t FndrIdx;
-uint32_t TotUniques;
-uint32_t TotNonUniques;
-double UniquesMean;
-double NonUniquesMean;
-uint32_t *pFndrUniques;
-uint32_t *pFndrNonUniques;
-uint8_t *pRawFndrHap;
-uint32_t SkimBinIdx;
-tsReadsetMetadata *pSkim;
-tsBinCnts *pSkimWinBinCnts;
-
-pSkim = &m_Readsets[m_SkimReadsetID-1];
-pSkimWinBinCnts = &m_pWinBinCnts[pSkim->StartWinBinCntsIdx];
-for(SkimBinIdx = 0; SkimBinIdx < pSkim->NumWinBins; SkimBinIdx++,pSkimWinBinCnts++)
-	{
-	memset(pSkimWinBinCnts->RawFndrHaps,(uint8_t)eHCAbsent,sizeof(pSkimWinBinCnts->RawFndrHaps));
-	memset(pSkimWinBinCnts->SmthdFndrHaps,(uint8_t)eHCAbsent,sizeof(pSkimWinBinCnts->SmthdFndrHaps));
-	// first determine the mean of the uniques over all founders
-	TotUniques = 0;
-	TotNonUniques = 0;
-
-	pFndrUniques = pSkimWinBinCnts->Uniques;
-	pFndrNonUniques = pSkimWinBinCnts->NonUniques;
-	for(FndrIdx = 0; FndrIdx < m_NumFndrs; FndrIdx++,pFndrUniques++,pFndrNonUniques++)
-		{
-		if(!(m_Fndrs2Proc[FndrIdx] & 0x01))
-			continue;
-		TotUniques += *pFndrUniques;
-		TotNonUniques += *pFndrNonUniques;
-		}
-
-	UniquesMean = (double)TotUniques/m_NumFndrsProcMap;
-	NonUniquesMean = (double)TotNonUniques/m_NumFndrsProcMap;
-	pFndrUniques = pSkimWinBinCnts->Uniques;
-	pFndrNonUniques = pSkimWinBinCnts->NonUniques;
-	pRawFndrHap = pSkimWinBinCnts->RawFndrHaps;
-	for(FndrIdx = 0; FndrIdx < m_NumFndrs; FndrIdx++,pFndrUniques++,pFndrNonUniques++,pRawFndrHap++)
-		{
-		if(!(m_Fndrs2Proc[FndrIdx] & 0x01))
-			continue;
-
-		if(*pFndrUniques < 5 && *pFndrNonUniques < 100)
-			continue;								// treating as noise counts, so leave ClassFndr as eHCHiConfNone
-
-		if(*pFndrUniques < (UniquesMean/10) && *pFndrNonUniques < (NonUniquesMean/5))
-			continue;								// treating as noise counts, so leave ClassFndr as eHCHiConfNone
-
-		if(*pFndrUniques >= 2 && (*pFndrUniques * 5) >= UniquesMean)
-			*pRawFndrHap = eHCHiConf;			// this founder has same or higher numbers of unique alignments relative to other founders 
-		else
-			if((*pFndrUniques * 10) >= UniquesMean)
-				*pRawFndrHap = eHCLoConf;		// low confidence that haplotype is present
-		}
-	}
-return(0);			
-}
-
 
 
 int32_t		// returned chrom identifier, < 1 if unable to accept this chromosome name
@@ -3083,123 +2362,166 @@ if(ChromID < 1 || ChromID > m_NumChromNames)
 return(&m_szChromNames[m_szChromIdx[ChromID-1]]);
 }
 
+uint8_t 
+CCallHaplotypes::LocateReadsetChromLociAlleles(int32_t ReadsetID,	// return alleles for this readset 
+									  int32_t ChromID,		// on this chromosome
+									  uint32_t Loci)		// at this loci
+{
+uint8_t *pPBA;
+if((pPBA=LocatePBAfor(ReadsetID,ChromID))==NULL)
+	return(0);
+return(pPBA[Loci]);
+}
 
-// NOTE: Readsets are checked for uniqueness as readsets must be unique
+// NOTE: Readsets are checked for uniqueness as readsets must be unique within a given readetset type
 int32_t		// returned readset identifier, < 1 if unable to accept this readset name
-CCallHaplotypes::AddReadset(char* pszReadset) // associate unique identifier with this readset name
+CCallHaplotypes::AddReadset(char* pszReadset, // associate unique identifier with this readset name
+							uint8_t ReadsetType)	// 0: founder, 1: progeny, 2: control
 {
 int32_t ReadsetNameIdx;
 int ReadsetNameLen;
+char Type;
 char *pszLAname;
+Type = '0' + (char)ReadsetType;
 
 // with any luck the sequence name will be same as the last accessed
 if((pszLAname = LocateReadset(m_LAReadsetNameID)) != NULL)
-	if(!stricmp(pszReadset,pszLAname))
-		return(0);
-		
+	{
+	if(pszLAname[-1] == Type &&	// prefixed with ReadsetType
+		!stricmp(pszReadset,pszLAname))
+			return(0); // non-unique within ReadsetType!
+	}
+	
 // iterate over all known readsets in case this readset to add is a duplicate
 for(ReadsetNameIdx = 0; ReadsetNameIdx < m_NumReadsetNames; ReadsetNameIdx++)
-	if(!stricmp(pszReadset, &m_szReadsetNames[m_szReadsetIdx[ReadsetNameIdx]]))
+	{
+	pszLAname = &m_szReadsetNames[m_szReadsetIdx[ReadsetNameIdx]];
+	if(*pszLAname++ != Type)
+		continue;
+	if(!stricmp(pszReadset, pszLAname))
 		{
 		m_LAReadsetNameID = ReadsetNameIdx + 1;
-		return(0);
+		return(0); // non-unique within ReadsetType!
 		}
+	}
 
 // not a duplicate
 ReadsetNameLen = (int)strlen(pszReadset);
-if((m_NxtszReadsetIdx + ReadsetNameLen + 1) > (int)sizeof(m_szReadsetNames))
-	return(0);
-if(m_NumReadsetNames == (cMaxFounderReadsets + 1))
-	return(0);
+if((m_NxtszReadsetIdx + ReadsetNameLen + 2) > (int)sizeof(m_szReadsetNames))
+	return(0);		// no more space to hold reeadset name, treating as if a non-unique!
+if(m_NumReadsetNames == (cMaxProgenyReadsets + cMaxFounderReadsets))
+	return(0);		// unable to hold any more readsets, treating as if a non-unique!
 
 m_szReadsetIdx[m_NumReadsetNames++] = m_NxtszReadsetIdx;
-strcpy(&m_szReadsetNames[m_NxtszReadsetIdx], pszReadset);
-m_NxtszReadsetIdx += ReadsetNameLen + 1;
+pszLAname = &m_szReadsetNames[m_NxtszReadsetIdx];
+*pszLAname++ = Type;
+strcpy(pszLAname, pszReadset);
+m_NxtszReadsetIdx += ReadsetNameLen + 2;
 m_LAReadsetNameID = m_NumReadsetNames;
 return(m_LAReadsetNameID);
 }
 
 
 int32_t		// returned Readset identifier, < 1 if unable to locate this Readset name
-CCallHaplotypes::LocateReadset(char* pszReadset) // return unique identifier associated with this Readset name
+CCallHaplotypes::LocateReadset(char* pszReadset, // return unique identifier associated with this Readset name
+							   uint8_t ReadsetType)	// 0: founder, 1: progeny, 2: control
 {
 int32_t ReadsetNameIdx;
+char Type;
 char *pszLAReadset;
 
+Type = '0'+ (char)ReadsetType;
 // with any luck the Readset name will be same as the last accessed
 if((pszLAReadset = LocateReadset(m_LAReadsetNameID)) != NULL)
-	if(!stricmp(pszReadset,pszLAReadset))
-		return(m_LAReadsetNameID);
+	{
+	if(pszLAReadset[-1] == Type &&	// prefixed with ReadsetType
+		!stricmp(pszReadset,pszLAReadset))
+			return(m_LAReadsetNameID);
+	}
 
 // iterate over all known Readsets
 for(ReadsetNameIdx = 0; ReadsetNameIdx < m_NumReadsetNames; ReadsetNameIdx++)
-	if(!stricmp(pszReadset, &m_szReadsetNames[m_szReadsetIdx[ReadsetNameIdx]]))
+	{
+	pszLAReadset = &m_szReadsetNames[m_szReadsetIdx[ReadsetNameIdx]];
+	if(*pszLAReadset++ != Type)		// readset must be that of ReadsetType
+		continue;
+	if(!stricmp(pszReadset, pszLAReadset))
 		{
 		m_LAReadsetNameID = ReadsetNameIdx + 1;
 		return(m_LAReadsetNameID);
 		}
+	}
 return(0);
 }
 
 char* 
 CCallHaplotypes::LocateReadset(int32_t ReadsetID)
 {
-if(ReadsetID < 1 || ReadsetID > m_NumReadsetNames)
+int Idx;
+Idx = ReadsetID & 0x0fffffff;			// mask out any potential ReadsetType
+if(Idx < 1 || Idx > m_NumReadsetNames)
 	return(NULL);
-return(&m_szReadsetNames[m_szReadsetIdx[ReadsetID-1]]);
+return(&(m_szReadsetNames[m_szReadsetIdx[Idx -1]+1])); // skipping lead char which is the ReadsetType
 }
 
-// sorting by ReadsetID.ChromID.StartLoci ascending
+// sorting by ChromID.StartLoci ascending
 int
-CCallHaplotypes::SortWinBinCnts(const void* arg1, const void* arg2)
+CCallHaplotypes::SortAlleleStacks(const void* arg1, const void* arg2)
 {
-tsBinCnts* pEl1 = (tsBinCnts*)arg1;
-tsBinCnts* pEl2 = (tsBinCnts*)arg2;
-if(pEl1->ReadsetID < pEl2->ReadsetID)
-	return(-1);
-if(pEl1->ReadsetID > pEl2->ReadsetID)
-	return(1);
+tsAlleleStack* pEl1 = (tsAlleleStack*)arg1;
+tsAlleleStack* pEl2 = (tsAlleleStack*)arg2;
 if(pEl1->ChromID < pEl2->ChromID)
 	return(-1);
 if(pEl1->ChromID > pEl2->ChromID)
 	return(1);
-if(pEl1->StartLoci < pEl2->StartLoci)
+if(pEl1->Loci < pEl2->Loci)
 	return(-1);
-if(pEl1->StartLoci > pEl2->StartLoci)
+if(pEl1->Loci > pEl2->Loci)
 	return(1);
 return(0);
 }
 
-// sorting founder unique counts descending, founder ascending
+// sorting by ReadsetID.ChromID.StartLoci ascending
 int
-CCallHaplotypes::SortFndrTotUniqueCnts(const void* arg1, const void* arg2)
+CCallHaplotypes::SortProgenyFndrAligns(const void* arg1, const void* arg2)
 {
-tsFndrTotUniqueCnts* pEl1 = (tsFndrTotUniqueCnts*)arg1;
-tsFndrTotUniqueCnts* pEl2 = (tsFndrTotUniqueCnts*)arg2;
-if(pEl1->TotUniqueCnts > pEl2->TotUniqueCnts)
+tsProgenyFndrAligns* pEl1 = (tsProgenyFndrAligns*)arg1;
+tsProgenyFndrAligns* pEl2 = (tsProgenyFndrAligns*)arg2;
+if(pEl1->ReadsetID < pEl2->ReadsetID)
 	return(-1);
-if(pEl1->TotUniqueCnts < pEl2->TotUniqueCnts)
+if(pEl1->ReadsetID > pEl2->ReadsetID)
+return(1);
+if(pEl1->ChromID < pEl2->ChromID)
+	return(-1);
+if(pEl1->ChromID > pEl2->ChromID)
 	return(1);
-if(pEl1->FounderID < pEl2->FounderID)
+if(pEl1->Loci < pEl2->Loci)
 	return(-1);
-if(pEl1->FounderID > pEl2->FounderID)
+if(pEl1->Loci > pEl2->Loci)
 	return(1);
 return(0);
 }
 
-// sorting founder smoothed means descending, founder ascending
+// sorting by ChromID.StartLoci.Readset ascending
 int
-CCallHaplotypes::SortFndrSmthdMeans(const void* arg1, const void* arg2)
+CCallHaplotypes::SortProgenyChromLociReadset(const void* arg1, const void* arg2)
 {
-tsFndrSmthdMean* pEl1 = (tsFndrSmthdMean*)arg1;
-tsFndrSmthdMean* pEl2 = (tsFndrSmthdMean*)arg2;
-if(pEl1->SmthdMean > pEl2->SmthdMean)
+tsProgenyFndrAligns* pEl1 = (tsProgenyFndrAligns*)arg1;
+tsProgenyFndrAligns* pEl2 = (tsProgenyFndrAligns*)arg2;
+
+if(pEl1->ChromID < pEl2->ChromID)
 	return(-1);
-if(pEl1->SmthdMean < pEl2->SmthdMean)
+if(pEl1->ChromID > pEl2->ChromID)
 	return(1);
-if(pEl1->FounderID < pEl2->FounderID)
+if(pEl1->Loci < pEl2->Loci)
 	return(-1);
-if(pEl1->FounderID > pEl2->FounderID)
+if(pEl1->Loci > pEl2->Loci)
+	return(1);
+if(pEl1->ReadsetID < pEl2->ReadsetID)
+	return(-1);
+if(pEl1->ReadsetID > pEl2->ReadsetID)
 	return(1);
 return(0);
 }
+
+
