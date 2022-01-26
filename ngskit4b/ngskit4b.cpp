@@ -174,7 +174,7 @@ tsSubProcess SubProcesses[] = {
 	{"sarscov2ml","ML SARS-CoV-2","SARS-CoV-2 ML feature classification",sarscov2ml},
 	{"genpba","","Align readsets against a target assembly and report alignments to a packed base alleles (PBA) file",kalignerPBA},
 	{"callhaplotypes","Call skim Haplotypes","Call skim read haplotypes using packed base alleles (PBA) files",callhaplotypes},
-	{"gbsmapbins","GBS map","Count GBS SNP loci into fixed sized window bins",gbsmapsnps},
+	{"gbsmapsnps","GBS map","SNP GBS to PBA GBS haplotypes",gbsmapsnps},
 	{"haps2genotype","Haplotype Genotyping","Process haplotypes into a genotype matrix",haps2genotype},
 
 

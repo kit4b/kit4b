@@ -1,6 +1,31 @@
 #pragma once
 #include "commdefs.h"
 
+// Wald–Wolfowitz runs test table
+// Required - number of runs 'r', number of values 'n1' and number of values 'n2'
+// critical value is the minimum number of runs at a Pvalue >= 0.025
+const uint8_t WaldWolfowitzRunsCritValues[19][19] = {
+{1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2},
+{1,1,1,1,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3},
+{1,1,1,2,2,2,3,3,3,3,3,3,3,3,4,4,4,4,4},
+{1,1,2,2,3,3,3,3,3,4,4,4,4,4,4,4,5,5,5},
+{1,2,2,3,3,3,3,4,4,4,4,5,5,5,5,5,5,6,6},
+{1,2,2,3,3,3,4,4,5,5,5,5,5,6,6,6,6,6,6},
+{1,2,3,3,3,4,4,5,5,5,6,6,6,6,6,7,7,7,7},
+{1,2,3,3,4,4,5,5,5,6,6,6,7,7,7,7,8,8,8},
+{1,2,3,3,4,5,5,5,6,6,7,7,7,7,8,8,8,8,9},
+{1,2,3,4,4,5,5,6,6,7,7,7,8,8,8,9,9,9,9},
+{2,2,3,4,4,5,6,6,7,7,7,8,8,8,9,9,9,10,10},
+{2,2,3,4,5,5,6,6,7,7,8,8,9,9,9,10,10,10,10},
+{2,2,3,4,5,5,6,7,7,8,8,9,9,9,10,10,10,11,11},
+{2,3,3,4,5,6,6,7,7,8,8,9,9,10,10,11,11,11,12},
+{2,3,4,4,5,6,6,7,8,8,9,9,10,10,11,11,11,12,12},
+{2,3,4,4,5,6,7,7,8,9,9,10,10,11,11,11,12,12,13},
+{2,3,4,5,5,6,7,8,8,9,9,10,10,11,11,12,12,13,13},
+{2,3,4,5,6,6,7,8,8,9,10,10,11,11,12,12,13,13,13},
+{2,3,4,5,6,6,7,8,9,9,10,10,11,12,12,13,13,13,14}
+};
+
 /* ------------------------------------------------------------- 
  * Name            : rvms.h (header file for the library rvms.c) 
  * Author          : Steve Park & Dave Geyer
@@ -111,5 +136,10 @@ public:
 	double Binomial(int n, // number of trials 
 				int k,	// number of observed successes 
 				double p); // expected probability of a success in a trial
+
+	bool	// true if single sided Wald–Wolfowitz runs test shows support at >= 0.025 for sequence of called haplotypes randomly drawn from FaFb
+			IsRandomHaplotypesFaFb(uint32_t n1,	// number of Fa haplotype calls
+				  uint32_t n2,	// number of Fb haplotype calls
+				  uint32_t r);	// number of runs in sequence of haplotypes
 
 };

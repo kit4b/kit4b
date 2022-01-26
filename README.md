@@ -74,7 +74,7 @@ make install
 Alternatively, the binary built for the appropriate platform can be used directly.
 
 ### Windows
-To build on Windows, this release requires compiling with either Visual Studio 2017 or 2019. 
+To build on Windows, this release requires compiling with either Visual Studio 2019 or 2022. 
 ```
 Open the `kit4b.sln` file in Visual Studio. 
 Under the Build menu, select Configuration Manager. 

@@ -415,7 +415,7 @@ if (!argerrors)
 	iNMer = NMer->count ? NMer->ival[0] : cDfltNMer;
 	if(iNMer != 3 && iNMer != 5 && iNMer != 7 && iNMer != 9 && iNMer != 11 && iNMer != 13)
 		{
-		printf("\nError: centriod oligo length specified as '-n%d' must be one of 3,5,7,9,11 or 13",iNMer);
+		printf("\nError: centroid oligo length specified as '-n%d' must be one of 3,5,7,9,11 or 13",iNMer);
 		exit(1);
 		}
 

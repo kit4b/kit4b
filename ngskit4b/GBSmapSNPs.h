@@ -11,7 +11,7 @@ const uint32_t cAllocProgenyFndrAligns = 1000000; // initial allocation for prog
 typedef enum TAG_eModeGBSMapSNPs
 {
 	eMGBSMDefault = 0, // default is to map SNP GBS to PBA GBS haplotypes
-	eMGBSMConsistency, // Compare 2 PBA GBS matrices for haplotype consistency
+	eMGBSMCombine, // combine two PBA GBS matrices
 	eMGBSMPlaceholder  // used to mark end of enumeration range
 } eModeGBSMapSNPs;
 
@@ -22,10 +22,11 @@ typedef struct TAG_s256Bits {
 } ts256Bits;
 
 typedef struct TAG_sProgenyFndrAligns {
+	uint32_t ExprID;				// alignment is part of this experiment
 	uint32_t ReadsetID;				// identifies the progeny readset
 	uint32_t ChromID;				// stack is on this chromosome
 	uint32_t Loci;					// and at this loci
-	uint32_t Source;				// identifies source - 0: conversion of SNP to PBA haplotypes, 1: matrix A, 2: matrix B when comparing 2 matrices for haplotype consistency
+	uint8_t Source;					// identifies source - 0: conversion of SNP to PBA haplotypes, 1: matrix A, 2: matrix B when comparing 2 matrices for haplotype consistency
 	uint8_t Alleles;				// progeny has these alleles present at the allelestack chrom.loci
 	uint8_t NumProgenyFounders;		// number of potential progeny founders in ProgenyParents bitmap
 	ts256Bits ProgenyFounders;		// bitmap of potential progeny founders - progeny has a minor/major allele shared with corresponding founder
@@ -43,6 +44,7 @@ typedef struct TAG_sChromMapping
 
 class CGBSmapSNPs {
 	eModeGBSMapSNPs m_PMode;	// processing mode
+	uint32_t m_ExprID;				// assign this experiment identifier for this analysis
 	char *m_pszInNMFile;	// processing chromosome name mapping from this file
 	char *m_pszInGBSFile;	// processing GBS SNP calls from this file
 	char *m_pszOutFile;		// windowed GBS SNP calls output file
@@ -56,7 +58,7 @@ class CGBSmapSNPs {
 	uint8_t m_Fndrs2Proc[cMaxFounderReadsets];	// array of founders which are to be processed, indexed by FounderID-1. If LSB is set then that founder is marked for processing
 	int32_t m_FndrIDs[cMaxFounderReadsets];	// founder readset identifiers for Fa..Fn
 
-	int32_t m_NumProgenies;				// number of F4s
+	uint32_t m_NumProgenies;				// number of F4s
 	int32_t	m_ProgenyIDs[cMaxProgenyReadsets];		// F4 readset identifiers
 
 	uint32_t m_WIGChromID;				// current WIG span is on this chromosome
@@ -119,8 +121,7 @@ class CGBSmapSNPs {
 	int LoadGBSSNPs(uint32_t MatrixID,			// identifies matrix source
 					char* pszInGBSFile);	// processing chromosome name mapping from this file)
 
-	int	LoadHaplotypeMatrix(uint32_t MatrixID,			// identifies matrix source
-				char* pszInGBSFile);						// processing chromosome name mapping from this file)
+	int	LoadHaplotypeMatrix(char* pszInGBSFile);						// loading existing matrix into memory
 
 	void Reset(void);			// reset class states back to that immediately following class instantiation 
 
@@ -133,8 +134,6 @@ class CGBSmapSNPs {
 
 	int	ReportMatrix(char* pszRsltsFileBaseName);		// matrix results are written to this file base name with '.SummaryMatrix.csv' appended
 
-	int ReportConsistency(char* pszRsltsFileBaseName);		// results are written to this file base name with '.consistency.csv' appended);
-	
 	int ReportHaplotypesByProgeny(char* pszRsltsFileBaseName,		// haplotype results are written to this file base name with 'ProgenyID.csv' appended
 								  uint32_t ReadsetID = 0);				// report on this progeny readset only, or if 0 then report on all progeny readsets
 
@@ -161,6 +160,7 @@ public:
 
 	int			// success or otherwise ( >= 0 success, < 0 if processing failed)
 	Process(eModeGBSMapSNPs PMode,			// processing mode
+							uint32_t ExprID,		// assign this experiment identifier for this SNP to haplotype analysis
 							char *pszInNMFile,		// processing chromosome name mapping from this file
 							char *pszInGBSFile,	// processing GBS SNP calls from this file
 							char *pszOutFile);	// windowed GBS haplotype matrix output file

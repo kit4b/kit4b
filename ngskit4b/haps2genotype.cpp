@@ -373,8 +373,6 @@ while((Rslt = m_pInHapFile->NextLine()) > 0)		// onto next line containing field
 		{
 		m_pInHapFile->GetInt((4 + ((NumFounders-1) * 4)) + FndrIdx, &Haps[FndrIdx-1]);		// 0 if smoothed haplotype absent, 2 if smoothed haplotype present 
 		}
-
-
 	}
 
 delete m_pInHapFile;

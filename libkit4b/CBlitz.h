@@ -196,7 +196,7 @@ class CBlitz
 	uint32_t m_NumQueriesProc;		// total number of query sequences processed
 
 	CSQLitePSL *m_pSQLitePSL;		// used when outputting PSL rows directly into SQLite database
-	int m_ExprID;					// experiment identifier allocated when initialising database with experiment details
+	uint32_t m_ExprID;				// experiment identifier allocated when initialising database with experiment details
 
 	int m_hOutNonAlignedFilePE1;	// results output file handle for non-aligned PE1 reads
 	int m_hOutNonAlignedFilePE2;	// results output file handle for non-aligned PE2 reads

@@ -563,6 +563,20 @@ for(int i = 0; i <= k; i++)
 return(min(sum,1.0));
 }
 
+bool	// true if single sided Wald–Wolfowitz runs test shows support at >= 0.025 for sequence of called haplotypes randomly drawn from FaFb
+CStats::IsRandomHaplotypesFaFb(uint32_t n1,	// number of Fa haplotype calls
+					   uint32_t n2,	// number of Fb haplotype calls
+					   uint32_t r)	// number of runs in sequence of haplotypes
+{
+uint32_t CritVal;
+if(n1 < 2 || n1 > 20 ||
+	n2 < 2 || n2 > 20 ||
+	r <= 1 || r > n1+n2 )
+	return(false);
+
+CritVal = WaldWolfowitzRunsCritValues[n1-2][n2-2];
+return(r > CritVal ? true : false);
+}
 
 
 /* ------------------------------------------------------------------------- 
