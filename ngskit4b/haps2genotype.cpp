@@ -19,7 +19,7 @@ int Process(eGTHMode PMode,	// processing mode 0: default processing mode which 
 				   char* pszRefAssemb,	// reference assembly
 				   int NumBinnedHaplotypeFiles,	// number of input called haplotype file specs
 				   char* pszBinnedHaplotypeFiles[],	// names of input called haplotype files (wildcards allowed)
-				   char* pszOutFile);		// output genotype mattrix to this CSV file
+				   char* pszOutFile);		// output genotype matrix to this CSV file
 
 #ifdef _WIN32
 int haps2genotype(int argc, char* argv[])
@@ -55,7 +55,7 @@ struct arg_file* LogFile = arg_file0("F", "log", "<file>", "diagnostics log file
 struct arg_int* pmode = arg_int0("m", "mode", "<int>", "processing mode: 0 default");
 struct arg_str* refassemb = arg_str0("r", "refassemb", "<str>", "reference assembly (default is BRZ)");
 struct arg_file* binnedhaplotypefiles = arg_filen("i", "binnedhaplotypes", "<file>", 1, cMaxHaplotypeFiles, "process these haplotype input CSV file(s), wildcards allowed, limit of 1000 files supported");
-struct arg_file* outfile = arg_file1("o", "out", "<file>", "output genotype mattrix to this CSV file");
+struct arg_file* outfile = arg_file1("o", "out", "<file>", "output genotype matrix to this CSV file");
 struct arg_end* end = arg_end(200);
 void* argtable[] = {help,version,FileLogLevel,LogFile,
 					pmode,refassemb,binnedhaplotypefiles,outfile,end};
@@ -213,7 +213,7 @@ if(!argerrors)
 					szRefAssemb,	// reference assembly
 					NumBinnedHaplotypeFiles,	// number of input called haplotype file specs
 					pszBinnedHaplotypeFiles,	// names of input called haplotype files (wildcards allowed)
-					szOutFile);		// output genotype mattrix to this CSV file
+					szOutFile);		// output genotype matrix to this CSV file
 
 	Rslt = Rslt >= 0 ? 0 : 1;
 	gStopWatch.Stop();
@@ -234,7 +234,7 @@ int Process(eGTHMode PMode,	// processing mode 0: default processing mode which 
 			char* pszRefAssemb,	// reference assembly
 			int NumBinnedHaplotypeFiles,	// number of input called haplotype file specs
 			char* pszBinnedHaplotypeFiles[],	// names of input called haplotype files (wildcards allowed)
-			char* pszOutFile)		// output genotype mattrix to this CSV file
+			char* pszOutFile)		// output genotype matrix to this CSV file
 {
 int Rslt;
 CHaps2Genotype *pHaps2Genotype;
@@ -259,7 +259,7 @@ CHaps2Genotype::Process(eGTHMode PMode,	// processing mode 0: default processing
 						char* pszRefAssemb,	// reference assembly
 						int NumBinnedHaplotypeFiles,	// number of input called haplotype file specs
 						char* pszBinnedHaplotypeFiles[],	// names of input called haplotype files (wildcards allowed)
-						char* pszOutFile)		// output genotype mattrix to this CSV file
+						char* pszOutFile)		// output genotype matrix to this CSV file
 {
 int Rslt;
 Rslt = PopulateGenotypes(NumBinnedHaplotypeFiles, pszBinnedHaplotypeFiles);

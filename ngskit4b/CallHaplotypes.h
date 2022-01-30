@@ -35,6 +35,10 @@ const uint32_t cAllocProgenyFndrAligns = 10000000; // initial allocation for pro
 const uint32_t cAllocAlleleStacks = 100000000;		// initial allocation for allele stacks - number of stacks
 const uint32_t cReallocAlleleStacks = (cAllocAlleleStacks/2);	// realloc allele stacks with this sized increments - number of stacks
 
+const uint32_t cAllocHGBinSpecs = 500000;  // initial allocation is to hold this many haplotype group clustering specifications
+const uint32_t cReallocHGBinSpecs = (cAllocHGBinSpecs/2);	// realloc haplotype group clustering in this sized increments - number of bins
+
+
 const int32_t cDfltGrpHapSize = 50000;  // default haplotype clustering over these sized KMer non-overlapping windows
 const int32_t cDfltGrpHapClustDif = 500;  // default haplotype clustering maximum group centroid clustering differential
 
@@ -59,12 +63,21 @@ typedef struct TAG_s256Bits {
 	uint64_t Bits[4];		// 256bits encoded into 4 x 64bit words
 } ts256Bits;
 
+typedef struct TAG_sHGBinSpec { // haplotype group clustering is for this bin specification
+	int32_t ChromID;	    // haplotype group clustering is on this chromosome
+	int32_t BinID;          // uniquely identifies bin - globally unique 
+	int32_t StartLoci;      // bin starts at this loci
+	int32_t NumLoci;	    // covering this many loci
+	int32_t Distance;       // maximal centroid distance measure metric used for clustering
+	} tsHGBinSpec;
+
 typedef struct TAG_sHaplotypeGroup {
 	struct TAG_sHaplotypeGroup* pNxt; // pts to next haplotype group on same chromosome, NULL if last
 	int32_t Size;           // this instance is this size (bytes)
 	int32_t ChromID;	    // group is for this chromosome
 	int32_t StartLoci;		// group starting from this loci
 	int32_t NumLoci;	    // covering this many loci
+	int32_t Distance;       // maximal centroid distance measure metric used for clustering 
 	int32_t NumFndrs;       // groups contain a total of this many founders
 	int32_t NumGroups;      // contains this many haplotype groups
 	ts256Bits HaplotypeGroup[1]; // could be multiple groups
@@ -110,6 +123,7 @@ uint32_t ChromMetadataIdx;	// index of this metadata
 uint32_t NxtChromMetadataIdx; // chromosome metadata in a given readset are forward linked
 int32_t ChromID;			// chromosome identifier
 int32_t ChromLen;			// has this many loci bases
+int32_t HGBinID;            // initial haplotype grouping bin identifier for this chromosome
 uint8_t *pPBAs;				// pts to memory allocation holding packed base alleles for this chromosome
 } tsChromMetadata;
 
@@ -203,6 +217,10 @@ class CCallHaplotypes
 	size_t m_AllocdAlleleStacksMem;		// current mem allocation size for m_pAlleleStacks
 	tsAlleleStack *m_pAlleleStacks;		// allocated to hold founder allele stacks
 
+	int32_t m_UsedHGBinSpecs;		    // number of actually used haplotype grouping bins
+	int32_t m_AllocdHGBinSpecs;		    // number of allocated ahaplotype grouping bins
+	size_t m_AllocdHGBinSpecsMem;		// current mem allocation size for m_pHGBinSpecs
+	tsHGBinSpec* m_pHGBinSpecs;         // allocated to hold haplotype grouping bin specifications
 
 	uint32_t m_AllocWorkQueueEls;		// work queue allocated to hold at most this number of elements
 	uint32_t m_TotWorkQueueEls;			// total number of work queue elements to be processed
@@ -228,6 +246,7 @@ class CCallHaplotypes
 
 	int m_hInFile;				// input file handle
 	int m_hOutFile;				// file handle for writing results
+	CCSVFile *m_pCSVFile;       // holds optional user specified haplotype group specifications in processing mode 3
 
 	char* m_pszRsltsFileBaseName;	// output results file basename
 	char *m_pszMaskBPAFile;		// optional input masking BPA file, only process BPAs which are intersect of these BPAs and progeny plus founder BPAs
@@ -268,6 +287,13 @@ class CCallHaplotypes
 
 	int	TerminateWorkerThreads(int WaitSecs = 120);	// allow at most this many seconds before force terminating threads
 
+	tsHGBinSpec*    // returned haplotype grouping bin specification, returns NULL if all bins on chromosome have been iterated
+		IterateHGBinSpecs(int32_t ChromID, // bin is on this chromosome
+			              int32_t BinID);    // previously iterated bin identifier, to access 1st bin on chromosome then pass 0 as the bin identifier 
+
+	// load and parse haplotype grouping bin specification file
+	int								 // eBSFSuccess or error
+		LoadHHGBinSpecs(char* pszInFile);  // load grouping specifications from this file
 
 	int32_t					// returned readset identifier (1..n) or < 1 if errors
 		LoadPBAFile(char* pszFile,		// load chromosome metadata and PBA data from this file
@@ -326,6 +352,16 @@ class CCallHaplotypes
 
 	uint32_t									// returned index+1 into m_pAlleleStacks[] to allocated and initialised allele stack, 0 if errors
 		AddAlleleStack(tsAlleleStack* pInitAlleleStack);	// allocated tsAlleleStack to be initialised with a copy of pInitAlleleStack
+
+	int32_t									// returned index+1 into m_pHGBinSpecs[] to allocated and initialised allele stack, 0 if errors
+		AddHGBinSpec(tsHGBinSpec* pInitHGBinSpec);	// allocated tsHGBinSpec to be initialised with a copy of pInitHGBinSpec
+
+	int32_t									// returned index+1 into m_pHGBinSpecs[] to allocated and initialised allele stack, 0 if errors
+		AddHGBinSpec(int32_t ChromID,	    // haplotype group clustering is on this chromosome
+			int32_t StartLoci,      // bin starts at this loci
+			int32_t NumLoci,	    // covering this many loci
+			int32_t Distance);       // maximal centroid distance measure metric used for clustering
+
 
 	int ProcessProgenyPBAFile(char* pszProgenyPBAFile,	// load, process and call haplotypes for this progeny PBA file against previously loaded panel founder PBAs
 							char *pszRsltsFileBaseName);		// results are written to this file base name with progeny readset identifier and type appended
@@ -435,6 +471,7 @@ class CCallHaplotypes
 	static int SortAlleleStacks(const void* arg1, const void* arg2);
 	static int SortProgenyFndrAligns(const void* arg1, const void* arg2);
 	static int SortProgenyChromLociReadset(const void* arg1, const void* arg2);
+	static int SortHGBinSpecs(const void* arg1, const void* arg2);
 
 	int32_t ReportHaplotypesAsGWAS(char* pszRsltsFileBaseName,		// generate a GWAS format file(s) for viewing haplotype calls in IGV, useful for looking at associations with coverage etc
 								   int32_t ReadsetID,				// report on this progeny readset

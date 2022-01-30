@@ -71,6 +71,6 @@ public:
 				char* pszRefAssemb,	// reference assembly
 				int NumBinnedHaplotypeFiles,	// number of input called haplotype file specs
 				char* pszBinnedHaplotypeFiles[],	// names of input called haplotype files (wildcards allowed)
-				char* pszOutFile);		// output genotype mattrix to this CSV file
+				char* pszOutFile);		// output genotype matrix to this CSV file
 };
 
