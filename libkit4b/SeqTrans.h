@@ -24,6 +24,8 @@ public:
 							char BaseInDel = '-',			// what to map eBaseInDel onto
 							bool RptMskUpperCase=false);  // if true then uppercase represents softmasked repeats
 
+	static etSeqBase MapAscii2Base(char AsciiBase);		// ascii base to map into corresponding etSeqBase
+
 	static char MapBase2Ascii(etSeqBase Base,				// base to map 
 							char BaseN = 'N',				// what to map eBaseN onto
 							char BaseUndef = 'U',			// what to map eBaseUndef onto

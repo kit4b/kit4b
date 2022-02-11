@@ -95,7 +95,7 @@ extern int sarscov2ml(int argc, char *argv[]);
 extern int kalignerPBA(int argc, char *argv[]);
 extern int callhaplotypes(int argc, char *argv[]);
 extern int gbsmapsnps(int argc, char *argv[]);
-extern int haps2genotype(int argc, char* argv[]);
+extern int pbafasta(int argc, char* argv[]);
 
 // inplace text cleaning; any leading/trailing or internal quote characters are removed; excessive whitespace is reduced to single
 char *
@@ -175,7 +175,7 @@ tsSubProcess SubProcesses[] = {
 	{"genpba","","Align readsets against a target assembly and report alignments to a packed base alleles (PBA) file",kalignerPBA},
 	{"callhaplotypes","Call skim Haplotypes","Call skim read haplotypes using packed base alleles (PBA) files",callhaplotypes},
 	{"gbsmapsnps","GBS map","SNP GBS to PBA GBS haplotypes",gbsmapsnps},
-	{"haps2genotype","Haplotype Genotyping","Process haplotypes into a genotype matrix",haps2genotype},
+	{"pbafasta","Interchange PBA Fasta","Interchange PBA and Fasta",pbafasta},
 
 
 };

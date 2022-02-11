@@ -120,6 +120,7 @@ const int cMaxSitePrefOfs = 100;			// allow octamer starts to be at most this aw
 
 const int cNumOctamers = 0x010000;			// number of different octamers (4^8) in m_OctSitePrefs[]
 
+// PBA at a single loci is packed into a single 8bit byte: Allele A in bits 7.6, C in bits 5.4, G in bits 3.2, T in bits 1.0
 const double cScorePBA3MinProp = 0.75;		// score PBA as 3 if allele proportion of all counts is >= this threshold and coverage is >= 5
 const double cScorePBA2MinProp = 0.35;		// score PBA as 2 if allele proportion of all counts is >= this threshold and coverage is >= 5
 const double cScorePBA1MinProp = 0.20;		// score PBA as 1 if allele proportion of all counts is >= this threshold and coverage is >= 5
@@ -943,8 +944,8 @@ class CKAligner
 
 	char *Octamer2Txt(int Octamer);		 // Report on site octamer site preferencing distribution
 
-	int OutputSNPs(void);	// if true then processing is for packed base alleles, no SNP calling
-	int ProcessSNPs(void);	// if true then processing is for packed base alleles, no SNP calling
+	int ProcessSNPs(void);	// actual SNP calling
+	int OutputSNPs(void);	// generate SNP calling results
 
 	void InitialiseWIGSpan(void);				// initialise WIG span vars to values corresponding to no spans having been previously reported
 	int CompleteWIGSpan(bool bWrite = false);	// close off any current WIG span ready to start any subsequent span, if bWrite is true then write to disk 

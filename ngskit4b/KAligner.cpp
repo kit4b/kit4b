@@ -7362,6 +7362,7 @@ else
 		double AlleleProp;
 		if(Coverage > 0)
 			{
+			// PBA: Allele A in bits 7.6, C in bits 5.4, G in bits 3.2, T in bits 1.0
 			for(int BaseIdx = 0; BaseIdx < 4; BaseIdx++)
 				{
 				PackedBaseAlleles <<= 2;
@@ -11949,11 +11950,16 @@ while((Rslt = (teBSFrsltCodes)(PE1ReadLen = PE1Fasta.ReadSequence(szPE1ReadBuff,
 		{
 		PE1DescrLen = PE1Fasta.ReadDescriptor((char *)szPE1DescrBuff,sizeof(szPE1DescrBuff)-1);
 		szPE1DescrBuff[cMaxKADescrLen-1] = '\0';
-		PE1ReadLen = PE1Fasta.ReadSequence(szPE1ReadBuff,sizeof(szPE1ReadBuff)-1);
+		PE1ReadLen = PE1Fasta.ReadSequence(szPE1ReadBuff,sizeof(szPE1ReadBuff)-1); // an observed issue is that some fastq triming toolkits can trim out the complete sequence leaving the descriptor imeediately followed by another descriptor with no sequence present 
 		if(PE1ReadLen < 0 || PE1ReadLen == eBSFFastaDescr || PE1ReadLen > cMaxReadLen)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Problem parsing sequence after %d reads parsed",PE1NumDescrReads);
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Last descriptor parsed: %s",szPE1DescrBuff);
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Problem parsing PE1 sequence after %d reads parsed (pre-filtering) from file: '%s'",PE1NumDescrReads,pszPE1File);
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Last PE1 descriptor parsed: %s",szPE1DescrBuff);
+			if(Rslt < eBSFSuccess)
+				{
+				while(PE1Fasta.NumErrMsgs())
+					gDiagnostics.DiagOut(eDLFatal, gszProcName, PE1Fasta.GetErrMsg());
+				}
 			PE1Fasta.Close();
 			if(bIsPairReads)
 				PE2Fasta.Close();
@@ -11965,9 +11971,22 @@ while((Rslt = (teBSFrsltCodes)(PE1ReadLen = PE1Fasta.ReadSequence(szPE1ReadBuff,
 			{
 			if((Rslt = (teBSFrsltCodes)(PE2ReadLen = PE2Fasta.ReadSequence(szPE2ReadBuff,sizeof(szPE2ReadBuff)-1,true,false))) <= eBSFSuccess)
 				{
-				gDiagnostics.DiagOut(eDLFatal,gszProcName,"Problem parsing sequence after %d reads parsed",PE2NumDescrReads);
+				gDiagnostics.DiagOut(eDLWarn,gszProcName,"Successfully parsed %d PE1 descriptors (pre-filtering) from file: '%s'",PE1NumDescrReads,pszPE1File);
+				gDiagnostics.DiagOut(eDLWarn,gszProcName,"Only able to parse corresponding %d PE2 descriptors (pre-filtering) from file: '%s'",PE2NumDescrReads,pszPE2File);
+				if(PE2ReadLen == 0)
+					gDiagnostics.DiagOut(eDLFatal,gszProcName,"Expected matching numbers of PE1 and PE2 (pre-filtering) descriptors");
+				else
+					{
+					if(Rslt < eBSFSuccess)
+						{
+						while(PE2Fasta.NumErrMsgs())
+							gDiagnostics.DiagOut(eDLFatal, gszProcName, PE2Fasta.GetErrMsg());
+						}
+					}
+				if(PE1NumDescrReads)
+					gDiagnostics.DiagOut(eDLFatal,gszProcName,"Last PE1 descriptor parsed: %s",szPE1DescrBuff);
 				if(PE2NumDescrReads)
-					gDiagnostics.DiagOut(eDLFatal,gszProcName,"Last descriptor parsed: %s",szPE2DescrBuff);
+					gDiagnostics.DiagOut(eDLFatal,gszProcName,"Last PE2 descriptor parsed: %s",szPE2DescrBuff);
 				PE1Fasta.Close();
 				PE2Fasta.Close();
 				return(eBSFerrParse);
@@ -11984,7 +12003,7 @@ while((Rslt = (teBSFrsltCodes)(PE1ReadLen = PE1Fasta.ReadSequence(szPE1ReadBuff,
 				PE2ReadLen = PE2Fasta.ReadSequence(szPE2ReadBuff,sizeof(szPE2ReadBuff)-1);
 				if(PE2ReadLen < 0  || PE1ReadLen == eBSFFastaDescr  || PE1ReadLen > cMaxReadLen)
 					{
-					gDiagnostics.DiagOut(eDLFatal,gszProcName,"Problem parsing sequence after %d reads parsed",PE2NumDescrReads);
+					gDiagnostics.DiagOut(eDLFatal,gszProcName,"Problem PE2 parsing sequence after %d reads parsed (pre-filtering) from file: '%s'",PE2NumDescrReads,pszPE2File);
 					gDiagnostics.DiagOut(eDLFatal,gszProcName,"Last descriptor parsed: %s",szPE2DescrBuff);
 					PE1Fasta.Close();
 					PE2Fasta.Close();
@@ -12337,6 +12356,7 @@ while((Rslt = (teBSFrsltCodes)(PE1ReadLen = PE1Fasta.ReadSequence(szPE1ReadBuff,
 		return(eBSFerrParse);
 		}
 	}
+
 if(Rslt != eBSFSuccess)
 	{
 	if(m_TermBackgoundThreads == 0)

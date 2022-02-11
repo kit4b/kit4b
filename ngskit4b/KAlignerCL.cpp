@@ -214,7 +214,7 @@ struct arg_file *LogFile = arg_file0("F","log","<file>",		"diagnostics log file"
 
 struct arg_int *pmode = arg_int0("m","mode","<int>",		    "alignment processing mode: 0 - standard sensitivity, 1 - more sensitive (slower), 2 - ultra sensitive (slowest), 3 - less sensitive (quicker)");
 
-struct arg_int* format = arg_int0("M", "format","<int>",		"output format: 0 - SAM (BAM) format with accepted aligned, 1 - SAM (BAM) format with all reads, 2 - UCSC BED (default is 0)");
+struct arg_int* format = arg_int0("M", "format","<int>",		"output format: 0 - SAM (BAM) format with accepted aligned, 1 - SAM (BAM) format with all reads, 2 - UCSC BED, 3 - Haplotype PBA (default is 0)");
 struct arg_int *peproc = arg_int0("U","pemode","<int>",		    "paired end processing mode: 0 - none, 1 - paired end with recover orphan ends, 2 - paired end no orphan recovery, 3 - paired end with recover orphan ends treating orphan ends as SE, 4 - paired end no orphan recovery treating orphan ends as SE (default: 0)");
 
 struct arg_lit  *bisulfite = arg_lit0("b","bisulfite",          "process for bisulfite methylation patterning");

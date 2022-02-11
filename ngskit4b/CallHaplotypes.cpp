@@ -102,7 +102,7 @@ struct arg_int* grphapclustdif = arg_int0("G", "grphapclustdif", "<int>", "haplo
 struct arg_file *founderfiles = arg_filen("I", "founderfiles", "<file>", 0,cMaxFounderFileSpecs,"founder input BPA file(s), wildcards allowed, limit of 100 founder filespecs supported");
 struct arg_file *progenyfiles = arg_filen("i", "inprogenyfile", "<file>",0, cMaxProgenyFileSpecs, "progeny input BPA file(s), wildcards allowed, limit of 500 progeny filespecs supported");
 struct arg_file *maskbpafile = arg_file0("c", "inmaskbpa", "<file>", "optional masking input BPA file, or in mode 3 only - haplotype grouping specification file(s)");
-struct arg_file *outfile = arg_file1("o", "out", "<file>", "loci haplotype calls output prefix (outputs CSV, BED and WIG format)");
+struct arg_file *outfile = arg_file1("o", "out", "<file>", "loci haplotype calls output prefix (outputs CSV and WIG format)");
 struct arg_int *threads = arg_int0("T","threads","<int>","number of processing threads 0..64 (defaults to 0 which limits threads to maximum of 64 CPU cores)");
 struct arg_end *end = arg_end (200);
 
@@ -1192,6 +1192,7 @@ else
 		}
 	}
 Reset();
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "Completed processing");
 return(Rslt);
 }
 
@@ -1694,9 +1695,9 @@ tsAlleleStack* pCurAlleleStack;
 char* pszChrom;
 int32_t Fndr;
 size_t ASIdx;
-uint32_t AlleleIdx;
+int32_t AlleleIdx;
 uint8_t AlleleMsk;
-uint32_t Alleles;
+int32_t Alleles;
 
 if(m_pszOutBuffer == NULL)
 	{
@@ -1710,7 +1711,7 @@ if(m_pszOutBuffer == NULL)
 	}
 m_OutBuffIdx = 0;
 sprintf(szOutFile, "%s.anchors.%d.all.gwas", pszRsltsFileBaseName, m_ExprID);
-
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "Reporting anchors as GWAS to file '%s'", szOutFile);
  #ifdef _WIN32
 m_hOutFile = open(szOutFile, (O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC), (_S_IREAD | _S_IWRITE));
 #else
@@ -1742,7 +1743,7 @@ for(ASIdx = 0; ASIdx < m_UsedAlleleStacks; ASIdx++, pCurAlleleStack++)
 		}
 	AlleleMsk = 0x03;
 	Alleles = 0x00;
-	for(AlleleIdx = 0; AlleleIdx < 4; AlleleIdx++, AlleleMsk <<= 2)
+	for(AlleleIdx = 3; AlleleIdx >= 0; AlleleIdx--, AlleleMsk <<= 2)
 		{
 		if(pCurAlleleStack->NumAlleleFndrs[AlleleIdx] == 0)
 			continue;
@@ -1751,12 +1752,12 @@ for(ASIdx = 0; ASIdx < m_UsedAlleleStacks; ASIdx++, pCurAlleleStack++)
 	if(pCurAlleleStack->NumFndrs == 1)	// if just one founder then which one?
 	{
 		if(Bits256Test(0, pCurAlleleStack->ProcFndrs))
-			Fndr = 6;
+			Fndr = 3;
 		else
-			Fndr = 9;
+			Fndr = 6;
 	}
 	else
-		Fndr = 1; // both founders
+		Fndr = 9; // both founders
 	m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], "%s %d 0x%.4x 0.%d\n", pszChrom, pCurAlleleStack->Loci, Alleles, Fndr);
 	if((m_OutBuffIdx + 1000) > m_AllocOutBuff)
 		{
@@ -1791,6 +1792,7 @@ if(m_hOutFile != -1)
 	close(m_hOutFile);
 	m_hOutFile = -1;
 	}
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "Completed reporting anchors as GWAS to file '%s'", szOutFile);
 return(eBSFSuccess);
 }
 
@@ -1805,8 +1807,7 @@ char* pszChrom;
 uint32_t FndrIdx;
 uint8_t NumFndrs;
 size_t ASIdx;
-uint32_t AlleleIdx;
-uint8_t AlleleMsk;
+int32_t AlleleIdx;
 
 if(m_pszOutBuffer == NULL)
 	{
@@ -1820,7 +1821,7 @@ if(m_pszOutBuffer == NULL)
 	}
 m_OutBuffIdx = 0;
 sprintf(szOutFile, "%s.anchors.%d.all.csv", pszRsltsFileBaseName, m_ExprID);
-
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "Reporting anchors as CVS to file '%s'", szOutFile);
 #ifdef _WIN32
 	m_hOutFile = open(szOutFile, (O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC), (_S_IREAD | _S_IWRITE));
 #else
@@ -1850,38 +1851,37 @@ for(ASIdx = 0; ASIdx < m_UsedAlleleStacks; ASIdx++, pCurAlleleStack++)
 		pszChrom = LocateChrom(pCurAlleleStack->ChromID);
 		PrevChromID = pCurAlleleStack->ChromID;
 		}
+	// PBA at a single loci is packed into a single 8bit byte: Allele A in bits 7.6, C in bits 5.4, G in bits 3.2, T in bits 1.0
 	BinAlleles = 0;
-	AlleleMsk = 0x03;
-	for(AlleleIdx = 0; AlleleIdx < 4; AlleleIdx++, AlleleMsk <<= 2)
+	for(AlleleIdx = 3; AlleleIdx >= 0; AlleleIdx--)
 		{
 		if(pCurAlleleStack->NumAlleleFndrs[AlleleIdx] == 0)
 			{
-			szAlleles[AlleleIdx] = '.';
+			szAlleles[3-AlleleIdx] = '.';
 			continue;
 			}
 		switch(AlleleIdx) {
-			case 0:
-				szAlleles[AlleleIdx] = 'A';
+			case 3:
+				szAlleles[3-AlleleIdx] = 'A';
 				BinAlleles |= 0x01;
 				break;
-			case 1:
-				szAlleles[AlleleIdx] = 'C';
+			case 2:
+				szAlleles[3-AlleleIdx] = 'C';
 				BinAlleles |= 0x02;
 				break;
-			case 2:
-				szAlleles[AlleleIdx] = 'G';
+			case 1:
+				szAlleles[3-AlleleIdx] = 'G';
 				BinAlleles |= 0x04;
 				break;
-			case 3:
-				szAlleles[AlleleIdx] = 'T';
+			case 0:
+				szAlleles[3-AlleleIdx] = 'T';
 				BinAlleles |= 0x08;
 				break;
 			}
 		}
-	szAlleles[AlleleIdx] = '\0';
-	AlleleMsk = 0x03;
+	szAlleles[4] = '\0';
 	m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], "\n%s,%d,%d,\"%s\"", pszChrom, pCurAlleleStack->Loci, BinAlleles, szAlleles);
-	for(AlleleIdx = 0; AlleleIdx < 4; AlleleIdx++, AlleleMsk <<= 2)
+	for(AlleleIdx = 3; AlleleIdx >= 0; AlleleIdx--)
 		{
 		if((NumFndrs = pCurAlleleStack->NumAlleleFndrs[AlleleIdx]) == 0)
 			{
@@ -1935,6 +1935,7 @@ if(m_hOutFile != -1)
 	close(m_hOutFile);
 	m_hOutFile = -1;
 	}
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "Completed reporting anchors as CVS to file '%s'", szOutFile);
 return(eBSFSuccess);
 }
 
@@ -1964,6 +1965,7 @@ if(m_pszOutBuffer == NULL)
 	m_AllocOutBuff = cOutBuffSize;
 	}
 m_OutBuffIdx = 0;
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "Reporting haplotypes as GWAS to file '%s'", szOutFile);
 sprintf(szOutFile, "%s.haplotypes.%d.%s.%s.gwas", pszRsltsFileBaseName, m_ExprID, LocateReadset(ReadsetID), bRaw ? "raw" : "imputed");
 #ifdef _WIN32
 	m_hOutFile = open(szOutFile, (O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC), (_S_IREAD | _S_IWRITE));
@@ -2054,6 +2056,7 @@ if(m_hOutFile != -1)
 	close(m_hOutFile);
 	m_hOutFile = -1;
 	}
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "Completed reporting haplotypes as GWAS to file '%s'", szOutFile);
 return(eBSFSuccess);
 }
 
@@ -2153,6 +2156,7 @@ if(m_pszOutBuffer == NULL)
 	}
 	m_AllocOutBuff = cOutBuffSize;
 }
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "Reporting matrix as CSV to file '%s'", szOutFile);
 m_OutBuffIdx = 0;
 sprintf(szOutFile, "%s.%d.%s.matrix.csv", pszRsltsFileBaseName,m_ExprID,bRaw ? "raw" : "inputed");
 #ifdef _WIN32
@@ -2272,7 +2276,7 @@ if(m_hOutFile != -1)
 		close(m_hOutFile);
 		m_hOutFile = -1;
 	}
-
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "Completed reporting matrix as CSV to file '%s'", szOutFile);
 return(eBSFSuccess);
 }
 
@@ -2340,8 +2344,9 @@ for(AlleleStackIdx = 0; AlleleStackIdx < m_UsedAlleleStacks; AlleleStackIdx++, p
 		NumAcceptAlleles = 0;
 		bAlleleAccept = false;
 
+		// Note: Allele A in bits 7.6, C in bits 5.4, G in bits 3.2, T in bits 1.0
 		AlleleMsk = 0x03;
-		for(AlleleIdx = 0; AlleleIdx < 4; AlleleIdx++, AlleleMsk <<= 2)
+		for(AlleleIdx = 0; AlleleIdx < 4; AlleleIdx++, AlleleMsk <<= 2) // iterating from allele T (AlleleIdx = 0) through to allele A (AlleleIdx = 3)
 			{
 			Allele = (ProgenyAlleles & AlleleMsk) >> (AlleleIdx * 2);
 
@@ -3013,6 +3018,8 @@ return(NULL);
 
 
 	// load and parse haplotype grouping bin specification file
+    // This file specifies grouping bins for specific regions on chromosomes starting at requested loci of specified length. The number of bins in that region is specified and required maximal clustering distance
+    // Thus regions of interest can easily be covered without having to specify explicitly each bin in that region
 int								 // eBSFSuccess or error
 CCallHaplotypes::LoadHHGBinSpecs(char* pszInFile)  // load grouping specifications from this file
 
@@ -3020,16 +3027,18 @@ CCallHaplotypes::LoadHHGBinSpecs(char* pszInFile)  // load grouping specificatio
 int Rslt;
 int32_t CurLineNumber;
 int32_t NumFields;
-int32_t StartLoci;
+int32_t RegionStartLoci;
+int32_t NumBins;
 int32_t BinSize;
+int32_t RegionLen;
 int32_t Distance;
 char *pszChrom;
 int32_t ChromID;
 int32_t CurChromID;
 tsChromMetadata* pChromMetadata;
 int32_t NumUnrecognisedChroms;
-int32_t NumRangeErrs;
-int32_t NumRangeTruncs;
+int32_t NumRegionErrs;
+int32_t NumRegions;
 int32_t NumHGBinSpecs;
 
 if(m_pCSVFile != NULL) // should be, but better to be sure!
@@ -3043,7 +3052,7 @@ if((m_pCSVFile = new CCSVFile) == NULL)
 	Reset();
 	return(eBSFerrObj);
 	}
-m_pCSVFile->SetMaxFields((cMaxFounderReadsets * 2) + 4); // allows a previously generated haplotype grouping file to be used as input, loads all fields 
+m_pCSVFile->SetMaxFields(10); // only actually processing 1st 5 fields: chrom,region start loci, bin size, number of bins, distance 
 
 if((Rslt = m_pCSVFile->Open(pszInFile)) != eBSFSuccess)
 	{
@@ -3056,37 +3065,36 @@ NumHGBinSpecs = 0;
 CurLineNumber = 0;
 CurChromID = 0;
 pChromMetadata = NULL;
+NumRegions = 0;
 NumUnrecognisedChroms = 0;
-NumRangeErrs = 0;
-NumRangeTruncs = 0;
+NumRegionErrs = 0;
 
 while((Rslt = m_pCSVFile->NextLine()) > 0)		// onto next line containing fields
 	{
 	CurLineNumber++;
-	if((NumFields = m_pCSVFile->GetCurFields()) < 4)	// must contain at least 4 fields
+	if((NumFields = m_pCSVFile->GetCurFields()) < 5)	// must contain at least 5 fields
 		{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Haplotype group bin specification file '%s' expected to contain a minimum of 4 fields, it contains %d at line %d", pszInFile, NumFields, CurLineNumber);
 		Reset();
 		return(eBSFerrParse);
 		}
 
-	// 1st row is expected to be a header row
+	// 1st row may be a header row, if so then skip this row
 	if(CurLineNumber == 1 && m_pCSVFile->IsLikelyHeaderLine())
 		continue;
 	m_pCSVFile->GetText(1, &pszChrom);
 	if(pszChrom == NULL || pszChrom[0] == '\0')
 		{
-		if(++NumUnrecognisedChroms <= 20)
-			gDiagnostics.DiagOut(eDLWarn, gszProcName, "Unrecognised chromosome/sequence at line %d in file '%s', sloughed", CurLineNumber, pszInFile);
+		if(++NumUnrecognisedChroms <= 100)
+			gDiagnostics.DiagOut(eDLWarn, gszProcName, "Unrecognised chromosome/sequence at line %d in file '%s', region sloughed", CurLineNumber, pszInFile);
 		continue;
 		}
-
 
 	// is chromosome known?
 	if((ChromID = LocateChrom(pszChrom)) <= 0)
 		{
-		if(++NumUnrecognisedChroms <= 20)
-			gDiagnostics.DiagOut(eDLWarn, gszProcName, "Unrecognised chromosome/sequence '%s' at line %d in file '%s', sloughed", pszChrom, CurLineNumber, pszInFile);
+		if(++NumUnrecognisedChroms <= 100)
+			gDiagnostics.DiagOut(eDLWarn, gszProcName, "Unrecognised chromosome/sequence '%s' at line %d in file '%s', region sloughed", pszChrom, CurLineNumber, pszInFile);
 		continue;
 		}
 
@@ -3096,78 +3104,93 @@ while((Rslt = m_pCSVFile->NextLine()) > 0)		// onto next line containing fields
 		pChromMetadata = LocateChromMetadataFor(1, ChromID);
 		CurChromID = ChromID;
 		}
-	m_pCSVFile->GetInt(2, &StartLoci);
-	if(StartLoci >= 0 && (StartLoci >= pChromMetadata->ChromLen)) // silently clamp
+	if(pChromMetadata->ChromLen < 10)
 		{
-		if(++NumRangeTruncs <= 20)
-			{
-			gDiagnostics.DiagOut(eDLWarn, gszProcName, "Chromosome/sequence '%s' has size: %d, referenced in file '%s' at line: %d", pszChrom, pChromMetadata->ChromLen, pszInFile, CurLineNumber);
-			gDiagnostics.DiagOut(eDLWarn, gszProcName, "Clamped start loci, originally '%d', to be '%d'", StartLoci, pChromMetadata->ChromLen - 1);
-			}
-		StartLoci = pChromMetadata->ChromLen - 1;
+		if(++NumUnrecognisedChroms <= 100)
+			gDiagnostics.DiagOut(eDLWarn, gszProcName, "Chromosome '%s' with length '%d' is smaller than minimum sized bin of 10 at line %d in file '%s', region sloughed", pszChrom, pChromMetadata->ChromLen, CurLineNumber, pszInFile);
+		continue;
 		}
 
-	if(StartLoci < 0)
+	m_pCSVFile->GetInt(2, &RegionStartLoci);
+	if(RegionStartLoci < 0 || (RegionStartLoci + 10 > pChromMetadata->ChromLen))
 		{
-		if(++NumRangeErrs <= 100)
+		if(++NumRegionErrs <= 100)
 			{
 			gDiagnostics.DiagOut(eDLWarn, gszProcName, "Chromosome/sequence '%s' has size: %d, referenced in file '%s' at line: %d", pszChrom, pChromMetadata->ChromLen, pszInFile, CurLineNumber);
-			gDiagnostics.DiagOut(eDLWarn, gszProcName, "StartLoci '%d' outside of allowed range 0..%d', sloughed", StartLoci, pChromMetadata->ChromLen - 1);
+			gDiagnostics.DiagOut(eDLWarn, gszProcName, "Region start loci '%d' must be in range 0..'%d' (minimum bin size is 10), region sloughed", RegionStartLoci, pChromMetadata->ChromLen - 10);
 			}
 		continue;
 		}
 
 	m_pCSVFile->GetInt(3, &BinSize);
-	if(BinSize > 0 && (BinSize + StartLoci > pChromMetadata->ChromLen)) // silently clamp
+	if(BinSize < 10 || (BinSize + RegionStartLoci > pChromMetadata->ChromLen))    // lower limit of 10 for bin sizes
 		{
-		if(++NumRangeTruncs <= 20)
+		if(++NumRegionErrs <= 100)
 			{
 			gDiagnostics.DiagOut(eDLWarn, gszProcName, "Chromosome/sequence '%s' has size: %d, referenced in file '%s' at line: %d", pszChrom, pChromMetadata->ChromLen, pszInFile, CurLineNumber);
-			gDiagnostics.DiagOut(eDLWarn, gszProcName, "Clamped bin size, originally '%d', to be '%d'", BinSize, pChromMetadata->ChromLen - StartLoci);
-			}
-		BinSize = pChromMetadata->ChromLen - StartLoci;
-		}
-	if(BinSize < 1)
-		{
-		if(++NumRangeErrs <= 100)
-			{
-			gDiagnostics.DiagOut(eDLWarn, gszProcName, "Chromosome/sequence '%s' has size: %d, referenced in file '%s' at line: %d", pszChrom, pChromMetadata->ChromLen, pszInFile, CurLineNumber);
-			gDiagnostics.DiagOut(eDLWarn, gszProcName, "Bin size '%d' starting from %d is outside of allowed range 1..%d'', sloughed", BinSize, StartLoci, pChromMetadata->ChromLen - StartLoci);
+			gDiagnostics.DiagOut(eDLWarn, gszProcName, "Bin size '%d' starting from %d is less than 10 or would extend past end of chromosome, region sloughed", BinSize, RegionStartLoci);
 			}
 		continue;
 		}
 
-	m_pCSVFile->GetInt(4, &Distance);
-	if(Distance > BinSize) // silently clamp
+	m_pCSVFile->GetInt(4, &NumBins);
+	if(NumBins < 1)
 		{
-		if(++NumRangeTruncs <= 20)
+		if(++NumRegionErrs <= 100)
 			{
 			gDiagnostics.DiagOut(eDLWarn, gszProcName, "Chromosome/sequence '%s' has size: %d, referenced in file '%s' at line: %d", pszChrom, pChromMetadata->ChromLen, pszInFile, CurLineNumber);
-			gDiagnostics.DiagOut(eDLWarn, gszProcName, "Clamped distance, originally '%d', to be '%d'", Distance, BinSize);
+			gDiagnostics.DiagOut(eDLWarn, gszProcName, "NumBins '%d' must be at least 1, region sloughed", NumBins);
 			}
-		Distance = BinSize;
+		continue;
 		}
+	RegionLen = NumBins * BinSize;
+	if(RegionLen + RegionStartLoci > pChromMetadata->ChromLen)
+		{
+		if(++NumRegionErrs <= 100)
+			{
+			gDiagnostics.DiagOut(eDLWarn, gszProcName, "Chromosome/sequence '%s' has size: %d, referenced in file '%s' at line: %d", pszChrom, pChromMetadata->ChromLen, pszInFile, CurLineNumber);
+			gDiagnostics.DiagOut(eDLWarn, gszProcName, "Region size %d (%d bins * %d binsize) + region start loci %d  would extend past end of chromosome, sloughed'", RegionLen, NumBins, BinSize,RegionStartLoci);
+			}
+		continue;
+		}
+
+	m_pCSVFile->GetInt(5, &Distance);
 	if(Distance < 1)
 		{
-		if(++NumRangeErrs <= 100)
+		if(++NumRegionErrs <= 100)
 			{
 			gDiagnostics.DiagOut(eDLWarn, gszProcName, "Chromosome/sequence '%s' has size: %d, referenced in file '%s' at line: %d", pszChrom, pChromMetadata->ChromLen, pszInFile, CurLineNumber);
-			gDiagnostics.DiagOut(eDLWarn, gszProcName, "Distance '%d' must be at least 1, if more will be silently limited to the maximum allowed '%d', sloughed", Distance, BinSize);
+			gDiagnostics.DiagOut(eDLWarn, gszProcName, "Distance '%d' must be at least 1, region sloughed", Distance);
 			}
 		continue;
 		}
 
-	if(AddHGBinSpec(ChromID, StartLoci, BinSize, Distance) < 1)
+	if(Distance >= BinSize)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddHGBinSpec(%d,%d,%d,%d) returned unrecoverable memory allocation error,parsing file '%s' at line %d",ChromID, StartLoci, BinSize, Distance, pszInFile, CurLineNumber);
-		Reset();
-		return(eBSFerrParse);
+		if(++NumRegionErrs <= 100)
+			{
+			gDiagnostics.DiagOut(eDLWarn, gszProcName, "Chromosome/sequence '%s' has size: %d, referenced in file '%s' at line: %d", pszChrom, pChromMetadata->ChromLen, pszInFile, CurLineNumber);
+			gDiagnostics.DiagOut(eDLWarn, gszProcName, "Group clustering centroid distance '%d' must be less than the binsize '%d', region sloughed", Distance, BinSize);
+			}
+		continue;
 		}
-	NumHGBinSpecs++;
+
+	while(NumBins--)
+		{
+		if(AddHGBinSpec(ChromID, RegionStartLoci, BinSize, Distance) < 1)
+			{
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddHGBinSpec(%d,%d,%d,%d) returned unrecoverable memory allocation error,parsing file '%s' at line %d", ChromID, RegionStartLoci, BinSize, Distance, pszInFile, CurLineNumber);
+			Reset();
+			return(eBSFerrParse);
+			}
+		RegionStartLoci += BinSize;
+		NumHGBinSpecs++;
+		}
+	NumRegions++;
 	}
 delete m_pCSVFile;
 m_pCSVFile = NULL;
-gDiagnostics.DiagOut(eDLInfo, gszProcName, "Parsed and accepted '%d' haplotype group bin specifications, clamped '%d', sloughed '%d', in file '%s', total accumulated '%d'", NumHGBinSpecs,NumRangeTruncs,NumUnrecognisedChroms+NumRangeErrs, pszInFile, m_UsedHGBinSpecs);
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "Parsed and accepted '%d' haplotype group region specifications resulting in '%d' bins for processing, sloughed '%d' regions, in file '%s', total accumulated bins '%d'",NumRegions, NumHGBinSpecs,NumUnrecognisedChroms+NumRegionErrs, pszInFile, m_UsedHGBinSpecs);
 return(m_UsedHGBinSpecs);
 }
 
@@ -3707,6 +3730,7 @@ if(m_pszOutBuffer == NULL)
 m_OutBuffIdx = 0;
 
 sprintf(szOutFile, "%s.haplotypegrouping.%d.%s.csv", m_pszRsltsFileBaseName, m_ExprID,pszIdent);
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "Reporting haplotype grouping to file '%s'", szOutFile);
 #ifdef _WIN32
 	m_hOutFile = open(szOutFile, (O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC), (_S_IREAD | _S_IWRITE));
 #else
@@ -3791,6 +3815,7 @@ if(m_hOutFile != -1)
 	close(m_hOutFile);
 	m_hOutFile = -1;
 	}
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "Completed reporting haplotype grouping to file '%s'", szOutFile);
 ReleaseSerialise();
 return(eBSFSuccess);
 }

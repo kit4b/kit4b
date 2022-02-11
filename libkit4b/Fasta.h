@@ -66,7 +66,8 @@ class CFasta : public CErrorCodes
 	tsFastaBlock *m_pCurFastaBlock;    // buffered fasta block currently being processed
 	tsFastaBlock m_FastaBlocks[cNumFastaBlocks];    // allow for at most cNumFastaBlocks buffered fasta file blocks; currently not implemented but in future will allow for readahead of blocks
 
-	bool m_DescrAvail;			// true if NEW descriptor available, reset by ReadDescriptor()
+	bool m_bForceRetSeq;        // true if 1bp dummy sequence is to be returned even if no sequence is actually available
+	bool m_bDescrAvail;			// true if NEW descriptor available, reset by ReadDescriptor()
 	char m_szDescriptor[cMaxFastaDescrLen+1];	// to hold last descriptor parsed
 	char m_szFastqSeq[cMaxFastQSeqLen+1];	    // to hold last FastQ sequence line parsed
 	char m_szFastqSeqQ[cMaxFastQSeqLen+1];	    // to hold last FastQ quality line parsed

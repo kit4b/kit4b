@@ -22,6 +22,7 @@ const int32_t cDfltProgTrim3 = 0;					// default is for no trimming - can trim P
 const int32_t cDfltWWRLProxWindow = 1000000;			// default for proximal window size for Wald-Wolfowitz runs test
 const int32_t cDlftOutliersProxWindow = 1000000;		// default for proximal window size for outliers reduction
 
+// PBA at a single loci is packed into a single 8bit byte: Allele A in bits 7.6, C in bits 5.4, G in bits 3.2, T in bits 1.0
 // following allele scoring thresholds are extracted from KAligner.h, you must ensure that these thresholds are updated each time KAligner is updated
 const double cScorePBA3MinProp = 0.75;		// score PBA as 3 if allele proportion of all counts is >= this threshold and coverage is >= 5
 const double cScorePBA2MinProp = 0.35;		// score PBA as 2 if allele proportion of all counts is >= this threshold and coverage is >= 5
@@ -41,6 +42,7 @@ const uint32_t cReallocHGBinSpecs = (cAllocHGBinSpecs/2);	// realloc haplotype g
 
 const int32_t cDfltGrpHapSize = 50000;  // default haplotype clustering over these sized KMer non-overlapping windows
 const int32_t cDfltGrpHapClustDif = 500;  // default haplotype clustering maximum group centroid clustering differential
+
 
 typedef enum TAG_eModeCSH {
 	eMCSHDefault = 0,		// processing mode 0: report progeny imputation haplotype matrix
@@ -90,7 +92,7 @@ typedef struct TAG_sAlleleStack {	// stacked informative - all dirac alleles and
 	uint8_t NumFndrs;		// number of founders
 	uint8_t NumProcFndrs;	// number of founders actually processed - some founders may be marked as not for processing
 	ts256Bits ProcFndrs;	// bitmap of founders actually processed
-	uint8_t NumAlleleFndrs[4];	// number of founders mapped in corresponding Alleles[] 
+	uint8_t NumAlleleFndrs[4];	// number of founders mapped in corresponding Alleles[], Alleles[0] allele T through to Alleles[3] allele A 
 	ts256Bits Alleles[4];	// bitmaps (founderA in bit0) for each founder allele contained in this stack - max of 256 founders per allele 
 } tsAlleleStack;
 

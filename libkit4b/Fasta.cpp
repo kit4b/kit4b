@@ -74,7 +74,8 @@ m_pCurFastaBlock = NULL;
 m_FileDescrOfs = 0;
 m_FileReadDescrOfs = 0;
 m_szDescriptor[0] = '\0';
-m_DescrAvail = false;
+m_bDescrAvail = false;
+m_bForceRetSeq = false;
 m_DescriptorLen = 0;
 m_szFile[0] = '\0';
 m_CurLineLen = 0;
@@ -896,7 +897,8 @@ m_FileReadDescrOfs = 0;
 m_FileDescrOfs = 0;
 m_CurLineLen = 0;
 m_szDescriptor[0] = '\0';
-m_DescrAvail = false;
+m_bDescrAvail = false;
+m_bForceRetSeq = false;
 m_DescriptorLen = 0;
 m_CurFastQParseLine = 0;
 return(eBSFSuccess);
@@ -974,11 +976,11 @@ if(m_bIsFastQ)
 	m_FastqSeqIdx = 0;
 	if((Rslt = ParseFastQblockQ()) <= eBSFSuccess)
 		return(Rslt);
-	m_DescrAvail = true;
+	m_bDescrAvail = true;
 	return(Rslt);
 	}
 
-m_DescrAvail = false;
+m_bDescrAvail = false;
 bInDescriptor = false;
 bMoreToDo = true;
 bSloughEOL = false;
@@ -1032,9 +1034,8 @@ while(bMoreToDo) {
 
 			if((Chr == '\n' || Chr == '\r'))	// end of Descriptor?
 				{
-				bInDescriptor = false;
 				m_szDescriptor[m_DescriptorLen] = '\0';
-				m_DescrAvail = true;
+				m_bDescrAvail = true;
 				return(eBSFFastaDescr);		 // let caller know current sequence has ended and a new descriptor line is available
 				}
 			if(m_DescriptorLen < cMaxFastaDescrLen)
@@ -1050,6 +1051,14 @@ while(bMoreToDo) {
 
 
 			case '>':					// start of a new fasta Descriptor
+				if(SeqLen == 0 && m_bForceRetSeq)       // ensuring that there will always be a simulated sequence of length 1 returned if no actual sequence between two descriptors
+					{
+					m_pCurFastaBlock->BuffIdx--;		// effective pushback of descriptor..
+					m_bForceRetSeq = false;
+					if(pRetSeq != NULL)
+						*(uint8_t *)pRetSeq = bSeqBase ? eBaseN : 'N';
+					return(1);
+					}
 				if(SeqLen)				// if sequence avail then return sequence, parse descriptor on next call..
 					{
 					m_pCurFastaBlock->BuffIdx--;		// effective pushback of descriptor..
@@ -1132,6 +1141,7 @@ while(bMoreToDo) {
 				if(pRetSeq == NULL || Max2Ret == 0 || SeqLen < Max2Ret)
 					continue;
 
+				m_bForceRetSeq = false;
 				if(pRetSeq != NULL && bSeqBase)
 					return(Ascii2Sense((char *)pRetSeq,SeqLen,(etSeqBase *)pRetSeq,RptMskUpperCase));
 				return(SeqLen);
@@ -1147,13 +1157,15 @@ if (m_pCurFastaBlock->BuffCnt < 0)
 	}
 if(SeqLen)
 	{
+	m_bForceRetSeq = false;
 	if(pRetSeq != NULL && bSeqBase)
 		return(Ascii2Sense((char *)pRetSeq,SeqLen,(etSeqBase *)pRetSeq,RptMskUpperCase));
 	return(SeqLen);
 	}
 if(bInDescriptor)
 	{
-	m_DescrAvail = true;
+	m_bForceRetSeq = false;
+	m_bDescrAvail = true;
 	m_szDescriptor[m_DescriptorLen] = '\0';
 	return(eBSFFastaDescr);
 	}
@@ -1184,7 +1196,7 @@ if(bFromStart)
 	{
 	m_pCurFastaBlock->BuffCnt = 0;
 	m_pCurFastaBlock->BuffIdx = 0;
-	m_DescrAvail = false;
+	m_bDescrAvail = false;
 	m_FastqSeqLen = 0;
 	m_FastqSeqIdx = 0;
 	m_FastqSeqQLen = 0;
@@ -1205,14 +1217,14 @@ if(pszPrefixToMatch != NULL && pszPrefixToMatch[0] != '\0')
 else
 	CmpLen = 0;
 Cnt = 0;
-while(m_DescrAvail || (Cnt = ReadSequence(Buffer,sizeof(Buffer)))>=0)
+while(m_bDescrAvail || (Cnt = ReadSequence(Buffer,sizeof(Buffer)))>=0)
 	{
-	m_DescrAvail = false;
+	m_bDescrAvail = false;
 	if(Cnt > 0 && Cnt != eBSFFastaDescr)			// slough sequences, looking for descriptor lines...
 		continue;	
 	if(!CmpLen || !strnicmp(m_szDescriptor,pszPrefixToMatch,CmpLen))
 		{
-		m_DescrAvail = true;
+		m_bDescrAvail = true;
 		return(eBSFSuccess);
 		}
 	}
@@ -1505,7 +1517,7 @@ CFasta::ReadSubsequence(etSeqBase *pSeq,	// where to return subsequence (NO TERM
 				 unsigned int SeqOfs,		// relative offset in sequence at which to read
 				 bool bFromStart)			// true: from start, false: from next sequence
 {
-char Buffer[0x7fff];
+char Buffer[0x2fff];
 unsigned int CurSeqOfs = 0;
 unsigned int SeqLen = 0;
 int Cnt;
@@ -1524,7 +1536,7 @@ if(bFromStart)
 	int FileOfs;
 	m_pCurFastaBlock->BuffCnt = 0;
 	m_pCurFastaBlock->BuffIdx = 0;
-	m_DescrAvail = false;
+	m_bDescrAvail = false;
 	if(m_gzFile != NULL)
 		FileOfs = gzseek(m_gzFile,0,SEEK_SET);
 	else
@@ -1537,7 +1549,7 @@ if(bFromStart)
 		}
 	}
 
-m_DescrAvail = false;
+m_bDescrAvail = false;
 CurSeqOfs = 0;
 while(SeqLen < MaxLen && (Cnt = ReadSequence(Buffer,sizeof(Buffer),true))>=0)
 	{
@@ -1545,7 +1557,7 @@ while(SeqLen < MaxLen && (Cnt = ReadSequence(Buffer,sizeof(Buffer),true))>=0)
 		{
 		if(SeqLen)		// any descriptor terminates the current sequence
 			{
-			m_DescrAvail = true;
+			m_bDescrAvail = true;
 			break;
 			}
 		continue;
@@ -1657,6 +1669,9 @@ return(SeqLen);
 
 // ReadDescriptor
 // Copies last parsed descriptor (truncates at MaxLen) into user supplied buffer.
+// Note: ReadSequence() is expected to return a sequence subsequent to a ReadDescriptor() call.
+//       Some fasta/fastq filtering processes can delete the complete sequence leaving descriptors immediately followed by another descriptor!
+//       Calls to ReadSequence() with user expecting a sequence to be returned would then fail, so a flag is set forcing ReadSequence() to always return at least 1bp immediately after a call to ReadDescriptor!!!
 int							// returns strlen of available descriptor or 0 if none
 CFasta::ReadDescriptor(char *pszDescriptor,int MaxLen)
 {
@@ -1666,7 +1681,7 @@ if(m_gzFile == NULL && m_hFile == -1)
 if(!m_bRead)
 	return(eBSFerrRead);
 
-if(!m_DescriptorLen || !m_DescrAvail)
+if(!m_DescriptorLen || !m_bDescrAvail)
 	return(eBSFerrParams);
 
 strncpy(pszDescriptor,m_szDescriptor,MaxLen);
@@ -1676,6 +1691,7 @@ if(m_DescriptorLen >= (unsigned int)MaxLen)
 	return(MaxLen-1);
 	}
 m_FileReadDescrOfs = m_FileDescrOfs;
+m_bForceRetSeq = true;
 return(m_DescriptorLen);
 }
 
@@ -1690,7 +1706,7 @@ if(m_gzFile == NULL && m_hFile == -1)
 if(!m_bRead)
 	return(eBSFerrRead);
 
-if(!m_DescrAvail)
+if(!m_bDescrAvail)
 	return(eBSFerrParams);
 
 if(m_FastqSeqQLen)

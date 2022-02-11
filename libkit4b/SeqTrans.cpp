@@ -28,6 +28,29 @@ Original 'BioKanga' copyright notice has been retained and immediately follows t
 #include "./commhdrs.h"
 #endif
 
+etSeqBase 
+CSeqTrans::MapAscii2Base(char AsciiBase)		// ascii base to map into corresponding etSeqBase
+{
+switch(AsciiBase) {
+	case 'a': case 'A':
+		return(eBaseA);
+	case 'c': case 'C':
+		return(eBaseC);
+	case 'g': case 'G':
+		return(eBaseG);
+	case 't': case 'T':
+		return(eBaseT);
+	case 'n': case 'N':
+		return(eBaseN);
+	case '-':
+		return(eBaseInDel);
+	case '\0':
+		return(eBaseEOS);
+	default:
+		break;
+	}
+return(eBaseUndef);
+}
 
 char CSeqTrans::MapBase2Ascii(etSeqBase Base,		// base to map 
 							char BaseN ,			// what to map eBaseN onto

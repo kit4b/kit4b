@@ -177,7 +177,7 @@
     <ClInclude Include="Benchmarker.h" />
     <ClInclude Include="CallHaplotypes.h" />
     <ClInclude Include="GBSmapSNPs.h" />
-    <ClInclude Include="haps2genotype.h" />
+    <ClInclude Include="pbafasta.h" />
     <ClInclude Include="seghaplotypes.h" />
     <ClInclude Include="repassemb.h" />
     <ClInclude Include="pangenome.h" />
@@ -216,7 +216,7 @@
     <ClCompile Include="Benchmarker.cpp" />
     <ClCompile Include="CallHaplotypes.cpp" />
     <ClCompile Include="GBSmapSNPs.cpp" />
-    <ClCompile Include="haps2genotype.cpp" />
+    <ClCompile Include="pbafasta.cpp" />
     <ClCompile Include="seghaplotypes.cpp" />
     <ClCompile Include="pangenome.cpp" />
     <ClCompile Include="repassemb.cpp" />
