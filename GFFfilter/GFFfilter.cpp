@@ -85,7 +85,7 @@ struct arg_int *ScreenLogLevel=arg_int0("S", "ScreenLogLevel",	"<int>","Level of
 struct arg_file *LogFile = arg_file0("F","log","<file>",		"diagnostics log file");
 
 struct arg_int *pmode = arg_int0("m","mode","<int>",		    "processing mode: 0 - output GFF format, 1 - output BED format (default 0)");
-struct arg_int *genes = arg_int0("g","genes","<int>",		    "filter records: 0 - all, 1 - protein genes, 2 - transposons, 3 - miRNAs, 4 - snoRNAs, 5 - tRNAs, 6 - pseudogenes (default: 1)");
+struct arg_int *genes = arg_int0("g","genes","<int>",		    "retain records: 0 - all, 1 - protein genes, 2 - transposons, 3 - miRNAs, 4 - snoRNAs, 5 - tRNAs, 6 - pseudogenes (default: 1)");
 struct arg_str *name = arg_str0("n","name","<string>",          "if BED output, attribute containing name identifier (default 'Name')");
 struct arg_dbl *scalefact=arg_dbl0("s", "scale","<dbl>",			"if BED output, score scaling factor (default 1.0)");
 struct arg_file *infile = arg_file1("i","in","<file>",			"input from this GFF file");

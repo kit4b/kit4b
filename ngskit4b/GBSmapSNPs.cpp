@@ -777,12 +777,12 @@ while ((Rslt = m_pInGBSFile->NextLine()) > 0)				// onto next line containing fi
 
 		if(bFa)
 			{
-			Bits256Set(0,ProgenyFndrAligns.ProgenyFounders);
+			BitsVectSet(0,ProgenyFndrAligns.ProgenyFounders);
 			ProgenyFndrAligns.NumProgenyFounders++;
 			}
 		if(bFb)
 			{
-			Bits256Set(1,ProgenyFndrAligns.ProgenyFounders);
+			BitsVectSet(1,ProgenyFndrAligns.ProgenyFounders);
 			ProgenyFndrAligns.NumProgenyFounders++;
 			}
 		AddProgenyFndrAligns(&ProgenyFndrAligns);
@@ -941,12 +941,12 @@ while ((Rslt = m_pInGBSFile->NextLine()) > 0)				// onto next line containing fi
 
 		if(bFa)
 			{
-			Bits256Set(0,ProgenyFndrAligns.ProgenyFounders);
+			BitsVectSet(0,ProgenyFndrAligns.ProgenyFounders);
 			ProgenyFndrAligns.NumProgenyFounders++;
 			}
 		if(bFb)
 			{
-			Bits256Set(1,ProgenyFndrAligns.ProgenyFounders);
+			BitsVectSet(1,ProgenyFndrAligns.ProgenyFounders);
 			ProgenyFndrAligns.NumProgenyFounders++;
 			}
 		AddProgenyFndrAligns(&ProgenyFndrAligns);
@@ -1182,7 +1182,7 @@ for(PFAIdx = 0; PFAIdx < m_UsedProgenyFndrAligns; PFAIdx++, pCurPFA++)
 	for(FndrIdx=0; FndrIdx < m_NumFounders; FndrIdx++)
 		{
 		if(m_Fndrs2Proc[FndrIdx] & 0x01)
-			m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], ",%d", Bits256Test(FndrIdx, pCurPFA->ProgenyFounders) ? 1 : 0);
+			m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], ",%d", BitsVectTest(FndrIdx, pCurPFA->ProgenyFounders) ? 1 : 0);
 		}
 	m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], "\n");
 	if((m_OutBuffIdx + 1000) > m_AllocOutBuff)
@@ -1336,7 +1336,7 @@ for(PFAIdx = 0; PFAIdx < m_UsedProgenyFndrAligns; PFAIdx++, pCurPFA++)
 				{
 				ProgHaplotype <<= 1;
 				if(m_Fndrs2Proc[FndrIdx-1] & 0x01)
-					ProgHaplotype |= Bits256Test(FndrIdx-1, pCurPFA->ProgenyFounders) ? 1 : 0;
+					ProgHaplotype |= BitsVectTest(FndrIdx-1, pCurPFA->ProgenyFounders) ? 1 : 0;
 				}
 			}
 		ProgenyHaplotypes[ProgIdx] = ProgHaplotype;
@@ -1437,66 +1437,58 @@ return(m_UsedProgenyFndrAligns);
 }
 
 inline void
-CGBSmapSNPs::Bits256Shl1(ts256Bits& Bits256)	// SHL 
+CGBSmapSNPs::BitsVectSet(uint16_t Bit,		// bit to set, range 0..4095
+			ts4096Bits & BitsVect)
 {
-uint64_t MSB;
-MSB = Bits256.Bits[2] >> 63; // MSB of word 2 into LSB of word 3 post SHL of word 3
-Bits256.Bits[3] <<= 1;
-Bits256.Bits[3] |= MSB & 0x01;
-MSB = Bits256.Bits[1] >> 63; // MSB of word 1 into LSB of word 2 post SHL of word 2
-Bits256.Bits[2] <<= 1;
-Bits256.Bits[2] |= MSB & 0x01;
-MSB = Bits256.Bits[0] >> 63; // MSB of word 0 into LSB of word 1 post SHL of word 1
-Bits256.Bits[1] <<= 1;
-Bits256.Bits[1] |= MSB & 0x01;
-Bits256.Bits[0] <<= 1;		  // LSB of word 0 will be set to 0 post the SHL
+BitsVect.Bits[Bit / 64] |= ((uint64_t)0x01 << (Bit % 64));
 }
 
 inline void
-CGBSmapSNPs::Bits256Set(uint8_t Bit,		// bit to set, range 0..255
-							ts256Bits& Bits256)
+CGBSmapSNPs::BitsVectReset(uint16_t Bit,		// bit to reset, range 0..4095
+		   ts4096Bits & BitsVect)
 {
-Bits256.Bits[Bit / 64] |= ((uint64_t)0x01 << (Bit % 64));
-}
-
-inline void
-CGBSmapSNPs::Bits256Reset(uint8_t Bit,		// bit to reset, range 0..255
-							  ts256Bits& Bits256)
-{
-Bits256.Bits[Bit / 64] &= ~((uint64_t)0x01 << (Bit % 64));
+BitsVect.Bits[Bit / 64] &= ~((uint64_t)0x01 << (Bit % 64));
 }
 
 
 inline bool
-CGBSmapSNPs::Bits256Test(uint8_t Bit,		// bit to test, range 0..255
-							 ts256Bits& Bits256)
+CGBSmapSNPs::BitsVectTest(uint16_t Bit,		// bit to test, range 0..4095
+			ts4096Bits & BitsVect)
 {
-	return(Bits256.Bits[Bit / 64] & ((uint64_t)0x01 << (Bit % 64)) ? true : false);
+return(BitsVect.Bits[Bit / 64] & ((uint64_t)0x01 << (Bit % 64)) ? true : false);
+}
+
+inline bool
+CGBSmapSNPs::BitsVectEqual(ts4096Bits & BitsVectA,	// compare for equality
+								ts4096Bits & BitsVectB)
+{
+if(!memcmp(&BitsVectA,&BitsVectB,sizeof(ts4096Bits)))
+	return(true);
+return(false);
 }
 
 inline void
-CGBSmapSNPs::Bits256Initialise(bool Set,			// if true then initialse all bits as set, otherwise initialise all bits as reset
-								   ts256Bits& Bits256)
+CGBSmapSNPs::BitsVectInitialise(bool Set,			// if true then initialse all bits as set, otherwise initialise all bits as reset
+				ts4096Bits & BitsVect)
 {
-uint64_t InitWith;
+uint8_t InitWith;
 if(Set)
-	InitWith = (uint64_t)(-1);
+	InitWith = 0xff;
 else
 	InitWith = 0;
-Bits256.Bits[0] = InitWith;
-Bits256.Bits[1] = InitWith;
-Bits256.Bits[2] = InitWith;
-Bits256.Bits[3] = InitWith;
+memset(&BitsVect,InitWith,sizeof(ts4096Bits));
 }
 
 inline uint32_t
-CGBSmapSNPs::Bits256Count(ts256Bits& Bits256)		// count number of set bits
+CGBSmapSNPs::BitsVectCount(ts4096Bits& BitsVect)		// count number of set bits
 {
 uint32_t Count = 0;
-uint64_t* pWord = Bits256.Bits;
+uint64_t *pWord = BitsVect.Bits;
 uint64_t Bit;
-for(uint32_t WordIdx = 0; WordIdx < 4; WordIdx++, pWord++)
+for(uint32_t WordIdx = 0; WordIdx < 64; WordIdx++, pWord++)
 	{
+	if(*pWord == 0)
+		continue;
 	for(Bit = 0x01; Bit != 0; Bit <<= 1)
 		if(*pWord & Bit)
 			Count++;
@@ -1505,15 +1497,56 @@ return(Count);
 }
 
 inline uint32_t
-CGBSmapSNPs::Bits256Combine(ts256Bits& Bits256A, ts256Bits& Bits256B)		// combine (effective |= ) bits in Bits256A with Bits256B with Bits256A updated 
+CGBSmapSNPs::BitsVectUnion(ts4096Bits &BitsVectA, ts4096Bits& BitsVectB)		// union (effective BitsVectA |= BitsVectB) bits in BitsVectA with BitsVectB with BitsVectA updated, returns number of bits set in BitsVectA 
 {
 uint32_t Count = 0;
-uint64_t* pWordA = Bits256A.Bits;
-uint64_t* pWordB = Bits256B.Bits;
+uint64_t* pWordA = BitsVectA.Bits;
+uint64_t* pWordB = BitsVectB.Bits;
 uint64_t Bit;
-for(uint32_t WordIdx = 0; WordIdx < 4; WordIdx++, pWordA++, pWordB++)
+for(uint32_t WordIdx = 0; WordIdx < 64; WordIdx++, pWordA++, pWordB++)
 	{
 	*pWordA |= *pWordB;
+	if(*pWordA == 0)
+		continue;
+	for(Bit = 0x01; Bit != 0; Bit <<= 1)
+		if(*pWordA & Bit)
+			Count++;
+	}
+return(Count);
+}
+
+
+inline uint32_t 
+CGBSmapSNPs::BitsVectIntersect(ts4096Bits& BitsVectA, ts4096Bits& BitsVectB)	// intersect (effective BitsVectA &= BitsVectB) of bits in BitsVectA with BitsVectB with BitsVectA updated, returns number of set bits in BitsVectA
+{
+uint32_t Count = 0;
+uint64_t* pWordA = BitsVectA.Bits;
+uint64_t* pWordB = BitsVectB.Bits;
+uint64_t Bit;
+for(uint32_t WordIdx = 0; WordIdx < 64; WordIdx++, pWordA++, pWordB++)
+	{
+	*pWordA &= *pWordB;
+	if(*pWordA == 0)
+		continue;
+	for(Bit = 0x01; Bit != 0; Bit <<= 1)
+		if(*pWordA & Bit)
+			Count++;
+	}
+return(Count);
+}
+
+uint32_t 
+CGBSmapSNPs::BitsVectClear(ts4096Bits& BitsVectA, ts4096Bits& BitsVectB)	    // clear bits in BitsVectA which are set in BitsVectB with BitsVectA updated, returns number of set bits in BitsVectA  
+{
+uint32_t Count = 0;
+uint64_t* pWordA = BitsVectA.Bits;
+uint64_t* pWordB = BitsVectB.Bits;
+uint64_t Bit;
+for(uint32_t WordIdx = 0; WordIdx < 64; WordIdx++, pWordA++, pWordB++)
+	{
+	*pWordA &= ~(* pWordB);
+	if(*pWordA == 0)
+		continue;
 	for(Bit = 0x01; Bit != 0; Bit <<= 1)
 		if(*pWordA & Bit)
 			Count++;

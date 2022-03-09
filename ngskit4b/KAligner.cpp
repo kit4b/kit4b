@@ -2096,7 +2096,7 @@ if(hChimerics != -1)
 	hChimerics = -1;
 	}
 if(pszLineBuff != NULL)
-	delete pszLineBuff;
+	delete []pszLineBuff;
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Completed reporting to file '%s'  %u chimeric flanks, %u 5', %u 3', %u both 5' and 3' flanks trimmed",pszChimericSeqFile,NumTrimmed,NumLeftTrimmed,NumRightTrimmed, NumLeftRightTrimmed);
 return(eBSFSuccess);
 }
@@ -2468,7 +2468,7 @@ if(SpliceJunctLen > 0)
 			else
 				NumSpliceAccepted += 1;
 			}
-		delete pSegJuncts;
+		delete []pSegJuncts;
 		}
 	else
 		if(NumSpliceJuncs > 0 && pCurHit != NULL)
@@ -2564,7 +2564,7 @@ if(microInDelLen > 0)
 			else
 				NumInDelsAccepted += 1;
 			}
-		delete pSegJuncts;
+		delete []pSegJuncts;
 		}
 	else
 		if(NumInDelJuncs > 0 && pCurHit != NULL)

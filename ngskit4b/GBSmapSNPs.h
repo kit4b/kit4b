@@ -16,10 +16,10 @@ typedef enum TAG_eModeGBSMapSNPs
 } eModeGBSMapSNPs;
 
 #pragma pack(1)
-typedef struct TAG_s256Bits {
-	uint8_t NumBits;		// total number of bits over all 64bit words in Bits256
-	uint64_t Bits[4];	// 256bits encoded into 4 x 64bit words
-} ts256Bits;
+typedef struct TAG_s4096Bits {
+	uint64_t Bits[64];		// 4096 bits encoded into 16 x 64bit words
+} ts4096Bits;
+
 
 typedef struct TAG_sProgenyFndrAligns {
 	uint32_t ExprID;				// alignment is part of this experiment
@@ -29,7 +29,7 @@ typedef struct TAG_sProgenyFndrAligns {
 	uint8_t Source;					// identifies source - 0: conversion of SNP to PBA haplotypes, 1: matrix A, 2: matrix B when comparing 2 matrices for haplotype consistency
 	uint8_t Alleles;				// progeny has these alleles present at the allelestack chrom.loci
 	uint8_t NumProgenyFounders;		// number of potential progeny founders in ProgenyParents bitmap
-	ts256Bits ProgenyFounders;		// bitmap of potential progeny founders - progeny has a minor/major allele shared with corresponding founder
+	ts4096Bits ProgenyFounders;		// bitmap of potential progeny founders - progeny has a minor/major allele shared with corresponding founder
 } tsProgenyFndrAligns;
 
 typedef struct TAG_sChromMapping
@@ -137,18 +137,21 @@ class CGBSmapSNPs {
 	int ReportHaplotypesByProgeny(char* pszRsltsFileBaseName,		// haplotype results are written to this file base name with 'ProgenyID.csv' appended
 								  uint32_t ReadsetID = 0);				// report on this progeny readset only, or if 0 then report on all progeny readsets
 
-	void	Bits256Shl1(ts256Bits& Bits256);
-	void	Bits256Set(uint8_t Bit,		// bit to set, range 0..255
-					   ts256Bits& Bits256);
-	void	Bits256Reset(uint8_t Bit,		// bit to reset, range 0..255
-						 ts256Bits& Bits256);
-	bool Bits256Test(uint8_t Bit,		// bit to test, range 0..255
-					 ts256Bits& Bits256);
-	void Bits256Initialise(bool Set,			// if true then initialse all bits as set, otherwise initialise all bits as reset
-						   ts256Bits& Bits256);
-	uint32_t Bits256Count(ts256Bits& Bits256);		// count number of set bits
+	void	BitsVectSet(uint16_t Bit,		// bit to set, range 0..4095
+				   ts4096Bits& BitsVect);
+	void	BitsVectReset(uint16_t Bit,		// bit to reset, range 0..4095
+					 ts4096Bits& BitsVect);
+	bool BitsVectEqual(ts4096Bits & BitsVectA,	// compare for equality
+								ts4096Bits & BitsVectB);
+	bool BitsVectTest(uint16_t Bit,		// bit to test, range 0..4095
+					ts4096Bits& BitsVect);
+	void BitsVectInitialise(bool Set,			// if true then initialse all bits as set, otherwise initialise all bits as reset
+										   ts4096Bits& BitsVect);
+	uint32_t BitsVectCount(ts4096Bits& BitsVect);		// count number of set bits
 
-	uint32_t Bits256Combine(ts256Bits& Bits256A, ts256Bits& Bits256B);		// combine (effective |= ) bits in Bits256A with Bits256B with Bits256A updated 
+	uint32_t BitsVectUnion(ts4096Bits& BitsVectA, ts4096Bits& BitsVectB);		// union (effective BitsVectA | BitsVectB) of bits in BitsVectA with BitsVectB with BitsVectA updated, returns number of set bits in BitsVectA  
+	uint32_t BitsVectIntersect(ts4096Bits& BitsVectA, ts4096Bits& BitsVectB);	// intersect (effective BitsVectA & BitsVectB) of bits in BitsVectA with BitsVectB with BitsVectA updated, returns number of set bits in BitsVectA  
+	uint32_t BitsVectClear(ts4096Bits& BitsVectA, ts4096Bits& BitsVectB);	    // clear bits in BitsVectA which are set in BitsVectB with BitsVectA updated, returns number of set bits in BitsVectA  
 
 	CMTqsort m_mtqsort;				// multi-threaded qsort
 	static int SortProgenyFndrAligns(const void* arg1, const void* arg2);

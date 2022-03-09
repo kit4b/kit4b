@@ -2,11 +2,14 @@
 
 const int32_t cMaxPBAWorkerThreads = 64;			// limiting number of worker threads to be a max of this many
 
-const int32_t cMaxFounderFileSpecs = 150;			// can accept at most this max number of input wildcarded founder file specs
+const int32_t cMaxFounderFileSpecs = 200;			// can accept at most this max number of input wildcarded founder file specs
 const int32_t cMaxProgenyFileSpecs = 500;			// can specify a max of this number of input wildcarded progeny file specs
 
-const int32_t cMaxFounderReadsets = 255;			// after input wildcard expansion then can accept at most this max number of founder readsets
-const int32_t cMaxProgenyReadsets = 2000;			// after input wildcard expansion then can specify at most this max number of progeny readsets
+const int32_t cMaxFounderReadsets = 4000;			// after input wildcard expansion then can accept at most this max number of founder readsets
+const int32_t cMaxProgenyReadsets = 4000;			// after input wildcard expansion then can specify at most this max number of progeny readsets
+
+const int cMaxIncludeChroms = 20;		// max number of include chromosomes regular expressions
+const int cMaxExcludeChroms = 20;		// max number of exclude chromosomes regular expressions
 
 const int32_t cMaxChromNames = 100000;				// max number of unique chromsome names allowed
 const int32_t cMaxChromMetadata = 1000000;			// allowing for a maximum of this many chromosomes/contigs over all founders
@@ -40,15 +43,20 @@ const uint32_t cAllocHGBinSpecs = 500000;  // initial allocation is to hold this
 const uint32_t cReallocHGBinSpecs = (cAllocHGBinSpecs/2);	// realloc haplotype group clustering in this sized increments - number of bins
 
 
-const int32_t cDfltGrpHapSize = 50000;  // default haplotype clustering over these sized KMer non-overlapping windows
-const int32_t cDfltGrpHapClustDif = 500;  // default haplotype clustering maximum group centroid clustering differential
-
+const int32_t cDfltGrpHapBinSize = 10000;  // default haplotype clustering over these sized KMer non-overlapping windows
+const int32_t cDfltMinCentClustDist = 10;  // default haplotype clustering minimum group centroid clustering differential
+const int32_t cDfltMaxCentClustDist = 10000;  // default haplotype clustering maximum group centroid clustering differential
+const int32_t cDfltMaxClustGrps = 10; // default number of haplotype groups
+const int32_t cMaxClustGrps = 200; // essentially no limits on numbers of haplotype groups, pointless if more!
+const int32_t cDfltNumHapGrpPhases = 10; // default is a max of 10 phases in which to converge group consensus when haplotype clustering into groups - a balance between optimal group consensus and processing resources.  
 
 typedef enum TAG_eModeCSH {
 	eMCSHDefault = 0,		// processing mode 0: report progeny imputation haplotype matrix
 	eMCSHRaw,               // report both raw and imputation haplotype matrices
 	eMCSHGWAS,				// additionally generate GWAS allowing visual comparisons
-	eMCSHFndrHaps,          // generating founder haplotypes only
+	eMCSHAllelicHapsGrps,   // generating allelic haplotype groupings
+	eMCSHCoverageHapsGrps,  // generating coverage haplotype groupings
+	eMCSHGrpDist2WIG,       // post-processing haplotype grouping centroid distances into WIG format
 	eMCSHPlaceHolder		// used to mark end of processing modes
 	}eModeCSH;
 
@@ -61,39 +69,50 @@ typedef enum TAG_eHapClass	// confidence in a haplotype for given founder being 
 
 #pragma pack(1)
 
-typedef struct TAG_s256Bits {
-	uint64_t Bits[4];		// 256bits encoded into 4 x 64bit words
-} ts256Bits;
+typedef struct TAG_s4096Bits {
+	uint64_t Bits[64];		// 4096 bits encoded into 64 x 64bit words
+} ts4096Bits;
 
-typedef struct TAG_sHGBinSpec { // haplotype group clustering is for this bin specification
-	int32_t ChromID;	    // haplotype group clustering is on this chromosome
-	int32_t BinID;          // uniquely identifies bin - globally unique 
-	int32_t StartLoci;      // bin starts at this loci
-	int32_t NumLoci;	    // covering this many loci
-	int32_t Distance;       // maximal centroid distance measure metric used for clustering
-	} tsHGBinSpec;
+
 
 typedef struct TAG_sHaplotypeGroup {
-	struct TAG_sHaplotypeGroup* pNxt; // pts to next haplotype group on same chromosome, NULL if last
 	int32_t Size;           // this instance is this size (bytes)
 	int32_t ChromID;	    // group is for this chromosome
 	int32_t StartLoci;		// group starting from this loci
 	int32_t NumLoci;	    // covering this many loci
-	int32_t Distance;       // maximal centroid distance measure metric used for clustering 
+	int32_t MinCentroidDistance; // centroid distance can range from this minimum and up to MaxCentroidDistance when attempting to limit number of haplotype groupings to MaxNumHaplotypeGroups
+	int32_t MaxCentroidDistance; // maximum centroid distance which can be used when attempting to meet MaxNumHaplotypeGroups constraint
+	int32_t MaxNumHaplotypeGroups; // attempt to constrain number of haplotype groups to be this maximum
+	int32_t CentroidDistance; // actual centroid distance used when limiting number of haplotype groupings to MaxNumHaplotypeGroups
+	int32_t MRAGrpChromID;	     // most recently updated group consensus PBAs was on this chrom - GenConsensusGroupBPA()
+	int32_t MRAGrpLoci;      // most recently updated group consensus PBAs was at this loci - GenConsensusGroupBPA()
+	uint8_t MRAGrpConsensus[256];    // most recently returned haplotype group consensus allele - GenConsensusGroupBPA()
 	int32_t NumFndrs;       // groups contain a total of this many founders
-	int32_t NumGroups;      // contains this many haplotype groups
-	ts256Bits HaplotypeGroup[1]; // could be multiple groups
+	int32_t NumHaplotypeGroups;      // contains this many haplotype groups
+	ts4096Bits HaplotypeGroup[1]; // could be (likely!) multiple groups
 	} tsHaplotypeGroup;
+
+typedef struct TAG_sHGBinSpec { // haplotype group clustering is for this bin specification
+	uint32_t Status;        // bin status  - 0x01 if currently processing, 0x02 if processing completed, 0x07 if processing completed but referenced chromosome not located       
+	int32_t ChromID;	    // haplotype group clustering is on this chromosome
+	int32_t BinID;          // uniquely identifies bin - globally unique 
+	int32_t StartLoci;      // bin starts at this loci
+	int32_t NumLoci;	    // covering this many loci
+	int32_t MinCentroidDistance; // centroid distance can range from this minimum and up to MaxCentroidDistance when attempting to limit number of haplotype groupings to MaxNumHaplotypeGroups
+	int32_t MaxCentroidDistance; // maximum centroid distance which can be used when attempting to meet MaxNumHaplotypeGroups constraint
+	int32_t MaxNumHaplotypeGroups; // attempt to constrain number of haplotype groups to be this maximum
+	tsHaplotypeGroup* pHaplotypeGroup; // haplotype groupings for this bin
+	} tsHGBinSpec;
 
 typedef struct TAG_sAlleleStack {	// stacked informative - all dirac alleles and not all alleles the same in stack -, e.g founder alleles differ at the given chrom and loci
 	uint32_t AlleleStackID; // uniquely identifies this allele stack instance
 	int32_t ChromID;		// stack is on this chromosome
 	int32_t Loci;			// and at this loci
-	uint8_t NumFndrs;		// number of founders
-	uint8_t NumProcFndrs;	// number of founders actually processed - some founders may be marked as not for processing
-	ts256Bits ProcFndrs;	// bitmap of founders actually processed
-	uint8_t NumAlleleFndrs[4];	// number of founders mapped in corresponding Alleles[], Alleles[0] allele T through to Alleles[3] allele A 
-	ts256Bits Alleles[4];	// bitmaps (founderA in bit0) for each founder allele contained in this stack - max of 256 founders per allele 
+	uint32_t NumFndrs;		// number of founders
+	uint32_t NumProcFndrs;	// number of founders actually processed - some founders may be marked as not for processing
+	ts4096Bits ProcFndrs;	// bitmap of founders actually processed
+	uint32_t NumAlleleFndrs[4];	// number of founders mapped in corresponding Alleles[], Alleles[0] allele T through to Alleles[3] allele A 
+	ts4096Bits Alleles[4];	// bitmaps (founderA in bit0) for each founder allele contained in this stack - max of 256 founders per allele 
 } tsAlleleStack;
 
 typedef struct TAG_FndrHapGroup {   // founder haplotype group - founders which have been grouped having same sequence of haplotype alleles
@@ -103,7 +122,7 @@ typedef struct TAG_FndrHapGroup {   // founder haplotype group - founders which 
 	int32_t Loci;		// starting from this loci
 	int32_t Len;        // is this length
 	int32_t NumFndrs;   // shared by this number of founders
-	ts256Bits Fndrs;    // bitmap of sharing founders
+	ts4096Bits Fndrs;    // bitmap of sharing founders
 	} tsFndrHapGroup;
 
 typedef struct TAG_sProgenyFndrAligns {
@@ -111,11 +130,11 @@ typedef struct TAG_sProgenyFndrAligns {
 	int32_t ReadsetID;				// identifies the progeny readset
 	int32_t ChromID;				// stack is on this chromosome
 	int32_t Loci;					// and at this loci
-	uint8_t FaHap;					// 0 : none assigned 
-	uint8_t FbHap;					// 0: none assigned 
+	uint32_t FaHap;					// 0 : none assigned 
+	uint32_t FbHap;					// 0: none assigned 
 	uint8_t Alleles;				// progeny has these alleles present at the allelestack chrom.loci
-	uint8_t NumProgenyFounders;		// number of potential progeny founders in ProgenyParents bitmap
-	ts256Bits ProgenyFounders;		// bitmap of potential progeny founders - progeny has a minor/major allele shared with corresponding founder
+	uint32_t NumProgenyFounders;	// number of potential progeny founders in ProgenyParents bitmap
+	ts4096Bits ProgenyFounders;		// bitmap of potential progeny founders - progeny has a minor/major allele shared with corresponding founder
 } tsProgenyFndrAligns;
 
 typedef struct TAG_sChromMetadata
@@ -134,7 +153,7 @@ typedef struct TAG_sReadsetMetadata
 int32_t ReadsetID;				// identifies from which readset these packed base alleles were generated
 char szExperimentID[100];		// sequencing experiment
 char szRefAssemblyID[100];		// alignments were against this target assembly
-uint8_t ReadsetType;			// 0: founder, 1: progeny, 2: control
+uint8_t ReadsetType;			// 0: primary or founder, 1: progeny, 2: control
 int32_t NumChroms;				// readset has this number of chromosomes
 uint32_t StartChromMetadataIdx;	// index of starting chrom metadata for this readset
 int32_t StartChromID;			// starting chrom for this readset
@@ -170,7 +189,7 @@ typedef struct TAG_sWorkerInstance {
 class CCallHaplotypes
 {
 	eModeCSH m_PMode;				// processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons (default 0)
-	int32_t m_Dbg;                  // whilst debugging then limit number of chromosomes loaded per PBA file to this many. -1 if normal processing, 0 if debug with no limits, > 0 debug sets upper limit
+	int32_t m_LimitPrimaryPBAs;    // limit number of loaded primary or founder PBA files to this many. 0: no limits, > 0 sets upper limit
 	uint32_t m_ExprID;				// assign this experiment identifier for this PBA analysis
 
 	int32_t m_FndrTrim5;			// trim this many aligned PBAs from 5' end of founder aligned segments - reduces false alleles due to sequencing errors
@@ -180,11 +199,20 @@ class CCallHaplotypes
 	bool m_bAllFndrsLociAligned;    // true if all founders at a given loci must have a PBA alignment for founders to be processed at that alignment - if false then only one founder need have a PBA alignment
 	int32_t m_WWRLProxWindow;		// proximal window size for Wald-Wolfowitz runs test
 	int32_t m_OutliersProxWindow;	// proximal window size for outliers reduction
-	int32_t m_GrpHapSize;           // when grouping into haplotypes (processing mode 3) then use this non-overlapping window size for accumulation of differentials between all founder PBAs
-	int32_t m_GrpHapCentClustDif;        // when grouping into haplotypes (processing mode 3) then use this maximum group centroid differential for clustering groups
 
+	int32_t m_NumHapGrpPhases;      // number of grouping phases - using more phases convergess the group consensus alleles but at the cost of processing times, optimal balance seems to be at 3 phases but this will be subject to change  
+	int32_t m_GrpHapBinSize;           // when grouping into haplotypes (processing mode 3) then use this non-overlapping bin size for accumulation of differentials between all founder PBAs
+	int32_t m_MinCentClustDist;       // haplotype groupings - in processing mode 3 only - minimum group centroid clustering distance (default 500, min 1, clamped to bin size)
+	int32_t m_MaxCentClustDist;        // haplotype groupings - in processing mode 3 only - maximum group centroid clustering distance (default mincentclustdist, clamped to bin size)
+	int32_t m_MaxClustGrps;          // haplotype groupings - in processing mode 3 only - targeted maximum number of groups (default 50)
 
-	uint64_t m_FndrsProcMap;			// bitmap (founder1 in bit position 0) corresponding to founders which are to be processed, if bit is not set then the corresponding founder is not to be processed
+	uint32_t m_WIGChromID;				// current WIG span is on this chromosome
+	uint32_t m_WIGRptdChromID;			// previously reported WIG chrom
+	uint32_t m_WIGSpanLoci;				// current WIG span starts at this loci
+	uint32_t m_WIGSpanLen;				// current span is this length
+	uint32_t m_WIGRptdSpanLen;			// previously reported WIG span length
+	uint64_t m_WIGSpanCnts;				// current span has accumulated this many counts
+
 	int32_t m_NumFndrsProcMap;			// number of founders in m_FndrsProcMap
 	int32_t m_NumFounders;				// number of founders
 	int32_t m_NumProgenies;				// number of progenies
@@ -218,7 +246,7 @@ class CCallHaplotypes
 	uint32_t m_AllocdAlleleStacks;		// number of allocated allele stacks
 	size_t m_AllocdAlleleStacksMem;		// current mem allocation size for m_pAlleleStacks
 	tsAlleleStack *m_pAlleleStacks;		// allocated to hold founder allele stacks
-
+	int32_t m_ProccessingBinID;         // most recent bin undergoing processing - processing may be incomplete
 	int32_t m_UsedHGBinSpecs;		    // number of actually used haplotype grouping bins
 	int32_t m_AllocdHGBinSpecs;		    // number of allocated ahaplotype grouping bins
 	size_t m_AllocdHGBinSpecsMem;		// current mem allocation size for m_pHGBinSpecs
@@ -235,7 +263,7 @@ class CCallHaplotypes
 #endif
 	tsWorkQueueEl *m_pWorkQueueEls;	// thread work queue elements - currently really a list that is iterated over but in future may be adapted to become a queue
 
-	uint8_t m_Fndrs2Proc[cMaxFounderReadsets];	// array of founders which are to be processed, indexed by FounderID-1. If LSB is set then that founder is marked for processing
+	uint32_t m_Fndrs2Proc[cMaxFounderReadsets];	// array of founders which are to be processed, indexed by FounderID-1. If LSB is set then that founder is marked for processing
 
 	uint32_t m_InNumProcessed;	// this number of input bytes have been processed
 	uint32_t m_InNumBuffered;	// currently buffering this many input bytes
@@ -246,9 +274,15 @@ class CCallHaplotypes
 	uint32_t m_AllocOutBuff;	// m_pszOutBuffer allocated to hold this many output bytes
 	uint8_t *m_pszOutBuffer;	// allocated for buffering output
 
+	uint32_t m_WIGBuffIdx;		// currently buffering this many output bytes
+	uint32_t m_AllocWIGBuff;	// m_pszOutBuffer allocated to hold this many output bytes
+	uint8_t *m_pszWIGBuff;	    // allocated for buffering output
+
 	int m_hInFile;				// input file handle
 	int m_hOutFile;				// file handle for writing results
+	int m_hWIGOutFile;				// file handle for writing results
 	CCSVFile *m_pCSVFile;       // holds optional user specified haplotype group specifications in processing mode 3
+	CCSVFile* m_pHGCSVFile;        // holds input previously generated haplotype grouping file for  post-processing
 
 	char* m_pszRsltsFileBaseName;	// output results file basename
 	char *m_pszMaskBPAFile;		// optional input masking BPA file, only process BPAs which are intersect of these BPAs and progeny plus founder BPAs
@@ -266,6 +300,28 @@ class CCallHaplotypes
 #endif
 
 	tsWorkerInstance m_WorkerInstances[cMaxPBAWorkerThreads];	// to hold all worker instance thread parameters
+
+	int m_NumIncludeChroms;				// number of RE include chroms
+	int m_NumExcludeChroms;				// number of RE exclude chroms
+
+	#ifdef _WIN32
+	Regexp *m_IncludeChromsRE[cMaxIncludeChroms];	// compiled regular expressions
+	Regexp *m_ExcludeChromsRE[cMaxExcludeChroms];
+	#else
+	regex_t m_IncludeChromsRE[cMaxIncludeChroms];	// compiled regular expressions
+	regex_t m_ExcludeChromsRE[cMaxExcludeChroms];
+	#endif
+
+	int CompileChromRegExprs(int	NumIncludeChroms,	// number of chromosome regular expressions to include
+		char **ppszIncludeChroms,		// array of include chromosome regular expressions
+		int	NumExcludeChroms,			// number of chromosome expressions to exclude
+		char **ppszExcludeChroms);		// array of exclude chromosome regular expressions
+
+	bool					// true if chrom is accepted, false if chrom not accepted
+		AcceptThisChromID(uint32_t ChromID);
+
+	bool					// true if chrom is accepted, false if chrom not accepted
+		AcceptThisChromName(char *pszChrom);
 
 	bool m_bMutexesCreated;		// will be set true if synchronisation mutexes have been created
 	int CreateMutexes(void);
@@ -290,8 +346,7 @@ class CCallHaplotypes
 	int	TerminateWorkerThreads(int WaitSecs = 120);	// allow at most this many seconds before force terminating threads
 
 	tsHGBinSpec*    // returned haplotype grouping bin specification, returns NULL if all bins on chromosome have been iterated
-		IterateHGBinSpecs(int32_t ChromID, // bin is on this chromosome
-			              int32_t BinID);    // previously iterated bin identifier, to access 1st bin on chromosome then pass 0 as the bin identifier 
+		IterateHGBinSpecs(int32_t BinID);    // previously iterated bin identifier, to access 1st bin then pass 0 as the bin identifier 
 
 	// load and parse haplotype grouping bin specification file
 	int								 // eBSFSuccess or error
@@ -299,8 +354,7 @@ class CCallHaplotypes
 
 	int32_t					// returned readset identifier (1..n) or < 1 if errors
 		LoadPBAFile(char* pszFile,		// load chromosome metadata and PBA data from this file
-			uint8_t ReadsetType,	// 0: founder, 1: progeny, 2: control
-			int32_t Dbg);                // whilst debugging then limit number of chromosomes loaded per PBA file to this many. -1 if normal processing, 0 if debug with no limits, > 0 debug sets upper limit
+			uint8_t ReadsetType);	// 0: founder, 1: progeny, 2: control
 
 	// trim 5' and 3' aligned segments within the PBAs attempting to reduce sequencing error induced false alleles
 	int			// returns number of non-trimmed loci in the pPBAs
@@ -362,7 +416,10 @@ class CCallHaplotypes
 		AddHGBinSpec(int32_t ChromID,	    // haplotype group clustering is on this chromosome
 			int32_t StartLoci,      // bin starts at this loci
 			int32_t NumLoci,	    // covering this many loci
-			int32_t Distance);       // maximal centroid distance measure metric used for clustering
+			int32_t MinCentroidDistance, // centroid distance can range from this minimum and up to MaxCentroidDistance when attempting to limit number of haplotype groupings to MaxNumHaplotypeGroups
+			int32_t MaxCentroidDistance, // maximum centroid distance which can be used when attempting to meet MaxNumHaplotypeGroups constraint
+			int32_t MaxNumHaplotypeGroups); // attempt to constrain number of haplotype groups to be this maximum
+
 
 
 	int ProcessProgenyPBAFile(char* pszProgenyPBAFile,	// load, process and call haplotypes for this progeny PBA file against previously loaded panel founder PBAs
@@ -380,35 +437,34 @@ class CCallHaplotypes
 
 	
 	int				// < 0 if errors, >=0 length of generated consensus
-		GenConsensusPBA(int32_t ChromSize,		// chromosome is this size
-			int32_t Loci,			// processing for allele stacks starting from this loci
-			int32_t MaxNumLoci,		// processing for generation of this maximum sized consensus PBAs
+		GenConsensusPBA(int32_t Loci,			// processing for allele stacks starting from this loci
+			int32_t NumLoci,		// processing for generation of this sized consensus PBAs
 			int32_t NumFndrs,		// number of founders to be processed 1st PBA at *pPBAs[0]
 			uint8_t* pFounderPBAs[], // pPBAs[] pts to chromosome PBAs, for each of the chromosome founder PBAs
 			uint8_t* pConsensusPBAs);     // ptr to preallocated sequence of length MaxNumLoci which is to be updated with consensus PBAs
 
 	uint8_t				// concensus PBA for founders in a group of which specified founder is a member at the requested loci
 		GenConsensusGroupPBA(int Founder, // consensus for all founders in same group as this founder
-			tsHaplotypeGroup** ppHaplotypes, // pts to first groupings in linked list of groupings, on return will be updated with pointer to haplotype grouping containing requesting loci
+			tsHaplotypeGroup* pHaplotypes, // pts to haplotype grouping expected to contain the chrom and loci
+			int32_t ChromID,        // requiring consensus for this chrom at Loci
 			int32_t Loci,			// requiring consensus at this loci
 			int32_t NumFndrs,		// number of founders to be processed 1st PBA at *pPBAs[0]
 			uint8_t* pFounderPBAs[]); // pPBAs[] pts to chromosome PBAs, for each of the chromosome founder PBAs
 
-	tsHaplotypeGroup * // returns allocated ptr to haplotype groups - allocated with 'new', free with 'delete'
+	tsHaplotypeGroup * // returns allocated ptr to haplotype groups - allocated with 'new', caller must free with 'delete'
 		GroupHaplotypes(int32_t ChromID, // grouping is on this chromosome
-			int32_t StartLoci, // grouping starts at this loci
-	              int32_t Length,     // grouping is over this many loci
-			uint32_t ThresDiff, // members of a given haplotype group must be within this maximal distance from all other group members
-			uint32_t* pFndrDiffs, // matrix counts of founder differentials
-			int32_t NumFndrs); // number of founders
+			          int32_t StartLoci, // grouping starts at this loci
+	                     int32_t Length,     // grouping is over this many loci
+			             int32_t MinCentroidDistance, // centroid distance can range from this minimum and up to MaxCentroidDistance when attempting to limit number of haplotype groupings to MaxNumGroups
+			             int32_t MaxCentroidDistance, // maximum centroid distance which can be used when attempting to meet MaxNumGroups constraint
+			             int32_t MaxNumGroups, // attempt to constrain number of haplotype groups to be this maximum
+			             uint32_t* pFndrDiffs, // matrix counts of founder differentials
+			             int32_t NumFndrs); // number of founders
 
 	int				// < 0 if errors, otherwise success
-		GenFounderHaplotypes(int32_t ChromID,	// processing is for this chromosome
-										  int32_t ChromSize,		// chromosome is this size
-										  int32_t Loci,			// processing for allele stacks starting from this loci
-										  int32_t MaxNumLoci,		// processing for this maximum number of loci
-										  int32_t NumFndrs,		// number of founders to be processed 1st PBA at *pPBAs[0]
-		                                  uint8_t* pFounderPBAs[]);	// pPBAs[] pts to chromosome PBAs, for each of the chromosome founder PBAs
+		GenHaplotypeGroups(tsHGBinSpec* pHGBinSpec,   // clustering using these specs
+			int32_t NumFndrs,		// number of founders to be processed 1st PBA at *pPBAs[0]
+			uint8_t* pFounderPBAs[]);	// pPBAs[] pts to chromosome PBAs, for each of the chromosome founder PBAs
 
 	int
 		AlignAlleleStacks(int32_t NumFndrs,			// number of founders to be processed against
@@ -452,22 +508,21 @@ class CCallHaplotypes
 			bool bNormalise=true);    // normalise for coverage, low coverage major alleles (2,0,0,0) are normalised to high coverage (3,0,0,0)
 
 
-	void	Bits256Shl1(ts256Bits& Bits256);
-	void	Bits256Set(uint8_t Bit,		// bit to set, range 0..255
-				   ts256Bits& Bits256);
-	void	Bits256Reset(uint8_t Bit,		// bit to reset, range 0..255
-					 ts256Bits& Bits256);
-	bool Bits256Equal(ts256Bits & Bits256A,	// compare for equality
-								ts256Bits & Bits256B);
-	bool Bits256Test(uint8_t Bit,		// bit to test, range 0..255
-					ts256Bits& Bits256);
-	void Bits256Initialise(bool Set,			// if true then initialse all bits as set, otherwise initialise all bits as reset
-										   ts256Bits& Bits256);
-	uint32_t Bits256Count(ts256Bits& Bits256);		// count number of set bits
+	void	BitsVectSet(uint16_t Bit,		// bit to set, range 0..4095
+				   ts4096Bits& BitsVect);
+	void	BitsVectReset(uint16_t Bit,		// bit to reset, range 0..4095
+					 ts4096Bits& BitsVect);
+	bool BitsVectEqual(ts4096Bits & BitsVectA,	// compare for equality
+								ts4096Bits & BitsVectB);
+	bool BitsVectTest(uint16_t Bit,		// bit to test, range 0..4095
+					ts4096Bits& BitsVect);
+	void BitsVectInitialise(bool Set,			// if true then initialse all bits as set, otherwise initialise all bits as reset
+										   ts4096Bits& BitsVect);
+	uint32_t BitsVectCount(ts4096Bits& BitsVect);		// count number of set bits
 
-	uint32_t Bits256Union(ts256Bits& Bits256A, ts256Bits& Bits256B);		// union (effective Bits256A | Bits256B) of bits in Bits256A with Bits256B with Bits256A updated, returns number of set bits in Bits256A  
-	uint32_t Bits256Intersect(ts256Bits& Bits256A, ts256Bits& Bits256B);	// intersect (effective Bits256A & Bits256B) of bits in Bits256A with Bits256B with Bits256A updated, returns number of set bits in Bits256A  
-	uint32_t Bits256Clear(ts256Bits& Bits256A, ts256Bits& Bits256B);	    // clear bits in Bits256A which are set in Bits256B with Bits256A updated, returns number of set bits in Bits256A  
+	uint32_t BitsVectUnion(ts4096Bits& BitsVectA, ts4096Bits& BitsVectB);		// union (effective BitsVectA | BitsVectB) of bits in BitsVectA with BitsVectB with BitsVectA updated, returns number of set bits in BitsVectA  
+	uint32_t BitsVectIntersect(ts4096Bits& BitsVectA, ts4096Bits& BitsVectB);	// intersect (effective BitsVectA & BitsVectB) of bits in BitsVectA with BitsVectB with BitsVectA updated, returns number of set bits in BitsVectA  
+	uint32_t BitsVectClear(ts4096Bits& BitsVectA, ts4096Bits& BitsVectB);	    // clear bits in BitsVectA which are set in BitsVectB with BitsVectA updated, returns number of set bits in BitsVectA  
 
 	CMTqsort m_mtqsort;				// multi-threaded qsort
 	static int SortAlleleStacks(const void* arg1, const void* arg2);
@@ -482,10 +537,22 @@ class CCallHaplotypes
 	int32_t ReportAnchorsAsGWAS(char* pszRsltsFileBaseName);		// generate a GWAS format file(s) for viewing marker anchors calls in IGV, useful for looking at associations with coverage etc
 	int32_t ReportAnchorsAsCSV(char* pszRsltsFileBaseName);		// generate a CSV format file(s) containing anchor (potential markers) loci
 
-	int32_t ReportHaplotypeGroups(char *pszIdent,           // file name suffix identifier - initially will be the chromosome name with each chrom in it's own file but in later releases could be some other reference
-		                      int32_t NumFndrs,             // total number of founders
-		                      int32_t NumHaplotypeGroups,       // number of haplotype groups in linked list pFirstHaplotypeGroups
-		                      tsHaplotypeGroup *pHaplotypeGroups); // first haplotype groupings, next is linked through pHaplotypeGroups->pNxt, last linked pNxt is NULL
+	int32_t ReportHaplotypeGroups(int32_t NumHaplotypes);         // number of haplotypes which have been grouped 
+
+
+	int  CSV2WIG(char* pszInFile, // input file containing haplotype groupings
+			char* pszOutFile); // where to write as WIG formated file
+
+	int  // simulating a in-memory PBA with PBA loci alleles replaced by coverage obtained from a WIG coverage file generated at the same time as the PBA file - enables haplotype coverage grouping
+		LoadPBACoverage(char* pszInPBA);   // file containing PBA, file name extension will be replaced with 'coverage.wig' which will be expected to be name of file containing the PBA coverage
+
+	void InitialiseWIGSpan(void);				// initialise WIG span vars to values corresponding to no spans having been previously reported
+	int CompleteWIGSpan(bool bWrite = false);	// close off any current WIG span ready to start any subsequent span, if bWrite is true then write to disk 
+	int AccumWIGCnts(uint32_t ChromID,	// accumulate wiggle counts into variableStep spans over this chromosome
+			uint32_t Loci,		// span is starting at this loci
+		    uint32_t BinLen,       // span bin is this length
+			uint32_t Cnts,		// has this many counts attributed to the bin
+			uint32_t MaxSpanLen = 10000000); // allow reported variableStep WIG spans to be continuous up this maximal length and then start another span
 
 	CStats m_Stats;					// used for determining statistical significance of individual founder unique counts relative to other founder counts
 
@@ -493,11 +560,14 @@ public:
 	CCallHaplotypes();
 	~CCallHaplotypes();
 	void Reset(void);	// resets class instance state back to that immediately following instantiation
-	int Process(eModeCSH PMode,	// processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons (default 0)
-			    int32_t Dbg,                // whilst debugging then limit number of chromosomes loaded per PBA file to this many. -1 if normal processing, 0 if debug with no limits, > 0 debug sets upper limit
+	int Process(eModeCSH PMode,	// processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons, 3: haplotype grouping, 4: post-process to WIG (default 0)
+			    int32_t LimitPrimaryPBAs,                // limit number of loaded primary or founder PBA files to this many. 0: no limits, > 0 sets upper limit
 		        int32_t ExprID,			// assign this experiment identifier for this PBA analysis
-			    int32_t GrpHapSize,           // when grouping into haplotypes (processing mode 3) then use this non-overlapping window size for accumulation of differentials between all founder PBAs
-                int32_t GrpHapCentClustDif,        // when grouping into haplotypes (processing mode 3) then use this maximum group centroid differential for clustering groups
+				int32_t GrpHapBinSize,           // when grouping into haplotypes (processing mode 3) then use this non-overlapping bin size for accumulation of differentials between all founder PBAs
+		        int32_t NumHapGrpPhases,         // number of phases over which to converge group consensus when haplotype clustering into groups - is a balance between optimal group consensus and processing resources.
+				int32_t MinCentClustDist,        // haplotype groupings - in processing mode 3 only - minimum group centroid clustering distance (default 500, min 1, clamped to bin size)
+				int32_t MaxCentClustDist,        // haplotype groupings - in processing mode 3 only - maximum group centroid clustering distance (default mincentclustdist, clamped to bin size)
+				int32_t MaxClustGrps,       // haplotype groupings - in processing mode 3 only - targeted maximum number of groups (default 50)
 				int32_t FndrTrim5,			// trim this many aligned PBAs from 5' end of founder aligned segments - reduces false alleles due to sequencing errors
 				int32_t FndrTrim3,			// trim this many aligned PBAs from 3' end of founder aligned segments - reduces false alleles due to sequencing errors
 				int32_t ProgTrim5,			// trim this many aligned PBAs from 5' end of progeny aligned segments - reduces false alleles due to sequencing errors
@@ -510,6 +580,10 @@ public:
 				int NumProgenyInputFiles,	// number of input progeny file specs
 				char* pszProgenyInputFiles[],		// names of input progeny PBA files (wildcards allowed)
 				char* pszOutFile,		// Windowed haplotype calls output file (CSV format)
+				int	NumIncludeChroms,			// number of chromosome regular expressions to include
+				char **ppszIncludeChroms,		// array of include chromosome regular expressions
+				int	NumExcludeChroms,			// number of chromosome expressions to exclude
+				char **ppszExcludeChroms,		// array of exclude chromosome regular expressions
 				int NumThreads);		// number of worker threads to use
 
 	int ProcWorkerThread(tsWorkerInstance *pThreadPar);	// worker thread parameters

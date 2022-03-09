@@ -19,11 +19,14 @@
 
 
 
-int CallHaplotypes(eModeCSH PMode,	// processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons (default 0)
-	        int32_t Dbg,                // whilst debugging then limit number of chromosomes loaded per PBA file to this many. -1 if normal processing, 0 if debug with no limits, > 0 debug sets upper limit
+int CallHaplotypes(eModeCSH PMode,	// processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons, 3: allelic haplotype grouping,4: coverage haplotype grouping, 5: post-process to WIG (default 0)
+	        int32_t LimitPrimaryFiles,                // limit number of loaded primary or founder PBA files to this many. 0: no limits, > 0 sets upper limit
 			int32_t ExprID,			// assign this experiment identifier for this PBA analysis
-	        int32_t GrpHapSize,          // when grouping into haplotypes (processing mode 3) then use this non-overlapping window size for accumulation of differentials between all founder PBAs
-            int32_t GrpHapClustDif,  // when grouping into haplotypes (processing mode 3) then use this maximum group centroid differential for clustering groups
+			int32_t GrpHapBinSize,           // when grouping into haplotypes (processing mode 3) then use this non-overlapping bin size for accumulation of differentials between all founder PBAs
+	        int32_t NumHapGrpPhases,         // number of phases over which to converge group consensus when haplotype clustering into groups - moves the balance between optimal group consensus and processing resource
+			int32_t MinCentClustDist,        // haplotype groupings - in processing mode 3/4 only - minimum group centroid clustering distance
+			int32_t MaxCentClustDist,        // haplotype groupings - in processing mode 3/4 only - maximum group centroid clustering distance
+			int32_t MaxClustGrps,       // haplotype groupings - in processing mode 3 only - targeted maximum number of groups
 			int32_t FndrTrim5,			// trim this many aligned PBAs from 5' end of founder aligned segments - reduces false alleles due to sequencing errors
 			int32_t FndrTrim3,			// trim this many aligned PBAs from 3' end of founder aligned segments - reduces false alleles due to sequencing errors
 			int32_t ProgTrim5,			// trim this many aligned PBAs from 5' end of progeny aligned segments - reduces false alleles due to sequencing errors
@@ -36,6 +39,10 @@ int CallHaplotypes(eModeCSH PMode,	// processing mode 0: report imputation haplo
 			int NumProgenyInputFiles,	// number of input progeny file specs
 			char* pszProgenyInputFiles[],		// names of input progeny PBA files (wildcards allowed)
 			char* pszOutFile,		// loci haplotype calls output file (CSV format)
+			int	NumIncludeChroms,			// number of chromosome regular expressions to include
+			char **ppszIncludeChroms,		// array of include chromosome regular expressions
+			int	NumExcludeChroms,			// number of chromosome expressions to exclude
+			char **ppszExcludeChroms,		// array of exclude chromosome regular expressions
 			int NumThreads);		// number of worker threads to use
 
 #ifdef _WIN32
@@ -59,8 +66,8 @@ int NumThreads;				// number of threads (0 defaults to number of CPUs or a maxim
 
 int Idx;
 
-eModeCSH PMode;				// processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons (default 0)
-int32_t Dbg;                // whilst debugging then limit number of chromosomes loaded per PBA file to this many. -1 if normal processing, 0 if debug with no limits, > 0 debug sets upper limit
+eModeCSH PMode;				// processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons,3: allelic haplotype grouping,4: coverage haplotype grouping, 5: post-process to WIG (default 0) 
+int32_t LimitPrimaryPBAs;                // limit number of loaded primary or founder PBA files to this many. 0: no limits, > 0 sets upper limit
 int32_t ExprID;			    // assign this experiment identifier to this PBA analysis
 int32_t FndrTrim5;		    // trim this many aligned PBAs from 5' end of founder aligned segments - reduces false alleles due to sequencing errors
 int32_t FndrTrim3;		    // trim this many aligned PBAs from 3' end of founder aligned segments - reduces false alleles due to sequencing errors
@@ -68,8 +75,16 @@ int32_t ProgTrim5;		    // trim this many aligned PBAs from 5' end of progeny al
 int32_t ProgTrim3;		    // trim this many aligned PBAs from 3' end of progeny aligned segments - reduces false alleles due to sequencing errors
 int32_t WWRLProxWindow;		// proximal window size for Wald-Wolfowitz runs test
 int32_t OutliersProxWindow;	// proximal window size for outliers reduction
-int32_t GrpHapSize;           // when grouping into haplotypes (processing mode 3) then use this non-overlapping window size for accumulation of differentials between all founder PBAs
-int32_t GrpHapClustDif;        // when grouping into haplotypes (processing mode 3) then use this maximum group centroid differential for clustering groups
+int32_t GrpHapBinSize;           // when grouping into haplotypes (processing mode 3) then use this non-overlapping bin size for accumulation of differentials between all founder PBAs
+int32_t NumHapGrpPhases;         // number of phases over which to converge group consensus when haplotype clustering into groups - is a balance between optimal group consensus and processing resource
+int32_t MinCentClustDist;        // haplotype groupings - in processing mode 3 only - minimum group centroid clustering distance (default 10, min 1, clamped to bin size)
+int32_t MaxCentClustDist;        // haplotype groupings - in processing mode 3 only - maximum group centroid clustering distance (default mincentclustdist, clamped to bin size)
+int32_t MaxClustGrps;       // haplotype groupings - in processing mode 3 only - targeted maximum number of groups (default 10)
+
+int NumIncludeChroms;
+char *pszIncludeChroms[cMaxIncludeChroms];
+int NumExcludeChroms;
+char *pszExcludeChroms[cMaxExcludeChroms];
 
 int NumFounderInputFiles;		// number of input founder BPA files
 char *pszFounderInputFiles[cMaxFounderFileSpecs];		// names of input founder BPA files (wildcards allowed)
@@ -84,8 +99,8 @@ struct arg_lit *version = arg_lit0 ("v", "version,ver", "print version informati
 struct arg_int *FileLogLevel = arg_int0 ("f", "FileLogLevel", "<int>", "Level of diagnostics written to screen and logfile 0=fatal,1=errors,2=info,3=diagnostics,4=debug");
 struct arg_file *LogFile = arg_file0 ("F", "log", "<file>", "diagnostics log file");
 
-struct arg_int *pmode = arg_int0 ("m", "mode", "<int>", "processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons, 3: haplotype grouping (default 0)");
-struct arg_int *dbg = arg_int0 ("d", "debug", "<int>", "debug processing - limit max number of loaded chromosomes to this specified value, 0 if no limit (default 0)");
+struct arg_int *pmode = arg_int0 ("m", "mode", "<int>", "processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons, 3: allelic haplotype grouping,4: coverage haplotype grouping, 5: post-process to WIG (default 0)");
+struct arg_int *limitprimarypbas = arg_int0 ("l", "debug", "<int>", " limit number of loaded primary or founder PBA files to this many. 0: no limits, > 0 sets upper limit (default 0)");
 
 struct arg_int* exprid = arg_int0("e","exprid","<int>","assign this experiment identifier for haplotypes called (default 1");
 struct arg_int* fndrtrim5 = arg_int0("y", "fndrtrim5", "<int>", "trim this many aligned PBAs from 5' end of founder aligned segments (default 0)");
@@ -96,19 +111,27 @@ struct arg_int* progtrim3 = arg_int0("X", "progtrim3", "<int>", "trim this many 
 struct arg_int* wwrlproxwindow = arg_int0("w", "wwrlproxwindow", "<int>", "proximal window size for Wald-Wolfowitz runs test (default 1000000)");
 struct arg_int* outliersproxwindow = arg_int0("W", "outliersproxwindow", "<int>", "proximal window size for outliers reduction (default 1000000)");
 
-struct arg_int* grphapsize = arg_int0("g", "grphapsize", "<int>", "haplotype groupings - in processing mode 3 only - bin size (default 50000, min 10, will be clamped to actual size)");
-struct arg_int* grphapclustdif = arg_int0("G", "grphapclustdif", "<int>", "haplotype groupings - in processing mode 3 only - maximum group centroid clustering distance (default 500, min 1, clamped to bin size)");
+struct arg_int* grphapbinsize = arg_int0("g", "grphapbinsize", "<int>", "haplotype groupings - in processing mode 3/4 only - bin size (default 10000, min 10, will be clamped to actual size)");
+struct arg_int* maxclustgrps = arg_int0("G", "maxclustgrps", "<int>", "haplotype groupings - in processing mode 3/4 only - targeted maximum number of groups (default 10)");
+struct arg_int* gpphases = arg_int0("p", "gpphases", "<int>", "haplotype groupings - in processing mode 3/4 only - max number of cluster processing phases (default 10)");
+
+struct arg_int* mincentclustdist = arg_int0("c", "mincentclustdist", "<int>", "haplotype groupings - in processing mode 3/4 only - minimum group centroid clustering distance (default 10, min 1, clamped to bin size)");
+struct arg_int* maxcentclustdist = arg_int0("C", "maxcentclustdist", "<int>", "haplotype groupings - in processing mode 3/4 only - maximum group centroid clustering distance (default 10000, clamped to bin size)");
+
+struct arg_str  *ExcludeChroms = arg_strn("Z","chromexclude",	"<string>",0,cMaxExcludeChroms,"high priority - regular expressions defining chromosomes to exclude");
+struct arg_str  *IncludeChroms = arg_strn("z","chromeinclude",	"<string>",0,cMaxIncludeChroms,"low priority - regular expressions defining chromosomes to include");
+
 	
-struct arg_file *founderfiles = arg_filen("I", "founderfiles", "<file>", 0,cMaxFounderFileSpecs,"founder input BPA file(s), wildcards allowed, limit of 100 founder filespecs supported");
+struct arg_file *founderfiles = arg_filen("I", "founderfiles", "<file>", 0,cMaxFounderFileSpecs,"founder input BPA file(s), wildcards allowed, limit of 200 founder filespecs supported");
 struct arg_file *progenyfiles = arg_filen("i", "inprogenyfile", "<file>",0, cMaxProgenyFileSpecs, "progeny input BPA file(s), wildcards allowed, limit of 500 progeny filespecs supported");
-struct arg_file *maskbpafile = arg_file0("c", "inmaskbpa", "<file>", "optional masking input BPA file, or in mode 3 only - haplotype grouping specification file(s)");
+struct arg_file *maskbpafile = arg_file0("j", "inmaskbpa", "<file>", "optional masking input BPA file, or haplotype grouping specification file(s) or previously generated haplotype grouping file for post-processing");
 struct arg_file *outfile = arg_file1("o", "out", "<file>", "loci haplotype calls output prefix (outputs CSV and WIG format)");
 struct arg_int *threads = arg_int0("T","threads","<int>","number of processing threads 0..64 (defaults to 0 which limits threads to maximum of 64 CPU cores)");
 struct arg_end *end = arg_end (200);
 
 void *argtable[] = { help,version,FileLogLevel,LogFile,
-					pmode,dbg,grphapsize,grphapclustdif,exprid,fndrtrim5,fndrtrim3,progtrim5,progtrim3,wwrlproxwindow,outliersproxwindow,
-					maskbpafile,progenyfiles,founderfiles, outfile,threads,end };
+					pmode,limitprimarypbas,grphapbinsize,gpphases,mincentclustdist,maxcentclustdist,maxclustgrps,exprid,fndrtrim5,fndrtrim3,progtrim5,progtrim3,wwrlproxwindow,outliersproxwindow,
+					maskbpafile,IncludeChroms,ExcludeChroms,progenyfiles,founderfiles, outfile,threads,end };
 
 char **pAllArgs;
 int argerrors;
@@ -182,10 +205,15 @@ if (!argerrors)
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Error: Unsupported processing mode '-m%d'\n",PMode);
 			exit(1);
 			}
+		if(PMode <= eMCSHCoverageHapsGrps)
+			{
+			LimitPrimaryPBAs = limitprimarypbas->count ? limitprimarypbas->ival[0] : 0;
+			if(LimitPrimaryPBAs < 0)
+				LimitPrimaryPBAs = 0;
+			}
+		else
+			LimitPrimaryPBAs = 0;
 
-		Dbg = dbg->count ? dbg->ival[0] : -1;
-		if(Dbg < 0)
-			Dbg = -1;
 		ExprID = exprid->count ? exprid->ival[0] : 1;
 		if(ExprID < 1)
 			{
@@ -199,71 +227,143 @@ if (!argerrors)
 				exit(1);
 				}
 
-		if(PMode == eMCSHFndrHaps && maskbpafile->count == 0)
+		NumHapGrpPhases = 0;
+		if(PMode == eMCSHAllelicHapsGrps || PMode == eMCSHCoverageHapsGrps) 
 			{
-			GrpHapSize = grphapsize->count ? grphapsize->ival[0] : cDfltGrpHapSize;
-			if(GrpHapSize < 10)        // silently clamping to a more reasonable size!
-				GrpHapSize = 10;       // upper limit will be actual chromosome size
-
-            GrpHapClustDif = grphapclustdif->count ? grphapclustdif->ival[0] : 500;
-			if(GrpHapClustDif < 1) 
-				GrpHapClustDif = 1;
+			NumHapGrpPhases = gpphases->count ? gpphases->ival[0] : cDfltNumHapGrpPhases;
+			if(NumHapGrpPhases < 2) // silently clamping ...
+				NumHapGrpPhases = 2;
 			else
-				if(GrpHapClustDif > GrpHapSize) // silently clamp grouping size to window size!
-					GrpHapClustDif = GrpHapSize;
+			if(NumHapGrpPhases > 100)
+				NumHapGrpPhases = 100;
+			}
+
+		if(IncludeChroms->count)
+			{
+			for(NumIncludeChroms = Idx = 0; NumIncludeChroms < cMaxIncludeChroms && Idx < IncludeChroms->count; Idx++)
+				{
+				pszIncludeChroms[Idx] = NULL;
+				if(pszIncludeChroms[NumIncludeChroms] == NULL)
+					pszIncludeChroms[NumIncludeChroms] = new char[_MAX_PATH];
+				strncpy(pszIncludeChroms[NumIncludeChroms], IncludeChroms->sval[Idx], _MAX_PATH);
+				pszIncludeChroms[NumIncludeChroms][_MAX_PATH - 1] = '\0';
+				CUtility::TrimQuotedWhitespcExtd(pszIncludeChroms[NumIncludeChroms]);
+				if(pszIncludeChroms[NumIncludeChroms][0] != '\0')
+					NumIncludeChroms++;
+				}
+			}
+		else
+			NumIncludeChroms = 0;
+		
+
+		if(ExcludeChroms->count)
+			{
+			for(NumExcludeChroms = Idx = 0; NumExcludeChroms < cMaxExcludeChroms && Idx < ExcludeChroms->count; Idx++)
+				{
+				pszExcludeChroms[Idx] = NULL;
+				if(pszExcludeChroms[NumExcludeChroms] == NULL)
+					pszExcludeChroms[NumExcludeChroms] = new char[_MAX_PATH];
+				strncpy(pszExcludeChroms[NumExcludeChroms], ExcludeChroms->sval[Idx], _MAX_PATH);
+				pszExcludeChroms[NumExcludeChroms][_MAX_PATH - 1] = '\0';
+				CUtility::TrimQuotedWhitespcExtd(pszExcludeChroms[NumExcludeChroms]);
+				if(pszExcludeChroms[NumExcludeChroms][0] != '\0')
+					NumExcludeChroms++;
+				}
+			}
+		else
+			NumExcludeChroms = 0;
+
+		if((PMode == eMCSHAllelicHapsGrps || PMode == eMCSHCoverageHapsGrps) && maskbpafile->count == 0)
+			{
+			GrpHapBinSize = grphapbinsize->count ? grphapbinsize->ival[0] : cDfltGrpHapBinSize;
+			if(GrpHapBinSize < 10)        // silently clamping to a more reasonable size!
+				GrpHapBinSize = 10;       // upper limit will be actual chromosome size
+
+            MinCentClustDist = mincentclustdist->count ? mincentclustdist->ival[0] : cDfltMinCentClustDist;
+			if(MinCentClustDist < 1) 
+				MinCentClustDist = 1;
+			else
+				if(MinCentClustDist > GrpHapBinSize) // silently clamp grouping size to window size-1!
+					MinCentClustDist = GrpHapBinSize-1;
+			MaxCentClustDist = maxcentclustdist->count ? maxcentclustdist->ival[0] : cDfltMaxCentClustDist;
+			if(MaxCentClustDist < MinCentClustDist) 
+				MaxCentClustDist = MinCentClustDist;
+			else
+				if(MaxCentClustDist >= GrpHapBinSize) // silently clamp grouping size to window size-1!
+					MaxCentClustDist = GrpHapBinSize-1;
+			MaxClustGrps = maxclustgrps->count ? maxclustgrps->ival[0] : cDfltMaxClustGrps;
+			if(MaxClustGrps < 1) 
+				MaxClustGrps = 1;
+			else
+				if(MaxClustGrps > cMaxClustGrps) // silently clamp
+					MaxClustGrps = cMaxClustGrps;
 			}
 		else
 			{
-			GrpHapSize = 0;
-			GrpHapClustDif = 0;
+			GrpHapBinSize = 0;
+			MinCentClustDist = 0;
+			MaxCentClustDist = 0;
+			MaxClustGrps = 0;
 			}
 
-		FndrTrim5 = fndrtrim5->count ? fndrtrim5->ival[0] : cDfltFndrTrim5;
-		if(FndrTrim5 < 0)
-			FndrTrim5 = 0;
-		else
-			if(FndrTrim5 > 1000)
-				FndrTrim5 = 1000;
-
-		FndrTrim3 = fndrtrim3->count ? fndrtrim3->ival[0] : cDfltFndrTrim3;
-		if(FndrTrim3 < 0)
-			FndrTrim3 = 0;
-		else
-			if(FndrTrim3 > 1000)
-				FndrTrim3 = 1000;
-
-		ProgTrim5 = progtrim5->count ? progtrim5->ival[0] : cDfltProgTrim5;
-		if(ProgTrim5 < 0)
-			ProgTrim5 = 0;
-		else
-			if(ProgTrim5 > 1000)
-				ProgTrim5 = 1000;
-
-		ProgTrim3 = progtrim3->count ? progtrim3->ival[0] : cDfltProgTrim3;
-		if(ProgTrim3 < 0)
-			ProgTrim3 = 0;
-		else
-			if(ProgTrim3 > 1000)
-				ProgTrim3 = 1000;
-
-		if(PMode != eMCSHFndrHaps)
+		if(PMode < eMCSHAllelicHapsGrps)
 			{
-			WWRLProxWindow = wwrlproxwindow->count ? wwrlproxwindow->ival[0] : cDfltWWRLProxWindow;
-			if(WWRLProxWindow < 10000)
+			FndrTrim5 = fndrtrim5->count ? fndrtrim5->ival[0] : cDfltFndrTrim5;
+			if(FndrTrim5 < 0)
+				FndrTrim5 = 0;
+			else
+				if(FndrTrim5 > 1000)
+					FndrTrim5 = 1000;
+
+			FndrTrim3 = fndrtrim3->count ? fndrtrim3->ival[0] : cDfltFndrTrim3;
+			if(FndrTrim3 < 0)
+				FndrTrim3 = 0;
+			else
+				if(FndrTrim3 > 1000)
+					FndrTrim3 = 1000;
+
+			ProgTrim5 = progtrim5->count ? progtrim5->ival[0] : cDfltProgTrim5;
+			if(ProgTrim5 < 0)
+				ProgTrim5 = 0;
+			else
+				if(ProgTrim5 > 1000)
+					ProgTrim5 = 1000;
+
+			ProgTrim3 = progtrim3->count ? progtrim3->ival[0] : cDfltProgTrim3;
+			if(ProgTrim3 < 0)
+				ProgTrim3 = 0;
+			else
+				if(ProgTrim3 > 1000)
+					ProgTrim3 = 1000;
+
+			if(!(PMode == eMCSHAllelicHapsGrps || PMode == eMCSHCoverageHapsGrps))
+				{
+				WWRLProxWindow = wwrlproxwindow->count ? wwrlproxwindow->ival[0] : cDfltWWRLProxWindow;
+				if(WWRLProxWindow < 10000)
+					WWRLProxWindow = 0;
+				else
+					if(WWRLProxWindow > 10000000)	// silently clamping to 10Mbp
+						WWRLProxWindow = 10000000;
+
+				OutliersProxWindow = outliersproxwindow->count ? outliersproxwindow->ival[0] : cDlftOutliersProxWindow;
+				if(OutliersProxWindow < 10000)
+					OutliersProxWindow = 0;
+				else
+					if(OutliersProxWindow > 10000000)	// silently clamping to 10Mbp
+						OutliersProxWindow = 10000000;
+				}
+			else
+				{
 				WWRLProxWindow = 0;
-			else
-				if(WWRLProxWindow > 10000000)	// silently clamping to 10Mbp
-					WWRLProxWindow = 10000000;
-
-			OutliersProxWindow = outliersproxwindow->count ? outliersproxwindow->ival[0] : cDlftOutliersProxWindow;
-			if(OutliersProxWindow < 10000)
 				OutliersProxWindow = 0;
-			else
-				if(OutliersProxWindow > 10000000)	// silently clamping to 10Mbp
-					OutliersProxWindow = 10000000;
+				}
 			}
 		else
 			{
+			FndrTrim5 = 0;
+			FndrTrim3 = 0;
+			ProgTrim5 = 0;
+			ProgTrim3 = 0;
 			WWRLProxWindow = 0;
 			OutliersProxWindow = 0;
 			}
@@ -293,7 +393,7 @@ if (!argerrors)
 
 	NumProgenyInputFiles = 0;
 
-	if(PMode != eMCSHFndrHaps)
+	if(PMode < eMCSHAllelicHapsGrps)
 		{
 		if(progenyfiles->count)
 			{
@@ -319,27 +419,29 @@ if (!argerrors)
 		}
 
 	NumFounderInputFiles = 0;
-	if(founderfiles->count)
+	if(PMode < eMCSHGrpDist2WIG)
 		{
-		for(NumFounderInputFiles = Idx = 0; NumFounderInputFiles < cMaxFounderFileSpecs && Idx < founderfiles->count; Idx++)
+		if(founderfiles->count)
 			{
-			pszFounderInputFiles[Idx] = NULL;
-			if(pszFounderInputFiles[NumFounderInputFiles] == NULL)
-				pszFounderInputFiles[NumFounderInputFiles] = new char[_MAX_PATH];
-			strncpy(pszFounderInputFiles[NumFounderInputFiles], founderfiles->filename[Idx], _MAX_PATH);
-			pszFounderInputFiles[NumFounderInputFiles][_MAX_PATH - 1] = '\0';
-			CUtility::TrimQuotedWhitespcExtd(pszFounderInputFiles[NumFounderInputFiles]);
-			if(pszFounderInputFiles[NumFounderInputFiles][0] != '\0')
-				NumFounderInputFiles++;
+			for(NumFounderInputFiles = Idx = 0; NumFounderInputFiles < cMaxFounderFileSpecs && Idx < founderfiles->count; Idx++)
+				{
+				pszFounderInputFiles[Idx] = NULL;
+				if(pszFounderInputFiles[NumFounderInputFiles] == NULL)
+					pszFounderInputFiles[NumFounderInputFiles] = new char[_MAX_PATH];
+				strncpy(pszFounderInputFiles[NumFounderInputFiles], founderfiles->filename[Idx], _MAX_PATH);
+				pszFounderInputFiles[NumFounderInputFiles][_MAX_PATH - 1] = '\0';
+				CUtility::TrimQuotedWhitespcExtd(pszFounderInputFiles[NumFounderInputFiles]);
+				if(pszFounderInputFiles[NumFounderInputFiles][0] != '\0')
+					NumFounderInputFiles++;
+				}
+			}
+
+		if(!NumFounderInputFiles)
+			{
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Error: After removal of whitespace, there are no input founder file(s) specified with '-I<filespec>' option)\n");
+			exit(1);
 			}
 		}
-
-	if(!NumFounderInputFiles)
-		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Error: After removal of whitespace, there are no input founder file(s) specified with '-I<filespec>' option)\n");
-		exit(1);
-		}
-
 
 	if(maskbpafile->count)
 		{
@@ -347,12 +449,21 @@ if (!argerrors)
 		CUtility::TrimQuotedWhitespcExtd (szMaskBPAFile);
 		if(szMaskBPAFile[0] == '\0')
 			{
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Error: After removal of whitespace, no input %s file specified with '-c<filespec>' option)\n",PMode == eMCSHFndrHaps ? "haplotype group clustering specification" : "masking BPA");
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Error: After removal of whitespace, no input %s file specified with '-z<filespec>' option)\n",(PMode == eMCSHAllelicHapsGrps || PMode == eMCSHCoverageHapsGrps) ? "haplotype group clustering specification" : "masking BPA");
 			exit(1);
 			}
 		}
 	else
 		szMaskBPAFile[0] = '\0';
+
+	if(PMode >= eMCSHGrpDist2WIG)
+		{
+		if(szMaskBPAFile[0] == '\0')
+			{
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Error: No previously generated haplotype grouping file specified with '-z<filespec>' option, required for post-processing centroid distances into WIG output format)\n");
+			exit(1);
+			}
+		}
 
 	strcpy (szOutFile, outfile->filename[0]);
 	CUtility::TrimQuotedWhitespcExtd (szOutFile);
@@ -374,47 +485,78 @@ if (!argerrors)
 		case eMCSHGWAS:
 			pszDescr = "Report both raw and imputation haplotype matrices plus generate pre/post imputation GWAS formated files";
 			break;
-		case eMCSHFndrHaps:
-			pszDescr = "Report founders only haplotype groupings";
+		case eMCSHAllelicHapsGrps:
+			pszDescr = "Report allelic haplotype groupings using centroid clustering";
+			break;
+		case eMCSHCoverageHapsGrps:
+			pszDescr = "Report coverage haplotype groupings using centroid clustering";
+			break;
+		case eMCSHGrpDist2WIG:
+			pszDescr = "Post-processing haplotype grouping centroid distances into WIG format";
 			break;
 		}
 
 	gDiagnostics.DiagOutMsgOnly (eDLInfo, "Calling haplotypes : '%s'", pszDescr);
-	if(Dbg >= 0)
-		{
-		if(Dbg > 0)
-			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Processing in debug mode and limiting number of loaded PBA chromosomes to first: %d",Dbg);
-		else
-			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Processing in debug mode");
-		}
-	else
-		Dbg = -1;
-	gDiagnostics.DiagOutMsgOnly(eDLInfo, "Experiment identifier: %d", ExprID);
-	gDiagnostics.DiagOutMsgOnly(eDLInfo, "Trim this many aligned PBAs from 5' end of founder aligned segments: %d", FndrTrim5);
-	gDiagnostics.DiagOutMsgOnly(eDLInfo, "Trim this many aligned PBAs from 3' end of founder aligned segments: %d", FndrTrim3);
-	gDiagnostics.DiagOutMsgOnly(eDLInfo, "Trim this many aligned PBAs from 5' end of progeny aligned segments: %d", ProgTrim5);
-	gDiagnostics.DiagOutMsgOnly(eDLInfo, "Trim this many aligned PBAs from 3' end of progeny aligned segments: %d", ProgTrim3);
+	
+	for(Idx = 0; Idx < NumIncludeChroms; Idx++)
+		gDiagnostics.DiagOutMsgOnly(eDLInfo,"reg expressions defining chroms to include: '%s'",pszIncludeChroms[Idx]);
+	for(Idx = 0; Idx < NumExcludeChroms; Idx++)
+		gDiagnostics.DiagOutMsgOnly(eDLInfo,"reg expressions defining chroms to exclude: '%s'",pszExcludeChroms[Idx]);
 
-	if(PMode != eMCSHFndrHaps)
+	if(LimitPrimaryPBAs > 0)
+		gDiagnostics.DiagOutMsgOnly(eDLInfo, "Limiting number of loaded primary or founder PBA files to first: %d",LimitPrimaryPBAs);
+
+	gDiagnostics.DiagOutMsgOnly(eDLInfo, "Experiment identifier: %d", ExprID);
+	if(PMode < eMCSHGrpDist2WIG)
+		{
+		gDiagnostics.DiagOutMsgOnly(eDLInfo, "Trim this many aligned PBAs from 5' end of founder aligned segments: %d", FndrTrim5);
+		gDiagnostics.DiagOutMsgOnly(eDLInfo, "Trim this many aligned PBAs from 3' end of founder aligned segments: %d", FndrTrim3);
+		gDiagnostics.DiagOutMsgOnly(eDLInfo, "Trim this many aligned PBAs from 5' end of progeny aligned segments: %d", ProgTrim5);
+		gDiagnostics.DiagOutMsgOnly(eDLInfo, "Trim this many aligned PBAs from 3' end of progeny aligned segments: %d", ProgTrim3);
+		}
+
+
+	if(PMode < eMCSHAllelicHapsGrps)
 		{
 		gDiagnostics.DiagOutMsgOnly(eDLInfo, "Proximal window size for Wald-Wolfowitz runs test: %d", WWRLProxWindow);
 		gDiagnostics.DiagOutMsgOnly(eDLInfo, "Proximal window size for outliers reduction: %d", OutliersProxWindow);
+		if(szMaskBPAFile[0] != '\0')
+			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Loading asking BPAs from : '%s'", szMaskBPAFile);
 		}
 	else
 		{
-		gDiagnostics.DiagOutMsgOnly(eDLInfo, "Haplotype groupings window size: %d", GrpHapSize);
-		gDiagnostics.DiagOutMsgOnly(eDLInfo, "Maximum group centroid clustering differential: %d",GrpHapClustDif);
+		if(PMode == eMCSHAllelicHapsGrps || PMode == eMCSHCoverageHapsGrps)
+			{
+			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Number of haplotype grouping centroid clustering phases: %d", NumHapGrpPhases);
+			if(szMaskBPAFile[0] != '\0')
+				{
+				gDiagnostics.DiagOutMsgOnly(eDLInfo, "Loading group centroid clustering specifications from : '%s'", szMaskBPAFile);
+				GrpHapBinSize = MinCentClustDist = MaxCentClustDist = MaxClustGrps = 0;
+				}
+			else
+				{
+				gDiagnostics.DiagOutMsgOnly(eDLInfo, "Haplotype groupings window size: %d", GrpHapBinSize);
+				gDiagnostics.DiagOutMsgOnly(eDLInfo, "Minimum group centroid clustering differential: %d", MinCentClustDist);
+				gDiagnostics.DiagOutMsgOnly(eDLInfo, "Maximum group centroid clustering differential: %d", MaxCentClustDist);
+				gDiagnostics.DiagOutMsgOnly(eDLInfo, "Targeted maximum number of haplotype groups: %d", MaxClustGrps);
+				}
+			}
+		else
+			{
+			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Loading previously generated haplotype grouping centroid distances from : '%s'", szMaskBPAFile);
+			}
 		}
 
-	if(szMaskBPAFile[0] != '\0')
-		gDiagnostics.DiagOutMsgOnly (eDLInfo, "Loading %s from : '%s'",PMode == eMCSHFndrHaps ? "Haplotype group clustering specifications" : "Masking BPAs", szMaskBPAFile);
-		
-	for(Idx = 0; Idx < NumFounderInputFiles; Idx++)
-		gDiagnostics.DiagOutMsgOnly (eDLInfo, "Founder file : '%s'", pszFounderInputFiles[Idx]);
+	if(PMode < eMCSHGrpDist2WIG)
+		{
+		for(Idx = 0; Idx < NumFounderInputFiles; Idx++)
+			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Sample or Founder file : '%s'", pszFounderInputFiles[Idx]);
 
-	if(NumProgenyInputFiles)
-		for(Idx = 0; Idx < NumProgenyInputFiles; Idx++)
-			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Progeny file : '%s'", pszProgenyInputFiles[Idx]);
+		if(NumProgenyInputFiles)
+			for(Idx = 0; Idx < NumProgenyInputFiles; Idx++)
+				gDiagnostics.DiagOutMsgOnly(eDLInfo, "Progeny file : '%s'", pszProgenyInputFiles[Idx]);
+		}
+
 	gDiagnostics.DiagOutMsgOnly (eDLInfo, "Output file : '%s'", szOutFile);
 	gDiagnostics.DiagOutMsgOnly(eDLInfo,"number of threads : %d",NumThreads);
 
@@ -423,11 +565,14 @@ if (!argerrors)
 #endif
 	gStopWatch.Start ();
 	Rslt = 0;
-	Rslt = CallHaplotypes(PMode,			// processing mode 0: call haplotype loci,  1: also generate pre/post imputation GWAS formated files for evaluating efficacy of imputation, GWAS enabling vewing in most genome browsers
-		            Dbg,                // whilst debugging then limit number of chromosomes loaded per PBA file to this many. -1 if normal processing, 0 if debug with no limits, > 0 debug sets upper limit			
+	Rslt = CallHaplotypes(PMode,			// processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons,3: allelic haplotype grouping,4: coverage haplotype grouping, 5: post-process to WIG (default 0)
+		            LimitPrimaryPBAs,                //limit number of loaded primary or founder PBA files to this many. 0: no limits, > 0 sets upper limit			
 		            ExprID,					// experiment identifier
-			        GrpHapSize,           // when grouping into haplotypes (processing mode 3) then use this non-overlapping window size for accumulation of differentials between all founder PBAs
-                    GrpHapClustDif,        // when grouping into haplotypes (processing mode 3) then use this maximum group centroid differential for clustering groups
+					GrpHapBinSize,           // when grouping into haplotypes (processing mode 3) then use this non-overlapping bin size for accumulation of differentials between all founder PBAs
+		            NumHapGrpPhases,         // number of phases over which to converge group consensus when haplotype clustering into groups - is a balance between optimal group consensus and processing resource
+					MinCentClustDist,        // haplotype groupings - in processing mode 3 only - minimum group centroid clustering distance (default 500, min 1, clamped to bin size)
+					MaxCentClustDist,        // haplotype groupings - in processing mode 3 only - maximum group centroid clustering distance (default mincentclustdist, clamped to bin size)
+					MaxClustGrps,       // haplotype groupings - in processing mode 3 only - targeted maximum number of groups (default 50)
 					FndrTrim5,			// trim this many aligned PBAs from 5' end of founder aligned segments - reduces false alleles due to sequencing errors
 					FndrTrim3,			// trim this many aligned PBAs from 3' end of founder aligned segments - reduces false alleles due to sequencing errors
 					ProgTrim5,			// trim this many aligned PBAs from 5' end of progeny aligned segments - reduces false alleles due to sequencing errors
@@ -440,6 +585,10 @@ if (!argerrors)
 					NumProgenyInputFiles,		// number of input progeny file specs
 					pszProgenyInputFiles,		// names of input progeny PBA files (wildcards allowed)
 					szOutFile,				// output to this file
+					NumIncludeChroms,			// number of chromosome regular expressions to include
+					pszIncludeChroms,		// array of include chromosome regular expressions
+					NumExcludeChroms,			// number of chromosome expressions to exclude
+					pszExcludeChroms,		// array of exclude chromosome regular expressions
 					NumThreads);			// number of worker threads to use
 	Rslt = Rslt >= 0 ? 0 : 1;
 	gStopWatch.Stop ();
@@ -456,11 +605,14 @@ else
 	}
 }
 
-int CallHaplotypes(eModeCSH PMode,	// processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons (default 0)
-				   int32_t Dbg,                // whilst debugging then limit number of chromosomes loaded per PBA file to this many. -1 if normal processing, 0 if debug with no limits, > 0 debug sets upper limit
+int CallHaplotypes(eModeCSH PMode,	// processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons,3: allelic haplotype grouping,4: coverage haplotype grouping, 5: post-process to WIG
+				   int32_t LimitPrimaryPBAs,                // limit number of loaded primary or founder PBA files to this many. 0: no limits, > 0 sets upper limit
 	               int32_t ExprID,			// assign this experiment identifier for this PBA analysis
-		           int32_t GrpHapSize,           // when grouping into haplotypes (processing mode 3) then use this non-overlapping window size for accumulation of differentials between all founder PBAs
-                   int32_t GrpHapClustDif,        // when grouping into haplotypes (processing mode 3) then use this maximum group centroid differential for clustering groups
+					int32_t GrpHapBinSize,           // when grouping into haplotypes (processing mode 3) then use this non-overlapping bin size for accumulation of differentials between all founder PBAs
+	                int32_t NumHapGrpPhases,         // number of phases over which to converge group consensus when haplotype clustering into groups - is a balance between optimal group consensus and processing resource
+					int32_t MinCentClustDist,        // haplotype groupings - in processing mode 3 only - minimum group centroid clustering distance (default 500, min 1, clamped to bin size)
+					int32_t MaxCentClustDist,        // haplotype groupings - in processing mode 3 only - maximum group centroid clustering distance (default mincentclustdist, clamped to bin size)
+					int32_t MaxClustGrps,       // haplotype groupings - in processing mode 3 only - targeted maximum number of groups (default 50)
 	               int32_t FndrTrim5,			// trim this many aligned PBAs from 5' end of founder aligned segments - reduces false alleles due to sequencing errors
 				   int32_t FndrTrim3,			// trim this many aligned PBAs from 3' end of founder aligned segments - reduces false alleles due to sequencing errors
 				   int32_t ProgTrim5,			// trim this many aligned PBAs from 5' end of progeny aligned segments - reduces false alleles due to sequencing errors
@@ -473,6 +625,10 @@ int CallHaplotypes(eModeCSH PMode,	// processing mode 0: report imputation haplo
 				   int NumProgenyInputFiles,	// number of input progeny file specs
 				   char* pszProgenyInputFiles[],		// names of input progeny PBA files (wildcards allowed)
 				   char* pszOutFile,		// Windowed haplotype calls output file (CSV format)
+					int	NumIncludeChroms,			// number of chromosome regular expressions to include
+					char **ppszIncludeChroms,		// array of include chromosome regular expressions
+					int	NumExcludeChroms,			// number of chromosome expressions to exclude
+					char **ppszExcludeChroms,		// array of exclude chromosome regular expressions
 				   int NumThreads)		// number of worker threads to use
 {
 int Rslt;
@@ -483,9 +639,9 @@ if((pCallHaplotypes = new CCallHaplotypes) == NULL)
 	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Unable to instantiate instance of CCallHaplotypes");
 	return(eBSFerrObj);
 	}
-Rslt = pCallHaplotypes->Process(PMode,Dbg,ExprID,GrpHapSize,GrpHapClustDif,FndrTrim5, FndrTrim3, ProgTrim5, ProgTrim3, WWRLProxWindow,OutliersProxWindow,
+Rslt = pCallHaplotypes->Process(PMode,LimitPrimaryPBAs,ExprID,GrpHapBinSize,NumHapGrpPhases,MinCentClustDist,MaxCentClustDist,MaxClustGrps,FndrTrim5, FndrTrim3, ProgTrim5, ProgTrim3, WWRLProxWindow,OutliersProxWindow,
 				pszMaskBPAFile,NumFounderInputFiles,
-				pszFounderInputFiles,NumProgenyInputFiles,pszProgenyInputFiles,pszOutFile,NumThreads);
+				pszFounderInputFiles,NumProgenyInputFiles,pszProgenyInputFiles,pszOutFile,NumIncludeChroms,ppszIncludeChroms,NumExcludeChroms,ppszExcludeChroms,NumThreads);
 delete pCallHaplotypes;
 return(Rslt);
 }
@@ -498,11 +654,14 @@ m_pProgenyFndrAligns = NULL;
 m_pWorkQueueEls = NULL;
 m_pInBuffer = NULL;
 m_pszOutBuffer = NULL;
+m_pszWIGBuff = NULL;
 m_pAlleleStacks = NULL;
 m_pHGBinSpecs = NULL;
 m_hOutFile = -1;
+m_hWIGOutFile = -1;
 m_hInFile = -1;
 m_pCSVFile = NULL;
+m_pHGCSVFile = NULL;
 m_bMutexesCreated = false;
 Reset();
 }
@@ -513,15 +672,21 @@ if(m_hInFile != -1)
 	close(m_hInFile);
 if(m_hOutFile != -1)
 	close(m_hOutFile);
+if(m_hWIGOutFile != -1)
+    close(m_hWIGOutFile);
 if(m_pWorkQueueEls != NULL)
 	delete []m_pWorkQueueEls;
 if(m_pszOutBuffer != NULL)
 	delete []m_pszOutBuffer;
+if(m_pszWIGBuff != NULL)
+	delete []m_pszWIGBuff;
 if(m_pInBuffer != NULL)
 	delete []m_pInBuffer;
 
 if(m_pCSVFile != NULL)
 	delete m_pCSVFile;
+if(m_pHGCSVFile != NULL)
+    delete m_pHGCSVFile;
 
 if(m_pChromMetadata != NULL)
 	{
@@ -567,6 +732,11 @@ if(m_pAlleleStacks != NULL)
 
 if(m_pHGBinSpecs != NULL)
 {
+	tsHGBinSpec* pBin;
+	pBin = m_pHGBinSpecs;
+	for(int BinIdx = 0; BinIdx < m_UsedHGBinSpecs; BinIdx++, pBin++)
+		if(pBin->pHaplotypeGroup != NULL)
+			delete[]pBin->pHaplotypeGroup;
 #ifdef _WIN32
 	free(m_pHGBinSpecs);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
 #else
@@ -591,11 +761,22 @@ if(m_hOutFile != -1)
 	close(m_hOutFile);
 	m_hOutFile = -1;
 	}
+if(m_hWIGOutFile != -1)
+	{
+	close(m_hWIGOutFile);
+	m_hWIGOutFile = -1;
+	}
 
 if(m_pCSVFile != NULL)
 	{
 	delete m_pCSVFile;
 	m_pCSVFile = NULL;
+	}
+
+if(m_pHGCSVFile != NULL)
+	{
+	delete m_pHGCSVFile;
+	m_pHGCSVFile = NULL;
 	}
 
 if(m_pWorkQueueEls != NULL)
@@ -618,6 +799,12 @@ if(m_pszOutBuffer != NULL)
 	{
 	delete []m_pszOutBuffer;
 	m_pszOutBuffer = NULL;
+	}
+
+if(m_pszWIGBuff != NULL)
+	{
+	delete []m_pszWIGBuff;
+	m_pszWIGBuff = NULL;
 	}
 
 if(m_pChromMetadata != NULL)
@@ -662,6 +849,11 @@ m_AllocdAlleleStacks = 0;
 
 if(m_pHGBinSpecs != NULL)
 	{
+	tsHGBinSpec* pBin;
+	pBin = m_pHGBinSpecs;
+	for(int BinIdx = 0; BinIdx < m_UsedHGBinSpecs; BinIdx++, pBin++)
+		if(pBin->pHaplotypeGroup != NULL)
+			delete[]pBin->pHaplotypeGroup;
 #ifdef _WIN32
 	free(m_pHGBinSpecs);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
 #else
@@ -697,13 +889,27 @@ m_FndrTrim5 = cDfltFndrTrim5;
 m_FndrTrim3 = cDfltFndrTrim3;
 m_ProgTrim5 = cDfltProgTrim5;
 m_ProgTrim3 = cDfltProgTrim3;
-m_GrpHapSize = cDfltGrpHapSize;
-m_GrpHapCentClustDif = cDfltGrpHapClustDif;
+m_GrpHapBinSize = cDfltGrpHapBinSize;
+m_NumHapGrpPhases = cDfltNumHapGrpPhases;
+m_MinCentClustDist = cDfltMinCentClustDist;
+m_MaxCentClustDist = cDfltMaxCentClustDist;
+m_MaxClustGrps = cDfltMaxClustGrps;
+
+m_WIGChromID = 0;
+m_WIGRptdChromID = 0;
+m_WIGSpanLoci = 0;
+m_WIGSpanLen = 0;
+m_WIGRptdSpanLen = 0;
+m_WIGSpanCnts = 0;
+
 m_InNumBuffered = 0;
 m_AllocInBuff = 0;
 
 m_OutBuffIdx = 0;	
 m_AllocOutBuff = 0;
+
+m_WIGBuffIdx = 0;
+m_AllocWIGBuff = 0;
 
 m_LAReadsetNameID = 0;
 m_NumReadsetNames = 0;
@@ -717,7 +923,9 @@ m_szChromNames[0] = '\0';
 
 memset(m_Fndrs2Proc,0,sizeof(m_Fndrs2Proc));
 m_NumFounders = 0;
-m_FndrsProcMap = (uint64_t)-1;
+
+m_NumIncludeChroms = 0;
+m_NumExcludeChroms = 0;
 
 if(m_bMutexesCreated)
 	DeleteMutexes();
@@ -787,11 +995,14 @@ pthread_mutex_unlock(&m_hSerialiseAccess);
 
 
 int
-CCallHaplotypes::Process(eModeCSH PMode,	// processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons (default 0)
-	            int32_t Dbg,                // whilst debugging then limit number of chromosomes loaded per PBA file to this many. -1 if normal processing, 0 if debug with no limits, > 0 debug sets upper limit
+CCallHaplotypes::Process(eModeCSH PMode,	// processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons, 3: haplotype grouping, 4: post-process to WIG (default 0)
+	            int32_t LimitPrimaryPBAs,                // limit number of loaded primary or founder PBA files to this many. 0: no limits, > 0 sets upper limit
 				int32_t ExprID,				// assign this experiment identifier for this PBA analysis
-		        int32_t GrpHapSize,         // when grouping into haplotypes (processing mode 3) then use this non-overlapping window size for accumulation of differentials between all founder PBAs
-                int32_t GrpHapCentClustDif, // when grouping into haplotypes (processing mode 3) then use this maximum group centroid differential for clustering groups
+				int32_t GrpHapBinSize,           // when grouping into haplotypes (processing mode 3) then use this non-overlapping bin size for accumulation of differentials between all founder PBAs
+	            int32_t NumHapGrpPhases,         // number of phases over which to converge group consensus when haplotype clustering into groups - is a balance between optimal group consensus and processing resource
+				int32_t MinCentClustDist,        // haplotype groupings - in processing mode 3 only - minimum group centroid clustering distance (default 500, min 1, clamped to bin size)
+				int32_t MaxCentClustDist,        // haplotype groupings - in processing mode 3 only - maximum group centroid clustering distance (default mincentclustdist, clamped to bin size)
+				int32_t MaxClustGrps,       // haplotype groupings - in processing mode 3 only - targeted maximum number of groups (default 50)
 	            int32_t FndrTrim5,			// trim this many aligned PBAs from 5' end of founder aligned segments - reduces false alleles due to sequencing errors
 				int32_t FndrTrim3,			// trim this many aligned PBAs from 3' end of founder aligned segments - reduces false alleles due to sequencing errors
 				int32_t ProgTrim5,			// trim this many aligned PBAs from 5' end of progeny aligned segments - reduces false alleles due to sequencing errors
@@ -803,7 +1014,11 @@ CCallHaplotypes::Process(eModeCSH PMode,	// processing mode 0: report imputation
 				char* pszFounderInputFiles[],// names of input founder PBA files (wildcards allowed)
 				int NumProgenyInputFiles,	// number of input progeny file specs
 				char* pszProgenyInputFiles[],// names of input progeny PBA files (wildcards allowed)
-				char* pszOutFile,		    // Windowed haplotype calls output file (CSV format)
+				char* pszOutFile,		    // Windowed haplotype calls output file (CSV format), or WIG if reporting centroid distances
+				int	NumIncludeChroms,			// number of chromosome regular expressions to include
+				char **ppszIncludeChroms,		// array of include chromosome regular expressions
+				int	NumExcludeChroms,			// number of chromosome expressions to exclude
+				char **ppszExcludeChroms,		// array of exclude chromosome regular expressions
 				int NumThreads)		        // number of worker threads to use
 {
 int Rslt;
@@ -815,11 +1030,14 @@ Reset();
 
 CreateMutexes();
 m_PMode = PMode;
-m_Dbg = Dbg;
+m_LimitPrimaryPBAs = LimitPrimaryPBAs;
 m_bAllFndrsLociAligned = true; // replace with actual user parameter!
 m_ExprID = ExprID;
-m_GrpHapSize = GrpHapSize;
-m_GrpHapCentClustDif = GrpHapCentClustDif;
+m_GrpHapBinSize = GrpHapBinSize;
+m_MinCentClustDist = MinCentClustDist;
+m_MaxCentClustDist = MaxCentClustDist;
+m_MaxClustGrps = MaxClustGrps;
+m_NumHapGrpPhases = NumHapGrpPhases;
 m_FndrTrim5 = FndrTrim5;
 m_FndrTrim3 = FndrTrim3;
 m_ProgTrim5 = ProgTrim5;
@@ -829,6 +1047,15 @@ m_OutliersProxWindow = OutliersProxWindow;
 m_pszRsltsFileBaseName = pszOutFile;
 m_NumThreads = NumThreads;
 
+// compile include/exclude chromosome regexpr if user has specified alignments to be filtered by chrom
+if(NumIncludeChroms > 0 || NumExcludeChroms > 0)
+	if((Rslt = CompileChromRegExprs(NumIncludeChroms,ppszIncludeChroms,NumExcludeChroms,ppszExcludeChroms)) != eBSFSuccess)
+		{
+		Reset();
+		return(Rslt);
+		}
+m_NumIncludeChroms = NumIncludeChroms;
+m_NumExcludeChroms = NumExcludeChroms;
 if(NumFounderInputFiles > cMaxFounderFileSpecs)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Can accept at most %d founder wildcarded file specs for processing, %d requested", cMaxFounderFileSpecs, NumFounderInputFiles);
@@ -848,16 +1075,12 @@ if(pszMaskBPAFile == NULL || pszMaskBPAFile[0] == '\0')
 else
 	m_pszMaskBPAFile = pszMaskBPAFile;
 
-
-if((m_pInBuffer = new uint8_t[cInBuffSize]) == NULL)
+if(PMode >= eMCSHGrpDist2WIG)
 	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Memory allocation of %u bytes for input buffering failed - %s", cInBuffSize, strerror(errno));
+	Rslt = CSV2WIG(pszMaskBPAFile,pszOutFile);
 	Reset();
-	return(eBSFerrMem);
+	return(Rslt);
 	}
-m_AllocInBuff = cInBuffSize;
-m_InNumBuffered = 0;
-
 // initial allocation, will be realloc'd as required if more memory required
 memreq = (size_t)cAllocChromMetadata * sizeof(tsChromMetadata);
 #ifdef _WIN32
@@ -882,7 +1105,7 @@ m_AllocdChromMetadataMem = memreq;
 m_UsedNumChromMetadata = 0;
 m_AllocdChromMetadata = cAllocChromMetadata;
 
-if(m_PMode != eMCSHFndrHaps)
+if(!(m_PMode == eMCSHAllelicHapsGrps || m_PMode == eMCSHCoverageHapsGrps))
 	{
 	memreq = (size_t)cAllocProgenyFndrAligns * sizeof(tsProgenyFndrAligns);
 #ifdef _WIN32
@@ -968,6 +1191,15 @@ else
 	m_AllocdAlleleStacks = 0;
 	}
 
+if((m_pInBuffer = new uint8_t[cInBuffSize]) == NULL)
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Memory allocation of %u bytes for input buffering failed - %s", cInBuffSize, strerror(errno));
+	Reset();
+	return(eBSFerrMem);
+	}
+m_AllocInBuff = cInBuffSize;
+m_InNumBuffered = 0;
+
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "Process: Starting to load pool of founders");
 Rslt = eBSFSuccess;		// assume success!
 CSimpleGlob glob(SG_GLOB_FULLSORT);
@@ -990,7 +1222,16 @@ for(Idx = 0; Idx < NumFounderInputFiles; Idx++)
 		Reset();
 		return(eBSFerrFileName);
 		}
+
+
+	if(LimitPrimaryPBAs > 0 && (TotNumFiles + NumFiles) > LimitPrimaryPBAs)
+		{
+		NumFiles = LimitPrimaryPBAs - TotNumFiles;
+		if(NumFiles == 0)
+			break;
+		}
 	TotNumFiles += NumFiles;
+
 	if(TotNumFiles > cMaxFounderReadsets)
 		{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Can accept at most %d founder pool readsets for processing, after wildcard file name expansions there are %d requested", cMaxFounderReadsets, TotNumFiles);
@@ -1002,27 +1243,36 @@ for(Idx = 0; Idx < NumFounderInputFiles; Idx++)
 	for(int FileID = 0; Rslt >= eBSFSuccess && FileID < NumFiles; ++FileID)
 		{
 		pszInFile = glob.File(FileID);
-		if((ReadsetID = LoadPBAFile(pszInFile,0, m_Dbg)) <= 0)
+
+		if(PMode == eMCSHCoverageHapsGrps)
+			ReadsetID = LoadPBACoverage(pszInFile);
+		else
+			ReadsetID = LoadPBAFile(pszInFile, 0);
+		if(ReadsetID <= 0)
 			{
-			gDiagnostics.DiagOut(eDLInfo, gszProcName, "Process: Errors loading pool file '%s'",pszInFile);
+			gDiagnostics.DiagOut(eDLInfo, gszProcName, "Process: Errors loading file '%s'",pszInFile);
 			Reset();
 			return(ReadsetID);
 			}
 		m_Fndrs2Proc[ReadsetID-1] = 0x01;	// if loaded then assumption is that this founder will be processed
 		}
+	if(LimitPrimaryPBAs > 0 && TotNumFiles >= LimitPrimaryPBAs)
+		break;
 	}
 m_NumFounders = ReadsetID;
+if(m_MaxClustGrps > m_NumFounders)
+     m_MaxClustGrps = m_NumFounders;
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "Process: Completed loading founders (%d) pool", m_NumFounders);
 
 
-if(m_PMode != eMCSHFndrHaps)
+if(!(m_PMode == eMCSHAllelicHapsGrps || m_PMode == eMCSHCoverageHapsGrps))
 	{
 	// load the control PBA file if it has been specified
 	m_MaskReadsetID = 0;
 	if(m_pszMaskBPAFile != NULL)
 		{
 		gDiagnostics.DiagOut(eDLInfo, gszProcName, "Process: Loading control PBA file '%s'", m_pszMaskBPAFile);
-		if((ReadsetID = LoadPBAFile(m_pszMaskBPAFile, 2, m_Dbg)) <= 0)
+		if((ReadsetID = LoadPBAFile(m_pszMaskBPAFile, 2)) <= 0)
 			{
 			gDiagnostics.DiagOut(eDLInfo, gszProcName, "Process: Errors loading control PBA file");
 			Reset();
@@ -1256,8 +1506,8 @@ for(PFAIdx = 0; PFAIdx < m_UsedProgenyFndrAligns; PFAIdx++, pCurPFA++)
 	PrevHap = 0;
 	NumFa = 0;
 	NumFb = 0;
-	uint8_t FaHap = 0;
-	uint8_t FbHap = 0;
+	uint32_t FaHap = 0;
+	uint32_t FbHap = 0;
 	memset(NumFndrs, 0, sizeof(NumFndrs));
 	ChkHapStart = max(0,(int64_t)PFAIdx-9);
 	ChkHapEnd = min((int64_t)m_UsedProgenyFndrAligns-1,(int64_t)PFAIdx+10);
@@ -1277,8 +1527,8 @@ for(PFAIdx = 0; PFAIdx < m_UsedProgenyFndrAligns; PFAIdx++, pCurPFA++)
 			{
 			// only a single founder but which founder?
 			ChkHap = 0;
-			for(int FndrIdx = 0; ChkHap == 0 && FndrIdx < 255; FndrIdx++)
-				if(Bits256Test(FndrIdx, pChkPFA->ProgenyFounders))
+			for(int FndrIdx = 0; ChkHap == 0 && FndrIdx < 4095; FndrIdx++)
+				if(BitsVectTest(FndrIdx, pChkPFA->ProgenyFounders))
 					ChkHap = FndrIdx+1;
 
 			if(PrevHap == 0 || PrevHap != ChkHap)
@@ -1303,8 +1553,8 @@ for(PFAIdx = 0; PFAIdx < m_UsedProgenyFndrAligns; PFAIdx++, pCurPFA++)
 			NumRuns+=2;
 			SeqLen+=2;
 			ChkHap = 0;
-			for(int FndrIdx = 0; ChkHap < 2 && FndrIdx < 255; FndrIdx++)
-				if(Bits256Test(FndrIdx, pChkPFA->ProgenyFounders))
+			for(int FndrIdx = 0; ChkHap < 2 && FndrIdx < 4095; FndrIdx++)
+				if(BitsVectTest(FndrIdx, pChkPFA->ProgenyFounders))
 					{
 					NumFndrs[FndrIdx]++;
 					if(NumFndrs[FndrIdx] > NumFa)
@@ -1352,9 +1602,9 @@ for(PFAIdx = 0; PFAIdx < m_UsedProgenyFndrAligns; PFAIdx++, pCurPFA++)
 	if(pCurPFA->FaHap != 0 && pCurPFA->FbHap != 0)
 		{
 		pCurPFA->NumProgenyFounders = 2;
-		Bits256Initialise(0,pCurPFA->ProgenyFounders);
-		Bits256Set(pCurPFA->FaHap-1,pCurPFA->ProgenyFounders);
-		Bits256Set(pCurPFA->FbHap-1,pCurPFA->ProgenyFounders);
+		BitsVectInitialise(0,pCurPFA->ProgenyFounders);
+		BitsVectSet(pCurPFA->FaHap-1,pCurPFA->ProgenyFounders);
+		BitsVectSet(pCurPFA->FbHap-1,pCurPFA->ProgenyFounders);
 		}
 	}
 return(0);
@@ -1420,7 +1670,7 @@ for(PFAIdx = 0; PFAIdx < m_UsedProgenyFndrAligns; PFAIdx++, pCurPFA++)
 		   pNxtPFA->ChromID == CurChromID)
 			{
 			if((NxtLociDelta = (pNxtPFA->Loci - pCurPFA->Loci)) <= MaxDistance)
-				bNxtEqual = Bits256Equal(pCurPFA->ProgenyFounders, pNxtPFA->ProgenyFounders);
+				bNxtEqual = BitsVectEqual(pCurPFA->ProgenyFounders, pNxtPFA->ProgenyFounders);
 			else
 				NxtLociDelta = MaxDistance + 1;
 			}
@@ -1433,7 +1683,7 @@ for(PFAIdx = 0; PFAIdx < m_UsedProgenyFndrAligns; PFAIdx++, pCurPFA++)
 		   pPrevPFA->ChromID == CurChromID)
 			{
 			if((PrevLociDelta = (pCurPFA->Loci - pPrevPFA->Loci)) <= MaxDistance)
-				bPrevEqual = Bits256Equal(pCurPFA->ProgenyFounders, pPrevPFA->ProgenyFounders);
+				bPrevEqual = BitsVectEqual(pCurPFA->ProgenyFounders, pPrevPFA->ProgenyFounders);
 			else
 				PrevLociDelta = MaxDistance + 1;
 			}
@@ -1475,8 +1725,8 @@ tsProgenyFndrAligns *pPrvPFA;
 size_t PFANxtIdx;
 size_t PFAPrvIdx;
 size_t PFAIdx;
-ts256Bits CurFounders;
-ts256Bits ExtdFounders;
+ts4096Bits CurFounders;
+ts4096Bits ExtdFounders;
 uint32_t NumIntersect;
 
 int32_t PrevReadsetID;
@@ -1515,7 +1765,7 @@ for(PFAIdx = 0; PFAIdx < m_UsedProgenyFndrAligns; PFAIdx++, pCurPFA++)
 			{
 			if(pFndrAlleles->NumAlleleFndrs[UniqueAllele] == 1)
 				{
-				Bits256Clear(CurFounders,pFndrAlleles->Alleles[UniqueAllele]);
+				BitsVectClear(CurFounders,pFndrAlleles->Alleles[UniqueAllele]);
 				break;
 				}
 			}
@@ -1535,7 +1785,7 @@ for(PFAIdx = 0; PFAIdx < m_UsedProgenyFndrAligns; PFAIdx++, pCurPFA++)
 				// determining the intersect here!
 				// extending group of aligned founders through adjacent progeny alignments until one becomes only remaining
 				ExtdFounders = pNxtPFA->ProgenyFounders;
-				if(NumIntersect = Bits256Intersect(ExtdFounders, CurFounders) <= 1)
+				if(NumIntersect = BitsVectIntersect(ExtdFounders, CurFounders) <= 1)
 					break;
 				pNxtPFA += 1;
 				}
@@ -1549,7 +1799,7 @@ for(PFAIdx = 0; PFAIdx < m_UsedProgenyFndrAligns; PFAIdx++, pCurPFA++)
 				{
 				// determining the intersect here!
 				ExtdFounders = pPrvPFA->ProgenyFounders;
-				if(NumIntersect = Bits256Intersect(ExtdFounders, CurFounders) <= 1)
+				if(NumIntersect = BitsVectIntersect(ExtdFounders, CurFounders) <= 1)
 					break;
 
 				pPrvPFA -= 1;
@@ -1646,7 +1896,7 @@ for(PFAIdx = 0; PFAIdx < m_UsedProgenyFndrAligns; PFAIdx++, pCurPFA++)
 	for(FndrIdx=0; FndrIdx < m_NumFounders; FndrIdx++)
 		{
 		if(m_Fndrs2Proc[FndrIdx] & 0x01)
-			m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], ",%d", Bits256Test(FndrIdx, pCurPFA->ProgenyFounders) ? 1 : 0);
+			m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], ",%d", BitsVectTest(FndrIdx, pCurPFA->ProgenyFounders) ? 1 : 0);
 		}
 	m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], "\n");
 	if((m_OutBuffIdx + 1000) > m_AllocOutBuff)
@@ -1751,7 +2001,7 @@ for(ASIdx = 0; ASIdx < m_UsedAlleleStacks; ASIdx++, pCurAlleleStack++)
 		}
 	if(pCurAlleleStack->NumFndrs == 1)	// if just one founder then which one?
 	{
-		if(Bits256Test(0, pCurAlleleStack->ProcFndrs))
+		if(BitsVectTest(0, pCurAlleleStack->ProcFndrs))
 			Fndr = 3;
 		else
 			Fndr = 6;
@@ -1805,7 +2055,7 @@ uint32_t BinAlleles;
 tsAlleleStack* pCurAlleleStack;
 char* pszChrom;
 uint32_t FndrIdx;
-uint8_t NumFndrs;
+uint32_t NumFndrs;
 size_t ASIdx;
 int32_t AlleleIdx;
 
@@ -1891,7 +2141,7 @@ for(ASIdx = 0; ASIdx < m_UsedAlleleStacks; ASIdx++, pCurAlleleStack++)
 		m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], ",\"");
 		for(FndrIdx = 0; NumFndrs && FndrIdx < pCurAlleleStack->NumFndrs; FndrIdx++)
 			{
-			if(Bits256Test((uint8_t)FndrIdx, pCurAlleleStack->Alleles[AlleleIdx]))
+			if(BitsVectTest(FndrIdx, pCurAlleleStack->Alleles[AlleleIdx]))
 				{
 				m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], "%s", LocateReadset(FndrIdx + 1));
 				if(--NumFndrs)
@@ -1946,7 +2196,7 @@ CCallHaplotypes::ReportHaplotypesAsGWAS(char* pszRsltsFileBaseName,		// generate
 {		
 char szOutFile[_MAX_PATH];
 tsProgenyFndrAligns* pCurPFA;
-char szFounders[cMaxFounderReadsets*20];
+char *pszFounders;
 int32_t FndOfs;
 int32_t FndrIdx;
 char *pszProgenyReadset;
@@ -1986,6 +2236,12 @@ if(m_hOutFile < 0)
 	}
 m_OutBuffIdx = sprintf((char*)m_pszOutBuffer, "CHR BP SNP P\n");
 
+if((pszFounders = new char[cMaxFounderReadsets*50]) == NULL)
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "ReportHaplotypesAsGWAS: Memory allocation of %u bytes failed",cMaxFounderReadsets*50);
+	Reset();
+	return(eBSFerrMem);
+	}
 int32_t PrevReadsetID = 0;
 int32_t PrevChromID = 0;
 pCurPFA = &m_pProgenyFndrAligns[0];
@@ -2005,17 +2261,17 @@ for(PFAIdx = 0; PFAIdx < m_UsedProgenyFndrAligns; PFAIdx++, pCurPFA++)
 	FndOfs = 0;
 	for(FndrIdx = 0; FndrIdx < m_NumFounders; FndrIdx++)
 		{
-		if(Bits256Test(FndrIdx, pCurPFA->ProgenyFounders))
+		if(BitsVectTest(FndrIdx, pCurPFA->ProgenyFounders))
 			{
 			if(FndOfs != 0)
-				szFounders[FndOfs++] = ':';
-			FndOfs+=sprintf(&szFounders[FndOfs],"%s", LocateReadset(FndrIdx + 1));
+				pszFounders[FndOfs++] = ':';
+			FndOfs+=sprintf(&pszFounders[FndOfs],"%s", LocateReadset(FndrIdx + 1));
 			}
 		}
 
 	if(pCurPFA->NumProgenyFounders == 1)	// if just one founder then which one?
 		{
-		if(Bits256Test(0, pCurPFA->ProgenyFounders))
+		if(BitsVectTest(0, pCurPFA->ProgenyFounders))
 			Fndr = 3; // visually represents Fa parental haplotype only 
 		else
 			Fndr = 9; // visually represents Fb parental haplotype only
@@ -2023,18 +2279,20 @@ for(PFAIdx = 0; PFAIdx < m_UsedProgenyFndrAligns; PFAIdx++, pCurPFA++)
 	else
 		Fndr = 1;	// visually represents both parental haplotypes as being present 
 	
-	m_OutBuffIdx += sprintf((char *)&m_pszOutBuffer[m_OutBuffIdx],"%s %d %s 0.%d\n", pszChrom, pCurPFA->Loci, szFounders,Fndr);
+	m_OutBuffIdx += sprintf((char *)&m_pszOutBuffer[m_OutBuffIdx],"%s %d %s 0.%d\n", pszChrom, pCurPFA->Loci, pszFounders,Fndr);
 	if((m_OutBuffIdx + 1000) > m_AllocOutBuff)
 		{
 		if(!CUtility::RetryWrites(m_hOutFile, m_pszOutBuffer, m_OutBuffIdx))
 			{
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, "ReportHaplotypesAsGWAS: Fatal error in RetryWrites()");
+			delete[]pszFounders;
 			Reset();
 			return(eBSFerrFileAccess);
 			}
 		m_OutBuffIdx = 0;
 		}
 	}
+delete[]pszFounders;
 if(m_hOutFile != -1)
 	{
 	if(m_OutBuffIdx)
@@ -2056,6 +2314,7 @@ if(m_hOutFile != -1)
 	close(m_hOutFile);
 	m_hOutFile = -1;
 	}
+
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "Completed reporting haplotypes as GWAS to file '%s'", szOutFile);
 return(eBSFSuccess);
 }
@@ -2138,7 +2397,7 @@ size_t PFAIdx;
 int32_t FndrIdx;
 int32_t ProgIdx;
 int32_t ProgenyHaplotypes[cMaxProgenyReadsets];
-uint8_t ProgHaplotype;
+uint32_t ProgHaplotype;
 int32_t CurChromID;
 int32_t CurLoci;
 bool bNewLoci;
@@ -2240,7 +2499,7 @@ for(PFAIdx = 0; PFAIdx < m_UsedProgenyFndrAligns; PFAIdx++, pCurPFA++)
 				{
 				ProgHaplotype <<= 1;
 				if(m_Fndrs2Proc[FndrIdx-1] & 0x01)
-					ProgHaplotype |= Bits256Test(FndrIdx-1, pCurPFA->ProgenyFounders) ? 1 : 0;
+					ProgHaplotype |= BitsVectTest(FndrIdx-1, pCurPFA->ProgenyFounders) ? 1 : 0;
 				}
 			}
 		ProgenyHaplotypes[ProgIdx] = ProgHaplotype;
@@ -2288,7 +2547,7 @@ CCallHaplotypes::ProcessProgenyPBAFile(char* pszProgenyPBAFile,	// load, process
 m_CurProgenyReadsetID = 0;
 m_LAChromNameID = 0;
 m_LAReadsetNameID = 0;
-if((m_CurProgenyReadsetID = LoadPBAFile(pszProgenyPBAFile,1, m_Dbg)) <= 0)
+if((m_CurProgenyReadsetID = LoadPBAFile(pszProgenyPBAFile,1)) <= 0)
 	{
 	gDiagnostics.DiagOut(eDLInfo, gszProcName, "ProcessProgenyPBAFile: Errors loading progeny PBA file '%s'",pszProgenyPBAFile);
 	Reset();
@@ -2381,7 +2640,7 @@ for(AlleleStackIdx = 0; AlleleStackIdx < m_UsedAlleleStacks; AlleleStackIdx++, p
 				{
 				NumAcceptAlleles = 1;
 				bAlleleAccept = true;
-				ProgenyFndrAligns.NumProgenyFounders = Bits256Union(ProgenyFndrAligns.ProgenyFounders, pCurAlleleStack->Alleles[AlleleIdx]);
+				ProgenyFndrAligns.NumProgenyFounders = BitsVectUnion(ProgenyFndrAligns.ProgenyFounders, pCurAlleleStack->Alleles[AlleleIdx]);
 				break;
 				}
 
@@ -2398,7 +2657,7 @@ for(AlleleStackIdx = 0; AlleleStackIdx < m_UsedAlleleStacks; AlleleStackIdx++, p
 				break;
 				}
 
-			ProgenyFndrAligns.NumProgenyFounders = Bits256Union(ProgenyFndrAligns.ProgenyFounders, pCurAlleleStack->Alleles[AlleleIdx]);
+			ProgenyFndrAligns.NumProgenyFounders = BitsVectUnion(ProgenyFndrAligns.ProgenyFounders, pCurAlleleStack->Alleles[AlleleIdx]);
 			bAlleleAccept = true;
 			}
 
@@ -2437,6 +2696,143 @@ gDiagnostics.DiagOut(eDLInfo, gszProcName, "ProcessProgenyPBAFile: Located %d pr
 return(eBSFSuccess);
 }
 
+int
+CCallHaplotypes::CompileChromRegExprs(int	NumIncludeChroms,	// number of chromosome regular expressions to include
+		char **ppszIncludeChroms,		// array of include chromosome regular expressions
+		int	NumExcludeChroms,			// number of chromosome expressions to exclude
+		char **ppszExcludeChroms)		// array of exclude chromosome regular expressions
+{
+int Idx = 0;
+
+#ifndef _WIN32
+int RegErr;				// regular expression parsing error
+char szRegErr[128];			// to hold RegErr as textual representation ==> regerror();
+#endif
+
+#ifdef _WIN32
+try {
+	for(Idx=0;Idx < NumIncludeChroms;Idx++)
+		{
+		m_IncludeChromsRE[Idx] = new Regexp();
+		m_IncludeChromsRE[Idx]->Parse(ppszIncludeChroms[Idx],false);	// note case insensitive
+		}
+	}
+catch(...)
+	{
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to process include regexpr chrom '%s'",ppszIncludeChroms[Idx]);
+	return(eBSFerrMem);
+	}
+try {
+	for(Idx=0;Idx < NumExcludeChroms;Idx++)
+		{
+		m_ExcludeChromsRE[Idx] = new Regexp();
+		m_ExcludeChromsRE[Idx]->Parse(ppszExcludeChroms[Idx],false);	// note case insensitive
+		}
+	}
+catch(...)
+	{
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to process exclude regexpr chrom '%s'",ppszExcludeChroms[Idx]);
+	return(eBSFerrMem);
+	}
+
+#else
+for(Idx=0;Idx < NumIncludeChroms;Idx++)
+	{
+
+	RegErr=regcomp(&m_IncludeChromsRE[Idx],ppszIncludeChroms[Idx],REG_EXTENDED | REG_ICASE);	// note case insensitive
+	if(RegErr)
+		{
+		regerror(RegErr,&m_IncludeChromsRE[Idx],szRegErr,sizeof(szRegErr));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to process include chrom '%s' error: %s",ppszIncludeChroms[Idx],szRegErr);
+		return(eBSFerrMem);
+		}
+	}
+for(Idx=0;Idx < NumExcludeChroms;Idx++)
+	{
+	RegErr = regcomp(&m_ExcludeChromsRE[Idx],ppszExcludeChroms[Idx],REG_EXTENDED | REG_ICASE);	// note case insensitive
+	if(RegErr)
+		{
+		regerror(RegErr,&m_ExcludeChromsRE[Idx],szRegErr,sizeof(szRegErr));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to process exclude chrom '%s' error: %s",ppszExcludeChroms[Idx],szRegErr);
+		return(eBSFerrMem);
+		}
+	}
+#endif
+return(eBSFSuccess);
+}
+
+bool					// true if chrom is accepted, false if chrom not accepted
+CCallHaplotypes::AcceptThisChromID(uint32_t ChromID)
+{
+char *pzChrom;
+if(!(m_NumExcludeChroms || m_NumIncludeChroms))
+	return(true);
+if((pzChrom=LocateChrom(ChromID)) == NULL)
+    return(false);
+return(AcceptThisChromName(pzChrom));
+}
+
+bool					// true if chrom is accepted, false if chrom not accepted
+CCallHaplotypes::AcceptThisChromName(char *pszChrom)
+{
+int IncChromIdx;
+int ExclChromIdx;
+
+bool bProcChrom = false;
+int MatchesFiltOut = 0;
+
+if(!(m_NumExcludeChroms || m_NumIncludeChroms))
+	return(true);
+
+#ifdef _WIN32
+RegexpMatch mc;
+#else
+regmatch_t mc;
+int RegErr;					// regular expression parsing error
+char szRegErr[128];			// to hold RegErr as textual representation ==> regerror();
+#endif
+
+AcquireSerialise();
+
+	// check if to be excluded
+bProcChrom = true;
+for(ExclChromIdx = 0; ExclChromIdx < m_NumExcludeChroms; ExclChromIdx++)
+	{
+#ifdef _WIN32
+	if(m_ExcludeChromsRE[ExclChromIdx]->Match(pszChrom,&mc))
+#else
+	if(!regexec(&m_ExcludeChromsRE[ExclChromIdx],pszChrom,1,&mc,0))
+#endif
+		{
+		bProcChrom = false;
+		break;
+		}
+	}
+
+	// to be included?
+if(bProcChrom && m_NumIncludeChroms > 0)
+	{
+	bProcChrom = false;
+	for(IncChromIdx = 0; IncChromIdx < m_NumIncludeChroms; IncChromIdx++)
+		{
+#ifdef _WIN32
+		if(m_IncludeChromsRE[IncChromIdx]->Match(pszChrom,&mc))
+#else
+		if(!regexec(&m_IncludeChromsRE[IncChromIdx],pszChrom,1,&mc,0))
+#endif
+			{
+			bProcChrom = true;
+			break;
+			}
+		}
+	}
+
+ReleaseSerialise();
+
+if(!bProcChrom)
+	return(false);
+return(true);
+}
 
 
 uint32_t				// returns number of unprocessed bytes in buffer
@@ -2472,8 +2868,7 @@ return(m_InNumBuffered);
 
 int32_t					// returned readset identifier (1..n) or < 0 if errors
 CCallHaplotypes::LoadPBAFile(char* pszFile,	// load chromosome metadata and PBA data from this file
-							uint8_t ReadsetType,	// 0: founder, 1: progeny, 2: control
-	                        int32_t Dbg)                // whilst debugging then limit number of chromosomes loaded per PBA file to this many. -1 if normal processing, 0 if debug with no limits, > 0 debug sets upper limit
+							uint8_t ReadsetType)	// 0: founder, 1: progeny, 2: control
 {
 int Rslt;
 int Version;
@@ -2481,7 +2876,6 @@ char szExperimentID[100];
 char szRefAssemblyID[100];
 char szReadsetID[100];
 uint32_t PrevChromMetadataIdx;
-int32_t NumChroms;
 int32_t ChromID;
 int32_t ReadsetID;
 tsReadsetMetadata *pReadsetMetadata;
@@ -2558,7 +2952,6 @@ char *pszChromName;
 int32_t ChromLen;
 
 // iterate over all chromosomes
-NumChroms = 0;
 PrevChromMetadataIdx = 0;
 while((m_InNumProcessed + 110) <= m_InNumBuffered)
 	{
@@ -2571,6 +2964,15 @@ while((m_InNumProcessed + 110) <= m_InNumBuffered)
 	m_InNumProcessed += ChromNameLen + 1 + sizeof(uint32_t);
 	if((m_InNumBuffered - m_InNumProcessed) < (uint32_t)ChromLen && FillInBuffer((uint32_t)ChromLen) == 0)
 		break;
+
+	// check if this chromosome is to be retained for further processing
+	if(!AcceptThisChromName(pszChromName))
+		{
+		m_InNumProcessed += ChromLen;
+		if((m_InNumBuffered - m_InNumProcessed) < 110 && FillInBuffer(ChromLen) == 0)
+			break;
+		continue;
+		}
 
 	ChromID = AddChrom(pszChromName);
 
@@ -2606,8 +3008,6 @@ while((m_InNumProcessed + 110) <= m_InNumBuffered)
 		TrimPBAs(m_FndrTrim5, m_FndrTrim3, ChromLen,pChromMetadata->pPBAs);
 	else // treating controls as if progeny when trimming
 		TrimPBAs(m_ProgTrim5, m_ProgTrim3, ChromLen, pChromMetadata->pPBAs);
-	if(Dbg > 0 && ++NumChroms == Dbg)
-		break;
 	m_InNumProcessed += ChromLen;
 	if((m_InNumBuffered - m_InNumProcessed) < 110 && FillInBuffer(ChromLen) == 0)
 		break;
@@ -2901,17 +3301,26 @@ InterlockedCompareExchange(&m_FastSerialise,0,1);
 __sync_val_compare_and_swap(&m_FastSerialise,1,0);
 #endif
 }
+
 int32_t									// returned index+1 into m_pHGBinSpecs[] to allocated and initialised allele stack, 0 if errors
 CCallHaplotypes::AddHGBinSpec(int32_t ChromID,	    // haplotype group clustering is on this chromosome
 	int32_t StartLoci,      // bin starts at this loci
 	int32_t NumLoci,	    // covering this many loci
-	int32_t Distance)       // maximal centroid distance measure metric used for clustering
+	int32_t MinCentroidDistance, // centroid distance can range from this minimum and up to MaxCentroidDistance when attempting to limit number of haplotype groupings to MaxNumHaplotypeGroups
+	int32_t MaxCentroidDistance, // maximum centroid distance which can be used when attempting to meet MaxNumHaplotypeGroups constraint
+	int32_t MaxNumHaplotypeGroups) // attempt to constrain number of haplotype groups to be this maximum
+
 {
 tsHGBinSpec Tmp;
 Tmp.ChromID = ChromID;
-Tmp.Distance = Distance;
+Tmp.MaxCentroidDistance = MaxCentroidDistance;
 Tmp.NumLoci = NumLoci;
 Tmp.StartLoci = StartLoci;
+Tmp.MinCentroidDistance = MinCentroidDistance;
+Tmp.MaxCentroidDistance = MaxCentroidDistance;
+Tmp.MaxNumHaplotypeGroups = MaxNumHaplotypeGroups;
+Tmp.Status = 0;
+Tmp.pHaplotypeGroup = NULL;
 return(AddHGBinSpec(&Tmp));
 }
 
@@ -2980,39 +3389,26 @@ ReleaseFastSerialise();
 return(m_UsedHGBinSpecs);
 }
 
-tsHGBinSpec*    // returned haplotype grouping bin specification, returns NULL if all bins on chromosome have been iterated
-CCallHaplotypes::IterateHGBinSpecs(int32_t ChromID, // bin is on this chromosome
-	int32_t BinID)    // previously iterated bin identifier, to access 1st bin on chromosome then pass 0 as the bin identifier 
+tsHGBinSpec*    // returned haplotype grouping bin specification, returns NULL if all bins have been iterated
+CCallHaplotypes::IterateHGBinSpecs(int32_t BinID)    // previously iterated bin identifier, to access 1st bin then pass 0 as the bin identifier 
 {
 tsHGBinSpec* pHGBinSpec;
-tsChromMetadata *pChromMetadata;
-tsReadsetMetadata *pReadsetMetadata;
-uint32_t CurChromMetadataIdx;
-int32_t ChromIdx;
 
-if(BinID <= 0) // 1st bin on chromosome requested
+if(BinID < 0) // 1st bin is being requested
+    BinID = 0;
+AcquireFastSerialise();
+while(BinID < m_UsedHGBinSpecs)
 	{
-	pReadsetMetadata = &m_Readsets[0];		// founders were loaded first so 1st founder will be here
-	CurChromMetadataIdx = pReadsetMetadata->StartChromMetadataIdx;
-	for(ChromIdx = 0; ChromIdx < pReadsetMetadata->NumChroms && CurChromMetadataIdx != 0; ChromIdx++)
+	pHGBinSpec = &m_pHGBinSpecs[BinID++];
+	if(!(pHGBinSpec->Status & 0x01))
 		{
-		pChromMetadata = &m_pChromMetadata[CurChromMetadataIdx - 1];
-		if(pChromMetadata->ChromID == ChromID)
-			{
-			if(pChromMetadata->HGBinID == 0)
-				break;
-			return(&m_pHGBinSpecs[pChromMetadata->HGBinID-1]);
-			}
-		CurChromMetadataIdx = pChromMetadata->NxtChromMetadataIdx;
+		pHGBinSpec->Status = 0x01;
+		m_ProccessingBinID = pHGBinSpec->BinID;
+		ReleaseFastSerialise();
+		return(pHGBinSpec);
 		}
 	}
-else
-	if(BinID < m_UsedHGBinSpecs)
-		{
-		pHGBinSpec = &m_pHGBinSpecs[BinID];
-		if(pHGBinSpec->ChromID == ChromID)
-			return(pHGBinSpec);
-		}
+ReleaseFastSerialise();
 return(NULL);
 }
 
@@ -3031,7 +3427,9 @@ int32_t RegionStartLoci;
 int32_t NumBins;
 int32_t BinSize;
 int32_t RegionLen;
-int32_t Distance;
+int32_t MinCentroidDistance; // centroid distance can range from this minimum and up to MaxCentroidDistance when attempting to limit number of haplotype groupings to MaxNumHaplotypeGroups
+int32_t MaxCentroidDistance; // maximum centroid distance which can be used when attempting to meet MaxNumHaplotypeGroups constraint
+int32_t MaxNumHaplotypeGroups;// attempt to constrain number of haplotype groups to be this maximum
 char *pszChrom;
 int32_t ChromID;
 int32_t CurChromID;
@@ -3052,7 +3450,7 @@ if((m_pCSVFile = new CCSVFile) == NULL)
 	Reset();
 	return(eBSFerrObj);
 	}
-m_pCSVFile->SetMaxFields(10); // only actually processing 1st 5 fields: chrom,region start loci, bin size, number of bins, distance 
+m_pCSVFile->SetMaxFields(10); // only actually processing 1st 7 fields: chrom,region start loci, bin size, number of bins, MinCentroidDistance, MaxCentroidDistance,MaxNumHaplotypeGroups
 
 if((Rslt = m_pCSVFile->Open(pszInFile)) != eBSFSuccess)
 	{
@@ -3072,9 +3470,9 @@ NumRegionErrs = 0;
 while((Rslt = m_pCSVFile->NextLine()) > 0)		// onto next line containing fields
 	{
 	CurLineNumber++;
-	if((NumFields = m_pCSVFile->GetCurFields()) < 5)	// must contain at least 5 fields
+	if((NumFields = m_pCSVFile->GetCurFields()) < 7)	// must contain at least 7 fields
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Haplotype group bin specification file '%s' expected to contain a minimum of 4 fields, it contains %d at line %d", pszInFile, NumFields, CurLineNumber);
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Haplotype group bin specification file '%s' expected to contain a minimum of 7 fields, it contains %d at line %d", pszInFile, NumFields, CurLineNumber);
 		Reset();
 		return(eBSFerrParse);
 		}
@@ -3083,18 +3481,24 @@ while((Rslt = m_pCSVFile->NextLine()) > 0)		// onto next line containing fields
 	if(CurLineNumber == 1 && m_pCSVFile->IsLikelyHeaderLine())
 		continue;
 	m_pCSVFile->GetText(1, &pszChrom);
+
+
+
 	if(pszChrom == NULL || pszChrom[0] == '\0')
 		{
 		if(++NumUnrecognisedChroms <= 100)
-			gDiagnostics.DiagOut(eDLWarn, gszProcName, "Unrecognised chromosome/sequence at line %d in file '%s', region sloughed", CurLineNumber, pszInFile);
+			gDiagnostics.DiagOut(eDLWarn, gszProcName, "Unrecognised chromosome/sequence name at line %d in file '%s', region sloughed", CurLineNumber, pszInFile);
 		continue;
 		}
+
+	if(!AcceptThisChromName(pszChrom)) // may not be accepting this chromosome for processing
+		continue;
 
 	// is chromosome known?
 	if((ChromID = LocateChrom(pszChrom)) <= 0)
 		{
 		if(++NumUnrecognisedChroms <= 100)
-			gDiagnostics.DiagOut(eDLWarn, gszProcName, "Unrecognised chromosome/sequence '%s' at line %d in file '%s', region sloughed", pszChrom, CurLineNumber, pszInFile);
+			gDiagnostics.DiagOut(eDLWarn, gszProcName, "Unrecognised chromosome/sequence name '%s' at line %d in file '%s', region sloughed", pszChrom, CurLineNumber, pszInFile);
 		continue;
 		}
 
@@ -3154,32 +3558,68 @@ while((Rslt = m_pCSVFile->NextLine()) > 0)		// onto next line containing fields
 		continue;
 		}
 
-	m_pCSVFile->GetInt(5, &Distance);
-	if(Distance < 1)
+	m_pCSVFile->GetInt(5, &MinCentroidDistance);
+	if(MinCentroidDistance < 1)
 		{
 		if(++NumRegionErrs <= 100)
 			{
 			gDiagnostics.DiagOut(eDLWarn, gszProcName, "Chromosome/sequence '%s' has size: %d, referenced in file '%s' at line: %d", pszChrom, pChromMetadata->ChromLen, pszInFile, CurLineNumber);
-			gDiagnostics.DiagOut(eDLWarn, gszProcName, "Distance '%d' must be at least 1, region sloughed", Distance);
+			gDiagnostics.DiagOut(eDLWarn, gszProcName, "MinCentroidDistance '%d' must be at least 1, region sloughed", MinCentroidDistance);
 			}
 		continue;
 		}
 
-	if(Distance >= BinSize)
+	if(MinCentroidDistance >= BinSize)
 		{
 		if(++NumRegionErrs <= 100)
 			{
 			gDiagnostics.DiagOut(eDLWarn, gszProcName, "Chromosome/sequence '%s' has size: %d, referenced in file '%s' at line: %d", pszChrom, pChromMetadata->ChromLen, pszInFile, CurLineNumber);
-			gDiagnostics.DiagOut(eDLWarn, gszProcName, "Group clustering centroid distance '%d' must be less than the binsize '%d', region sloughed", Distance, BinSize);
+			gDiagnostics.DiagOut(eDLWarn, gszProcName, "Group clustering MinCentroidDistance '%d' must be less than the binsize '%d', region sloughed", MinCentroidDistance, BinSize);
 			}
 		continue;
 		}
+
+
+	m_pCSVFile->GetInt(6, &MaxCentroidDistance);
+	if(MaxCentroidDistance < MinCentroidDistance)
+		{
+		if(++NumRegionErrs <= 100)
+			{
+			gDiagnostics.DiagOut(eDLWarn, gszProcName, "Chromosome/sequence '%s' has size: %d, referenced in file '%s' at line: %d", pszChrom, pChromMetadata->ChromLen, pszInFile, CurLineNumber);
+			gDiagnostics.DiagOut(eDLWarn, gszProcName, "MaxCentroidDistance '%d' must be at least MinCentroidDistance '%d', region sloughed", MaxCentroidDistance,MinCentroidDistance);
+			}
+		continue;
+		}
+
+	if(MaxCentroidDistance >= BinSize)
+		{
+		if(++NumRegionErrs <= 100)
+			{
+			gDiagnostics.DiagOut(eDLWarn, gszProcName, "Chromosome/sequence '%s' has size: %d, referenced in file '%s' at line: %d", pszChrom, pChromMetadata->ChromLen, pszInFile, CurLineNumber);
+			gDiagnostics.DiagOut(eDLWarn, gszProcName, "Group clustering MaxCentroidDistance '%d' must be less than the binsize '%d', region sloughed", MaxCentroidDistance, BinSize);
+			}
+		continue;
+		}
+
+	m_pCSVFile->GetInt(7, &MaxNumHaplotypeGroups);
+	if(MaxNumHaplotypeGroups < 1)
+		{
+		if(++NumRegionErrs <= 100)
+			{
+			gDiagnostics.DiagOut(eDLWarn, gszProcName, "Chromosome/sequence '%s' has size: %d, referenced in file '%s' at line: %d", pszChrom, pChromMetadata->ChromLen, pszInFile, CurLineNumber);
+			gDiagnostics.DiagOut(eDLWarn, gszProcName, "MaxNumHaplotypeGroups '%d' must be at least 1, region sloughed", MaxNumHaplotypeGroups);
+			}
+		continue;
+		}
+
+	if(MaxNumHaplotypeGroups > m_NumFounders) // silently clamp
+		MaxNumHaplotypeGroups = m_NumFounders;
 
 	while(NumBins--)
 		{
-		if(AddHGBinSpec(ChromID, RegionStartLoci, BinSize, Distance) < 1)
+		if(AddHGBinSpec(ChromID, RegionStartLoci, BinSize, MinCentroidDistance,MaxCentroidDistance,MaxNumHaplotypeGroups) < 1)
 			{
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddHGBinSpec(%d,%d,%d,%d) returned unrecoverable memory allocation error,parsing file '%s' at line %d", ChromID, RegionStartLoci, BinSize, Distance, pszInFile, CurLineNumber);
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddHGBinSpec(%d,%d,%d,%d,%d,%d) returned unrecoverable memory allocation error,parsing file '%s' at line %d", ChromID, RegionStartLoci, BinSize, MinCentroidDistance,MaxCentroidDistance,MaxNumHaplotypeGroups, pszInFile, CurLineNumber);
 			Reset();
 			return(eBSFerrParse);
 			}
@@ -3290,9 +3730,6 @@ uint32_t StartQuerySeqIdx;
 uint32_t ThreadIdx;
 uint32_t StartedInstances;
 tsWorkerInstance *pThreadPar;
-
-if(NumThreads > m_TotWorkQueueEls)
-	NumThreads = m_TotWorkQueueEls;
 
 StartQuerySeqIdx = 0;
 pThreadPar = m_WorkerInstances;
@@ -3425,15 +3862,22 @@ int
 CCallHaplotypes::ProcWorkerThread(tsWorkerInstance *pThreadPar)	// worker thread parameters
 {
 int Rslt;
+int CurBinID;
+int CurChromID;
 uint32_t NumQueueElsProcessed;
+uint32_t MarkNumQueueElsProcessed;
 tsWorkQueueEl *pWorkQueueEl;
 uint32_t ReqTerminate;
 // this thread has started, one more worker thread
 AcquireSerialise();
 m_NumWorkerInsts++;
 ReleaseSerialise();
-Rslt = 0;
-while(Rslt >= 0) {
+CurChromID = -1;
+NumQueueElsProcessed = 0;
+pWorkQueueEl = NULL;
+CurBinID = 0;
+Rslt = eBSFSuccess;
+while(Rslt >= eBSFSuccess) {
 	// check if requested to terminate
 	AcquireSerialise();
 	ReqTerminate = m_ReqTerminate;
@@ -3441,21 +3885,45 @@ while(Rslt >= 0) {
 	if(ReqTerminate)
 		break;
 
-	AcquireSerialise();
-	NumQueueElsProcessed = 	m_NumQueueElsProcessed;
-	if(NumQueueElsProcessed == m_TotWorkQueueEls)
+	if(!(m_PMode == eMCSHAllelicHapsGrps || m_PMode == eMCSHCoverageHapsGrps))
 		{
+		AcquireSerialise();
+    	NumQueueElsProcessed = 	m_NumQueueElsProcessed;
+	    if(NumQueueElsProcessed == m_TotWorkQueueEls)
+		    {
+			ReleaseSerialise();
+			break;
+			}
+		m_NumQueueElsProcessed++;
 		ReleaseSerialise();
-		break;
-		}
-	m_NumQueueElsProcessed++;
-	ReleaseSerialise();
-	pWorkQueueEl = &m_pWorkQueueEls[NumQueueElsProcessed];
-
-	if(m_PMode != eMCSHFndrHaps)
+		pWorkQueueEl = &m_pWorkQueueEls[NumQueueElsProcessed];
 		Rslt = GenChromAlleleStacks(pWorkQueueEl->ChromID, pWorkQueueEl->ChromLen, pWorkQueueEl->StartLoci, pWorkQueueEl->MaxNumLoci, pWorkQueueEl->NumFndrs, pWorkQueueEl->pFounderPBAs, pWorkQueueEl->pMskPBA);
+		}
 	else
-		Rslt = GenFounderHaplotypes(pWorkQueueEl->ChromID, pWorkQueueEl->ChromLen, pWorkQueueEl->StartLoci, pWorkQueueEl->MaxNumLoci, pWorkQueueEl->NumFndrs, pWorkQueueEl->pFounderPBAs);
+		{
+		tsHGBinSpec* pCurBinSpec;
+		if((pCurBinSpec = IterateHGBinSpecs(CurBinID)) == NULL)
+			break;
+		CurBinID = pCurBinSpec->BinID;
+
+		// locate work queue element corresponding to be processed bin ChromID
+		if(pCurBinSpec->ChromID != CurChromID)
+			{
+			MarkNumQueueElsProcessed = NumQueueElsProcessed; // so can restore if bin chromosome not present in all samples
+			pWorkQueueEl = &m_pWorkQueueEls[NumQueueElsProcessed];
+			while(NumQueueElsProcessed < m_TotWorkQueueEls && pWorkQueueEl->ChromID != pCurBinSpec->ChromID)
+				pWorkQueueEl = &m_pWorkQueueEls[++NumQueueElsProcessed];
+			if(NumQueueElsProcessed == m_TotWorkQueueEls)
+				{
+				pCurBinSpec->Status |= 0x07; // mark as being completed but able to locate chromosome - user specification was for a chromosome not present in all samples
+				NumQueueElsProcessed = MarkNumQueueElsProcessed; // attempt to iterate forward onto a bin which does reference a chromsome present in all samples
+				continue;
+				}
+			CurChromID = pCurBinSpec->ChromID;
+			}
+		Rslt = GenHaplotypeGroups(pCurBinSpec,pWorkQueueEl->NumFndrs, pWorkQueueEl->pFounderPBAs);
+		pCurBinSpec->Status = 0x03; // mark processing on this bin as completed
+		}
 	}
 
 AcquireSerialise();
@@ -3511,9 +3979,9 @@ int32_t FndrIdx;
 int32_t DivAlleles;
 int32_t LociFounders;
 uint8_t FndrBaseAllele;
-ts256Bits Fndrs2Proc;
+ts4096Bits Fndrs2Proc;
 
-if(NumFndrs < 1 || NumFndrs > 256)
+if(NumFndrs < 1 || NumFndrs > 4096)
 	return(-1);
 
 // check that at least 1 founder actually has a PBAs
@@ -3525,7 +3993,7 @@ for(FounderIdx = 0; FounderIdx < NumFndrs; FounderIdx++)
 		continue;
 	if((pFndrLoci = pFounderPBAs[FounderIdx]) == NULL)	// can't score if no PBA for this founder
 		continue;
-	Bits256Set(NumFndrs2Proc, Fndrs2Proc);
+	BitsVectSet(NumFndrs2Proc, Fndrs2Proc);
 	NumFndrs2Proc++;							// can use this founder for generating an allelestack
 	}
 if(NumFndrs2Proc < 1)							// must have at least 1 founder
@@ -3537,7 +4005,7 @@ memset(&AlleleStack, 0, sizeof(AlleleStack));
 AlleleStack.ChromID = ChromID;
 AlleleStack.NumFndrs = NumFndrs;
 AlleleStack.NumProcFndrs = NumFndrs2Proc;
-memcpy(&AlleleStack.ProcFndrs, &Fndrs2Proc, sizeof(ts256Bits));
+memcpy(&AlleleStack.ProcFndrs, &Fndrs2Proc, sizeof(ts4096Bits));
 
 bFndrAllele = false;
 NumAlleleStacks = 0;
@@ -3585,7 +4053,7 @@ for(AlleleLoci = Loci; AlleleLoci <= EndLoci; AlleleLoci++)
 				}
 			bFndrAllele = true;			// accepting this founder as having at least one allele, if more alleles then founder loci treated as having no alleles
 			AlleleStack.NumAlleleFndrs[AlleleIdx]++;
-			Bits256Set(FndrIdx, AlleleStack.Alleles[AlleleIdx]);
+			BitsVectSet(FndrIdx, AlleleStack.Alleles[AlleleIdx]);
 			}
 		if(!bFndrAllele)				// if no alleles of required level for this founder then don't bother with other founders
 			break;
@@ -3612,9 +4080,8 @@ return(NumAlleleStacks);
 
 
 int				// < 0 if errors, >=0 length of generated consensus
-CCallHaplotypes::GenConsensusPBA(int32_t ChromSize,		// chromosome is this size
-			int32_t Loci,			// processing for consensus starting from this loci
-			int32_t MaxNumLoci,		// processing for generation of this maximum sized consensus PBAs
+CCallHaplotypes::GenConsensusPBA(int32_t Loci,			// processing for consensus starting from this loci
+			int32_t NumLoci,		// processing for generation of this maximum sized consensus PBAs
 			int32_t NumFndrs,		// number of founders to be processed 1st PBA at *pPBAs[0]
 			uint8_t* pFounderPBAs[], // pPBAs[] pts to chromosome PBAs, for each of the chromosome founder PBAs
 			uint8_t* pConsensusPBAs)     // ptr to preallocated sequence of length MaxNumLoci which is to be updated with consensus PBAs
@@ -3628,7 +4095,7 @@ int32_t EndLoci;
 int32_t ConsensusLen;
 uint8_t MaxFeqAllele;
 
-EndLoci = min(ChromSize, Loci + MaxNumLoci);
+EndLoci = Loci + NumLoci;
 
 ConsensusLen = 0;
 for(AlleleLoci = Loci; AlleleLoci < EndLoci; AlleleLoci++,ConsensusLen++)
@@ -3649,71 +4116,77 @@ return(ConsensusLen);
 
 uint8_t				// concensus PBA for founders in a group of which specified founder is a member at the requested loci
 CCallHaplotypes::GenConsensusGroupPBA(int Founder, // consensus for all founders in same group as this founder
-	        tsHaplotypeGroup **ppHaplotypes, // pts to first groupings in linked list of groupings, on return will be updated with pointer to haplotype grouping containing requesting loci
+	tsHaplotypeGroup *pHaplotypes, // pts to haplotype grouping expected to contain requested chrom and loci
+	        int32_t ChromID,        // requiring consensus for this chrom at Loci
 	        int32_t Loci,			// requiring consensus at this loci
 			int32_t NumFndrs,		// number of founders to be processed 1st PBA at *pPBAs[0]
 			uint8_t* pFounderPBAs[]) // pPBAs[] pts to chromosome PBAs, for each of the chromosome founder PBAs
 {
-tsHaplotypeGroup* pHaplotypes;
 int32_t HapGrp;
-ts256Bits* pHapGrp;
+ts4096Bits* pHapGrp;
 uint32_t AlleleFreq[256];
 uint8_t* pFndrLoci;
 int32_t FndrIdx;
 uint8_t MaxFeqAllele;
 
-if(ppHaplotypes == NULL || *ppHaplotypes == NULL)
+if(pHaplotypes == NULL)
     return(0);
 
-// first locate haplotype groupings containing requested loci
-pHaplotypes = *ppHaplotypes;
-while(pHaplotypes != NULL && (Loci < pHaplotypes->StartLoci || (Loci >= pHaplotypes->StartLoci + pHaplotypes->NumLoci)))
-   pHaplotypes = pHaplotypes->pNxt;
-if((*ppHaplotypes = pHaplotypes) == NULL)
-   return(0);
+if(ChromID != pHaplotypes->ChromID || (Loci < pHaplotypes->StartLoci || (Loci >= pHaplotypes->StartLoci + pHaplotypes->NumLoci)))
+  return(0);
+
+if(pHaplotypes->MRAGrpChromID != ChromID || pHaplotypes->MRAGrpLoci != Loci) // different loci from that cached? If so then need to clear cache so consensus entries are recalculated
+	{
+	pHaplotypes->MRAGrpChromID = 0;
+	pHaplotypes->MRAGrpLoci = -1;
+	memset(pHaplotypes->MRAGrpConsensus,0x0ff,sizeof(pHaplotypes->MRAGrpConsensus));
+	}
 
 // groupings in which loci is located now known
-// identify to which group the founder has been grouped
+// identify in which group the founder is a member
 pHapGrp = pHaplotypes->HaplotypeGroup;
-for(HapGrp = 0; HapGrp < pHaplotypes->NumGroups; HapGrp++,pHapGrp++)
+for(HapGrp = 0; HapGrp < pHaplotypes->NumHaplotypeGroups; HapGrp++,pHapGrp++)
 	{
-	if(Bits256Test(Founder, *pHapGrp))
+	if(BitsVectTest(Founder, *pHapGrp))
 		break;
 	}
-if(HapGrp == pHaplotypes->NumGroups)
-	{
-	*ppHaplotypes = NULL;
+if(HapGrp == pHaplotypes->NumHaplotypeGroups) // should have been a member of a group, but check!
 	return(0);
-	}
 
-// group has been identified
+if(pHaplotypes->MRAGrpChromID == ChromID && pHaplotypes->MRAGrpLoci == Loci && pHaplotypes->MRAGrpConsensus[HapGrp] != 0x0ff) // with any luck the consensus for group has already been generated and cached
+    return(pHaplotypes->MRAGrpConsensus[HapGrp]); // returning the cached consensus
+
+// group has been identified, generate and cache the consensus, consensus will be highest frequency allele within that groups members
+pHaplotypes->MRAGrpChromID = ChromID;
+pHaplotypes->MRAGrpLoci = Loci;
 memset(AlleleFreq,0,sizeof(AlleleFreq));
 MaxFeqAllele = 0;
 for(FndrIdx = 0; FndrIdx < NumFndrs; FndrIdx++)
 	{
-	if(!Bits256Test(FndrIdx, *pHapGrp))
+	if(!BitsVectTest(FndrIdx, *pHapGrp))
 		continue;
 	pFndrLoci = pFounderPBAs[FndrIdx] + Loci;
 	AlleleFreq[*pFndrLoci]++;
 	if(AlleleFreq[*pFndrLoci] > AlleleFreq[MaxFeqAllele])
 		MaxFeqAllele = *pFndrLoci;
 	}
+pHaplotypes->MRAGrpConsensus[HapGrp] = MaxFeqAllele; // cache group concensus
 return(MaxFeqAllele);
 }
 
 
 int32_t 
-CCallHaplotypes::ReportHaplotypeGroups(char *pszIdent,           // file name suffix identifier - initially will be the chromosome name with each chrom in it's own file but in later releases could be some other reference
-	int32_t NumFndrs,             // total number of founders
-	int32_t NumHaplotypeGroups,       // number of haplotype groups in linked list pFirstHaplotypeGroups
-	tsHaplotypeGroup* pHaplotypeGroups) // first haplotype groupings, next is linked through pHaplotypeGroups->pNxt, last linked pNxt is NULL
+CCallHaplotypes::ReportHaplotypeGroups(int32_t NumHaplotypes)         // number of haplotypes which have been grouped
 {
+int32_t BinIdx;
+tsHGBinSpec* pHGBinSpec;
+tsHaplotypeGroup* pHaplotypeGroup;
 int32_t CurChromID;
-int32_t FndrIdx;
+int32_t HaplotypeIdx;
 int32_t GrpIdx;
 char* pszChrom;
 char szOutFile[_MAX_PATH];
-tsHaplotypeGroup* pGroups;
+
 int32_t NumGrpMembers[cMaxFounderReadsets];
 
 AcquireSerialise();
@@ -3729,7 +4202,7 @@ if(m_pszOutBuffer == NULL)
 	}
 m_OutBuffIdx = 0;
 
-sprintf(szOutFile, "%s.haplotypegrouping.%d.%s.csv", m_pszRsltsFileBaseName, m_ExprID,pszIdent);
+sprintf(szOutFile, "%s.haplotypegrouping.%d.%d.all.csv", m_pszRsltsFileBaseName, m_ExprID,NumHaplotypes);
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "Reporting haplotype grouping to file '%s'", szOutFile);
 #ifdef _WIN32
 	m_hOutFile = open(szOutFile, (O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC), (_S_IREAD | _S_IWRITE));
@@ -3748,28 +4221,34 @@ if(m_hOutFile < 0)
 	Reset();
 	return(eBSFerrCreateFile);
 	}
-m_OutBuffIdx = sprintf((char*)m_pszOutBuffer, "\"Chrom\",\"Loci\",\"Len\",\"Distance\",\"NumHaplotypeGroups\"");
-for(FndrIdx = 0; FndrIdx < NumFndrs; FndrIdx++)
-	m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], ",\"%s\"", LocateReadset(FndrIdx+1));
-for(FndrIdx = 0; FndrIdx < NumFndrs; FndrIdx++)
-	m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], ",\"GrpMembers:%d\"", FndrIdx+1);
+m_OutBuffIdx = sprintf((char*)m_pszOutBuffer, "\"Chrom\",\"Loci\",\"Len\",\"MinDistance\",\"MaxDistance\",\"MaxHaplotypeGroups\",\"ActualDistance\",\"ActualHaplotypeGroups\"");
+for(HaplotypeIdx = 0; HaplotypeIdx < NumHaplotypes; HaplotypeIdx++)
+	m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], ",\"%s\"", LocateReadset(HaplotypeIdx+1));
+for(HaplotypeIdx = 0; HaplotypeIdx < NumHaplotypes; HaplotypeIdx++)
+	m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], ",\"GrpMembers:%d\"", HaplotypeIdx+1);
 m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], "\n");
 
-pGroups = pHaplotypeGroups;
 CurChromID = 0;
-do {
-	if(pGroups->ChromID != CurChromID)
+pHGBinSpec = m_pHGBinSpecs;
+for(BinIdx = 0; BinIdx < m_UsedHGBinSpecs; BinIdx++,pHGBinSpec++)
+	{
+	if((pHGBinSpec->Status & 0x07) != 0x03) // skip any with error status or incomplete processing
+		continue;
+
+	if(pHGBinSpec->ChromID != CurChromID)
 		{
-		CurChromID = pGroups->ChromID;
+		CurChromID = pHGBinSpec->ChromID;
 		pszChrom = LocateChrom(CurChromID);
 		}
-	m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], "\"%s\",%d,%d,%d,%d", pszChrom, pGroups->StartLoci, pGroups->NumLoci, pGroups->Distance, pGroups->NumGroups);
+
+	pHaplotypeGroup = pHGBinSpec->pHaplotypeGroup;
+	m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], "\"%s\",%d,%d,%d,%d,%d,%d,%d", pszChrom, pHGBinSpec->StartLoci, pHGBinSpec->NumLoci, pHGBinSpec->MinCentroidDistance,pHGBinSpec->MaxCentroidDistance,pHGBinSpec->MaxNumHaplotypeGroups, pHaplotypeGroup->CentroidDistance,pHaplotypeGroup->NumHaplotypeGroups);
 	memset(NumGrpMembers, 0, sizeof(NumGrpMembers));
-	for(FndrIdx = 0; FndrIdx < NumFndrs; FndrIdx++)
+	for(HaplotypeIdx = 0; HaplotypeIdx < NumHaplotypes; HaplotypeIdx++)
 		{
-		for(GrpIdx = 0; GrpIdx < pGroups->NumGroups; GrpIdx++)
+		for(GrpIdx = 0; GrpIdx < pHaplotypeGroup->NumHaplotypeGroups; GrpIdx++)
 			{
-			if(Bits256Test(FndrIdx, pGroups->HaplotypeGroup[GrpIdx]))
+			if(BitsVectTest(HaplotypeIdx, pHaplotypeGroup->HaplotypeGroup[GrpIdx]))
 				{
 				NumGrpMembers[GrpIdx] += 1;
 				m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], ",%d", GrpIdx + 1);
@@ -3777,7 +4256,7 @@ do {
 				}
 			}
 		}
-	for(GrpIdx = 0; GrpIdx < NumFndrs; GrpIdx++)
+	for(GrpIdx = 0; GrpIdx < NumHaplotypes; GrpIdx++)
 		m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], ",%d", NumGrpMembers[GrpIdx]);
 
 	m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], "\n");
@@ -3792,7 +4271,6 @@ do {
 		m_OutBuffIdx = 0;
 		}
 	}
-while((pGroups = pGroups->pNxt) != NULL);
 
 if(m_hOutFile != -1)
 	{
@@ -3823,14 +4301,17 @@ return(eBSFSuccess);
 
 tsHaplotypeGroup * // returns allocated ptr to haplotype groups - allocated with 'new', free with 'delete'
 CCallHaplotypes::GroupHaplotypes(int32_t ChromID, // grouping is on this chromosome
-	              int32_t StartLoci, // grouping starts at this loci
-	              int32_t Length,     // grouping is over this many loci
-	              uint32_t ThresDiff, // members of a given haplotype group must be within this maximal distance from all other group members
-	              uint32_t* pFndrDiffs, // matrix counts of founder differentials
-	              int32_t NumFndrs) // number of founders
+			          int32_t StartLoci, // grouping starts at this loci
+	                     int32_t Length,     // grouping is over this many loci
+			             int32_t MinCentroidDistance, // centroid distance can range from this minimum and up to MaxCentroidDistance when attempting to limit number of haplotype groupings to MaxNumHaplotypeGroups
+			             int32_t MaxCentroidDistance, // maximum centroid distance which can be used when attempting to meet MaxNumHaplotypeGroups constraint
+			             int32_t MaxNumHaplotypeGroups, // attempt to constrain number of haplotype groups to be this maximum
+			             uint32_t* pFndrDiffs, // matrix counts of founder differentials
+			             int32_t NumFndrs) // number of founders
 {
-ts256Bits ClusterMembers[cMaxFounderReadsets];
-ts256Bits AssocToAGroup;
+ts4096Bits *pClusterMembers;
+ts4096Bits *pMinimisedClusterMembers;
+ts4096Bits AssocToAGroup;
 int32_t nCol;
 
 uint32_t* pFndrDiff;
@@ -3838,95 +4319,133 @@ uint32_t* pFndrDiff;
 int32_t nRow;
 
 int32_t NumHaplotypeGroups;
-ts256Bits CurClusterFounders;
+ts4096Bits CurClusterFounders;
 int32_t CurClusterSize;
+int32_t TargCentroidDistance;
+int32_t TargMaxCentroidDistance;
+int32_t TargMinCentroidDistance;
+int32_t MinimisedCentroidDistance;
 int32_t CurClusterDiffs;
-ts256Bits SelClusterFounders;
+ts4096Bits SelClusterFounders;
 int32_t SelClusterSize;
 int32_t SelClusterDiffs;
 int32_t NumFndrsChkd;
 
-// for each founder determine which other founders are within a specified maximal distance and assign a founder grouping to this group
-// objective is to maximise number of founders in a grouping
-Bits256Initialise(0, AssocToAGroup);
-Bits256Initialise(0, SelClusterFounders);
-NumHaplotypeGroups = 0;
-do {
-	pFndrDiff = pFndrDiffs;
-	SelClusterSize = 0;
-	SelClusterDiffs = 0;
-	NumFndrsChkd = 0;
-	for(nRow = 0; nRow < NumFndrs; nRow++)
-		{
-		CurClusterSize = 0;
-		CurClusterDiffs = 0;
-		Bits256Initialise(0, CurClusterFounders);
-		for(nCol = 0; nCol < NumFndrs; nCol++, pFndrDiff++)
-			{
-			if(Bits256Test(nCol, AssocToAGroup))
-				continue;
-			NumFndrsChkd += 1;
-			if(*pFndrDiff > ThresDiff) // if outside of group threshold then can't be member of that group
-				continue;
-			Bits256Set(nCol, CurClusterFounders);
-			CurClusterSize += 1;
-			CurClusterDiffs += *pFndrDiff;
-			}
+if((pClusterMembers = new ts4096Bits[NumFndrs]) == NULL)
+    return(NULL);
+if((pMinimisedClusterMembers = new ts4096Bits[NumFndrs]) == NULL)
+	{
+	delete []pClusterMembers;
+	return(NULL);
+	}
 
-		if(CurClusterSize > SelClusterSize ||
-			(CurClusterSize == SelClusterSize && CurClusterDiffs < SelClusterDiffs))
+TargMaxCentroidDistance = MaxCentroidDistance;
+TargMinCentroidDistance = MinCentroidDistance;
+MinimisedCentroidDistance = -1;
+do {
+	TargCentroidDistance = (TargMaxCentroidDistance + TargMinCentroidDistance)/2;
+
+	// for each founder determine which other founders are within a specified maximal distance and assign a founder grouping to this group
+	// objective is to maximise number of founders in a grouping
+	BitsVectInitialise(0, AssocToAGroup);
+	BitsVectInitialise(0, SelClusterFounders);
+	NumHaplotypeGroups = 0;
+	do {
+		pFndrDiff = pFndrDiffs;
+		SelClusterSize = 0;
+		SelClusterDiffs = 0;
+		NumFndrsChkd = 0;
+		for(nRow = 0; nRow < NumFndrs; nRow++)
 			{
-			SelClusterSize = CurClusterSize;
-			SelClusterDiffs = CurClusterDiffs;
-			SelClusterFounders = CurClusterFounders;
+			CurClusterSize = 0;
+			CurClusterDiffs = 0;
+			BitsVectInitialise(0, CurClusterFounders);
+			for(nCol = 0; nCol < NumFndrs; nCol++, pFndrDiff++)
+				{
+				if(BitsVectTest(nCol, AssocToAGroup))
+					continue;
+				NumFndrsChkd += 1;
+				if(*pFndrDiff > (uint32_t)TargCentroidDistance) // if outside of group threshold then can't be member of that group
+					continue;
+				BitsVectSet(nCol, CurClusterFounders);
+				CurClusterSize += 1;
+				CurClusterDiffs += *pFndrDiff;
+				}
+
+			if(CurClusterSize > SelClusterSize ||
+				(CurClusterSize == SelClusterSize && CurClusterDiffs < SelClusterDiffs))
+				{
+				SelClusterSize = CurClusterSize;
+				SelClusterDiffs = CurClusterDiffs;
+				SelClusterFounders = CurClusterFounders;
+				}
+			}
+		if(NumFndrsChkd)
+			{
+			pClusterMembers[NumHaplotypeGroups++] = SelClusterFounders;
+			BitsVectUnion(AssocToAGroup, SelClusterFounders);
 			}
 		}
-	if(NumFndrsChkd)
+	while(NumFndrsChkd);
+
+	if(MinCentroidDistance == MaxCentroidDistance)
+		break;
+	
+	if(NumHaplotypeGroups > MaxNumHaplotypeGroups) // if more groups than targeted then need to increase the centroid distance attempting to reduce groups
+		TargMinCentroidDistance = TargCentroidDistance + 1;
+	else // else if fewer or equal groups than targeted then need to minimise the centroid distance until distance boundary at which number of groups is more than targeted
 		{
-		ClusterMembers[NumHaplotypeGroups++] = SelClusterFounders;
-		Bits256Union(AssocToAGroup, SelClusterFounders);
+		if(NumHaplotypeGroups == MaxNumHaplotypeGroups)
+			{
+			MinimisedCentroidDistance = TargCentroidDistance;
+			memcpy(pMinimisedClusterMembers, pClusterMembers, sizeof(ts4096Bits) * MaxNumHaplotypeGroups);
+			}
+		TargMaxCentroidDistance = TargCentroidDistance - 1;
 		}
 	}
-while(NumFndrsChkd);
+while(TargMaxCentroidDistance >= TargMinCentroidDistance);
+
+if(MinimisedCentroidDistance > -1 && MinimisedCentroidDistance != TargCentroidDistance)
+	{
+	TargCentroidDistance = MinimisedCentroidDistance;
+	NumHaplotypeGroups = MaxNumHaplotypeGroups;
+	memcpy(pClusterMembers,pMinimisedClusterMembers, sizeof(ts4096Bits) * MaxNumHaplotypeGroups);
+	}
 
 tsHaplotypeGroup* pGroupings;
-size_t MemReq = sizeof(tsHaplotypeGroup) + (sizeof(ts256Bits) * (NumHaplotypeGroups-1));
+size_t MemReq = sizeof(tsHaplotypeGroup) + (sizeof(ts4096Bits) * (NumHaplotypeGroups-1));
 pGroupings = (tsHaplotypeGroup *) new uint8_t[MemReq];
 memset(pGroupings, 0, MemReq);
 pGroupings->Size = (int32_t)MemReq;
 pGroupings->ChromID = ChromID;
 pGroupings->StartLoci = StartLoci;
 pGroupings->NumLoci = Length;
-pGroupings->pNxt = NULL;
-pGroupings->NumGroups = NumHaplotypeGroups;
-memcpy(pGroupings->HaplotypeGroup, ClusterMembers, sizeof(ts256Bits) * NumHaplotypeGroups);
+pGroupings->NumFndrs = NumFndrs;
+pGroupings->CentroidDistance = TargCentroidDistance;
+pGroupings->MinCentroidDistance = MinCentroidDistance;
+pGroupings->MaxCentroidDistance = MaxCentroidDistance;
+pGroupings->MaxNumHaplotypeGroups = MaxNumHaplotypeGroups;
+pGroupings->MRAGrpChromID = -1;
+pGroupings->MRAGrpLoci = -1;
+pGroupings->NumHaplotypeGroups = NumHaplotypeGroups;
+memcpy(pGroupings->HaplotypeGroup, pClusterMembers, sizeof(ts4096Bits) * NumHaplotypeGroups);
+delete []pClusterMembers;
+delete []pMinimisedClusterMembers;
 return(pGroupings);
 }
 
 
 
 int				// < 0 if errors, otherwise success
-CCallHaplotypes::GenFounderHaplotypes(int32_t ChromID,	// processing is for this chromosome
-										  int32_t ChromSize,		// chromosome is this size
-										  int32_t StartLoci,			// processing for allele stacks starting from this loci
-										  int32_t MaxNumLoci,		// processing for this maximum number of loci
+CCallHaplotypes::GenHaplotypeGroups(tsHGBinSpec *pHGBinSpec,   // clustering using these specs
 										  int32_t NumFndrs,		// number of founders to be processed 1st PBA at *pPBAs[0]
 										  uint8_t* pFounderPBAs[])	// pPBAs[] pts to chromosome PBAs, for each of the chromosome founder PBAs
 {
 int32_t	GroupingPhase;  // grouping can be multiphased, in inital (1) phase there is no imputation for unaligned PBA values, in next (2) phase then unaligned PBA values are replaced with group concensus PBA values
 
-uint32_t P1NumHaplotypeGroups;             // number of haplotype groups in linked list of haplotype groups generated during phase 1
-tsHaplotypeGroup* pP1FirstHaplotypeGroups; // pts to first in linked list of haplotype groups generated during phase 1
-tsHaplotypeGroup* pP1LastHaplotypeGroups; // pts to last in linked list of haplotype groups generated during phase 1
 tsHaplotypeGroup *pP1CurHapGroups;
 
-uint32_t P2NumHaplotypeGroups;             // number of haplotype groups in linked list of haplotype groups generated during phase 2
-tsHaplotypeGroup* pP2FirstHaplotypeGroups; // pts to first in linked list of haplotype groups generated during phase 2
-tsHaplotypeGroup* pP2LastHaplotypeGroups; // pts to last in linked list of haplotype groups generated during phase 2
-
 tsHaplotypeGroup* pCurHaplotypeGroups; // pts most recently generated haplotype groups
-
-int32_t FounderIdx;
 
 int32_t EndLoci;
 uint8_t* pFndrLoci;
@@ -3935,6 +4454,7 @@ uint8_t *pChkFndrLoci;
 int32_t AlleleLoci;
 
 int32_t FndrIdx;
+int32_t PrevFndrIdx;
 int32_t ChkFndrIdx;
 
 uint32_t *pFndrDiff;
@@ -3945,66 +4465,47 @@ uint8_t ChkFndrLociPBA;
 uint8_t *pConsensusPBA;
 uint8_t *pConsensusLociPBA;
 
-tsHGBinSpec* pCurHGBinSpec;
-
-if(NumFndrs < 1 || NumFndrs > 256)
-	return(-1);
-
-// check that all founders actually do has alignment PBAs
-for(FounderIdx = 0; FounderIdx < NumFndrs; FounderIdx++)
-	{
-	if((pFndrLoci = pFounderPBAs[FounderIdx]) == NULL)	// can't score if no PBA for this founder
-		return(-2);
-	}
-
-pConsensusPBA = new uint8_t[ChromSize];
-GenConsensusPBA(ChromSize, StartLoci, MaxNumLoci, NumFndrs, pFounderPBAs, pConsensusPBA);
+pConsensusPBA = new uint8_t[pHGBinSpec->NumLoci];
+GenConsensusPBA(pHGBinSpec->StartLoci, pHGBinSpec->NumLoci, NumFndrs, pFounderPBAs, pConsensusPBA);
 pFndrDiffs = new uint32_t[NumFndrs * NumFndrs]; // organised as [row][col]
 
-P1NumHaplotypeGroups = 0;
-pP1FirstHaplotypeGroups = NULL;
-pP1LastHaplotypeGroups = NULL;
 pP1CurHapGroups = NULL;
-P2NumHaplotypeGroups = 0;
-pP2FirstHaplotypeGroups = NULL;
-pP2LastHaplotypeGroups = NULL;
-EndLoci = min(StartLoci + MaxNumLoci, ChromSize);
-GroupingPhase = 1; // starting with phase 1 using all founders consensus for missing PBA alignment loci and then onto phase 2 which uses group membership to derive group consensus for missing PBA alignment loci
+GroupingPhase = 0; // starting with phase 0 using all founders consensus for missing PBA alignment loci and then onto subsequent refining phases which instead use group membership to derive the group consensus for missing PBA alignment loci
 do {
-	if((pCurHGBinSpec = IterateHGBinSpecs(ChromID, 0)) == NULL)
-		break;
-	pP1CurHapGroups = pP1FirstHaplotypeGroups;
-	do {
-		EndLoci = pCurHGBinSpec->StartLoci + pCurHGBinSpec->NumLoci - 1;
-		if(EndLoci >= ChromSize || pCurHGBinSpec->StartLoci < StartLoci || EndLoci > (StartLoci + MaxNumLoci - 1)) // skipping over any HGBinSpec which is outside of permitted loci range
-			continue;
+	EndLoci = pHGBinSpec->StartLoci + pHGBinSpec->NumLoci - 1;
 
 		// generating all vs.all matrix
-		memset(pFndrDiffs, 0, NumFndrs * NumFndrs * sizeof(uint32_t));
-		for(AlleleLoci = pCurHGBinSpec->StartLoci; AlleleLoci <= EndLoci; AlleleLoci++)
+	memset(pFndrDiffs, 0, NumFndrs * NumFndrs * sizeof(uint32_t));
+	for(AlleleLoci = pHGBinSpec->StartLoci; AlleleLoci <= EndLoci; AlleleLoci++)
+		{
+		PrevFndrIdx = -1;
+		pFndrDiff = pFndrDiffs;
+		pConsensusLociPBA = pConsensusPBA + AlleleLoci - pHGBinSpec->StartLoci;
+		for(FndrIdx = 0; FndrIdx < NumFndrs; FndrIdx++)  // iterating founder by row
 			{
-			pFndrDiff = pFndrDiffs;
-			pConsensusLociPBA = pConsensusPBA + AlleleLoci;
-			for(FndrIdx = 0; FndrIdx < NumFndrs; FndrIdx++)  // iterating founder by row
-				{
-				pFndrLoci = pFounderPBAs[FndrIdx] + AlleleLoci;
+			pFndrLoci = pFounderPBAs[FndrIdx] + AlleleLoci;
 
-				for(ChkFndrIdx = 0; ChkFndrIdx < NumFndrs; ChkFndrIdx++, pFndrDiff++)  // iterating founder by col
-					{
-					pChkFndrLoci = pFounderPBAs[ChkFndrIdx] + AlleleLoci;
-					switch(GroupingPhase) {
-							case 1: // using consensus over all founders if no alignment PBA for founder
-								if((FndrLociPBA = *pFndrLoci) == 0)
-									FndrLociPBA = *pConsensusLociPBA;
-								if((ChkFndrLociPBA = *pChkFndrLoci) == 0)
-									ChkFndrLociPBA = *pConsensusLociPBA;
-								break;
-							case 2:  // using group consensus 
-								if((FndrLociPBA = *pFndrLoci) == 0)
-									FndrLociPBA = GenConsensusGroupPBA(FndrIdx, &pP1CurHapGroups, AlleleLoci, NumFndrs, pFounderPBAs);
-								if((ChkFndrLociPBA = *pChkFndrLoci) == 0)
-									ChkFndrLociPBA = GenConsensusGroupPBA(ChkFndrIdx, &pP1CurHapGroups, AlleleLoci, NumFndrs, pFounderPBAs);
-								break;
+			for(ChkFndrIdx = 0; ChkFndrIdx < NumFndrs; ChkFndrIdx++, pFndrDiff++)  // iterating founder by col
+				{
+				pChkFndrLoci = pFounderPBAs[ChkFndrIdx] + AlleleLoci;
+				switch(GroupingPhase) { // using a switch() instead of a 'if' only because there may be a need for phase specific processing in the future????
+					case 0: // inital phase is using consensus over all founders if no alignment PBA
+						if((FndrLociPBA = *pFndrLoci) == 0)
+							FndrLociPBA = *pConsensusLociPBA;
+						if((ChkFndrLociPBA = *pChkFndrLoci) == 0)
+							ChkFndrLociPBA = *pConsensusLociPBA;
+						break;
+
+					default:  // subsequent phases are refining the group consensus if no alignment PBA
+						if(FndrIdx != PrevFndrIdx)
+							{
+							PrevFndrIdx = FndrIdx;
+							if((FndrLociPBA = *pFndrLoci) == 0)
+								FndrLociPBA = GenConsensusGroupPBA(FndrIdx, pP1CurHapGroups, pHGBinSpec->ChromID, AlleleLoci, NumFndrs, pFounderPBAs);
+							}
+						if((ChkFndrLociPBA = *pChkFndrLoci) == 0)
+							ChkFndrLociPBA = GenConsensusGroupPBA(ChkFndrIdx, pP1CurHapGroups, pHGBinSpec->ChromID, AlleleLoci, NumFndrs, pFounderPBAs);
+						break;
 						}
 
 					if(FndrLociPBA != ChkFndrLociPBA)
@@ -4014,60 +4515,31 @@ do {
 			}
 
 		// have a difference matrix, now goup haplotypes
-		pCurHaplotypeGroups = GroupHaplotypes(ChromID, pCurHGBinSpec->StartLoci, pCurHGBinSpec->NumLoci, pCurHGBinSpec->Distance, pFndrDiffs, NumFndrs);
-		pCurHaplotypeGroups->pNxt = NULL;
-		pCurHaplotypeGroups->ChromID = ChromID;
-		pCurHaplotypeGroups->StartLoci = pCurHGBinSpec->StartLoci;
-		pCurHaplotypeGroups->NumLoci = pCurHGBinSpec->NumLoci;
-		pCurHaplotypeGroups->Distance = pCurHGBinSpec->Distance;
-		pCurHaplotypeGroups->NumFndrs = NumFndrs;
-
-		switch(GroupingPhase) {
-				case 1:
-					if(P1NumHaplotypeGroups)
-						pP1LastHaplotypeGroups->pNxt = pCurHaplotypeGroups;
-					else
-						pP1FirstHaplotypeGroups = pCurHaplotypeGroups;
-					pP1LastHaplotypeGroups = pCurHaplotypeGroups;
-					P1NumHaplotypeGroups++;
-					break;
-				case 2:
-					if(P2NumHaplotypeGroups)
-						pP2LastHaplotypeGroups->pNxt = pCurHaplotypeGroups;
-					else
-						pP2FirstHaplotypeGroups = pCurHaplotypeGroups;
-					pP2LastHaplotypeGroups = pCurHaplotypeGroups;
-					P2NumHaplotypeGroups++;
-					break;
+	pCurHaplotypeGroups = GroupHaplotypes(pHGBinSpec->ChromID, pHGBinSpec->StartLoci, pHGBinSpec->NumLoci,pHGBinSpec->MinCentroidDistance, pHGBinSpec->MaxCentroidDistance,pHGBinSpec->MaxNumHaplotypeGroups, pFndrDiffs, NumFndrs);
+	if(pP1CurHapGroups != NULL)
+		{
+		pP1CurHapGroups->MRAGrpChromID = -1;
+		pP1CurHapGroups->MRAGrpLoci = -1;
+		memset(pP1CurHapGroups->MRAGrpConsensus, 0, sizeof(pP1CurHapGroups->MRAGrpConsensus));
+		if(pP1CurHapGroups->Size == pCurHaplotypeGroups->Size && !memcmp(pCurHaplotypeGroups, pP1CurHapGroups, pCurHaplotypeGroups->Size))
+			{
+			delete[]pP1CurHapGroups;
+			break;
 			}
+		delete[]pP1CurHapGroups;
 		}
-	while((pCurHGBinSpec = IterateHGBinSpecs(ChromID, pCurHGBinSpec->BinID)) != NULL);
+	pP1CurHapGroups = pCurHaplotypeGroups;
 	}
-while(GroupingPhase++ <= 2);
+while(++GroupingPhase < m_NumHapGrpPhases);
+
+pHGBinSpec->pHaplotypeGroup = pCurHaplotypeGroups;
 
 if(pFndrDiffs != NULL)
     delete[]pFndrDiffs;
 if(pConsensusPBA != NULL)
     delete []pConsensusPBA;
-
-if(P2NumHaplotypeGroups > 0)
-    ReportHaplotypeGroups(LocateChrom(ChromID), NumFndrs, P2NumHaplotypeGroups, pP2FirstHaplotypeGroups);
-
-while(pP1FirstHaplotypeGroups != NULL)
-	{
-	pCurHaplotypeGroups = pP1FirstHaplotypeGroups->pNxt;
-	delete[]pP1FirstHaplotypeGroups;
-	pP1FirstHaplotypeGroups = pCurHaplotypeGroups;
-	}
-while(pP2FirstHaplotypeGroups != NULL)
-	{
-	pCurHaplotypeGroups = pP2FirstHaplotypeGroups->pNxt;
-	delete[]pP2FirstHaplotypeGroups;
-	pP2FirstHaplotypeGroups = pCurHaplotypeGroups;
-	}
 return(eBSFSuccess);
 }
-
 
 
 int				// returns number of allele stacks generated
@@ -4201,7 +4673,6 @@ uint8_t *pPBAs[cMaxFounderReadsets+1];							// additional is to allow for the p
 uint8_t *pMskPBA;
 int32_t ChromIdx;
 int32_t NumUnits;			// NumUnits is the total number of work units to be distributed over available threads for processing chromosomes
-int32_t UnitSize;
 bool bInitHGBinSpecs;
 
 
@@ -4265,14 +4736,14 @@ for(ChromIdx = 0; ChromIdx < pReadsetMetadata->NumChroms && CurChromMetadataIdx 
 	if(bInitHGBinSpecs) // use user specified bins or create default fixed sizes
 		{
 		int32_t BinSize;
-		int32_t ClustDiff;
 
 		// create default fixed sizes
-		for(StartLoci = 0; StartLoci < pChromMetadata->ChromLen; StartLoci += m_GrpHapSize)
+		for(StartLoci = 0; StartLoci < pChromMetadata->ChromLen; StartLoci += m_GrpHapBinSize)
 			{
-			BinSize = min(pChromMetadata->ChromLen - StartLoci, m_GrpHapSize);
-			ClustDiff = min(BinSize, m_GrpHapCentClustDif);
-			if((Rslt = AddHGBinSpec(pChromMetadata->ChromID, StartLoci, BinSize, m_GrpHapCentClustDif)) == 0)
+			BinSize = min(pChromMetadata->ChromLen - StartLoci, m_GrpHapBinSize);
+			if(BinSize < 10) // any bin smaller is of no value!
+				continue;
+			if((Rslt = AddHGBinSpec(pChromMetadata->ChromID, StartLoci, BinSize, min(m_MinCentClustDist,BinSize-1),min(m_MaxCentClustDist,BinSize-1),m_MaxClustGrps)) == 0)
 				{
 				char* pszChrom = LocateChrom(pChromMetadata->ChromID);
 				gDiagnostics.DiagOut(eDLInfo, gszProcName, "AlignFounderHaps: Error adding haplotyping group bin specifications on chromosome '%s'", pszChrom);
@@ -4282,7 +4753,6 @@ for(ChromIdx = 0; ChromIdx < pReadsetMetadata->NumChroms && CurChromMetadataIdx 
 					m_pWorkQueueEls = NULL;
 					}
 				m_NumQueueElsProcessed = 0;
-				m_FastSerialise = 0;
 				return(-1);
 				}
 
@@ -4293,9 +4763,6 @@ for(ChromIdx = 0; ChromIdx < pReadsetMetadata->NumChroms && CurChromMetadataIdx 
 
 	if(pChromMetadata->HGBinID == 0)   // skipping this chrom if no haplotype group specifications
 		continue;
-
-	// what is the maximal sized unit that a thread would be expected to process in this chromosome
-	UnitSize = pChromMetadata->ChromLen;
 
 	StartLoci = 0;
 	pWorkQueueEl->NumFndrs = NumFndrs;
@@ -4311,12 +4778,20 @@ for(ChromIdx = 0; ChromIdx < pReadsetMetadata->NumChroms && CurChromMetadataIdx 
 
 if(m_TotWorkQueueEls > 0)
 	{
-	gDiagnostics.DiagOut(eDLInfo,gszProcName,"AlignFounderHaps: Starting to generate haplotype groupings %d founders ",NumFndrs);
+	m_ProccessingBinID = 0;
+	gDiagnostics.DiagOut(eDLInfo,gszProcName,"AlignFounderHaps: Starting to generate haplotype groupings for %d founders ",NumFndrs);
 // startup threads
 	StartWorkerThreads(m_NumThreads,		// there are this many threads in pool
 		pReadsetMetadata->NumChroms);		// processing this number of chromosomes
-	while(!WaitAlignments(60))
-		gDiagnostics.DiagOut(eDLInfo, gszProcName, "AlignFounderHaps: Generating haplotype groupings ...");
+	int WaitSecs = 60;
+	while(!WaitAlignments(WaitSecs))
+		{
+		WaitSecs = min(WaitSecs += 60, 300);
+		AcquireFastSerialise();
+		int32_t LatestBinID = m_ProccessingBinID;
+		ReleaseFastSerialise();
+		gDiagnostics.DiagOut(eDLInfo, gszProcName, "AlignFounderHaps: Generating haplotype groupings ... %0.3f%%",(LatestBinID * 100.0)/m_UsedHGBinSpecs);
+		}
 
 	gDiagnostics.DiagOut(eDLInfo, gszProcName, "AlignFounderHaps: Completed generating haplotype groupings");
 	}
@@ -4329,7 +4804,10 @@ if(m_pWorkQueueEls != NULL)
 	}
 m_NumQueueElsProcessed = 0;
 m_FastSerialise = 0;
-return(eBSFSuccess);
+
+// report haplotype groupings .....
+Rslt = ReportHaplotypeGroups(NumFndrs);
+return(Rslt);
 }
 
 
@@ -4361,73 +4839,56 @@ for(ASIdx = 1; ASIdx <= m_UsedAlleleStacks; ASIdx++, pAlleleStack++)
 return(m_UsedAlleleStacks);
 }
 
-
 inline void
-CCallHaplotypes::Bits256Shl1(ts256Bits &Bits256)	// SHL 
+CCallHaplotypes::BitsVectSet(uint16_t Bit,		// bit to set, range 0..4095
+			ts4096Bits & BitsVect)
 {
-uint64_t MSB;
-MSB = Bits256.Bits[2] >> 63; // MSB of word 2 into LSB of word 3 post SHL of word 3
-Bits256.Bits[3] <<= 1;
-Bits256.Bits[3] |= MSB & 0x01;
-MSB = Bits256.Bits[1] >> 63; // MSB of word 1 into LSB of word 2 post SHL of word 2
-Bits256.Bits[2] <<= 1;
-Bits256.Bits[2] |= MSB & 0x01;
-MSB = Bits256.Bits[0] >> 63; // MSB of word 0 into LSB of word 1 post SHL of word 1
-Bits256.Bits[1] <<= 1;
-Bits256.Bits[1] |= MSB & 0x01;
-Bits256.Bits[0] <<= 1;		  // LSB of word 0 will be set to 0 post the SHL
+BitsVect.Bits[Bit / 64] |= ((uint64_t)0x01 << (Bit % 64));
 }
 
 inline void
-CCallHaplotypes::Bits256Set(uint8_t Bit,		// bit to set, range 0..255
-			ts256Bits & Bits256)
+CCallHaplotypes::BitsVectReset(uint16_t Bit,		// bit to reset, range 0..4095
+		   ts4096Bits & BitsVect)
 {
-	Bits256.Bits[Bit / 64] |= ((uint64_t)0x01 << (Bit % 64));
-}
-
-inline void
-CCallHaplotypes::Bits256Reset(uint8_t Bit,		// bit to reset, range 0..255
-		   ts256Bits & Bits256)
-{
-	Bits256.Bits[Bit / 64] &= ~((uint64_t)0x01 << (Bit % 64));
+BitsVect.Bits[Bit / 64] &= ~((uint64_t)0x01 << (Bit % 64));
 }
 
 
 inline bool
-CCallHaplotypes::Bits256Test(uint8_t Bit,		// bit to test, range 0..255
-			ts256Bits & Bits256)
+CCallHaplotypes::BitsVectTest(uint16_t Bit,		// bit to test, range 0..4095
+			ts4096Bits & BitsVect)
 {
-return(Bits256.Bits[Bit / 64] & ((uint64_t)0x01 << (Bit % 64)) ? true : false);
+return(BitsVect.Bits[Bit / 64] & ((uint64_t)0x01 << (Bit % 64)) ? true : false);
 }
 
 inline bool
-CCallHaplotypes::Bits256Equal(ts256Bits & Bits256A,	// compare for equality
-								ts256Bits & Bits256B)
+CCallHaplotypes::BitsVectEqual(ts4096Bits & BitsVectA,	// compare for equality
+								ts4096Bits & BitsVectB)
 {
-if(!memcmp(&Bits256A,&Bits256B,sizeof(ts256Bits)))
+if(!memcmp(&BitsVectA,&BitsVectB,sizeof(ts4096Bits)))
 	return(true);
 return(false);
 }
 
 inline void
-CCallHaplotypes::Bits256Initialise(bool Set,			// if true then initialse all bits as set, otherwise initialise all bits as reset
-				ts256Bits & Bits256)
+CCallHaplotypes::BitsVectInitialise(bool Set,			// if true then initialse all bits as set, otherwise initialise all bits as reset
+				ts4096Bits & BitsVect)
 {
 uint8_t InitWith;
 if(Set)
 	InitWith = 0xff;
 else
 	InitWith = 0;
-memset(&Bits256,InitWith,sizeof(ts256Bits));
+memset(&BitsVect,InitWith,sizeof(ts4096Bits));
 }
 
 inline uint32_t
-CCallHaplotypes::Bits256Count(ts256Bits& Bits256)		// count number of set bits
+CCallHaplotypes::BitsVectCount(ts4096Bits& BitsVect)		// count number of set bits
 {
 uint32_t Count = 0;
-uint64_t *pWord = Bits256.Bits;
+uint64_t *pWord = BitsVect.Bits;
 uint64_t Bit;
-for(uint32_t WordIdx = 0; WordIdx < 4; WordIdx++, pWord++)
+for(uint32_t WordIdx = 0; WordIdx < 64; WordIdx++, pWord++)
 	{
 	if(*pWord == 0)
 		continue;
@@ -4439,13 +4900,13 @@ return(Count);
 }
 
 inline uint32_t
-CCallHaplotypes::Bits256Union(ts256Bits &Bits256A, ts256Bits& Bits256B)		// union (effective Bits256A |= Bits256B) bits in Bits256A with Bits256B with Bits256A updated, returns number of bits set in Bits256A 
+CCallHaplotypes::BitsVectUnion(ts4096Bits &BitsVectA, ts4096Bits& BitsVectB)		// union (effective BitsVectA |= BitsVectB) bits in BitsVectA with BitsVectB with BitsVectA updated, returns number of bits set in BitsVectA 
 {
 uint32_t Count = 0;
-uint64_t* pWordA = Bits256A.Bits;
-uint64_t* pWordB = Bits256B.Bits;
+uint64_t* pWordA = BitsVectA.Bits;
+uint64_t* pWordB = BitsVectB.Bits;
 uint64_t Bit;
-for(uint32_t WordIdx = 0; WordIdx < 4; WordIdx++, pWordA++, pWordB++)
+for(uint32_t WordIdx = 0; WordIdx < 64; WordIdx++, pWordA++, pWordB++)
 	{
 	*pWordA |= *pWordB;
 	if(*pWordA == 0)
@@ -4459,13 +4920,13 @@ return(Count);
 
 
 inline uint32_t 
-CCallHaplotypes::Bits256Intersect(ts256Bits& Bits256A, ts256Bits& Bits256B)	// intersect (effective Bits256A &= Bits256B) of bits in Bits256A with Bits256B with Bits256A updated, returns number of set bits in Bits256A
+CCallHaplotypes::BitsVectIntersect(ts4096Bits& BitsVectA, ts4096Bits& BitsVectB)	// intersect (effective BitsVectA &= BitsVectB) of bits in BitsVectA with BitsVectB with BitsVectA updated, returns number of set bits in BitsVectA
 {
 uint32_t Count = 0;
-uint64_t* pWordA = Bits256A.Bits;
-uint64_t* pWordB = Bits256B.Bits;
+uint64_t* pWordA = BitsVectA.Bits;
+uint64_t* pWordB = BitsVectB.Bits;
 uint64_t Bit;
-for(uint32_t WordIdx = 0; WordIdx < 4; WordIdx++, pWordA++, pWordB++)
+for(uint32_t WordIdx = 0; WordIdx < 64; WordIdx++, pWordA++, pWordB++)
 	{
 	*pWordA &= *pWordB;
 	if(*pWordA == 0)
@@ -4478,13 +4939,13 @@ return(Count);
 }
 
 uint32_t 
-CCallHaplotypes::Bits256Clear(ts256Bits& Bits256A, ts256Bits& Bits256B)	    // clear bits in Bits256A which are set in Bits256B with Bits256A updated, returns number of set bits in Bits256A  
+CCallHaplotypes::BitsVectClear(ts4096Bits& BitsVectA, ts4096Bits& BitsVectB)	    // clear bits in BitsVectA which are set in BitsVectB with BitsVectA updated, returns number of set bits in BitsVectA  
 {
 uint32_t Count = 0;
-uint64_t* pWordA = Bits256A.Bits;
-uint64_t* pWordB = Bits256B.Bits;
+uint64_t* pWordA = BitsVectA.Bits;
+uint64_t* pWordB = BitsVectB.Bits;
 uint64_t Bit;
-for(uint32_t WordIdx = 0; WordIdx < 4; WordIdx++, pWordA++, pWordB++)
+for(uint32_t WordIdx = 0; WordIdx < 64; WordIdx++, pWordA++, pWordB++)
 	{
 	*pWordA &= ~(* pWordB);
 	if(*pWordA == 0)
@@ -4680,6 +5141,418 @@ if(Idx < 1 || Idx > m_NumReadsetNames)
 return(&(m_szReadsetNames[m_szReadsetIdx[Idx -1]+1])); // skipping lead char which is the ReadsetType
 }
 
+
+int
+CCallHaplotypes::LoadPBACoverage(char* pszInPBA)   // file containing PBA
+{
+int32_t Rslt;
+int32_t ReadsetID;
+int32_t ChromID;
+tsReadsetMetadata* pReadsetMetadata;
+tsChromMetadata* pChromMetadata;
+uint32_t CurChromMetadataIdx;
+FILE* pInStream;
+char szInWIG[1000];
+char* pszInWIG;
+char szLineBuff[1000];
+char szChrom[100];
+char* pszInBuff;
+int32_t CurChromID;
+int32_t PrevChromID;
+int32_t StartLoci;
+int32_t Span;
+uint8_t *pAllele;
+int32_t StartLociOfs;
+int32_t Coverage;
+uint64_t TotAllelesLen;
+int32_t NumElsParsed;
+int32_t WIGtype;    // 0: unknown, 1: fixed steps, 2 variable steps
+
+int32_t LineNumb;
+
+// compose WIG file name from PBA file name
+// 
+CUtility::AppendFileNameSuffix(szInWIG, pszInPBA, (char*)".covsegs.wig",'.');
+pszInWIG = szInWIG;
+
+// ensure WIG file is can be opened for reading
+if((pInStream = fopen(pszInWIG,"r"))==NULL)
+	{
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to file %s for reading error: %s",pszInWIG,strerror(errno));
+	Reset();
+	return(eBSFerrOpnFile);
+	}
+
+// load the PBA as per usual load, but then set actual PBAs to be 0
+if((ReadsetID = LoadPBAFile(pszInPBA,0)) <= 0)
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Errors loading PBA file '%s'",pszInPBA);
+	fclose(pInStream);
+	Reset();
+	return(ReadsetID);
+	}
+m_Fndrs2Proc[ReadsetID-1] = 0x01;	// if loaded then assumption is that this founder will be processed
+pReadsetMetadata = &m_Readsets[ReadsetID-1];
+// iterate all PBA chroms and set PBA alleles to be all 0
+pReadsetMetadata = &m_Readsets[ReadsetID-1];
+CurChromMetadataIdx = pReadsetMetadata->StartChromMetadataIdx;
+TotAllelesLen = 0; // used to later on normalise coverage by total length with coverage - in this release not actually used!!
+for(ChromID = 1; ChromID <= pReadsetMetadata->NumChroms && CurChromMetadataIdx != 0; ChromID++)
+	{
+	pChromMetadata = &m_pChromMetadata[CurChromMetadataIdx - 1];
+	pAllele = pChromMetadata->pPBAs;
+	for(StartLoci=0;StartLoci < pChromMetadata->ChromLen;StartLoci++,pAllele++)
+		if(*pAllele != 0)
+			{
+			*pAllele = 0;
+			TotAllelesLen++;
+			}
+	CurChromMetadataIdx = pChromMetadata->NxtChromMetadataIdx;
+	}
+
+// load the WIG and where there is coverage then set the corresponding loci in the PBA to be max(254,log2(coverage) * 10)
+// Note that the max limit of 254 is so that when later processing grouping and caching highest frequency coverage (alleles) then 254 can be distinguished from a marker of 255 used if not already cached 
+LineNumb = 0;
+WIGtype = 0;
+pChromMetadata = NULL;
+CurChromID = PrevChromID = 0;
+Rslt = eBSFSuccess;
+while(fgets(szLineBuff, sizeof(szLineBuff) - 1, pInStream) != NULL)
+	{
+	LineNumb++;
+	pszInBuff = CUtility::ReduceWhitespace(szLineBuff);
+	if(pszInBuff == NULL || *pszInBuff == '\0' || *pszInBuff == '\n')
+		continue;
+
+	if(!strnicmp(pszInBuff, "variableStep",12))
+		{
+		NumElsParsed = sscanf(pszInBuff, "variableStep chrom=%s span=%d", szChrom, &Span);
+		if(NumElsParsed != 2)
+			{
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "SimWig2PBA: Errors parsing line %d - \"%s\" - in file '%s'",LineNumb,pszInBuff,pszInPBA);
+			Rslt = -1;
+			break;
+			}
+
+		// check for valid chrom, a missing chrom relative to PBA could be that the user has specified a limit on number of chromosomes to process so can't treat as a fatal error
+		if((CurChromID = LocateChrom(szChrom)) < 1)
+			{
+			CurChromID = 0;
+			continue;
+			}
+
+		if(CurChromID != PrevChromID)
+			{
+			pChromMetadata = LocateChromMetadataFor(ReadsetID, CurChromID);
+			PrevChromID = CurChromID;
+			}
+
+		if(Span < 1 || Span > pChromMetadata->ChromLen)
+			{
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "SimWig2PBA: Span must be between 1..%d \"%s\" at line %d - \"%s\" - in file '%s'",LineNumb,pChromMetadata->ChromLen,pszInBuff,pszInPBA);
+			Rslt = -1;
+			break;
+			}
+
+		WIGtype = 2;
+		continue;
+		}
+	else
+		if(!strnicmp(pszInBuff, "fixedStep",10))
+			{
+			NumElsParsed = sscanf(pszInBuff, "fixedStep chrom=%s start=%d step=%d", szChrom, &StartLoci,&Span);
+			if(NumElsParsed != 3)
+				{
+				gDiagnostics.DiagOut(eDLFatal, gszProcName, "SimWig2PBA: Errors parsing line %d - \"%s\" - in file '%s'",LineNumb,pszInBuff,pszInPBA);
+				Rslt = -1;
+				break;
+				}
+
+			// check for valid chrom, a missing chrom relative to PBA could be that the user has specified a limit on number of chromosomes to process so can't treat as a fatal error
+			CurChromID = LocateChrom(szChrom);
+			if((CurChromID = LocateChrom(szChrom)) < 1)
+				{
+				CurChromID = 0;
+				continue;
+				}
+
+			if(CurChromID != PrevChromID)
+				{
+				pChromMetadata = LocateChromMetadataFor(ReadsetID, CurChromID);
+				PrevChromID = CurChromID;
+				}
+
+			if(StartLoci < 1 || (StartLoci + Span - 1) >  pChromMetadata->ChromLen)
+				{
+				gDiagnostics.DiagOut(eDLFatal, gszProcName, "SimWig2PBA: StartLoci must be between 1..%d, Span %d not extending past end of chromosome \"%s\" at line %d - \"%s\" - in file '%s'",LineNumb,pChromMetadata->ChromLen,Span,pszInBuff,pszInPBA);
+				Rslt = -1;
+				break;
+				}
+			WIGtype = 1;
+			continue;
+			}
+	if(CurChromID == 0)
+		continue;
+
+	switch(WIGtype) {
+			case 0: // unrecognised format, assume some kind of comment or directive, slough
+				continue;
+
+			case 1: // fixed step
+				NumElsParsed = sscanf(pszInBuff, "%d", &Coverage);
+				break;
+
+			case 2: // variable step
+				NumElsParsed = sscanf(pszInBuff, "%d %d", &StartLoci, &Coverage);
+				break;
+		   }
+	if(StartLoci < 1 || StartLoci > pChromMetadata->ChromLen) // ensure not writing past end of chromosome
+		continue;
+	pAllele = &pChromMetadata->pPBAs[StartLoci - 1];
+	for(StartLociOfs = 0; StartLociOfs < Span; StartLociOfs++, StartLoci++, pAllele++)
+		{
+		if(StartLoci > pChromMetadata->ChromLen) // ensure not writing past end of chromosome
+			break;
+		*pAllele = min((int)log2(Coverage) * 10, 0x0fe);
+		}
+	}
+fclose(pInStream);
+return(Rslt >= 0 ? ReadsetID : Rslt);
+}
+
+int
+CCallHaplotypes::CSV2WIG(char* pszInFile, // file containing haplotype groupings
+	char* pszOutFile) // where to write as WIG formated file
+{
+int Rslt;
+int32_t CurLineNumber;
+int32_t NumFields;
+char* pszChrom;
+int32_t CurChromID;
+int32_t PrevChromID;
+int32_t BinStartLoci;
+int32_t BinSize;
+int32_t CentroidDistance;
+int32_t NumChromBins;
+int32_t TotNumChromBins;
+
+if(m_hWIGOutFile != -1)
+	{
+	close(m_hWIGOutFile);
+	m_hWIGOutFile = -1;
+	}
+
+if(m_pHGCSVFile != NULL) // should be, but better to be sure!
+	{
+	delete m_pHGCSVFile;
+	m_pHGCSVFile = NULL;
+	}
+
+if((m_pHGCSVFile = new CCSVFile) == NULL)
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to instantiate CCSVfile");
+	Reset();
+	return(eBSFerrObj);
+	}
+m_pHGCSVFile->SetMaxFields(10); // only actually processing 1st 8 fields: chrom,loci, bin size, min distance, max distance, max haplotypes, actual distance, actual haplotypes
+
+if((Rslt = m_pHGCSVFile->Open(pszInFile)) != eBSFSuccess)
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to open file: '%s'", pszInFile);
+	Reset();
+	return(Rslt);
+	}
+
+if(m_pszWIGBuff == NULL)
+	{
+	if((m_pszWIGBuff = new uint8_t[cOutBuffSize]) == NULL)
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "CSV2WIG: Memory allocation of %u bytes for WIG output buffering failed - %s", cOutBuffSize, strerror(errno));
+		Reset();
+		return(eBSFerrMem);
+		};
+	m_AllocWIGBuff = cOutBuffSize;
+	}
+
+#ifdef _WIN32
+m_hWIGOutFile = open(pszOutFile, (O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC), (_S_IREAD | _S_IWRITE));
+#else
+if((m_hWIGOutFile = open64(pszOutFile, O_WRONLY | O_CREAT, S_IREAD | S_IWRITE)) != -1)
+if(ftruncate(m_hWIGOutFile, 0) != 0)
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "CSV2WIG: Unable to create/truncate %s - %s", pszOutFile, strerror(errno));
+	Reset();
+	return(eBSFerrCreateFile);
+	}
+#endif
+if(m_hWIGOutFile < 0)
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "CSV2WIG: Unable to create/truncate %s - %s", pszOutFile, strerror(errno));
+	Reset();
+	return(eBSFerrCreateFile);
+	}
+
+CurLineNumber = 0;
+BinStartLoci = 0;
+BinSize = 0;
+CentroidDistance = 0;
+PrevChromID = -1;
+NumChromBins = 0;
+TotNumChromBins = 0;
+InitialiseWIGSpan();
+
+while((Rslt = m_pHGCSVFile->NextLine()) > 0)		// onto next line containing fields
+	{
+	CurLineNumber++;
+	if((NumFields = m_pHGCSVFile->GetCurFields()) < 8)	// must contain at least 8 fields
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Haplotype group bin specification file '%s' expected to contain a minimum of 8 fields, it contains %d at line %d", pszInFile, NumFields, CurLineNumber);
+		Reset();
+		return(eBSFerrParse);
+		}
+
+	// 1st row may be a header row, if so then skip this row
+	if(CurLineNumber == 1 && m_pHGCSVFile->IsLikelyHeaderLine())
+		continue;
+	m_pHGCSVFile->GetText(1, &pszChrom);
+	if(pszChrom == NULL || pszChrom[0] == '\0')
+		{
+		gDiagnostics.DiagOut(eDLWarn, gszProcName, "Unrecognised chromosome/sequence name at line %d in file '%s'", CurLineNumber, pszInFile);
+		continue;
+		}
+	CurChromID = AddChrom(pszChrom);
+	if(CurChromID != PrevChromID)
+		{
+		if(NumChromBins > 1)
+			CompleteWIGSpan(true);
+		NumChromBins = 0;
+		PrevChromID = CurChromID;
+		}
+	m_pHGCSVFile->GetInt(2, &BinStartLoci);
+	m_pHGCSVFile->GetInt(3, &BinSize);
+	m_pHGCSVFile->GetInt(7, &CentroidDistance);
+	NumChromBins++;
+	AccumWIGCnts(CurChromID, BinStartLoci+1, BinSize, CentroidDistance); // WIG loci start from 1 not 0
+	}
+CompleteWIGSpan(true);
+delete m_pHGCSVFile;
+m_pHGCSVFile = NULL;
+
+if(m_hWIGOutFile != -1)
+	{
+// commit output file
+#ifdef _WIN32
+	_commit(m_hWIGOutFile);
+#else
+	fsync(m_hWIGOutFile);
+#endif
+	close(m_hWIGOutFile);
+	m_hWIGOutFile = -1;
+	}
+return(eBSFSuccess);
+}
+
+void
+CCallHaplotypes::InitialiseWIGSpan(void) // initialise WIG span vars to values corresponding to no spans having been previously reported
+{
+m_WIGChromID = 0;
+m_WIGRptdChromID = 0;
+m_WIGSpanLoci = 0;
+m_WIGSpanLen = 0;
+m_WIGRptdSpanLen = 0;
+m_WIGSpanCnts = 0;
+}
+
+int
+CCallHaplotypes::CompleteWIGSpan(bool bWrite)				// close off any current WIG span ready to start any subsequent span
+{
+char* pszChrom;
+
+	// if existing span then write that span out
+if(m_WIGChromID != 0 && m_WIGSpanLen > 0 && m_WIGSpanLoci > 0 && m_WIGSpanCnts > 0)
+	{
+	// has chrom and/or span changed since previously writing out a span?
+	if(m_WIGChromID != m_WIGRptdChromID || m_WIGSpanLen != m_WIGRptdSpanLen)
+		{
+		pszChrom=LocateChrom(m_WIGChromID);
+		m_WIGBuffIdx += sprintf((char *) & m_pszWIGBuff[m_WIGBuffIdx], "variableStep chrom=%s span=%d\n", pszChrom, m_WIGSpanLen);
+		m_WIGRptdChromID = m_WIGChromID;
+		m_WIGRptdSpanLen = m_WIGSpanLen;
+		}
+	m_WIGBuffIdx += sprintf((char *) & m_pszWIGBuff[m_WIGBuffIdx], "%d %d\n", m_WIGSpanLoci, (uint32_t)m_WIGSpanCnts);
+	}
+if((bWrite && m_WIGBuffIdx) || (m_WIGBuffIdx + 500) >  m_AllocWIGBuff)
+	{
+	if(!CUtility::RetryWrites(m_hWIGOutFile, m_pszWIGBuff, m_WIGBuffIdx))
+		{
+		gDiagnostics.DiagOut(eDLInfo,gszProcName,"RetryWrites() error");
+		return(eBSFerrWrite);
+		}
+	m_WIGBuffIdx=0;
+	}
+m_WIGSpanLoci = 0;
+m_WIGSpanLen = 0;
+m_WIGSpanCnts = 0;
+return(eBSFSuccess);
+}
+
+
+
+int
+CCallHaplotypes::AccumWIGCnts(uint32_t ChromID,	// accumulate wiggle counts into variableStep spans over this chromosome
+			uint32_t Loci,		// this loci - starts from 1 not 0!
+	        uint32_t BinLen,     // span bin is this length
+			uint32_t Cnts,		 // has this many counts attributed to the span
+			uint32_t MaxSpanLen) // allow WIG spans to be this maximal length
+{
+int Rslt;
+uint32_t Meanx100;
+if(ChromID != m_WIGChromID || m_WIGSpanLen >= MaxSpanLen || Cnts == 0)		// onto a different chromosome, or current span is at maximal length?
+	{
+	if(m_WIGChromID != 0)
+		{
+		if((Rslt = CompleteWIGSpan()) < 0)
+			return(Rslt);
+		}
+	if(Cnts > 0)
+		{
+		m_WIGChromID = ChromID;
+		m_WIGSpanLoci = Loci;
+		m_WIGSpanLen = BinLen;
+		m_WIGSpanCnts = Cnts;
+		}
+	return(eBSFSuccess);
+	}
+
+if(m_WIGSpanLen == 0 || m_WIGSpanCnts == 0) // starting a new span?
+	{
+	m_WIGSpanLoci = Loci;
+	m_WIGSpanLen = BinLen;
+	m_WIGSpanCnts = (uint64_t)Cnts;
+	return(eBSFSuccess);
+	}
+
+if(Cnts != m_WIGSpanCnts)
+	{
+// if less than 5% difference between existing and new span counts then combine adjacent bins into a single span  
+	Meanx100 = 100 * (uint32_t)(m_WIGSpanCnts / (uint64_t)m_WIGSpanLen);
+	if((Cnts <= 100 && (Cnts * 100) != Meanx100) || (Meanx100 < (Cnts * 95) || Meanx100 >= (Cnts * 105)))
+		{
+		// write current span out
+		if((Rslt = CompleteWIGSpan()) < 0)
+			return(Rslt);
+		m_WIGSpanLoci = Loci;
+		m_WIGSpanLen = BinLen;
+		m_WIGSpanCnts = (uint64_t)Cnts;
+		return(eBSFSuccess);
+		}
+	}
+m_WIGSpanLen = Loci - m_WIGSpanLoci + BinLen;
+return(eBSFSuccess);
+}
+
+
+
 // sorting by ChromID.StartLoci ascending
 int
 CCallHaplotypes::SortAlleleStacks(const void* arg1, const void* arg2)
@@ -4758,9 +5631,9 @@ if(pEl1->NumLoci < pEl2->NumLoci)
 	return(-1);
 if(pEl1->NumLoci > pEl2->NumLoci)
 	return(1);
-if(pEl1->Distance < pEl2->Distance)
+if(pEl1->MaxCentroidDistance < pEl2->MaxCentroidDistance)
 	return(-1);
-if(pEl1->Distance > pEl2->Distance)
+if(pEl1->MaxCentroidDistance > pEl2->MaxCentroidDistance)
 	return(1);
 return(0);
 }

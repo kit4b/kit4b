@@ -332,7 +332,7 @@ if(NameLen >= 4 && !stricmp(".gz",&pszFile[NameLen-3]))
 	{
 	if((gzdFile = gzopen(pszFile,"r"))==NULL)
 		{
-		delete pBuff;
+		delete []pBuff;
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"FastaEstSizes: Unable to open gzip file '%s'",pszFile);
 		return(0);
 		}
@@ -351,7 +351,7 @@ else
 	if((hFile = open(pszFile,O_READSEQ))== -1)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"FastaEstSizes: Unable to open %s - %s",pszFile,strerror(errno));
-		delete pBuff;
+		delete []pBuff;
 		return(0);
 		}
 	NumInBuff = read(hFile,pBuff,BuffSize);
@@ -362,7 +362,7 @@ else
 if(NumInBuff < 10)			// what kind of fasta file would be this small :-)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"FastaEstSizes: Unable to estimate sizes for file '%s', file exists but is only %d long",pszFile,NumInBuff);
-	delete pBuff;
+	delete []pBuff;
 	return(0);
 	}
 pBuff[NumInBuff] = 0;
@@ -455,7 +455,7 @@ while((Chr = *pChr++) != '\0')
 		}
 	}
 
-delete pBuff;
+delete []pBuff;
 
 if(!bIsGZ)
 	{
@@ -800,7 +800,7 @@ for(BuffIdx = 0; BuffIdx < BuffCnt; BuffIdx++,pChr++)
 				continue;
 				}
 			AddErrMsg("CFasta::CheckIsFasta","Errors whilst reading file near line %d#%d - '%s' - expected '+' not chr '%c'", CurLineNum,ChrPsn,m_szFile,*pChr);
-			delete pszBuff;	
+			delete []pszBuff;	
 			return(eBSFerrNotFasta);
 
 		case 7:					// processing fastq duplicate seq identifier line
@@ -822,7 +822,7 @@ for(BuffIdx = 0; BuffIdx < BuffCnt; BuffIdx++,pChr++)
 			if(NumQualChrs != NumSeqChrs)
 				{
 				AddErrMsg("CFasta::CheckIsFasta","Errors whilst reading file near line %d - '%s' - sequence length (%d) not same as quality length (%d)", CurLineNum,m_szFile,NumSeqChrs,NumQualChrs);
-				delete pszBuff;	
+				delete []pszBuff;	
 				return(eBSFerrNotFasta);
 				}
 			CurLineNum += 1;
@@ -842,11 +842,11 @@ for(BuffIdx = 0; BuffIdx < BuffCnt; BuffIdx++,pChr++)
 				continue;
 				}
 			AddErrMsg("CFasta::CheckIsFasta","Errors whilst reading file near line %d#%d - '%s' - expected '@' not chr '%c'", CurLineNum,ChrPsn,m_szFile,*pChr);
-			delete pszBuff;	
+			delete []pszBuff;	
 			return(eBSFerrNotFasta);
 		}
 	}
-delete pszBuff;	
+delete []pszBuff;	
 m_bIsFastQ = FileState >= 4 ? true : false;
 m_bIscsfasta = bIscsfasta;
 return(eBSFSuccess);	
@@ -1061,6 +1061,7 @@ while(bMoreToDo) {
 					}
 				if(SeqLen)				// if sequence avail then return sequence, parse descriptor on next call..
 					{
+					m_bForceRetSeq = false;
 					m_pCurFastaBlock->BuffIdx--;		// effective pushback of descriptor..
 					if(pRetSeq != NULL && bSeqBase)
 						return(Ascii2Sense((char *)pRetSeq,SeqLen,(etSeqBase *)pRetSeq,RptMskUpperCase));
@@ -1691,7 +1692,7 @@ if(m_DescriptorLen >= (unsigned int)MaxLen)
 	return(MaxLen-1);
 	}
 m_FileReadDescrOfs = m_FileDescrOfs;
-m_bForceRetSeq = true;
+m_bForceRetSeq = true; // ensures a dummy sequence of length 1 will always be returned if a sequence missing between two descriptors - Ugh, Ugh and Ugh again
 return(m_DescriptorLen);
 }
 
