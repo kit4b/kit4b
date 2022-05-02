@@ -37,10 +37,8 @@ BenchmarkProcess(eBMProcMode PMode,			// processing mode
 				bool bPrimaryOnly,			// if true then score only primary alignments otherwise score including secondary
 				bool bScoreMatedPE,			// if true then both mates of a PE must have been aligned for alignment to be scored
 				bool bPEReads,				// if true then PE pairs processing otherwise SE reads
-				int UnalignedBasePts,		// points to apply for each unaligned base
-				int AlignedBasePts,			// points to apply for each base aligned to it's ground truth loci
-				int SilentTrimAlignBasePts, // points to apply for each base aligned in a silently trimmed read within ground truth loci range
-				int MisalignedBasePts,		// points to apply for each base aligned but not to ground truth loci
+	            double FbetaBases,		// Fbeta-measure to use when scoring bases recall relative to precision
+	            double FbetaReads,		// Fbeta-measure to use when scoring reads recall relative to precision
 				int MaxNumReads,			// maximum number of alignment CIGARs to process or number of simulated reads 
 				char *pszObsCIGARsFile,		// observed CIGARs are in this file
 				char *pszRefGenomeFile,		// reads are against this target genome file
@@ -81,10 +79,8 @@ bool bPEReads;				// if true then PE simulations
 
 int NumberOfProcessors;		// number of installed CPUs
 
-int UnalignedBasePts;		// points to apply for each unaligned base
-int SilentTrimAlignBasePts; // points to apply for each base aligned in a silently trimmed read within ground truth loci range
-int AlignedBasePts;			// points to apply for each base aligned to it's ground truth loci
-int MisalignedBasePts;		// points to apply for each base aligned but not to ground truth loci
+double FbetaBases;		// Fbeta-measure to use when scoring bases recall relative to precision
+double FbetaReads;		// Fbeta-measure to use when scoring reads recall relative to precision
 
 int MaxNumReads;			// maximum number of alignment CIGARs to process or number of simulated reads 
 
@@ -125,10 +121,9 @@ struct arg_file* results = arg_file0("s", "results", "<file>",		"summary benchma
 
 struct arg_file* cigars = arg_file0("c", "CIGARs", "<file>",		"observed CIGARs R/W this file");
 
-struct arg_int* alignedbasepts = arg_int0("j", "alignedbasepts", "<int>",		"correctly aligned base weighting (defaults to 50");
-struct arg_int* silenttrimaligdbasepts = arg_int0("J", "silenttrimalignbasepts", "<int>", "silently trimmed alignment within truth bounds base weighting (defaults to 25)");
-struct arg_int* unalignedbasepts = arg_int0("k", "unalignedbasepts", "<int>",	"unaligned base weighting (defaults to 20)");
-struct arg_int* misalignedbasepts = arg_int0("l", "misalignedbasepts", "<int>",	"incorrectly aligned base weighting (defaults to 0");
+struct arg_dbl* fbetabases = arg_dbl0("j", "fbetabases", "<int>",		"Fbeta-measure to use when scoring bases recall relative to precision (default 0.1)");
+struct arg_dbl* fbetareads = arg_dbl0("j", "fbetareadss", "<int>",		"Fbeta-measure to use when scoring reads recall relative to precision (default 0.1)");
+
 struct arg_int* maxnumreads = arg_int0("r", "maxnumreads", "<int>", "process for this number of reads or read pairs if PE (defaults to 5000000 if sampling '-m0' or 2000000 if simulating '-m2'");
 struct arg_str* experimentdescr = arg_str0("e", "experiment", "<str>", "experiment description");
 struct arg_str* controlaligner = arg_str0("a", "controlaligner", "<str>", "Control aligner used for derivation of empirical error profiles");
@@ -137,8 +132,8 @@ struct arg_str* scoredaligner = arg_str0("A", "scoredaligner", "<str>", "Scored 
 struct arg_end* end = arg_end(200);
 
 	void* argtable[] = { help,version,FileLogLevel,LogFile,
-						pmode, inalignments,pereads,scoremated,refgenome,insereads,inpe2reads,outsereads,outpe2reads,results,scoreprimaryonly,cigars,alignedbasepts,
-						silenttrimaligdbasepts,unalignedbasepts,misalignedbasepts,maxnumreads,
+						pmode, inalignments,pereads,scoremated,refgenome,insereads,inpe2reads,outsereads,outpe2reads,results,scoreprimaryonly,cigars,
+						fbetabases,fbetareads,maxnumreads,
 						controlaligner,scoredaligner,experimentdescr,end };
 
 	char** pAllArgs;
@@ -222,11 +217,9 @@ struct arg_end* end = arg_end(200);
 
 		bPEReads = false;
 		bScoreMatedPE = false;
-		UnalignedBasePts = 0;
-		AlignedBasePts = 0;
-		MisalignedBasePts = 0;
+		FbetaBases = cDfltFbetaMeasure;
+		FbetaReads = cDfltFbetaMeasure;
 		MaxNumReads = 0;
-		SilentTrimAlignBasePts = 0;
 
 		PMode = pmode->count ? (eBMProcMode)pmode->ival[0] : eBMGenCIGARs;
 		if (PMode < eBMLimitReads || PMode > eBMScore)
@@ -362,33 +355,21 @@ struct arg_end* end = arg_end(200);
 
 		if (PMode == eBMScore)
 			{
-			AlignedBasePts = alignedbasepts->count ? alignedbasepts->ival[0] : cBMDfltAlignedBaseWtg;
-			if(AlignedBasePts > cBMMaxBaseWtg)		// clamp and report later
-				AlignedBasePts = cBMMaxBaseWtg;
+			FbetaBases = fbetabases->count ? fbetabases->dval[0] : cDfltFbetaMeasure;
+			if(FbetaBases > cBMMaxFbetaMeasure)		// silently clamp
+				FbetaBases = cBMMaxFbetaMeasure;
 			else
-				if(AlignedBasePts < cBMMinBaseWtg)
-					AlignedBasePts = cBMMinBaseWtg;
+				if(FbetaBases < cBMMinFbetaMeasure)
+					FbetaBases = cBMMinFbetaMeasure;
+			FbetaBases = ((int)(FbetaBases * 1000)) / 1000.0;
 
-			SilentTrimAlignBasePts = silenttrimaligdbasepts->count ? silenttrimaligdbasepts->ival[0] : cBMDfltSilentTrimAlignBaseWtg;
-			if (SilentTrimAlignBasePts > cBMMaxBaseWtg)
-				SilentTrimAlignBasePts = cBMMaxBaseWtg;
+			FbetaReads = fbetareads->count ? fbetareads->dval[0] : cDfltFbetaMeasure;
+			if(FbetaReads > cBMMaxFbetaMeasure)		// silently clamp
+				FbetaReads = cBMMaxFbetaMeasure;
 			else
-				if (SilentTrimAlignBasePts < cBMMinBaseWtg)
-					SilentTrimAlignBasePts = cBMMinBaseWtg;
-
-			UnalignedBasePts = unalignedbasepts->count ? unalignedbasepts->ival[0] : cBMDfltUnalignedBaseWtg;
-			if (UnalignedBasePts > cBMMaxBaseWtg)
-				UnalignedBasePts = cBMMaxBaseWtg;
-			else
-				if (UnalignedBasePts < cBMMinBaseWtg)
-					UnalignedBasePts = cBMMinBaseWtg;
-
-			MisalignedBasePts = misalignedbasepts->count ? misalignedbasepts->ival[0] : cBMDfltMisalignedBaseWtg;
-			if (MisalignedBasePts > cBMMaxBaseWtg)
-				MisalignedBasePts = cBMMaxBaseWtg;
-			else
-				if (MisalignedBasePts < cBMMinBaseWtg)
-					MisalignedBasePts = cBMMinBaseWtg;
+				if(FbetaReads < cBMMinFbetaMeasure)
+					FbetaReads = cBMMinFbetaMeasure;
+			FbetaReads = ((int)(FbetaReads * 1000)) / 1000.0;
 			}
 
 
@@ -505,10 +486,8 @@ struct arg_end* end = arg_end(200);
 			{
 			if(bPEReads)
 				gDiagnostics.DiagOutMsgOnly(eDLInfo, "Score alignments only if both mates of a PE are aligned: '%s'", bScoreMatedPE ? "Yes" : "No" );
-			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Aligned base weighting: %d", AlignedBasePts);
-			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Aligned silently trimmed read base weighting: %d", SilentTrimAlignBasePts);
-			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Misaligned base weighting: %d", MisalignedBasePts);
-			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Unaligned base weighting: %d", UnalignedBasePts);
+			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Base Fbeta-measure : %1.3f", FbetaBases);
+			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Reads Fbeta-measure : %1.3f", FbetaReads);
 			}
 
 		if (szExperimentDescr[0] != '\0')
@@ -527,10 +506,8 @@ struct arg_end* end = arg_end(200);
 								bPrimaryOnly,			// if true then score only primary alignments otherwise score including secondary
 								bScoreMatedPE,			// if true then both mates of a PE must have been aligned for alignment to be scored
 							    bPEReads,				// if true then PE pair processing otherwise SE reads
-								UnalignedBasePts,		// points to apply for each unaligned base
-								AlignedBasePts,			// points to apply for each base aligned to it's ground truth loci
-								SilentTrimAlignBasePts, // points to apply for each base aligned in a silently trimmed read within ground truth loci range
-								MisalignedBasePts,		// points to apply for each base aligned but not to ground truth loci
+			                    FbetaBases,	// Fbeta-measure to use when scoring bases recall relative to precision
+			                    FbetaReads,		// Fbeta-measure to use when scoring reads recall relative to precision
 								MaxNumReads,			// maximum number of alignment CIGARs to process or number of simulated reads 
 								szCIGARsFile,			// observed CIGARs are in this file
 								szRefGenomeFile,		// reads are against this target genome file
@@ -572,10 +549,8 @@ BenchmarkProcess(eBMProcMode PMode,	// processing mode
 	bool bPrimaryOnly,			// if true then score only primary alignments otherwise score including secondary
 	bool bScoreMatedPE,			// if true then both mates of a PE must have been aligned for alignment to be scored
 	bool bPEReads,				// true if PE pair reads
-	int UnalignedBasePts,		// points to apply for each unaligned base
-	int AlignedBasePts,			// points to apply for each base aligned to it's ground truth loci
-	int SilentTrimAlignBasePts, // points to apply for each base aligned in a silently trimmed read within ground truth loci range
-	int MisalignedBasePts,		// points to apply for each base aligned but not to ground truth loci
+	double FbetaBases,		// Fbeta-measure to use when scoring bases recall relative to precision
+	double FbetaReads,		// Fbeta-measure to use when scoring reads recall relative to precision
 	int MaxNumReads,			// maximum number of alignment CIGARs to process or number of simulated reads 
 	char* pszObsCIGARsFile,		// observed CIGARs are in this file
 	char* pszRefGenomeFile,		// alignments are against this target genome file
@@ -608,7 +583,7 @@ switch (PMode) {
 		break;
 
 	case eBMScore:
-		Rslt = pBenchmark->Score(bPrimaryOnly,bScoreMatedPE,bPEReads, UnalignedBasePts, AlignedBasePts, SilentTrimAlignBasePts, MisalignedBasePts, 
+		Rslt = pBenchmark->Score(bPrimaryOnly,bScoreMatedPE,bPEReads, FbetaBases, FbetaReads,
 					pszResultsFile,pszExperimentDescr, pszControlAligner, pszScoredAligner, pszInSEReads, pszInPE2Reads, pszAlignmentsFile);
 		break;
 	}
@@ -820,10 +795,10 @@ if (m_pPE2SimReads != NULL)
 
 m_bPrimaryOnly = false;
 m_bPEReads = false;				// if true then PE pairs processing otherwise SE reads
-m_UnalignedBasePts = 0;			// points to apply for each unaligned base
-m_AlignedBasePts = 0;			// points to apply for each base aligned to it's ground truth loci
-m_SilentTrimAlignBasePts = 0;	// points to apply for each base aligned in a silently trimmed read within ground truth loci range
-m_MisalignedBasePts = 0;		// points to apply for each base aligned but not to ground truth loci
+
+m_FbetaReads = cBMDfltFbeta;
+m_FbetaBases = cBMDfltFbeta;
+
 m_ObsCIGARBuffLen = 0;
 m_AllocdObsCIGARBuffSize = 0;
 m_AllocdObsErrProfMem = 0;
@@ -832,7 +807,6 @@ m_TotNumPotentialAlignBases = 0;	// number of match bases in actual alignments w
 m_NumBasesLociCorrect = 0;			// total number of bases aligned correctly to ground truth loci
 m_NumBasesLociIncorrect = 0;		// total number of bases aligned incorrectly to ground truth loci
 m_NumBasesLociUnclaimed = 0;		// total number of ground truth bases which were not aligned
-m_NumSilentTrimBaseMatches = 0;		// total number of bases accepted as aligned even though in reads which have been silently trimmed - neighter soft or hard trimmed
 m_NumGroundTruthReads = 0;			// loaded this many ground truths loaded from simulated reads
 m_TotGroundTruthReadBases = 0;		// ground truth read sequences total to this many bases
 
@@ -2517,10 +2491,8 @@ int
 CBenchmark::Score(bool bScorePrimaryOnly,		// score only primary alignments otherwise score including secondary
 			bool bScoreMatedPE,			// if true then both mates of a PE must have been aligned for alignment to be scored
 		bool bPEReads,				// if true only PE pair processing otherwise score as if SE reads
-		int UnalignedBasePts,		// points to apply for each unaligned base
-		int AlignedBasePts,			// points to apply for each base aligned to it's ground truth loci
-		int SilentTrimAlignBasePts, // points to apply for each base aligned in a silently trimmed read within ground truth loci range
-		int MisalignedBasePts,		// points to apply for each base aligned but not to ground truth loci
+		double FbetaBases,		// Fbeta-measure to use when scoring bases recall relative to precision
+	    double FbetaReads,		// Fbeta-measure to use when scoring reads recall relative to precision
 		char* pszResultsFile,		// benchmarking m3 results appended to this CSV file
 		char* pszExperimentDescr,	// experiment descriptor by which benchmarking results can be identified in szResultsFile
 		char *pszControlAligner,	// control aligner generating error profile from which simulated reads were generated 
@@ -2533,10 +2505,8 @@ int Rslt;
 Reset();
 m_bPrimaryOnly = bScorePrimaryOnly;
 m_bPEReads = bPEReads;
-m_UnalignedBasePts = UnalignedBasePts;
-m_AlignedBasePts = AlignedBasePts;
-m_SilentTrimAlignBasePts = SilentTrimAlignBasePts;
-m_MisalignedBasePts = MisalignedBasePts;
+m_FbetaBases = FbetaBases;
+m_FbetaReads = FbetaReads;
 m_MaxNumReads = 0;
 strcpy(m_szAlignmentsFile, pszAlignmentsFile);
 strcpy(m_szSEReads, pszSEReads);
@@ -2786,14 +2756,25 @@ for(uint32_t GTIdx = 0; GTIdx < m_NumGroundTruthReads; GTIdx++)
 	pGroundTruth = (tsBMGroundTruth*)((uint8_t *)pGroundTruth + pGroundTruth->Size);
 	}
 
-double MaxBaseAlignmentScore = max(0.000001,(double)(m_TotNumPotentialAlignBases * m_AlignedBasePts)); // ensure > 0.0
-double TotBaseAlignmentScore = max(0.000001,((double)m_NumBasesLociCorrect * m_AlignedBasePts) + ((double)m_NumBasesLociIncorrect * m_MisalignedBasePts) + 
-						((double)m_NumSilentTrimBaseMatches * m_SilentTrimAlignBasePts) + ((double)m_NumBasesLociUnclaimed * m_UnalignedBasePts)); // ensure > 0.0
 
-double BaseScoreRate = min(1.000f,TotBaseAlignmentScore / MaxBaseAlignmentScore);		
+// changes: switch to using F-measures as the scoring
+// reporting:
+// Recall, Precision and F-measure
+// F1-measure = 2 * precision  * recall/(precision+recall)
+// generalisation is to use a Beta term: defaults to 2 if recall is more important than precision, 0.5 if precision is more important  
+// Fbeta-measure = ((1 + beta^2) * Precision * Recall) / (beta^2 * Precision + Recall)
 
-double AlignBaseScoreRate = min(1.000f,(((double)m_NumBasesLociCorrect * m_AlignedBasePts) + ((double)m_NumBasesLociIncorrect * m_MisalignedBasePts) + ((double)m_NumSilentTrimBaseMatches * m_SilentTrimAlignBasePts)) /
-											((((double)m_NumBasesLociCorrect + m_NumBasesLociIncorrect + m_NumSilentTrimBaseMatches) * (double)m_AlignedBasePts)+0.0000001));
+double RecallBases = ((double)m_NumBasesLociCorrect + m_NumBasesLociIncorrect) / m_TotNumPotentialAlignBases;
+double PrecisionBases = m_NumBasesLociCorrect/(double)(m_NumBasesLociCorrect + m_NumBasesLociIncorrect);
+double FbetaBases2 = m_FbetaBases * m_FbetaBases;
+double RecallReads = (double)m_ScoredReads/m_NumGroundTruthReads;
+double PrecisionReads = ((double)m_ScoredReads -  NumErrChroms+NumErrStrands+ NumErrPE2) /m_ScoredReads;
+double FbetaReads2 = m_FbetaReads * m_FbetaReads;
+
+double BasesF1measure = 2 * PrecisionBases * RecallBases / (PrecisionBases + RecallBases);
+double ReadsF1measure = 2 * PrecisionReads * RecallReads / (PrecisionReads + RecallReads);
+double BasesFbetaMeasure = (1 + FbetaBases2) * PrecisionBases * RecallBases / ((FbetaBases2 * PrecisionBases) + RecallBases);
+double ReadsFbetaMeasure = (1 + FbetaBases2) * PrecisionReads * RecallReads / ((FbetaBases2 * PrecisionReads) + RecallReads);;
 
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "Completed scoring alignments in: '%s'", pszAlignmentsFile);
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "Experiment: %s", pszExperimentDescr);
@@ -2803,8 +2784,10 @@ gDiagnostics.DiagOut(eDLInfo, gszProcName, "There were a total of %u alignments 
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "%u alignments classified as misaligned due to: chrom: %u, strand: %u, PE mismatch: %u ", NumErrChroms+NumErrStrands+ NumErrPE2,NumErrChroms,NumErrStrands, NumErrPE2);
 gDiagnostics.DiagOut(eDLInfo, gszProcName,"Bases loci correct: %lld, misaligned: %lld, unaligned: %lld", m_NumBasesLociCorrect, m_NumBasesLociIncorrect, m_NumBasesLociUnclaimed);
 
-gDiagnostics.DiagOut(eDLInfo, gszProcName,"Alignment base score rate relative to background ground truth simulation bases is %1.6f", BaseScoreRate);
-gDiagnostics.DiagOut(eDLInfo, gszProcName, "Alignment base score rate relative to actually aligned read ground truth simulation bases is %1.6f", AlignBaseScoreRate);
+gDiagnostics.DiagOut(eDLInfo, gszProcName,"Reads alignment F1-measure: %1.3f F%1.3f-measure: %1.3f", ReadsF1measure,m_FbetaReads,ReadsFbetaMeasure);
+gDiagnostics.DiagOut(eDLInfo, gszProcName,"Base alignment F1-measure: %1.3f F%1.3f-measure: %1.3f", BasesF1measure,m_FbetaBases,BasesFbetaMeasure);
+
+
 
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "Aligned reads with ground truth bases percentage overlap histogram:");
 for(int Idx = 0; Idx < 101; Idx++)
@@ -2832,7 +2815,7 @@ if(m_szResultsFile[0] != '\0')
 		LineBuffIdx = sprintf(szLineBuffer, "\"Experiment\",\"Control Aligner\",\"Scored Aligner\",\"Scored Alignment File\",\"Ground truth reads\",\"Ground truth bases\",\"Potential scored bases\",\"Scored reads\",");
 		LineBuffIdx += sprintf(&szLineBuffer[LineBuffIdx],"\"Reads Classified As Misaligned\",\"Wrong Chrom\",\"Wrong Strand\",\"PE Mismatch\",");
 		LineBuffIdx += sprintf(&szLineBuffer[LineBuffIdx],"\"Bases loci correct\",\"Bases loci incorrect\",\"Bases Unaligned\",");
-		LineBuffIdx += sprintf(&szLineBuffer[LineBuffIdx], "\"Background Bases Relative Score\",\"Aligned Read Bases Relative Score\"");
+		LineBuffIdx += sprintf(&szLineBuffer[LineBuffIdx], "\"Reads F1-Measure\",\"Reads F%1.3f-Measure\",\"Bases F1-Measure\",\"Bases F%1.3f-Measure\"",m_FbetaReads,m_FbetaBases);
 		for (int Idx = 0; Idx < 101; Idx++)
 			LineBuffIdx += sprintf(&szLineBuffer[LineBuffIdx], ",RBO %u%%", Idx);
 		LineBuffIdx += sprintf(&szLineBuffer[LineBuffIdx], "\n");
@@ -2852,7 +2835,7 @@ if(m_szResultsFile[0] != '\0')
 #else
 	LineBuffIdx += sprintf(&szLineBuffer[LineBuffIdx], "%ld,%ld,%ld,", (int64_t)m_NumBasesLociCorrect, (int64_t)m_NumBasesLociIncorrect, (int64_t)m_NumBasesLociUnclaimed);
 #endif
-	LineBuffIdx += sprintf(&szLineBuffer[LineBuffIdx], "%1.6f,%1.6f",BaseScoreRate, AlignBaseScoreRate);
+	LineBuffIdx += sprintf(&szLineBuffer[LineBuffIdx], "%1.3f,%1.3f,%1.3f,%1.3f",ReadsF1measure,ReadsFbetaMeasure, BasesF1measure,BasesFbetaMeasure);
 	for (int Idx = 0; Idx < 101; Idx++)
 		LineBuffIdx += sprintf(&szLineBuffer[LineBuffIdx],",%u", m_ReadOverlapHistogram[Idx]);
 	LineBuffIdx += sprintf(&szLineBuffer[LineBuffIdx], "\n");
@@ -3092,35 +3075,60 @@ if(pAlignment == NULL || pGroundTruth == NULL)
 if ((NumGroundTruthOpTypes = ParseObsCIGAR((char*)&pGroundTruth->NameChromCIGAR[pGroundTruth->NameLen + pGroundTruth->ChromNameLen + 2], pGroundTruth->ReadLen, cMaxBAMCigarOps, GroundTruthOps)) < 1)
 	return(0);
 
+if(pAlignment->l_seq < 1) // if no alignment sequence then assume no ground truth bases were aligned
+	{
+	m_NumBasesLociUnclaimed += (int64_t)pGroundTruth->ReadLen;
+	return(0);
+	}
+
+if((int)pGroundTruth->ReadLen < pAlignment->l_seq) // if claimed aligned bases more than in ground truth read then treat as if a complete misalignment
+	{
+	m_NumBasesLociIncorrect += (int64_t)pGroundTruth->ReadLen;
+	return(0);
+	}
+
+uint32_t ClaimedReadOfs = 0;
+uint32_t ExpectReadOfs = 0;;
+uint32_t NumLociCorrect = 0;
+uint32_t NumLociIncorrect = 0;
+
 // if it a silently trimmed claimed sequence then can't really infer which end (could be both) was trimmed
 if (pGroundTruth->ReadLen != pAlignment->l_seq)		// check if silently trimmed
 	{
-	int HardTrimLen = 0;
-	int SilentTrimBaseMatches;
+	int HardTrimLen;
+	int HardTrim5Len;
+	int HardTrim3Len;
+	int GroundTruthEnd;
+
+	// determine if aligned sequence has been hard trimmed which would explain as to why the number of aligned bases differs from the number of ground truth read bases
+	HardTrim5Len = 0;
+	HardTrim3Len = 0;
 	if(eCOPHardClip == (etCIGAROpType)(pAlignment->cigar[0] & 0x0f))
-		HardTrimLen = (pAlignment->cigar[0] >> 4) & 0x0fffffff;
+		HardTrim5Len = (pAlignment->cigar[0] >> 4) & 0x0fffffff;
 	if (eCOPHardClip == (etCIGAROpType)(pAlignment->cigar[(pAlignment->flag_nc & 0x0ff) - 1] & 0x0f))
-		HardTrimLen += (pAlignment->cigar[(pAlignment->flag_nc & 0x0ff)-1] >> 4) & 0x0fffffff;
-	if (pGroundTruth->ReadLen != pAlignment->l_seq + HardTrimLen) // if not equal then alignment read has been silently trimmed or incorrectly reported
+		HardTrim3Len = (pAlignment->cigar[(pAlignment->flag_nc & 0x0ff)-1] >> 4) & 0x0fffffff;
+	HardTrimLen = HardTrim5Len + HardTrim3Len;
+
+	if((pAlignment->l_seq + HardTrimLen) > (int)pGroundTruth->ReadLen) // if claimed alignment more than ground truth after accounting for hard trimming then assume errors and treat as if completely misaligned
 		{
-		// does claimed loci range fall within the ground truth loci range, if so then score with m_SilentTrimAlignBasePts otherwise score with m_MisalignedBasePts
-		int GroundTruthEnd;
-		SilentTrimBaseMatches = 0;
+		m_NumBasesLociIncorrect += (int64_t)pGroundTruth->ReadLen;
+		return(0);
+		}
+
+	if((pAlignment->l_seq + HardTrimLen) < (int)pGroundTruth->ReadLen) // if claimed alignment still less than ground truth after accounting for hard trimming then assume alignment read has been silently trimmed
+		{
 		GroundTruthEnd = pGroundTruth->StartLoci + RefSeqConsumedLen(NumGroundTruthOpTypes,GroundTruthOps, true) - 1;
-		if((pAlignment->pos + 15) >= (int)pGroundTruth->StartLoci && ((int)pAlignment->end - 15) <= GroundTruthEnd)	// allowing a 15bp latitude!
-			SilentTrimBaseMatches = pGroundTruth->PotentialBasesAligning;
-		m_NumSilentTrimBaseMatches += SilentTrimBaseMatches;	// have to assume these did match - Ugh, Ugh, and Ugh - because what is the alternative, can't just ignore them
-		return(SilentTrimBaseMatches);
+
+		m_NumBasesLociUnclaimed += max(0,(int)pGroundTruth->ReadLen - pAlignment->l_seq);
+		m_NumBasesLociIncorrect += pAlignment->l_seq;
+		return(0);
 		}
 	}
 
 
 NumClaimOpTypes = pAlignment->flag_nc & 0x0ff;
 
-uint32_t ClaimedReadOfs = 0;
-uint32_t ExpectReadOfs = 0;;
-uint32_t NumLociCorrect = 0;
-uint32_t NumLociIncorrect = 0;
+
 int ClaimOpIdx;
 int GroundTruthOpIdx;
 int ClaimedLoci;

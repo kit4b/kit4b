@@ -137,7 +137,7 @@ struct arg_file *inputfilepe2 = arg_file0("u", "inpe2", "<file>", "PE2 input seq
 struct arg_lit  *kmerdist = arg_lit0("K", "kmerdist",			"report on K-mer counts distributions");
 
 struct arg_int  *alignstrand = arg_int0("Q","alignstrand","<int>", "align to this strand: 0 either, 1 Watson '+', 2 Crick '-' (default is to align to either strand)");
-struct arg_file *sfxfile = arg_file1("I","sfx","<file>",		"align against this suffix array ('kit4b index' generated) file");
+struct arg_file *sfxfile = arg_file1("I","sfx","<file>",		"align against this suffix array ('ngskit4b index' generated) file");
 struct arg_file *outfile = arg_file1("o","out","<file>",		"output alignments to this file");
 
 struct arg_int *maxocckmerdepth = arg_int0("k","maxocckmerdepth","<int>",	"maximum depth to explore over-occurring seed K-mers (default is 0 for auto, range 100 to 20000)");

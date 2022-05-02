@@ -25,8 +25,8 @@ Original 'BioKanga' copyright notice has been retained and immediately follows t
 #ifdef _WIN32
 #include "./commhdrs.h"
 #else
-#include "./commhdrs.h"
 #include <sys/resource.h>
+#include "./commhdrs.h"
 #endif
 
 uint16_t			// generated 16bit hash over the lowercased chromosome name; hashes as 0 if pszName == null or is empty

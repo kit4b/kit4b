@@ -29,6 +29,24 @@ Original 'BioKanga' copyright notice has been retained and immediately follows t
 #include "./commhdrs.h"
 #endif
 
+tsGFF3FeatureType GFF3FeatureTypes[] = { // GFF3 file gene feature regions which will be parsed and accepted for subsequent processing 
+	{eGFF3FTgene,"gene"},
+	{eGFF3FTmRNA,"mRNA"},
+	{eGFF3FTexon,"exon"},
+	{eGFF3FTintron,"intron"},
+	{eGFF3FTCDS,"CDS"},
+	{eGFF3FTthree_prime_UTR,"three_prime_UTR"},
+	{eGFF3FTfive_prime_UTR,"five_prime_UTR"}
+};
+const int cNumGFF3FeatTypes = (sizeof(GFF3FeatureTypes) / sizeof(tsGFF3FeatureType));
+
+tsGFF3AttribType GFF3AttribTypes[] = { // GFF3 file gene features can have associated attribute types
+	{eGFF3AID,"ID"},
+	{eGFF3AParent,"Parent"},
+	{eGFF3AName,"Name"},
+};
+const int cNumGFF3AttribTypes = (sizeof(GFF3AttribTypes) / sizeof(tsGFF3AttribType));
+
 CBEDfile::CBEDfile(void)
 {
 short word = 0x4321;
@@ -523,43 +541,6 @@ pTxt[2] = '\0';
 return(pStart);
 }
 
-
-typedef struct TAG_sGFF3FeatureType {
-	int FeatTypeID;		// uniquely identifies this feature type
-	const char *pszFeatType;	// feature type
-	} tsGFF3FeatureType;
-
-tsGFF3FeatureType GFF3FeatureTypes[] = {
-	{1,"gene"},
-	{2,"mRNA"},
-	{3,"exon"},
-	{4,"intron"},
-	{5,"CDS"},
-	{6,"three_prime_UTR"},
-	{7,"five_prime_UTR"}
-	};
-const int cNumGFF3FeatTypes = (sizeof(GFF3FeatureTypes)/sizeof(tsGFF3FeatureType));
-
-// defines GFF3 attributes of interest
-typedef struct TAG_sGFF3AttribType {
-	int AttribTypeID;		// uniquely identifies this attribute type
-	const char *pszAttribType;	// attribute type
-	} tsGFF3AttribType;
-
-tsGFF3AttribType GFF3AttribTypes[] = {
-	{1,"ID"},
-	{2,"Parent"},
-	{3,"Name"},
-	};
-const int cNumGFF3AttribTypes = (sizeof(GFF3AttribTypes)/sizeof(tsGFF3AttribType));
-
-const int cMaxGFF3AttribValueLen = 200;	// truncate GFF3 attribute values to this length
-typedef struct TAG_sGFF3AttribValue {
-	int AttribTypeID;		// attribute type identifier
-	char szAttribValue[cMaxGFF3AttribValueLen+1];	// value associated with this attribute
-	} tsGFF3AttribValue;
-
-
 // ProcessGFF3File
 // Opens and parses GFF3 format file
 // <seqid>\t<source>\t<type>\t<start>\t<end>\t<score>\t<strand>\t<phase>\t<attributes>
@@ -571,10 +552,10 @@ FILE *pGFFStream;
 int LineNum;
 int NumFields;
 int FeatNum;
-int FeatTypeID;
+teGFFFeatureType FeatTypeID;
 tsGFF3FeatureType *pFeatType;
 
-int AttribTypeID;
+teGFF3AttribType AttribTypeID;
 tsGFF3AttribValue AttribValues[cNumGFF3AttribTypes];
 tsGFF3AttribType *pAttribType;
 tsGFF3AttribValue *pAttribValue;

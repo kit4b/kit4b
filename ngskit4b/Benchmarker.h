@@ -1,13 +1,10 @@
 #pragma once
 
-// base weightings will be silently clamped to be in the range of cBMMinPts..cBMMaxPts
-// defaults were chosen to heavily favor correctly aligned bases, and that it is preferable to have unaligned bases rather than misaligned bases
-const int cBMMinBaseWtg = 0;					// base weighting minimum
-const int cBMMaxBaseWtg = 100;					// base weighting max
-const int cBMDfltAlignedBaseWtg = 50;			// default points to apply for each base aligned to it's ground truth loci
-const int cBMDfltSilentTrimAlignBaseWtg = 25;	// default weighting for if read was silently trimmed and falls within ground truth loci range then credit this weighting - Ugh, Ugh and Ugh again 
-const int cBMDfltUnalignedBaseWtg = 20;			// default weighting to apply for each unaligned base
-const int cBMDfltMisalignedBaseWtg = 0;			// default weighting to apply for each base aligned but not to ground truth loci
+// user specified Fbeta-measures will be silently clamped to be within a reasonable range
+const double cBMMinFbetaMeasure = 0.01;				// Fbeta weighting minimum
+const double cDfltFbetaMeasure = 0.1;               // giving significant weighting to precision over recall - accuracy of SNP calls at low coverage loci is extremely important
+const double cBMMaxFbetaMeasure = 2.0;				// Fbeta weighting max
+const double cBMDfltFbeta = 0.5;			        // default is to favor precision over recall for both bases and reads
 
 // silently clamping number of reads, SE or PE pairs, to be within following ranges
 const int cBMMaxReads = 100000000;		// max number of reads or read pairs to process for MAGIC simulations
@@ -87,16 +84,13 @@ typedef struct TAG_sBMGroundTruth {
 class CBenchmark {
 	bool m_bPrimaryOnly;			// if true then only score primary read alignments otherwise score all including secondary
 	bool m_bPEReads;				// if true then PE pair only processing otherwise treating all reads as if SE reads
-	int m_UnalignedBasePts;			// points to apply for each unaligned base
-	int m_AlignedBasePts;			// points to apply for each base aligned to it's ground truth loci
-	int m_SilentTrimAlignBasePts;	// points to apply for each base aligned in a silently trimmed read within ground truth loci range
-	int m_MisalignedBasePts;		// points to apply for each base aligned but not to ground truth loci
+	double m_FbetaBases;		// Fbeta-measure to use when scoring bases recall relative to precision
+	double m_FbetaReads;		// Fbeta-measure to use when scoring reads recall relative to precision
 
 	int64_t m_TotNumPotentialAlignBases;	// number of match bases in actual alignments which potentially could have been aligned to ground truth
 	int64_t m_NumBasesLociCorrect;			// total number of bases aligned correctly to ground truth loci
 	int64_t m_NumBasesLociIncorrect;		// total number of bases aligned incorrectly to ground truth loci
 	int64_t m_NumBasesLociUnclaimed;		// total number of ground truth bases which were not aligned
-	int64_t m_NumSilentTrimBaseMatches;		// total number of bases accepted as aligned even though in reads which have been silently trimmed - neither soft or hard trimmed
 
 	uint32_t m_ReadOverlapHistogram[101];	// histogram of read alignments by percentile proportion of read bases in reads overlapping with ground truth read bases
 
@@ -264,10 +258,8 @@ public:
 		Score(bool bScorePrimaryOnly,		// score only primary alignments otherwise score including secondary
 			bool bScoreMatedPE,			// if true then both mates of a PE must have been aligned for alignment to be scored
 			bool bPEReads,				// true if PE pair processing
-			int UnalignedBasePts,		// points to apply for each unaligned base
-			int AlignedBasePts,			// points to apply for each base aligned to it's ground truth loci
-			int SilentTrimAlignBasePts, // points to apply for each base aligned in a silently trimmed read within ground truth loci range
-			int MisalignedBasePts,		// points to apply for each base aligned but not to ground truth loci
+			double FbetaBases,		// Fbeta-measure to use when scoring bases recall relative to precision
+			double FbetaReads,		// Fbeta-measure to use when scoring reads recall relative to precision
 			char* pszResultsFile,		// benchmarking m2 results appended to this CSV file
 			char* pszExperimentDescr,	// experiment descriptor by which benchmarking results can be identified in szResultsFile
 			char* pszControlAligner,	// control aligner generating error profile from which simulated reads were generated 

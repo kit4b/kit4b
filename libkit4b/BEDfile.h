@@ -55,7 +55,35 @@ typedef enum eBEDFeatureType {
 	eBTLast								// marker setting the range of teBEDFeatureTypes
 } teBEDFeatureType;
 
+typedef enum eGFFFeatureType {          // GFF3 file gene feature regions which will be parsed and accepted for subsequent processing
+		eGFF3FTgene = 1, eGFF3FTmRNA, eGFF3FTexon, eGFF3FTintron, eGFF3FTCDS, eGFF3FTthree_prime_UTR, eGFF3FTfive_prime_UTR
+	} teGFFFeatureType;
+
+typedef enum eGFF3AttribType { // GFF3 file gene features can have associated attribute types
+	eGFF3AID = 1,eGFF3AParent,eGFF3AName
+	}teGFF3AttribType;
 #pragma pack(1)
+
+typedef struct TAG_sGFF3FeatureType {
+	teGFFFeatureType FeatTypeID;		// uniquely identifies this feature type
+	const char* pszFeatType;	// feature type
+} tsGFF3FeatureType;
+
+
+// defines GFF3 attributes of interest
+typedef struct TAG_sGFF3AttribType {
+	teGFF3AttribType AttribTypeID;		// uniquely identifies this attribute type
+	const char* pszAttribType;	// attribute type
+} tsGFF3AttribType;
+
+
+const int cMaxGFF3AttribValueLen = 200;	// truncate GFF3 attribute values to this length
+typedef struct TAG_sGFF3AttribValue {
+	int AttribTypeID;		// attribute type identifier
+	char szAttribValue[cMaxGFF3AttribValueLen + 1];	// value associated with this attribute
+} tsGFF3AttribValue;
+
+
 
 typedef struct TAG_sUnsortToSortID {    // used whilst intialising feature to chrom identifier mapping
 	uint32_t OldID;		// previous identifier

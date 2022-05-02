@@ -533,14 +533,15 @@ switch(Sensitivity) {
 			m_MaxIter = cMinBlitzSensCoreIters;
 		break;
 	}
+m_MaxOccKMerDepth = m_MaxIter;
 
-gDiagnostics.DiagOut(eDLInfo,gszProcName,"Using maximum depth to explore over-occurring seed K-mers : %d",m_MaxIter);
+gDiagnostics.DiagOut(eDLInfo,gszProcName,"Using this maximum depth to explore over-occurring seed K-mers : %d",m_MaxIter);
 
 m_pSfxArray->SetMaxIter(m_MaxIter);
 
 if(CoreLen <= cMaxKmerLen)
 	{
-	if((Rslt = m_pSfxArray->InitOverOccKMers(CoreLen,m_MaxIter))!=eBSFSuccess)
+	if((Rslt = m_pSfxArray->InitOverOccKMers(CoreLen,m_MaxIter+1))!=eBSFSuccess)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Failed to initialise for over occurring K-mers");
 		Reset(false);
@@ -550,14 +551,14 @@ if(CoreLen <= cMaxKmerLen)
 
 if(KMerDist == true)
 	{
-	if ((m_pKmerOccsDist = new uint32_t[cMaxBlitzOccKMerDepth + 1]) == NULL)				// allocated to hold Kmer count distributions (up to cMaxOccKMerDepth counts)
+	if ((m_pKmerOccsDist = new uint32_t[m_MaxIter + 1]) == NULL)				// allocated to hold Kmer count distributions (up to cMaxOccKMerDepth counts)
 		{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Failed to allocate memory for KMer distribution counts");
 		Reset(false);
 		return(eBSFerrMem);
 		}
-	memset(m_pKmerOccsDist, 0, sizeof(int) * (cMaxBlitzOccKMerDepth + 1));
-	m_pSfxArray->InitKMerCountDists(cMaxBlitzOccKMerDepth + 1, m_pKmerOccsDist);
+	memset(m_pKmerOccsDist, 0, sizeof(int) * (m_MaxIter + 1));
+	m_pSfxArray->InitKMerCountDists(m_MaxIter + 1, m_pKmerOccsDist);
 	}
 
 if(RsltsFormat == eBLZRsltsSAM)
@@ -817,7 +818,7 @@ if(m_pKmerOccsDist != NULL)
 		return(eBSFerrCreateFile);
 		}
 
-	ReportKMerDist(m_CoreLen,cMaxBlitzOccKMerDepth, m_pKmerOccsDist);
+	ReportKMerDist(m_CoreLen,m_MaxIter, m_pKmerOccsDist);
 
 #ifdef _WIN32
 	_commit(m_hOutFile);
@@ -2494,42 +2495,39 @@ CBlitz::ReportKMerDist(uint32_t KMerLen,// KMer count distributions are for this
 {
 uint32_t DistIdx;
 uint32_t *pOccsDist;
-uint64_t CummulativeQKmers;
-uint64_t CummulativeTKmers;
-uint64_t TotalCummulativeQKmers;
-uint64_t TotalCummulativeTKmers;
-double PropCummulativeQKmers;
-double PropCummulativeTKmers;
+uint64_t CumulativeQKmers;
+uint64_t CumulativeTKmers;
+uint64_t TotalCumulativeQKmers;
+uint64_t TotalCumulativeTKmers;
+double PropCumulativeQKmers;
+double PropCumulativeTKmers;
 
-TotalCummulativeQKmers = 0;
-TotalCummulativeTKmers = 0;
+TotalCumulativeQKmers = 0;
+TotalCumulativeTKmers = 0;
 pOccsDist = pKmerOccsDist;
 for (DistIdx = 0; DistIdx <= MaxKMerCnts; DistIdx++, pOccsDist++)
 	{
-	TotalCummulativeQKmers += (uint64_t)*pOccsDist;
-	TotalCummulativeTKmers += DistIdx * (uint64_t)*pOccsDist;
+	TotalCumulativeQKmers += (uint64_t)*pOccsDist;
+	TotalCumulativeTKmers += DistIdx * (uint64_t)*pOccsDist;
 	}
 
 
-if (m_szLineBuffIdx > (cAlignBlitzRprtBufferSize * 9) / 10)
-	{
-	CUtility::RetryWrites(m_hOutFile, m_pszLineBuff, m_szLineBuffIdx);
-	m_szLineBuffIdx = 0;
-	}
-CummulativeQKmers = 0;
-CummulativeTKmers = 0;
+m_szLineBuffIdx = sprintf(m_pszLineBuff, "\"CntTKmers\",\"QKmers\",\"CumulativeTKmers\",\"CumulativeQKmers\",\"PropCumulativeTKmers\",\"PropCumulativeQKmers\"\n");
+
+CumulativeQKmers = 0;
+CumulativeTKmers = 0;
 for(DistIdx = 0; DistIdx <= MaxKMerCnts; DistIdx++, pKmerOccsDist++)
 	{
-	CummulativeQKmers += (uint64_t)*pKmerOccsDist;
-	CummulativeTKmers += DistIdx * (uint64_t)*pKmerOccsDist;
-	PropCummulativeQKmers = (double)CummulativeQKmers/(double)TotalCummulativeQKmers;
-	PropCummulativeTKmers = (double)CummulativeTKmers / (double)TotalCummulativeTKmers;
+	CumulativeQKmers += (uint64_t)*pKmerOccsDist;
+	CumulativeTKmers += DistIdx * (uint64_t)*pKmerOccsDist;
+	PropCumulativeQKmers = (double)CumulativeQKmers/(double)TotalCumulativeQKmers;
+	PropCumulativeTKmers = (double)CumulativeTKmers / (double)TotalCumulativeTKmers;
 #if _WIN32
-	m_szLineBuffIdx += sprintf(&m_pszLineBuff[m_szLineBuffIdx], "%u,%u, %u, %Iu,%Iu,%f,%f\n",
+	m_szLineBuffIdx += sprintf(&m_pszLineBuff[m_szLineBuffIdx], "%u,%u,%Iu,%Iu,%f,%f\n",
 #else
-	m_szLineBuffIdx += sprintf(&m_pszLineBuff[m_szLineBuffIdx], "%u,%u, %u, %lu,%lu,%f,%f\n",
+	m_szLineBuffIdx += sprintf(&m_pszLineBuff[m_szLineBuffIdx], "%u,%u,%lu,%lu,%f,%f\n",
 #endif
-							DistIdx, *pKmerOccsDist, DistIdx == 0 ? *pKmerOccsDist : DistIdx * *pKmerOccsDist, CummulativeQKmers, CummulativeTKmers, PropCummulativeQKmers, PropCummulativeTKmers);
+							DistIdx, *pKmerOccsDist, CumulativeQKmers, CumulativeTKmers, PropCumulativeTKmers, PropCumulativeQKmers);
 	if (m_szLineBuffIdx > (cAlignBlitzRprtBufferSize * 9) / 10)
 		{
 		CUtility::RetryWrites(m_hOutFile, m_pszLineBuff, m_szLineBuffIdx);

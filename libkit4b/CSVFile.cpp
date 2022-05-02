@@ -123,7 +123,7 @@ hFile = open(pszFile,O_READSEQ);
 if(hFile == -1)
 	{
 	gDiagnostics.DiagOut(eDLWarn,gszProcName,"CSVEstSizes: Unable to open file '%s'",pszFile);
-	delete pBuff;
+	delete []pBuff;
 	return(0);
 	}
 
@@ -210,7 +210,7 @@ while((Chr = *pChr++) != '\0')
 		}
 	}
 
-delete pBuff;
+delete []pBuff;
 
 if(TotNumRows)
 	{
@@ -470,6 +470,7 @@ pField->bTruncated = false;
 
 pField->pValue[0] = '\0';
 *pChrsParsed = 0;
+szField[0] = '\0';
 
 while(FieldState == 2 && (Chr = *pszField++) != '\0')
 	{
@@ -699,6 +700,7 @@ while(bMore) {
 	pChr = &m_pBuffer[m_BuffParseOfs];
 	Ofs = 0;
 	ChrsParsed = 0;
+	ParseRslt = 0;
 	for(Idx = 0; Idx < m_MaxFields; Idx++)
 		{
 		ParseRslt = ParseField(&pChr[Ofs],  // field to parse 

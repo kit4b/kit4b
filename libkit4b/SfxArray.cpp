@@ -7013,7 +7013,7 @@ do
 			NumTargSeqProc += 1;
 			IterCnt += 1;
 
-			// now do the matching allowing for missmatches
+			// now do the matching allowing for mismatches
 			// if colorspace then need to allow for adjacent apparent mismatches actually being the result of a single substitution relative to the target
 			// if colorspace and a standalone, without an adjacent, mismatch then this is supposedly a sequencing error, still treat as though a mismatch
 				{
