@@ -1529,7 +1529,7 @@ for(Idx = 0; Idx < pParams->MaxNMerLen; Idx++)
 		if(!*pCnt)
 			continue;
 #ifdef _WIN32
-		Len = sprintf(szLineBuff,"\"%s\",%d,%d,\"%s\",%lld,%.10g",
+		Len = sprintf(szLineBuff,"\"%s\",%d,%d,\"%s\",%I64d,%.10g",
 #else
 		Len = sprintf(szLineBuff,"\"%s\",%d,%d,\"%s\",%ld,%.10g",
 #endif

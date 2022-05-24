@@ -381,7 +381,7 @@ while(m_Sequences.NumSeqs2Assemb) {
 	if(MaxPasses > 0 && CurPass > MaxPasses)   // number of passes is limited
 		break;
 
-	gDiagnostics.DiagOut(eDLInfo,gszProcName,"AssembReads: Starting pass %d allowing %d substitutions per overlapping Kbp, overlap end primer %d substitutions, processing total of %u sequences with total length %llu...",CurPass,AllowedSubsKbp,AllowedEnd12Subs,m_Sequences.NumSeqs2Assemb,m_Sequences.Seqs2AssembLen);
+	gDiagnostics.DiagOut(eDLInfo,gszProcName,"AssembReads: Starting pass %d allowing %d substitutions per overlapping Kbp, overlap end primer %d substitutions, processing total of %u sequences with total length %I64u...",CurPass,AllowedSubsKbp,AllowedEnd12Subs,m_Sequences.NumSeqs2Assemb,m_Sequences.Seqs2AssembLen);
 	if(bProcPE)
 		gDiagnostics.DiagOut(eDLInfo,gszProcName,"AssembReads: MinReqPEPrimOverlap: %d, MinReqPESecOverlap: %d, MinReqPESumOverlap: %d, MinReqSEPrimOverlap :%d, MinPEMergeOverlap: %d, MinReqPESepDist: %d, MaxReqPESepDist: %d",
 								CurMinReqPEPrimOverlap,CurMinReqPESecOverlap,CurMinReqPESumOverlap,CurMinReqSEPrimOverlap,CurMinPEMergeOverlap,m_MinReqPESepDist,m_MaxReqPESepDist);
@@ -457,7 +457,7 @@ while(m_Sequences.NumSeqs2Assemb) {
 	if(Rslt < 0)
 		return((teBSFrsltCodes)Rslt);
 
-	gDiagnostics.DiagOut(eDLInfo,gszProcName,"AssembReads: Generated %d partial merges resulting in total sequence length %lld ...",m_NumPartialSeqs2Assemb,m_Sequences.Seqs2AssembLen);	// report number of newly merged sequences
+	gDiagnostics.DiagOut(eDLInfo,gszProcName,"AssembReads: Generated %d partial merges resulting in total sequence length %I64d ...",m_NumPartialSeqs2Assemb,m_Sequences.Seqs2AssembLen);	// report number of newly merged sequences
 	// what percentage of sequences were merged in current pass - this percentage is used to determine if the thresholds should be relaxed
 	MergedPercentage = 100.0 * ((double)(PrevNumSeqs2Assemb - m_Sequences.NumSeqs2Assemb) / (double)PrevNumSeqs2Assemb);
 	if(MergedPercentage < 0.0)		// possible if too many overlength PEs are being classified as SE relative to sequences merged

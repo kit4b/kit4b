@@ -104,7 +104,7 @@ typedef struct TAG_sASSubSeqAligns {
 	sASAlignQScores Scores[3];		// 0: Muscle vs UCSC, 1: Clustalw vs UCSC, 2: Muscle vs Clustalw
 	tsASAlignerBlock Blocks[3];		// 0: UCSC, 1: Muscle, 2: Clustalw
 	tsASSpeciesSubSeqAlign Species[1];	// place holder for all species specific subseqs in alignment
-									// aditional species are concatenated on to the end of this structure
+									// additional species are concatenated on to the end of this structure
 	} tsASSubSeqAligns;
 #pragma pack()
 

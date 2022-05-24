@@ -1242,7 +1242,7 @@ if(NumTargSeqs > 0)
 else
 	MaxTargSeqLen = 0;
 
-gDiagnostics.DiagOut(eDLInfo,gszProcName,"Loaded for error correcting %d assembled contig sequences totaling %lldbp",NumTargSeqs,TotTargSeqLen);
+gDiagnostics.DiagOut(eDLInfo,gszProcName,"Loaded for error correcting %d assembled contig sequences totaling %I64dbp",NumTargSeqs,TotTargSeqLen);
 
 if(MaxTargSeqLen > cMaxRefSeqLen)
 	{
@@ -1326,7 +1326,7 @@ if((m_pMAConsensus = new CMAConsensus)==NULL)
 	}
 if((Rslt=m_pMAConsensus->Init(NumTargSeqs,TotTargSeqLen))!=eBSFSuccess)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"MAConsensus initialialisation for %u targeted sequences totaling %llubp failed",NumTargSeqs,TotTargSeqLen);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"MAConsensus initialialisation for %u targeted sequences totaling %I64ubp failed",NumTargSeqs,TotTargSeqLen);
 	return(eBSFerrObj);
 	}
 
@@ -1524,13 +1524,13 @@ for(ThreadIdx = 0; ThreadIdx < NumECThreads; ThreadIdx++,pThreadPar++)
 	pThreadPar->pCoreHits = (tsPBECCCoreHit *)malloc(pThreadPar->AllocdCoreHitsSize);	
 	if(pThreadPar->pCoreHits == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"IdentifySequenceOverlaps: Core hits memory allocation of %llu bytes - %s",pThreadPar->AllocdCoreHitsSize,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"IdentifySequenceOverlaps: Core hits memory allocation of %I64u bytes - %s",pThreadPar->AllocdCoreHitsSize,strerror(errno));
 		break;
 		}
 #else
 	if((pThreadPar->pCoreHits = (tsPBECCCoreHit *)mmap(NULL,pThreadPar->AllocdCoreHitsSize, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0)) == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"IdentifySequenceOverlaps: Core hits memory allocation of %llu bytes - %s",pThreadPar->AllocdCoreHitsSize,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"IdentifySequenceOverlaps: Core hits memory allocation of %I64u bytes - %s",pThreadPar->AllocdCoreHitsSize,strerror(errno));
 		break;
 		}
 #endif

@@ -662,7 +662,7 @@ while(Rslt >= eBSFSuccess && (LineLen = m_pSAMfile->GetNxtSAMline((char *)m_pInB
 		Now = time(NULL);
 		if ((Now - Then) >= 60)
 			{
-			gDiagnostics.DiagOut(eDLInfo, gszProcName, "Accepted %lld SAM/BAM alignments", NumAcceptedAlignments);
+			gDiagnostics.DiagOut(eDLInfo, gszProcName, "Accepted %I64d SAM/BAM alignments", NumAcceptedAlignments);
 			Then += 60;
 			}
 		}
@@ -737,7 +737,7 @@ while(Rslt >= eBSFSuccess && (LineLen = m_pSAMfile->GetNxtSAMline((char *)m_pInB
 #endif
 		if (pTmp == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenBinnedSegments: Memory re-allocation to %lld bytes - %s", (int64_t)(memreq), strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenBinnedSegments: Memory re-allocation to %I64d bytes - %s", (int64_t)(memreq), strerror(errno));
 			Reset();
 			return(eBSFerrMem);
 			}
@@ -945,7 +945,7 @@ m_AllocdSAMlociMem = (size_t)cAllocSHNumSAMloci * sizeof(tsSHSAMloci);
 m_pSAMloci = (tsSHSAMloci*)malloc(m_AllocdSAMlociMem);
 if (m_pSAMloci == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenBinnedSegments: Memory allocation of %lld bytes failed", (int64_t)m_AllocdSAMlociMem);
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenBinnedSegments: Memory allocation of %I64d bytes failed", (int64_t)m_AllocdSAMlociMem);
 	m_AllocdSAMlociMem = 0;
 	Reset();
 	return(eBSFerrMem);
@@ -955,7 +955,7 @@ if (m_pSAMloci == NULL)
 m_pSAMloci = (tsSHSAMloci*)mmap(NULL, m_AllocdSAMlociMem, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 if (m_pSAMloci == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenBinnedSegments: Memory allocation of %lld bytes through mmap()  failed", (int64_t)m_AllocdSAMlociMem, strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenBinnedSegments: Memory allocation of %I64d bytes through mmap()  failed", (int64_t)m_AllocdSAMlociMem, strerror(errno));
 	m_pSAMloci = NULL;
 	m_AllocdSAMlociMem = 0;
 	Reset();
@@ -1031,7 +1031,7 @@ if(m_CurNumSAMloci == 0)		// ugh, no alignments!
 	return(eBSFSuccess);			// not an error!
 	}
 else
-	gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenBinnedSegments: Accepted %lld total alignments onto %d targets for binning",m_CurNumSAMloci, m_NumAlignedTargSeqs);
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenBinnedSegments: Accepted %I64d total alignments onto %d targets for binning",m_CurNumSAMloci, m_NumAlignedTargSeqs);
 
 if((m_pBins = new tsSHBin[m_AllocdBins]) == NULL)
 	{
@@ -1097,7 +1097,7 @@ for(LociIdx = 1; LociIdx < m_CurNumSAMloci; LociIdx++, pSAMloci++)
 		}
 	}
 m_CurNumSAMloci = NumUniqueLoci;
-gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenBinnedSegments: Alignments were to %lld unique loci",m_CurNumSAMloci);
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenBinnedSegments: Alignments were to %I64d unique loci",m_CurNumSAMloci);
 
 pSAMloci = m_pSAMloci;
 NumFounder1IDs = 0;
@@ -1831,7 +1831,7 @@ if(m_pAllocSNPSites == NULL)		// initial allocation?
 	m_pAllocSNPSites = (tsSHSNPSSite *) malloc(memreq);	// initial and perhaps the only allocation
 	if(m_pAllocSNPSites == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddLoci: Memory allocation of %lld bytes - %s",(int64_t)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddLoci: Memory allocation of %I64d bytes - %s",(int64_t)memreq,strerror(errno));
 		return(eBSFerrMem);
 		}
 #else
@@ -1839,7 +1839,7 @@ if(m_pAllocSNPSites == NULL)		// initial allocation?
 	m_pAllocSNPSites = (tsSHSNPSSite *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pAllocSNPSites == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddLoci: Memory allocation of %lld bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddLoci: Memory allocation of %I64d bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
 		m_pAllocSNPSites = NULL;
 		return(eBSFerrMem);
 		}
@@ -1856,7 +1856,7 @@ else
 		size_t AllocTo;
 		AllocTo = (size_t)cAllocSNPSites + m_AllocMemSNPSites;
 		memreq = AllocTo * sizeof(tsSHSNPSSite);
-		gDiagnostics.DiagOut(eDLInfo,gszProcName,"AddLoci: memory re-allocation to %lld from %lld bytes",(int64_t)memreq,(int64_t)m_AllocMemSNPSites);
+		gDiagnostics.DiagOut(eDLInfo,gszProcName,"AddLoci: memory re-allocation to %I64d from %I64d bytes",(int64_t)memreq,(int64_t)m_AllocMemSNPSites);
 
 #ifdef _WIN32
 		pSNPSite = (tsSHSNPSSite *) realloc(m_pAllocSNPSites,memreq);
@@ -1867,7 +1867,7 @@ else
 #endif
 		if(pSNPSite == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddLoci: Memory re-allocation to %lld bytes - %s",(int64_t)memreq,strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddLoci: Memory re-allocation to %I64d bytes - %s",(int64_t)memreq,strerror(errno));
 			return(eBSFerrMem);
 			}
 		m_pAllocSNPSites = pSNPSite;

@@ -566,7 +566,7 @@ if(m_pSeqBuff == NULL)
 	m_pSeqBuff = (etSeqBase *) malloc(SeqLen);	// initial and perhaps the only allocation
 	if(m_pSeqBuff == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocSeqBuff: Memory allocation of %lld bytes - %s",(int64_t)SeqLen,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocSeqBuff: Memory allocation of %I64d bytes - %s",(int64_t)SeqLen,strerror(errno));
 		return(NULL);
 		}
 #else
@@ -574,7 +574,7 @@ if(m_pSeqBuff == NULL)
 	m_pSeqBuff = (etSeqBase *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pSeqBuff == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocSeqBuff: Memory allocation of %lld bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocSeqBuff: Memory allocation of %I64d bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
 		m_pSeqBuff = NULL;
 		return(NULL);
 		}
@@ -592,7 +592,7 @@ else
 #endif
 	if(pTmp == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocSeqBuff: Memory re-allocation to %lld bytes - %s",(int64_t)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocSeqBuff: Memory re-allocation to %I64d bytes - %s",(int64_t)memreq,strerror(errno));
 		return(NULL);
 		}
 	m_pSeqBuff = pTmp;
@@ -803,7 +803,7 @@ if(m_IdxRptSSRs > (cMaxAllocRptSSRs - 2000))
 	}
 
 #ifdef _WIN32
-m_IdxRptSSRs += sprintf(&m_pszRptSSRsBuff[m_IdxRptSSRs],"%d,\"SSRs\",\"N/A\",\"%s\",%lld,%lld,%lld,%d,%lld,\"+\",%d,%d,\"",m_TotNumAcceptedSSRs,
+m_IdxRptSSRs += sprintf(&m_pszRptSSRsBuff[m_IdxRptSSRs],"%d,\"SSRs\",\"N/A\",\"%s\",%I64d,%I64d,%I64d,%d,%I64d,\"+\",%d,%d,\"",m_TotNumAcceptedSSRs,
 #else
 m_IdxRptSSRs += sprintf(&m_pszRptSSRsBuff[m_IdxRptSSRs],"%d,\"SSRs\",\"N/A\",\"%s\",%ld,%ld,%ld,%d,%ld,\"+\",%d,%d,\"",m_TotNumAcceptedSSRs,
 #endif
@@ -1191,7 +1191,7 @@ if(pszKMerFreqFile != NULL && pszKMerFreqFile[0] != '\0' &&
 	m_pKMerDist = (tsKMerDist *) malloc(memreq);	// initial and only allocation
 	if(m_pKMerDist == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes - %s",(int64_t)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %I64d bytes - %s",(int64_t)memreq,strerror(errno));
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -1200,7 +1200,7 @@ if(pszKMerFreqFile != NULL && pszKMerFreqFile[0] != '\0' &&
 	m_pKMerDist = (tsKMerDist *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pKMerDist == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %I64d bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
 		m_pKMerDist = NULL;
 		Reset();
 		return(eBSFerrMem);

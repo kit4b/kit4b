@@ -165,7 +165,7 @@ if(m_pContigEntries == NULL)
 
 	if(m_pContigEntries == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadContigFile: Memory allocation of %lld bytes for contig entries - %s",(int64_t)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadContigFile: Memory allocation of %I64d bytes for contig entries - %s",(int64_t)memreq,strerror(errno));
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -174,7 +174,7 @@ if(m_pContigEntries == NULL)
 	m_pContigEntries = (tsContigEntry *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pContigEntries == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadContigFile: Memory allocation of %lld bytes through mmap() for contig entries failed - %s",(int64_t)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadContigFile: Memory allocation of %I64d bytes through mmap() for contig entries failed - %s",(int64_t)memreq,strerror(errno));
 		m_pContigEntries = NULL;
 		Reset();
 		return(eBSFerrMem);
@@ -195,7 +195,7 @@ if(m_pContigSeqs == NULL)
 
 	if(m_pContigSeqs == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadContigFile: Memory allocation of %lld bytes for contig sequences - %s",(int64_t)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadContigFile: Memory allocation of %I64d bytes for contig sequences - %s",(int64_t)memreq,strerror(errno));
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -204,7 +204,7 @@ if(m_pContigSeqs == NULL)
 	m_pContigSeqs = (uint8_t *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pContigSeqs == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadContigFile: Memory allocation of %lld bytes through mmap() for contig sequences failed - %s",(int64_t)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadContigFile: Memory allocation of %I64d bytes through mmap() for contig sequences failed - %s",(int64_t)memreq,strerror(errno));
 		m_pContigSeqs = NULL;
 		Reset();
 		return(eBSFerrMem);

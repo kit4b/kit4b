@@ -664,7 +664,7 @@ for(int FileIdx = 0;FileIdx < m_NumSNPFiles; FileIdx++)
 			m_pSNPSites = (tsSNPSite*)malloc(memreq);	// initial and perhaps the only allocation
 			if(m_pSNPSites == NULL)
 				{
-				gDiagnostics.DiagOut(eDLFatal, gszProcName, "SNPs: Initial memory allocation of %lld bytes - %s", (int64_t)memreq, strerror(errno));
+				gDiagnostics.DiagOut(eDLFatal, gszProcName, "SNPs: Initial memory allocation of %I64d bytes - %s", (int64_t)memreq, strerror(errno));
 				Reset();
 				return(eBSFerrMem);
 				}
@@ -673,7 +673,7 @@ for(int FileIdx = 0;FileIdx < m_NumSNPFiles; FileIdx++)
 			m_pSNPSites = (tsSNPSite *)mmap(NULL, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 			if(m_pSNPSites == MAP_FAILED)
 				{
-				gDiagnostics.DiagOut(eDLFatal, gszProcName, "SNPs: Memory allocation of %lld bytes through mmap()  failed - %s", (int64_t)memreq, strerror(errno));
+				gDiagnostics.DiagOut(eDLFatal, gszProcName, "SNPs: Memory allocation of %I64d bytes through mmap()  failed - %s", (int64_t)memreq, strerror(errno));
 				m_pSNPSites = NULL;
 				Reset();
 				return(eBSFerrMem);
@@ -699,7 +699,7 @@ for(int FileIdx = 0;FileIdx < m_NumSNPFiles; FileIdx++)
 	#endif
 				if(pSNPSite == NULL)
 					{
-					gDiagnostics.DiagOut(eDLFatal, gszProcName, "SNPs: Memory re-allocation to %lld bytes - %s", memreq, strerror(errno));
+					gDiagnostics.DiagOut(eDLFatal, gszProcName, "SNPs: Memory re-allocation to %I64d bytes - %s", memreq, strerror(errno));
 					return(eBSFerrMem);
 					}
 				m_pSNPSites = pSNPSite;
@@ -796,7 +796,7 @@ if(m_pASegments == NULL)
 	m_pASegments = (tsASegment*)malloc(memreq);	// initial and perhaps the only allocation
 	if(m_pASegments == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "MergeASegs: Initial memory allocation of %lld bytes - %s", (int64_t)memreq, strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "MergeASegs: Initial memory allocation of %I64d bytes - %s", (int64_t)memreq, strerror(errno));
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -805,7 +805,7 @@ if(m_pASegments == NULL)
 	m_pASegments = (tsASegment *)mmap(NULL, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	if(m_pASegments == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "MergeASegs: Memory allocation of %lld bytes through mmap()  failed - %s", (int64_t)memreq, strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "MergeASegs: Memory allocation of %I64d bytes through mmap()  failed - %s", (int64_t)memreq, strerror(errno));
 		m_pASegments = NULL;
 		Reset();
 		return(eBSFerrMem);
@@ -831,7 +831,7 @@ else
 #endif
 		if(pASeg == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "MergeASegs: Memory re-allocation to %lld bytes - %s", memreq, strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "MergeASegs: Memory re-allocation to %I64d bytes - %s", memreq, strerror(errno));
 			return(eBSFerrMem);
 			}
 		m_pASegments = pASeg;
@@ -1007,7 +1007,7 @@ memreq = (size_t)cAllocAssembFastaMem;
 m_pSeqBuffer = (uint8_t *)malloc(memreq);	// initial and perhaps the only allocation
 if(m_pSeqBuffer == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Initial memory allocation of %lld bytes - %s", (int64_t)memreq, strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Initial memory allocation of %I64d bytes - %s", (int64_t)memreq, strerror(errno));
 	Reset();
 	return(eBSFerrMem);
 	}
@@ -1016,7 +1016,7 @@ if(m_pSeqBuffer == NULL)
 m_pSeqBuffer = (uint8_t *)mmap(NULL, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 if(m_pSeqBuffer == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Assembly: Memory allocation of %lld bytes through mmap()  failed - %s", (int64_t)memreq, strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Assembly: Memory allocation of %I64d bytes through mmap()  failed - %s", (int64_t)memreq, strerror(errno));
 	m_pSeqBuffer = NULL;
 	Reset();
 	return(eBSFerrMem);
@@ -1041,7 +1041,7 @@ while((NumRead = (int)read(m_hInFile, &m_pSeqBuffer[m_SeqBuffIdx], (int)(m_Alloc
 #endif
 		if(pInChr == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Memory re-allocation to %lld bytes - %s", memreq, strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Memory re-allocation to %I64d bytes - %s", memreq, strerror(errno));
 			return(eBSFerrMem);
 			}
 		m_pSeqBuffer = pInChr;

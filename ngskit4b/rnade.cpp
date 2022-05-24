@@ -1335,7 +1335,7 @@ while(pthread_spin_trylock(&m_hSpinLock)==EBUSY)
 	{
 	if(SpinCnt -= 1)
 		continue;
-	pthread_yield();
+	sched_yield();
 	SpinCnt = 500;
 	}
 #endif
@@ -2299,7 +2299,7 @@ memreq = m_NumBins * sizeof(tsAlignBin) * NumThreads;
 m_pAlignBins = (tsAlignBin *) malloc((size_t)memreq);
 if(m_pAlignBins == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for bins failed",(int64_t)memreq);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %I64d bytes for bins failed",(int64_t)memreq);
 	DEReset();
 	return(eBSFerrMem);
 	}
@@ -2308,7 +2308,7 @@ if(m_pAlignBins == NULL)
 m_pAlignBins = (tsAlignBin *)mmap(NULL,(size_t)memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pAlignBins == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for bins through mmap()  failed",(int64_t)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %I64d bytes for bins through mmap()  failed",(int64_t)memreq,strerror(errno));
 	m_pAlignBins = NULL;
 	DEReset();
 	return(eBSFerrMem);
@@ -2322,7 +2322,7 @@ memreq = m_NumBins * sizeof(tsAlignBin) * NumThreads;
 m_pPoissonAlignBins = (tsAlignBin *) malloc((size_t)memreq);
 if(m_pPoissonAlignBins == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for bins failed",(int64_t)memreq);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %I64d bytes for bins failed",(int64_t)memreq);
 	DEReset();
 	return(eBSFerrMem);
 	}
@@ -2331,7 +2331,7 @@ if(m_pPoissonAlignBins == NULL)
 m_pPoissonAlignBins = (tsAlignBin *)mmap(NULL,(size_t)memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pPoissonAlignBins == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for bins through mmap()  failed",(int64_t)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %I64d bytes for bins through mmap()  failed",(int64_t)memreq,strerror(errno));
 	m_pPoissonAlignBins = NULL;
 	DEReset();
 	return(eBSFerrMem);
@@ -2345,7 +2345,7 @@ memreq = cMaxAssumTransLoci * NumThreads * sizeof(tsAlignLociInstStarts);
 m_pBinInstsStarts = (tsAlignLociInstStarts *) malloc((size_t)memreq);
 if(m_pBinInstsStarts == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for bin loci instances failed",(int64_t)memreq);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %I64d bytes for bin loci instances failed",(int64_t)memreq);
 	DEReset();
 	return(eBSFerrMem);
 	}
@@ -2354,7 +2354,7 @@ if(m_pBinInstsStarts == NULL)
 m_pBinInstsStarts = (tsAlignLociInstStarts *)mmap(NULL,(size_t)memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pBinInstsStarts == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for bin loci instances through mmap()  failed",(int64_t)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %I64d bytes for bin loci instances through mmap()  failed",(int64_t)memreq,strerror(errno));
 	m_pBinInstsStarts = NULL;
 	DEReset();
 	return(eBSFerrMem);
@@ -2368,7 +2368,7 @@ memreq = cMaxConfidenceIterations * NumThreads * sizeof(double);
 m_pFeatFoldChanges = (double *) malloc((size_t)memreq);
 if(m_pFeatFoldChanges == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for fold change instances failed",(int64_t)memreq);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %I64d bytes for fold change instances failed",(int64_t)memreq);
 	DEReset();
 	return(eBSFerrMem);
 	}
@@ -2377,7 +2377,7 @@ if(m_pFeatFoldChanges == NULL)
 m_pFeatFoldChanges = (double *)mmap(NULL,(size_t)memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pFeatFoldChanges == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for fold change instances through mmap()  failed",(int64_t)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %I64d bytes for fold change instances through mmap()  failed",(int64_t)memreq,strerror(errno));
 	m_pFeatFoldChanges = NULL;
 	DEReset();
 	return(eBSFerrMem);
@@ -2390,7 +2390,7 @@ memreq = cMaxConfidenceIterations * NumThreads * sizeof(double);
 m_pPValues = (double *) malloc((size_t)memreq);
 if(m_pPValues == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for PValue instances failed",(int64_t)memreq);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %I64d bytes for PValue instances failed",(int64_t)memreq);
 	DEReset();
 	return(eBSFerrMem);
 	}
@@ -2399,7 +2399,7 @@ if(m_pPValues == NULL)
 m_pPValues = (double *)mmap(NULL,(size_t)memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pPValues == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for PValue instances through mmap()  failed",(int64_t)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %I64d bytes for PValue instances through mmap()  failed",(int64_t)memreq,strerror(errno));
 	m_pPValues = NULL;
 	DEReset();
 	return(eBSFerrMem);
@@ -2412,7 +2412,7 @@ memreq = cMaxConfidenceIterations * NumThreads * sizeof(double);
 m_pPearsons = (double *) malloc((size_t)memreq);
 if(m_pPearsons == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for fold change pearsons instances failed",(int64_t)memreq);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %I64d bytes for fold change pearsons instances failed",(int64_t)memreq);
 	DEReset();
 	return(eBSFerrMem);
 	}
@@ -2421,7 +2421,7 @@ if(m_pPearsons == NULL)
 m_pPearsons = (double *)mmap(NULL,(size_t)memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pFeatFoldChanges == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for fold change instances through mmap()  failed",(int64_t)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %I64d bytes for fold change instances through mmap()  failed",(int64_t)memreq,strerror(errno));
 	m_pFeatFoldChanges = NULL;
 	DEReset();
 	return(eBSFerrMem);
@@ -2434,7 +2434,7 @@ memreq = (m_NumFeaturesLoaded + 1) * sizeof(tsFeatDE);
 m_pFeatDEs = (tsFeatDE *) malloc((size_t)memreq);
 if(m_pFeatDEs == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for processed feature instances failed",(int64_t)memreq);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %I64d bytes for processed feature instances failed",(int64_t)memreq);
 	DEReset();
 	return(eBSFerrMem);
 	}
@@ -2443,7 +2443,7 @@ if(m_pFeatDEs == NULL)
 m_pFeatDEs = (tsFeatDE *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pFeatDEs == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for processed feature instances through mmap()  failed",(int64_t)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %I64d bytes for processed feature instances through mmap()  failed",(int64_t)memreq,strerror(errno));
 	m_pFeatDEs = NULL;
 	DEReset();
 	return(eBSFerrMem);
@@ -2803,7 +2803,7 @@ if(bIsExperiment)
 	#endif
 		if(pTmpAlloc == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddReadLoci: Memory reallocation to %lld bytes failed - %s",memreq,strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddReadLoci: Memory reallocation to %I64d bytes failed - %s",memreq,strerror(errno));
 			DEReset();
 			return(eBSFerrMem);
 			}
@@ -2828,7 +2828,7 @@ else
 	#endif
 		if(pTmpAlloc == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddReadLoci: Memory reallocation to %lld bytes failed - %s",memreq,strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddReadLoci: Memory reallocation to %I64d bytes failed - %s",memreq,strerror(errno));
 			DEReset();
 			return(eBSFerrMem);
 			}
@@ -2987,7 +2987,7 @@ if(bExperiment)
 	#endif
 		if(pTmpAlloc == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"CoalesceReadAlignments: Memory reallocation to %lld bytes failed - %s",memreq,strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"CoalesceReadAlignments: Memory reallocation to %I64d bytes failed - %s",memreq,strerror(errno));
 			DEReset();
 			return(eBSFerrMem);
 			}
@@ -3012,7 +3012,7 @@ else
 	#endif
 		if(pTmpAlloc == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"CoalesceReadAlignments: Memory reallocation to %lld bytes failed - %s",memreq,strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"CoalesceReadAlignments: Memory reallocation to %I64d bytes failed - %s",memreq,strerror(errno));
 			DEReset();
 			return(eBSFerrMem);
 			}
@@ -3731,7 +3731,7 @@ if(m_pCtrlAlignReadLoci == NULL)
 	m_pCtrlAlignReadLoci = (tsAlignReadLoci *) malloc((size_t)memreq);
 	if(m_pCtrlAlignReadLoci == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEntry: Memory allocation of %lld bytes failed",(int64_t)memreq);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEntry: Memory allocation of %I64d bytes failed",(int64_t)memreq);
 		DEReset();
 		return(eBSFerrMem);
 		}
@@ -3740,7 +3740,7 @@ if(m_pCtrlAlignReadLoci == NULL)
 	m_pCtrlAlignReadLoci = (tsAlignReadLoci *)mmap(NULL,(size_t)memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pCtrlAlignReadLoci == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadAlignedReadFiles: Memory allocation of %lld bytes through mmap()  failed",(int64_t)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadAlignedReadFiles: Memory allocation of %I64d bytes through mmap()  failed",(int64_t)memreq,strerror(errno));
 		m_pCtrlAlignReadLoci = NULL;
 		DEReset();
 		return(eBSFerrMem);
@@ -3759,7 +3759,7 @@ if(m_pExprAlignReadLoci == NULL)
 	m_pExprAlignReadLoci = (tsAlignReadLoci *) malloc((size_t)memreq);
 	if(m_pExprAlignReadLoci == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEntry: Memory allocation of %lld bytes failed",(int64_t)memreq);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEntry: Memory allocation of %I64d bytes failed",(int64_t)memreq);
 		DEReset();
 		return(eBSFerrMem);
 		}
@@ -3768,7 +3768,7 @@ if(m_pExprAlignReadLoci == NULL)
 	m_pExprAlignReadLoci = (tsAlignReadLoci *)mmap(NULL,(size_t)memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pExprAlignReadLoci == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadAlignedReadFiles: Memory allocation of %lld bytes through mmap()  failed",(int64_t)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadAlignedReadFiles: Memory allocation of %I64d bytes through mmap()  failed",(int64_t)memreq,strerror(errno));
 		m_pExprAlignReadLoci = NULL;
 		DEReset();
 		return(eBSFerrMem);

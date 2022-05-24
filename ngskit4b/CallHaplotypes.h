@@ -64,6 +64,7 @@ typedef enum TAG_eModeCSH {
 	eMCSHCoverageHapsGrps,  // generating coverage haplotype groupings
 	eMCSHQGLHapsGrps,       // post-processing haplotype groupings for differential QGL loci
 	eMCSHGrpDist2WIG,       // post-processing haplotype grouping centroid distances into WIG format
+	eMCSHHyperConserved,    // identify hyperconserved regions
 	eMCSHPlaceHolder		// used to mark end of processing modes
 	}eModeCSH;
 

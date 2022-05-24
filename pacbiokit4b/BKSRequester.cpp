@@ -3836,7 +3836,7 @@ for(ChkPtID = 0; ChkPtID < m_MaxChkPtReqs; ChkPtID+=1)
 #endif
 		if(pChkPtReqs == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal, gszProcName,"CreateChkPtReqs: Memory allocation of %lld bytes failed - %s",(int64_t)ReallocTo,strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal, gszProcName,"CreateChkPtReqs: Memory allocation of %I64d bytes failed - %s",(int64_t)ReallocTo,strerror(errno));
 			return(eBSFerrMem);
 			}
 	    memset(pChkPtReqs,0,sizeof(tsChkPtReqs));
@@ -3880,7 +3880,7 @@ for(ChkPtID = 0; ChkPtID < m_MaxChkPtReqs; ChkPtID+=1)
 #endif
 			if(pChkPtReqs->pRespData == NULL)
 				{
-				gDiagnostics.DiagOut(eDLFatal, gszProcName,"CreateChkPtReqs: Memory allocation of %lld bytes failed - %s",(int64_t)ReallocTo,strerror(errno));
+				gDiagnostics.DiagOut(eDLFatal, gszProcName,"CreateChkPtReqs: Memory allocation of %I64d bytes failed - %s",(int64_t)ReallocTo,strerror(errno));
 				return(eBSFerrMem);
 				}
 			memset(pChkPtReqs->pRespData,0,ReallocTo);
@@ -3967,7 +3967,7 @@ if(MemUsed >= AllocMem)
 #endif
 	if(pReallocd == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName,"AddChkPtReq: Memory reallocation to %lld bytes failed - %s",(int64_t)ReallocTo,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal, gszProcName,"AddChkPtReq: Memory reallocation to %I64d bytes failed - %s",(int64_t)ReallocTo,strerror(errno));
 		return(false);
 		}
 	pChkPtReqs = pReallocd;
@@ -3988,7 +3988,7 @@ if(MaxOutDataSize >= pChkPtReqs->AllocRespData)
 #endif
 	if(pReallocdResp == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName,"AddChkPtReq: Memory reallocation to %lld bytes failed - %s",(int64_t)ReallocTo,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal, gszProcName,"AddChkPtReq: Memory reallocation to %I64d bytes failed - %s",(int64_t)ReallocTo,strerror(errno));
 		return(false);
 		}
 	pChkPtReqs->AllocRespData = (uint32_t)ReallocTo;
@@ -4037,7 +4037,7 @@ if(RespSize >= pChkPtReqs->AllocRespData)
 #endif
 	if(pReallocdResp == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName,"AddChkPtResp: Memory reallocation to %lld bytes failed - %s",(int64_t)ReallocTo,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal, gszProcName,"AddChkPtResp: Memory reallocation to %I64d bytes failed - %s",(int64_t)ReallocTo,strerror(errno));
 		return(false);
 		}
 	pChkPtReqs->AllocRespData = (uint32_t)ReallocTo;

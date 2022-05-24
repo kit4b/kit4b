@@ -832,7 +832,7 @@ CSfxArray::ChunkedWrite(int64_t WrtOfs,uint8_t *pData,int64_t WrtLen)
 int BlockLen;
 if(_lseeki64(m_hFile,WrtOfs,SEEK_SET) != WrtOfs)
 	{
-	AddErrMsg("CSfxArray::ChunkedWrite","Unable to seek to %lld on file %s - error %s",WrtOfs,m_szFile,strerror(errno));
+	AddErrMsg("CSfxArray::ChunkedWrite","Unable to seek to %I64d on file %s - error %s",WrtOfs,m_szFile,strerror(errno));
 	Reset(false);
 	return(eBSFerrFileAccess);
 	}
@@ -863,7 +863,7 @@ uint32_t BlockLen;
 uint32_t ActualRdLen;
 if(_lseeki64(m_hFile,RdOfs,SEEK_SET) != RdOfs)
 	{
-	AddErrMsg("CSfxArray::ChunkedRead","Unable to seek to %lld on file %s - error %s",RdOfs,m_szFile,strerror(errno));
+	AddErrMsg("CSfxArray::ChunkedRead","Unable to seek to %I64d on file %s - error %s",RdOfs,m_szFile,strerror(errno));
 	return(eBSFerrFileAccess);
 	}
 if(m_bTermThread)
@@ -922,7 +922,7 @@ if(m_pSfxBlock->ConcatSeqLen)
 #endif
 		if(pRealloc == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: SfxBlock memory re-allocation to %lld bytes - %s",(int64_t)ReallocSize,strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: SfxBlock memory re-allocation to %I64d bytes - %s",(int64_t)ReallocSize,strerror(errno));
 			return(eBSFerrMem);
 			}
 
@@ -1058,7 +1058,7 @@ else // else opening existing file
 	m_pSfxBlock = (tsSfxBlock *) malloc((size_t)m_SfxHeader.SfxBlockSize);
 	if(m_pSfxBlock == NULL)
 		{
-		AddErrMsg("CSfxArray::Open","Fatal: unable to allocate %lld bytes contiguous memory for index",(int64_t)m_SfxHeader.SfxBlockSize);
+		AddErrMsg("CSfxArray::Open","Fatal: unable to allocate %I64d bytes contiguous memory for index",(int64_t)m_SfxHeader.SfxBlockSize);
 		Reset(false);
 		return(eBSFerrMem);
 		}
@@ -1593,7 +1593,7 @@ if(m_pEntriesBlock == NULL)					// will be NULL until at least one entry has bee
 	m_pSfxBlock = (tsSfxBlock *) malloc((size_t)m_AllocSfxBlockMem);
 	if(m_pSfxBlock == NULL)
 		{
-		AddErrMsg("CSfxArray::AddEntry","Fatal: unable to allocate suffix block memory %llu",m_AllocSfxBlockMem);
+		AddErrMsg("CSfxArray::AddEntry","Fatal: unable to allocate suffix block memory %I64u",m_AllocSfxBlockMem);
 		m_AllocSfxBlockMem = 0;
 		Reset();
 		return(eBSFerrMem);
@@ -1603,7 +1603,7 @@ if(m_pEntriesBlock == NULL)					// will be NULL until at least one entry has bee
 	m_pSfxBlock = (tsSfxBlock *)mmap(NULL,m_AllocSfxBlockMem, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pSfxBlock == MAP_FAILED)
 		{
-		AddErrMsg("CSfxArray::AddEntry","Fatal: unable to allocate suffix block memory %llu",m_AllocSfxBlockMem);
+		AddErrMsg("CSfxArray::AddEntry","Fatal: unable to allocate suffix block memory %I64u",m_AllocSfxBlockMem);
 		m_pSfxBlock = NULL;
 		m_AllocSfxBlockMem = 0;
 		Reset(false);			// closes opened file..
@@ -1620,7 +1620,7 @@ if(m_pEntriesBlock == NULL)					// will be NULL until at least one entry has bee
 		m_pBisulfateBases = (uint8_t *) malloc((size_t)m_AllocBisulfiteMem);
 		if(m_pBisulfateBases == NULL)
 			{
-			AddErrMsg("CSfxArray::AddEntry","Fatal: unable to allocate Bisulfite memory %llu",m_AllocBisulfiteMem);
+			AddErrMsg("CSfxArray::AddEntry","Fatal: unable to allocate Bisulfite memory %I64u",m_AllocBisulfiteMem);
 			m_AllocBisulfiteMem = 0;
 			Reset();
 			return(eBSFerrMem);
@@ -1630,7 +1630,7 @@ if(m_pEntriesBlock == NULL)					// will be NULL until at least one entry has bee
 		m_pBisulfateBases = (uint8_t *)mmap(NULL,(size_t)m_AllocBisulfiteMem, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 		if(m_pBisulfateBases == MAP_FAILED)
 			{
-			AddErrMsg("CSfxArray::AddEntry","Fatal: unable to allocate Bislfite memory %llu",m_AllocBisulfiteMem);
+			AddErrMsg("CSfxArray::AddEntry","Fatal: unable to allocate Bislfite memory %I64u",m_AllocBisulfiteMem);
 			m_pBisulfateBases = NULL;
 			m_AllocBisulfiteMem = 0;
 			Reset(false);			// closes opened file..
@@ -1644,7 +1644,7 @@ else	// else already at least one entry
 	// here is where to check if this new entry would cause the current block to exceed the max allowed block size
 	if((m_pSfxBlock->ConcatSeqLen + SeqLen) > m_MaxSfxBlockEls)
 		{
-		AddErrMsg("CSfxArray::AddEntry","Fatal: Total concatenated sequence length (%llu) is more than maximum (%llu) supported",m_pSfxBlock->ConcatSeqLen + SeqLen,m_MaxSfxBlockEls);
+		AddErrMsg("CSfxArray::AddEntry","Fatal: Total concatenated sequence length (%I64u) is more than maximum (%I64u) supported",m_pSfxBlock->ConcatSeqLen + SeqLen,m_MaxSfxBlockEls);
 		Reset(false);			// closes opened file..
 		return(eBSFerrMem);
 		}
@@ -1696,7 +1696,7 @@ else	// else already at least one entry
 #endif
 		if(pRealloc == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: SfxBlock memory re-allocation to %lld bytes - %s",(int64_t)ReallocSize,strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: SfxBlock memory re-allocation to %I64d bytes - %s",(int64_t)ReallocSize,strerror(errno));
 			return(eBSFerrMem);
 			}
 
@@ -1720,7 +1720,7 @@ else	// else already at least one entry
 #endif
 			if(pRealloc == NULL)
 				{
-				gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Bisulfite memory re-allocation to %lld bytes - %s",ReallocSize,strerror(errno));
+				gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Bisulfite memory re-allocation to %I64d bytes - %s",ReallocSize,strerror(errno));
 				return(eBSFerrMem);
 				}
 
@@ -6362,7 +6362,7 @@ m_AllocOccKMerClasMem = (size_t)0x01 << ((KMerLen-1) * 2);
 m_pOccKMerClas = (uint8_t *) malloc(m_AllocOccKMerClasMem);
 if(m_pOccKMerClas==NULL)
 	{
-	AddErrMsg("CSfxArray::InitOverOccKMers","unable to allocate %llu bytes for over occurring KMers",m_AllocOccKMerClasMem);
+	AddErrMsg("CSfxArray::InitOverOccKMers","unable to allocate %I64u bytes for over occurring KMers",m_AllocOccKMerClasMem);
 	Reset(false);			// closes opened file..
 	ReleaseBaseFlags();
 	return(eBSFerrMem);
@@ -6372,7 +6372,7 @@ if(m_pOccKMerClas==NULL)
 m_pOccKMerClas = (uint8_t *)mmap(NULL,m_AllocOccKMerClasMem, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pOccKMerClas == MAP_FAILED)
 	{
-	AddErrMsg("CSfxArray::InitOverOccKMers","unable to allocate %llu bytes for over occurring KMers",m_AllocOccKMerClasMem);
+	AddErrMsg("CSfxArray::InitOverOccKMers","unable to allocate %I64u bytes for over occurring KMers",m_AllocOccKMerClasMem);
 	m_pOccKMerClas = NULL;
 	Reset(false);			// closes opened file..
 	ReleaseBaseFlags();
@@ -8059,7 +8059,7 @@ if (!(KMerLen == m_CoreKMerLen && m_pCoreKMers != NULL))
 	m_pCoreKMers = (tsCoreKMer *)malloc(m_AllocdCoreKMersMem);
 	if (m_pCoreKMers == NULL)
 		{
-		AddErrMsg("CSfxArray::InitOverOccKMers", "unable to allocate %llu bytes for core KMers", m_AllocdCoreKMersMem);
+		AddErrMsg("CSfxArray::InitOverOccKMers", "unable to allocate %I64u bytes for core KMers", m_AllocdCoreKMersMem);
 		ReleaseBaseFlags();
 		return(eBSFerrMem);
 		}
@@ -8068,7 +8068,7 @@ if (!(KMerLen == m_CoreKMerLen && m_pCoreKMers != NULL))
 	m_pCoreKMers = (tsCoreKMer *)mmap(NULL, m_AllocdCoreKMersMem, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	if (m_pCoreKMers == MAP_FAILED)
 		{
-		AddErrMsg("CSfxArray::InitOverOccKMers", "unable to allocate %llu bytes for core KMers", m_AllocdCoreKMersMem);
+		AddErrMsg("CSfxArray::InitOverOccKMers", "unable to allocate %I64u bytes for core KMers", m_AllocdCoreKMersMem);
 		m_pCoreKMers = NULL;
 		ReleaseBaseFlags();
 		return(eBSFerrMem);

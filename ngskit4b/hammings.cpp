@@ -2177,7 +2177,7 @@ tsSfxHeaderV3 SfxHeader;
 m_pSfxArray->GetSfxHeader(&SfxHeader);
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Genome Assembly Name: '%s' Descr: '%s' Title: '%s' Version: %d",
 					 m_szTargSpecies,SfxHeader.szDescription,SfxHeader.szTitle,SfxHeader.Version);
-gDiagnostics.DiagOut(eDLInfo,gszProcName,"Assembly has blocks: %d, max block size: %llu",SfxHeader.NumSfxBlocks,SfxHeader.SfxBlockSize);
+gDiagnostics.DiagOut(eDLInfo,gszProcName,"Assembly has blocks: %d, max block size: %I64u",SfxHeader.NumSfxBlocks,SfxHeader.SfxBlockSize);
 
 // load single SfxBlock, expected to contain all chromosomes, and sample K-mers against that block
 int CurBlockID = 1;
@@ -2249,7 +2249,7 @@ if(bProcSepKMers)
 	m_pGenomeSeq = (uint8_t *) malloc((size_t)m_AllocGenomeSeq);
 	if(m_pGenomeSeq == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadGenome: Memory allocation of %lld bytes failed",(int64_t)m_AllocGenomeSeq);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadGenome: Memory allocation of %I64d bytes failed",(int64_t)m_AllocGenomeSeq);
 		Reset(false);
 		return(eBSFerrMem);
 		}
@@ -2258,7 +2258,7 @@ if(bProcSepKMers)
 	m_pGenomeSeq = (uint8_t *)mmap(NULL,(size_t)m_AllocGenomeSeq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pGenomeSeq == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadGenome: Memory allocation of %lld bytes through mmap()  failed",(int64_t)m_AllocGenomeSeq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadGenome: Memory allocation of %I64d bytes through mmap()  failed",(int64_t)m_AllocGenomeSeq,strerror(errno));
 		m_pGenomeSeq = NULL;
 		Reset(false);
 		return(eBSFerrMem);
@@ -2302,11 +2302,11 @@ if(bProcSepKMers)
 		pChrom->NumSubSeqs = (uint32_t)ChromLen;
 		m_NumSubSeqs += (uint32_t)ChromLen;
 		}
-		gDiagnostics.DiagOut(eDLInfo,gszProcName,"Targeted suffix genome has %d sequences containing %llu total nucleotides, %u sequences of at least K-mer length %d",
+		gDiagnostics.DiagOut(eDLInfo,gszProcName,"Targeted suffix genome has %d sequences containing %I64u total nucleotides, %u sequences of at least K-mer length %d",
 														m_NumGChroms,(uint64_t)m_TotAllocHammings,m_NumSubSeqs,m_SubSeqLen);
 
 
-	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Genome containing %llu total nucleotides loaded with %u subsequences of K-mer length %d...",m_TotAllocHammings,m_NumSubSeqs,m_SubSeqLen);
+	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Genome containing %I64u total nucleotides loaded with %u subsequences of K-mer length %d...",m_TotAllocHammings,m_NumSubSeqs,m_SubSeqLen);
 	}
 else
 	{
@@ -2325,7 +2325,7 @@ else
 			continue;
 		m_NumSubSeqs += (uint32_t)ChromLen;
 		}
-	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Targeted suffix genome has %d sequences containing %llu total nucleotides, %u sequences of at least K-mer length %d",
+	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Targeted suffix genome has %d sequences containing %I64u total nucleotides, %u sequences of at least K-mer length %d",
 														NumEntries,(uint64_t)m_TotAllocHammings,m_NumSubSeqs,m_SubSeqLen);
 	}
 
@@ -2336,7 +2336,7 @@ m_pRHammings = NULL;
 m_pRHammings = (uint8_t *) malloc((size_t)m_TotAllocHammings);
 if(m_pRHammings == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadGenome: Memory allocation of %llu bytes failed",(int64_t)m_TotAllocHammings);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadGenome: Memory allocation of %I64u bytes failed",(int64_t)m_TotAllocHammings);
 	Reset(false);
 	return(eBSFerrMem);
 	}
@@ -2345,7 +2345,7 @@ if(m_pRHammings == NULL)
 m_pRHammings = (uint8_t *)mmap(NULL,(size_t)m_TotAllocHammings, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pRHammings == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadGenome: Memory allocation of %llu bytes through mmap()  failed",(int64_t)m_TotAllocHammings,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadGenome: Memory allocation of %I64u bytes through mmap()  failed",(int64_t)m_TotAllocHammings,strerror(errno));
 	m_pRHammings = NULL;
 	Reset(false);
 	return(eBSFerrMem);
@@ -2448,7 +2448,7 @@ PrevApproxNumChroms = HammProcState.ApproxNumChroms;
 PrevApproxNumHammings = HammProcState.ApproxNumHammings;
 pthread_mutex_unlock(&m_hMtxThreadParams);
 #endif
-gDiagnostics.DiagOut(eDLInfo,gszProcName,"Progress: %llu K-mers processed from %d sequences",PrevApproxNumHammings,PrevApproxNumChroms);
+gDiagnostics.DiagOut(eDLInfo,gszProcName,"Progress: %I64u K-mers processed from %d sequences",PrevApproxNumHammings,PrevApproxNumChroms);
 
 for(ThreadIdx = 0; ThreadIdx < m_NumProcThreads; ThreadIdx++)
 	{
@@ -2460,7 +2460,7 @@ for(ThreadIdx = 0; ThreadIdx < m_NumProcThreads; ThreadIdx++)
 		ApproxNumHammings = HammProcState.ApproxNumHammings;
 		ReleaseMutex(m_hMtxThreadParams);
 		if(ApproxNumChroms > PrevApproxNumChroms || ApproxNumHammings > PrevApproxNumHammings)
-			gDiagnostics.DiagOut(eDLInfo,gszProcName,"Progress: %llu K-mers processed from %d sequences",ApproxNumHammings,ApproxNumChroms);
+			gDiagnostics.DiagOut(eDLInfo,gszProcName,"Progress: %I64u K-mers processed from %d sequences",ApproxNumHammings,ApproxNumChroms);
 		PrevApproxNumChroms = ApproxNumChroms;
 		PrevApproxNumHammings = ApproxNumHammings;
 		}
@@ -2477,7 +2477,7 @@ for(ThreadIdx = 0; ThreadIdx < m_NumProcThreads; ThreadIdx++)
 		ApproxNumHammings = HammProcState.ApproxNumHammings;
 		pthread_mutex_unlock(&m_hMtxThreadParams);
 		if(ApproxNumChroms > PrevApproxNumChroms || ApproxNumHammings > PrevApproxNumHammings)
-			gDiagnostics.DiagOut(eDLInfo,gszProcName,"Progress: %llu K-mers processed from %d sequences",ApproxNumHammings,ApproxNumChroms);
+			gDiagnostics.DiagOut(eDLInfo,gszProcName,"Progress: %I64u K-mers processed from %d sequences",ApproxNumHammings,ApproxNumChroms);
 		PrevApproxNumChroms = ApproxNumChroms;
 		PrevApproxNumHammings = ApproxNumHammings;
 		ts.tv_sec += 60;
@@ -2495,7 +2495,7 @@ pthread_mutex_destroy(&m_hMtxThreadParams);
 ApproxNumChroms = HammProcState.ApproxNumChroms;
 ApproxNumHammings = HammProcState.ApproxNumHammings;
 
-gDiagnostics.DiagOut(eDLInfo,gszProcName,"Progress: %llu K-mers processed from %d sequences",ApproxNumHammings,ApproxNumChroms);
+gDiagnostics.DiagOut(eDLInfo,gszProcName,"Progress: %I64u K-mers processed from %d sequences",ApproxNumHammings,ApproxNumChroms);
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Completed restricted hammings generation...");
 
 uint32_t CurLoci;
@@ -2584,7 +2584,7 @@ if(SampleN > 1)
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Sampled %u K-mers, did not sample %u",NumSampled,NumUnsampled);
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Distribution:\nEditDist,Freq,Proportion");
 for(SeqIdx = 0; SeqIdx <= (uint32_t)(RHamm+1); SeqIdx++)
-	gDiagnostics.DiagOutMsgOnly(eDLInfo,"%d%c,%llu,%1.3f",SeqIdx,SeqIdx == RHamm+1 ? '+' : ' ',CntHist[SeqIdx],(CntHist[SeqIdx]*100.0f)/NumSampled);
+	gDiagnostics.DiagOutMsgOnly(eDLInfo,"%d%c,%I64u,%1.3f",SeqIdx,SeqIdx == RHamm+1 ? '+' : ' ',CntHist[SeqIdx],(CntHist[SeqIdx]*100.0f)/NumSampled);
 
 Reset(true);
 
@@ -3041,7 +3041,7 @@ m_AllocGenomeSeq = m_GenomeLen;
 m_pGenomeSeq = (uint8_t *) malloc((size_t)m_AllocGenomeSeq);
 if(m_pGenomeSeq == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadGenome: Memory allocation of %lld bytes failed",(int64_t)m_AllocGenomeSeq);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadGenome: Memory allocation of %I64d bytes failed",(int64_t)m_AllocGenomeSeq);
 	Reset(false);
 	return(eBSFerrMem);
 	}
@@ -3050,7 +3050,7 @@ if(m_pGenomeSeq == NULL)
 m_pGenomeSeq = (uint8_t *)mmap(NULL,(size_t)m_AllocGenomeSeq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pGenomeSeq == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadGenome: Memory allocation of %lld bytes through mmap()  failed",(int64_t)m_AllocGenomeSeq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadGenome: Memory allocation of %I64d bytes through mmap()  failed",(int64_t)m_AllocGenomeSeq,strerror(errno));
 	m_pGenomeSeq = NULL;
 	Reset(false);
 	return(eBSFerrMem);
@@ -3092,7 +3092,7 @@ for(ChromIdx = 0; ChromIdx < m_NumGChroms; ChromIdx++, pChrom++)
 	pChrom->NumSubSeqs = (uint32_t)ChromLen;
 	m_NumSubSeqs += ChromLen;
 	}
-gDiagnostics.DiagOut(eDLInfo,gszProcName,"Genome containing %llu total nucleotides loaded with %u subsequences of length %d...",TotLen,m_NumSubSeqs,m_SubSeqLen);
+gDiagnostics.DiagOut(eDLInfo,gszProcName,"Genome containing %I64u total nucleotides loaded with %u subsequences of length %d...",TotLen,m_NumSubSeqs,m_SubSeqLen);
 
 // now allocate and initialise the Hamming edit distance array
 // note that each processing thread will have it's own region of the array so that serialisation of r/w's is not required
@@ -3101,7 +3101,7 @@ m_AllocHamDist = ((int64_t)(m_GenomeLen-2) * m_NumProcThreads * sizeof(uint16_t)
 m_pHamDist = (uint16_t *) malloc((size_t)m_AllocHamDist);
 if(m_pHamDist == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadGenome: Memory allocation of %lld bytes failed",(int64_t)m_AllocHamDist);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadGenome: Memory allocation of %I64d bytes failed",(int64_t)m_AllocHamDist);
 	Reset(false);
 	return(eBSFerrMem);
 	}
@@ -3110,7 +3110,7 @@ if(m_pHamDist == NULL)
 m_pHamDist = (uint16_t *)mmap(NULL,(size_t)m_AllocHamDist, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pHamDist == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadGenome: Memory allocation of %lld bytes through mmap()  failed",(int64_t)m_AllocHamDist,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadGenome: Memory allocation of %I64d bytes through mmap()  failed",(int64_t)m_AllocHamDist,strerror(errno));
 	m_pHamDist = NULL;
 	Reset(false);
 	return(eBSFerrMem);

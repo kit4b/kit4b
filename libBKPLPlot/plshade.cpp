@@ -144,7 +144,7 @@ static PLFLT int_val;
 // Function prototypes
 
 static void
-set_cond( register int *cond, register PLFLT *a, register PLINT n );
+set_cond(  int *cond,  PLFLT *a,  PLINT n );
 
 static int
 find_interval( PLFLT a0, PLFLT a1, PLINT c0, PLINT c1, PLFLT *x );
@@ -160,7 +160,7 @@ exfill( void ( *fill )( PLINT, const PLFLT *, const PLFLT * ),
         int n, const PLFLT *x, const PLFLT *y );
 
 static void
-big_recl( int *cond_code, register int ny, int dx, int dy,
+big_recl( int *cond_code,  int ny, int dx, int dy,
           int *ix, int *iy );
 
 static void
@@ -814,7 +814,7 @@ plshade_int( PLFLT ( *f2eval )( PLINT, PLINT, PLPointer ),
 //--------------------------------------------------------------------------
 
 static void
-set_cond( register int *cond, register PLFLT *a, register PLINT n )
+set_cond(  int *cond,  PLFLT *a,  PLINT n )
 {
     while ( n-- )
     {
@@ -844,7 +844,7 @@ set_cond( register int *cond, register PLFLT *a, register PLINT n )
 static int
 find_interval( PLFLT a0, PLFLT a1, PLINT c0, PLINT c1, PLFLT *x )
 {
-    register int n;
+     int n;
 
     n = 0;
     if ( c0 == OK )
@@ -896,7 +896,7 @@ selected_polygon( void ( *fill )( PLINT, const PLFLT *, const PLFLT * ),
                   PLINT ( *defined )( PLFLT, PLFLT ),
                   const PLFLT *x, const PLFLT *y, PLINT v1, PLINT v2, PLINT v3, PLINT v4 )
 {
-    register PLINT n = 0;
+     PLINT n = 0;
     PLFLT          xx[4], yy[4];
 
     if ( fill == NULL )
@@ -1074,12 +1074,12 @@ exfill( void ( *fill )( PLINT, const PLFLT *, const PLFLT * ),
 #define COND( x, y )    cond_code[x * ny + y]
 
 static void
-big_recl( int *cond_code, register int ny, int dx, int dy,
+big_recl( int *cond_code,  int ny, int dx, int dy,
           int *ix, int *iy )
 {
     int          ok_x, ok_y, j;
-    register int i, x, y;
-    register int *cond;
+     int i, x, y;
+     int *cond;
 
     // ok_x = ok to expand in x direction
     // x = current number of points in x direction

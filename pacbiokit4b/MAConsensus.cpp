@@ -124,7 +124,7 @@ if(m_pMACols == NULL || memreq > m_AllocMAColsSize)
 	m_pMACols = (tsMAlignConCol *) malloc(memreq);
 	if(m_pMACols == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for multialignment",(int64_t)memreq);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %I64d bytes contiguous memory for multialignment",(int64_t)memreq);
 		return(eBSFerrMem);
 		}
 #else
@@ -132,7 +132,7 @@ if(m_pMACols == NULL || memreq > m_AllocMAColsSize)
 	m_pMACols = (tsMAlignConCol *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pMACols == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for multialignment",(int64_t)memreq);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %I64d bytes contiguous memory for multialignment",(int64_t)memreq);
 		m_pMACols = NULL;
 		return(eBSFerrMem);
 		}
@@ -372,7 +372,7 @@ if(m_MACurCols + 10 >= m_AllocMACols)			// need to extend previously allocated c
 #endif
 	if(pAllocd == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"InsertCol: Memory re-allocation to %lld bytes - %s",memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"InsertCol: Memory re-allocation to %I64d bytes - %s",memreq,strerror(errno));
 		return(NULL);
 		}
 	m_pMACols = (tsMAlignConCol *)pAllocd;

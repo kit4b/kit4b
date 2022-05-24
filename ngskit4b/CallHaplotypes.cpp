@@ -24,7 +24,7 @@ Please contact Dr Stuart Stephen < stuartjs@g3web.com > if you have any question
 #include "../libkit4b/bgzf.h"
 
 
-int CallHaplotypes(eModeCSH PMode,	// processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons, 3: allelic haplotype grouping,4: coverage haplotype grouping, 5: post-process haplotype groupings for QGLs,  6: post-process to WIG
+int CallHaplotypes(eModeCSH PMode,	// processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons, 3: allelic haplotype grouping,4: coverage haplotype grouping, 5: post-process haplotype groupings for QGLs,  6: post-process to WIG, 7: Hyperconserved
 	        int32_t LimitPrimaryPBAs,        // limit number of loaded primary or founder PBA files to this many. 0: no limits, > 0 sets upper limit
 			int32_t ExprID,			         // assign this experiment identifier for this PBA analysis
 			int32_t SeedRowID,               // generated CSVs will contain monotonically incremented row identifiers seeded with this identifier  
@@ -76,7 +76,7 @@ int NumThreads;				// number of threads (0 defaults to number of CPUs or a maxim
 
 int Idx;
 
-eModeCSH PMode;				// processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons, 3: allelic haplotype grouping,4: coverage haplotype grouping, 5: post-process haplotype groupings for QGLs,  6: post-process to WIG 
+eModeCSH PMode;				// processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons, 3: allelic haplotype grouping,4: coverage haplotype grouping, 5: post-process haplotype groupings for QGLs,  6: post-process to WIG, , 7: Hyperconserved 
 int32_t LimitPrimaryPBAs;   // limit number of loaded primary or founder PBA files to this many. 0: no limits, > 0 sets upper limit
 int32_t ExprID;			    // assign this experiment identifier to this PBA analysis
 int32_t SeedRowID;          // generated CSVs will contain monotonically incremented row identifiers seeded with this identifier  
@@ -114,7 +114,7 @@ struct arg_lit *version = arg_lit0 ("v", "version,ver", "print version informati
 struct arg_int *FileLogLevel = arg_int0 ("f", "FileLogLevel", "<int>", "Level of diagnostics written to screen and logfile 0=fatal,1=errors,2=info,3=diagnostics,4=debug");
 struct arg_file *LogFile = arg_file0 ("F", "log", "<file>", "diagnostics log file");
 
-struct arg_int *pmode = arg_int0 ("m", "mode", "<int>", "processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons, 3: allelic haplotype grouping,4: coverage haplotype grouping, 5: post-process haplotype groupings for QGLs,  6: post-process to WIG (default 0)");
+struct arg_int *pmode = arg_int0 ("m", "mode", "<int>", "processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons, 3: allelic haplotype grouping,4: coverage haplotype grouping, 5: post-process haplotype groupings for QGLs, 6: post-process to WIG, 7: Hyperconserved (default 0)");
 struct arg_int *limitprimarypbas = arg_int0 ("l", "debug", "<int>", " limit number of loaded primary or founder PBA files to this many. 0: no limits, > 0 sets upper limit (default 0)");
 
 struct arg_int* exprid = arg_int0("e","exprid","<int>","assign this experiment identifier for haplotypes called (default 1");
@@ -567,6 +567,9 @@ if (!argerrors)
 			break;
 		case eMCSHGrpDist2WIG:
 			pszDescr = "Post-processing haplotype grouping centroid distances into WIG format";
+			break;
+		case eMCSHHyperConserved:
+			pszDescr = "Identify hyperconserved regions";
 			break;
 		}
 
@@ -1212,19 +1215,21 @@ if(pszMaskBPAFile == NULL || pszMaskBPAFile[0] == '\0')
 else
 	m_pszMaskBPAFile = pszMaskBPAFile;
 
-if(PMode >= eMCSHGrpDist2WIG)
+if(PMode == eMCSHGrpDist2WIG)
 	{
 	Rslt = CSV2WIG(pszMaskBPAFile,pszOutFile);
 	Reset();
 	return(Rslt);
 	}
+
+
 // initial allocation, will be realloc'd as required if more memory required
 memreq = (size_t)cAllocChromMetadata * sizeof(tsChromMetadata);
 #ifdef _WIN32
 m_pChromMetadata = (tsChromMetadata *)malloc(memreq);	// initial and perhaps the only allocation
 if(m_pChromMetadata == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Initial memory allocation of %lld bytes for chromosome metadata failed - %s", (int64_t)memreq, strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Initial memory allocation of %I64d bytes for chromosome metadata failed - %s", (int64_t)memreq, strerror(errno));
 	Reset();
 	return(eBSFerrMem);
 	}
@@ -1232,7 +1237,7 @@ if(m_pChromMetadata == NULL)
 m_pChromMetadata = (tsChromMetadata *)mmap(NULL, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 if(m_pChromMetadata == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Memory allocation of %lld bytes through mmap() for chromosome metadata failed - %s", (int64_t)memreq, strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Memory allocation of %I64d bytes through mmap() for chromosome metadata failed - %s", (int64_t)memreq, strerror(errno));
 	m_pChromMetadata = NULL;
 	Reset();
 	return(eBSFerrMem);
@@ -1256,7 +1261,7 @@ if(PMode < eMCSHAllelicHapsGrps)
 	m_pProgenyFndrAligns = (tsProgenyFndrAligns*)malloc(memreq);	// initial and perhaps the only allocation
 	if(m_pProgenyFndrAligns == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Initial memory allocation of %lld bytes for chromosome windowed founder counts failed - %s",(int64_t)memreq, strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Initial memory allocation of %I64d bytes for chromosome windowed founder counts failed - %s",(int64_t)memreq, strerror(errno));
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -1264,7 +1269,7 @@ if(PMode < eMCSHAllelicHapsGrps)
 	m_pProgenyFndrAligns = (tsProgenyFndrAligns*)mmap(NULL, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	if(m_pProgenyFndrAligns == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Memory allocation of %lld bytes through mmap() for chromosome windowed founder counts failed - %s", (int64_t)memreq, strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Memory allocation of %I64d bytes through mmap() for chromosome windowed founder counts failed - %s", (int64_t)memreq, strerror(errno));
 		m_pProgenyFndrAligns = NULL;
 		Reset();
 		return(eBSFerrMem);
@@ -1280,7 +1285,7 @@ if(PMode < eMCSHAllelicHapsGrps)
 	m_pAlleleStacks = (tsAlleleStack*)malloc(memreq);	// initial and perhaps the only allocation
 	if(m_pAlleleStacks == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Initial memory allocation of %lld bytes for allele stacks failed - %s", (int64_t)memreq, strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Initial memory allocation of %I64d bytes for allele stacks failed - %s", (int64_t)memreq, strerror(errno));
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -1288,7 +1293,7 @@ if(PMode < eMCSHAllelicHapsGrps)
 	m_pAlleleStacks = (tsAlleleStack*)mmap(NULL, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	if(m_pAlleleStacks == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Memory allocation of %lld bytes through mmap() for allele stacks failed - %s", (int64_t)memreq, strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Memory allocation of %I64d bytes through mmap() for allele stacks failed - %s", (int64_t)memreq, strerror(errno));
 		m_pAlleleStacks = NULL;
 		Reset();
 		return(eBSFerrMem);
@@ -1309,7 +1314,7 @@ else
 	m_pHGBinSpecs = (tsHGBinSpec*)malloc(memreq);	// initial and perhaps the only allocation
 	if(m_pHGBinSpecs == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Initial memory allocation of %lld bytes for haplotype grouping bin definitions failed - %s", (int64_t)memreq, strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Initial memory allocation of %I64d bytes for haplotype grouping bin definitions failed - %s", (int64_t)memreq, strerror(errno));
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -1317,7 +1322,7 @@ else
 	m_pHGBinSpecs = (tsHGBinSpec*)mmap(NULL, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	if(m_pHGBinSpecs == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Memory allocation of %lld bytes through mmap() for haplotype grouping bin definitions failed - %s", (int64_t)memreq, strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Memory allocation of %I64d bytes through mmap() for haplotype grouping bin definitions failed - %s", (int64_t)memreq, strerror(errno));
 		m_pHGBinSpecs = NULL;
 		Reset();
 		return(eBSFerrMem);
@@ -1409,7 +1414,7 @@ if(m_MaxClustGrps > m_NumFounders)
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "Process: Completed loading founders (%d) pool", m_NumFounders);
 
 
-if(!(m_PMode == eMCSHAllelicHapsGrps || m_PMode == eMCSHCoverageHapsGrps || m_PMode == eMCSHQGLHapsGrps))
+if(!(m_PMode == eMCSHAllelicHapsGrps || m_PMode == eMCSHCoverageHapsGrps || m_PMode == eMCSHQGLHapsGrps || m_PMode == eMCSHHyperConserved))
 	{
 	// load the control PBA file if it has been specified
 	m_MaskReadsetID = 0;
@@ -1523,8 +1528,14 @@ if(!(m_PMode == eMCSHAllelicHapsGrps || m_PMode == eMCSHCoverageHapsGrps || m_PM
 	m_mtqsort.qsort(m_pProgenyFndrAligns, (int64_t)m_UsedProgenyFndrAligns, sizeof(tsProgenyFndrAligns), SortProgenyChromLociReadset);
 	ReportMatrix(pszOutFile);
 	}
-else // else (eMCSHAllelicHapsGrps or eMCSHCoverageHapsGrps or eMCSHQGLHapsGrps)
+else // else (eMCSHAllelicHapsGrps or eMCSHCoverageHapsGrps or eMCSHQGLHapsGrps or eMCSHHyperConserved)
 	{
+	if (PMode == eMCSHHyperConserved)
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "The requested processing mode has yet to be implemented!");
+		Reset();
+		return(Rslt);
+		}
 	// optional Haplotype group clustering specifications file(s) or previously generated haplotype groupings file
 	if(m_pszMaskBPAFile != NULL)
 		{
@@ -1988,12 +1999,11 @@ if(m_pszOutBuffer == NULL)
 	}
 m_OutBuffIdx = 0;
 
-sprintf(szOutFile, "%s.haplotypes.%d.%s.%s.gwas", pszRsltsFileBaseName, m_ExprID, LocateReadset(ReadsetID), bRaw ? "raw" : "imputed");
-
+pszProgenyReadset = LocateReadset(ReadsetID);
 if(ReadsetID == 0)
-	sprintf(szOutFile, "%s.progeny.%d.%s.all.csv", pszRsltsFileBaseName, m_ExprID,bRaw ? "raw" : "imputed");
+	sprintf(szOutFile, "%s.progeny.%u.%s.all.csv", pszRsltsFileBaseName, m_ExprID,bRaw ? "raw" : "imputed");
 else
-	sprintf(szOutFile, "%s.progeny.%d.%s.%s.csv", pszRsltsFileBaseName, m_ExprID,bRaw ? "raw" : "imputed",LocateReadset(ReadsetID));
+	sprintf(szOutFile, "%s.progeny.%u.%s.%s.csv", pszRsltsFileBaseName, m_ExprID, pszProgenyReadset, bRaw ? "raw" : "imputed");
 #ifdef _WIN32
 m_hOutFile = open(szOutFile, (O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC), (_S_IREAD | _S_IWRITE));
 #else
@@ -2039,7 +2049,7 @@ for(PFAIdx = 0; PFAIdx < m_UsedProgenyFndrAligns; PFAIdx++, pCurPFA++)
 	if(!pCurPFA->NumProgenyFounders)
 		continue;
 
-	m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx],"%d,%lld,\"%s\",\"%s\",%u",m_ExprID,(int64_t)m_CurRowID++, pszProgenyReadset, pszChrom, pCurPFA->Loci);
+	m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx],"%u,%u,\"%s\",\"%s\",%u",m_ExprID,m_CurRowID++, pszProgenyReadset, pszChrom, pCurPFA->Loci);
 	for(FndrIdx=0; FndrIdx < m_NumFounders; FndrIdx++)
 		{
 		if(m_Fndrs2Proc[FndrIdx] & 0x01)
@@ -2279,7 +2289,7 @@ for(ASIdx = 0; ASIdx < m_UsedAlleleStacks; ASIdx++, pCurAlleleStack++)
 			}
 		}
 	szAlleles[4] = '\0';
-	m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], "\n%d,%lld,\"%s\",%d,%d,\"%s\"",m_ExprID,(int64_t)m_CurRowID++, pszChrom, pCurAlleleStack->Loci, BinAlleles, szAlleles);
+	m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], "\n%u,%u,\"%s\",%u,%u,\"%s\"",m_ExprID,m_CurRowID++, pszChrom, pCurAlleleStack->Loci, BinAlleles, szAlleles);
 	for(AlleleIdx = 3; AlleleIdx >= 0; AlleleIdx--)
 		{
 		if((NumFndrs = pCurAlleleStack->NumAlleleFndrs[AlleleIdx]) == 0)
@@ -2604,7 +2614,7 @@ for(PFAIdx = 0; PFAIdx < m_UsedProgenyFndrAligns; PFAIdx++, pCurPFA++)
 		{
 		if(bNewLoci && bProgFndrs)
 			{
-			m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], "\n%d,%lld,\"%s\",%u", m_ExprID,(int64_t)m_CurRowID++,pszChrom, CurLoci);
+			m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], "\n%u,%u,\"%s\",%u", m_ExprID,m_CurRowID++,pszChrom, CurLoci);
 			for(ProgIdx = 0; ProgIdx < m_NumProgenies; ProgIdx++)
 				m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], ",%d", ProgenyHaplotypes[ProgIdx]);
 			if((m_OutBuffIdx + 10000) > m_AllocOutBuff)
@@ -3383,7 +3393,7 @@ if (m_pChromMetadata == NULL)					// may be NULL first time in
 	m_pChromMetadata = (tsChromMetadata *)malloc((size_t)memreq);
 	if (m_pChromMetadata == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "AllocChromMetadata: Memory allocation of %lld bytes failed",(int64_t)memreq);
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "AllocChromMetadata: Memory allocation of %I64d bytes failed",(int64_t)memreq);
 		return(eBSFerrMem);
 		}
 #else
@@ -3391,7 +3401,7 @@ if (m_pChromMetadata == NULL)					// may be NULL first time in
 	if (m_pChromMetadata == MAP_FAILED)
 		{
 		m_pChromMetadata = NULL;
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "AllocChromMetadata: Memory allocation of %lld bytes through mmap()  failed", (int64_t)memreq, strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "AllocChromMetadata: Memory allocation of %I64d bytes through mmap()  failed", (int64_t)memreq, strerror(errno));
 		return(eBSFerrMem);
 		}
 #endif
@@ -3414,7 +3424,7 @@ else
 			if (pChromMetadata == MAP_FAILED)
 			{
 #endif
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "AllocChromMetadata: Memory reallocation to %lld bytes failed - %s", (int64_t)memreq, strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "AllocChromMetadata: Memory reallocation to %I64d bytes failed - %s", (int64_t)memreq, strerror(errno));
 			return(eBSFerrMem);
 			}
 		m_pChromMetadata = pChromMetadata;
@@ -3433,12 +3443,12 @@ memreq = (size_t)ChromLen;	// no safety margin!
 #ifdef _WIN32
 pPBAs = (uint8_t*)malloc((size_t)memreq);
 if (pPBAs == NULL)
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "AllocPBAs Memory allocation of %lld bytes failed",(int64_t)memreq);
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "AllocPBAs Memory allocation of %I64d bytes failed",(int64_t)memreq);
 #else
 pPBAs = (uint8_t*)mmap(NULL, (size_t)memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 if (pPBAs == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "AllocPBAs: Memory allocation of %lld bytes through mmap()  failed",(int64_t)memreq, strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "AllocPBAs: Memory allocation of %I64d bytes through mmap()  failed",(int64_t)memreq, strerror(errno));
 	pPBAs = NULL;
 	}
 #endif
@@ -3507,7 +3517,7 @@ if (m_pProgenyFndrAligns == NULL)					// may be NULL first time in
 	m_pProgenyFndrAligns = (tsProgenyFndrAligns*)malloc((size_t)memreq);
 	if (m_pProgenyFndrAligns == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddWinBinCnts: Memory allocation of %lld bytes failed", (int64_t)memreq);
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddWinBinCnts: Memory allocation of %I64d bytes failed", (int64_t)memreq);
 		return(0);
 		}
 #else
@@ -3515,7 +3525,7 @@ if (m_pProgenyFndrAligns == NULL)					// may be NULL first time in
 	if (m_pProgenyFndrAligns == MAP_FAILED)
 		{
 		m_pProgenyFndrAligns = NULL;
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddWinBinCnts: Memory allocation of %lld bytes through mmap()  failed",(int64_t)memreq, strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddWinBinCnts: Memory allocation of %I64d bytes through mmap()  failed",(int64_t)memreq, strerror(errno));
 		return(0);
 		}
 #endif
@@ -3538,7 +3548,7 @@ else
 		if (pProgenyFndrAligns == MAP_FAILED)
 			{
 #endif
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddProgenyFndrAligns: Memory reallocation to %lld bytes failed - %s", (int64_t)memreq, strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddProgenyFndrAligns: Memory reallocation to %I64d bytes failed - %s", (int64_t)memreq, strerror(errno));
 			return(0);
 			}
 		m_pProgenyFndrAligns = pProgenyFndrAligns;
@@ -3671,7 +3681,7 @@ if(m_pQGLLoci == NULL)					// may be NULL first time in
 	if(m_pQGLLoci == NULL)
 		{
 		ReleaseFastSerialise();
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddQGLLoci: Memory allocation of %lld bytes failed", (int64_t)memreq);
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddQGLLoci: Memory allocation of %I64d bytes failed", (int64_t)memreq);
 		return(0);
 		}
 #else
@@ -3680,7 +3690,7 @@ if(m_pQGLLoci == NULL)					// may be NULL first time in
 		{
 		m_pQGLLoci = NULL;
 		ReleaseFastSerialise();
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddQGLLoci: Memory allocation of %lld bytes through mmap()  failed", (int64_t)memreq, strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddQGLLoci: Memory allocation of %I64d bytes through mmap()  failed", (int64_t)memreq, strerror(errno));
 		return(0);
 		}
 #endif
@@ -3704,7 +3714,7 @@ else
 			{
 #endif
 			ReleaseFastSerialise();
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddQGLLoci: Memory reallocation to %lld bytes failed - %s", (int64_t)memreq, strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddQGLLoci: Memory reallocation to %I64d bytes failed - %s", (int64_t)memreq, strerror(errno));
 			return(0);
 			}
 		m_pQGLLoci = pQGLLoci;
@@ -3759,7 +3769,7 @@ if(m_pHGBinSpecs == NULL)					// may be NULL first time in
 	if(m_pHGBinSpecs == NULL)
 		{
 		ReleaseFastSerialise();
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddHGBinSpec: Memory allocation of %lld bytes failed", (int64_t)memreq);
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddHGBinSpec: Memory allocation of %I64d bytes failed", (int64_t)memreq);
 		return(0);
 		}
 #else
@@ -3768,7 +3778,7 @@ if(m_pHGBinSpecs == NULL)					// may be NULL first time in
 		{
 		m_pHGBinSpecs = NULL;
 		ReleaseFastSerialise();
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddHGBinSpec: Memory allocation of %lld bytes through mmap()  failed", (int64_t)memreq, strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddHGBinSpec: Memory allocation of %I64d bytes through mmap()  failed", (int64_t)memreq, strerror(errno));
 		return(0);
 		}
 #endif
@@ -3792,7 +3802,7 @@ else
 			{
 #endif
 			ReleaseFastSerialise();
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddHGBinSpec: Memory reallocation to %lld bytes failed - %s", (int64_t)memreq, strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddHGBinSpec: Memory reallocation to %I64d bytes failed - %s", (int64_t)memreq, strerror(errno));
 			return(0);
 			}
 		m_pHGBinSpecs = pHGBinSpec;
@@ -4355,7 +4365,7 @@ if(m_pAlleleStacks == NULL)					// may be NULL first time in
 	if(m_pAlleleStacks == NULL)
 		{
 		ReleaseFastSerialise();
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddAlleleStack: Memory allocation of %lld bytes failed",(int64_t)memreq);
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddAlleleStack: Memory allocation of %I64d bytes failed",(int64_t)memreq);
 		return(0);
 		}
 #else
@@ -4364,7 +4374,7 @@ if(m_pAlleleStacks == NULL)					// may be NULL first time in
 		{
 		m_pAlleleStacks = NULL;
 		ReleaseFastSerialise();
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddAlleleStack: Memory allocation of %lld bytes through mmap()  failed", (int64_t)memreq, strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddAlleleStack: Memory allocation of %I64d bytes through mmap()  failed", (int64_t)memreq, strerror(errno));
 		return(0);
 		}
 #endif
@@ -4388,7 +4398,7 @@ else
 			{
 #endif
 			ReleaseFastSerialise();
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddAlleleStack: Memory reallocation to %lld bytes failed - %s", (int64_t)memreq, strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddAlleleStack: Memory reallocation to %I64d bytes failed - %s", (int64_t)memreq, strerror(errno));
 			return(0);
 			}
 		m_pAlleleStacks = pAlleleStack;
@@ -5731,7 +5741,7 @@ for(BinIdx = 0; BinIdx < m_UsedHGBinSpecs; BinIdx++,pHGBinSpec++)
 		}
 
 	pHaplotypeGroup = pHGBinSpec->pHaplotypeGroup;
-	m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], "%d,%lld,\"%s\",%d,%d,%d,%d,%d,%d,%d", m_ExprID,(int64_t)m_CurRowID++,pszChrom, pHGBinSpec->StartLoci, pHGBinSpec->NumLoci, pHGBinSpec->MinCentroidDistance,pHGBinSpec->MaxCentroidDistance,pHGBinSpec->MaxNumHaplotypeGroups, pHaplotypeGroup->CentroidDistance,pHaplotypeGroup->NumHaplotypeGroups);
+	m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], "%u,%u,\"%s\",%u,%u,%u,%u,%u,%u,%u", m_ExprID,m_CurRowID++,pszChrom, pHGBinSpec->StartLoci, pHGBinSpec->NumLoci, pHGBinSpec->MinCentroidDistance,pHGBinSpec->MaxCentroidDistance,pHGBinSpec->MaxNumHaplotypeGroups, pHaplotypeGroup->CentroidDistance,pHaplotypeGroup->NumHaplotypeGroups);
 	memset(pNumGrpMembers, 0, sizeof(int32_t) * MaxNumHapGrps);
 	for(HaplotypeIdx = 0; HaplotypeIdx < NumHaplotypes; HaplotypeIdx++)
 		{

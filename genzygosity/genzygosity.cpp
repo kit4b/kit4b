@@ -669,7 +669,7 @@ tsSfxHeaderV3 SfxHeader;
 m_pSfxArray->GetSfxHeader(&SfxHeader);
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Genome Assembly Name: '%s' Descr: '%s' Title: '%s' Version: %d",
 					 m_szTargSpecies,SfxHeader.szDescription,SfxHeader.szTitle,SfxHeader.Version);
-gDiagnostics.DiagOut(eDLInfo,gszProcName,"Assembly has blocks: %d, max block size: %llu",SfxHeader.NumSfxBlocks,SfxHeader.SfxBlockSize);
+gDiagnostics.DiagOut(eDLInfo,gszProcName,"Assembly has blocks: %d, max block size: %I64u",SfxHeader.NumSfxBlocks,SfxHeader.SfxBlockSize);
 
 m_NumSfxEntries = m_pSfxArray->GetNumEntries();		// ensure that there is at least one entry in suffix array file
 if(m_NumSfxEntries < 1)

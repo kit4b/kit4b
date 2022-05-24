@@ -105,7 +105,7 @@ m_pAGPentries = (tsAGPentry *) malloc(memreq);	// initial and perhaps the only a
 
 if(m_pAGPentries == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessAGP: Memory allocation of %lld bytes - %s",(int64_t)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessAGP: Memory allocation of %I64d bytes - %s",(int64_t)memreq,strerror(errno));
 	Reset();
 	return(eBSFerrMem);
 	}
@@ -114,7 +114,7 @@ if(m_pAGPentries == NULL)
 m_pAGPentries = (tsAGPentry *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pAGPentries == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessAGP: Memory allocation of %lld bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessAGP: Memory allocation of %I64d bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
 	m_pAGPentries = NULL;
 	Reset();
 	return(eBSFerrMem);

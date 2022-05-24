@@ -1748,7 +1748,7 @@ int ChkOverlaps;
 
 	if(pParams->pElChrBuff == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"FilterCSV: Memory allocation of %lld bytes - %s",(int64_t)cElChrAllocChunk,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"FilterCSV: Memory allocation of %I64d bytes - %s",(int64_t)cElChrAllocChunk,strerror(errno));
 		Cleanup(pParams);
 		return(eBSFerrMem);
 		}
@@ -1757,7 +1757,7 @@ int ChkOverlaps;
 	pParams->pElChrBuff = (char *)mmap(NULL,cElChrAllocChunk, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(pParams->pElChrBuff == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"FilterCSV: Memory allocation of %lld bytes through mmap()  failed - %s",(int64_t)cElChrAllocChunk,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"FilterCSV: Memory allocation of %I64d bytes through mmap()  failed - %s",(int64_t)cElChrAllocChunk,strerror(errno));
 		pParams->pElChrBuff = NULL;
 		Cleanup(pParams);
 		return(eBSFerrMem);
@@ -1771,7 +1771,7 @@ int ChkOverlaps;
 
 	if(pParams->pElLocs == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"FilterCSV: Memory allocation of %lld bytes - %s",(int64_t)cElLociAllocChunk * sizeof(tsCSVEl),strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"FilterCSV: Memory allocation of %I64d bytes - %s",(int64_t)cElLociAllocChunk * sizeof(tsCSVEl),strerror(errno));
 		Cleanup(pParams);
 		return(eBSFerrMem);
 		}
@@ -1780,7 +1780,7 @@ int ChkOverlaps;
 	pParams->pElLocs = (tsCSVEl *)mmap(NULL,cElLociAllocChunk * sizeof(tsCSVEl), PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(pParams->pElLocs == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"FilterCSV: Memory allocation of %lld bytes through mmap()  failed - %s",(int64_t)cElLociAllocChunk * sizeof(tsCSVEl),strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"FilterCSV: Memory allocation of %I64d bytes through mmap()  failed - %s",(int64_t)cElLociAllocChunk * sizeof(tsCSVEl),strerror(errno));
 		pParams->pElLocs = NULL;
 		Cleanup(pParams);
 		return(eBSFerrMem);

@@ -1502,7 +1502,7 @@ memset(m_pScores,0,sizeof(uint32_t) * cMaxRSSeqLen * 42);
 
 if ((m_pSeqHashes = new uint32_t[cMaxHashArrayEntries]) == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessReadsetDist: (Instance %d) Memory allocation of %lld bytes for hashes - %s", ProcessingID,(int64_t)cMaxHashArrayEntries*sizeof(uint32_t), strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessReadsetDist: (Instance %d) Memory allocation of %I64d bytes for hashes - %s", ProcessingID,(int64_t)cMaxHashArrayEntries*sizeof(uint32_t), strerror(errno));
 	Reset();
 	return(eBSFerrMem);
 	}
@@ -1527,7 +1527,7 @@ memreq *= m_AllocdMaxReadLen * sizeof(uint32_t);
 m_pKMerCnts = (uint32_t *)malloc(memreq);	// initial and with any luck perhaps the only allocation
 if (m_pKMerCnts == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessReadsetDist: (Instance %d) Memory allocation of %lld bytes for K-mer distributions - %s", ProcessingID, (int64_t)memreq, strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessReadsetDist: (Instance %d) Memory allocation of %I64d bytes for K-mer distributions - %s", ProcessingID, (int64_t)memreq, strerror(errno));
 	Reset();
 	return(eBSFerrMem);
 	}
@@ -1536,7 +1536,7 @@ if (m_pKMerCnts == NULL)
 m_pKMerCnts = (uint32_t *)mmap(NULL, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 if (m_pKMerCnts == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessReadsetDist: (Instance %d) Memory allocation of %lld bytes  for K-mer distributions through mmap()  failed - %s", ProcessingID, (int64_t)memreq, strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessReadsetDist: (Instance %d) Memory allocation of %I64d bytes  for K-mer distributions through mmap()  failed - %s", ProcessingID, (int64_t)memreq, strerror(errno));
 	m_pKMerCnts = NULL;
 	Reset();
 	return(eBSFerrMem);
@@ -1553,7 +1553,7 @@ memreq = m_AllocdSampledSeqWrds * 4;
 m_pSampledSeqs = (uint32_t *)malloc(memreq);	// initial and with any luck perhaps the only allocation
 if (m_pSampledSeqs == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessReadsetDist: (Instance %d) Memory allocation of %lld bytes - %s", ProcessingID, (int64_t)memreq, strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessReadsetDist: (Instance %d) Memory allocation of %I64d bytes - %s", ProcessingID, (int64_t)memreq, strerror(errno));
 	Reset();
 	return(eBSFerrMem);
 	}
@@ -1562,7 +1562,7 @@ if (m_pSampledSeqs == NULL)
 m_pSampledSeqs = (uint32_t *)mmap(NULL, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 if (m_pSampledSeqs == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessReadsetDist: (Instance %d) Memory allocation of %lld bytes through mmap()  failed - %s",ProcessingID, (int64_t)memreq, strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessReadsetDist: (Instance %d) Memory allocation of %I64d bytes through mmap()  failed - %s",ProcessingID, (int64_t)memreq, strerror(errno));
 	m_pSampledSeqs = NULL;
 	Reset();
 	return(eBSFerrMem);
@@ -1661,14 +1661,14 @@ for (ThreadIdx = 0; ThreadIdx < NumThreads; ThreadIdx++, pThread++)
 	}
 
 if (!m_bPEProc)
-	gDiagnostics.DiagOut(eDLInfo, gszProcName, "(Instance %d) Total of %llu SE reads processed", ProcessingID, TotNumSEReads);
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "(Instance %d) Total of %I64u SE reads processed", ProcessingID, TotNumSEReads);
 else
-	gDiagnostics.DiagOut(eDLInfo, gszProcName, "(Instance %d) Total of %llu reads, %llu PE pairs processed", ProcessingID, TotNumSEReads, TotNumPEReads);
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "(Instance %d) Total of %I64u reads, %I64u PE pairs processed", ProcessingID, TotNumSEReads, TotNumPEReads);
 
-gDiagnostics.DiagOut(eDLInfo, gszProcName, "(Instance %d) Total of %llu reads not accepted for processing as they were underlength", ProcessingID, NotProcUL);
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "(Instance %d) Total of %I64u reads not accepted for processing as they were underlength", ProcessingID, NotProcUL);
 
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "(Instance %d) Total of %lu reads used as seed duplicates", ProcessingID, m_ActMaxDupSeeds);
-gDiagnostics.DiagOut(eDLInfo, gszProcName, "(Instance %d) Total of %llu reads containing 'N's and/or %llu below minimum Phred scores not accepted for duplicate processing", ProcessingID, NotProcNs,NotProcQS);
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "(Instance %d) Total of %I64u reads containing 'N's and/or %I64u below minimum Phred scores not accepted for duplicate processing", ProcessingID, NotProcNs,NotProcQS);
 
 if(m_ActMaxDupSeeds == 0)
 	{
@@ -1928,7 +1928,7 @@ CUtility::RetryWrites(m_hErrFreeReadDistRptFile,szRptBuff,BuffIdx);
 BuffIdx = 0;
 for (int Idx = 0; Idx < 100; Idx++)
 #ifdef _WIN32
-	BuffIdx += sprintf(&szRptBuff[BuffIdx],"\n%1.2f,%lld",(double)Idx*0.01,m_ProbNoReadErrDist[Idx]);
+	BuffIdx += sprintf(&szRptBuff[BuffIdx],"\n%1.2f,%I64d",(double)Idx*0.01,m_ProbNoReadErrDist[Idx]);
 #else
 	BuffIdx += sprintf(&szRptBuff[BuffIdx],"\n%1.2f,%ld",(double)Idx*0.01,m_ProbNoReadErrDist[Idx]);
 #endif
@@ -2314,7 +2314,7 @@ CReadStats::AcquireSerialise(void)
 	{
 		if (SpinCnt -= 1)
 			continue;
-		pthread_yield();
+		sched_yield();
 		SpinCnt = 100;
 	}
 #endif
@@ -2348,7 +2348,7 @@ while (pthread_spin_trylock(&m_hSpinLockScores) == EBUSY)
 	{
 	if (SpinCnt -= 1)
 		continue;
-	pthread_yield();
+	sched_yield();
 	SpinCnt = 100;
 	}
 #endif
@@ -2381,7 +2381,7 @@ while (pthread_spin_trylock(&m_hSpinLockKMers) == EBUSY)
 	{
 	if (SpinCnt -= 1)
 		continue;
-	pthread_yield();
+	sched_yield();
 	SpinCnt = 100;
 	}
 #endif
@@ -2487,7 +2487,7 @@ if (!m_bPEProc)								// if SE then process each input reads file separately
 		else
 			{
 			gDiagnostics.DiagOut(eDLInfo, gszProcName, "(Instance %d) Thread %d: Processed %u sequences from single ended reads file '%s'", pThread->ProcessingID, pThread->ThreadIdx, NumReads, pszInFile);
-			gDiagnostics.DiagOut(eDLInfo, gszProcName, "(Instance %d) Thread %d: Unable to accept - %d were underlength, %d contained 'N's, %lld below minimum Phred - reads from input reads file", pThread->ProcessingID,
+			gDiagnostics.DiagOut(eDLInfo, gszProcName, "(Instance %d) Thread %d: Unable to accept - %d were underlength, %d contained 'N's, %I64d below minimum Phred - reads from input reads file", pThread->ProcessingID,
 								 pThread->ThreadIdx, pInPE1File->SeqCharacteristics.NotProcUL,pInPE1File->SeqCharacteristics.NotProcNs,pInPE1File->SeqCharacteristics.NotProcQS);
 
 			pThread->SeqCharacteristics.NotProcUL += pInPE1File->SeqCharacteristics.NotProcUL;
@@ -2511,7 +2511,7 @@ if (!m_bPEProc)								// if SE then process each input reads file separately
 		return(eBSFerrNoEntries);
 		}
 	gDiagnostics.DiagOut(eDLInfo, gszProcName, "(Instance %d) Thread %d: Processed total of %u reads from input single ended sequences files", pThread->ProcessingID, pThread->ThreadIdx, pThread->TotNumSEReads);
-	gDiagnostics.DiagOut(eDLInfo, gszProcName, "(Instance %d) Thread %d: Unable to accept - %lld were underlength, %lld contained 'N's, %lld below minimum Phred - total reads from input reads files", pThread->ProcessingID,
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "(Instance %d) Thread %d: Unable to accept - %I64d were underlength, %I64d contained 'N's, %I64d below minimum Phred - total reads from input reads files", pThread->ProcessingID,
 					pThread->ThreadIdx, pThread->SeqCharacteristics.NotProcUL,pThread->SeqCharacteristics.NotProcNs,pThread->SeqCharacteristics.NotProcQS);
 	}
 else // else must be paired end processing so process PE1 and PE2 as paired files
@@ -2579,7 +2579,7 @@ else // else must be paired end processing so process PE1 and PE2 as paired file
 		return(eBSFerrNoEntries);
 		}
 	gDiagnostics.DiagOut(eDLInfo, gszProcName, "(Instance %d) Thread %d: Processed total of %u paired ends (%u sequences) from all input reads files", pThread->ProcessingID, pThread->ThreadIdx, pThread->TotNumPEReads / 2, pThread->TotNumPEReads);
-	gDiagnostics.DiagOut(eDLInfo, gszProcName, "(Instance %d) Thread %d: Unable to accept - %lld were underlength, %lld contained 'N's, %lld below minimum Phred - total reads from input reads files", pThread->ProcessingID,
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "(Instance %d) Thread %d: Unable to accept - %I64d were underlength, %I64d contained 'N's, %I64d below minimum Phred - total reads from input reads files", pThread->ProcessingID,
 					pThread->ThreadIdx, pThread->SeqCharacteristics.NotProcUL,pThread->SeqCharacteristics.NotProcNs,pThread->SeqCharacteristics.NotProcQS);
 	}
 return(eBSFSuccess);

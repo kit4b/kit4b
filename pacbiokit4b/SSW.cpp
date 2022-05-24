@@ -671,7 +671,7 @@ if(m_pAllocdCells == NULL || (m_AllocdCells < (MaxTargLen + 5)))  // allowing a 
 	m_pAllocdCells = (tsSSWCell *) malloc(m_AllocdCellSize);
 	if(m_pAllocdCells == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for cells",(int64_t)m_AllocdCellSize);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %I64d bytes contiguous memory for cells",(int64_t)m_AllocdCellSize);
 		m_AllocdCellSize = 0;
 		m_AllocdCells = 0;
 		return(false);
@@ -681,7 +681,7 @@ if(m_pAllocdCells == NULL || (m_AllocdCells < (MaxTargLen + 5)))  // allowing a 
 	m_pAllocdCells = (tsSSWCell *)mmap(NULL,m_AllocdCellSize, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pAllocdCells == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for cells",(int64_t)m_AllocdCellSize);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %I64d bytes contiguous memory for cells",(int64_t)m_AllocdCellSize);
 		m_pAllocdCells = NULL;
 		m_AllocdCellSize = 0;
 		m_AllocdCells = 0;
@@ -719,7 +719,7 @@ if(MaxOverlapLen > 0)
 		m_pAllocdTracebacks = (tsSSWTraceback *)malloc(m_AllocdTracebacksSize);
 		if (m_pAllocdTracebacks == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Fatal: unable to allocate %lld bytes contiguous memory for traceback cells", (int64_t)m_AllocdTracebacksSize);
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Fatal: unable to allocate %I64d bytes contiguous memory for traceback cells", (int64_t)m_AllocdTracebacksSize);
 			m_AllocdTracebacksSize = 0;
 			m_AllocdTracebacks = 0;
 			return(false);
@@ -729,7 +729,7 @@ if(MaxOverlapLen > 0)
 		m_pAllocdTracebacks = (tsSSWTraceback *)mmap(NULL, m_AllocdTracebacksSize, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 		if (m_pAllocdTracebacks == MAP_FAILED)
 			{
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Fatal: unable to allocate %lld bytes contiguous memory for traceback cells", (int64_t)m_AllocdTracebacksSize);
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Fatal: unable to allocate %I64d bytes contiguous memory for traceback cells", (int64_t)m_AllocdTracebacksSize);
 			m_pAllocdTracebacks = NULL;
 			m_AllocdTracebacksSize = 0;
 			m_AllocdTracebacks = 0;
@@ -758,7 +758,7 @@ if(MaxOverlapLen > 0)
 		m_pMAAlignOps = (uint8_t *) malloc(m_AllocdMAAlignOpsSize);
 		if(m_pMAAlignOps == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for multialignment operators",(int64_t)m_AllocdMAAlignOpsSize);
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %I64d bytes contiguous memory for multialignment operators",(int64_t)m_AllocdMAAlignOpsSize);
 			m_AllocdMAAlignOpsSize = 0;
 			return(false);
 			}
@@ -768,7 +768,7 @@ if(MaxOverlapLen > 0)
 		m_pMAAlignOps = (uint8_t *)mmap(NULL,m_AllocdMAAlignOpsSize, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 		if(m_pMAAlignOps == MAP_FAILED)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for multialignment operators",(int64_t)m_AllocdMAAlignOpsSize);
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %I64d bytes contiguous memory for multialignment operators",(int64_t)m_AllocdMAAlignOpsSize);
 			m_pMAAlignOps = NULL;
 			m_AllocdMAAlignOpsSize = 0;
 			return(false);
@@ -1148,7 +1148,7 @@ for(IdxP = 0; IdxP < ProbeRelLen; IdxP++)
 #endif
 			if(pAllocd == NULL)
 				{
-				gDiagnostics.DiagOut(eDLFatal,gszProcName,"Align: Memory re-allocation to %lld bytes - %s",memreq,strerror(errno));
+				gDiagnostics.DiagOut(eDLFatal,gszProcName,"Align: Memory re-allocation to %I64d bytes - %s",memreq,strerror(errno));
 				return(NULL);
 				}
 
@@ -1961,7 +1961,7 @@ for(; m_MAFAlignBuffIdx < m_MAFAlignBuffered; m_MAFAlignBuffIdx += 1,pBuff+=1)
 					{
 					m_pConsConfSeq->Base = eBaseEOS;
 					m_pConsConfSeq->Conf = 0;
-					gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadMAFBlock: Probe identifier is 0 at line %lld",m_MAFFileLineNum);
+					gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadMAFBlock: Probe identifier is 0 at line %I64d",m_MAFFileLineNum);
 					return(eBSFerrAlignBlk);
 					}
 				State = 1;			// next expecting to parse out the consensus bases
@@ -2010,14 +2010,14 @@ for(; m_MAFAlignBuffIdx < m_MAFAlignBuffered; m_MAFAlignBuffIdx += 1,pBuff+=1)
 				default:
 					m_pConsConfSeq->Base = eBaseEOS;
 					m_pConsConfSeq->Conf = 0;
-					gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadMAFBlock: Unexpected chars in consensus sequence at line %lld",m_MAFFileLineNum);
+					gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadMAFBlock: Unexpected chars in consensus sequence at line %I64d",m_MAFFileLineNum);
 					return(eBSFerrAlignBlk);
 				}
 			if(NumConBases + 10 >= cMaxMAFBlockErrCorLen)
 				{
 				m_pConsConfSeq->Base = eBaseEOS;
 				m_pConsConfSeq->Conf = 0;
-				gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadMAFBlock: Excessively long consensus sequence at line %lld",m_MAFFileLineNum);
+				gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadMAFBlock: Excessively long consensus sequence at line %I64d",m_MAFFileLineNum);
 				return(eBSFerrAlignBlk);
 				}
 			NumConBases += 1;
@@ -2051,7 +2051,7 @@ for(; m_MAFAlignBuffIdx < m_MAFAlignBuffered; m_MAFAlignBuffIdx += 1,pBuff+=1)
 						{
 						m_pConsConfSeq->Base = eBaseEOS;
 						m_pConsConfSeq->Conf = 0;
-						gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadMAFBlock: Inconsistency in number of consensus confidence scores at line %lld",m_MAFFileLineNum);
+						gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadMAFBlock: Inconsistency in number of consensus confidence scores at line %I64d",m_MAFFileLineNum);
 						return(eBSFerrAlignBlk);
 						}
 					}
@@ -2059,7 +2059,7 @@ for(; m_MAFAlignBuffIdx < m_MAFAlignBuffered; m_MAFAlignBuffIdx += 1,pBuff+=1)
 					{
 					m_pConsConfSeq->Base = eBaseEOS;
 					m_pConsConfSeq->Conf = 0;
-					gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadMAFBlock: Expected consensus confidence scores at line %lld",m_MAFFileLineNum);
+					gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadMAFBlock: Expected consensus confidence scores at line %I64d",m_MAFFileLineNum);
 					return(eBSFerrAlignBlk);
 					}
 				}
@@ -2080,7 +2080,7 @@ for(; m_MAFAlignBuffIdx < m_MAFAlignBuffered; m_MAFAlignBuffIdx += 1,pBuff+=1)
 					{
 					m_pConsConfSeq->Base = eBaseEOS;
 					m_pConsConfSeq->Conf = 0;
-					gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadMAFBlock: Inconsistency in numbers of consensus confidence scores and consensus bases at line %lld",m_MAFFileLineNum);
+					gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadMAFBlock: Inconsistency in numbers of consensus confidence scores and consensus bases at line %I64d",m_MAFFileLineNum);
 					return(eBSFerrAlignBlk);
 					}
 				NumConConfs += 1;
@@ -2099,12 +2099,12 @@ for(; m_MAFAlignBuffIdx < m_MAFAlignBuffered; m_MAFAlignBuffIdx += 1,pBuff+=1)
 					}
 				m_pConsConfSeq->Base = eBaseEOS;
 				m_pConsConfSeq->Conf = 0;
-				gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadMAFBlock: Inconsistency in numbers of consensus confidence scores and expected scores at line %lld",m_MAFFileLineNum);
+				gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadMAFBlock: Inconsistency in numbers of consensus confidence scores and expected scores at line %I64d",m_MAFFileLineNum);
 				return(eBSFerrAlignBlk);
 				}
 			m_pConsConfSeq->Base = eBaseEOS;
 			m_pConsConfSeq->Conf = 0;
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadMAFBlock: Unexpected char '%c' in line %lld",Chr,m_MAFFileLineNum);
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadMAFBlock: Unexpected char '%c' in line %I64d",Chr,m_MAFFileLineNum);
 			return(eBSFerrAlignBlk);
 		}
 	}
@@ -2121,7 +2121,7 @@ m_pConsConfSeq->Base = eBaseEOS;
 m_pConsConfSeq->Conf = 0;
 if(State != 0)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadMAFBlock: File truncated at line %lld",m_MAFFileLineNum);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadMAFBlock: File truncated at line %I64d",m_MAFFileLineNum);
 	return(eBSFerrAlignBlk);
 	}
 return(0);
@@ -2509,7 +2509,7 @@ if(m_pMACols == NULL || (memreq + 10000) > m_AllocMAColsSize)
 	m_pMACols = (uint8_t *) malloc(memreq);
 	if(m_pMACols == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for multialignment",(int64_t)memreq);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %I64d bytes contiguous memory for multialignment",(int64_t)memreq);
 		return(eBSFerrMem);
 		}
 #else
@@ -2517,7 +2517,7 @@ if(m_pMACols == NULL || (memreq + 10000) > m_AllocMAColsSize)
 	m_pMACols = (uint8_t *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pMACols == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %lld bytes contiguous memory for multialignment",(int64_t)memreq);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %I64d bytes contiguous memory for multialignment",(int64_t)memreq);
 		m_pMACols = NULL;
 		return(eBSFerrMem);
 		}
@@ -2815,7 +2815,7 @@ do {
 #endif
 		if(pAllocd == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"TracebacksToAlignOps: Memory re-allocation to %lld bytes - %s",memreq,strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"TracebacksToAlignOps: Memory re-allocation to %I64d bytes - %s",memreq,strerror(errno));
 			return(eBSFerrMem);
 			}
 	
@@ -3129,7 +3129,7 @@ if(m_MACols + 10 >= m_AllocMACols)			// need to extend previously allocated colu
 #endif
 	if(pAllocd == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"InsertCol: Memory re-allocation to %lld bytes - %s",memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"InsertCol: Memory re-allocation to %I64d bytes - %s",memreq,strerror(errno));
 		return(NULL);
 		}
 	m_pMACols = (uint8_t *)pAllocd;

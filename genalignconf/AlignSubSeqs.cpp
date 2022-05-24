@@ -644,7 +644,6 @@ if((hUCSCfile = open(pSubSeqAligns->szUCSCfa, O_RDWR | O_CREAT | O_TRUNC, S_IREA
 #endif
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"CAlignSubSeqs::ProcessExtern Unable to open %s - %s",pSubSeqAligns->szUCSCfa,strerror(errno));
-	delete pszInBuff;
 	return(eBSFerrCreateFile);
 	}
 CUtility::RetryWrites(hUCSCfile,pszInBuff,BuffIdx);
@@ -700,7 +699,6 @@ if((hUCSCfile = open(pSubSeqAligns->Blocks[0].szMFA, O_RDWR | O_CREAT | O_TRUNC,
 #endif
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"CAlignSubSeqs::Muscle Unable to open %s - %s",pSubSeqAligns->Blocks[0].szMFA,strerror(errno));
-	delete pszInBuff;
 	return(eBSFerrCreateFile);
 	}
 CUtility::RetryWrites(hUCSCfile,pszInBuff,BuffIdx);
@@ -790,7 +788,6 @@ while((FastaSeqLen = Fasta.ReadSequence(pszOutBuff,sizeof(pSubSeqAligns->FileBuf
 		if(SpeciesIdx == pSubSeqAligns->CurNumSpecies)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"CAlignSubSeqs::ExternAlign Unable to match returned species %s",szDescription);
-			delete pszOutBuff;
 			Fasta.Close();
 			return(eBSFerrSpecies);
 			}
@@ -903,7 +900,7 @@ CAlignSubSeqs::AddSubSeq(int SpeciesRefChromID,		// reference chromosome identif
 tsASSubSeq *pAlign;
 if(m_pSubSeqs == NULL)
 	{
-	m_pSubSeqs = (tsASSubSeq *)new tsASSubSeq [cASSAllocSubSeqIncr];
+	m_pSubSeqs = new tsASSubSeq [cASSAllocSubSeqIncr];
 	if(m_pSubSeqs == NULL)
 		return(eBSFerrMem);
 	m_AllocdSubSeqs = cASSAllocSubSeqIncr;
@@ -914,7 +911,7 @@ else
 	// grow m_pAlignSeqs when needed...
 	if(m_NumSubSeqs >= m_AllocdSubSeqs)
 		{
-		pAlign = (tsASSubSeq *)new tsASSubSeq [m_AllocdSubSeqs + cASSAllocSubSeqIncr];
+		pAlign = new tsASSubSeq [m_AllocdSubSeqs + cASSAllocSubSeqIncr];
 		if(pAlign == NULL)
 			{
 			delete m_pSubSeqs;
@@ -1498,7 +1495,7 @@ char szSpeciesChrom[100];
 int BuffLen;
 int Idx;
 tsASSpeciesSubSeqAlign *pAligns;
-pAligns = pSubSeqAligns->Species;
+pAligns = &pSubSeqAligns->Species[0];
 
 if(m_hUCSCMAF == -1 && m_hClustalWMAF == -1 && m_hMuscleMAF == -1)
 	return(eBSFSuccess);

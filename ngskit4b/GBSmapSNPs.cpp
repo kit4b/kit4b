@@ -1390,7 +1390,7 @@ if (m_pProgenyFndrAligns == NULL)					// may be NULL first time in
 	m_pProgenyFndrAligns = (tsProgenyFndrAligns*)malloc((size_t)memreq);
 	if (m_pProgenyFndrAligns == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddWinBinCnts: Memory allocation of %lld bytes failed", (int64_t)memreq);
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddWinBinCnts: Memory allocation of %I64d bytes failed", (int64_t)memreq);
 		return(0);
 		}
 #else
@@ -1398,7 +1398,7 @@ if (m_pProgenyFndrAligns == NULL)					// may be NULL first time in
 	if (m_pProgenyFndrAligns == MAP_FAILED)
 		{
 		m_pProgenyFndrAligns = NULL;
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddWinBinCnts: Memory allocation of %lld bytes through mmap()  failed", (int64_t)memreq, strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddWinBinCnts: Memory allocation of %I64d bytes through mmap()  failed", (int64_t)memreq, strerror(errno));
 		return(0);
 		}
 #endif
@@ -1421,7 +1421,7 @@ else
 		if (pProgenyFndrAligns == MAP_FAILED)
 			{
 #endif
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddProgenyFndrAligns: Memory reallocation to %lld bytes failed - %s", memreq, strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddProgenyFndrAligns: Memory reallocation to %I64d bytes failed - %s", memreq, strerror(errno));
 			return(0);
 			}
 		m_pProgenyFndrAligns = pProgenyFndrAligns;

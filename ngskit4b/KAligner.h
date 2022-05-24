@@ -86,7 +86,7 @@ const size_t cReadsHitReAlloc = 50000000; // realloc allocation to hold this man
 
 const int cPairMinLen =	25;				// apparent paired reads sequences insert size must be of at least this minimum length
 const int cPairMaxLen = 100000;			// apparent paired reads sequences insert size are restricted be of this maximum length
-const int cDfltPairMinLen = 50;			// default apparent paired reads sequences insert size must be of at least this length
+const int cDfltPairMinLen = 100;			// default apparent paired reads sequences insert size must be of at least this length
 const int cDfltPairMaxLen = 1000;		// default apparent paired reads sequences insert size must be no longer than this length
 
 const int cMaxConstrainedChroms = 64;   // at most this many chroms can have loci base constraints

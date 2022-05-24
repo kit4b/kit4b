@@ -138,7 +138,7 @@ while (pthread_spin_trylock(&m_ghPLPSpinLock) == EBUSY)
 	{
 	if (SpinCnt -= 1)
 		continue;
-	pthread_yield();
+	sched_yield();
 	SpinCnt = 100;
 	}
 #endif

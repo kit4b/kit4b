@@ -990,7 +990,7 @@ if(m_pFeatRPKMs == NULL)
 	memreq = sizeof(tsFeatRPKM) * cAllocFeatRPKMs;
 	if((m_pFeatRPKMs = (tsFeatRPKM *)malloc(memreq))==NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddFeatureRPKM: Memory allocation of %lld bytes - %s",(int64_t)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddFeatureRPKM: Memory allocation of %I64d bytes - %s",(int64_t)memreq,strerror(errno));
 		GDEReset();
 		return(eBSFerrMem);
 		}
@@ -1004,7 +1004,7 @@ else
 		memreq = sizeof(tsFeatRPKM) * (m_AllocdFeatRPMs + cAllocFeatRPKMs);
 		if((pFeatRPKM = (tsFeatRPKM *)realloc(m_pFeatRPKMs,memreq))==NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddFeatureRPKM: Memory allocation of %lld bytes - %s",(int64_t)memreq,strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddFeatureRPKM: Memory allocation of %I64d bytes - %s",(int64_t)memreq,strerror(errno));
 			GDEReset();
 			return(eBSFerrMem);
 			}

@@ -485,7 +485,7 @@ if(m_pSeqBuff == NULL)
 	m_pSeqBuff = (etSeqBase *) malloc(SeqLen);	// initial and perhaps the only allocation
 	if(m_pSeqBuff == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocSeqBuff: Memory allocation of %lld bytes - %s",(int64_t)SeqLen,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocSeqBuff: Memory allocation of %I64d bytes - %s",(int64_t)SeqLen,strerror(errno));
 		return(NULL);
 		}
 #else
@@ -493,7 +493,7 @@ if(m_pSeqBuff == NULL)
 	m_pSeqBuff = (etSeqBase *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pSeqBuff == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocSeqBuff: Memory allocation of %lld bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocSeqBuff: Memory allocation of %I64d bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
 		m_pSeqBuff = NULL;
 		return(NULL);
 		}
@@ -511,7 +511,7 @@ else
 #endif
 	if(pTmp == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocSeqBuff: Memory re-allocation to %lld bytes - %s",(int64_t)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocSeqBuff: Memory re-allocation to %I64d bytes - %s",(int64_t)memreq,strerror(errno));
 		return(NULL);
 		}
 	m_pSeqBuff = pTmp;

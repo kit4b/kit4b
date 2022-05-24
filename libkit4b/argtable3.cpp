@@ -976,7 +976,7 @@ void arg_dstr_destroy(arg_dstr_t ds) {
 
 void arg_dstr_set(arg_dstr_t ds, char* str, arg_dstr_freefn* free_proc) {
     int length;
-    register arg_dstr_freefn* old_free_proc = ds->free_proc;
+    arg_dstr_freefn* old_free_proc = ds->free_proc;
     char* old_result = ds->data;
 
     if (str == NULL) {

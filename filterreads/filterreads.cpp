@@ -653,7 +653,7 @@ memreq = cReadsHitAlloc;
 m_pAlignHits = (tsAlignHit *) malloc(memreq);	// initial and perhaps the only allocation
 if(m_pAlignHits == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"InitialMemAlloc: Memory allocation of %lld bytes - %s",(int64_t)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"InitialMemAlloc: Memory allocation of %I64d bytes - %s",(int64_t)memreq,strerror(errno));
 	Reset();
 	return(eBSFerrMem);
 	}
@@ -662,7 +662,7 @@ if(m_pAlignHits == NULL)
 m_pAlignHits = (tsAlignHit *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pAlignHits == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"InitialMemAlloc: Memory allocation of %lld bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"InitialMemAlloc: Memory allocation of %I64d bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
 	m_pAlignHits = NULL;
 	Reset();
 	return(eBSFerrMem);
@@ -678,7 +678,7 @@ memreq = cRawLineAlloc;
 m_pRawLines = (char *) malloc(memreq);	// initial and perhaps the only allocation
 if(m_pRawLines == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"InitialMemAlloc: Memory allocation of %lld bytes - %s",(int64_t)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"InitialMemAlloc: Memory allocation of %I64d bytes - %s",(int64_t)memreq,strerror(errno));
 	Reset();
 	return(eBSFerrMem);
 	}
@@ -687,7 +687,7 @@ if(m_pRawLines == NULL)
 m_pRawLines = (char *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pRawLines == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"InitialMemAlloc: Memory allocation of %lld bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"InitialMemAlloc: Memory allocation of %I64d bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
 	m_pRawLines = NULL;
 	Reset();
 	return(eBSFerrMem);

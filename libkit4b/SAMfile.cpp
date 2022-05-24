@@ -1627,7 +1627,7 @@ tsRefSeq *pRefSeq;
 
 if(m_SAMFileType >= eSFTBAM_BAI && (size_t)(uint64_t)SeqLen > cMaxCSIRefSeqLen)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddREfSeq: Reference sequence '%s':'%s' of length %d is longer than max allowed %s index offset of %lld",
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddREfSeq: Reference sequence '%s':'%s' of length %d is longer than max allowed %s index offset of %I64d",
 								pszSpecies,pszSeqName,SeqLen,
 								m_SAMFileType == eSFTBAM_BAI ? "BAI" : "CSI",
 								m_MaxIdxRefSeqLen-1);
@@ -1695,7 +1695,7 @@ if(m_SAMFileType >= eSFTBAM_BAI)
 	{
 	if(m_SAMFileType == eSFTBAM_BAI && m_MaxRefSeqLen >= cMaxSAIRefSeqLen)
 		{
-		gDiagnostics.DiagOut(eDLInfo,gszProcName,"StartAlignments: Forced generation of CSI instead of SAI index file as alignments to sequence lengths (max %lld) more than SAI 512Mbp limit",m_MaxRefSeqLen);
+		gDiagnostics.DiagOut(eDLInfo,gszProcName,"StartAlignments: Forced generation of CSI instead of SAI index file as alignments to sequence lengths (max %I64d) more than SAI 512Mbp limit",m_MaxRefSeqLen);
 		free(m_pChunkBins);
 		m_pChunkBins = NULL;
 		m_SAMFileType = eSFTBAM_CSI;
@@ -1722,7 +1722,7 @@ if(m_SAMFileType >= eSFTBAM_BAI)
 	
 	if((m_p16KOfsVirtAddrs = (uint64_t *)malloc(m_Alloc16KOfsVirtAddrsSize))==NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"StartAlignments: unable to alloc %lld memory for BAI or CSI 16kb linear virtual offsets",m_Alloc16KOfsVirtAddrsSize);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"StartAlignments: unable to alloc %I64d memory for BAI or CSI 16kb linear virtual offsets",m_Alloc16KOfsVirtAddrsSize);
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -2034,7 +2034,7 @@ tsBAIbin *pBin;
 
 if(End >= m_MaxIdxRefSeqLen)		// exceeding the limit should have been picked up earlier but better safe than sorry
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddAlignment: Unable to accept alignment ending at %u in %s index extending past %lldbp'",
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddAlignment: Unable to accept alignment ending at %u in %s index extending past %I64dbp'",
 									End,m_SAMFileType == eSFTBAM_BAI ? "BAI" : "CSI", m_MaxIdxRefSeqLen);
 	Reset();
 	return(eBSFerrOfs);
@@ -2380,7 +2380,7 @@ else   // BAM processing
 	// if read has been aligned then check that the alignment is within the limits for SAI or CSI
 	if(pBAMalign->pos >= 0 && m_SAMFileType >= eSFTBAM_BAI && pBAMalign->end >= m_MaxIdxRefSeqLen)		
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddAlignment: Unable to accept alignment ending at %d in %s index extending past %lldbp",
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddAlignment: Unable to accept alignment ending at %d in %s index extending past %I64dbp",
 			pBAMalign->end,m_SAMFileType == eSFTBAM_BAI ? "BAI" : "CSI",m_MaxIdxRefSeqLen-1);
 		Reset();
 		return(eBSFerrOfs);

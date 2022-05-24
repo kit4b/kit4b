@@ -614,7 +614,7 @@ for(SrcIdx = 0; SrcIdx < ePMBSSrcPlaceholder; SrcIdx++,pSeq++)
 	pSeq->pSeqDescrs = (tsSeqDescr *) malloc(memreq);	// initial and perhaps the only allocation
 	if(pSeq->pSeqDescrs == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Init: Memory allocation of %lld bytes for sequence descriptors failed - %s",(int64_t)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Init: Memory allocation of %I64d bytes for sequence descriptors failed - %s",(int64_t)memreq,strerror(errno));
 		return(eBSFerrMem);
 		}
 #else
@@ -622,7 +622,7 @@ for(SrcIdx = 0; SrcIdx < ePMBSSrcPlaceholder; SrcIdx++,pSeq++)
 	pSeq->pSeqDescrs = (tsSeqDescr *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(pSeq->pSeqDescrs == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Init: Memory allocation of %lld bytes for sequence descriptors failed - %s",(int64_t)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Init: Memory allocation of %I64d bytes for sequence descriptors failed - %s",(int64_t)memreq,strerror(errno));
 		pSeq->pSeqDescrs = NULL;
 		return(eBSFerrMem);
 		}
@@ -636,7 +636,7 @@ for(SrcIdx = 0; SrcIdx < ePMBSSrcPlaceholder; SrcIdx++,pSeq++)
 	pSeq->pSeqBlocks = (tsSeqBlock *) malloc(memreq);	// initial and perhaps the only allocation
 	if(pSeq->pSeqBlocks == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Init: Memory allocation of %lld bytes for sequence blocks failed - %s",(int64_t)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Init: Memory allocation of %I64d bytes for sequence blocks failed - %s",(int64_t)memreq,strerror(errno));
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -645,7 +645,7 @@ for(SrcIdx = 0; SrcIdx < ePMBSSrcPlaceholder; SrcIdx++,pSeq++)
 	pSeq->pSeqBlocks = (tsSeqBlock *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(pSeq->pSeqBlocks == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Init: Memory allocation of %lld bytes for sequence blocks failed - %s",(int64_t)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Init: Memory allocation of %I64d bytes for sequence blocks failed - %s",(int64_t)memreq,strerror(errno));
 		pSeq->pSeqBlocks = NULL;
 		Reset();
 		return(eBSFerrMem);
@@ -661,7 +661,7 @@ for(SrcIdx = 0; SrcIdx < ePMBSSrcPlaceholder; SrcIdx++,pSeq++)
 	pSeq->pSeqs = (etSeqBase *) malloc(memreq);	// initial and perhaps the only allocation
 	if(pSeq->pSeqs == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Init: Memory allocation of %lld bytes for sequence bases failed - %s",(int64_t)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Init: Memory allocation of %I64d bytes for sequence bases failed - %s",(int64_t)memreq,strerror(errno));
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -670,7 +670,7 @@ for(SrcIdx = 0; SrcIdx < ePMBSSrcPlaceholder; SrcIdx++,pSeq++)
 	pSeq->pSeqs = (etSeqBase *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(pSeq->pSeqs == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Init: Memory allocation of %lld bytes for sequence bases failed - %s",(int64_t)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Init: Memory allocation of %I64d bytes for sequence bases failed - %s",(int64_t)memreq,strerror(errno));
 		pSeq->pSeqs = NULL;
 		Reset();
 		return(eBSFerrMem);
@@ -728,7 +728,7 @@ if(pSeqAllocs->AllocdSeqDescrsSize <= (pSeqAllocs->UsedSeqDescrsSize + sizeof(ts
 #endif
 	if(pSeqDescrs == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddSeq: Memory reallocation to %lld bytes for sequence descriptors failed - %s",(int64_t)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddSeq: Memory reallocation to %I64d bytes for sequence descriptors failed - %s",(int64_t)memreq,strerror(errno));
 		return(eBSFerrMem);
 		}
 	pSeqAllocs->AllocdSeqDescrsSize = memreq;
@@ -748,7 +748,7 @@ if(pSeqAllocs->SeqBlocksAllocSize <= pSeqAllocs->UsedSeqBlocksSize + sizeof(tsSe
 #endif
 	if(pSeqBlocks == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddSeq: Memory reallocation to %lld bytes for sequence blocks failed - %s",(int64_t)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddSeq: Memory reallocation to %I64d bytes for sequence blocks failed - %s",(int64_t)memreq,strerror(errno));
 		return(eBSFerrMem);
 		}
 	pSeqAllocs->SeqBlocksAllocSize = memreq;
@@ -768,7 +768,7 @@ if(pSeqAllocs->AllocdSeqsSize <= pSeqAllocs->UsedSeqsSize + (sizeof(etSeqBase) *
 #endif
 	if(pSeqs == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddSeq: Memory reallocation to %lld bytes for sequence bases failed - %s",(int64_t)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddSeq: Memory reallocation to %I64d bytes for sequence bases failed - %s",(int64_t)memreq,strerror(errno));
 		return(eBSFerrMem);
 		}
 	pSeqAllocs->AllocdSeqsSize = memreq;

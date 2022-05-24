@@ -432,7 +432,7 @@ while(pthread_spin_trylock(&m_hSpinLock)==EBUSY)
 	{
 	if(SpinCnt -= 1)
 		continue;
-	pthread_yield();
+	sched_yield();
 	SpinCnt = 500;
 	}
 #endif
@@ -2054,7 +2054,7 @@ switch(ParamType) {
 		if(ValueSize != sizeof(int64_t))
 			return(eBSFerrCvrtType);
 #ifdef _WIN32
-		sprintf(szBuff,"%lld",*(int64_t *)pValue);
+		sprintf(szBuff,"%I64d",*(int64_t *)pValue);
 #else
 		sprintf(szBuff,"%ld",*(int64_t *)pValue);
 #endif
@@ -2063,7 +2063,7 @@ switch(ParamType) {
 		if(ValueSize != sizeof(uint64_t))
 			return(eBSFerrCvrtType);
 #ifdef _WIN32
-		sprintf(szBuff,"%llu",*(uint64_t *)pValue);
+		sprintf(szBuff,"%I64u",*(uint64_t *)pValue);
 #else
 		sprintf(szBuff,"%lu",*(uint64_t *)pValue);
 #endif

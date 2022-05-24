@@ -1291,7 +1291,7 @@ if(KMerLenFilter)
 	m_pKMerSeqs = (tsKMerSeqInst *)malloc(m_AllocdKMerSeqInstsMem);	// initial and with any luck perhaps the only allocation
 	if (m_pKMerSeqs == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessReadsetDist: Memory allocation of %lld bytes for K-mer distributions - %s", (int64_t)m_AllocdKMerSeqInstsMem, strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessReadsetDist: Memory allocation of %I64d bytes for K-mer distributions - %s", (int64_t)m_AllocdKMerSeqInstsMem, strerror(errno));
 		m_AllocdKMerSeqInstsMem = 0;
 		ARReset();
 		Reset();
@@ -1302,7 +1302,7 @@ if(KMerLenFilter)
 	m_pKMerSeqs = (tsKMerSeqInst *)mmap(NULL, m_AllocdKMerSeqInstsMem, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	if (m_pKMerSeqs == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessReadsetDist: Memory allocation of %lld bytes  for K-mer distributions through mmap()  failed - %s", (int64_t)m_AllocdKMerSeqInstsMem, strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessReadsetDist: Memory allocation of %I64d bytes  for K-mer distributions through mmap()  failed - %s", (int64_t)m_AllocdKMerSeqInstsMem, strerror(errno));
 		m_pKMerSeqs = NULL;
 		m_AllocdKMerSeqInstsMem = 0;
 		ARReset();

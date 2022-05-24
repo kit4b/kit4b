@@ -695,7 +695,7 @@ m_AllocdChromSize = sizeof(tsSRChromSeq) * cSRAllocNumChroms;
 m_pChromSeqs = (tsSRChromSeq *) malloc((size_t)m_AllocdChromSize);
 if(m_pChromSeqs == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadFasta: Memory allocation of %lld bytes failed",(int64_t)m_AllocdChromSize);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadFasta: Memory allocation of %I64d bytes failed",(int64_t)m_AllocdChromSize);
 	m_AllocdChromSize = 0;
 	Reset(false);
 	return(eBSFerrMem);
@@ -705,7 +705,7 @@ if(m_pChromSeqs == NULL)
 m_pChromSeqs = (tsSRChromSeq *)mmap(NULL,(size_t)m_AllocdChromSize, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pChromSeqs == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadFasta: Memory allocation of %lld bytes through mmap()  failed",(int64_t)m_AllocdChromSize,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadFasta: Memory allocation of %I64d bytes through mmap()  failed",(int64_t)m_AllocdChromSize,strerror(errno));
 	m_pChromSeqs = NULL;
 	m_AllocdChromSize = 0;
 	Reset(false);
@@ -720,7 +720,7 @@ m_AllocdGenomeMem = cSRMaxAllocBuffChunk;		// an initial allocation to hold the 
 m_pGenomeSeq = (uint8_t *) malloc((size_t)m_AllocdGenomeMem);
 if(m_pGenomeSeq == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadFasta: Memory allocation of %lld bytes failed",(int64_t)m_AllocdGenomeMem);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadFasta: Memory allocation of %I64d bytes failed",(int64_t)m_AllocdGenomeMem);
 	Reset(false);
 	return(eBSFerrMem);
 	}
@@ -729,7 +729,7 @@ if(m_pGenomeSeq == NULL)
 m_pGenomeSeq = (uint8_t *)mmap(NULL,(size_t)m_AllocdGenomeMem, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pGenomeSeq == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadFasta: Memory allocation of %lld bytes through mmap()  failed",(int64_t)m_AllocdGenomeMem,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadFasta: Memory allocation of %I64d bytes through mmap()  failed",(int64_t)m_AllocdGenomeMem,strerror(errno));
 	m_pGenomeSeq = NULL;
 	Reset(false);
 	return(eBSFerrMem);
@@ -783,7 +783,7 @@ while((Rslt = SeqLen = Fasta.ReadSequence(pSeqBuff,cSRMaxAllocBuffChunk-1,true,f
 #endif
 			if(pTmp == NULL)
 				{
-				gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadFasta: Memory re-allocation to %lld bytes - %s",(int64_t)(memreq),strerror(errno));
+				gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadFasta: Memory re-allocation to %I64d bytes - %s",(int64_t)(memreq),strerror(errno));
 				delete pSeqBuff;
 				return(eBSFerrMem);
 				}
@@ -824,7 +824,7 @@ while((Rslt = SeqLen = Fasta.ReadSequence(pSeqBuff,cSRMaxAllocBuffChunk-1,true,f
 #endif
 		if(pSeq == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadFasta: Memory re-allocation to %lld bytes - %s",(int64_t)(memreq),strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadFasta: Memory re-allocation to %I64d bytes - %s",(int64_t)(memreq),strerror(errno));
 			delete pSeqBuff;
 			return(eBSFerrMem);
 			}
@@ -907,7 +907,7 @@ m_AllocdChromSize = sizeof(tsSRChromSeq) * m_AllocdChromSeqs;
 m_pChromSeqs = (tsSRChromSeq *) malloc((size_t)m_AllocdChromSize);
 if(m_pChromSeqs == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadAssembly: Memory allocation of %lld bytes failed",(int64_t)m_AllocdChromSize);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadAssembly: Memory allocation of %I64d bytes failed",(int64_t)m_AllocdChromSize);
 	Reset(false);
 	return(eBSFerrMem);
 	}
@@ -916,7 +916,7 @@ if(m_pChromSeqs == NULL)
 m_pChromSeqs = (tsSRChromSeq *)mmap(NULL,(size_t)m_AllocdChromSize, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pChromSeqs == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadAssembly: Memory allocation of %lld bytes through mmap()  failed",(int64_t)m_AllocdChromSize,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadAssembly: Memory allocation of %I64d bytes through mmap()  failed",(int64_t)m_AllocdChromSize,strerror(errno));
 	m_pChromSeqs = NULL;
 	Reset(false);
 	return(eBSFerrMem);
@@ -946,7 +946,7 @@ m_AllocdGenomeMem = (size_t)m_GenomeLen;
 m_pGenomeSeq = (uint8_t *) malloc((size_t)m_AllocdGenomeMem);
 if(m_pGenomeSeq == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadAssembly: Memory allocation of %lld bytes failed",(int64_t)m_AllocdGenomeMem);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadAssembly: Memory allocation of %I64d bytes failed",(int64_t)m_AllocdGenomeMem);
 	Reset(false);
 	return(eBSFerrMem);
 	}
@@ -955,7 +955,7 @@ if(m_pGenomeSeq == NULL)
 m_pGenomeSeq = (uint8_t *)mmap(NULL,(size_t)m_AllocdGenomeMem, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pGenomeSeq == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadAssembly: Memory allocation of %lld bytes through mmap()  failed",(int64_t)m_AllocdGenomeMem,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadAssembly: Memory allocation of %I64d bytes through mmap()  failed",(int64_t)m_AllocdGenomeMem,strerror(errno));
 	m_pGenomeSeq = NULL;
 	Reset(false);
 	return(eBSFerrMem);
@@ -1118,7 +1118,7 @@ while((FeatID = m_pBEDFile->GetNextFeatureID(FeatID)) > 0) {
 m_pGenomeSeq = (uint8_t *) malloc((size_t)m_GenomeLen);
 if(m_pGenomeSeq == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadTranscriptome: Memory allocation of %lld bytes failed",(int64_t)m_GenomeLen);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadTranscriptome: Memory allocation of %I64d bytes failed",(int64_t)m_GenomeLen);
 	Reset(false);
 	return(eBSFerrMem);
 	}
@@ -1127,7 +1127,7 @@ if(m_pGenomeSeq == NULL)
 m_pGenomeSeq = (uint8_t *)mmap(NULL,(size_t)m_GenomeLen, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pGenomeSeq == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadAssembly: Memory allocation of %lld bytes through mmap()  failed",(int64_t)m_GenomeLen,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadAssembly: Memory allocation of %I64d bytes through mmap()  failed",(int64_t)m_GenomeLen,strerror(errno));
 	m_pGenomeSeq = NULL;
 	Reset(false);
 	return(eBSFerrMem);
@@ -2036,7 +2036,7 @@ m_AllocdMemReads = (int64_t)m_NumReadsAllocd * sizeof(tsSRSimRead);
 m_pSimReads = (tsSRSimRead *) malloc((size_t)m_AllocdMemReads);
 if(m_pSimReads == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for simulated reads failed",(int64_t)m_AllocdMemReads);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %I64d bytes for simulated reads failed",(int64_t)m_AllocdMemReads);
 	Reset(false);
 	return(eBSFerrMem);
 	}
@@ -2045,7 +2045,7 @@ if(m_pSimReads == NULL)
 m_pSimReads = (tsSRSimRead *)mmap(NULL,(size_t)m_AllocdMemReads, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pSimReads == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %lld bytes for simulated reads through mmap()  failed",(int64_t)m_AllocdMemReads,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %I64d bytes for simulated reads through mmap()  failed",(int64_t)m_AllocdMemReads,strerror(errno));
 	m_pSimReads = NULL;
 	Reset(false);
 	return(eBSFerrMem);

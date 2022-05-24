@@ -1260,14 +1260,14 @@ if(m_NumSeqEdges)
 	m_ppToSeqEdges = (tsSeqEdge **)malloc((size_t)m_AllocMemToSeqEdges);	
 	if(m_ppToSeqEdges == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenerateGraph: Unable to allocate memory of %llu bytes - %s",m_AllocMemToSeqEdges,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenerateGraph: Unable to allocate memory of %I64u bytes - %s",m_AllocMemToSeqEdges,strerror(errno));
 		Reset(false);
 		return(eBSFerrMem);
 		}
 #else
 	if((m_ppToSeqEdges = (tsSeqEdge **)mmap(NULL,m_AllocMemToSeqEdges, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0)) == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenerateGraph: Unable to allocate memory of %llu bytes - %s",m_AllocMemToSeqEdges,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenerateGraph: Unable to allocate memory of %I64u bytes - %s",m_AllocMemToSeqEdges,strerror(errno));
 		m_ppToSeqEdges = NULL;
 		Reset(false);
 		return(eBSFerrMem);
@@ -2627,14 +2627,14 @@ if(m_pSeqEdges == NULL)
 	m_pSeqEdges = (tsSeqEdge *)malloc((size_t)m_AllocMemSeqEdges);	
 	if(m_pSeqEdges == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddOverlap: Unable to allocate memory of %llu bytes - %s",m_AllocMemSeqEdges,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddOverlap: Unable to allocate memory of %I64u bytes - %s",m_AllocMemSeqEdges,strerror(errno));
 		Reset(false);
 		return(eBSFerrMem);
 		}
 #else
 	if((m_pSeqEdges = (tsSeqEdge *)mmap(NULL,m_AllocMemSeqEdges, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0)) == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddOverlap: Unable to allocate memory of %llu bytes - %s",m_AllocMemSeqEdges,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddOverlap: Unable to allocate memory of %I64u bytes - %s",m_AllocMemSeqEdges,strerror(errno));
 		m_pSeqEdges = NULL;
 		ReleaseSerialiseSeqFlags();
 		Reset(false);
@@ -2688,14 +2688,14 @@ if(m_pSeqVertices == NULL)
 	m_pSeqVertices = (tsSeqVertex *)malloc((size_t)m_AllocMemSeqVertices);	
 	if(m_pSeqVertices == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddSeqVertex: Unable to allocate memory of %llu bytes - %s",m_AllocMemSeqVertices,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddSeqVertex: Unable to allocate memory of %I64u bytes - %s",m_AllocMemSeqVertices,strerror(errno));
 		Reset(false);
 		return(eBSFerrMem);
 		}
 #else
 	if((m_pSeqVertices = (tsSeqVertex *)mmap(NULL,m_AllocMemSeqVertices, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0)) == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddSeqVertex: Unable to allocate memory of %llu bytes - %s",m_AllocMemSeqVertices,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddSeqVertex: Unable to allocate memory of %I64u bytes - %s",m_AllocMemSeqVertices,strerror(errno));
 		m_pSeqVertices = NULL;
 		ReleaseSerialiseSeqFlags();
 		Reset(false);

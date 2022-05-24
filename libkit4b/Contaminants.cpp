@@ -106,7 +106,7 @@ while (pthread_spin_trylock(&m_hSpinLock) == EBUSY)
 	{
 	if (SpinCnt -= 1)
 		continue;
-	pthread_yield();
+	sched_yield();
 	SpinCnt = 100;
 	}
 #endif
@@ -715,7 +715,7 @@ if(m_pContaminants == NULL)
 	m_pContaminants = (tsFlankContam *)malloc(AllocMem);
 	if (m_pContaminants == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddFlankContam: unable to allocate for Contaminant memory %llu", AllocMem);
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddFlankContam: unable to allocate for Contaminant memory %I64u", AllocMem);
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -724,7 +724,7 @@ if(m_pContaminants == NULL)
 	m_pContaminants = (tsFlankContam *)mmap(NULL, (size_t)AllocMem, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	if (m_pContaminants == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddFlankContam: unable to allocate for Contaminant memory %llu", AllocMem);
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddFlankContam: unable to allocate for Contaminant memory %I64u", AllocMem);
 		m_pContaminants = NULL;
 		Reset();
 		return(eBSFerrMem);
@@ -750,7 +750,7 @@ if((m_NumFlankContaminates + 1) > m_AllocContaminants)		// time to realloc some 
 #endif
 	if (pRealloc == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddFlankContam: Memory re-allocation to %lld bytes - %s", ReallocSize, strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddFlankContam: Memory re-allocation to %I64d bytes - %s", ReallocSize, strerror(errno));
 		return(eBSFerrMem);
 		}
 
@@ -849,7 +849,7 @@ if(m_pContamSeqNodes == NULL)
 	m_pContamSeqNodes = (tsContamSeqNode *)malloc(AllocMem);
 	if (m_pContamSeqNodes == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "IndexContamSeq: unable to allocate for ContamSeqNodes memory %llu", AllocMem);
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "IndexContamSeq: unable to allocate for ContamSeqNodes memory %I64u", AllocMem);
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -858,7 +858,7 @@ if(m_pContamSeqNodes == NULL)
 	m_pContamSeqNodes = (tsContamSeqNode *)mmap(NULL, (size_t)AllocMem, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	if (m_pContamSeqNodes == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "IndexContamSeq: unable to allocate for ContamSeqNodes memory %llu", AllocMem);
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "IndexContamSeq: unable to allocate for ContamSeqNodes memory %I64u", AllocMem);
 		m_pContamSeqNodes = NULL;
 		Reset();
 		return(eBSFerrMem);
@@ -883,7 +883,7 @@ if(m_NumContamSeqNodes + cMaxContaminantLen + 10 >= m_AllocdContamSeqNodes)
 #endif
 	if (pRealloc == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "IndexContamSeq: Memory re-allocation to %lld bytes - %s", AllocMem, strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "IndexContamSeq: Memory re-allocation to %I64d bytes - %s", AllocMem, strerror(errno));
 		return(eBSFerrMem);
 		}
 

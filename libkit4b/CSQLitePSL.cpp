@@ -324,7 +324,7 @@ memreq = ((size_t)cAllocAlignSummaryInsts * (sizeof(tsAlignSummary) + (size_t)cM
 m_pAlignmentSummaries = (tsAlignSummary *) malloc(memreq);	// initial and perhaps the only allocation
 if(m_pAlignmentSummaries == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"CreateDatabase: Memory allocation of %lld bytes for alignment summary instances failed - %s",(int64_t)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"CreateDatabase: Memory allocation of %I64d bytes for alignment summary instances failed - %s",(int64_t)memreq,strerror(errno));
 	sqlite3_close_v2(m_pDB);
 	sqlite3_shutdown();
 	m_pDB = NULL;
@@ -335,7 +335,7 @@ if(m_pAlignmentSummaries == NULL)
 	m_pAlignmentSummaries = (tsAlignSummary *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pAlignmentSummaries == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"CreateDatabase: Memory allocation of %lld bytes for alignment summary instances failed - %s",(int64_t)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"CreateDatabase: Memory allocation of %I64d bytes for alignment summary instances failed - %s",(int64_t)memreq,strerror(errno));
 		m_pAlignmentSummaries = NULL;
 		sqlite3_close_v2(m_pDB);
 		sqlite3_shutdown();
@@ -594,7 +594,7 @@ if((m_allocAlignmentSummariesSize - m_UsedAlignmentSummariesSize) < (2 * (sizeof
 #endif
 	if(m_pAlignmentSummaries == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddAlignSummary: Memory reallocation to %lld bytes for alignment summary instances failed - %s",(int64_t)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddAlignSummary: Memory reallocation to %I64d bytes for alignment summary instances failed - %s",(int64_t)memreq,strerror(errno));
 		return(eBSFerrMem);
 		}
 	m_allocAlignmentSummariesSize = memreq;

@@ -440,7 +440,7 @@ CMAlignFile::ChunkedWrite(int64_t WrtOfs,uint8_t *pData,int64_t WrtLen)
 int BlockLen;
 if(_lseeki64(m_hFile,WrtOfs,SEEK_SET) != WrtOfs)
 	{
-	AddErrMsg("CMAlignFile::ChunkedWrite","Unable to seek to %lld on file %s - error %s",WrtOfs,m_szFile,strerror(errno));
+	AddErrMsg("CMAlignFile::ChunkedWrite","Unable to seek to %I64d on file %s - error %s",WrtOfs,m_szFile,strerror(errno));
 	Reset(false);
 	return(eBSFerrFileAccess);
 	}
@@ -469,7 +469,7 @@ uint32_t BlockLen;
 uint32_t ActualRdLen;
 if(_lseeki64(m_hFile,RdOfs,SEEK_SET) != RdOfs)
 	{
-	AddErrMsg("CSfxArray::ChunkedRead","Unable to seek to %lld on file %s - error %s",RdOfs,m_szFile,strerror(errno));
+	AddErrMsg("CSfxArray::ChunkedRead","Unable to seek to %I64d on file %s - error %s",RdOfs,m_szFile,strerror(errno));
 	return(eBSFerrFileAccess);
 	}
 
@@ -569,13 +569,13 @@ if(AccessMode == eMAPOCreate)
 #ifdef _WIN32
 	m_pDirEls = (tsBlockDirEl *) malloc((size_t)m_AllocdDirElsMem);	// initial and will be realloc'd as may be required for additional blocks
 	if(m_pDirEls == NULL)
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %lld bytes through malloc()  failed - %s",(int64_t)m_AllocdDirElsMem,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %I64d bytes through malloc()  failed - %s",(int64_t)m_AllocdDirElsMem,strerror(errno));
 #else
 // gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
 	m_pDirEls = (tsBlockDirEl *)mmap(NULL,(size_t)m_AllocdDirElsMem, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pDirEls == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %lld bytes through mmap()  failed - %s",(int64_t)m_AllocdDirElsMem,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %I64d bytes through mmap()  failed - %s",(int64_t)m_AllocdDirElsMem,strerror(errno));
 		m_pDirEls = NULL;
 		}
 #endif
@@ -633,7 +633,7 @@ else // else opening existing file
 	m_pDirEls = (tsBlockDirEl *)mmap(NULL,(size_t)m_AllocdDirElsMem, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pDirEls == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %lld bytes through mmap()  failed - %s",(int64_t)m_AllocdDirElsMem,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %I64d bytes through mmap()  failed - %s",(int64_t)m_AllocdDirElsMem,strerror(errno));
 		m_pDirEls = NULL;
 		}
 #endif
@@ -1043,7 +1043,7 @@ if((BlockID + 10) > m_NumAllocdDirEls)		// need to realloc the block directory?
 	if(pDirEl == MAP_FAILED)
 		{
 #endif
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"WriteBlock: Memory for block directory reallocation to %lld bytes failed - %s",memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"WriteBlock: Memory for block directory reallocation to %I64d bytes failed - %s",memreq,strerror(errno));
 		return(eBSFerrMem);
 		}
 	m_pDirEls = pDirEl;

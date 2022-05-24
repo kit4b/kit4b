@@ -159,10 +159,10 @@ if (!argerrors)
 		}
 
 	strncpy(szInFile,InFile->filename[0],_MAX_PATH);
-	szInFile[_MAX_PATH] = '\0';
+	szInFile[_MAX_PATH-1] = '\0';
 
 	strncpy(szOutputFile,OutFile->filename[0],_MAX_PATH);
-	szOutputFile[_MAX_PATH] = '\0';
+	szOutputFile[_MAX_PATH-1] = '\0';
 
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Processing parameters:");
 

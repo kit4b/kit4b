@@ -1309,7 +1309,7 @@ m_pScaffoldContigs = (tsPEScaffoldContig *) malloc(memreq);	// initial and perha
 
 if(m_pScaffoldContigs == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %lld bytes for m_pScaffoldContigs - %s",(int64_t)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %I64d bytes for m_pScaffoldContigs - %s",(int64_t)memreq,strerror(errno));
 	Reset();
 	return(eBSFerrMem);
 	}
@@ -1318,7 +1318,7 @@ if(m_pScaffoldContigs == NULL)
 m_pScaffoldContigs = (tsPEScaffoldContig *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pScaffoldContigs == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %lld bytes for m_pScaffoldContigs through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %I64d bytes for m_pScaffoldContigs through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
 	m_pScaffoldContigs = NULL;
 	Reset();
 	return(eBSFerrMem);
@@ -1343,7 +1343,7 @@ m_pScaffolds = (tsPEScaffold *) malloc(memreq);	// initial and perhaps the only 
 
 if(m_pScaffolds == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %lld bytes for m_pScaffolds - %s",(int64_t)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %I64d bytes for m_pScaffolds - %s",(int64_t)memreq,strerror(errno));
 	Reset();
 	return(eBSFerrMem);
 	}
@@ -1352,7 +1352,7 @@ if(m_pScaffolds == NULL)
 m_pScaffolds = (tsPEScaffold *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pScaffolds == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %lld bytes for m_pScaffolds through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %I64d bytes for m_pScaffolds through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
 	m_pScaffolds = NULL;
 	Reset();
 	return(eBSFerrMem);
@@ -1368,7 +1368,7 @@ m_pPEIdents = (tsPEIdent *) malloc(memreq);	// initial and perhaps the only allo
 
 if(m_pPEIdents == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %lld bytes for m_pPEIdents - %s",(int64_t)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %I64d bytes for m_pPEIdents - %s",(int64_t)memreq,strerror(errno));
 	Reset();
 	return(eBSFerrMem);
 	}
@@ -1377,7 +1377,7 @@ if(m_pPEIdents == NULL)
 m_pPEIdents = (tsPEIdent *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pPEIdents == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %lld bytes for m_pPEIdents through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %I64d bytes for m_pPEIdents through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
 	m_pPEIdents = NULL;
 	Reset();
 	return(eBSFerrMem);
@@ -1426,7 +1426,7 @@ if(m_NumScaffolds > 0)
 
 	if(m_ppPE2Scaffolds == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Memory allocation of %lld bytes for m_ppPE2Scaffolds - %s",(int64_t)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Memory allocation of %I64d bytes for m_ppPE2Scaffolds - %s",(int64_t)memreq,strerror(errno));
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -1435,7 +1435,7 @@ if(m_NumScaffolds > 0)
 	m_ppPE2Scaffolds = (tsPEScaffold **)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_ppPE2Scaffolds == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Memory allocation of %lld bytes for m_ppPE2Scaffolds through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Memory allocation of %I64d bytes for m_ppPE2Scaffolds through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
 		m_ppPE2Scaffolds = NULL;
 		Reset();
 		return(eBSFerrMem);

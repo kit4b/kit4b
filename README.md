@@ -58,14 +58,16 @@ Limited documentation is located in the /kit4b/Docs directory
 
 ## Build and installation
 ### Linux
-To build on Ubuntu, clone this repository, run `autoreconf -f -i`, `configure` and `make`. 
+To build on Ubuntu firstly clone this repository. Dependent on your hosting environment it may be neccessary to firstly update the repository 'aclocal.m4' by running 'aclocal'.
 
-The following example will install the **kitb** toolkit processes to a `bin` directory underneath the user's home directory.
+
+The following example, for Ubuntu 18..22.04 LTS, will install the **kitb** toolkit processes to a user created `bin` directory in the user's home directory. It assumes that the Autotools toolchain ('autotools-dev', 'automake' and 'autoconf') have been installed and are accessible to the user. 
 
 ```
 mkdir ~/bin
 git clone https://github.com/kit4b/kit4b.git
 cd kit4b
+aclocal
 autoreconf -f -i
 ./configure --prefix=$HOME
 make install

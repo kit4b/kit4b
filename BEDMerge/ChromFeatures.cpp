@@ -303,7 +303,7 @@ else
 		pFeature = (tsFeatureEl *) malloc(memreq);	// initial and perhaps the only allocation
 		if(pFeature == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddFeature: Memory allocation of %lld bytes - %s",(int64_t)memreq,strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddFeature: Memory allocation of %I64d bytes - %s",(int64_t)memreq,strerror(errno));
 			Reset();
 			return(eBSFerrMem);
 			}
@@ -312,7 +312,7 @@ else
 		pFeature = (tsFeatureEl *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 		if(pFeature == MAP_FAILED)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddFeature: Memory allocation of %lld bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddFeature: Memory allocation of %I64d bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
 			Reset();
 			return(eBSFerrMem);
 			}

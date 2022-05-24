@@ -399,7 +399,7 @@ else
 #endif
 		if(pTmp == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEdges: graph forward edge (%d bytes per edge) re-allocation to %lld edges from %lld failed - %s",
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEdges: graph forward edge (%d bytes per edge) re-allocation to %I64d edges from %I64d failed - %s",
 														(int)sizeof(tsGraphOutEdge),AllocMem,m_AllocGraphOutEdges,AllocEdges,strerror(errno));
 			m_bTerminate = true;
 			ReleaseCASSerialise();
@@ -677,7 +677,7 @@ else
 #endif
 		if(pTmp == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEdge: graph forward edge (%d bytes per edge) re-allocation to %lld edges from %lld failed - %s",
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEdge: graph forward edge (%d bytes per edge) re-allocation to %I64d edges from %I64d failed - %s",
 													(int)sizeof(tsGraphOutEdge),AllocMem,m_AllocGraphOutEdges,AllocEdges,strerror(errno));
 			m_bTerminate = true;
 			ReleaseCASSerialise();
@@ -1420,7 +1420,7 @@ for(VertexIdx = 0; VertexIdx < m_UsedGraphVertices; VertexIdx++, pVertex++)
 		#endif
 			if(pTmp == NULL)
 				{
-				gDiagnostics.DiagOut(eDLFatal,gszProcName,"PushTransitStack: graph Transit stack (%d bytes per entry) re-allocation to %lld from %lld failed - %s",
+				gDiagnostics.DiagOut(eDLFatal,gszProcName,"PushTransitStack: graph Transit stack (%d bytes per entry) re-allocation to %I64d from %I64d failed - %s",
 																	(int)sizeof(tsComponent),m_AllocComponents  + (uint64_t)ReallocComponents,m_AllocComponents,strerror(errno));
 				return(eBSFerrMem);
 				}
@@ -1512,7 +1512,7 @@ else
 	#endif
 		if(pTmp == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"PushTransitStack: graph Transit stack (%d bytes per entry) re-allocation to %lld from %lld failed - %s",
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"PushTransitStack: graph Transit stack (%d bytes per entry) re-allocation to %I64d from %I64d failed - %s",
 																(int)sizeof(tVertID),m_AllocTransitStack  + (uint64_t)ReallocTransitStack,m_AllocTransitStack,strerror(errno));
 			return(eBSFerrMem);
 			}
@@ -2037,7 +2037,7 @@ pComponent = m_pComponents;
 for(ComponentIdx = 0; ComponentIdx < min(50,m_NumComponents); ComponentIdx++,pComponent++)
 	{
 	if(pComponent->NumVertices > 1)
-		gDiagnostics.DiagOut(eDLInfo,gszProcName,"Component: %d Path length: %u Path Vertices: %u Path Score: %llu", pComponent->ComponentID, pComponent->PathLength, pComponent->NumTraceBacks, pComponent->PathScore);
+		gDiagnostics.DiagOut(eDLInfo,gszProcName,"Component: %d Path length: %u Path Vertices: %u Path Score: %I64u", pComponent->ComponentID, pComponent->PathLength, pComponent->NumTraceBacks, pComponent->PathScore);
 
 	}
 

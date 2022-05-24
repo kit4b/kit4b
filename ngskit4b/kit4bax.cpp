@@ -686,7 +686,7 @@ for(CurChromID = 1; CurChromID <= NumSimChroms; CurChromID++)
 	sprintf(szName,"SimChrom%d",CurChromID);
 	if((Rslt=m_pSfxFile->AddEntry(szName,pSeqBuff,(uint32_t)BuffOfs)) < eBSFSuccess)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessSimGenome - adding %s of size %lld (cumulative total bases %lld) error %d %s",szName,BuffOfs,(int64_t)SimGenomeSizebp - RemainingSimGenomeSizebp,Rslt,m_pSfxFile->GetErrMsg());
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessSimGenome - adding %s of size %I64d (cumulative total bases %I64d) error %d %s",szName,BuffOfs,(int64_t)SimGenomeSizebp - RemainingSimGenomeSizebp,Rslt,m_pSfxFile->GetErrMsg());
 		break;
 		}
 	if(!(CurChromID % 1000))

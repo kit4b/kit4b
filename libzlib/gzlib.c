@@ -62,7 +62,7 @@ char ZLIB_INTERNAL *gz_strwinerror (error)
         LocalFree(msgbuf);
     }
     else {
-        sprintf(buf, "unknown win32 error (%lld)", error);
+        sprintf(buf, "unknown win32 error (%I64d)", error);
     }
 
     SetLastError(lasterr);
