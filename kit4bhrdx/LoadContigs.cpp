@@ -128,7 +128,7 @@ if(m_pSeqs2Assemb == NULL)
 	m_pSeqs2Assemb = (uint8_t *) malloc((size_t)m_AllocMemSeqs2Assemb);
 	if(m_pSeqs2Assemb == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadContigs: Concatenated sequences memory allocation of %I64d bytes - %s",(int64_t)m_AllocMemSeqs2Assemb,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadContigs: Concatenated sequences memory allocation of %zd bytes - %s",(int64_t)m_AllocMemSeqs2Assemb,strerror(errno));
 		m_AllocMemConcat = 0;
 		Reset(false);
 		return(eBSFerrMem);
@@ -138,7 +138,7 @@ if(m_pSeqs2Assemb == NULL)
 	m_pSeqs2Assemb = (uint8_t *)mmap(NULL,m_AllocMemSeqs2Assemb, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pSeqs2Assemb == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadContigs: Concatenated sequences memory of %I64d bytes through mmap()  failed - %s",(int64_t)m_AllocMemSeqs2Assemb,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadContigs: Concatenated sequences memory of %zd bytes through mmap()  failed - %s",(int64_t)m_AllocMemSeqs2Assemb,strerror(errno));
 		m_pSeqs2Assemb = NULL;
 		Reset(false);
 		return(eBSFerrMem);
@@ -163,7 +163,7 @@ else
 #endif
 		if(pDstSeq == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddSeq: Memory re-allocation to %I64d bytes - %s",memreq,strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddSeq: Memory re-allocation to %zd bytes - %s",memreq,strerror(errno));
 			return(eBSFerrMem);
 			}
 		m_AllocMemSeqs2Assemb = memreq;
@@ -176,7 +176,7 @@ if(m_AllocMemSeqs2Assemb > m_CurMaxMemWorkSetBytes)
 	{
 	if(!SetMaxMemWorkSetSize(m_AllocMemSeqs2Assemb * 2))
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadContigs: Length of loaded concatenated sequences exceeds limit of %I64d bytes",cMaxConcatSeqLen);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadContigs: Length of loaded concatenated sequences exceeds limit of %zd bytes",cMaxConcatSeqLen);
 		return(eBSFerrMaxDirEls);
 		}
 	}
@@ -250,7 +250,7 @@ while((Rslt = (teBSFrsltCodes)(ReadLen = Fasta.ReadSequence(pRawContigsBuff,cAll
 
 		if(m_Seqs2AssembLen > cMaxConcatSeqLen)			// hit limit?
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadContigs: Length of loaded concatenated sequences exceeds limit of %I64d bytes",cMaxConcatSeqLen);
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadContigs: Length of loaded concatenated sequences exceeds limit of %zd bytes",cMaxConcatSeqLen);
 			Rslt = eBSFerrMaxDirEls;
 			break;
 			}
@@ -460,7 +460,7 @@ while((RdLen = read(m_hInFile,&ReadBuff[BuffLen],sizeof(ReadBuff) - BuffLen)) > 
 			{
 			if(!SetMaxMemWorkSetSize(m_Seqs2AssembLen * 5))
 				{
-				gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadContigs: Length of loaded concatenated sequences exceeds limit of %I64d bytes",cMaxConcatSeqLen);
+				gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadContigs: Length of loaded concatenated sequences exceeds limit of %zd bytes",cMaxConcatSeqLen);
 				Rslt = eBSFerrMaxDirEls;
 				break;
 				}
@@ -471,7 +471,7 @@ while((RdLen = read(m_hInFile,&ReadBuff[BuffLen],sizeof(ReadBuff) - BuffLen)) > 
 		}
 	if(m_RdsSfxHdr.ConcatSeqLen > cMaxConcatSeqLen)			// hit limit?
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadContigs: Loaded length of concatenated sequences exceeds limit of %I64d bytes",cMaxConcatSeqLen);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadContigs: Loaded length of concatenated sequences exceeds limit of %zd bytes",cMaxConcatSeqLen);
 		Rslt = eBSFerrMaxDirEls;
 		break;
 		}
@@ -529,7 +529,7 @@ if(m_pSfxdSeqs == NULL)					// if first time then memory needs to be allocated
 	m_pSfxdSeqs = (tsSfxdSeq *) malloc((size_t)m_AllocdMemSfxdSeqs);
 	if(m_pSfxdSeqs == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenSfxdSeqs: Initial reads memory allocation of %I64d bytes - %s",(int64_t)m_AllocdMemSfxdSeqs,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenSfxdSeqs: Initial reads memory allocation of %zd bytes - %s",(int64_t)m_AllocdMemSfxdSeqs,strerror(errno));
 		Reset(false);
 		return(eBSFerrMem);
 		}
@@ -538,7 +538,7 @@ if(m_pSfxdSeqs == NULL)					// if first time then memory needs to be allocated
 	m_pSfxdSeqs = (tsSfxdSeq *)mmap(NULL,m_AllocdMemSfxdSeqs, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pSfxdSeqs == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEntry: Initial reads memory allocation of %I64d bytes through mmap()  failed - %s",(int64_t)m_AllocdMemSfxdSeqs,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEntry: Initial reads memory allocation of %zd bytes through mmap()  failed - %s",(int64_t)m_AllocdMemSfxdSeqs,strerror(errno));
 		m_pSfxdSeqs = NULL;
 		Reset(false);
 		return(eBSFerrMem);
@@ -576,7 +576,7 @@ if(m_pConcatSeqs == NULL)
 	m_pConcatSeqs = (uint8_t *) malloc((size_t)m_AllocMemConcat);
 	if(m_pConcatSeqs == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenSfxdSeqs: Concatenated sequences memory allocation of %I64d bytes - %s",(int64_t)m_AllocMemConcat,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenSfxdSeqs: Concatenated sequences memory allocation of %zd bytes - %s",(int64_t)m_AllocMemConcat,strerror(errno));
 		m_AllocMemConcat = 0;
 		Reset(false);
 		return(eBSFerrMem);
@@ -586,7 +586,7 @@ if(m_pConcatSeqs == NULL)
 	m_pConcatSeqs = (uint8_t *)mmap(NULL,m_AllocMemConcat, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pConcatSeqs == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenSfxdSeqs: Concatenated sequences memory of %I64d bytes through mmap()  failed - %s",(int64_t)m_AllocMemConcat,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenSfxdSeqs: Concatenated sequences memory of %zd bytes through mmap()  failed - %s",(int64_t)m_AllocMemConcat,strerror(errno));
 		m_pConcatSeqs = NULL;
 		Reset(false);
 		return(eBSFerrMem);
@@ -657,7 +657,7 @@ for(SeqIdx = 0; SeqIdx < m_NumSeqs2Assemb; SeqIdx++)
 
 	if(m_RdsSfxHdr.ConcatSeqLen > cMaxConcatSeqLen)
 		{
-		gDiagnostics.DiagOut(eDLWarn,gszProcName,"GenSfxdSeqs: Reached concatenated sequence size limit of %I64d index elements",cMaxConcatSeqLen);
+		gDiagnostics.DiagOut(eDLWarn,gszProcName,"GenSfxdSeqs: Reached concatenated sequence size limit of %zd index elements",cMaxConcatSeqLen);
 		return(eBSFerrMaxEntries);
 		}
 	}
@@ -693,7 +693,7 @@ if(m_pSeqs2Assemb == NULL)
 	m_pSeqs2Assemb = (uint8_t *) malloc((size_t)m_AllocMemSeqs2Assemb);
 	if(m_pSeqs2Assemb == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadContigs: Concatenated sequences memory allocation of %I64d bytes - %s",(int64_t)m_AllocMemSeqs2Assemb,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadContigs: Concatenated sequences memory allocation of %zd bytes - %s",(int64_t)m_AllocMemSeqs2Assemb,strerror(errno));
 		m_AllocMemConcat = 0;
 		Reset(false);
 		return(eBSFerrMem);
@@ -703,7 +703,7 @@ if(m_pSeqs2Assemb == NULL)
 	m_pSeqs2Assemb = (uint8_t *)mmap(NULL,m_AllocMemSeqs2Assemb, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pSeqs2Assemb == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadContigs: Concatenated sequences memory of %I64d bytes through mmap()  failed - %s",(int64_t)m_AllocMemSeqs2Assemb,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadContigs: Concatenated sequences memory of %zd bytes through mmap()  failed - %s",(int64_t)m_AllocMemSeqs2Assemb,strerror(errno));
 		m_pSeqs2Assemb = NULL;
 		Reset(false);
 		return(eBSFerrMem);
@@ -725,7 +725,7 @@ if((m_Seqs2AssembLen + SeqLen + 100) >= m_AllocMemSeqs2Assemb)		// 100 as a smal
 #endif
 	if(pDstSeq == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddSeq: Memory re-allocation to %I64d bytes - %s",memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddSeq: Memory re-allocation to %zd bytes - %s",memreq,strerror(errno));
 		return(eBSFerrMem);
 		}
 	m_AllocMemSeqs2Assemb = memreq;
@@ -757,7 +757,7 @@ ElSize = sizeof(uint32_t);
 if(MaxSuffixEls > cMaxSfxBlkEls)
 	ElSize += 1;
 
-gDiagnostics.DiagOut(eDLInfo,gszProcName,"GenRdsSfx: Now generating suffix array with %I64d index elements size %d bytes..",MaxSuffixEls,ElSize);
+gDiagnostics.DiagOut(eDLInfo,gszProcName,"GenRdsSfx: Now generating suffix array with %zd index elements size %d bytes..",MaxSuffixEls,ElSize);
 
 size_t ReqAllocMem;
 ReqAllocMem = (size_t)((MaxSuffixEls + 10) * (int64_t)ElSize);
@@ -768,7 +768,7 @@ if(m_pSuffixArray == NULL || m_AllocMemSfx == 0)
 	m_pSuffixArray = (uint32_t *) malloc((size_t)m_AllocMemSfx);
 	if(m_pSuffixArray == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenRdsSfx: Suffix array memory allocation of %I64d bytes - %s",(int64_t)m_AllocMemSfx,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenRdsSfx: Suffix array memory allocation of %zd bytes - %s",(int64_t)m_AllocMemSfx,strerror(errno));
 		m_AllocMemSfx = 0;
 		Reset(false);
 		return(eBSFerrMem);
@@ -778,7 +778,7 @@ if(m_pSuffixArray == NULL || m_AllocMemSfx == 0)
 	m_pSuffixArray = (uint32_t *)mmap(NULL,m_AllocMemSfx, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pSuffixArray == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenRdsSfx: Suffix array memory allocation of %I64d bytes through mmap()  failed - %s",(int64_t)m_AllocMemSfx,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenRdsSfx: Suffix array memory allocation of %zd bytes through mmap()  failed - %s",(int64_t)m_AllocMemSfx,strerror(errno));
 		m_pSuffixArray = NULL;
 		m_AllocMemSfx = 0;
 		Reset(false);
@@ -802,7 +802,7 @@ else
 #endif
 		if(pTmp == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenRdsSfx: Memory re-allocation to %I64d bytes - %s",ReqAllocMem,strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenRdsSfx: Memory re-allocation to %zd bytes - %s",ReqAllocMem,strerror(errno));
 			return(eBSFerrMem);
 			}
 		m_AllocMemSfx = ReqAllocMem;
@@ -859,7 +859,7 @@ CHomozyReduce::ChunkedWrite(int hFile,char *pszFile,int64_t WrtOfs,uint8_t *pDat
 int BlockLen;
 if(_lseeki64(hFile,WrtOfs,SEEK_SET) != WrtOfs)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to seek to %I64d on file %s - error %s",WrtOfs,pszFile,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to seek to %zd on file %s - error %s",WrtOfs,pszFile,strerror(errno));
 	return(eBSFerrFileAccess);
 	}
 
@@ -893,7 +893,7 @@ CHomozyReduce::ChunkedRead(int hFile,char *pszFile,int64_t RdOfs,uint8_t *pData,
 int BlockLen;
 if(_lseeki64(hFile,RdOfs,SEEK_SET) != RdOfs)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to seek to %I64d on file - error %s",RdOfs,pszFile,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to seek to %zd on file - error %s",RdOfs,pszFile,strerror(errno));
 	return(eBSFerrFileAccess);
 	}
 

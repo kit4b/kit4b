@@ -1301,7 +1301,7 @@ if(m_ppReadsIdx == NULL)
 	m_ppReadsIdx = (tsRawReadV6 **) malloc((size_t)memreq);
 	if(m_ppReadsIdx == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Reads Idx: Memory allocation of %I64d bytes failed",(int64_t)memreq);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Reads Idx: Memory allocation of %zd bytes failed",(int64_t)memreq);
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -1310,7 +1310,7 @@ if(m_ppReadsIdx == NULL)
 	m_ppReadsIdx = (tsRawReadV6 **)mmap(NULL,(size_t)memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_ppReadsIdx == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEntry: Memory allocation of %I64d bytes through mmap()  failed",(int64_t)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEntry: Memory allocation of %zd bytes through mmap()  failed",(int64_t)memreq,strerror(errno));
 		m_ppReadsIdx = NULL;
 		Reset();
 		return(eBSFerrMem);
@@ -1534,7 +1534,7 @@ if(m_ppReadsIdx == NULL)
 	m_ppReadsIdx = (tsRawReadV6 **) malloc((size_t)memreq);
 	if(m_ppReadsIdx == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Reads Idx: Memory allocation of %I64d bytes failed",(int64_t)memreq);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Reads Idx: Memory allocation of %zd bytes failed",(int64_t)memreq);
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -1543,7 +1543,7 @@ if(m_ppReadsIdx == NULL)
 	m_ppReadsIdx = (tsRawReadV6 **)mmap(NULL,(size_t)memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_ppReadsIdx == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEntry: Memory allocation of %I64d bytes through mmap()  failed",(int64_t)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEntry: Memory allocation of %zd bytes through mmap()  failed",(int64_t)memreq,strerror(errno));
 		m_ppReadsIdx = NULL;
 		Reset();
 		return(eBSFerrMem);
@@ -1925,7 +1925,7 @@ if(m_pDataBuff == NULL)
 	m_pDataBuff = (uint8_t *) malloc((size_t)memreq);
 	if(m_pDataBuff == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEntry: Memory allocation of %I64d bytes failed",(int64_t)memreq);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEntry: Memory allocation of %zd bytes failed",(int64_t)memreq);
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -1934,7 +1934,7 @@ if(m_pDataBuff == NULL)
 	m_pDataBuff = (uint8_t *)mmap(NULL,(size_t)memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pDataBuff == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEntry: Memory allocation of %I64d bytes through mmap()  failed",(int64_t)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEntry: Memory allocation of %zd bytes through mmap()  failed",(int64_t)memreq,strerror(errno));
 		m_pDataBuff = NULL;
 		Reset();
 		return(eBSFerrMem);
@@ -1957,7 +1957,7 @@ if((m_DataBuffAllocMem - m_DataBuffOfs) < (sizeof(tsRawReadV6) +  ReadLen + Desc
 #endif
 	if(pTmpAlloc == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEntry: Memory reallocation to %I64d bytes failed - %s",memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEntry: Memory reallocation to %zd bytes failed - %s",memreq,strerror(errno));
 		Reset();
 		return(eBSFerrMem);
 		}

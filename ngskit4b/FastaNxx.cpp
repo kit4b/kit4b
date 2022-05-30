@@ -706,7 +706,7 @@ gDiagnostics.DiagOut(eDLInfo,gszProcName,"Sequences loaded %d of which %d were p
 					NumProcessed,NumAccepted,NumUnderLen,NumOverLen);
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Maximum length sequence loaded and accepted for processing was %d bp",MaxLengthRead);
 if(NumAccepted > 0)
-	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Total length of all accepted sequences was %I64d bp with mean length %d",m_TotLenCovered,m_TotLenCovered/NumAccepted);
+	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Total length of all accepted sequences was %zd bp with mean length %d",m_TotLenCovered,m_TotLenCovered/NumAccepted);
 if(MaxLengthRead > m_MaxLengthRead)
 	m_MaxLengthRead = MaxLengthRead;
 return(Rslt);
@@ -909,7 +909,7 @@ if(Mode == ePMdefault)
 			m_pBins[min(*pCnts / BinDelta,NumBins)] += 1;
 		}	
 
-	gDiagnostics.DiagOut(eDLInfo,gszProcName,"  Total sequence length over accepted contigs: %I64d",SumCtgLens);
+	gDiagnostics.DiagOut(eDLInfo,gszProcName,"  Total sequence length over accepted contigs: %zd",SumCtgLens);
 
 	if(m_pBins != NULL)
 		{

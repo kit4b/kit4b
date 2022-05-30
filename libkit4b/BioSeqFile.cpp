@@ -972,7 +972,7 @@ else
 
 if(DataPsn != _lseeki64(m_hFile,DataPsn,SEEK_SET))
 	{
-	AddErrMsg("CBioSeqFile::GetData","Seek failed to offset %I64d on %s- %s",DataPsn,m_szFile,strerror(errno));
+	AddErrMsg("CBioSeqFile::GetData","Seek failed to offset %zd on %s- %s",DataPsn,m_szFile,strerror(errno));
 	return(eBSFerrFileAccess);
 	}
 if(ReqDataType == pEntry->DType)
@@ -1283,7 +1283,7 @@ if(m_DataBuffLen >= cBSFDataBuffSize || (m_DataBuffLen >= 1 && (PackedLen > (cBS
 		m_DataBuffLen -= 1;
 	if(m_DataWrtPsn != _lseeki64(m_hFile,m_DataWrtPsn,SEEK_SET))
 		{
-		AddErrMsg("CBioSeqFile::AddData","Seek to %I64d on %s - %s",m_DataWrtPsn,m_szFile,strerror(errno));
+		AddErrMsg("CBioSeqFile::AddData","Seek to %zd on %s - %s",m_DataWrtPsn,m_szFile,strerror(errno));
 		return(eBSFerrFileAccess);
 		}
 	if((BlockLen = write(m_hFile,m_pDataBuff,m_DataBuffLen))!= m_DataBuffLen)
@@ -1336,7 +1336,7 @@ if(m_DataBuffLen != 0)
 	// write out data sitting in buffer
 	if(m_DataWrtPsn != _lseeki64(m_hFile,m_DataWrtPsn,SEEK_SET))
 		{
-		AddErrMsg("CBioSeqFile::SealEntry","Seek to %I64d on %s - %s",m_DataWrtPsn,m_szFile,strerror(errno));
+		AddErrMsg("CBioSeqFile::SealEntry","Seek to %zd on %s - %s",m_DataWrtPsn,m_szFile,strerror(errno));
 		return(eBSFerrFileAccess);
 		}
 	

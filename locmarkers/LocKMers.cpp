@@ -605,7 +605,7 @@ tsSfxHeaderV3 SfxHeader;
 m_pSfxArray->GetSfxHeader(&SfxHeader);
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Psuedo-assembly Name: '%s' Descr: '%s' Title: '%s' Version: %d",
 					 m_szDataset,SfxHeader.szDescription,SfxHeader.szTitle,SfxHeader.Version);
-gDiagnostics.DiagOut(eDLInfo,gszProcName,"Assembly has blocks: %d, max block size: %I64u",SfxHeader.NumSfxBlocks,SfxHeader.SfxBlockSize);
+gDiagnostics.DiagOut(eDLInfo,gszProcName,"Assembly has blocks: %d, max block size: %zu",SfxHeader.NumSfxBlocks,SfxHeader.SfxBlockSize);
 
 // ensure assembly and suffix array has been fully loaded into memory 
 int CurBlockID = 1;		// currently only single block supported
@@ -741,7 +741,7 @@ for(ThreadIdx = 0; ThreadIdx < m_NumThreads; ThreadIdx++)
 
 // let user know that this K-mer processing process is working hard...
 NumAcceptedExtdKMers = GetKMerProcProgress(&NumBlocks,&NumKMers,&NumPutativeKMers, &NumAcceptedKMers);
-gDiagnostics.DiagOut(eDLInfo,gszProcName,"Progress - K-Mers processed: %I64d, Cultivar specific : %u, Hamming retained: %u, Extended: %u",NumKMers,NumPutativeKMers, NumAcceptedKMers,NumAcceptedExtdKMers);
+gDiagnostics.DiagOut(eDLInfo,gszProcName,"Progress - K-Mers processed: %zd, Cultivar specific : %u, Hamming retained: %u, Extended: %u",NumKMers,NumPutativeKMers, NumAcceptedKMers,NumAcceptedExtdKMers);
 
 // wait for all threads to have completed
 for(ThreadIdx = 0; ThreadIdx < m_NumThreads; ThreadIdx++)
@@ -750,7 +750,7 @@ for(ThreadIdx = 0; ThreadIdx < m_NumThreads; ThreadIdx++)
 	while(WAIT_TIMEOUT == WaitForSingleObject( WorkerThreads[ThreadIdx].threadHandle, 60000))
 		{
 		NumAcceptedExtdKMers = GetKMerProcProgress(&NumBlocks,&NumKMers,&NumPutativeKMers, &NumAcceptedKMers);
-		gDiagnostics.DiagOut(eDLInfo,gszProcName,"Progress - K-Mers processed: %I64d, Cultivar specific : %u, Hamming retained: %u, Extended: %u",NumKMers,NumPutativeKMers, NumAcceptedKMers,NumAcceptedExtdKMers);
+		gDiagnostics.DiagOut(eDLInfo,gszProcName,"Progress - K-Mers processed: %zd, Cultivar specific : %u, Hamming retained: %u, Extended: %u",NumKMers,NumPutativeKMers, NumAcceptedKMers,NumAcceptedExtdKMers);
 		}
 	CloseHandle( WorkerThreads[ThreadIdx].threadHandle);
 #else
@@ -761,7 +761,7 @@ for(ThreadIdx = 0; ThreadIdx < m_NumThreads; ThreadIdx++)
 	while((JoinRlt = pthread_timedjoin_np(WorkerThreads[ThreadIdx].threadID, NULL, &ts)) != 0)
 		{
 		NumAcceptedExtdKMers = GetKMerProcProgress(&NumBlocks,&NumKMers,&NumPutativeKMers, &NumAcceptedKMers);
-		gDiagnostics.DiagOut(eDLInfo,gszProcName,"Progress - K-Mers processed: %I64d, Cultivar specific : %u, Hamming retained: %u, Extended: %u",NumKMers,NumPutativeKMers, NumAcceptedKMers,NumAcceptedExtdKMers);
+		gDiagnostics.DiagOut(eDLInfo,gszProcName,"Progress - K-Mers processed: %zd, Cultivar specific : %u, Hamming retained: %u, Extended: %u",NumKMers,NumPutativeKMers, NumAcceptedKMers,NumAcceptedExtdKMers);
 		ts.tv_sec += 60;
 		}
 #endif
@@ -773,7 +773,7 @@ for(ThreadIdx = 0; ThreadIdx < m_NumThreads; ThreadIdx++)
 	}
 
 NumAcceptedExtdKMers = GetKMerProcProgress(&NumBlocks,&NumKMers,&NumPutativeKMers, &NumAcceptedKMers);
-gDiagnostics.DiagOut(eDLInfo,gszProcName,"Completed - K-Mers processed: %I64d, Cultivar specific : %u, Hamming retained: %u, Extended: %u",NumKMers,NumPutativeKMers, NumAcceptedKMers,NumAcceptedExtdKMers);
+gDiagnostics.DiagOut(eDLInfo,gszProcName,"Completed - K-Mers processed: %zd, Cultivar specific : %u, Hamming retained: %u, Extended: %u",NumKMers,NumPutativeKMers, NumAcceptedKMers,NumAcceptedExtdKMers);
 
 if(m_hOutFile != -1)
 	{

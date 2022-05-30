@@ -790,7 +790,7 @@ bRslt = SetProcessWorkingSetSize(hProcess,ReqMinSize,ReqMaxSize);	// can only bu
 
 if(bRslt == false && (m_WorkingSetSizeRejected++ > 5))
 	{
-	gDiagnostics.DiagOut(eDLWarn,gszProcName,"SetMaxMemWorkSetSize: unable to SetProcessWorkingSetSize for min %I64d max %I64d bytes (page size is %d)",
+	gDiagnostics.DiagOut(eDLWarn,gszProcName,"SetMaxMemWorkSetSize: unable to SetProcessWorkingSetSize for min %zd max %zd bytes (page size is %d)",
 					ReqMinSize,ReqMaxSize,m_WinPageSize);
 	}
 if(bRslt)
@@ -919,7 +919,7 @@ if(PPCRdsHdr.Version < cPPCRdsFileVersionBack || PPCRdsHdr.Version > cPPCRdsFile
 // quick check that file is of expected size
 if(_lseeki64(hInSeqTypesFile,PPCRdsHdr.FileSize,SEEK_SET) != PPCRdsHdr.FileSize)			
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"DumpHeader: Expected file to be of size %I64d but seek failed '%s' - %s",PPCRdsHdr.FileSize,pszTypeSeqFile,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"DumpHeader: Expected file to be of size %zd but seek failed '%s' - %s",PPCRdsHdr.FileSize,pszTypeSeqFile,strerror(errno));
 	close(hInSeqTypesFile);			// closes opened file..
 	return(eBSFerrFileAccess);
 	}
@@ -930,7 +930,7 @@ if(DiagLevel >= eDLDiag)
 	BuffIdx = sprintf(szHeader,"\tHeader length: %d\n",cSizeofPPCRdsFileHdr);
 	BuffIdx += sprintf(&szHeader[BuffIdx],"\tMagic [0] %c [1] %c [2] %c [3] %c\n", (char)PPCRdsHdr.Magic[0], (char)PPCRdsHdr.Magic[1],(char)PPCRdsHdr.Magic[2],(char)PPCRdsHdr.Magic[3]);
 #ifdef _WIN32
-	BuffIdx += sprintf(&szHeader[BuffIdx],"\tVersion: %u, FileSize: %I64u, NumRawFiles: %d\n",PPCRdsHdr.Version,PPCRdsHdr.FileSize,PPCRdsHdr.NumRawFiles);
+	BuffIdx += sprintf(&szHeader[BuffIdx],"\tVersion: %u, FileSize: %zu, NumRawFiles: %d\n",PPCRdsHdr.Version,PPCRdsHdr.FileSize,PPCRdsHdr.NumRawFiles);
 #else
 	BuffIdx += sprintf(&szHeader[BuffIdx],"\tVersion: %u, FileSize: %lu, NumRawFiles: %d\n",PPCRdsHdr.Version,PPCRdsHdr.FileSize,PPCRdsHdr.NumRawFiles);
 #endif
@@ -946,7 +946,7 @@ if(DiagLevel >= eDLDiag)
 										PPCRdsHdr.Sequences.SfxSparsity,PPCRdsHdr.Sequences.SeqWrdBytes,PPCRdsHdr.Sequences.SeqHdrLen,PPCRdsHdr.Sequences.TotSeqsParsed,PPCRdsHdr.Sequences.TotSeqsUnderLen,PPCRdsHdr.Sequences.TotSeqsExcessNs);
 	printf("\nFile Header Dump\n%s",szHeader);
 #ifdef _WIN32
-	printf("\n\tSeqWrdBytes: %d, SeqHdrLen: %d\n\tTotSeqs2Assemb: %u, NumSeqs2Assemb: %u, Seqs2AssembLen: %I64d\n\tMeanSeqLen: %1.1f, MinSeqLen: %d, MaxSeqLen: %d\n\n",
+	printf("\n\tSeqWrdBytes: %d, SeqHdrLen: %d\n\tTotSeqs2Assemb: %u, NumSeqs2Assemb: %u, Seqs2AssembLen: %zd\n\tMeanSeqLen: %1.1f, MinSeqLen: %d, MaxSeqLen: %d\n\n",
 #else
 	printf("\n\tSeqWrdBytes: %d, SeqHdrLen: %d\n\tTotSeqs2Assemb: %u, NumSeqs2Assemb: %u, Seqs2AssembLen: %ld\n\tMeanSeqLen: %1.1f, MinSeqLen: %d, MaxSeqLen: %d\n\n",
 #endif
@@ -1023,7 +1023,7 @@ if(PPCRdsHdr.Version < cPPCRdsFileVersionBack || PPCRdsHdr.Version > cPPCRdsFile
 // quick check that file is of expected size
 if(_lseeki64(m_hInSeqTypesFile,PPCRdsHdr.FileSize,SEEK_SET) != PPCRdsHdr.FileSize)			
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadPackedSeqsFromFile: Expected file to be of size %I64d but seek failed '%s' - %s",PPCRdsHdr.FileSize,pszTypeSeqFile,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadPackedSeqsFromFile: Expected file to be of size %zd but seek failed '%s' - %s",PPCRdsHdr.FileSize,pszTypeSeqFile,strerror(errno));
 	Reset(false);			// closes opened file..
 	return(eBSFerrFileAccess);
 	}
@@ -1049,7 +1049,7 @@ if(CurWorkSetSize != m_CurMaxMemWorkSetBytes)
 	{
 	if(!SetMaxMemWorkSetSize((size_t)CurWorkSetSize))
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadPackedSeqsFromFile: Unable to set maximum working set size (bytes) to %I64d bytes",m_CurMaxMemWorkSetBytes);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadPackedSeqsFromFile: Unable to set maximum working set size (bytes) to %zd bytes",m_CurMaxMemWorkSetBytes);
 		Reset(false);
 		return(eBSFerrMaxDirEls);
 		}
@@ -1099,14 +1099,14 @@ if(FileOfs == 0 || AllocBlockSize == 0 || ppLoadedBlock == NULL || pAllocBlockSi
 *ppLoadedBlock = (void *) malloc((size_t)AllocBlockSize);	
 if(*ppLoadedBlock == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocLoadBlock: array memory allocation of %I64u bytes - %s",AllocBlockSize,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocLoadBlock: array memory allocation of %zu bytes - %s",AllocBlockSize,strerror(errno));
 	Reset(false);
 	return(eBSFerrMem);
 	}
 #else
 if((*ppLoadedBlock = (void *)mmap(NULL,AllocBlockSize, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0)) == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocLoadBlock: array memory allocation of %I64u bytes through mmap()  failed - %s",AllocBlockSize,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocLoadBlock: array memory allocation of %zu bytes through mmap()  failed - %s",AllocBlockSize,strerror(errno));
 	*ppLoadedBlock = NULL;
 	*pAllocBlockSize = 0;
 	Reset(false);
@@ -1209,7 +1209,7 @@ if(ReqAllocSize < 1)
 	}
 if((uint64_t)SizeT != ReqAllocSize)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocSeqs2AssembMem: Requested allocation of %I64d too large for 32bit application",ReqAllocSize);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocSeqs2AssembMem: Requested allocation of %zd too large for 32bit application",ReqAllocSize);
 	Reset(false);
 	return(eBSFerrParams);
 	}
@@ -1234,14 +1234,14 @@ if(m_Sequences.pSeqs2Assemb == NULL)
 	m_Sequences.pSeqs2Assemb = malloc((size_t)m_Sequences.AllocMemSeqs2Assemb);	
 	if(m_Sequences.pSeqs2Assemb == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocSeqs2AssembMem: Concatenated packed sequences memory allocation of %I64u bytes - %s",m_Sequences.AllocMemSeqs2Assemb,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocSeqs2AssembMem: Concatenated packed sequences memory allocation of %zu bytes - %s",m_Sequences.AllocMemSeqs2Assemb,strerror(errno));
 		Reset(false);
 		return(eBSFerrMem);
 		}
 #else
 	if((m_Sequences.pSeqs2Assemb = (void *)mmap(NULL,m_Sequences.AllocMemSeqs2Assemb, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0)) == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocSeqs2AssembMem: Concatenated packed sequences memory of %I64u bytes through mmap()  failed - %s",m_Sequences.AllocMemSeqs2Assemb,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocSeqs2AssembMem: Concatenated packed sequences memory of %zu bytes through mmap()  failed - %s",m_Sequences.AllocMemSeqs2Assemb,strerror(errno));
 		m_Sequences.pSeqs2Assemb = NULL;
 		Reset(false);
 		return(eBSFerrMem);
@@ -1296,14 +1296,14 @@ if(m_pBlockNsLoci == NULL)
 	m_pBlockNsLoci = (tsBlockNsLoci *)malloc(m_AllocdBlockNsLociSize);	
 	if(m_pBlockNsLoci == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocBlockNsLoci: memory allocation of %I64u bytes - %s",m_AllocdBlockNsLociSize,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocBlockNsLoci: memory allocation of %zu bytes - %s",m_AllocdBlockNsLociSize,strerror(errno));
 		Reset(false);
 		return(eBSFerrMem);
 		}
 #else
 	if((m_pBlockNsLoci = (tsBlockNsLoci *)mmap(NULL,m_AllocdBlockNsLociSize, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0)) == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocBlockNsLoci: memory of %I64u bytes through mmap()  failed - %s",m_AllocdBlockNsLociSize,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocBlockNsLoci: memory of %zu bytes through mmap()  failed - %s",m_AllocdBlockNsLociSize,strerror(errno));
 		m_pBlockNsLoci = NULL;
 		Reset(false);
 		return(eBSFerrMem);
@@ -2147,7 +2147,7 @@ if(CurWorkSetSize != m_CurMaxMemWorkSetBytes)
 	{
 	if(!SetMaxMemWorkSetSize((size_t)CurWorkSetSize))
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadRawReads: Unable to set maximum working set size (bytes) to %I64d bytes",CurWorkSetSize);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadRawReads: Unable to set maximum working set size (bytes) to %zd bytes",CurWorkSetSize);
 		FastaPE1.Close();
 		if(m_Sequences.bPESeqs)
 			FastaPE2.Close();
@@ -2642,7 +2642,7 @@ if(CurWorkSetSize != m_CurMaxMemWorkSetBytes)
 	{
 	if(!SetMaxMemWorkSetSize((size_t)CurWorkSetSize))
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadRawReads: Unable to set maximum working set size (bytes) to %I64d bytes",CurWorkSetSize);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadRawReads: Unable to set maximum working set size (bytes) to %zd bytes",CurWorkSetSize);
 		FastaPE1.Close();
 		delete pPE1RawReadsBuff;
 		delete pszPE1QScoresBuff;
@@ -3064,7 +3064,7 @@ while((Rslt = (teBSFrsltCodes)(PE1ReadLen = FastaPE1.ReadSequence(pPE1RawReadsBu
 
 		if((m_Sequences.Seqs2AssembOfs * m_Sequences.SeqWrdBytes) > cMaxConcatSeqLen)			// hit limit?
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Total length of loaded concatenated and packed sequences exceeds limit of %I64d bytes",cMaxConcatSeqLen);
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Total length of loaded concatenated and packed sequences exceeds limit of %zd bytes",cMaxConcatSeqLen);
 			Rslt = eBSFerrMaxDirEls;
 			break;
 			}
@@ -3337,7 +3337,7 @@ if(CurWorkSetSize != m_CurMaxMemWorkSetBytes)
 	{
 	if(!SetMaxMemWorkSetSize((size_t)CurWorkSetSize))
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadSeedPEs: Unable to set maximum working set size (bytes) to %I64d bytes",CurWorkSetSize);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadSeedPEs: Unable to set maximum working set size (bytes) to %zd bytes",CurWorkSetSize);
 		FastaPE1.Close();
 		delete pPE1RawReadsBuff;
 		if(pPE2RawReadsBuff)
@@ -3553,7 +3553,7 @@ while((Rslt = (teBSFrsltCodes)(PE1ReadLen = FastaPE1.ReadSequence(pPE1RawReadsBu
 
 		if((m_Sequences.Seqs2AssembOfs * m_Sequences.SeqWrdBytes) > cMaxConcatSeqLen)			// hit limit?
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadSeedPEs: Total length of loaded concatenated and packed sequences exceeds limit of %I64d bytes",cMaxConcatSeqLen);
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadSeedPEs: Total length of loaded concatenated and packed sequences exceeds limit of %zd bytes",cMaxConcatSeqLen);
 			Rslt = eBSFerrMaxDirEls;
 			break;
 			}
@@ -3724,7 +3724,7 @@ if(CurWorkSetSize != m_CurMaxMemWorkSetBytes)
 	{
 	if(!SetMaxMemWorkSetSize((size_t)CurWorkSetSize))
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadSeedContigs: Unable to set maximum working set size (bytes) to %I64d bytes",CurWorkSetSize);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadSeedContigs: Unable to set maximum working set size (bytes) to %zd bytes",CurWorkSetSize);
 		Fasta.Close();
 		delete pRawContigsBuff;
 		Reset(false);
@@ -3870,7 +3870,7 @@ while((Rslt = (teBSFrsltCodes)(ContigLen = Fasta.ReadSequence(pRawContigsBuff,cM
 		
 		if((m_Sequences.Seqs2AssembOfs * m_Sequences.SeqWrdBytes) > cMaxConcatSeqLen)			// hit limit?
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadSeedContigs: Total length of loaded concatenated and packed sequences exceeds limit of %I64d bytes",cMaxConcatSeqLen);
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadSeedContigs: Total length of loaded concatenated and packed sequences exceeds limit of %zd bytes",cMaxConcatSeqLen);
 			Rslt = eBSFerrMaxDirEls;
 			break;
 			}
@@ -5227,7 +5227,7 @@ pSeqWord = (tSeqWrd4 *)m_Sequences.pSeqs2Assemb;
 SeqWord = *pSeqWord++;
 if(SeqWord != cSeqWrd4BOS)
 	{
-	gDiagnostics.DiagOut(eDLInfo,gszProcName,"ValidateSeqs2AssembStarts: Problem at word %I64u, expected %u instead read %u ...",0,SeqWord,cSeqWrd4BOS);
+	gDiagnostics.DiagOut(eDLInfo,gszProcName,"ValidateSeqs2AssembStarts: Problem at word %zu, expected %u instead read %u ...",0,SeqWord,cSeqWrd4BOS);
 	return(0);
 	}
 
@@ -5249,7 +5249,7 @@ for(SeqWrdIdx = 1; SeqWrdIdx <= m_Sequences.Seqs2AssembOfs; SeqWrdIdx++)
 		{
 		if(SeqWrdIdx != m_Sequences.Seqs2AssembOfs)
 			{
-			gDiagnostics.DiagOut(eDLInfo,gszProcName,"ValidateSeqs2AssembStarts: Problem at word %I64u, unexpected %u ...",SeqWrdIdx,cSeqWrd4EOS);
+			gDiagnostics.DiagOut(eDLInfo,gszProcName,"ValidateSeqs2AssembStarts: Problem at word %zu, unexpected %u ...",SeqWrdIdx,cSeqWrd4EOS);
 			return(0);
 			}
 		continue;
@@ -5267,7 +5267,7 @@ for(SeqWrdIdx = 1; SeqWrdIdx <= m_Sequences.Seqs2AssembOfs; SeqWrdIdx++)
 						false);			// set true if access to headers are required to be serialised
 
 				if(SeqID != PrevSeqID + 1)
-					gDiagnostics.DiagOut(eDLInfo,gszProcName,"ValidateSeqs2AssembStarts: Problem at SeqID: %u, word %I64u, expected %u for the SeqID...",SeqID,SeqWrdIdx,PrevSeqID+1);
+					gDiagnostics.DiagOut(eDLInfo,gszProcName,"ValidateSeqs2AssembStarts: Problem at SeqID: %u, word %zu, expected %u for the SeqID...",SeqID,SeqWrdIdx,PrevSeqID+1);
 
 				if(!bNoTypes)
 					{
@@ -5275,7 +5275,7 @@ for(SeqWrdIdx = 1; SeqWrdIdx <= m_Sequences.Seqs2AssembOfs; SeqWrdIdx++)
 						case 0:				// 0 if SE
 							if(ExpectType == 0)
 								break;
-							gDiagnostics.DiagOut(eDLInfo,gszProcName,"ValidateSeqs2AssembStarts: Problem at SeqID: %u, word %I64u, expected PE2 instead processed SE ...",SeqID,SeqWrdIdx);
+							gDiagnostics.DiagOut(eDLInfo,gszProcName,"ValidateSeqs2AssembStarts: Problem at SeqID: %u, word %zu, expected PE2 instead processed SE ...",SeqID,SeqWrdIdx);
 							bNoTypes = true;
 							break;
 						case 1:				// 1 if PE R1
@@ -5284,7 +5284,7 @@ for(SeqWrdIdx = 1; SeqWrdIdx <= m_Sequences.Seqs2AssembOfs; SeqWrdIdx++)
 								ExpectType = 1; // will be expecting the PE2 next
 								break;
 								}
-							gDiagnostics.DiagOut(eDLInfo,gszProcName,"ValidateSeqs2AssembStarts: Problem at SeqID: %u, word %I64u, expected PE2 instead processed PE1 ...",SeqID,SeqWrdIdx);
+							gDiagnostics.DiagOut(eDLInfo,gszProcName,"ValidateSeqs2AssembStarts: Problem at SeqID: %u, word %zu, expected PE2 instead processed PE1 ...",SeqID,SeqWrdIdx);
 							bNoTypes = true;
 							break;
 
@@ -5294,12 +5294,12 @@ for(SeqWrdIdx = 1; SeqWrdIdx <= m_Sequences.Seqs2AssembOfs; SeqWrdIdx++)
 								ExpectType = 0; // will be expecting a SE or PE1 next
 								break;
 								}
-							gDiagnostics.DiagOut(eDLInfo,gszProcName,"ValidateSeqs2AssembStarts: Problem at SeqID: %u, word %I64u, expected SE or PE1 instead processed PE2 ...",SeqID,SeqWrdIdx);
+							gDiagnostics.DiagOut(eDLInfo,gszProcName,"ValidateSeqs2AssembStarts: Problem at SeqID: %u, word %zu, expected SE or PE1 instead processed PE2 ...",SeqID,SeqWrdIdx);
 							bNoTypes = true;
 							break;
 
 						case 2:				// unexpected!
-							gDiagnostics.DiagOut(eDLInfo,gszProcName,"ValidateSeqs2AssembStarts: Problem at SeqID: %u, word %I64u, expected sequence type ...",SeqID,SeqWrdIdx);
+							gDiagnostics.DiagOut(eDLInfo,gszProcName,"ValidateSeqs2AssembStarts: Problem at SeqID: %u, word %zu, expected sequence type ...",SeqID,SeqWrdIdx);
 							bNoTypes = true;
 							break;
 						}
@@ -5310,7 +5310,7 @@ for(SeqWrdIdx = 1; SeqWrdIdx <= m_Sequences.Seqs2AssembOfs; SeqWrdIdx++)
 				State = 2;			// expecting next to be 1st of 2 cSeqWrd4LSWHdr words
 				continue;
 				}
-			gDiagnostics.DiagOut(eDLInfo,gszProcName,"ValidateSeqs2AssembStarts: Problem at word %I64u, expected %u instead read %u ...",SeqWrdIdx,cSeqWrd4MSWHdr,SeqWord);
+			gDiagnostics.DiagOut(eDLInfo,gszProcName,"ValidateSeqs2AssembStarts: Problem at word %zu, expected %u instead read %u ...",SeqWrdIdx,cSeqWrd4MSWHdr,SeqWord);
 			return(0);
 		case 2:
 			if((SeqWord & 0x0c0000000) == cSeqWrd4LSWHdr)
@@ -5318,7 +5318,7 @@ for(SeqWrdIdx = 1; SeqWrdIdx <= m_Sequences.Seqs2AssembOfs; SeqWrdIdx++)
 				State = 3;			// expecting 2nd of 2 cSeqWrd4LSWHdr words
 				continue;
 				}
-			gDiagnostics.DiagOut(eDLInfo,gszProcName,"ValidateSeqs2AssembStarts: Problem at word %I64u, expected 1st %u instead read %u ...",SeqWrdIdx,cSeqWrd4LSWHdr,SeqWord);
+			gDiagnostics.DiagOut(eDLInfo,gszProcName,"ValidateSeqs2AssembStarts: Problem at word %zu, expected 1st %u instead read %u ...",SeqWrdIdx,cSeqWrd4LSWHdr,SeqWord);
 			return(0);
 		case 3:
 			if((SeqWord & 0x0c0000000) == cSeqWrd4LSWHdr)
@@ -5326,7 +5326,7 @@ for(SeqWrdIdx = 1; SeqWrdIdx <= m_Sequences.Seqs2AssembOfs; SeqWrdIdx++)
 				State = 4;			// expecting at least one either full or partial SeqWrd containg packed bases
 				continue;
 				}
-			gDiagnostics.DiagOut(eDLInfo,gszProcName,"ValidateSeqs2AssembStarts: Problem at word %I64u, expected 2nd %u instead read %u ...",SeqWrdIdx,cSeqWrd4LSWHdr,SeqWord);
+			gDiagnostics.DiagOut(eDLInfo,gszProcName,"ValidateSeqs2AssembStarts: Problem at word %zu, expected 2nd %u instead read %u ...",SeqWrdIdx,cSeqWrd4LSWHdr,SeqWord);
 			return(0);
 
 		case 4:
@@ -5341,7 +5341,7 @@ for(SeqWrdIdx = 1; SeqWrdIdx <= m_Sequences.Seqs2AssembOfs; SeqWrdIdx++)
 						NumPEs += 1;
 				continue;
 				}
-			gDiagnostics.DiagOut(eDLInfo,gszProcName,"ValidateSeqs2AssembStarts: Problem at word %I64u, expected 1st base containing word instead read %u ...",SeqWrdIdx,SeqWord);
+			gDiagnostics.DiagOut(eDLInfo,gszProcName,"ValidateSeqs2AssembStarts: Problem at word %zu, expected 1st base containing word instead read %u ...",SeqWrdIdx,SeqWord);
 			return(0);
 
 
@@ -5365,14 +5365,14 @@ for(SeqWrdIdx = 1; SeqWrdIdx <= m_Sequences.Seqs2AssembOfs; SeqWrdIdx++)
 					continue;
 					}
 				// any other word is unexpected - where is the cSeqWrd4MSWHdr?
-				gDiagnostics.DiagOut(eDLInfo,gszProcName,"ValidateSeqs2AssembStarts: Problem at word %I64u, expected initial headr word %u instead read %u ...",SeqWrdIdx,cSeqWrd4MSWHdr,SeqWord);
+				gDiagnostics.DiagOut(eDLInfo,gszProcName,"ValidateSeqs2AssembStarts: Problem at word %zu, expected initial headr word %u instead read %u ...",SeqWrdIdx,cSeqWrd4MSWHdr,SeqWord);
 				return(0);
 				}
 		}
 	}
 if(!bNoTypes && ExpectType != 0)
 	{
-	gDiagnostics.DiagOut(eDLInfo,gszProcName,"ValidateSeqs2AssembStarts: Problem at last word %I64u, was expecting PE2 ...",SeqWrdIdx);
+	gDiagnostics.DiagOut(eDLInfo,gszProcName,"ValidateSeqs2AssembStarts: Problem at last word %zu, was expecting PE2 ...",SeqWrdIdx);
 	}
 
 // now to validate the 
@@ -6281,7 +6281,7 @@ if(m_Sequences.pSeqStarts == NULL || m_Sequences.AllocMemSeqStarts == 0)
 		{
 		if(bSerialise)
 			ReleaseSerialise();
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenSeqStarts: Sequence start offsets array memory allocation of %I64u bytes - %s",m_Sequences.AllocMemSeqStarts,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenSeqStarts: Sequence start offsets array memory allocation of %zu bytes - %s",m_Sequences.AllocMemSeqStarts,strerror(errno));
 		m_Sequences.AllocMemSeqStarts = 0;
 		Reset(false);
 		return(eBSFerrMem);
@@ -6291,7 +6291,7 @@ if(m_Sequences.pSeqStarts == NULL || m_Sequences.AllocMemSeqStarts == 0)
 		{
 		if(bSerialise)
 			ReleaseSerialise();
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenSeqStarts: Sequence start offsets array memory allocation of %I64u bytes through mmap()  failed - %s",m_Sequences.AllocMemSeqStarts,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenSeqStarts: Sequence start offsets array memory allocation of %zu bytes through mmap()  failed - %s",m_Sequences.AllocMemSeqStarts,strerror(errno));
 		m_Sequences.pSeqStarts = NULL;
 		m_Sequences.AllocMemSeqStarts = 0;
 		Reset(false);
@@ -6337,7 +6337,7 @@ if(bGenFlags)
 			{
 			if(bSerialise)
 				ReleaseSerialise();
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenSeqStarts: Sequence flags array memory allocation of %I64u bytes - %s",m_Sequences.AllocMemSeqFlags,strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenSeqStarts: Sequence flags array memory allocation of %zu bytes - %s",m_Sequences.AllocMemSeqFlags,strerror(errno));
 			m_Sequences.AllocMemSeqFlags = 0;
 			Reset(false);
 			return(eBSFerrMem);
@@ -6347,7 +6347,7 @@ if(bGenFlags)
 			{
 			if(bSerialise)
 				ReleaseSerialise();
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenSeqStarts: Sequence flags memory allocation of %I64u bytes through mmap()  failed - %s",m_Sequences.AllocMemSeqFlags,strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenSeqStarts: Sequence flags memory allocation of %zu bytes through mmap()  failed - %s",m_Sequences.AllocMemSeqFlags,strerror(errno));
 			m_Sequences.pSeqFlags = NULL;
 			m_Sequences.AllocMemSeqFlags = 0;
 			Reset(false);
@@ -6516,7 +6516,7 @@ if(m_Sequences.pSuffixArray == NULL || m_Sequences.AllocMemSfx == 0)
 	m_Sequences.pSuffixArray = (void *) malloc((size_t)m_Sequences.AllocMemSfx);	
 	if(m_Sequences.pSuffixArray == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenRdsSfx: Suffix array memory allocation of %I64u bytes - %s",m_Sequences.AllocMemSfx,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenRdsSfx: Suffix array memory allocation of %zu bytes - %s",m_Sequences.AllocMemSfx,strerror(errno));
 		m_Sequences.AllocMemSfx = 0;
 		Reset(false);
 		return(eBSFerrMem);
@@ -6524,7 +6524,7 @@ if(m_Sequences.pSuffixArray == NULL || m_Sequences.AllocMemSfx == 0)
 #else
 	if((m_Sequences.pSuffixArray = (void *)mmap(NULL,m_Sequences.AllocMemSfx, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0)) == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenRdsSfx: Suffix array memory allocation of %I64u bytes through mmap()  failed - %s",m_Sequences.AllocMemSfx,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenRdsSfx: Suffix array memory allocation of %zu bytes through mmap()  failed - %s",m_Sequences.AllocMemSfx,strerror(errno));
 		m_Sequences.pSuffixArray = NULL;
 		m_Sequences.AllocMemSfx = 0;
 		Reset(false);
@@ -6597,7 +6597,7 @@ if(ElSize == 5)
 		}
 	Pack5(0xffffffffff,pArr5);
 	m_xpConcatSeqs = (uint8_t *)m_Sequences.pSeqs2Assemb;
-	gDiagnostics.DiagOut(eDLDiag,gszProcName,"GenRdsSfx: Sparse suffix array contains %I64d index elements size %d bytes..",m_Sequences.NumSuffixEls,ElSize);
+	gDiagnostics.DiagOut(eDLDiag,gszProcName,"GenRdsSfx: Sparse suffix array contains %zd index elements size %d bytes..",m_Sequences.NumSuffixEls,ElSize);
 	gDiagnostics.DiagOut(eDLDiag,gszProcName,"GenRdsSfx: Now sorting...");
 	m_MTqsort.qsort(m_Sequences.pSuffixArray,m_Sequences.NumSuffixEls,5,Sfx5SortSeqWrd4Func);
 	gDiagnostics.DiagOut(eDLDiag,gszProcName,"GenRdsSfx: Sorting completed...");
@@ -6646,7 +6646,7 @@ else
 		}
 	pArr4[SfxIdx] = 0xffffffff;
 	m_xpConcatSeqs = (uint8_t *)m_Sequences.pSeqs2Assemb;
-	gDiagnostics.DiagOut(eDLDiag,gszProcName,"GenRdsSfx: Sparse suffix array contains %I64d index elements size %d bytes..",m_Sequences.NumSuffixEls,ElSize);
+	gDiagnostics.DiagOut(eDLDiag,gszProcName,"GenRdsSfx: Sparse suffix array contains %zd index elements size %d bytes..",m_Sequences.NumSuffixEls,ElSize);
 	gDiagnostics.DiagOut(eDLDiag,gszProcName,"GenRdsSfx: Now sorting...");
 	m_MTqsort.qsort(m_Sequences.pSuffixArray,m_Sequences.NumSuffixEls,sizeof(uint32_t),SfxSortSeqWrd4Func);
 	gDiagnostics.DiagOut(eDLDiag,gszProcName,"GenRdsSfx: Sorting completed...");
@@ -6676,7 +6676,7 @@ CKit4bdna::ChunkedWrite(int hFile,char *pszFile,uint64_t WrtOfs,uint8_t *pData,u
 uint32_t BlockLen;
 if(_lseeki64(hFile,WrtOfs,SEEK_SET) != WrtOfs)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to seek to %I64d on file %s - error %s",WrtOfs,pszFile,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to seek to %zd on file %s - error %s",WrtOfs,pszFile,strerror(errno));
 	return(eBSFerrFileAccess);
 	}
 
@@ -6711,7 +6711,7 @@ uint32_t BlockLen;
 int BytesRead;
 if(_lseeki64(hFile,(int64_t)RdOfs,SEEK_SET) != RdOfs)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to seek to %I64u on file - error %s",RdOfs,pszFile,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to seek to %zu on file - error %s",RdOfs,pszFile,strerror(errno));
 	return(eBSFerrFileAccess);
 	}
 
@@ -8929,7 +8929,7 @@ if(m_pPartialSeqs2Assemb == NULL || (sizeof(tSeqWrd4) * (m_PartialSeqs2AssembOfs
 		m_pPartialSeqs2Assemb = malloc((size_t)m_AllocdPartialSeqs2Assemb);	
 		if(m_pPartialSeqs2Assemb == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"SavePartialSeqs: Concatenated packed sequences memory allocation of %I64u bytes - %s",m_AllocdPartialSeqs2Assemb,strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"SavePartialSeqs: Concatenated packed sequences memory allocation of %zu bytes - %s",m_AllocdPartialSeqs2Assemb,strerror(errno));
 			m_AllocdPartialSeqs2Assemb = 0;
 			ReleaseSerialiseSeqHdr();
 			Reset(false);
@@ -8938,7 +8938,7 @@ if(m_pPartialSeqs2Assemb == NULL || (sizeof(tSeqWrd4) * (m_PartialSeqs2AssembOfs
 #else
 		if((m_pPartialSeqs2Assemb = (void *)mmap(NULL,m_AllocdPartialSeqs2Assemb, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0)) == MAP_FAILED)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"SavePartialSeqs: Concatenated packed sequences memory of %I64u bytes through mmap()  failed - %s",m_AllocdPartialSeqs2Assemb,strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"SavePartialSeqs: Concatenated packed sequences memory of %zu bytes through mmap()  failed - %s",m_AllocdPartialSeqs2Assemb,strerror(errno));
 			m_pPartialSeqs2Assemb = NULL;
 			m_AllocdPartialSeqs2Assemb = 0;
 			ReleaseSerialiseSeqHdr();
@@ -9235,12 +9235,12 @@ _ASSERTE( _CrtCheckMemory());
 #endif
 #endif
 double MeanLen = TotFastaPE1SeqLen/(double)NumFastaPE1Seqs;
-gDiagnostics.DiagOut(eDLInfo,gszProcName,"Accepted %s Multifasta NumSeqs: %u, MaxLen: %u, MinLen: %u, TotLen: %I64u, MeanLen: %1.1f",m_Sequences.bPESeqs ? "PE1" : "SE",
+gDiagnostics.DiagOut(eDLInfo,gszProcName,"Accepted %s Multifasta NumSeqs: %u, MaxLen: %u, MinLen: %u, TotLen: %zu, MeanLen: %1.1f",m_Sequences.bPESeqs ? "PE1" : "SE",
 										NumFastaPE1Seqs,FastaPE1MaxLen,FastaPE1MinLen,TotFastaPE1SeqLen,MeanLen);
 if(m_Sequences.bPESeqs)
 	{
 	MeanLen = TotFastaPE2SeqLen/(double)NumFastaPE2Seqs;
-	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Accepted PE2 Multifasta NumSeqs: %u, MaxLen: %u, MinLen: %u, TotLen: %I64u, MeanLen: %1.1f",
+	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Accepted PE2 Multifasta NumSeqs: %u, MaxLen: %u, MinLen: %u, TotLen: %zu, MeanLen: %1.1f",
 										NumFastaPE2Seqs,FastaPE2MaxLen,FastaPE2MinLen,TotFastaPE2SeqLen,MeanLen);
 	}
 

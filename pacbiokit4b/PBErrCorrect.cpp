@@ -3142,7 +3142,7 @@ if(m_szChkPtsFile[0] != '\0' && m_szErrCorFile[0] != '\0')
 							break;					
 							}
 						bRestartChkPts = true;
-						gDiagnostics.DiagOut(eDLWarn,gszProcName,"Checkpoint file node inconsistency at node %u, unable to access error corrected reads file at offset %I64d, restart error correction and checkpointing from 1st read",NodeID,CurChkPt.ECFileOfs);
+						gDiagnostics.DiagOut(eDLWarn,gszProcName,"Checkpoint file node inconsistency at node %u, unable to access error corrected reads file at offset %zd, restart error correction and checkpointing from 1st read",NodeID,CurChkPt.ECFileOfs);
 						break;
 						}
 					}
@@ -3481,13 +3481,13 @@ for(ThreadIdx = 0; ThreadIdx < NumOvlpThreads; ThreadIdx++,pThreadPar++)
 	pThreadPar->pCoreHits = (tsPBECoreHit *)malloc(pThreadPar->AllocdCoreHitsSize);	
 	if(pThreadPar->pCoreHits == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"IdentifySequenceOverlaps: Core hits memory allocation of %I64u bytes - %s",pThreadPar->AllocdCoreHitsSize,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"IdentifySequenceOverlaps: Core hits memory allocation of %zu bytes - %s",pThreadPar->AllocdCoreHitsSize,strerror(errno));
 		break;
 		}
 #else
 	if((pThreadPar->pCoreHits = (tsPBECoreHit *)mmap(NULL,pThreadPar->AllocdCoreHitsSize, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0)) == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"IdentifySequenceOverlaps: Core hits memory allocation of %I64u bytes - %s",pThreadPar->AllocdCoreHitsSize,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"IdentifySequenceOverlaps: Core hits memory allocation of %zu bytes - %s",pThreadPar->AllocdCoreHitsSize,strerror(errno));
 		break;
 		}
 #endif

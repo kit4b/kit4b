@@ -885,7 +885,7 @@ m_AllocdSAMlociMem = (size_t)cAllocNumSAMloci * sizeof(tsSAMloci);
 m_pSAMloci = (tsSAMloci*)malloc(m_AllocdSAMlociMem);
 if (m_pSAMloci == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenBinnedWiggle: Memory allocation of %I64d bytes failed", (int64_t)m_AllocdSAMlociMem);
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenBinnedWiggle: Memory allocation of %zd bytes failed", (int64_t)m_AllocdSAMlociMem);
 	m_AllocdSAMlociMem = 0;
 	Reset();
 	return(eBSFerrMem);
@@ -895,7 +895,7 @@ if (m_pSAMloci == NULL)
 m_pSAMloci = (tsSAMloci*)mmap(NULL, m_AllocdSAMlociMem, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 if (m_pSAMloci == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenBinnedWiggle: Memory allocation of %I64d bytes through mmap()  failed", (int64_t)m_AllocdSAMlociMem, strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenBinnedWiggle: Memory allocation of %zd bytes through mmap()  failed", (int64_t)m_AllocdSAMlociMem, strerror(errno));
 	m_pSAMloci = NULL;
 	m_AllocdSAMlociMem = 0;
 	Reset();
@@ -933,7 +933,7 @@ while(Rslt >= eBSFSuccess && (LineLen = m_pSAMfile->GetNxtSAMline((char *)m_pInB
 		Now = time(NULL);
 		if ((Now - Then) >= 60)
 			{
-			gDiagnostics.DiagOut(eDLInfo, gszProcName, "Accepted %I64d SAM/BAM alignments", NumAcceptedAlignments);
+			gDiagnostics.DiagOut(eDLInfo, gszProcName, "Accepted %zd SAM/BAM alignments", NumAcceptedAlignments);
 			Then += 60;
 			}
 		}
@@ -972,7 +972,7 @@ while(Rslt >= eBSFSuccess && (LineLen = m_pSAMfile->GetNxtSAMline((char *)m_pInB
 #endif
 		if (pTmp == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenBinnedWiggle: Memory re-allocation to %I64d bytes - %s", (int64_t)(memreq), strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenBinnedWiggle: Memory re-allocation to %zd bytes - %s", (int64_t)(memreq), strerror(errno));
 			Reset();
 			return(eBSFerrMem);
 			}
@@ -995,7 +995,7 @@ if(NumAcceptedAlignments == 0)		// ugh, no alignments!
 	return(eBSFSuccess);			// not an error!
 	}
 else
-	gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenBinnedWiggle: Accepted %I64d total alignments for binning",NumAcceptedAlignments);
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenBinnedWiggle: Accepted %zd total alignments for binning",NumAcceptedAlignments);
 
 
 // sort SAMloci by TargID.TargLoci ascending
@@ -1029,7 +1029,7 @@ for(LociIdx = 1; LociIdx < m_CurNumSAMloci; LociIdx++, pSAMloci++)
 		}
 	}
 m_CurNumSAMloci = NumUniqueLoci;
-gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenBinnedWiggle: Alignments were to %I64d unique loci",m_CurNumSAMloci);
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenBinnedWiggle: Alignments were to %zd unique loci",m_CurNumSAMloci);
 
 // iterate over all loci and accumulate counts within each bin sized to be WindowSize bp
 uint32_t BinStart;

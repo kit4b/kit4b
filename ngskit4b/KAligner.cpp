@@ -360,7 +360,7 @@ tsSfxHeaderV3 SfxHeader;
 m_pSfxArray->GetSfxHeader(&SfxHeader);
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Genome Assembly Name: '%s' Descr: '%s' Title: '%s' Version: %d",
 					 m_szTargSpecies,SfxHeader.szDescription,SfxHeader.szTitle,SfxHeader.Version);
-gDiagnostics.DiagOut(eDLInfo,gszProcName,"Assembly has blocks: %d, max block size: %I64u",SfxHeader.NumSfxBlocks,SfxHeader.SfxBlockSize);
+gDiagnostics.DiagOut(eDLInfo,gszProcName,"Assembly has blocks: %d, max block size: %zu",SfxHeader.NumSfxBlocks,SfxHeader.SfxBlockSize);
 
 // if user has specified that there are constraints on loci bases then need to load the loci constraints file
 if(pszLociConstraintsFile != NULL && pszLociConstraintsFile[0] != '\0')
@@ -410,7 +410,7 @@ if(m_MLMode > eMLrand && m_MLMode < eMLall)
 
 	if(m_pMultiHits == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %I64d bytes - %s",(int64_t)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %zd bytes - %s",(int64_t)memreq,strerror(errno));
 		Reset(false);
 		return(eBSFerrMem);
 		}
@@ -419,7 +419,7 @@ if(m_MLMode > eMLrand && m_MLMode < eMLall)
 	m_pMultiHits = (tsReadHit *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pMultiHits == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %I64d bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %zd bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
 		m_pMultiHits = NULL;
 		Reset(false);
 		return(eBSFerrMem);
@@ -442,7 +442,7 @@ if(m_MLMode >= eMLall || m_FMode == eFMsamAll)
 
 	if(m_pMultiAll == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %I64d bytes for multiAll - %s",(int64_t)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %zd bytes for multiAll - %s",(int64_t)memreq,strerror(errno));
 		Reset(false);
 		return(eBSFerrMem);
 		}
@@ -451,7 +451,7 @@ if(m_MLMode >= eMLall || m_FMode == eFMsamAll)
 	m_pMultiAll = (tsReadHit *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pMultiAll == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %I64d bytes for multiAll through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %zd bytes for multiAll through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
 		m_pMultiAll = NULL;
 		Reset(false);
 		return(eBSFerrMem);
@@ -801,7 +801,7 @@ if(!m_bPackedBaseAlleles)
 			if(bMarkers)
 				gDiagnostics.DiagOut(eDLInfo,gszProcName,"Marker processing completed with %d marker sequences writtten to file '%s",m_MarkerID,m_pszMarkerFile);
 			gDiagnostics.DiagOut(eDLInfo,gszProcName,"SNP processing completed with %d putative SNPs discovered",m_TotNumSNPs);
-			gDiagnostics.DiagOut(eDLInfo,gszProcName,"There are %I64d aligned loci bases which are covered by %I64d read bases with mean coverage of %1.2f",m_LociBasesCovered,m_LociBasesCoverage,m_LociBasesCoverage/(double)m_LociBasesCovered);
+			gDiagnostics.DiagOut(eDLInfo,gszProcName,"There are %zd aligned loci bases which are covered by %zd read bases with mean coverage of %1.2f",m_LociBasesCovered,m_LociBasesCoverage,m_LociBasesCoverage/(double)m_LociBasesCovered);
 			}
 		}
 
@@ -6993,7 +6993,7 @@ ReleaseMutex(m_hMtxMultiMatches);
 #else
 pthread_mutex_unlock(&m_hMtxMultiMatches);
 #endif
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddMultiHit: Memory re-allocation to %I64d bytes - %s",memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddMultiHit: Memory re-allocation to %zd bytes - %s",memreq,strerror(errno));
 		return(eBSFerrMem);
 		}
 	m_pMultiAll = pMultiHit;
@@ -7272,7 +7272,7 @@ if(!m_bPackedBaseAlleles)
 		m_pLociPValues = (tsLociPValues*)malloc((size_t)memreq);
 		if (m_pLociPValues == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "OutputSNPs: Memory allocation of %I64d bytes failed", (int64_t)memreq);
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "OutputSNPs: Memory allocation of %zd bytes failed", (int64_t)memreq);
 			return(eBSFerrMem);
 			}
 #else
@@ -7281,7 +7281,7 @@ if(!m_bPackedBaseAlleles)
 		if (m_pLociPValues == MAP_FAILED)
 			{
 			m_pLociPValues = NULL;
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "OutputSNPs: Memory allocation of %I64d bytes through mmap()  failed", (int64_t)memreq, strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "OutputSNPs: Memory allocation of %zd bytes through mmap()  failed", (int64_t)memreq, strerror(errno));
 			return(eBSFerrMem);
 			}
 #endif
@@ -7298,7 +7298,7 @@ else
 		m_pPackedBaseAlleles = (uint8_t*)malloc((size_t)memreq);
 		if (m_pPackedBaseAlleles == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "OutputSNPs: Memory allocation of %I64d bytes failed", (int64_t)memreq);
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "OutputSNPs: Memory allocation of %zd bytes failed", (int64_t)memreq);
 			return(eBSFerrMem);
 			}
 #else
@@ -7307,7 +7307,7 @@ else
 		if (m_pPackedBaseAlleles == MAP_FAILED)
 			{
 			m_pPackedBaseAlleles = NULL;
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "OutputSNPs: Memory allocation of %I64d bytes through mmap()  failed", (int64_t)memreq, strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "OutputSNPs: Memory allocation of %zd bytes through mmap()  failed", (int64_t)memreq, strerror(errno));
 			return(eBSFerrMem);
 			}
 #endif
@@ -7335,7 +7335,7 @@ else
 				if (pPackedBaseAlleles == MAP_FAILED)
 				{
 #endif
-				gDiagnostics.DiagOut(eDLFatal, gszProcName, "OutputSNPs: Memory reallocation to %I64d bytes failed - %s", memreq, strerror(errno));
+				gDiagnostics.DiagOut(eDLFatal, gszProcName, "OutputSNPs: Memory reallocation to %zd bytes failed - %s", memreq, strerror(errno));
 				return(eBSFerrMem);
 				}
 			m_pPackedBaseAlleles = pPackedBaseAlleles;
@@ -7510,7 +7510,7 @@ else
 				if (pLociPValues == MAP_FAILED)
 				{
 #endif
-				gDiagnostics.DiagOut(eDLFatal, gszProcName, "OutputSNPs: Memory reallocation to %I64d bytes failed - %s", memreq, strerror(errno));
+				gDiagnostics.DiagOut(eDLFatal, gszProcName, "OutputSNPs: Memory reallocation to %zd bytes failed - %s", memreq, strerror(errno));
 				return(eBSFerrMem);
 				}
 			m_pLociPValues = pLociPValues;
@@ -8465,7 +8465,7 @@ while((pReadHit = IterSortedReads(pReadHit))!=NULL)
 				size_t AllocSize = sizeof(tsChromSNPs) + ((ChromLen + 16) * sizeof(tsSNPcnts));
 				if((m_pChromSNPs = (tsChromSNPs *)new uint8_t[AllocSize])==NULL)
 					{
-					gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessSNPs: Memory allocation of %I64d bytes - %s",(int64_t)AllocSize,strerror(errno));
+					gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessSNPs: Memory allocation of %zd bytes - %s",(int64_t)AllocSize,strerror(errno));
 					Reset(false);
 					return(eBSFerrMem);
 					}
@@ -9120,7 +9120,7 @@ if(m_pReadHits == NULL)
 	{
 	ReleaseLock(true);
 	ReleaseSerialise();
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %I64d bytes - %s",(int64_t)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %zd bytes - %s",(int64_t)memreq,strerror(errno));
 	delete pReadBuff;
 	close(m_hInFile);
 	m_hInFile = -1;
@@ -9131,7 +9131,7 @@ if(m_pReadHits == NULL)
 m_pReadHits = (tsReadHit *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pReadHits == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %I64d bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %zd bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
 	m_pReadHits = NULL;
 	ReleaseLock(true);
 	ReleaseSerialise();
@@ -9188,7 +9188,7 @@ while((RdLen = read(m_hInFile,&pReadBuff[BuffLen],cRdsBuffAlloc - BuffLen)) > 0)
 			AcquireSerialise();
 			AcquireLock(true);
 			memreq = m_AllocdReadHitsMem + ((sizeof(tsReadHit) + (size_t)cDfltReadLen) * cReadsHitReAlloc);
-			gDiagnostics.DiagOut(eDLInfo,gszProcName,"LoadReads: Needing memory re-allocation to %I64d bytes from %I64d",(int64_t)m_AllocdReadHitsMem,(int64_t)memreq);
+			gDiagnostics.DiagOut(eDLInfo,gszProcName,"LoadReads: Needing memory re-allocation to %zd bytes from %zd",(int64_t)m_AllocdReadHitsMem,(int64_t)memreq);
 
 #ifdef _WIN32
 			pReadHit = (tsReadHit *) realloc(m_pReadHits,memreq);
@@ -9201,7 +9201,7 @@ while((RdLen = read(m_hInFile,&pReadBuff[BuffLen],cRdsBuffAlloc - BuffLen)) > 0)
 				{
 				ReleaseLock(true);
 				ReleaseSerialise();
-				gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory re-allocation to %I64d bytes - %s",(int64_t)(m_AllocdReadHitsMem + ((sizeof(tsReadHit) + cDfltReadLen)*cReadsHitReAlloc)),strerror(errno));
+				gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory re-allocation to %zd bytes - %s",(int64_t)(m_AllocdReadHitsMem + ((sizeof(tsReadHit) + cDfltReadLen)*cReadsHitReAlloc)),strerror(errno));
 				delete pReadBuff;
 				close(m_hInFile);
 				m_hInFile = -1;
@@ -10421,7 +10421,7 @@ if((m_AllocdMultiHits - m_NumMultiHits) < (NumHits+1000))	// need to realloc? --
 	if(pDstHits == NULL)
 		{
 		ReleaseSerialiseMH();
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddMHitReads: Memory re-allocation to %I64d bytes - %s",memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddMHitReads: Memory re-allocation to %zd bytes - %s",memreq,strerror(errno));
 		return(eBSFerrMem);
 		}
 	m_pMultiHits = pDstHits;
@@ -11593,7 +11593,7 @@ if(m_pReadHits == NULL)
 		{
 		ReleaseLock(true);
 		ReleaseSerialise();
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEntry: Memory allocation of %I64d bytes failed",(int64_t)memreq);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEntry: Memory allocation of %zd bytes failed",(int64_t)memreq);
 		return(eBSFerrMem);
 		}
 #else
@@ -11604,7 +11604,7 @@ if(m_pReadHits == NULL)
 		m_pReadHits = NULL;
 		ReleaseLock(true);
 		ReleaseSerialise();
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEntry: Memory allocation of %I64d bytes through mmap()  failed",(int64_t)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEntry: Memory allocation of %zd bytes through mmap()  failed",(int64_t)memreq,strerror(errno));
 		return(eBSFerrMem);
 		}
 #endif
@@ -11631,7 +11631,7 @@ if((m_AllocdReadHitsMem - m_DataBuffOfs) < (sizeof(tsReadHit) +  ReadLen + Descr
 		pTmpAlloc = NULL;
 #endif
 
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEntry: Memory reallocation to %I64d bytes failed - %s",memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEntry: Memory reallocation to %zd bytes failed - %s",memreq,strerror(errno));
 		ReleaseLock(true);
 		ReleaseSerialise();
 		return(eBSFerrMem);
@@ -11871,7 +11871,7 @@ if(m_pReadHits == NULL)
 		{
 		ReleaseLock(true);
 		ReleaseSerialise();
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Concatenated sequences memory allocation of %I64d bytes - %s",(int64_t)m_AllocdReadHitsMem,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Concatenated sequences memory allocation of %zd bytes - %s",(int64_t)m_AllocdReadHitsMem,strerror(errno));
 		PE1Fasta.Close();
 		m_AllocdReadHitsMem = 0;
 		return(eBSFerrMem);
@@ -11883,7 +11883,7 @@ if(m_pReadHits == NULL)
 		{
 		ReleaseLock(true);
 		ReleaseSerialise();
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Concatenated sequences memory of %I64d bytes through mmap()  failed - %s",(int64_t)m_AllocdReadHitsMem,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Concatenated sequences memory of %zd bytes through mmap()  failed - %s",(int64_t)m_AllocdReadHitsMem,strerror(errno));
 		PE1Fasta.Close();
 		m_pReadHits = NULL;
 		return(eBSFerrMem);
@@ -11908,7 +11908,7 @@ else
 #endif
 		if(pDstSeq == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddSeq: Memory re-allocation to %I64d bytes - %s",memreq,strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddSeq: Memory re-allocation to %zd bytes - %s",memreq,strerror(errno));
 			PE1Fasta.Close();
 			return(eBSFerrMem);
 			}

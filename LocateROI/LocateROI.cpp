@@ -727,7 +727,7 @@ if(ChromIdx == m_NumChromsCov)	// if a new or first chrom
 	pChrom->pCovCnts = (uint32_t *) malloc(ReallocTo);	// initial and perhaps the only allocation
 	if(pChrom->pCovCnts == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"BuildReadCoverage: Memory allocation of %I64d bytes - %s",(int64_t)ReallocTo,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"BuildReadCoverage: Memory allocation of %zd bytes - %s",(int64_t)ReallocTo,strerror(errno));
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -736,7 +736,7 @@ if(ChromIdx == m_NumChromsCov)	// if a new or first chrom
 	pChrom->pCovCnts = (uint32_t *)mmap(NULL,ReallocTo, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(pChrom->pCovCnts == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"BuildReadCoverage: Memory allocation of %I64d bytes through mmap()  failed - %s",(int64_t)ReallocTo,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"BuildReadCoverage: Memory allocation of %zd bytes through mmap()  failed - %s",(int64_t)ReallocTo,strerror(errno));
 		pChrom->pCovCnts = NULL;
 		Reset();
 		return(eBSFerrMem);
@@ -886,7 +886,7 @@ if(m_pROIs == NULL)		// should be the case but who knows :-)
 	m_pROIs = (tsROI *) malloc(memreq);	// initial allocation
 	if(m_pROIs == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"IdentROI: Memory allocation of %I64d bytes - %s",(int64_t)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"IdentROI: Memory allocation of %zd bytes - %s",(int64_t)memreq,strerror(errno));
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -895,7 +895,7 @@ if(m_pROIs == NULL)		// should be the case but who knows :-)
 	m_pROIs = (tsROI *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pROIs == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"IdentROI: Memory allocation of %I64d bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"IdentROI: Memory allocation of %zd bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
 		m_pROIs = NULL;
 		Reset();
 		return(eBSFerrMem);

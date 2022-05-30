@@ -172,7 +172,7 @@ m_pSeq = (uint8_t *) malloc(memreq);	// initial and perhaps the only allocation
 
 if(m_pSeq == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessMarkerSeqs: Memory allocation of %I64d bytes - %s",(int64_t)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessMarkerSeqs: Memory allocation of %zd bytes - %s",(int64_t)memreq,strerror(errno));
 	Reset();
 	return(eBSFerrMem);
 	}
@@ -181,7 +181,7 @@ if(m_pSeq == NULL)
 m_pSeq = (uint8_t *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pSeq == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessMarkerSeqs: Memory allocation of %I64d bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessMarkerSeqs: Memory allocation of %zd bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
 	m_pSeq = NULL;
 	Reset();
 	return(eBSFerrMem);

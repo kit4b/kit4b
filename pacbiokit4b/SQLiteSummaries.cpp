@@ -1134,7 +1134,7 @@ switch(ParamType) {
 		if(ValueSize != sizeof(int64_t))
 			return(eBSFerrCvrtType);
 #ifdef _WIN32
-		sprintf(szBuff,"%I64d",*(int64_t *)pValue);
+		sprintf(szBuff,"%zd",*(int64_t *)pValue);
 #else
 		sprintf(szBuff,"%ld",*(int64_t *)pValue);
 #endif
@@ -1143,7 +1143,7 @@ switch(ParamType) {
 		if(ValueSize != sizeof(uint64_t))
 			return(eBSFerrCvrtType);
 #ifdef _WIN32
-		sprintf(szBuff,"%I64u",*(uint64_t *)pValue);
+		sprintf(szBuff,"%zu",*(uint64_t *)pValue);
 #else
 		sprintf(szBuff,"%lu",*(uint64_t *)pValue);
 #endif

@@ -588,7 +588,7 @@ bRslt = SetProcessWorkingSetSize(hProcess,ReqMinSize,ReqMaxSize);	// can only bu
 
 if(bRslt == false && (m_WorkingSetSizeRejected++ > 5))
 	{
-	gDiagnostics.DiagOut(eDLWarn,gszProcName,"SetMaxMemWorkSetSize: unable to SetProcessWorkingSetSize for min %I64d max %I64d bytes (page size is %d)",
+	gDiagnostics.DiagOut(eDLWarn,gszProcName,"SetMaxMemWorkSetSize: unable to SetProcessWorkingSetSize for min %zd max %zd bytes (page size is %d)",
 					ReqMinSize,ReqMaxSize,m_WinPageSize);
 	}
 if(bRslt)
@@ -628,7 +628,7 @@ if(m_TotSeqs2Assemb == 0)	// have to be assembling at least one read!
 	return(-1);
 	}
 
-gDiagnostics.DiagOut(eDLInfo,gszProcName,"Processing %u sequences totalling %I64d bases for homozygotic regions...",m_TotSeqs2Assemb,m_TotSeqs2AssembBases);
+gDiagnostics.DiagOut(eDLInfo,gszProcName,"Processing %u sequences totalling %zd bases for homozygotic regions...",m_TotSeqs2Assemb,m_TotSeqs2AssembBases);
 
 
 // processing sensitivity determines CurMaxIter
@@ -683,7 +683,7 @@ if(m_pszLineBuff == NULL)
 	{
 	if((m_pszLineBuff = new char [cAllocLineBuffLen]) == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: output buffering allocation of %I64d bytes - %s",(int64_t)cAllocLineBuffLen,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: output buffering allocation of %zd bytes - %s",(int64_t)cAllocLineBuffLen,strerror(errno));
 		Reset(false);
 		return(eBSFerrMem);
 		}
@@ -943,7 +943,7 @@ fsync(m_hOutFile);
 close(m_hOutFile);
 m_hOutFile = -1;
 
-gDiagnostics.DiagOut(eDLInfo,gszProcName,"%d homozygotic region reduced contigs were generated covering %I64d bases",m_NumGenContigs,m_TotLenCovered);
+gDiagnostics.DiagOut(eDLInfo,gszProcName,"%d homozygotic region reduced contigs were generated covering %zd bases",m_NumGenContigs,m_TotLenCovered);
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Contig Nx lengths:");
 
 int64_t NxLens[11];	// to hold contig lengths for all Nx where Nx varies from 10 to 100 in increments of N10

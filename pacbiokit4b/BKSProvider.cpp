@@ -737,7 +737,7 @@ if (!bCpltdWrite)				// if a request frame has been received then ensure it is f
 					pTmp = NULL; 
 				if((m_BKSConnection.pReqResp = (uint8_t *)malloc(AllocMem))==NULL)
 					{
-					gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessSessEstab: unable to allocate %I64d bytes memory for pReqResp", AllocMem);
+					gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessSessEstab: unable to allocate %zd bytes memory for pReqResp", AllocMem);
 					if(pTmp != NULL)
 						free(pTmp);
 					TerminateConnection(true, true, true);
@@ -760,7 +760,7 @@ if (!bCpltdWrite)				// if a request frame has been received then ensure it is f
 					pTmp = NULL;
 				if((m_BKSConnection.TxdRxd.pRxdBuff = (uint8_t *)malloc(AllocMem))==NULL)
 					{
-					gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessSessEstab: unable to allocate %I64d bytes memory for pRxdBuff", AllocMem);
+					gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessSessEstab: unable to allocate %zd bytes memory for pRxdBuff", AllocMem);
 					if(pTmp != NULL)
 						free(pTmp);
 					TerminateConnection(true, true, true);
@@ -783,7 +783,7 @@ if (!bCpltdWrite)				// if a request frame has been received then ensure it is f
 					pTmp = NULL;
 				if((m_BKSConnection.TxdRxd.pTxdBuff = (uint8_t *)malloc(AllocMem))==NULL)
 					{
-					gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessSessEstab: unable to allocate %I64d bytes memory for pTxdBuff", AllocMem);
+					gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessSessEstab: unable to allocate %zd bytes memory for pTxdBuff", AllocMem);
 					if (pTmp != NULL)
 						free(pTmp);
 					TerminateConnection(true, true, true);

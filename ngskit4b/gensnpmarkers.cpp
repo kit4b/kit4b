@@ -674,7 +674,7 @@ TotMemToAlloc = (TotMemToAlloc * 115)/100;
 gDiagnostics.DiagOut(eDLFatal,gszProcName,"Estimating minimum total memory requirements to be: %dGB",(int)((TotMemToAlloc + 0x040000000 - 1)/0x040000000));
 
 // try to prealloc for SNPs 
-gDiagnostics.DiagOut(eDLFatal,gszProcName,"Pre-allocating memory for %I64d SNP loci allowing 10x additional for imputed SNPS",TotSNPRows);
+gDiagnostics.DiagOut(eDLFatal,gszProcName,"Pre-allocating memory for %zd SNP loci allowing 10x additional for imputed SNPS",TotSNPRows);
 
 if((Rslt = pMarkers->PreAllocEstSNPs(TotSNPRows)) != eBSFSuccess)
 	{
@@ -734,7 +734,7 @@ if(Rslt == 0)
 CurAlignLoci = pMarkers->NumAlignLoci();			// report on total number of accepted SNP alignments
 InitalAlignLoci = PrevAlignLoci = CurAlignLoci;
 
-gDiagnostics.DiagOut(eDLFatal, gszProcName, "Sorting %I64d known SNPs loaded from SNP files...", CurAlignLoci);
+gDiagnostics.DiagOut(eDLFatal, gszProcName, "Sorting %zd known SNPs loaded from SNP files...", CurAlignLoci);
 pMarkers->SortTargSeqLociSpecies();				// must be sorted ....
 if((Rslt = pMarkers->PreAllocImputedSNPs(NumSNPFiles)) != eBSFSuccess)
 	{
@@ -764,14 +764,14 @@ for(FileIdx = 0; FileIdx < NumSNPFiles; FileIdx++)
 		}
 	CurAlignLoci =  pMarkers->NumAlignLoci();
 	if(NumAlignFiles)
-		gDiagnostics.DiagOut(eDLInfo,gszProcName,"AddImputedAlignments('%s') imputed %I64d alignments, subtotal %I64d",pszAlignFile,CurAlignLoci - PrevAlignLoci, CurAlignLoci - InitalAlignLoci);
+		gDiagnostics.DiagOut(eDLInfo,gszProcName,"AddImputedAlignments('%s') imputed %zd alignments, subtotal %zd",pszAlignFile,CurAlignLoci - PrevAlignLoci, CurAlignLoci - InitalAlignLoci);
 	else
-			gDiagnostics.DiagOut(eDLInfo,gszProcName,"AddSimulatedAlignments ('%s') imputed %I64d alignments, subtotal %I64d",szProbeSpecies,CurAlignLoci - PrevAlignLoci, CurAlignLoci - InitalAlignLoci);
+			gDiagnostics.DiagOut(eDLInfo,gszProcName,"AddSimulatedAlignments ('%s') imputed %zd alignments, subtotal %zd",szProbeSpecies,CurAlignLoci - PrevAlignLoci, CurAlignLoci - InitalAlignLoci);
 	PrevAlignLoci = CurAlignLoci;
 	}
 
-gDiagnostics.DiagOut(eDLInfo,gszProcName,"Total SNPs %I64d of which %I64d are from imputed alignments",CurAlignLoci, CurAlignLoci - InitalAlignLoci);
-gDiagnostics.DiagOut(eDLFatal, gszProcName, "Sorting %I64d known and imputed SNPs ...", CurAlignLoci);
+gDiagnostics.DiagOut(eDLInfo,gszProcName,"Total SNPs %zd of which %zd are from imputed alignments",CurAlignLoci, CurAlignLoci - InitalAlignLoci);
+gDiagnostics.DiagOut(eDLFatal, gszProcName, "Sorting %zd known and imputed SNPs ...", CurAlignLoci);
 
 Rslt64 = pMarkers->SortTargSeqLociSpecies();
 gDiagnostics.DiagOut(eDLFatal, gszProcName, "Applying filtering ...");
@@ -784,7 +784,7 @@ Rslt64 = pMarkers->Report(pszRefGenome,NumRelGenomes,pszRelGenomes,pszMarkerFile
 if(Rslt64 < 0)
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Reporting of marker SNPs to '%s' error %d",pszMarkerFile,(int)Rslt64);
 else
-	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Reporting of %I64d marker SNPs to '%s' completed",Rslt64,pszMarkerFile);
+	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Reporting of %zd marker SNPs to '%s' completed",Rslt64,pszMarkerFile);
 delete pMarkers;
 return(Rslt64 < 0 ? (int)Rslt64 : eBSFSuccess);
 }

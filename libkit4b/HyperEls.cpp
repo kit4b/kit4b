@@ -158,7 +158,7 @@ if(m_pChroms == NULL)
 
 	if(m_pChroms == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddChrom: Memory allocation of %I64d bytes - %s",(int64_t)m_MemAllocChroms,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddChrom: Memory allocation of %zd bytes - %s",(int64_t)m_MemAllocChroms,strerror(errno));
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -167,7 +167,7 @@ if(m_pChroms == NULL)
 	m_pChroms = (tsHyperChrom *)mmap(NULL,m_MemAllocChroms, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pChroms == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddChrom: Memory allocation of %I64d bytes through mmap()  failed - %s",(int64_t)m_MemAllocChroms,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddChrom: Memory allocation of %zd bytes through mmap()  failed - %s",(int64_t)m_MemAllocChroms,strerror(errno));
 		m_pChroms = NULL;
 		Reset();
 		return(eBSFerrMem);
@@ -195,7 +195,7 @@ if((m_NumChroms+5) >= m_NumChromsAllocd)
 	if(pNewChrom == MAP_FAILED)
 		{
 #endif
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddElCore: Memory reallocation to %I64d bytes failed - %s",memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddElCore: Memory reallocation to %zd bytes failed - %s",memreq,strerror(errno));
 		return(eBSFerrMem);
 		}
 	m_pChroms = pNewChrom;
@@ -406,7 +406,7 @@ if(m_pSeqBases == NULL)
 	m_pSeqBases = (etSeqBase *) malloc(m_MemAllocSeqBases);	// initial and perhaps the only allocation
 	if(m_pSeqBases == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"PreAllocMem: Memory allocation of %I64d bytes - %s",(int64_t)m_MemAllocSeqBases,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"PreAllocMem: Memory allocation of %zd bytes - %s",(int64_t)m_MemAllocSeqBases,strerror(errno));
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -415,7 +415,7 @@ if(m_pSeqBases == NULL)
 	m_pSeqBases = (etSeqBase *)mmap(NULL,m_MemAllocSeqBases, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pSeqBases == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"PreAllocMem: Memory allocation of %I64d bytes through mmap()  failed - %s",(int64_t)m_MemAllocSeqBases,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"PreAllocMem: Memory allocation of %zd bytes through mmap()  failed - %s",(int64_t)m_MemAllocSeqBases,strerror(errno));
 		m_pSeqBases = NULL;
 		Reset();
 		return(eBSFerrMem);
@@ -434,7 +434,7 @@ if(m_pElements == NULL)
 	m_pElements = (tsHyperElement *) malloc(m_MemAllocEls);	// initial and perhaps the only allocation
 	if(m_pElements == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddElCore: Memory allocation of %I64d bytes - %s",(int64_t)m_MemAllocEls,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddElCore: Memory allocation of %zd bytes - %s",(int64_t)m_MemAllocEls,strerror(errno));
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -443,7 +443,7 @@ if(m_pElements == NULL)
 	m_pElements = (tsHyperElement *)mmap(NULL,m_MemAllocEls, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pElements == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddElCore: Memory allocation of %I64d bytes through mmap()  failed - %s",(int64_t)m_MemAllocEls,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddElCore: Memory allocation of %zd bytes through mmap()  failed - %s",(int64_t)m_MemAllocEls,strerror(errno));
 		m_pElements = NULL;
 		Reset();
 		return(eBSFerrMem);
@@ -513,7 +513,7 @@ if(!NumSNPBases && pSeq != NULL && m_pSeqBases == NULL)
 
 	if(m_pSeqBases == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddElCore: Memory allocation of %I64d bytes - %s",(int64_t)m_MemAllocSeqBases,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddElCore: Memory allocation of %zd bytes - %s",(int64_t)m_MemAllocSeqBases,strerror(errno));
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -522,7 +522,7 @@ if(!NumSNPBases && pSeq != NULL && m_pSeqBases == NULL)
 	m_pSeqBases = (etSeqBase *)mmap(NULL,m_MemAllocSeqBases, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pSeqBases == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddElCore: Memory allocation of %I64d bytes through mmap()  failed - %s",(int64_t)m_MemAllocSeqBases,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddElCore: Memory allocation of %zd bytes through mmap()  failed - %s",(int64_t)m_MemAllocSeqBases,strerror(errno));
 		m_pSeqBases = NULL;
 		Reset();
 		return(eBSFerrMem);
@@ -544,7 +544,7 @@ if(!NumSNPBases && pSeq != NULL && (m_MemUsedSeqBases + Len + 10000)  >= m_MemAl
 	if(pBase == MAP_FAILED)
 		{
 #endif
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddElCore: Memory reallocation to %I64d bytes failed - %s",memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddElCore: Memory reallocation to %zd bytes failed - %s",memreq,strerror(errno));
 		return(eBSFerrMem);
 		}
 	m_pSeqBases = pBase;
@@ -569,7 +569,7 @@ if(m_pElements == NULL)
 
 	if(m_pElements == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddElCore: Memory allocation of %I64d bytes - %s",(int64_t)m_MemAllocEls,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddElCore: Memory allocation of %zd bytes - %s",(int64_t)m_MemAllocEls,strerror(errno));
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -578,7 +578,7 @@ if(m_pElements == NULL)
 	m_pElements = (tsHyperElement *)mmap(NULL,m_MemAllocEls, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pElements == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddElCore: Memory allocation of %I64d bytes through mmap()  failed - %s",(int64_t)m_MemAllocEls,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddElCore: Memory allocation of %zd bytes through mmap()  failed - %s",(int64_t)m_MemAllocEls,strerror(errno));
 		m_pElements = NULL;
 		Reset();
 		return(eBSFerrMem);
@@ -604,7 +604,7 @@ if((m_NumEls + 1000)  >= m_NumElsAllocd)
 	if(pEl == MAP_FAILED)
 		{
 #endif
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddElCore: Memory reallocation to %I64d bytes failed - %s",memreq,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddElCore: Memory reallocation to %zd bytes failed - %s",memreq,strerror(errno));
 		return(eBSFerrMem);
 		}
 	m_pElements = pEl;

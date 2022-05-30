@@ -1812,7 +1812,7 @@ while((Rslt = m_pCSV->NextLine()) > 0)				// onto next line containing fields
 		m_pIsolateFeatSNPs = (tsIsolateFeatSNPs*)malloc(memreq);	// initial and perhaps the only allocation
 		if(m_pIsolateFeatSNPs == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "IsolateFeatSNPs: Initial memory allocation of %I64d bytes - %s", (int64_t)memreq, strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "IsolateFeatSNPs: Initial memory allocation of %zd bytes - %s", (int64_t)memreq, strerror(errno));
 			Reset();
 			return(eBSFerrMem);
 			}
@@ -1821,7 +1821,7 @@ while((Rslt = m_pCSV->NextLine()) > 0)				// onto next line containing fields
 		m_pIsolateFeatSNPs = (tsIsolateFeatSNPs *)mmap(NULL, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 		if(m_pIsolateFeatSNPs == MAP_FAILED)
 			{
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "IsolateFeatSNPs: Memory allocation of %I64d bytes through mmap()  failed - %s", (int64_t)memreq, strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "IsolateFeatSNPs: Memory allocation of %zd bytes through mmap()  failed - %s", (int64_t)memreq, strerror(errno));
 			m_pIsolateFeatSNPs = NULL;
 			Reset();
 			return(eBSFerrMem);
@@ -1846,7 +1846,7 @@ while((Rslt = m_pCSV->NextLine()) > 0)				// onto next line containing fields
 #endif
 			if(pIsolateFeatSNPs == NULL)
 				{
-				gDiagnostics.DiagOut(eDLFatal, gszProcName, "IsolateFeatSNPs: Memory re-allocation to %I64d bytes - %s", memreq, strerror(errno));
+				gDiagnostics.DiagOut(eDLFatal, gszProcName, "IsolateFeatSNPs: Memory re-allocation to %zd bytes - %s", memreq, strerror(errno));
 				return(eBSFerrMem);
 				}
 			m_pIsolateFeatSNPs = pIsolateFeatSNPs;

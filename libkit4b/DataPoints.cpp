@@ -267,7 +267,7 @@ else // else opening existing file
 		}
 	if((FileOfs=_lseeki64(m_hFile,m_FileHdr.DirElOfs,SEEK_SET)) != m_FileHdr.DirElOfs)
 		{
-		AddErrMsg("CDataPoints::Open","Unable to seek to %I64d prior to reading data segments directory on opened file %s - error %s",m_FileHdr.DirElOfs,pszFile,strerror(errno));
+		AddErrMsg("CDataPoints::Open","Unable to seek to %zd prior to reading data segments directory on opened file %s - error %s",m_FileHdr.DirElOfs,pszFile,strerror(errno));
 		Close();
 		return(eBSFerrFileAccess);
 		}

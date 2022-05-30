@@ -323,7 +323,7 @@ m_AllocPutMarkersSize = (size_t)cAllocNumPutativeSeqs * m_PutMarkerSize;
 m_pPutMarkers = (tsPutMarker *) malloc(m_AllocPutMarkersSize);
 if(m_pPutMarkers == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %I64d bytes contiguous memory for putative marker sequences",(int64_t)m_AllocPutMarkersSize);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %zd bytes contiguous memory for putative marker sequences",(int64_t)m_AllocPutMarkersSize);
 	m_AllocPutMarkersSize = 0;
 	Reset(false);
 	return(eBSFerrMem);
@@ -333,7 +333,7 @@ if(m_pPutMarkers == NULL)
 m_pPutMarkers = (tsPutMarker *)mmap(NULL,m_AllocPutMarkersSize, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pPutMarkers == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %I64d bytes contiguous memory for putative marker sequences",(int64_t)m_AllocPutMarkersSize);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %zd bytes contiguous memory for putative marker sequences",(int64_t)m_AllocPutMarkersSize);
 	m_AllocPutMarkersSize = 0;
 	m_pPutMarkers = NULL;
 	Reset(false);
@@ -370,7 +370,7 @@ tsSfxHeaderV3 SfxHeader;
 m_pSfxArray->GetSfxHeader(&SfxHeader);
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Psuedo-assembly Name: '%s' Descr: '%s' Title: '%s' Version: %d",
 					 m_szDataset,SfxHeader.szDescription,SfxHeader.szTitle,SfxHeader.Version);
-gDiagnostics.DiagOut(eDLInfo,gszProcName,"Assembly block size: %I64u",SfxHeader.SfxBlockSize);
+gDiagnostics.DiagOut(eDLInfo,gszProcName,"Assembly block size: %zu",SfxHeader.SfxBlockSize);
 
 m_NumSfxEntries = m_pSfxArray->GetNumEntries();
 if(m_NumSfxEntries < 1)
@@ -484,7 +484,7 @@ for(ThreadIdx = 0; ThreadIdx < NumActiveThreads; ThreadIdx++)
 
 // let user know that this K-mer processing process is working hard...
 NumPutativePrefixKMers = GetKMerProcProgress(&TotSenseCnts,&TotAntisenseCnts);
-gDiagnostics.DiagOut(eDLInfo,gszProcName,"Progress - putative prefix K-Mers: %I64d",NumPutativePrefixKMers);
+gDiagnostics.DiagOut(eDLInfo,gszProcName,"Progress - putative prefix K-Mers: %zd",NumPutativePrefixKMers);
 
 // wait for all threads to have completed
 for(ThreadIdx = 0; ThreadIdx < NumActiveThreads; ThreadIdx++)
@@ -493,7 +493,7 @@ for(ThreadIdx = 0; ThreadIdx < NumActiveThreads; ThreadIdx++)
 	while(WAIT_TIMEOUT == WaitForSingleObject( WorkerThreads[ThreadIdx].threadHandle, 60000 * 10))
 		{
 		NumPutativePrefixKMers = GetKMerProcProgress(&TotSenseCnts,&TotAntisenseCnts);
-		gDiagnostics.DiagOut(eDLInfo,gszProcName,"Progress - putative prefix K-Mers: %I64d",NumPutativePrefixKMers);
+		gDiagnostics.DiagOut(eDLInfo,gszProcName,"Progress - putative prefix K-Mers: %zd",NumPutativePrefixKMers);
 		}
 	CloseHandle( WorkerThreads[ThreadIdx].threadHandle);
 #else
@@ -504,13 +504,13 @@ for(ThreadIdx = 0; ThreadIdx < NumActiveThreads; ThreadIdx++)
 	while((JoinRlt = pthread_timedjoin_np(WorkerThreads[ThreadIdx].threadID, NULL, &ts)) != 0)
 		{
 		NumPutativePrefixKMers = GetKMerProcProgress(&TotSenseCnts,&TotAntisenseCnts);
-		gDiagnostics.DiagOut(eDLInfo,gszProcName,"Progress - putative prefix K-Mers: %I64d",NumPutativePrefixKMers);
+		gDiagnostics.DiagOut(eDLInfo,gszProcName,"Progress - putative prefix K-Mers: %zd",NumPutativePrefixKMers);
 		ts.tv_sec += 60;
 		}
 #endif
 	}
 
-gDiagnostics.DiagOut(eDLInfo,gszProcName,"Completed - putative prefix K-Mers: %I64d",m_NumPutMarkers);
+gDiagnostics.DiagOut(eDLInfo,gszProcName,"Completed - putative prefix K-Mers: %zd",m_NumPutMarkers);
 
 if(m_pSfxArray != NULL)						// releases memory!
 	{
@@ -530,7 +530,7 @@ if(m_NumPutMarkers == 0 || m_NumPutMarkers > 0x07fffffff)
 	if(m_NumPutMarkers == 0)
 		gDiagnostics.DiagOut(eDLInfo,gszProcName,"Nothing to do, no putative prefix K-Mers");
 	else
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Too many (%I64d) putative prefix K-Mers to process",m_NumPutMarkers);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Too many (%zd) putative prefix K-Mers to process",m_NumPutMarkers);
 	if(m_hOutFile != -1)
 		{
 		if(m_MarkerBuffOfs)
@@ -555,7 +555,7 @@ m_AllocPutMarkersIndexSize = (size_t)m_NumPutMarkers * sizeof(uint32_t);
 m_pPutMarkersIndex = (uint32_t *) malloc(m_AllocPutMarkersIndexSize);
 if(m_pPutMarkersIndex == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %I64d bytes contiguous memory for putative marker sequence index",(int64_t)m_AllocPutMarkersIndexSize);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %zd bytes contiguous memory for putative marker sequence index",(int64_t)m_AllocPutMarkersIndexSize);
 	m_AllocPutMarkersIndexSize = 0;
 	Reset(false);
 	return(eBSFerrMem);
@@ -565,7 +565,7 @@ if(m_pPutMarkersIndex == NULL)
 m_pPutMarkersIndex = (uint32_t *)mmap(NULL,m_AllocPutMarkersIndexSize, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pPutMarkersIndex == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %I64d bytes contiguous memory for putative marker sequences",(int64_t)m_AllocPutMarkersIndexSize);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %zd bytes contiguous memory for putative marker sequences",(int64_t)m_AllocPutMarkersIndexSize);
 	m_AllocPutMarkersIndexSize = 0;
 	m_pPutMarkersIndex = NULL;
 	Reset(false);
@@ -843,7 +843,7 @@ if(((pMarkerKMers->m_NumPutMarkers + 1) * pMarkerKMers->m_PutMarkerSize) > pMark
 #endif
 	if(pRealloc == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"MarkersCallback: putative marker sequences memory re-allocation to %I64d bytes - %s",(int64_t)ReallocSize,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"MarkersCallback: putative marker sequences memory re-allocation to %zd bytes - %s",(int64_t)ReallocSize,strerror(errno));
 		pMarkerKMers->LeaveCritSect();
 		return(eBSFerrMem);
 		}

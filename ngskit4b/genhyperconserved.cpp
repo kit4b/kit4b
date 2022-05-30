@@ -2683,7 +2683,7 @@ for(Idx = 0; Idx < 4; Idx++,pStep += pProcParams->Regions)
 			break;
 		}
 #ifdef _WIN32
-	Len = sprintf(szLineBuff,"\n\"%s\",%I64d",pszClass[Idx],Total);
+	Len = sprintf(szLineBuff,"\n\"%s\",%zd",pszClass[Idx],Total);
 #else
 	Len = sprintf(szLineBuff,"\n\"%s\",%ld",pszClass[Idx],Total);
 #endif
@@ -2701,14 +2701,14 @@ for(Idx = 0; Idx < 2; Idx++)
 	switch(Idx) {	// reference sequence
 		case 0:
 #ifdef _WIN32
-			Len=sprintf(szLineBuff,"\n\"RefBases\",%I64d",SumRefBases);
+			Len=sprintf(szLineBuff,"\n\"RefBases\",%zd",SumRefBases);
 #else
 			Len=sprintf(szLineBuff,"\n\"RefBases\",%ld",SumRefBases);
 #endif
 			break;
 		case 1:		// relative sequence
 #ifdef _WIN32
-			Len=sprintf(szLineBuff,"\n\"RelBases\",%I64d",SumRelBases);
+			Len=sprintf(szLineBuff,"\n\"RelBases\",%zd",SumRelBases);
 #else
 			Len=sprintf(szLineBuff,"\n\"RelBases\",%ld",SumRelBases);
 #endif
@@ -2732,7 +2732,7 @@ for(Idx = 0; Idx < 2; Idx++)
 					break;
 				}
 #ifdef _WIN32
-			Len += sprintf(&szLineBuff[Len],",%I64d",SumRefBases);
+			Len += sprintf(&szLineBuff[Len],",%zd",SumRefBases);
 #else
 			Len += sprintf(&szLineBuff[Len],",%ld",SumRefBases);
 #endif

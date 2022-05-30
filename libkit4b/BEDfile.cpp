@@ -1421,7 +1421,7 @@ if(m_pChromNames == NULL ||
 #endif
 		if(m_pChromNames == NULL)
 			{
-			AddErrMsg("CBEDfile::AddFeature","Memory allocation of %I64d bytes failed - %s",(int64_t)ReallocTo,strerror(errno));
+			AddErrMsg("CBEDfile::AddFeature","Memory allocation of %zd bytes failed - %s",(int64_t)ReallocTo,strerror(errno));
 			m_AllocChromNamesSize = 0;
 			return(eBSFerrMem);
 			}
@@ -1587,7 +1587,7 @@ if(m_pFeatures == NULL ||
 
 		if(m_pFeatures == NULL)
 			{
-			AddErrMsg("CBEDfile::LoadFeatures","Memory allocation of %I64d bytes failed - %s",(int64_t)ReallocTo,strerror(errno));
+			AddErrMsg("CBEDfile::LoadFeatures","Memory allocation of %zd bytes failed - %s",(int64_t)ReallocTo,strerror(errno));
 			m_AllocFeaturesSize = 0;
 			return(eBSFerrMem);
 			}
@@ -1861,7 +1861,7 @@ if(m_pFeatures == MAP_FAILED)
 
 if(m_pFeatures == NULL)
 	{
-	AddErrMsg("CBEDfile::LoadFeatures","Memory allocation of %I64d bytes failed - %s",(int64_t)m_FileHdr.FeaturesSize,strerror(errno));
+	AddErrMsg("CBEDfile::LoadFeatures","Memory allocation of %zd bytes failed - %s",(int64_t)m_FileHdr.FeaturesSize,strerror(errno));
 	if(bCloseFile)
 		{
 		close(m_hFile);

@@ -255,7 +255,7 @@ if(m_pTrcBckCells == NULL || m_TrcBckCellsAllocd < NumCells || ((uint64_t)m_TrcB
 	m_pTrcBckCells = (tNWTrcBckCell *) malloc(m_TrcBckCellsAllocdSize);
 	if(m_pTrcBckCells == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %I64d bytes contiguous memory for traceback cells",(int64_t)m_TrcBckCellsAllocdSize);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %zd bytes contiguous memory for traceback cells",(int64_t)m_TrcBckCellsAllocdSize);
 		m_TrcBckCellsAllocdSize = 0;
 		m_TrcBckCellsAllocd = 0;
 		return(eBSFerrMem);
@@ -265,7 +265,7 @@ if(m_pTrcBckCells == NULL || m_TrcBckCellsAllocd < NumCells || ((uint64_t)m_TrcB
 	m_pTrcBckCells = (tNWTrcBckCell *)mmap(NULL,m_TrcBckCellsAllocdSize, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pTrcBckCells == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %I64d bytes contiguous memory for traceback cells",(int64_t)m_TrcBckCellsAllocdSize);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %zd bytes contiguous memory for traceback cells",(int64_t)m_TrcBckCellsAllocdSize);
 		m_TrcBckCellsAllocdSize = 0;
 		m_TrcBckCellsAllocd = 0;
 		return(eBSFerrMem);
@@ -662,7 +662,7 @@ if(m_TrcBckCellsUsed == m_TrcBckCellsAllocd)			// need to allocate more?
 #endif
 	if(pRealloc == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocBandCell: traceback cell memory re-allocation to %I64d bytes - %s",(int64_t)ReallocSize,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocBandCell: traceback cell memory re-allocation to %zd bytes - %s",(int64_t)ReallocSize,strerror(errno));
 		return(NULL);
 		}
 	m_TrcBckCellsAllocdSize = ReallocSize;

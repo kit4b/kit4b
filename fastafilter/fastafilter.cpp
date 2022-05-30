@@ -499,7 +499,7 @@ m_pFastaIdentifiers = (tsFastaIdentifier *) malloc(memreq);	// initial and perha
 
 if(m_pFastaIdentifiers == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %I64d bytes for m_pFastaIdentifiers - %s",(int64_t)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %zd bytes for m_pFastaIdentifiers - %s",(int64_t)memreq,strerror(errno));
 	Reset();
 	return(eBSFerrMem);
 	}
@@ -508,7 +508,7 @@ if(m_pFastaIdentifiers == NULL)
 m_pFastaIdentifiers = (tsFastaIdentifier *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pFastaIdentifiers == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %I64d bytes for m_pFastaIdentifiers through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %zd bytes for m_pFastaIdentifiers through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
 	m_pFastaIdentifiers = NULL;
 	Reset();
 	return(eBSFerrMem);

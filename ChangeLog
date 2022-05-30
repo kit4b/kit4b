@@ -80,3 +80,4 @@ Release 1.8.6 - 'gbsmapsnps' extended to now process both DiSNPs and TriSNPs loc
 Release 1.8.15 - 'callhaplotypes' extended to now group up to a maximum of 4000 haplotypes by allelic differences or by coverage depth.
 Release 1.9.8 - 'callhaplotypes' effectively removes requirement to hold all complete targeted PBA assemblies (could be thousands) in available memory, assemblies are now processed by iteratively loading single chromosomes from all assemblies and dicarding each chromosome on processing completion.
 Release 1.9.9 - General code cleanup and optimisations
+Release 1.9.10- Fix for reporting platform independent 64bit values, now using the '-zd' type specifier with casts to (size_t) in sprintf output format strings.

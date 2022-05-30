@@ -768,7 +768,7 @@ for(; m_MAFAlignBuffIdx < m_MAFAlignBuffered; m_MAFAlignBuffIdx += 1,pBuff+=1)
 				{
 				if(ProbeID == 0)
 					{
-					gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadMAFBlock: Probe identifier is 0 at line %I64d",m_MAFFileLineNum);
+					gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadMAFBlock: Probe identifier is 0 at line %zd",m_MAFFileLineNum);
 					return(eBSFerrAlignBlk);
 					}
 				State = 1;			// next expecting to parse out the consensus bases
@@ -813,7 +813,7 @@ for(; m_MAFAlignBuffIdx < m_MAFAlignBuffered; m_MAFAlignBuffIdx += 1,pBuff+=1)
 					m_pConsConfSeq->ProbeBase = eBaseEOS;
 					m_pConsConfSeq->TargBase = eBaseEOS;
 					m_pConsConfSeq->Conf = 0;
-					gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadMAFBlock: Unexpected chars in consensus sequence at line %I64d",m_MAFFileLineNum);
+					gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadMAFBlock: Unexpected chars in consensus sequence at line %zd",m_MAFFileLineNum);
 					return(eBSFerrAlignBlk);
 				}
 			if(NumConBases + 10 >= cMaxMAFBlockRowLen)
@@ -822,7 +822,7 @@ for(; m_MAFAlignBuffIdx < m_MAFAlignBuffered; m_MAFAlignBuffIdx += 1,pBuff+=1)
 				m_pConsConfSeq->ProbeBase = eBaseEOS;
 				m_pConsConfSeq->TargBase = eBaseEOS;
 				m_pConsConfSeq->Conf = 0;
-				gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadMAFBlock: Excessively long consensus sequence at line %I64d",m_MAFFileLineNum);
+				gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadMAFBlock: Excessively long consensus sequence at line %zd",m_MAFFileLineNum);
 				return(eBSFerrAlignBlk);
 				}
 			NumConBases += 1;
@@ -860,7 +860,7 @@ for(; m_MAFAlignBuffIdx < m_MAFAlignBuffered; m_MAFAlignBuffIdx += 1,pBuff+=1)
 						m_pConsConfSeq->ProbeBase = eBaseEOS;
 						m_pConsConfSeq->TargBase = eBaseEOS;
 						m_pConsConfSeq->Conf = 0;
-						gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadMAFBlock: Inconsistency in number of consensus confidence scores at line %I64d",m_MAFFileLineNum);
+						gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadMAFBlock: Inconsistency in number of consensus confidence scores at line %zd",m_MAFFileLineNum);
 						return(eBSFerrAlignBlk);
 						}
 					}
@@ -870,7 +870,7 @@ for(; m_MAFAlignBuffIdx < m_MAFAlignBuffered; m_MAFAlignBuffIdx += 1,pBuff+=1)
 					m_pConsConfSeq->ProbeBase = eBaseEOS;
 					m_pConsConfSeq->TargBase = eBaseEOS;
 					m_pConsConfSeq->Conf = 0;
-					gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadMAFBlock: Expected consensus confidence scores at line %I64d",m_MAFFileLineNum);
+					gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadMAFBlock: Expected consensus confidence scores at line %zd",m_MAFFileLineNum);
 					return(eBSFerrAlignBlk);
 					}
 				}
@@ -893,7 +893,7 @@ for(; m_MAFAlignBuffIdx < m_MAFAlignBuffered; m_MAFAlignBuffIdx += 1,pBuff+=1)
 					m_pConsConfSeq->ProbeBase = eBaseEOS;
 					m_pConsConfSeq->TargBase = eBaseEOS;
 					m_pConsConfSeq->Conf = 0;
-					gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadMAFBlock: Inconsistency in numbers of consensus confidence scores and consensus bases at line %I64d",m_MAFFileLineNum);
+					gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadMAFBlock: Inconsistency in numbers of consensus confidence scores and consensus bases at line %zd",m_MAFFileLineNum);
 					return(eBSFerrAlignBlk);
 					}
 				NumConConfs += 1;
@@ -921,21 +921,21 @@ for(; m_MAFAlignBuffIdx < m_MAFAlignBuffered; m_MAFAlignBuffIdx += 1,pBuff+=1)
 				m_pConsConfSeq->ProbeBase = eBaseEOS;
 				m_pConsConfSeq->TargBase = eBaseEOS;
 				m_pConsConfSeq->Conf = 0;
-				gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadMAFBlock: Inconsistency in numbers of consensus confidence scores and expected scores at line %I64d",m_MAFFileLineNum);
+				gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadMAFBlock: Inconsistency in numbers of consensus confidence scores and expected scores at line %zd",m_MAFFileLineNum);
 				return(eBSFerrAlignBlk);
 				}
 			m_pConsConfSeq->ConsBase = eBaseEOS;
 			m_pConsConfSeq->ProbeBase = eBaseEOS;
 			m_pConsConfSeq->TargBase = eBaseEOS;
 			m_pConsConfSeq->Conf = 0;
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadMAFBlock: Unexpected char '%c' in line %I64d",Chr,m_MAFFileLineNum);
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadMAFBlock: Unexpected char '%c' in line %zd",Chr,m_MAFFileLineNum);
 			return(eBSFerrAlignBlk);
 
 		case 4:					// expecting start of sequence or possibly a new alignment block 'CB_nnnnnn" starting 
 			char CChr;
 			if((Cnt=sscanf(pBuff,"C%c_%u%n",&CChr,&SeqId,&Ofs))!=2)
 				{
-				gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadMAFBlock: Expected CS_nnn sequence at line %I64d",m_MAFFileLineNum);
+				gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadMAFBlock: Expected CS_nnn sequence at line %zd",m_MAFFileLineNum);
 				return(eBSFerrAlignBlk);
 				}
 			if(CChr == 'B')		// it is a new alignment block starting
@@ -949,7 +949,7 @@ for(; m_MAFAlignBuffIdx < m_MAFAlignBuffered; m_MAFAlignBuffIdx += 1,pBuff+=1)
 			
 			if(ExpSeqID != SeqId || CChr != 'S')
 				{
-				gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadMAFBlock: Expected CS_%3d sequence at line %I64d",ExpSeqID,m_MAFFileLineNum);
+				gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadMAFBlock: Expected CS_%3d sequence at line %zd",ExpSeqID,m_MAFFileLineNum);
 				return(eBSFerrAlignBlk);
 				}	
 			State = 5;
@@ -980,7 +980,7 @@ for(; m_MAFAlignBuffIdx < m_MAFAlignBuffered; m_MAFAlignBuffIdx += 1,pBuff+=1)
 					m_pConsConfSeq->ProbeBase = eBaseEOS;
 					m_pConsConfSeq->TargBase = eBaseEOS;
 					m_pConsConfSeq->Conf = 0;
-					gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadMAFBlock: Truncated line %I64d",m_MAFFileLineNum);
+					gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadMAFBlock: Truncated line %zd",m_MAFFileLineNum);
 					return(eBSFerrAlignBlk);
 
 				case 'A': 
@@ -1009,7 +1009,7 @@ for(; m_MAFAlignBuffIdx < m_MAFAlignBuffered; m_MAFAlignBuffIdx += 1,pBuff+=1)
 					m_pConsConfSeq->ProbeBase = eBaseEOS;
 					m_pConsConfSeq->TargBase = eBaseEOS;
 					m_pConsConfSeq->Conf = 0;
-					gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadMAFBlock: Unexpected chars in sequence at line %I64d",m_MAFFileLineNum);
+					gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadMAFBlock: Unexpected chars in sequence at line %zd",m_MAFFileLineNum);
 					return(eBSFerrAlignBlk);
 				}
 
@@ -1019,7 +1019,7 @@ for(; m_MAFAlignBuffIdx < m_MAFAlignBuffered; m_MAFAlignBuffIdx += 1,pBuff+=1)
 				m_pConsConfSeq->ProbeBase = eBaseEOS;
 				m_pConsConfSeq->TargBase = eBaseEOS;
 				m_pConsConfSeq->Conf = 0;
-				gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadMAFBlock: Excessively long sequence at line %I64d",m_MAFFileLineNum);
+				gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadMAFBlock: Excessively long sequence at line %zd",m_MAFFileLineNum);
 				return(eBSFerrAlignBlk);
 				}
 
@@ -1067,7 +1067,7 @@ if(State == 5 && ExpSeqID >= 1 && NumConConfs == ExpNumConConfs)
 	}
 
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Completed processing of %d alignment blocks",m_NumParsedBlocks);
-gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadMAFBlock: File truncated at line %I64d",m_MAFFileLineNum);
+gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadMAFBlock: File truncated at line %zd",m_MAFFileLineNum);
 return(eBSFerrAlignBlk);
 }
 

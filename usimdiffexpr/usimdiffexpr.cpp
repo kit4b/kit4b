@@ -881,7 +881,7 @@ uint32_t NumAcceptedSamples;
 #else
 		pthread_rwlock_unlock(&m_hCntsRwLock);
 #endif
-gDiagnostics.DiagOut(eDLInfo,gszProcName,"Progress, from %I64d sampled reads have accepted %d as counts...",NumTestedSamples,NumAcceptedSamples);
+gDiagnostics.DiagOut(eDLInfo,gszProcName,"Progress, from %zd sampled reads have accepted %d as counts...",NumTestedSamples,NumAcceptedSamples);
 }
 
 int

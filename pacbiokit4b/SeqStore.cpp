@@ -187,7 +187,7 @@ if(m_pSeqHdrs == NULL)
 	m_pSeqHdrs = (tsSeqHdr *) malloc(m_AllocdSeqHdrSize);
 	if(m_pSeqHdrs == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %I64d bytes contiguous memory for sequence headers",(int64_t)m_AllocdSeqHdrSize);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %zd bytes contiguous memory for sequence headers",(int64_t)m_AllocdSeqHdrSize);
 		return(0);
 		}
 #else
@@ -195,7 +195,7 @@ if(m_pSeqHdrs == NULL)
 	m_pSeqHdrs = (tsSeqHdr *)mmap(NULL,m_AllocdSeqHdrSize, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pSeqHdrs == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %I64d bytes contiguous memory for sequence headers",(int64_t)m_AllocdSeqHdrSize);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %zd bytes contiguous memory for sequence headers",(int64_t)m_AllocdSeqHdrSize);
 		m_pSeqHdrs = NULL;
 		m_AllocdSeqHdrSize = 0;
 		return(0);
@@ -216,7 +216,7 @@ else
 #endif
 		if(pAllocd == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddSeq: Memory re-allocation to %I64d bytes - %s",memreq,strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddSeq: Memory re-allocation to %zd bytes - %s",memreq,strerror(errno));
 			return(0);
 			}
 		m_AllocdSeqHdrSize = memreq;
@@ -234,7 +234,7 @@ if(m_pDescrSeqs == NULL)
 	m_pDescrSeqs = (uint8_t *) malloc(m_AllocdDescrSeqsSize);
 	if(m_pDescrSeqs == NULL)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %I64d bytes contiguous memory for sequences",(int64_t)m_AllocdDescrSeqsSize);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %zd bytes contiguous memory for sequences",(int64_t)m_AllocdDescrSeqsSize);
 		return(0);
 		}
 #else
@@ -242,7 +242,7 @@ if(m_pDescrSeqs == NULL)
 	m_pDescrSeqs = (uint8_t *)mmap(NULL,m_AllocdDescrSeqsSize, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pDescrSeqs == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %I64d bytes contiguous memory for sequence headers",(int64_t)m_AllocdDescrSeqsSize);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %zd bytes contiguous memory for sequence headers",(int64_t)m_AllocdDescrSeqsSize);
 		m_pDescrSeqs = NULL;
 		m_AllocdDescrSeqsSize = 0;
 		return(0);
@@ -263,7 +263,7 @@ else
 #endif
 		if(pAllocd == NULL)
 			{
-			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddSeq: Memory re-allocation to %I64d bytes - %s",memreq,strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddSeq: Memory re-allocation to %zd bytes - %s",memreq,strerror(errno));
 			return(0);
 			}
 		m_AllocdDescrSeqsSize = memreq;
@@ -309,7 +309,7 @@ m_AllocdSeqDescrIdxSize = sizeof(uint32_t) * (m_NumStoredSeqs + 1000);	// alloca
 m_pSeqDescrIdx = (uint32_t *) malloc(m_AllocdSeqDescrIdxSize);
 if(m_pSeqDescrIdx == NULL)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %I64d bytes contiguous memory for sequences",(int64_t)m_AllocdSeqDescrIdxSize);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %zd bytes contiguous memory for sequences",(int64_t)m_AllocdSeqDescrIdxSize);
 	m_AllocdSeqDescrIdxSize = 0;
 	return(eBSFerrMem);
 	}
@@ -318,7 +318,7 @@ if(m_pSeqDescrIdx == NULL)
 m_pSeqDescrIdx = (uint32_t *)mmap(NULL,m_AllocdSeqDescrIdxSize, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pSeqDescrIdx == MAP_FAILED)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %I64d bytes contiguous memory for sequence headers",(int64_t)m_AllocdSeqDescrIdxSize);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %zd bytes contiguous memory for sequence headers",(int64_t)m_AllocdSeqDescrIdxSize);
 	m_pSeqDescrIdx = NULL;
 	m_AllocdSeqDescrIdxSize = 0;
 	return(eBSFerrMem);
