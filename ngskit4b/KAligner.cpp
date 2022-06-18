@@ -143,11 +143,10 @@ CKAligner::Align(etPMode PMode,			// processing mode
 		int	NumExcludeChroms,			// number of chromosome expressions to exclude
 		char **ppszExcludeChroms)		// array of exclude chromosome regular expressions
 {
-int Rslt;
-int Idx;
+int Rslt = 0;
 int BuffLen = 0;
 int BuffOfs = 0;
-int SeqIdx;
+int SeqIdx = 0;
 char szPEInsertDistFile[_MAX_PATH];
 char szOutBAIFile[_MAX_PATH];
 Init(); 
@@ -477,6 +476,7 @@ if((Rslt=CreateOrTruncResultFiles())!=eBSFSuccess)
 			gDiagnostics.DiagOut(eDLInfo,gszProcName,"Progress: waiting for reads load thread to terminate");
 			}
 		CloseHandle(m_hThreadLoadReads);
+		m_hThreadLoadReads = NULL;
 		}
 #else
 	if(m_ThreadLoadReadsID != 0)
@@ -490,12 +490,14 @@ if((Rslt=CreateOrTruncResultFiles())!=eBSFSuccess)
 			gDiagnostics.DiagOut(eDLInfo,gszProcName,"Progress: waiting for reads load thread to terminate");
 			ts.tv_sec += 60;
 			}
+		m_ThreadLoadReadsID = 0;
 		}
 #endif
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Progress: reads load thread terminated");
 	Reset(false);
 	return(Rslt);
 	}
+
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Creating/truncating result files completed");
 m_CurReadsSortMode = eRSMReadID;			// reads were loaded and assigned ascending read identifiers so that is their initial sort order
 
@@ -503,7 +505,6 @@ m_CurReadsSortMode = eRSMReadID;			// reads were loaded and assigned ascending r
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Aligning in %s...",bSOLiD ? "colorspace" : "basespace");
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Aligning for %s cored matches...",bBisulfite ? "bisulfite" : "normal");
 
-// heavy lifting now starts!
 Rslt = LocateCoredApprox(MinEditDist,m_InitalAlignSubs);
 
 if(Rslt < eBSFSuccess)
@@ -527,7 +528,7 @@ int AvReadsLen;
 int MinReadsLen = -1;
 int MaxReadsLen = 0;
 pReadHit = m_pReadHits;
-for(Idx = 0; Idx < (int)m_NumReadsLoaded; Idx++)
+for(uint32_t RIdx = 0; RIdx < m_NumReadsLoaded; RIdx++)
 	{
 	TotReadsLen += pReadHit->ReadLen;
 	if(MinReadsLen > pReadHit->ReadLen || MinReadsLen == -1)
@@ -596,7 +597,7 @@ if(m_MLMode >= eMLall)		// a little involved as need to reuse m_pReadHits ptrs s
 	m_NumMultiAll = 0;
 	if(m_ppReadHitsIdx != NULL)
 		{
-		delete m_ppReadHitsIdx;
+		delete []m_ppReadHitsIdx;
 		m_ppReadHitsIdx = NULL;
 		m_AllocdReadHitsIdx = 0;
 		}
@@ -853,7 +854,6 @@ m_CovSegBuffIdx = 0;
 m_pszCovSegBuff = NULL;
 m_pReadHits = NULL;
 m_ppReadHitsIdx = NULL;
-m_ppReadHitsIdx = NULL;
 m_pMultiHits = NULL;
 m_pMultiAll = NULL;
 m_pLociPValues = NULL;
@@ -961,6 +961,8 @@ m_NumPackedBaseAlleles = 0;
 
 #ifdef _WIN32
 m_hThreadLoadReads = NULL;
+#else
+m_ThreadLoadReadsID = 0;
 #endif
 memset(m_AlignQSubDist,0,sizeof(m_AlignQSubDist));
 memset(m_AlignMSubDist,0,sizeof(m_AlignMSubDist));
@@ -1168,14 +1170,14 @@ if(m_hSNPCentsfile != -1)
 
 if(m_pSNPCentroids != NULL)
 	{
-	delete(m_pSNPCentroids);
+	delete []m_pSNPCentroids;
 	m_pSNPCentroids = NULL;
 	}
 
 
 if(m_pConstraintLoci != NULL)
 	{
-	delete(m_pConstraintLoci);
+	delete []m_pConstraintLoci;
 	m_pConstraintLoci = NULL;
 	}
 
@@ -1223,24 +1225,24 @@ if(m_gzSNPCentsfile != NULL)
 
 if(m_pszLineBuff != NULL)
 	{
-	delete m_pszLineBuff;
+	delete []m_pszLineBuff;
 	m_pszLineBuff = NULL;
 	}
 if(m_pAllocsIdentNodes != NULL)
 	{
-	delete m_pAllocsIdentNodes;
+	delete []m_pAllocsIdentNodes;
 	m_pAllocsIdentNodes = NULL;
 	}
 
 if(m_pAllocsMultiHitBuff != NULL)
 	{
-	delete m_pAllocsMultiHitBuff;
+	delete []m_pAllocsMultiHitBuff;
 	m_pAllocsMultiHitBuff = NULL;
 	}
 
 if(m_pAllocsMultiHitLoci != NULL)
 	{
-	delete m_pAllocsMultiHitLoci;
+	delete []m_pAllocsMultiHitLoci;
 	m_pAllocsMultiHitLoci = NULL;
 	}
 if(m_pSfxArray != NULL)
@@ -1278,7 +1280,7 @@ if(m_pMultiAll != NULL)
 
 if(m_ppReadHitsIdx != NULL)
 	{
-	delete m_ppReadHitsIdx;
+	delete []m_ppReadHitsIdx;
 	m_ppReadHitsIdx = NULL;
 	}
 if(m_pMultiHits != NULL)
@@ -1316,13 +1318,13 @@ if(m_pPackedBaseAlleles != NULL)
 
 if(m_pChromSNPs != NULL)
 	{
-	delete m_pChromSNPs;
+	delete []m_pChromSNPs;
 	m_pChromSNPs = NULL;
 	}
 
 if(m_pLenDist != NULL)
 	{
-	delete m_pLenDist;
+	delete []m_pLenDist;
 	m_pLenDist = NULL;
 	}
 
@@ -1371,7 +1373,7 @@ int CSVLineNum;
 
 int Idx;
 
-CCSVFile InFile;
+CCSVFile *pInFile = new CCSVFile;
 
 char *pszTargChrom;
 char szPrevTargChrom[cMaxGeneNameLen];
@@ -1387,11 +1389,12 @@ char Base;
 
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Loading loci base constraints from CSV file '%s' ...",pszLociConstraints);
 
-if((Rslt=InFile.Open(pszLociConstraints)) !=eBSFSuccess)
+if((Rslt=pInFile->Open(pszLociConstraints)) !=eBSFSuccess)
 	{
-	while(InFile.NumErrMsgs())
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,InFile.GetErrMsg());
+	while(pInFile->NumErrMsgs())
+		gDiagnostics.DiagOut(eDLFatal,gszProcName, pInFile->GetErrMsg());
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to open '%s' for processing",pszLociConstraints);
+	delete pInFile;
 	return(eBSFerrOpnFile);
 	}
 
@@ -1403,28 +1406,29 @@ NumLines = 0;
 NumFields = 0;
 szPrevTargChrom[0] = 0;
 ChromID = 0;
-while((Rslt=InFile.NextLine()) > 0)	// onto next line containing fields
+while((Rslt= pInFile->NextLine()) > 0)	// onto next line containing fields
 	{
 	NumLines += 1;
-	NumFields = InFile.GetCurFields();
+	NumFields = pInFile->GetCurFields();
 	if(NumFields < 4)
 		{
-		CSVLineNum = InFile.GetLineNumber();
+		CSVLineNum = pInFile->GetLineNumber();
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Expected at least 4 fields at line %d in '%s', GetCurFields() returned '%d'",CSVLineNum,pszLociConstraints,NumFields);
-		InFile.Close();
+		pInFile->Close();
+		delete pInFile;
 		return(eBSFerrFieldCnt);
 		}
 
 	if(NumLines == 1)		// slough 1st line if it is a title line, assuming title line contains only text values ... 
 		{
-		if(InFile.IsLikelyHeaderLine())
+		if(pInFile->IsLikelyHeaderLine())
 			continue;
 		}
 
-	InFile.GetText(1,&pszTargChrom);
-	InFile.GetInt(2,&StartLoci);
-	InFile.GetInt(3,&EndLoci);
-	InFile.GetText(4,&pszBases);
+	pInFile->GetText(1,&pszTargChrom);
+	pInFile->GetInt(2,&StartLoci);
+	pInFile->GetInt(3,&EndLoci);
+	pInFile->GetText(4,&pszBases);
 
 	// get chrom identifier
 	if(ChromID == 0 || szPrevTargChrom[0] == 0 || stricmp(pszTargChrom,szPrevTargChrom))
@@ -1433,9 +1437,10 @@ while((Rslt=InFile.NextLine()) > 0)	// onto next line containing fields
 		szPrevTargChrom[sizeof(szPrevTargChrom)-1] = '\0';
 		if((ChromID = m_pSfxArray->GetIdent(szPrevTargChrom)) <= 0)
 			{
-			CSVLineNum = InFile.GetLineNumber();
+			CSVLineNum = pInFile->GetLineNumber();
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to find matching indexed identifier for '%s' at line %d in '%s'",szPrevTargChrom,CSVLineNum,pszLociConstraints);
-			InFile.Close();
+			pInFile->Close();
+			delete pInFile;
 			return(eBSFerrFieldCnt);
 			}
 		
@@ -1443,17 +1448,19 @@ while((Rslt=InFile.NextLine()) > 0)	// onto next line containing fields
 
 	if(StartLoci < 0 || StartLoci > EndLoci)
 		{
-		CSVLineNum = InFile.GetLineNumber();
+		CSVLineNum = pInFile->GetLineNumber();
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Start loci must be >= 0 and <= end loci for '%s' at line %d in '%s'",szPrevTargChrom,CSVLineNum,pszLociConstraints);
-		InFile.Close();
+		pInFile->Close();
+		delete pInFile;
 		return(eBSFerrFieldCnt);
 		}
 
 	if((uint32_t)EndLoci >= m_pSfxArray->GetSeqLen(ChromID))
 		{
-		CSVLineNum = InFile.GetLineNumber();
+		CSVLineNum = pInFile->GetLineNumber();
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"End loci must be > targeted sequence length for '%s' at line %d in '%s'",szPrevTargChrom,CSVLineNum,pszLociConstraints);
-		InFile.Close();
+		pInFile->Close();
+		delete pInFile;
 		return(eBSFerrFieldCnt);
 		}
 
@@ -1480,17 +1487,19 @@ while((Rslt=InFile.NextLine()) > 0)	// onto next line containing fields
 			case ' ': case '\t':
 				continue;
 			default:
-				CSVLineNum = InFile.GetLineNumber();
+				CSVLineNum = pInFile->GetLineNumber();
 				gDiagnostics.DiagOut(eDLFatal,gszProcName,"Illegal base specifiers for '%s' at line %d in '%s'",szPrevTargChrom,CSVLineNum,pszLociConstraints);
-				InFile.Close();
+				pInFile->Close();
+				delete pInFile;
 				return(eBSFerrFieldCnt);
 			}
 		}
 	if(Constraint == 0)
 		{
-		CSVLineNum = InFile.GetLineNumber();
+		CSVLineNum = pInFile->GetLineNumber();
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Illegal base specifiers for '%s' at line %d in '%s'",szPrevTargChrom,CSVLineNum,pszLociConstraints);
-		InFile.Close();
+		pInFile->Close();
+		delete pInFile;
 		return(eBSFerrFieldCnt);
 		}
 
@@ -1504,9 +1513,10 @@ while((Rslt=InFile.NextLine()) > 0)	// onto next line containing fields
 		{
 		if(m_NumConstrainedChroms == cMaxConstrainedChroms)
 			{
-			CSVLineNum = InFile.GetLineNumber();
+			CSVLineNum = pInFile->GetLineNumber();
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Number of constrained chroms would be more than max (%d) allowed for '%s' at line %d in '%s'",cMaxConstrainedChroms,szPrevTargChrom,CSVLineNum,pszLociConstraints);
-			InFile.Close();
+			pInFile->Close();
+			delete pInFile;
 			return(eBSFerrFieldCnt);
 			}
 		m_ConstrainedChromIDs[Idx] = ChromID;
@@ -1515,9 +1525,10 @@ while((Rslt=InFile.NextLine()) > 0)	// onto next line containing fields
 
 	if(m_NumConstraintLoci == cMaxConstrainedLoci)
 		{
-		CSVLineNum = InFile.GetLineNumber();
+		CSVLineNum = pInFile->GetLineNumber();
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Number of constrained loci would be more than max (%d) allowed for '%s' at line %d in '%s'",cMaxConstrainedLoci,szPrevTargChrom,CSVLineNum,pszLociConstraints);
-		InFile.Close();
+		pInFile->Close();
+		delete pInFile;
 		return(eBSFerrFieldCnt);
 		}
 	m_pConstraintLoci[m_NumConstraintLoci].ChromID = ChromID;
@@ -1526,7 +1537,8 @@ while((Rslt=InFile.NextLine()) > 0)	// onto next line containing fields
 	m_pConstraintLoci[m_NumConstraintLoci++].Constraint = Constraint;
 	}
 
-InFile.Close();
+pInFile->Close();
+delete pInFile;
 
 // sort the constraints by chromid.start.end ascending
 if(m_NumConstraintLoci > 1)
@@ -1711,6 +1723,8 @@ uint32_t SeqIdx;
 uint32_t Idx;
 int MinTrimmedLen;
 uint8_t *pSeq;
+uint8_t ReadSeq[cMaxFastQSeqLen + 10000];
+uint8_t TargSeq[cMaxFastQSeqLen + 10000];
 
 if((Rslt=SortReadHits(eRSMHitMatch,false)) < eBSFSuccess)
 	{
@@ -1730,8 +1744,7 @@ if(MinFlankExacts > 0)	// do  3' and 5' autotrim? Note that currently can't trim
 	int RightOfs;
 	uint32_t MatchLen;
 	int TrimMismatches;
-	uint8_t ReadSeq[cMaxFastQSeqLen+1];
-	uint8_t TargSeq[cMaxFastQSeqLen+1];
+
 
 	while((pReadHit = IterReads(pReadHit))!=NULL)
 		{
@@ -2123,7 +2136,7 @@ int NumUnacceptedReads;
 etSeqBase *pHitSeq;
 pReadHit = NULL;
 uint32_t MatchLen;
-uint8_t TargSeq[cMaxFastQSeqLen+1];
+uint8_t TargSeq[cMaxFastQSeqLen+ 10000];
 
 
 if(m_bIsSOLiD || KLen < 1)
@@ -2969,7 +2982,7 @@ void *KProcessPairedEndsThread(void * pThreadPars)
 	_endthreadex(0);
 	return(eBSFSuccess);
 #else
-	pthread_exit(NULL);
+pthread_exit(&pPars->Rslt);
 #endif
 }
 
@@ -3007,13 +3020,13 @@ gDiagnostics.DiagOut(eDLInfo,gszProcName,"Starting to associate Paired End reads
 
 if(m_pLenDist != NULL)
 	{
-	delete m_pLenDist;
+	delete []m_pLenDist;
 	m_pLenDist = NULL;
 	}
 if((m_pLenDist = new int[cPairMaxLen+1])==NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate %d bytes memory for paired read sequence length distributions",
-								sizeof(int) * (cPairMaxLen+1));
+								(int)sizeof(int) * (cPairMaxLen+1));
 	Reset(false);
 	return(eBSFerrMem);
 	}
@@ -3130,7 +3143,7 @@ if(m_hStatsFile != -1)
 	{
 	int hGlobalPEInsertDist;
 	char szGlobalPEInsertDist[_MAX_PATH];
-	char szLineBuff[cMaxReadLen*2];
+	char szLineBuff[(cMaxReadLen + 1000)*2];
 	int BuffIdx = 0;
 
 	CUtility::AppendFileNameSuffix(szGlobalPEInsertDist, m_pszStatsFile, (char*)".GlobalPEInsertDist.csv", '.');
@@ -3872,7 +3885,7 @@ int	NxtFastaCol;
 int NumCols;
 tsReadHit *pReadHit;
 uint32_t SeqIdx;
-etSeqBase Sequence[cMaxFastQSeqLen+1];	// to hold sequence (sans quality scores) for current read
+etSeqBase Sequence[cMaxFastQSeqLen+ 10000];	// to hold sequence (sans quality scores) for current read
 uint8_t *pSeqVal;
 etSeqBase *pSeq;
 
@@ -3970,7 +3983,7 @@ int	NxtFastaCol;
 int NumCols;
 tsReadHit *pReadHit;
 uint32_t SeqIdx;
-etSeqBase Sequence[cMaxFastQSeqLen+1];	// to hold sequence (sans quality scores) for current read
+etSeqBase Sequence[cMaxFastQSeqLen+ 10000];	// to hold sequence (sans quality scores) for current read
 uint8_t *pSeqVal;
 etSeqBase *pSeq;
 int LineLen = 0;
@@ -4233,7 +4246,7 @@ CKAligner::WriteBasicCountStats(void)
 {
 int Idx;
 int SeqOfs;
-char szLineBuff[cMaxReadLen * 8];
+char szLineBuff[(cMaxReadLen + 1000) * 8];
 int BuffIdx;
 int PhredBand;
 
@@ -4907,7 +4920,7 @@ pPars->Rslt = Rslt;
 _endthreadex(0);
 return(eBSFSuccess);
 #else
-pthread_exit(NULL);
+pthread_exit(&pPars->Rslt);
 #endif
 }
 
@@ -4915,7 +4928,7 @@ int
 CKAligner::InitiateLoadingReads(void)
 {
 tsLoadReadsThreadPars ThreadPars;
-
+memset(&ThreadPars, 0, sizeof(ThreadPars));
 // initiate loading the reads
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Loading reads from file...");
 m_ThreadLoadReadsRslt = -1;
@@ -4929,13 +4942,30 @@ ThreadPars.Rslt = 0;
 
 #ifdef _WIN32
 m_hThreadLoadReads = ThreadPars.threadHandle = (HANDLE)_beginthreadex(NULL,0x0fffff,KLoadReadFilesThread,&ThreadPars,0,&m_ThreadLoadReadsID);
+if (m_hThreadLoadReads == NULL)
+	{
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Failed to initiate read loading thread ...");
+	return(-1);
+	}
 #else
-int ThreadRslt = ThreadPars.threadRslt = pthread_create (&m_ThreadLoadReadsID , NULL , KLoadReadFilesThread , &ThreadPars );
+int ThreadRslt = ThreadPars.threadRslt = pthread_create (&m_ThreadLoadReadsID , NULL , KLoadReadFilesThread , &ThreadPars);
+if (ThreadRslt != 0)
+	{
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Failed to initiate read loading thread ...");
+	return(-1);
+	}
 #endif
 
-// wait a few seconds, if major problems with loading reads then should show very quickly
+// allow a few seconds for threads to actually startup
 #ifdef _WIN32
-if(WAIT_TIMEOUT != WaitForSingleObject(m_hThreadLoadReads, 3000))
+Sleep(2000);
+#else
+sleep(2);
+#endif
+
+// wait a few additional seconds, if major problems with loading reads then these should show up very quickly
+#ifdef _WIN32
+if(WaitForSingleObject(m_hThreadLoadReads, 1000) != WAIT_TIMEOUT)
 	{
 	CloseHandle(m_hThreadLoadReads);
 	m_hThreadLoadReads = NULL;
@@ -4945,7 +4975,7 @@ if(WAIT_TIMEOUT != WaitForSingleObject(m_hThreadLoadReads, 3000))
 struct timespec ts;
 int JoinRlt;
 clock_gettime(CLOCK_REALTIME, &ts);
-ts.tv_sec += 3;
+ts.tv_sec += 1;
 if((JoinRlt = pthread_timedjoin_np(m_ThreadLoadReadsID, NULL, &ts)) == 0)
 	{
 	m_ThreadLoadReadsID = 0;
@@ -4969,9 +4999,9 @@ Rslt = pThis->ProcAssignMultiMatches(pPars);
 pPars->Rslt = Rslt;
 #ifdef _WIN32
 _endthreadex(0);
-return(eBSFSuccess);
+return(eBSFSuccess); // unreached, but keeps compilers happy!
 #else
-pthread_exit(NULL);
+pthread_exit(&pPars->Rslt);
 #endif
 }
 
@@ -5193,7 +5223,7 @@ pPars->Rslt = 1;
 _endthreadex(0);
 return(eBSFSuccess);
 #else
-pthread_exit(NULL);
+pthread_exit(&pPars->Rslt);
 #endif
 }
 
@@ -5559,7 +5589,7 @@ if(NumTargIDs)
 		CUtility::RetryWrites(m_hInsertLensFile,szDistBuff,BuffOfs);
 	}
 
-delete pInsertLens;
+delete []pInsertLens;
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Reporting PE insert lengths for %u transcripts or assembly sequences completed",NumTargIDs);
 SortReadHits(eRSMHitMatch,false);
 return(NumTargIDs);
@@ -5833,7 +5863,7 @@ CKAligner::WriteBAMReadHits(etFMode ProcMode,	   // eFMsam or eFMsamAll
 							int ComprLev)		   // BAM to be BGZF compressed at the requested level (0..9)
 {
 int Rslt;
-tsBAMalign BAMalign;			// to hold each SAM or BAM alignment as it is constructed
+tsBAMalign *pBAMalign;			// to hold each SAM or BAM alignment as it is constructed
 eSAMFileType FileType;
 CSAMfile *pSAMfile;
 
@@ -5851,6 +5881,13 @@ uint32_t ChromSeqLen;
 int ChromID;
 uint32_t CurChromID;
 uint16_t EntryFlags;
+
+if((pBAMalign = new tsBAMalign) == NULL)
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "WriteBAMReadHits: Unable to allocate memory for instance of tsBAMalign");
+	return(eBSFerrInternal);
+	}
+
 
 if((pSAMfile = new CSAMfile) == NULL)
 	{
@@ -5872,6 +5909,7 @@ switch(SAMFormat) {
 
 if((Rslt = pSAMfile->Create(FileType,m_pszOutFile,ComprLev,(char *)kit4bversion)) < eBSFSuccess)
 	{
+	delete pBAMalign;
 	delete pSAMfile;
 	return(Rslt);
 	}
@@ -5914,6 +5952,7 @@ for(ChromID = 1; ChromID <= NumChroms; ChromID++)
 		ChromSeqLen=m_pSfxArray->GetSeqLen(ChromID);
 		if((Rslt = pSAMfile->AddRefSeq(m_szTargSpecies,szChromName,ChromSeqLen)) < 1)
 			{
+			delete pBAMalign;
 			delete pSAMfile;
 			return(Rslt);
 			}
@@ -5970,9 +6009,12 @@ while((pReadHit = IterSortedReads(pReadHit))!=NULL)
 			m_szSAMTargChromName[1] = '\0';
 			}
 
-		if((Rslt = ReportBAMread(pReadHit,BAMRefID,ReadIs,&BAMalign)) < eBSFSuccess)
+		if ((Rslt = ReportBAMread(pReadHit, BAMRefID, ReadIs,pBAMalign)) < eBSFSuccess)
+			{
+			delete pBAMalign;
 			return(Rslt);
-		strcpy(BAMalign.szRefSeqName,m_szSAMTargChromName);
+			}
+		strcpy(pBAMalign->szRefSeqName,m_szSAMTargChromName);
 
 		// look ahead to check if current read is the last accepted aligned read
 		bLastAligned = false;
@@ -5983,7 +6025,7 @@ while((pReadHit = IterSortedReads(pReadHit))!=NULL)
 				bLastAligned = true;
 			}
 
-		if((Rslt = pSAMfile->AddAlignment(&BAMalign,bLastAligned)) < eBSFSuccess)
+		if((Rslt = pSAMfile->AddAlignment(pBAMalign,bLastAligned)) < eBSFSuccess)
 			return(Rslt);
 
 		NumReportedBAMreads += 1;
@@ -6006,7 +6048,9 @@ while((pReadHit = IterSortedReads(pReadHit))!=NULL)
 		}
 	}
 
+delete pBAMalign;
 pSAMfile->Close();
+delete pSAMfile;
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Completed reporting %s %u read alignments",SAMFormat == etSAMFformat ? "SAM" : "BAM",NumReportedBAMreads);
 return(0);
 }
@@ -6065,7 +6109,7 @@ char *pszQName;
 char *pszRNext;
 
 int SeqIdx;
-etSeqBase Sequence[cMaxFastQSeqLen+1];	// to hold sequence (sans quality scores) for current read
+etSeqBase Sequence[cMaxFastQSeqLen+ 10000];	// to hold sequence (sans quality scores) for current read
 
 int SumScores;
 uint8_t *pSeqVal;
@@ -6573,7 +6617,7 @@ uint8_t *pSeqVal;
 etSeqBase *pAssembSeq;
 tsSegLoci *pSeg;
 
-etSeqBase AssembSeq[cMaxFastQSeqLen+1];	// to hold targeted genome assembly sequence
+etSeqBase AssembSeq[cMaxFastQSeqLen+ 10000];	// to hold targeted genome assembly sequence
 
 if(m_hStatsFile == -1 || pReadHit == NULL || pReadHit->NAR != eNARAccepted || pReadHit->HitLoci.FlagSegs !=0) // if read was segmented because of InDel or splice junction then can't handle, simply slough
 	return(eBSFSuccess);
@@ -6631,7 +6675,7 @@ const char *pszBsMap;
 int LineLen;
 char szChromName[128];
 int SeqIdx;
-etSeqBase ReadSeq[cMaxFastQSeqLen+1];	// to hold sequence (sans quality scores) for current read
+etSeqBase ReadSeq[cMaxFastQSeqLen+ 10000];	// to hold sequence (sans quality scores) for current read
 uint8_t *pSeqVal;
 etSeqBase *pReadSeq;
 
@@ -7026,7 +7070,7 @@ tsSegLoci *pSeg;
 int ReadHitBuffIdx;						// index into output szReadHits
 
 tBSFEntryID PrevTargEntry;
-uint8_t ReadHit[sizeof(tsReadHit) + cMaxKADescrLen + cMaxFastQSeqLen + 10];
+uint8_t ReadHit[sizeof(tsReadHit) + cMaxKADescrLen + cMaxFastQSeqLen + 10000];
 tsReadHit *pMultiHit;
 
 m_MaxAlignLen = 0;
@@ -8264,8 +8308,8 @@ int Rslt;
 int LineLen;
 
 uint32_t SeqIdx;
-etSeqBase ReadSeq[cMaxFastQSeqLen+1];	// to hold sequence (sans quality scores) for current read
-etSeqBase AssembSeq[cMaxFastQSeqLen+1];	// to hold targeted genome assembly sequence
+etSeqBase ReadSeq[cMaxFastQSeqLen+10000];	// to hold sequence (sans quality scores) for current read
+etSeqBase AssembSeq[cMaxFastQSeqLen+ 10000];	// to hold targeted genome assembly sequence
 
 etSeqBase TargBases[3];
 etSeqBase ReadBase;
@@ -8459,7 +8503,7 @@ while((pReadHit = IterSortedReads(pReadHit))!=NULL)
 				{
 				if(m_pChromSNPs != NULL)
 					{
-					delete m_pChromSNPs;
+					delete []m_pChromSNPs;
 					m_pChromSNPs = NULL;
 					}
 				size_t AllocSize = sizeof(tsChromSNPs) + ((ChromLen + 16) * sizeof(tsSNPcnts));
@@ -8788,7 +8832,7 @@ else
 
 if(m_pChromSNPs != NULL)
 	{
-	delete m_pChromSNPs;
+	delete []m_pChromSNPs;
 	m_pChromSNPs = NULL;
 	}
 return(eBSFSuccess);
@@ -9103,7 +9147,7 @@ for(BuffOfs=0;BuffOfs<m_FileHdr.NumFiles;BuffOfs++)
 if(m_FileHdr.NumRds == 0 || m_FileHdr.TotReadsLen == 0)
 	{
 	gDiagnostics.DiagOut(eDLWarn,gszProcName,"Nothing to do, '%s' contains no reads...",pszRdsFile);
-	delete pReadBuff;
+	delete []pReadBuff;
 	close(m_hInFile);
 	m_hInFile = -1;
 	return(eBSFerrOpnFile);
@@ -9121,7 +9165,7 @@ if(m_pReadHits == NULL)
 	ReleaseLock(true);
 	ReleaseSerialise();
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %zd bytes - %s",(int64_t)memreq,strerror(errno));
-	delete pReadBuff;
+	delete []pReadBuff;
 	close(m_hInFile);
 	m_hInFile = -1;
 	return(eBSFerrMem);
@@ -9202,7 +9246,7 @@ while((RdLen = read(m_hInFile,&pReadBuff[BuffLen],cRdsBuffAlloc - BuffLen)) > 0)
 				ReleaseLock(true);
 				ReleaseSerialise();
 				gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory re-allocation to %zd bytes - %s",(int64_t)(m_AllocdReadHitsMem + ((sizeof(tsReadHit) + cDfltReadLen)*cReadsHitReAlloc)),strerror(errno));
-				delete pReadBuff;
+				delete []pReadBuff;
 				close(m_hInFile);
 				m_hInFile = -1;
 				return(eBSFerrMem);
@@ -9254,7 +9298,7 @@ while((RdLen = read(m_hInFile,&pReadBuff[BuffLen],cRdsBuffAlloc - BuffLen)) > 0)
 	if(BuffLen)
 		memmove(pReadBuff,&pReadBuff[BuffOfs],BuffLen);
 	}
-delete pReadBuff;
+delete []pReadBuff;
 close(m_hInFile);
 m_hInFile = -1;
 if(m_NumDescrReads != m_NumReadsLoaded)
@@ -9368,7 +9412,7 @@ pPars->Rslt = Rslt;
 _endthreadex(Rslt < 0 ? 1 : 0);
 return(Rslt < 0 ? 1 : 0);
 #else
-pthread_exit(NULL);
+pthread_exit(&pPars->Rslt);
 #endif
 }
 
@@ -9395,7 +9439,7 @@ int MaxNumSlides;
 int ThreadIdx;
 tsThreadMatchPars *pWorkerThreads;
 
-if((pWorkerThreads = new tsThreadMatchPars [m_NumThreads])==NULL)
+if((pWorkerThreads = new tsThreadMatchPars [m_NumThreads+1])==NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Fatal: unable to allocate memory for %d tsThreadMatchPars", m_NumThreads);
 	Reset(false);
@@ -9407,7 +9451,7 @@ m_TotAllocdIdentNodes = m_PerThreadAllocdIdentNodes * m_NumThreads;
 if((m_pAllocsIdentNodes = new tsIdentNode [m_TotAllocdIdentNodes])==NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate memory for %d tsIdentNodes",m_TotAllocdIdentNodes);
-	delete pWorkerThreads;
+	delete []pWorkerThreads;
 	Reset(false);
 	return(eBSFerrMem);
 	}
@@ -9420,7 +9464,7 @@ else
 if((m_pAllocsMultiHitLoci = new tsHitLoci [m_NumThreads * (max(m_MaxMLPEmatches,m_MaxMLmatches) + cPriorityExacts)])==NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate memory for %d tsHitLoci",m_NumThreads * (m_MaxMLmatches + cPriorityExacts));
-	delete pWorkerThreads;
+	delete []pWorkerThreads;
 	Reset(false);
 	return(eBSFerrMem);
 	}
@@ -9430,16 +9474,13 @@ if(m_MLMode == eMLall)
 	if((m_pAllocsMultiHitBuff = new uint8_t [m_NumThreads * cReadHitBuffLen])==NULL)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate memory for %d multihit record buffering",m_NumThreads * cReadHitBuffLen);
-		delete pWorkerThreads;
+		delete []pWorkerThreads;
 		Reset(false);
 		return(eBSFerrMem);
 		}
 	}
 else
 	m_pAllocsMultiHitBuff = NULL;
-
-
-
 
 // load single SfxBlock, expected to contain all chromosomes, and process all reads against that block
 PlusHits = 0;
@@ -9456,7 +9497,7 @@ if((Rslt=m_pSfxArray->SetTargBlock(CurBlockID))<0)
 	while(m_pSfxArray->NumErrMsgs())
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,m_pSfxArray->GetErrMsg());
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to load genome assembly suffix array");
-	delete pWorkerThreads;
+	delete []pWorkerThreads;
 	return(Rslt);
 	}
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Genome assembly suffix array loaded");
@@ -9607,6 +9648,7 @@ for(ThreadIdx = 0; ThreadIdx < m_NumThreads; ThreadIdx++, pWorkerThread++)
 		}
 	}
 
+
 // pickup the read loader thread, if the reads processing threads all finished then the loader thread should also have finished
 #ifdef _WIN32
 if(m_hThreadLoadReads != NULL)
@@ -9616,6 +9658,7 @@ if(m_hThreadLoadReads != NULL)
 		gDiagnostics.DiagOut(eDLInfo,gszProcName,"Progress: waiting");
 		}
 	CloseHandle(m_hThreadLoadReads);
+	m_hThreadLoadReads = NULL;
 	}
 #else
 if(m_ThreadLoadReadsID != 0)
@@ -9629,6 +9672,7 @@ if(m_ThreadLoadReadsID != 0)
 		gDiagnostics.DiagOut(eDLInfo,gszProcName,"Progress: waiting");
 		ts.tv_sec += 60;
 		}
+	m_ThreadLoadReadsID = 0;
 	}
 #endif
 
@@ -9646,18 +9690,18 @@ m_PerThreadAllocdIdentNodes = 0;
 m_TotAllocdIdentNodes = 0;
 if(m_pAllocsIdentNodes != NULL)
 	{
-	delete m_pAllocsIdentNodes;
+	delete []m_pAllocsIdentNodes;
 	m_pAllocsIdentNodes = NULL;
 	}
 if(m_pAllocsMultiHitLoci != NULL)
 	{
-	delete m_pAllocsMultiHitLoci;
+	delete []m_pAllocsMultiHitLoci;
 	m_pAllocsMultiHitLoci = NULL;
 	}
 
 if(m_pAllocsMultiHitBuff != NULL)
 	{
-	delete m_pAllocsMultiHitBuff;
+	delete []m_pAllocsMultiHitBuff;
 	m_pAllocsMultiHitBuff = NULL;
 	}
 
@@ -9673,8 +9717,7 @@ if(m_szLineBuffIdx > 0)
 	m_szLineBuffIdx = 0;
 	}
 
-delete pWorkerThreads;
-
+delete []pWorkerThreads;
 return(eBSFSuccess);
 }
 
@@ -10038,8 +10081,8 @@ switch (HitRslt) {
 		else
 			pPars->TotAcceptedAsMultiAligned += 1;
 
-
-		m_MultiHitDist[LowHitInstances - 1] += 1;
+		if(LowHitInstances > 0)
+			m_MultiHitDist[LowHitInstances - 1] += 1;
 
 		if(m_PEproc == ePEdefault)   // not PE processing
 			{
@@ -10827,8 +10870,11 @@ int PrvNxtStart;
 uint32_t NxtReadIdx;
 tsReadHit *pNxtReadHit = NULL;
 
-if(pCurReadHit == NULL)									// if NULL then start from first
+if (pCurReadHit == NULL)									// if NULL then start from first
+	{
 	NxtReadIdx = 0;
+	pCurReadHit = m_ppReadHitsIdx[NxtReadIdx];
+	}
 else
 	if((NxtReadIdx = pCurReadHit->ReadHitIdx) == m_NumReadsLoaded)
 		return(0);
@@ -10928,7 +10974,7 @@ if(m_ppReadHitsIdx == NULL || m_AllocdReadHitsIdx < m_NumReadsLoaded)
 	{
 	if(m_ppReadHitsIdx != NULL)
 		{
-		delete m_ppReadHitsIdx;
+		delete []m_ppReadHitsIdx;
 		m_ppReadHitsIdx = NULL;
 		m_AllocdReadHitsIdx = 0;
 		}
@@ -11738,11 +11784,11 @@ uint8_t Qphred;
 
 int PE1NumDescrReads;
 int PE1DescrLen;
-uint8_t szPE1DescrBuff[cMaxKADescrLen];
+uint8_t szPE1DescrBuff[cMaxKADescrLen+1];
 int PE1ReadLen;
-uint8_t szPE1ReadBuff[cMaxReadLen];
 int PE1QualLen;
-uint8_t szPE1QualBuff[cMaxReadLen];
+uint8_t* pszPE1ReadBuff = NULL;
+uint8_t *pszPE1QualBuff = NULL;
 int PE1NumReadsAccepted;
 int PE1NumInvalValues;
 int PE1NumUnsupportedBases;
@@ -11751,11 +11797,12 @@ int PE1NumOverlength;
 
 int PE2NumDescrReads;
 int PE2DescrLen;
-uint8_t szPE2DescrBuff[cMaxKADescrLen];
+uint8_t szPE2DescrBuff[cMaxKADescrLen+1];
 int PE2ReadLen;
-uint8_t szPE2ReadBuff[cMaxReadLen];
+
 int PE2QualLen;
-uint8_t szPE2QualBuff[cMaxReadLen];
+uint8_t* pszPE2ReadBuff = NULL;
+uint8_t *pszPE2QualBuff = NULL;
 int PE2NumReadsAccepted;
 int PE2NumInvalValues;
 int PE2NumUnsupportedBases;
@@ -11938,9 +11985,15 @@ NumContamLen5PE2 = 0;
 NumContamLen3PE2 = 0;
 
 NxtToSample = m_SampleNthRawRead;
+pszPE1ReadBuff = new uint8_t[cMaxReadLen+1000];
+pszPE1QualBuff = new uint8_t[cMaxReadLen+1000];
+if (bIsPairReads)
+	{
+	pszPE2ReadBuff = new uint8_t[cMaxReadLen + 1000];
+	pszPE2QualBuff = new uint8_t[cMaxReadLen + 1000];
+	}
 
-
-while((Rslt = (teBSFrsltCodes)(PE1ReadLen = PE1Fasta.ReadSequence(szPE1ReadBuff,sizeof(szPE1ReadBuff)-1,true,false))) > eBSFSuccess)
+while((Rslt = (teBSFrsltCodes)(PE1ReadLen = PE1Fasta.ReadSequence(pszPE1ReadBuff, cMaxReadLen-1,true,false))) > eBSFSuccess)
 	{
 	if(m_TermBackgoundThreads != 0)	// need to immediately self-terminate?
 		break;
@@ -11950,8 +12003,8 @@ while((Rslt = (teBSFrsltCodes)(PE1ReadLen = PE1Fasta.ReadSequence(szPE1ReadBuff,
 		{
 		PE1DescrLen = PE1Fasta.ReadDescriptor((char *)szPE1DescrBuff,sizeof(szPE1DescrBuff)-1);
 		szPE1DescrBuff[cMaxKADescrLen-1] = '\0';
-		PE1ReadLen = PE1Fasta.ReadSequence(szPE1ReadBuff,sizeof(szPE1ReadBuff)-1); // an observed issue is that some fastq triming toolkits can trim out the complete sequence leaving the descriptor imeediately followed by another descriptor with no sequence present 
-		if(PE1ReadLen < 0 || PE1ReadLen == eBSFFastaDescr || PE1ReadLen > cMaxReadLen)
+		PE1ReadLen = PE1Fasta.ReadSequence(pszPE1ReadBuff, cMaxReadLen-1); // an observed issue is that some fastq triming toolkits can trim out the complete sequence leaving the descriptor imeediately followed by another descriptor with no sequence present 
+		if(PE1ReadLen < 0 || PE1ReadLen == eBSFFastaDescr || PE1ReadLen >= cMaxReadLen)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Problem parsing PE1 sequence after %d reads parsed (pre-filtering) from file: '%s'",PE1NumDescrReads,pszPE1File);
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Last PE1 descriptor parsed: %s",szPE1DescrBuff);
@@ -11963,13 +12016,21 @@ while((Rslt = (teBSFrsltCodes)(PE1ReadLen = PE1Fasta.ReadSequence(szPE1ReadBuff,
 			PE1Fasta.Close();
 			if(bIsPairReads)
 				PE2Fasta.Close();
+			if (pszPE1ReadBuff != NULL)
+				delete []pszPE1ReadBuff;
+			if (pszPE2ReadBuff != NULL)
+				delete[]pszPE2ReadBuff;
+			if (pszPE1QualBuff != NULL)
+				delete []pszPE1QualBuff;
+			if (pszPE2QualBuff != NULL)
+				delete[]pszPE2QualBuff;
 			return(eBSFerrParse);
 			}
 
 		// if paired end processing then also load PE2 read
 		if(bIsPairReads)
 			{
-			if((Rslt = (teBSFrsltCodes)(PE2ReadLen = PE2Fasta.ReadSequence(szPE2ReadBuff,sizeof(szPE2ReadBuff)-1,true,false))) <= eBSFSuccess)
+			if((Rslt = (teBSFrsltCodes)(PE2ReadLen = PE2Fasta.ReadSequence(pszPE2ReadBuff, cMaxReadLen-1,true,false))) <= eBSFSuccess)
 				{
 				gDiagnostics.DiagOut(eDLWarn,gszProcName,"Successfully parsed %d PE1 descriptors (pre-filtering) from file: '%s'",PE1NumDescrReads,pszPE1File);
 				gDiagnostics.DiagOut(eDLWarn,gszProcName,"Only able to parse corresponding %d PE2 descriptors (pre-filtering) from file: '%s'",PE2NumDescrReads,pszPE2File);
@@ -11989,6 +12050,14 @@ while((Rslt = (teBSFrsltCodes)(PE1ReadLen = PE1Fasta.ReadSequence(szPE1ReadBuff,
 					gDiagnostics.DiagOut(eDLFatal,gszProcName,"Last PE2 descriptor parsed: %s",szPE2DescrBuff);
 				PE1Fasta.Close();
 				PE2Fasta.Close();
+				if (pszPE1ReadBuff != NULL)
+					delete[]pszPE1ReadBuff;
+				if (pszPE2ReadBuff != NULL)
+					delete[]pszPE2ReadBuff;
+				if (pszPE1QualBuff != NULL)
+					delete[]pszPE1QualBuff;
+				if (pszPE2QualBuff != NULL)
+					delete[]pszPE2QualBuff;
 				return(eBSFerrParse);
 				}
 
@@ -12000,13 +12069,21 @@ while((Rslt = (teBSFrsltCodes)(PE1ReadLen = PE1Fasta.ReadSequence(szPE1ReadBuff,
 				{
 				PE2DescrLen = PE2Fasta.ReadDescriptor((char *)szPE2DescrBuff,sizeof(szPE2DescrBuff)-1);
 				szPE2DescrBuff[cMaxKADescrLen-1] = '\0';
-				PE2ReadLen = PE2Fasta.ReadSequence(szPE2ReadBuff,sizeof(szPE2ReadBuff)-1);
-				if(PE2ReadLen < 0  || PE1ReadLen == eBSFFastaDescr  || PE1ReadLen > cMaxReadLen)
+				PE2ReadLen = PE2Fasta.ReadSequence(pszPE2ReadBuff, cMaxReadLen-1);
+				if(PE2ReadLen < 0  || PE1ReadLen == eBSFFastaDescr  || PE1ReadLen >= cMaxReadLen)
 					{
 					gDiagnostics.DiagOut(eDLFatal,gszProcName,"Problem PE2 parsing sequence after %d reads parsed (pre-filtering) from file: '%s'",PE2NumDescrReads,pszPE2File);
 					gDiagnostics.DiagOut(eDLFatal,gszProcName,"Last descriptor parsed: %s",szPE2DescrBuff);
 					PE1Fasta.Close();
 					PE2Fasta.Close();
+					if (pszPE1ReadBuff != NULL)
+						delete[]pszPE1ReadBuff;
+					if (pszPE2ReadBuff != NULL)
+						delete[]pszPE2ReadBuff;
+					if (pszPE1QualBuff != NULL)
+						delete[]pszPE1QualBuff;
+					if (pszPE2QualBuff != NULL)
+						delete[]pszPE2QualBuff;
 					return(eBSFerrParse);
 					}
 				}
@@ -12017,6 +12094,14 @@ while((Rslt = (teBSFrsltCodes)(PE1ReadLen = PE1Fasta.ReadSequence(szPE1ReadBuff,
 				PE1Fasta.Close();
 				if(bIsPairReads)
 					PE2Fasta.Close();
+				if (pszPE1ReadBuff != NULL)
+					delete[]pszPE1ReadBuff;
+				if (pszPE2ReadBuff != NULL)
+					delete[]pszPE2ReadBuff;
+				if (pszPE1QualBuff != NULL)
+					delete[]pszPE1QualBuff;
+				if (pszPE2QualBuff != NULL)
+					delete[]pszPE2QualBuff;
 				return(eBSFerrParse);
 				}
 			}
@@ -12033,14 +12118,14 @@ while((Rslt = (teBSFrsltCodes)(PE1ReadLen = PE1Fasta.ReadSequence(szPE1ReadBuff,
 		if(m_pContaminants != NULL)
 			{
 			// currently treating any contaminant match errors as if simply there was no overlap - should really report these!!!
-			if((ContamLen5PE1 = m_pContaminants->MatchContaminants(eAOF5PE1Targ,1,m_Trim5+1,PE1ReadLen,szPE1ReadBuff)) <= m_Trim5)
+			if((ContamLen5PE1 = m_pContaminants->MatchContaminants(eAOF5PE1Targ,1,m_Trim5+1,PE1ReadLen,pszPE1ReadBuff)) <= m_Trim5)
 				ContamLen5PE1 = 0;
 			else
 				{
 				if(ContamLen5PE1 > m_Trim5)
 					ContamLen5PE1 -= m_Trim5;
 				}
-			if((ContamLen3PE1 = m_pContaminants->MatchContaminants(eAOF3PE1Targ,1,m_Trim3+1,PE1ReadLen,szPE1ReadBuff)) <= m_Trim3)
+			if((ContamLen3PE1 = m_pContaminants->MatchContaminants(eAOF3PE1Targ,1,m_Trim3+1,PE1ReadLen,pszPE1ReadBuff)) <= m_Trim3)
 				ContamLen3PE1 = 0;
 			else
 				{
@@ -12050,14 +12135,14 @@ while((Rslt = (teBSFrsltCodes)(PE1ReadLen = PE1Fasta.ReadSequence(szPE1ReadBuff,
 
 			if(bIsPairReads)
 				{
-				if((ContamLen5PE2 = m_pContaminants->MatchContaminants(eAOF5PE2Targ,1,m_Trim5+1,PE2ReadLen,szPE2ReadBuff)) <= m_Trim5)
+				if((ContamLen5PE2 = m_pContaminants->MatchContaminants(eAOF5PE2Targ,1,m_Trim5+1,PE2ReadLen,pszPE2ReadBuff)) <= m_Trim5)
 					ContamLen5PE2 = 0;
 				else
 					{
 					if(ContamLen5PE2 > m_Trim5)
 						ContamLen5PE2 -= m_Trim5;
 					}
-				if((ContamLen3PE2 = m_pContaminants->MatchContaminants(eAOF3PE2Targ,1,m_Trim3+1,PE2ReadLen,szPE2ReadBuff)) <= m_Trim3)
+				if((ContamLen3PE2 = m_pContaminants->MatchContaminants(eAOF3PE2Targ,1,m_Trim3+1,PE2ReadLen,pszPE2ReadBuff)) <= m_Trim3)
 					ContamLen3PE2 = 0;
 				else
 					{
@@ -12117,17 +12202,25 @@ while((Rslt = (teBSFrsltCodes)(PE1ReadLen = PE1Fasta.ReadSequence(szPE1ReadBuff,
 
 		if(bIsFastq && m_QMethod != eFQIgnore)
 			{
-			PE1QualLen = PE1Fasta.ReadQValues((char *)szPE1QualBuff,sizeof(szPE1QualBuff)-1);
+			PE1QualLen = PE1Fasta.ReadQValues((char *)pszPE1QualBuff, cMaxReadLen-1);
 			if(PE1QualLen != PE1ReadLen)		// must be same...
 				{
 				gDiagnostics.DiagOut(eDLFatal,gszProcName,"Load: quality length (%d) not same as read length (%d) for '%s' entry in file '%s'",PE1QualLen,PE1ReadLen,szPE1DescrBuff,pszPE1File);
 				PE1Fasta.Close();
 				if(bIsPairReads)
 					PE2Fasta.Close();
+				if (pszPE1ReadBuff != NULL)
+					delete[]pszPE1ReadBuff;
+				if (pszPE2ReadBuff != NULL)
+					delete[]pszPE2ReadBuff;
+				if (pszPE1QualBuff != NULL)
+					delete[]pszPE1QualBuff;
+				if (pszPE2QualBuff != NULL)
+					delete[]pszPE2QualBuff;
 				return(eBSFerrParse);
 				}
 			// normalise the quality score to be in range 0..15 (needs to fit into 4 bits!)
-			pQualBuff = szPE1QualBuff;
+			pQualBuff = pszPE1QualBuff;
 			for(Idx = 0; Idx < PE1ReadLen; Idx++,pQualBuff++)
 				{
 				switch(m_QMethod) {
@@ -12190,23 +12283,31 @@ while((Rslt = (teBSFrsltCodes)(PE1ReadLen = PE1Fasta.ReadSequence(szPE1ReadBuff,
 				}
 
 			// pack the read and quality, read into the low order bits 0..3, quality into bits 4..7
-			pQualBuff = szPE1QualBuff;
-			pReadBuff = szPE1ReadBuff;
+			pQualBuff = pszPE1QualBuff;
+			pReadBuff = pszPE1ReadBuff;
 			for(Idx = 0; Idx < PE1ReadLen; Idx++,pQualBuff++,pReadBuff++)
-				szPE1ReadBuff[Idx] |= *pQualBuff << 4;
+				pszPE1ReadBuff[Idx] |= *pQualBuff << 4;
 
 			if(bIsPairReads)
 				{
-				PE2QualLen = PE2Fasta.ReadQValues((char *)szPE2QualBuff,sizeof(szPE2QualBuff)-1);
+				PE2QualLen = PE2Fasta.ReadQValues((char *)pszPE2QualBuff, cMaxReadLen-1);
 				if(PE2QualLen != PE2ReadLen)		// must be same...
 					{
 					gDiagnostics.DiagOut(eDLFatal,gszProcName,"Load: quality length (%d) not same as read length (%d) for '%s' entry in file '%s'",PE2QualLen,PE2ReadLen,szPE2DescrBuff,pszPE2File);
 					PE1Fasta.Close();
 					PE2Fasta.Close();
+					if (pszPE1ReadBuff != NULL)
+						delete[]pszPE1ReadBuff;
+					if (pszPE2ReadBuff != NULL)
+						delete[]pszPE2ReadBuff;
+					if (pszPE1QualBuff != NULL)
+						delete[]pszPE1QualBuff;
+					if (pszPE2QualBuff != NULL)
+						delete[]pszPE2QualBuff;
 					return(eBSFerrParse);
 					}
 				// normalise the quality score to be in range 0..15 (needs to fit into 4 bits!)
-				pQualBuff = szPE2QualBuff;
+				pQualBuff = pszPE2QualBuff;
 				for(Idx = 0; Idx < PE2ReadLen; Idx++,pQualBuff++)
 					{
 					switch(m_QMethod) {
@@ -12269,10 +12370,10 @@ while((Rslt = (teBSFrsltCodes)(PE1ReadLen = PE1Fasta.ReadSequence(szPE1ReadBuff,
 					}
 
 					// pack the read and quality, read into the low order bits 0..3, quality into bits 4..7
-				pQualBuff = szPE2QualBuff;
-				pReadBuff = szPE2ReadBuff;
+				pQualBuff = pszPE2QualBuff;
+				pReadBuff = pszPE2ReadBuff;
 				for(Idx = 0; Idx < PE2ReadLen; Idx++,pQualBuff++,pReadBuff++)
-					szPE2ReadBuff[Idx] |= *pQualBuff << 4;
+					pszPE2ReadBuff[Idx] |= *pQualBuff << 4;
 				}
 			}
 
@@ -12280,7 +12381,7 @@ while((Rslt = (teBSFrsltCodes)(PE1ReadLen = PE1Fasta.ReadSequence(szPE1ReadBuff,
 		if(m_Trim5 || ContamLen5PE1)
 			{
 			PE1ReadLen -= (m_Trim5 + ContamLen5PE1);
-			memmove(szPE1ReadBuff,&szPE1ReadBuff[m_Trim5 + ContamLen5PE1],PE1ReadLen);
+			memmove(pszPE1ReadBuff,&pszPE1ReadBuff[m_Trim5 + ContamLen5PE1],PE1ReadLen);
 			}
 		if(m_Trim3 || ContamLen3PE1)
 			PE1ReadLen -= (m_Trim3 + ContamLen3PE1);
@@ -12305,7 +12406,7 @@ while((Rslt = (teBSFrsltCodes)(PE1ReadLen = PE1Fasta.ReadSequence(szPE1ReadBuff,
 			if(m_Trim5 || ContamLen5PE2)
 				{
 				PE2ReadLen -= (m_Trim5 + ContamLen5PE2);
-				memmove(szPE2ReadBuff,&szPE2ReadBuff[m_Trim5 + ContamLen5PE2],PE2ReadLen);
+				memmove(pszPE2ReadBuff,&pszPE2ReadBuff[m_Trim5 + ContamLen5PE2],PE2ReadLen);
 				}
 			if(m_Trim3 || ContamLen3PE2)
 				PE2ReadLen -= (m_Trim3 + ContamLen3PE2);
@@ -12330,16 +12431,16 @@ while((Rslt = (teBSFrsltCodes)(PE1ReadLen = PE1Fasta.ReadSequence(szPE1ReadBuff,
 
 		if(!bIsPairReads)
 			{
-			if((Rslt=(teBSFrsltCodes)AddEntry(bIsPairReads,false,0,FileID,PE1DescrLen,(char *)szPE1DescrBuff,PE1ReadLen,szPE1ReadBuff))!=eBSFSuccess)
+			if((Rslt=(teBSFrsltCodes)AddEntry(bIsPairReads,false,0,FileID,PE1DescrLen,(char *)szPE1DescrBuff,PE1ReadLen,pszPE1ReadBuff))!=eBSFSuccess)
 				break;
 			PE1NumReadsAccepted += 1;
 			}
 		else
 			{
-			if((Rslt=(teBSFrsltCodes)AddEntry(bIsPairReads,false,PairReadID,FileID,PE1DescrLen,(char *)szPE1DescrBuff,PE1ReadLen,szPE1ReadBuff))!=eBSFSuccess)
+			if((Rslt=(teBSFrsltCodes)AddEntry(bIsPairReads,false,PairReadID,FileID,PE1DescrLen,(char *)szPE1DescrBuff,PE1ReadLen,pszPE1ReadBuff))!=eBSFSuccess)
 				break;
 			PE1NumReadsAccepted += 1;
-			if((Rslt=(teBSFrsltCodes)AddEntry(bIsPairReads,true,PairReadID,FileID+1,PE2DescrLen,(char *)szPE2DescrBuff,PE2ReadLen,szPE2ReadBuff))!=eBSFSuccess)
+			if((Rslt=(teBSFrsltCodes)AddEntry(bIsPairReads,true,PairReadID,FileID+1,PE2DescrLen,(char *)szPE2DescrBuff,PE2ReadLen,pszPE2ReadBuff))!=eBSFSuccess)
 				break;
 			PE2NumReadsAccepted += 1;
 			PairReadID += 1;
@@ -12353,6 +12454,14 @@ while((Rslt = (teBSFrsltCodes)(PE1ReadLen = PE1Fasta.ReadSequence(szPE1ReadBuff,
 		PE1Fasta.Close();
 		if(bIsPairReads)
 			PE2Fasta.Close();
+		if (pszPE1ReadBuff != NULL)
+			delete[]pszPE1ReadBuff;
+		if (pszPE2ReadBuff != NULL)
+			delete[]pszPE2ReadBuff;
+		if (pszPE1QualBuff != NULL)
+			delete[]pszPE1QualBuff;
+		if (pszPE2QualBuff != NULL)
+			delete[]pszPE2QualBuff;
 		return(eBSFerrParse);
 		}
 	}
@@ -12368,12 +12477,27 @@ if(Rslt != eBSFSuccess)
 	PE1Fasta.Close();
 	if(bIsPairReads)
 		PE2Fasta.Close();
+	if (pszPE1ReadBuff != NULL)
+		delete[]pszPE1ReadBuff;
+	if (pszPE2ReadBuff != NULL)
+		delete[]pszPE2ReadBuff;
+	if (pszPE1QualBuff != NULL)
+		delete[]pszPE1QualBuff;
+	if (pszPE2QualBuff != NULL)
+		delete[]pszPE2QualBuff;
 	return(Rslt);
 	}
 PE1Fasta.Close();
 if(bIsPairReads)
 	PE2Fasta.Close();
-
+if (pszPE1ReadBuff != NULL)
+delete[]pszPE1ReadBuff;
+if (pszPE2ReadBuff != NULL)
+delete[]pszPE2ReadBuff;
+if (pszPE1QualBuff != NULL)
+delete[]pszPE1QualBuff;
+if (pszPE2QualBuff != NULL)
+delete[]pszPE2QualBuff;
 if(m_TermBackgoundThreads != 0)	// need to immediately self-terminate?
 	return(eBSErrSession);
 

@@ -2594,7 +2594,7 @@ pThreadInst->Rslt = eBSFSuccess;
 _endthreadex(0);
 return(eBSFSuccess);
 #else
-pthread_exit(NULL);
+pthread_exit(&pThreadInst->Rslt);
 #endif
 }
 

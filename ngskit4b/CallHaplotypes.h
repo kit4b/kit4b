@@ -56,6 +56,10 @@ const double cDfltMinQGLGrpPropTotSamples = 0.10; // haplotype groups containing
 const double cDfltMinQGLFmeasure = 0.90;   // only accepting QGL loci with at least this F-measure score
 const double cDlftFbetaGrps = 1.0;         // default Fbeta-measure
 
+const int32_t cDfltSparseRepPropGrpMbrs = 0;  // only apply sparse representative imputation if number of haplotype group members at least this, default is for no sparse imputations
+const double cDfltSparseRepProp = 0.25;	   // if highest frequency (consensus) allele is 0x00 (no coverage) then if next highest frequency allele is at least this proportion of all members in haplotype group then treat next highest allele as
+										   // being as being the consensus. Objective to obtain an imputed allele in regions of sparse haplotype coverage
+
 typedef enum TAG_eModeCSH {
 	eMCSHDefault = 0,		// processing mode 0: report progeny imputation haplotype matrix
 	eMCSHRaw,               // report both raw and imputation haplotype matrices
@@ -64,7 +68,6 @@ typedef enum TAG_eModeCSH {
 	eMCSHCoverageHapsGrps,  // generating coverage haplotype groupings
 	eMCSHQGLHapsGrps,       // post-processing haplotype groupings for differential QGL loci
 	eMCSHGrpDist2WIG,       // post-processing haplotype grouping centroid distances into WIG format
-	eMCSHHyperConserved,    // identify hyperconserved regions
 	eMCSHPlaceHolder		// used to mark end of processing modes
 	}eModeCSH;
 
@@ -237,7 +240,7 @@ class CCallHaplotypes
 	eModeCSH m_PMode;				// processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons, 3: allelic haplotype grouping,4: coverage haplotype grouping, 5: post-process haplotype groupings for QGLs,  6: post-process to WIG
 	uint32_t m_LimitPrimaryPBAs;    // limit number of loaded primary or founder PBA files to this many. 0: no limits, > 0 sets upper limit
 
-	uint32_t m_MaxReportGrpQGLs;          // when calling group QGLs then, if non-zero - report this many highest scoring QGLs
+	uint32_t m_MaxReportGrpQGLs;    // when calling group QGLs then, if non-zero - report this many highest scoring QGLs
 	uint32_t m_ExprID;				// assign this experiment identifier for this PBA analysis
 	uint32_t m_SeedRowID;           // generated CSVs will contain monotonically unique row identifiers seeded with this row identifier  
 	uint32_t m_CurRowID;            // current row identifier, increment after each row assignment  
@@ -260,6 +263,11 @@ class CCallHaplotypes
 	double m_MinQGLGrpPropTotSamples;  // haplotype groups containing less than this proportion of all samples are treated as if containing noise and alleles in these groups are not used when determining QGL group specific major alleles 
 	double m_MinQGLFmeasure;            // only accepting QGL loci with at least this F-measure score
 	double m_FbetameasureGrps;         // default Fbeta-measure
+
+	uint32_t m_SparseRepPropGrpMbrs;		// only apply sparse representative imputation if number of haplotype group members at least this 
+	double m_SparseRepProp;				// if highest frequency (consensus) allele is 0x00 (no coverage) then if next highest frequency allele is at least this proportion of all members in haplotype group then treat next highest allele as
+										// being as being the consensus. Objective to obtain an imputed allele in regions of sparse haplotype coverage
+
 	uint32_t m_WIGChromID;				// current WIG span is on this chromosome
 	uint32_t m_WIGRptdChromID;			// previously reported WIG chrom
 	uint32_t m_WIGSpanLoci;				// current WIG span starts at this loci
@@ -694,6 +702,9 @@ public:
 			int32_t MinCentClustDist,        // haplotype groupings - in processing mode 3/4 only - minimum group centroid clustering distance
 			int32_t MaxCentClustDist,        // haplotype groupings - in processing mode 3/4 only - maximum group centroid clustering distance
 			int32_t MaxClustGrps,            // haplotype groupings - in processing mode 3 only - targeted maximum number of groups
+			uint32_t SparseRepPropGrpMbrs,	// only apply sparse representative imputation if number of haplotype group members at least this 
+			double SparseRepProp,			// if highest frequency (consensus) allele is 0x00 (no coverage) then if next highest frequency allele is at least this proportion of all members in haplotype group then treat next highest allele as
+										// being as being the consensus. Objective to obtain an imputed allele in regions of sparse haplotype coverage
 			int32_t MaxReportGrpQGLs,     // when calling group QGLs then, if non-zero - report this many highest scoring QGLs
 			int32_t MinQGLGrpMembers,        // groups with fewer than this number of members - in processing mode 5 only -are treated as noise alleles these groups are not used when determining QGL group specific major alleles
 			double MinQGLGrpPropTotSamples,  // haplotype groups - in processing mode 5 only -containing less than this proportion of all samples are treated as if containing noise and alleles in these groups are not used when determining QGL group specific major alleles 

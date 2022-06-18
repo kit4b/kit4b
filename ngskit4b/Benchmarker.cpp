@@ -962,7 +962,7 @@ int BuffOffs;
 int SeqOfs;
 int Descrlen;
 char * pszLineBuff;
-char szSeqBuff[0x03fff];
+char szSeqBuff[0x02fff];
 char szDescription[1000];
 int hOutReads;
 CFasta* pReads = NULL;
@@ -1255,7 +1255,7 @@ if ((pszLine = new char[cMaxReadLen]) == NULL)				// buffer input lines
 if ((pSAMalign = new tsBAMalign) == NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to allocate memory for alignment tsBAMalign structure");
-	delete pszLine;
+	delete []pszLine;
 	Reset();
 	return(-1);
 	}
@@ -1603,7 +1603,7 @@ while (Rslt >= eBSFSuccess && (LineLen = m_pAlignments->GetNxtSAMline(pszLine)) 
 		if (pTmp == NULL)
 			{
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenObsCIGARs: Memory re-allocation to %zd bytes - %s", (int64_t)(memreq), strerror(errno));
-			delete pszLine;
+			delete []pszLine;
 			delete pSAMalign;
 			Reset();
 			return(eBSFerrMem);

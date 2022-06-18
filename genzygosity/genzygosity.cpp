@@ -1246,9 +1246,9 @@ if(CurEntryID > 0 &&  EntrySourceSfxEntryCnts > 0)
 pPars->Rslt = 1;
 #ifdef _WIN32
 _endthreadex(0);
-return(eBSFSuccess);
+return(eBSFSuccess); // unreached, but keeps compilers happy!
 #else
-pthread_exit(NULL);
+pthread_exit(&pPars->Rslt);
 #endif
 }
 

@@ -1703,7 +1703,7 @@ pPars->State = Rslt;
 _endthreadex(0);
 return(Rslt);
 #else
-pthread_exit(NULL);
+pthread_exit(&pPars->State);
 #endif
 }
 

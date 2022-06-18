@@ -32,6 +32,8 @@ CFasta::CFasta(void)
 {
 m_hFile = -1;
 m_gzFile = NULL;
+m_pszFastqSeq = NULL;
+m_pszFastqSeqQ = NULL;
 memset(m_FastaBlocks, 0, sizeof(m_FastaBlocks));
 m_pCurFastaBlock = NULL;
 Cleanup();
@@ -39,7 +41,23 @@ Cleanup();
 
 CFasta::~CFasta(void)
 {
-Cleanup();
+if (m_hFile >= 0)
+	close(m_hFile);
+
+if (m_gzFile != NULL)
+	gzclose(m_gzFile);
+
+if (m_pszFastqSeq != NULL)
+	delete[]m_pszFastqSeq;
+
+if (m_pszFastqSeqQ != NULL)
+	delete[]m_pszFastqSeqQ;
+
+for (int32_t Idx = 0; Idx < cNumFastaBlocks; Idx++)
+	{
+	if (m_FastaBlocks[Idx].pBlock != NULL)
+		delete[]m_FastaBlocks[Idx].pBlock;
+	}
 }
 
 void
@@ -63,11 +81,20 @@ if(m_gzFile != NULL)
 	gzclose(m_gzFile);
 	m_gzFile = NULL;
 	}
-
-for (int Idx = 0; Idx < cNumFastaBlocks; Idx++)
+if (m_pszFastqSeq != NULL)
+	{
+	delete []m_pszFastqSeq;
+	m_pszFastqSeq = NULL;
+	}
+if (m_pszFastqSeqQ != NULL)
+	{
+	delete []m_pszFastqSeqQ;
+	m_pszFastqSeqQ = NULL;
+	}
+for (int32_t Idx = 0; Idx < cNumFastaBlocks; Idx++)
 	{
 	if (m_FastaBlocks[Idx].pBlock != NULL)
-		delete m_FastaBlocks[Idx].pBlock;
+		delete []m_FastaBlocks[Idx].pBlock;
 	}
 memset(m_FastaBlocks, 0, sizeof(m_FastaBlocks));
 m_pCurFastaBlock = NULL;
@@ -94,12 +121,12 @@ CFasta::InitialFileSize(void)				// file size when initially opened for reading
 return(m_StatFileSize);
 }
 
-int
+int32_t
 CFasta::Open(char *pszFile,						// fasta or fastq file path+name to open
 			 bool Read,							// TRUE if opening for read, FALSE for write
-			 unsigned long BufferSize)			// use this size buffer for staging
+			 uint32_t BufferSize)			// use this size buffer for staging
 {
-int Rslt;
+int32_t Rslt;
 if(pszFile == NULL || *pszFile == '\0')
 	return(eBSFerrParams);
 
@@ -111,6 +138,17 @@ else
 		BufferSize = cMaxStageBuffSize;
 
 Cleanup();	
+
+if (m_pszFastqSeq == NULL)
+	{
+	if ((m_pszFastqSeq = new char[cMaxFastQSeqLen+10]) == NULL)
+		return(eBSFerrMem);
+	}
+if (m_pszFastqSeq == NULL)
+	{
+	if((m_pszFastqSeqQ = new char[cMaxFastQSeqLen+10]) == NULL)
+		return(eBSFerrMem);
+	}
 
 #ifdef _WIN32
 struct _stat64 st;
@@ -128,7 +166,7 @@ if(Read)		// read
 	strcpy(m_szFile,pszFile);
 
 	// if file has extension of ".gz' then assume that this file has been compressed and needs processing with gzopen/gzread/gzclose
-	int NameLen = (int)strlen(pszFile);
+	int32_t NameLen = (int32_t)strlen(pszFile);
 	if(NameLen >= 4 && !stricmp(".gz",&pszFile[NameLen-3]))
 		{
 		if((m_gzFile = gzopen(pszFile,"r"))==NULL)
@@ -216,7 +254,7 @@ if (m_pCurFastaBlock->pBlock == NULL)
 m_pCurFastaBlock->AllocSize = BufferSize;
 if (m_bRead && cNumFastaBlocks > 1)
 	{
-	for (int Idx = 1; Idx < cNumFastaBlocks; Idx++)
+	for (int32_t Idx = 1; Idx < cNumFastaBlocks; Idx++)
 		{
 		m_FastaBlocks[Idx].pBlock = new uint8_t[BufferSize];
 		if (m_FastaBlocks[Idx].pBlock == NULL)
@@ -238,7 +276,7 @@ return(eBSFSuccess);
 
 // FastaEstimateSizes
 // Generally suitable only for NGS read dataset size estimates
-const int cEstChrsBuff = 0x03fffff;					// base estimates on the first 4M chars of file
+const int32_t cEstChrsBuff = 0x03fffff;					// base estimates on the first 4M chars of file
 
 uint32_t								// returns estimated number of sequences in fata/fastq file
 CFasta::FastaEstSizes(char *pszFile,				// fasta or fastq file path+name to estimate sizes
@@ -255,27 +293,27 @@ char MaxScoreChr;		// max score char in any of the reads, used for reasonable gu
 char MinScoreChr;		// min score char in any of the reads, used for reasonable guestimate of scoring schema utilised
 
 gzFile gzdFile;
-int hFile;
+int32_t hFile;
 bool bIsGZ;
 long FileOfs;
 
-int BuffSize;
-int NumInBuff;
+int32_t BuffSize;
+int32_t NumInBuff;
 uint8_t *pBuff;
 char Chr;
 char *pChr;
-int NumChrsParsed;
-int NumChrsParsedThisLine;
+int32_t NumChrsParsed;
+int32_t NumChrsParsedThisLine;
 
 bool bInDescrLine;
 bool bInSeqLine;
-int NumLines2Slough;
+int32_t NumLines2Slough;
 
-int CurseqLen;
-int MaxSeqLen;
-int TotSeqLen;
-int MaxDescrLen;
-int TotDescrLen;
+int32_t CurseqLen;
+int32_t MaxSeqLen;
+int32_t TotSeqLen;
+int32_t MaxDescrLen;
+int32_t TotDescrLen;
 uint32_t EstNumSeqs;
 
 MaxScoreChr = 0;
@@ -327,7 +365,7 @@ if((pBuff = new uint8_t [BuffSize+10])==NULL)			// allows for trailing '\0's
 	}
 
 
-int NameLen = (int)strlen(pszFile);
+int32_t NameLen = (int32_t)strlen(pszFile);
 if(NameLen >= 4 && !stricmp(".gz",&pszFile[NameLen-3]))
 	{
 	if((gzdFile = gzopen(pszFile,"r"))==NULL)
@@ -510,23 +548,23 @@ return(EstNumSeqs);
 // Crude check on presumed fasta or fastq file contents
 // Reads 1st 1Mbp of contents and checks if contents are consistent with fasta or fastq file formats
 // Also handles Fastq with SOLiD 2 base representation
-const int cChkFastaSize = 0x100000;
+const int32_t cChkFastaSize = 0x100000;
 
-int
+int32_t
 CFasta::CheckIsFasta(void)
 {
 char *pszBuff;
-int BuffCnt;
+int32_t BuffCnt;
 char *pChr;
 char Base;
-int BuffIdx;
-int CurLineNum;		// line currently being processed
-int ChrPsn;			// chr psn 1..n in line being processed
+int32_t BuffIdx;
+int32_t CurLineNum;		// line currently being processed
+int32_t ChrPsn;			// chr psn 1..n in line being processed
 bool bIsFastQSOLiD;	// some fastq files (from NCBA SRA SRP000191) have SOLiD 2 base representation sequences
-int NumSeqChrs;		// cur number of sequence line nucleotides processed
-int NumAmbiguousBases; // number of ambiguous bases in current fasta sequence
-int NumQualChrs;	// cur number of quality line scores processed
-int FileState;		// 0 unknown, 1 in fasta, 2 in fasta descr, 3 in fasta seq, 4 in fastq, 5 in fastq seq, 6 waiting for '+', 7 in '+', 8 quality values
+int32_t NumSeqChrs;		// cur number of sequence line nucleotides processed
+int32_t NumAmbiguousBases; // number of ambiguous bases in current fasta sequence
+int32_t NumQualChrs;	// cur number of quality line scores processed
+int32_t FileState;		// 0 unknown, 1 in fasta, 2 in fasta descr, 3 in fasta seq, 4 in fastq, 5 in fastq seq, 6 waiting for '+', 7 in '+', 8 quality values
 bool bSkipEOL;		// true if remainder of current line not to be parsed
 bool bIscsfasta;	// true if file has been determined to be SOLiD csfasta format
 bool bIsfasta;		// true if file has been determined to be basespace
@@ -784,7 +822,7 @@ for(BuffIdx = 0; BuffIdx < BuffCnt; BuffIdx++,pChr++)
 					break;
 				}
 			AddErrMsg("CFasta::CheckIsFasta","Errors whilst reading file near line %d#%d - '%s' - non-sequence chr '%d'", CurLineNum,ChrPsn,m_szFile,*pChr);
-			delete pszBuff;	
+			delete []pszBuff;	
 			return(eBSFerrNotFasta);
 
 		case 6:	// presumed fastq file and reading the duplicate seq ident line
@@ -871,7 +909,7 @@ return(m_bIscsfasta);
 // Reset
 // Resets context to that immediately following an Open() with file seek to FileOfs
 // NOTE: gzip library can't handle file offsets which are greater than 2^31 - 1
-int
+int32_t
 CFasta::Reset(int64_t FileOfs)
 {
 if(m_hFile == -1 && m_gzFile == NULL)
@@ -925,9 +963,9 @@ uint8_t CFasta::m_SOLiDmap[5][5] = {
 	{'n','n','n','n','n'}};		
 
 
-int						// returns actual number read (eBSFSuccess == EOF,eBSFFastaDescr == End of current sequence, descriptor line now available)
+int32_t						// returns actual number read (eBSFSuccess == EOF,eBSFFastaDescr == End of current sequence, descriptor line now available)
 CFasta::ReadSequence(void *pRetSeq,		// where to return sequence, can be NULL if only interested in the sequence length
-					 int Max2Ret,		// max to return, ignored if pRetSeq is NULL
+					 int32_t Max2Ret,		// max to return, ignored if pRetSeq is NULL
 					 bool bSeqBase,		// if false then return ascii, if true then return as etSeqBase
 					 bool RptMskUpperCase)	// default is false, UCSC softmasked use lowercase when repeat masked
 {
@@ -935,11 +973,11 @@ bool bInDescriptor;		// true whilst processing descriptor or fastq sequence iden
 bool bMoreToDo;
 char Chr;
 int64_t FileOfs;			// will contain file offset corresponding to last buffer read from file
-int SeqLen = 0;
+int32_t SeqLen = 0;
 char *pAscii = (char *)pRetSeq;
-int Rslt;
+int32_t Rslt;
 bool bSloughEOL;	// if true then skip to end of current line
-int PrevSOLiDbase;
+int32_t PrevSOLiDbase;
 
 if (m_gzFile == NULL && m_hFile == -1 || m_pCurFastaBlock == NULL || m_pCurFastaBlock->pBlock == NULL)
 	return(eBSFerrClosed);
@@ -964,10 +1002,10 @@ if(m_bIsFastQ)
 
 		SeqLen = min(Max2Ret,m_FastqSeqLen - m_FastqSeqIdx); 
 		if(pRetSeq != NULL && bSeqBase)
-			Ascii2Sense((char *)&m_szFastqSeq[m_FastqSeqIdx],SeqLen,(etSeqBase *)pRetSeq,RptMskUpperCase);
+			Ascii2Sense((char *)&m_pszFastqSeq[m_FastqSeqIdx],SeqLen,(etSeqBase *)pRetSeq,RptMskUpperCase);
 		else
 			{
-			strncpy((char *)pRetSeq,&m_szFastqSeq[m_FastqSeqIdx],SeqLen);
+			strncpy((char *)pRetSeq,&m_pszFastqSeq[m_FastqSeqIdx],SeqLen);
 			((char *)pRetSeq)[SeqLen] = '\0';
 			}
 		m_FastqSeqIdx += SeqLen;
@@ -1179,14 +1217,14 @@ return(eBSFSuccess);
 // If bFromStart==false then the search starts from the previous descriptor (or start of file if first call)
 // If bFromStart==false then the search starts from the start of file
 // Returns eBSFSuccess if descriptor is located
-int													// eBSFSuccess if matched and descriptor is available
+int32_t													// eBSFSuccess if matched and descriptor is available
 CFasta::LocateDescriptor(char *pszPrefixToMatch,	// prefix to match or NULL if match any
 						 bool bFromStart)			// true: from start, false: from last descriptor or sequence
 {
 char Buffer[16000];
-int Cnt;
-int CmpLen;
-int FilePsn;
+int32_t Cnt;
+int32_t CmpLen;
+int32_t FilePsn;
 
 if(m_gzFile == NULL && m_hFile == -1 )
 	return(eBSFerrClosed);
@@ -1205,7 +1243,7 @@ if(bFromStart)
 	if(m_gzFile != NULL)
 		FilePsn = gzseek(m_gzFile,0,SEEK_SET);
 	else
-		FilePsn = (int)_lseeki64(m_hFile,0,SEEK_SET);
+		FilePsn = (int32_t)_lseeki64(m_hFile,0,SEEK_SET);
 	if(FilePsn != 0)
 		{
 		AddErrMsg("CFasta::LocateDescriptor","Seek failed to offset 0 on %s - %s",m_szFile,strerror(errno));
@@ -1214,7 +1252,7 @@ if(bFromStart)
 	}
 
 if(pszPrefixToMatch != NULL && pszPrefixToMatch[0] != '\0')
-	CmpLen = (int)strlen(pszPrefixToMatch);
+	CmpLen = (int32_t)strlen(pszPrefixToMatch);
 else
 	CmpLen = 0;
 Cnt = 0;
@@ -1239,13 +1277,13 @@ return(eBSFerrFastaDescr);
 // Returns eBSFSuccess if EOF
 //         eBSFFastaDescr if fastq block was parsed
 //         standard error codes if any errors
-int						
+int32_t						
 CFasta::ParseFastQblockQ(void)	
 {
 char Chr;
 int64_t FileOfs;			// will contain file offset corresponding to last buffer read from file
-int ParseState;
-int SeqLen = 0;
+int32_t ParseState;
+int32_t SeqLen = 0;
 bool bIsFastQSOLiD;	// some fastq files (from NCBA SRA SRP000191) have SOLiD sequences
 char PrvBase;		// used if decoding SOLiD sequences
 if (m_gzFile == NULL && m_hFile == -1 || m_pCurFastaBlock == NULL || m_pCurFastaBlock->pBlock == NULL)
@@ -1323,7 +1361,7 @@ while(ParseState < 6) {
 					{
 					if(m_FastqSeqLen == 0)		
 						continue;
-					m_szFastqSeq[m_FastqSeqLen] = '\0';
+					m_pszFastqSeq[m_FastqSeqLen] = '\0';
 					ParseState = 3;					// next expecting duplicate sequence identifier
 					continue;
 					}
@@ -1337,15 +1375,15 @@ while(ParseState < 6) {
 										// a warning is written to log
 						if(m_FastqSeqLen == 0)
 							{
-							m_szFastqSeq[m_FastqSeqLen++] = 'N';
-							m_szFastqSeq[m_FastqSeqLen] = '\0';
+							m_pszFastqSeq[m_FastqSeqLen++] = 'N';
+							m_pszFastqSeq[m_FastqSeqLen] = '\0';
 							m_pCurFastaBlock->BuffIdx--;			// push back so '+' will be reparsed as if true duplicate sequence identifier
 							if(m_NumMissingSequences++ == 0)
 								gDiagnostics.DiagOut(eDLWarn,gszProcName,"ParseFastQblockQ: At least one instance of missing sequence in file '%s' - first is near line %d, simulating sequence of length 1", m_szFile,m_CurFastQParseLine+1);
 							ParseState = 3;		
 							continue;
 							}
-						AddErrMsg("CFasta::ParseFastQblockQ","sequence char (0x%2x %c) error whilst reading fastq file - '%s' - near line %d at chr position %d", (int)Chr,Chr, m_szFile,m_CurFastQParseLine+1,m_FastqSeqLen);
+						AddErrMsg("CFasta::ParseFastQblockQ","sequence char (0x%2x %c) error whilst reading fastq file - '%s' - near line %d at chr position %d", (int32_t)Chr,Chr, m_szFile,m_CurFastQParseLine+1,m_FastqSeqLen);
 						return(eBSFerrFastqSeq);
 
 					case 'a': case 'A': case 'c': case 'C': case 'g': case 'G': case 't': case 'T': case 'n': case 'N':
@@ -1367,11 +1405,11 @@ while(ParseState < 6) {
 							{
 							bIsFastQSOLiD = true;
 							m_FastqSeqLen = 0;
-							PrvBase = tolower(m_szFastqSeq[0]);
+							PrvBase = tolower(m_pszFastqSeq[0]);
 							}
 						else
 							{
-							if((PrvBase = m_szFastqSeq[m_FastqSeqLen-1])=='n')
+							if((PrvBase = m_pszFastqSeq[m_FastqSeqLen-1])=='n')
 								PrvBase = 'a'; // making previous base as not being indeterminate gives a 25% chance remainder of sequence will be correct
 							}
 
@@ -1415,11 +1453,11 @@ while(ParseState < 6) {
 						break;
 	
 					default:
-						AddErrMsg("CFasta::ParseFastQblockQ","sequence char (0x%2x %c) error whilst reading fastq file - '%s' - near line %d at chr position %d", (int)Chr,Chr, m_szFile,m_CurFastQParseLine+1,m_FastqSeqLen);
+						AddErrMsg("CFasta::ParseFastQblockQ","sequence char (0x%2x %c) error whilst reading fastq file - '%s' - near line %d at chr position %d", (int32_t)Chr,Chr, m_szFile,m_CurFastQParseLine+1,m_FastqSeqLen);
 						return(eBSFerrFastqSeq);
 					}
 					
-				m_szFastqSeq[m_FastqSeqLen++] = Chr;
+				m_pszFastqSeq[m_FastqSeqLen++] = Chr;
 				continue;
 
 			case 3:		// parsing '+' duplicate sequence identifier
@@ -1447,10 +1485,10 @@ while(ParseState < 6) {
 						{
 						if(m_FastqSeqLen > 1)
 							continue;
-						m_szFastqSeqQ[m_FastqSeqQLen++] = 'a';
+						m_pszFastqSeqQ[m_FastqSeqQLen++] = 'a';
 						}
 
-					m_szFastqSeqQ[m_FastqSeqQLen] = '\0';
+					m_pszFastqSeqQ[m_FastqSeqQLen] = '\0';
 					ParseState = 6;					// block processed
 					}
 				else
@@ -1462,7 +1500,7 @@ while(ParseState < 6) {
 						bIsFastQSOLiD = false;
 						continue;
 						}
-					m_szFastqSeqQ[m_FastqSeqQLen++] = Chr;
+					m_pszFastqSeqQ[m_FastqSeqQLen++] = Chr;
 					}
 				continue;
 			}
@@ -1481,14 +1519,14 @@ if(ParseState == 5)
 	{
 	if(m_FastqSeqQLen > 0)	// need to allow for last block having quality scores not being terminated by a CR/LF as last block could be EOF terminated
 		{
-		m_szFastqSeqQ[m_FastqSeqQLen] = '\0';
+		m_pszFastqSeqQ[m_FastqSeqQLen] = '\0';
 		ParseState = 6;					// treat as if block was processed
 		}
 	else
 		if(m_FastqSeqLen == 1 && m_FastqSeqQLen == 0)	// could have been a filtered out sequence which is still present as a fastq sequence block
 			{
-			m_szFastqSeqQ[m_FastqSeqQLen++] = 'a';
-			m_szFastqSeqQ[m_FastqSeqQLen] = '\0';
+			m_pszFastqSeqQ[m_FastqSeqQLen++] = 'a';
+			m_pszFastqSeqQ[m_FastqSeqQLen] = '\0';
 			ParseState = 6;					// treat as if block was processed
 			}
 	}
@@ -1512,18 +1550,18 @@ return(eBSFFastaDescr);
 
 // ReadSubsequence
 // Reads a subsubsequence from fasta starting at SeqOfs within the next sequence to be located in the fasta file
-int											// number actually read
+int32_t											// number actually read
 CFasta::ReadSubsequence(etSeqBase *pSeq,	// where to return subsequence (NO TERMINATING eBaseEOS)
-				 unsigned int MaxLen,		// reads upto MaxLen sequence bases from file
-				 unsigned int SeqOfs,		// relative offset in sequence at which to read
+				 uint32_t MaxLen,		// reads upto MaxLen sequence bases from file
+				 uint32_t SeqOfs,		// relative offset in sequence at which to read
 				 bool bFromStart)			// true: from start, false: from next sequence
 {
 char Buffer[0x2fff];
-unsigned int CurSeqOfs = 0;
-unsigned int SeqLen = 0;
-int Cnt;
-int CpyLen;
-int CpyFromIdx;
+uint32_t CurSeqOfs = 0;
+uint32_t SeqLen = 0;
+int32_t Cnt;
+int32_t CpyLen;
+int32_t CpyFromIdx;
 char *pAscii = (char *)pSeq;
    
 if (m_gzFile == NULL && m_hFile == -1 || m_pCurFastaBlock == NULL || m_pCurFastaBlock->pBlock == NULL)
@@ -1534,14 +1572,14 @@ if(!m_bRead)
 
 if(bFromStart)
 	{
-	int FileOfs;
+	int32_t FileOfs;
 	m_pCurFastaBlock->BuffCnt = 0;
 	m_pCurFastaBlock->BuffIdx = 0;
 	m_bDescrAvail = false;
 	if(m_gzFile != NULL)
 		FileOfs = gzseek(m_gzFile,0,SEEK_SET);
 	else
-		FileOfs = (int)_lseeki64(m_hFile,0,SEEK_SET);
+		FileOfs = (int32_t)_lseeki64(m_hFile,0,SEEK_SET);
 
 	if(FileOfs!=0)
 		{
@@ -1563,7 +1601,7 @@ while(SeqLen < MaxLen && (Cnt = ReadSequence(Buffer,sizeof(Buffer),true))>=0)
 			}
 		continue;
 		}
-	if(Cnt + CurSeqOfs < (int)SeqOfs)
+	if(Cnt + CurSeqOfs < (int32_t)SeqOfs)
 		{
 		CurSeqOfs += Cnt;
 		continue;
@@ -1618,14 +1656,14 @@ return(eBaseN);
 // Ascii2Sense
 // Translates ascii into etSeqBase's
 // Caller can override assumption that lowercase represents softmasked repeats
-int
+int32_t
 CFasta::Ascii2Sense(char *pAscii,		// expected to be '\0' terminated, or SeqLen long
-					int MaxSeqLen,		// maximal sized sequence that pSeq can hold				
+					int32_t MaxSeqLen,		// maximal sized sequence that pSeq can hold				
 					etSeqBase *pSeq,	// where to return translated bases
 					bool RptMskUpperCase) // true if bases are softmasked as uppercase instead of default lowercase
 {
 char Base;
-int SeqLen = 0;
+int32_t SeqLen = 0;
 while(MaxSeqLen-- && (Base = *pAscii++)!='\0')
 	{
 	SeqLen++;
@@ -1673,8 +1711,8 @@ return(SeqLen);
 // Note: ReadSequence() is expected to return a sequence subsequent to a ReadDescriptor() call.
 //       Some fasta/fastq filtering processes can delete the complete sequence leaving descriptors immediately followed by another descriptor!
 //       Calls to ReadSequence() with user expecting a sequence to be returned would then fail, so a flag is set forcing ReadSequence() to always return at least 1bp immediately after a call to ReadDescriptor!!!
-int							// returns strlen of available descriptor or 0 if none
-CFasta::ReadDescriptor(char *pszDescriptor,int MaxLen)
+int32_t							// returns strlen of available descriptor or 0 if none
+CFasta::ReadDescriptor(char *pszDescriptor,int32_t MaxLen)
 {
 if(m_gzFile == NULL && m_hFile == -1)
 	return(eBSFerrClosed);
@@ -1686,7 +1724,7 @@ if(!m_DescriptorLen || !m_bDescrAvail)
 	return(eBSFerrParams);
 
 strncpy(pszDescriptor,m_szDescriptor,MaxLen);
-if(m_DescriptorLen >= (unsigned int)MaxLen)
+if(m_DescriptorLen >= (uint32_t)MaxLen)
 	{
 	pszDescriptor[MaxLen-1] = '\0';
 	return(MaxLen-1);
@@ -1698,8 +1736,8 @@ return(m_DescriptorLen);
 
 // ReadQualityValues
 // Copies last parsed sequence quality scores (truncates at MaxLen) into user supplied buffer.
-int							// returns strlen of available quality scores or 0 if none
-CFasta::ReadQValues(char *pszValues,int MaxLen)
+int32_t							// returns strlen of available quality scores or 0 if none
+CFasta::ReadQValues(char *pszValues,int32_t MaxLen)
 {
 if(m_gzFile == NULL && m_hFile == -1)
 	return(eBSFerrClosed);
@@ -1712,7 +1750,7 @@ if(!m_bDescrAvail)
 
 if(m_FastqSeqQLen)
 	{
-	strncpy(pszValues,m_szFastqSeqQ,MaxLen);
+	strncpy(pszValues,m_pszFastqSeqQ,MaxLen);
 	if(m_FastqSeqQLen >= MaxLen)
 		{
 		pszValues[MaxLen-1] = '\0';
@@ -1735,10 +1773,10 @@ return(m_FileReadDescrOfs);
 // Write ascii (assumed to be a IUB symbol) IUB char to file
 // Note that whitespace is sloughed w/o any error being returned
 // Note that any other nonalpha chr is treated as an error
-int 
+int32_t 
 CFasta::Write(char Symbol)
 {
-int NumWritten;
+int32_t NumWritten;
 
 if(m_hFile == -1)
 	return(eBSFerrClosed);
@@ -1773,10 +1811,10 @@ return(eBSFSuccess);
 }
 
 // Write Cnt ascii (assumed IUB symbols w/o any checking) IUB chars to file
-int
-CFasta::Write(char *pSymbols,unsigned int Cnt)
+int32_t
+CFasta::Write(char *pSymbols,uint32_t Cnt)
 {
-int Rslt = eBSFSuccess;
+int32_t Rslt = eBSFSuccess;
 if(m_bRead)
 	return(eBSFerrWrite);
 
@@ -1790,11 +1828,11 @@ return(Rslt);
 
 // Write fasta descriptor line to file
 // 
-int
+int32_t
 CFasta::WriteDescriptor(char *pszDescriptor)
 {
 size_t Len;
-int NumWritten;
+int32_t NumWritten;
 if(m_bRead)
 	return(eBSFerrWrite);
 
@@ -1825,13 +1863,13 @@ if(m_CurLineLen)
 if(*pszDescriptor != '>')
 	m_pCurFastaBlock->pBlock[m_pCurFastaBlock->BuffIdx++] = '>';
 strncpy((char *)&m_pCurFastaBlock->pBlock[m_pCurFastaBlock->BuffIdx], pszDescriptor, Len);
-m_pCurFastaBlock->BuffIdx += (int)Len;
+m_pCurFastaBlock->BuffIdx += (int32_t)Len;
 m_pCurFastaBlock->pBlock[m_pCurFastaBlock->BuffIdx++] = '\n';
 m_CurLineLen=0;
 return(eBSFSuccess);
 }
 
-int
+int32_t
 CFasta::Close(void)
 {
 if(!m_bRead)
@@ -1840,7 +1878,7 @@ if(!m_bRead)
 		return(eBSFSuccess);
 
 	if (m_pCurFastaBlock->BuffIdx)
-		if (m_pCurFastaBlock->BuffIdx != (unsigned int)write(m_hFile, m_pCurFastaBlock->pBlock, m_pCurFastaBlock->BuffIdx))
+		if (m_pCurFastaBlock->BuffIdx != write(m_hFile, m_pCurFastaBlock->pBlock, m_pCurFastaBlock->BuffIdx))
 			{
 			AddErrMsg("CFasta::Close", "Errors whilst writing %d bytes - '%s' - %s", m_pCurFastaBlock->BuffIdx, m_szFile, strerror(errno));
 			return(eBSFerrFileAccess);

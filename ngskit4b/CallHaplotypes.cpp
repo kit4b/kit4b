@@ -23,7 +23,6 @@ Please contact Dr Stuart Stephen < stuartjs@g3web.com > if you have any question
 
 #include "../libkit4b/bgzf.h"
 
-
 int CallHaplotypes(eModeCSH PMode,	// processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons, 3: allelic haplotype grouping,4: coverage haplotype grouping, 5: post-process haplotype groupings for QGLs,  6: post-process to WIG, 7: Hyperconserved
 	        int32_t LimitPrimaryPBAs,        // limit number of loaded primary or founder PBA files to this many. 0: no limits, > 0 sets upper limit
 			int32_t ExprID,			         // assign this experiment identifier for this PBA analysis
@@ -33,7 +32,10 @@ int CallHaplotypes(eModeCSH PMode,	// processing mode 0: report imputation haplo
 			int32_t MinCentClustDist,        // haplotype groupings - in processing mode 3/4 only - minimum group centroid clustering distance
 			int32_t MaxCentClustDist,        // haplotype groupings - in processing mode 3/4 only - maximum group centroid clustering distance
 			int32_t MaxClustGrps,            // haplotype groupings - in processing mode 3 only - targeted maximum number of groups
-			int32_t MaxReportGrpQGLs,     // when calling group QGLs then, if non-zero - report this many highest scoring QGLs
+			uint32_t SparseRepPropGrpMbrs,	// only apply sparse representative imputation if number of haplotype group members at least this 
+			double SparseRepProp,			// if highest frequency (consensus) allele is 0x00 (no coverage) then if next highest frequency allele is at least this proportion of all members in haplotype group then treat next highest allele as
+											// being as being the consensus. Objective to obtain an imputed allele in regions of sparse haplotype coverage
+			int32_t MaxReportGrpQGLs,		// when calling group QGLs then, if non-zero - report this many highest scoring QGLs
 			int32_t MinQGLGrpMembers,        // groups with fewer than this number of members - in processing mode 5 only -are treated as noise alleles these groups are not used when determining QGL group specific major alleles
 			double MinQGLGrpPropTotSamples,  // haplotype groups - in processing mode 5 only -containing less than this proportion of all samples are treated as if containing noise and alleles in these groups are not used when determining QGL group specific major alleles 
 			double MinQGLFmeasure,           // only accepting QGL loci with at least this F-measure score
@@ -95,6 +97,9 @@ double MinQGLFmeasure;           // only accepting QGL loci with at least this F
 int32_t MinCentClustDist;        // haplotype groupings - in processing mode 3 only - minimum group centroid clustering distance (default 10, min 1, clamped to bin size)
 int32_t MaxCentClustDist;        // haplotype groupings - in processing mode 3 only - maximum group centroid clustering distance (default mincentclustdist, clamped to bin size)
 int32_t MaxClustGrps;            // haplotype groupings - in processing mode 3 only - targeted maximum number of groups (default 5)
+int32_t SparseRepPropGrpMbrs;		// only apply sparse representative imputation if number of haplotype group members at least this 
+double SparseRepProp;				// if highest frequency (consensus) allele is 0x00 (no coverage) then if next highest frequency allele is at least this proportion of all members in haplotype group then treat next highest allele as
+									// being as being the consensus. Objective to obtain an imputed allele in regions of sparse haplotype coverage
 
 int NumIncludeChroms;
 char *pszIncludeChroms[cMaxIncludeChroms];
@@ -114,7 +119,7 @@ struct arg_lit *version = arg_lit0 ("v", "version,ver", "print version informati
 struct arg_int *FileLogLevel = arg_int0 ("f", "FileLogLevel", "<int>", "Level of diagnostics written to screen and logfile 0=fatal,1=errors,2=info,3=diagnostics,4=debug");
 struct arg_file *LogFile = arg_file0 ("F", "log", "<file>", "diagnostics log file");
 
-struct arg_int *pmode = arg_int0 ("m", "mode", "<int>", "processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons, 3: allelic haplotype grouping,4: coverage haplotype grouping, 5: post-process haplotype groupings for QGLs, 6: post-process to WIG, 7: Hyperconserved (default 0)");
+struct arg_int *pmode = arg_int0 ("m", "mode", "<int>", "processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons, 3: allelic haplotype grouping,4: coverage haplotype grouping, 5: post-process haplotype groupings for QGLs, 6: post-process to WIG (default 0)");
 struct arg_int *limitprimarypbas = arg_int0 ("l", "debug", "<int>", " limit number of loaded primary or founder PBA files to this many. 0: no limits, > 0 sets upper limit (default 0)");
 
 struct arg_int* exprid = arg_int0("e","exprid","<int>","assign this experiment identifier for haplotypes called (default 1");
@@ -130,9 +135,11 @@ struct arg_int* outliersproxwindow = arg_int0("W", "outliersproxwindow", "<int>"
 
 struct arg_int* maxreportgrpQGLs = arg_int0("N", "maxreportgrpQGLs", "<int>", "Report at most, this many highest scoring haplotype grouping QGL loci, 0 for no limits, (default 10000000)");
 struct arg_int* minQGLgrpmembers = arg_int0("n", "grpQGLmbrs", "<int>", "Minimum QGL haplotype group members, mode 5 only, (default 10)");
-struct arg_dbl* minQGLgrpprptotsamples = arg_dbl0("q", "grpQGLsamples", "<int>", "Minimum QGL haplotype group members as proportion of total samples, mode 5 only, (default 0.10)");
-struct arg_dbl* minQGLgrpfmeasure = arg_dbl0("Q", "grpQGLfmeasure", "<int>", "Only accepting QGL loci with at least this F-measure score (default 0.90)");
+struct arg_dbl* minQGLgrpprptotsamples = arg_dbl0("q", "grpQGLsamples", "<dbl>", "Minimum QGL haplotype group members as proportion of total samples, mode 5 only, (default 0.10)");
+struct arg_dbl* minQGLgrpfmeasure = arg_dbl0("Q", "grpQGLfmeasure", "<dbl>", "Only accepting QGL loci with at least this F-measure score (default 0.90)");
 
+struct arg_int* minsparsegrpmbrs = arg_int0("s", "minsparsegrpmbrs", "<int>", "Minimum number of group members required for sparse imputation (default 0 for no sparse imputation)");
+struct arg_dbl* minsparseprop = arg_dbl0("S", "minsparseprop", "<dbl>", "Minimum proportion of group members with called alleles before applying sparse imputation (default 0.25)");
 
 struct arg_int* grphapbinsize = arg_int0("g", "grphapbinsize", "<int>", "haplotype groupings - in processing mode 3/4 only - bin size (default 10000, min 10, will be clamped to actual size)");
 struct arg_int* maxclustgrps = arg_int0("G", "maxclustgrps", "<int>", "haplotype groupings - in processing mode 3/4 only - targeted maximum number of groups (default 5)");
@@ -153,7 +160,8 @@ struct arg_int *threads = arg_int0("T","threads","<int>","number of processing t
 struct arg_end *end = arg_end (200);
 
 void *argtable[] = { help,version,FileLogLevel,LogFile,
-					pmode,exprid,rowid,limitprimarypbas,maxreportgrpQGLs,minQGLgrpmembers,minQGLgrpfmeasure,minQGLgrpprptotsamples,grphapbinsize,gpphases,mincentclustdist,maxcentclustdist,maxclustgrps,fndrtrim5,fndrtrim3,progtrim5,progtrim3,wwrlproxwindow,outliersproxwindow,
+					pmode,exprid,rowid,limitprimarypbas,maxreportgrpQGLs,minQGLgrpmembers,minQGLgrpfmeasure,minQGLgrpprptotsamples,minsparsegrpmbrs,minsparseprop,
+					grphapbinsize,gpphases,mincentclustdist,maxcentclustdist,maxclustgrps,fndrtrim5,fndrtrim3,progtrim5,progtrim3,wwrlproxwindow,outliersproxwindow,
 					maskbpafile,IncludeChroms,ExcludeChroms,progenyfiles,founderfiles, outfile,threads,end };
 
 char **pAllArgs;
@@ -278,6 +286,26 @@ if (!argerrors)
 				NumHapGrpPhases = 100;
 			}
 
+		SparseRepPropGrpMbrs = 0;
+		SparseRepProp = 0.0;
+		if (PMode == eMCSHAllelicHapsGrps || PMode == eMCSHQGLHapsGrps)
+			{
+			SparseRepPropGrpMbrs = minsparsegrpmbrs->count ? minsparsegrpmbrs->ival[0] : cDfltSparseRepPropGrpMbrs;
+			if (SparseRepPropGrpMbrs < 0)	// silently clamping to reasonable values
+				SparseRepPropGrpMbrs = 0;
+			else
+				if (SparseRepPropGrpMbrs > 100000)
+					SparseRepPropGrpMbrs = 100000;
+			if (SparseRepPropGrpMbrs > 0)
+				SparseRepProp = minsparseprop->count ? minsparseprop->dval[0] : cDfltSparseRepProp;
+			if (SparseRepProp < 0.05)    // silently clamping to reasonable values
+				SparseRepProp = 0.05;
+			else
+				if(SparseRepProp > 90.0)
+					SparseRepProp = 90.0;
+			}
+
+
 		if(PMode == eMCSHQGLHapsGrps)
 			{
 			MaxReportGrpQGLs = maxreportgrpQGLs->count ? maxreportgrpQGLs->ival[0] : cDfltMaxReportGrpQGLs;
@@ -301,7 +329,6 @@ if (!argerrors)
 				if(MinQGLGrpPropTotSamples > 0.250)
 					MinQGLGrpPropTotSamples = 0.250;
 			MinQGLFmeasure  = minQGLgrpfmeasure->count ? minQGLgrpfmeasure->dval[0] : cDfltMinQGLFmeasure;
-			MinQGLFmeasure = ((int)(cDfltMinQGLFmeasure * 1000)) / 1000.0;
 			if(MinQGLFmeasure < 0.5)
 				MinQGLFmeasure = 0.5;
 			else
@@ -568,9 +595,6 @@ if (!argerrors)
 		case eMCSHGrpDist2WIG:
 			pszDescr = "Post-processing haplotype grouping centroid distances into WIG format";
 			break;
-		case eMCSHHyperConserved:
-			pszDescr = "Identify hyperconserved regions";
-			break;
 		}
 
 	gDiagnostics.DiagOutMsgOnly (eDLInfo, "Calling haplotypes : '%s'", pszDescr);
@@ -632,6 +656,11 @@ if (!argerrors)
 			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Loading previously generated haplotype groupings from : '%s'", szMaskBPAFile);
 			}
 		}
+	if (SparseRepPropGrpMbrs > 0 && (PMode == eMCSHAllelicHapsGrps || PMode == eMCSHQGLHapsGrps))
+		{
+		gDiagnostics.DiagOutMsgOnly(eDLInfo, "Process for sparse imputation if number of group members more than: %d", SparseRepPropGrpMbrs);
+		gDiagnostics.DiagOutMsgOnly(eDLInfo, "Use alleles for sparse imputation if at least this proportion of all group members: %.3f", SparseRepProp);
+		}
 
 	if(PMode < eMCSHGrpDist2WIG)
 		{
@@ -660,6 +689,8 @@ if (!argerrors)
 					MinCentClustDist,        // haplotype groupings - in processing mode 3 only - minimum group centroid clustering distance (default 500, min 1, clamped to bin size)
 					MaxCentClustDist,        // haplotype groupings - in processing mode 3 only - maximum group centroid clustering distance (default mincentclustdist, clamped to bin size)
 					MaxClustGrps,       // haplotype groupings - in processing mode 3 only - targeted maximum number of groups (default 5)
+					SparseRepPropGrpMbrs,	// only apply sparse representative imputation if number of haplotype group members at least this 
+					SparseRepProp,			// if highest frequency (consensus) allele is 0x00 (no coverage) then if next highest frequency allele is at least this proportion of all members in haplotype group then treat next highest allele as
 					MaxReportGrpQGLs,     // when calling group QGLs then, if non-zero - report this many highest scoring QGLs
 					MinQGLGrpMembers,        // groups with fewer than this number of members - in processing mode 5 only -are treated as noise alleles these groups are not used when determining QGL group specific major alleles
 				    MinQGLGrpPropTotSamples,  // haplotype groups - in processing mode 5 only -containing less than this proportion of all samples are treated as if containing noise and alleles in these groups are not used when determining QGL group specific major alleles 
@@ -705,6 +736,8 @@ int CallHaplotypes(eModeCSH PMode,	// processing mode 0: report imputation haplo
 			int32_t MinCentClustDist,        // haplotype groupings - in processing mode 3/4 only - minimum group centroid clustering distance
 			int32_t MaxCentClustDist,        // haplotype groupings - in processing mode 3/4 only - maximum group centroid clustering distance
 			int32_t MaxClustGrps,            // haplotype groupings - in processing mode 3 only - targeted maximum number of groups
+			uint32_t SparseRepPropGrpMbrs,	// only apply sparse representative imputation if number of haplotype group members at least this 
+			double SparseRepProp,			// if highest frequency (consensus) allele is 0x00 (no coverage) then if next highest frequency allele is at least this proportion of all members in haplotype group then treat next highest allele as
 			int32_t MaxReportGrpQGLs,     // when calling group QGLs then, if non-zero - report this many highest scoring QGLs
 			int32_t MinQGLGrpMembers,        // groups with fewer than this number of members - in processing mode 5 only -are treated as noise alleles these groups are not used when determining QGL group specific major alleles
 			double MinQGLGrpPropTotSamples,  // haplotype groups - in processing mode 5 only -containing less than this proportion of all samples are treated as if containing noise and alleles in these groups are not used when determining QGL group specific major alleles 
@@ -735,7 +768,7 @@ if((pCallHaplotypes = new CCallHaplotypes) == NULL)
 	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Unable to instantiate instance of CCallHaplotypes");
 	return(eBSFerrObj);
 	}
-Rslt = pCallHaplotypes->Process(PMode,ExprID,SeedRowID,LimitPrimaryPBAs,GrpHapBinSize,NumHapGrpPhases,MinCentClustDist,MaxCentClustDist,MaxClustGrps,
+Rslt = pCallHaplotypes->Process(PMode,ExprID,SeedRowID,LimitPrimaryPBAs,GrpHapBinSize,NumHapGrpPhases,MinCentClustDist,MaxCentClustDist,MaxClustGrps, SparseRepPropGrpMbrs, SparseRepProp,
 				MaxReportGrpQGLs,MinQGLGrpMembers,MinQGLGrpPropTotSamples,MinQGLFmeasure,
 				FndrTrim5, FndrTrim3, ProgTrim5, ProgTrim3, WWRLProxWindow,OutliersProxWindow,
 				pszMaskBPAFile,NumFounderInputFiles,
@@ -1019,7 +1052,8 @@ m_MinCentClustDist = cDfltMinCentClustDist;
 m_MaxCentClustDist = cDfltMaxCentClustDist;
 m_MaxClustGrps = cDfltMaxClustGrps;
 m_MaxReportGrpQGLs = cDfltMaxReportGrpQGLs;
-
+m_SparseRepProp = cDfltSparseRepProp;
+m_SparseRepPropGrpMbrs = cDfltSparseRepPropGrpMbrs;
 m_MinQGLGrpMembers = cDfltMinQGLGrpMembers;
 m_MinQGLGrpPropTotSamples = cDfltMinQGLGrpPropTotSamples;
 m_MinQGLFmeasure = cDfltMinQGLFmeasure;
@@ -1133,22 +1167,25 @@ CCallHaplotypes::Process(eModeCSH PMode,	// processing mode 0: report imputation
 			int32_t MinCentClustDist,        // haplotype groupings - in processing mode 3/4 only - minimum group centroid clustering distance
 			int32_t MaxCentClustDist,        // haplotype groupings - in processing mode 3/4 only - maximum group centroid clustering distance
 			int32_t MaxClustGrps,            // haplotype groupings - in processing mode 3 only - targeted maximum number of groups
-			int32_t MaxReportGrpQGLs,     // when calling group QGLs then, if non-zero - report this many highest scoring QGLs
+			uint32_t SparseRepPropGrpMbrs,	// only apply sparse representative imputation if number of haplotype group members at least this 
+			double SparseRepProp,			// if highest frequency (consensus) allele is 0x00 (no coverage) then if next highest frequency allele is at least this proportion of all members in haplotype group then treat next highest allele as
+											// being as being the consensus. Objective to obtain an imputed allele in regions of sparse haplotype coverage
+			int32_t MaxReportGrpQGLs,		// when calling group QGLs then, if non-zero - report this many highest scoring QGLs
 			int32_t MinQGLGrpMembers,        // groups with fewer than this number of members - in processing mode 5 only -are treated as noise alleles these groups are not used when determining QGL group specific major alleles
 			double MinQGLGrpPropTotSamples,  // haplotype groups - in processing mode 5 only -containing less than this proportion of all samples are treated as if containing noise and alleles in these groups are not used when determining QGL group specific major alleles 
 			double MinQGLFmeasure,           // only accepting QGL loci with at least this F-measure score
-			int32_t FndrTrim5,			// trim this many aligned PBAs from 5' end of founder aligned segments - reduces false alleles due to sequencing errors
-			int32_t FndrTrim3,			// trim this many aligned PBAs from 3' end of founder aligned segments - reduces false alleles due to sequencing errors
-			int32_t ProgTrim5,			// trim this many aligned PBAs from 5' end of progeny aligned segments - reduces false alleles due to sequencing errors
-			int32_t ProgTrim3,			// trim this many aligned PBAs from 3' end of progeny aligned segments - reduces false alleles due to sequencing errors
-			int32_t WWRLProxWindow,		// proximal window size for Wald-Wolfowitz runs test
-			int32_t OutliersProxWindow,	// proximal window size for outliers reduction
-			char *pszMaskBPAFile,	// optional masking input BPA file, only process BPAs which are intersect of these BPAs and progeny plus founder BPAs
-			int NumFounderInputFiles,	// number of input founder file specs
+			int32_t FndrTrim5,				// trim this many aligned PBAs from 5' end of founder aligned segments - reduces false alleles due to sequencing errors
+			int32_t FndrTrim3,				// trim this many aligned PBAs from 3' end of founder aligned segments - reduces false alleles due to sequencing errors
+			int32_t ProgTrim5,				// trim this many aligned PBAs from 5' end of progeny aligned segments - reduces false alleles due to sequencing errors
+			int32_t ProgTrim3,				// trim this many aligned PBAs from 3' end of progeny aligned segments - reduces false alleles due to sequencing errors
+			int32_t WWRLProxWindow,			// proximal window size for Wald-Wolfowitz runs test
+			int32_t OutliersProxWindow,		// proximal window size for outliers reduction
+			char *pszMaskBPAFile,			// optional masking input BPA file, only process BPAs which are intersect of these BPAs and progeny plus founder BPAs
+			int NumFounderInputFiles,		// number of input founder file specs
 			char *pszFounderInputFiles[],	// names of input founder PBA files (wildcards allowed)
-			int NumProgenyInputFiles,	// number of input progeny file specs
-			char* pszProgenyInputFiles[],		// names of input progeny PBA files (wildcards allowed)
-			char* pszOutFile,		// loci haplotype calls output file (CSV format)
+			int NumProgenyInputFiles,		// number of input progeny file specs
+			char* pszProgenyInputFiles[],	// names of input progeny PBA files (wildcards allowed)
+			char* pszOutFile,				// loci haplotype calls output file (CSV format)
 			int	NumIncludeChroms,			// number of chromosome regular expressions to include
 			char **ppszIncludeChroms,		// array of include chromosome regular expressions
 			int	NumExcludeChroms,			// number of chromosome expressions to exclude
@@ -1177,6 +1214,8 @@ m_GrpHapBinSize = GrpHapBinSize;
 m_MinCentClustDist = MinCentClustDist;
 m_MaxCentClustDist = MaxCentClustDist;
 m_MaxClustGrps = MaxClustGrps;
+m_SparseRepProp = SparseRepProp;
+m_SparseRepPropGrpMbrs = SparseRepPropGrpMbrs;
 m_NumHapGrpPhases = NumHapGrpPhases;
 m_FndrTrim5 = FndrTrim5;
 m_FndrTrim3 = FndrTrim3;
@@ -1414,7 +1453,7 @@ if(m_MaxClustGrps > m_NumFounders)
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "Process: Completed loading founders (%d) pool", m_NumFounders);
 
 
-if(!(m_PMode == eMCSHAllelicHapsGrps || m_PMode == eMCSHCoverageHapsGrps || m_PMode == eMCSHQGLHapsGrps || m_PMode == eMCSHHyperConserved))
+if(!(m_PMode == eMCSHAllelicHapsGrps || m_PMode == eMCSHCoverageHapsGrps || m_PMode == eMCSHQGLHapsGrps))
 	{
 	// load the control PBA file if it has been specified
 	m_MaskReadsetID = 0;
@@ -1530,12 +1569,6 @@ if(!(m_PMode == eMCSHAllelicHapsGrps || m_PMode == eMCSHCoverageHapsGrps || m_PM
 	}
 else // else (eMCSHAllelicHapsGrps or eMCSHCoverageHapsGrps or eMCSHQGLHapsGrps or eMCSHHyperConserved)
 	{
-	if (PMode == eMCSHHyperConserved)
-		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "The requested processing mode has yet to be implemented!");
-		Reset();
-		return(Rslt);
-		}
 	// optional Haplotype group clustering specifications file(s) or previously generated haplotype groupings file
 	if(m_pszMaskBPAFile != NULL)
 		{
@@ -4433,7 +4466,7 @@ pPars->Rslt = Rslt;
 _endthreadex(0);
 return(eBSFSuccess);
 #else
-pthread_exit(NULL);
+pthread_exit(&pPars->Rslt);
 #endif
 }
 
@@ -4454,7 +4487,7 @@ pPars->Rslt = Rslt;
 _endthreadex(0);
 return(eBSFSuccess);
 #else
-pthread_exit(NULL);
+pthread_exit(&pPars->Rslt);
 #endif
 }
 
@@ -4964,6 +4997,8 @@ uint32_t AlleleFreq[256];
 uint8_t* pFndrLoci;
 uint32_t FndrIdx;
 uint8_t MaxFeqAllele;
+uint32_t Max2ndFreqAllele;
+uint32_t NumGrpMembers;
 
 if(pHaplotypes == NULL)
     return(0);
@@ -4996,18 +5031,32 @@ pHaplotypes->MRAGrpChromID = ChromID;
 pHaplotypes->MRAGrpLoci = Loci;
 memset(AlleleFreq,0,sizeof(AlleleFreq));
 MaxFeqAllele = 0;
+Max2ndFreqAllele = 0;
+NumGrpMembers = 0;
 for(FndrIdx = 0; FndrIdx < NumFndrs; FndrIdx++)
 	{
 	if(!BitsVectTest(FndrIdx, *pHapGrp))
 		continue;
+	NumGrpMembers += 1;
 	pFndrLoci = pFounderPBAs[FndrIdx] + Loci;
 	AlleleFreq[*pFndrLoci]++;
 	if(AlleleFreq[*pFndrLoci] > AlleleFreq[MaxFeqAllele])
 		MaxFeqAllele = *pFndrLoci;
+	else
+		if (AlleleFreq[*pFndrLoci] > AlleleFreq[Max2ndFreqAllele])
+			Max2ndFreqAllele = *pFndrLoci;
 	}
-pHaplotypes->MRAGrpConsensus[HapGrp] = MaxFeqAllele; // cache group concensus
+// A major issue with consensus alleles arises when alignments are sparse - RNA-seq around exon splice sites plus where there are multiple isoforms, GBS, Skims, InDels are some common examples
+// These sparse alignments are evidenced in the haplotype groups as some members having no alleles whilst others do..
+// If the proportion of none-allele members to allele members is less than a threshold then it is assumed that the true consensus haplotype allele is the next most frequent allele
+if (m_SparseRepProp > 0.0 && MaxFeqAllele == 0x00 && NumGrpMembers >= m_SparseRepPropGrpMbrs && (((double)AlleleFreq[Max2ndFreqAllele] / NumGrpMembers) >= m_SparseRepProp))
+	MaxFeqAllele = Max2ndFreqAllele;
+
+pHaplotypes->MRAGrpConsensus[HapGrp] = MaxFeqAllele; // cache group consensus
 return(MaxFeqAllele);
 }
+
+
 
 
 uint8_t				// concensus PBA for founders in a group of which specified founder is a member at the requested loci
@@ -5410,6 +5459,7 @@ uint8_t *pSampleLoci;
 uint32_t GrpsAlleleCnts[5 * 6];
 uint32_t AllGrpsAlleleCnts[5];
 uint32_t *pGrpAlleleCnts;
+uint8_t GrpRepAllele;
 double GrpFbeta2 = m_FbetameasureGrps * m_FbetameasureGrps;
 double GrpRecall;
 double GrpPrecision;
@@ -5483,6 +5533,7 @@ for(BinIdx = 0; BinIdx < m_UsedHGBinSpecs; BinIdx++, pHGBinSpec++)
 		memset(GrpsAlleleCnts,0,sizeof(GrpsAlleleCnts));
 		pGrpAlleleCnts = GrpsAlleleCnts;
 		pHaplotypeGroup = pHGBinSpec->pHaplotypeGroup;
+		GrpRepAllele = 0;
 		for(GrpIdx = 0; GrpIdx < pHaplotypeGroup->NumHaplotypeGroups; GrpIdx++)
 			{
 			pGrpAlleleCnts = &GrpsAlleleCnts[min(GrpIdx,5)*5];
@@ -5490,15 +5541,22 @@ for(BinIdx = 0; BinIdx < m_UsedHGBinSpecs; BinIdx++, pHGBinSpec++)
 				{
 				if(!BitsVectTest(SampleIdx, pHaplotypeGroup->HaplotypeGroup[GrpIdx])) // if sample not member of group then onto next sample
 					continue;
-
+				// if using sparse coverage mode then need to generate a representative allele for members of each group at CurLoci
+				if(m_SparseRepPropGrpMbrs > 0)
+					GrpRepAllele = GenFounderConsensusPBA(SampleIdx, pHaplotypeGroup, ChromID, CurLoci, NumFndrs, pFounderPBAs);
 				pSampleLoci = pFounderPBAs[SampleIdx] + CurLoci; // alleles for current sample at CurLoci
 				SampleAllele = *pSampleLoci;
 				// sum number of alleles - A,C,G,T - any coverage contributes a count for that allele, note that a sample may have no coverage or multiple alleles at a given loci
-				if(SampleAllele == 0)     // no coverage
+				if (SampleAllele == 0)     // no coverage
 					{
-					pGrpAlleleCnts[4]++;
-					AllGrpsAlleleCnts[4]++;
-					continue;
+					if (GrpRepAllele == 0)
+						{
+						pGrpAlleleCnts[4]++;
+						AllGrpsAlleleCnts[4]++;
+						continue;
+						}
+					else
+						SampleAllele = GrpRepAllele;	// use the representative allele
 					}
 				// some samples may have multiple alleles - hence testing for all alleles
 				if(SampleAllele & 0xc0)   // A
@@ -5623,7 +5681,7 @@ for(BinIdx = 0; BinIdx < m_UsedHGBinSpecs; BinIdx++, pHGBinSpec++)
 			}
 		if(pHaplotypeGroup->NumHaplotypeGroups > 5)
 			{
-			pGrpAlleleCnts = &GrpsAlleleCnts[25]; // psuedo group alleles
+			pGrpAlleleCnts = &GrpsAlleleCnts[25]; // pseudo group alleles
 			pGrpCnts->NumMembers = NumGrpMembers[5];
 			for(AlleleIdx = 0; AlleleIdx < 5; AlleleIdx++,pGrpAlleleCnts++)
 				pGrpCnts->NumAllele[AlleleIdx] = *pGrpAlleleCnts;
@@ -5995,9 +6053,9 @@ do {
 				pChkFndrLoci = pFounderPBAs[ChkFndrIdx] + AlleleLoci;
 				switch(GroupingPhase) { // using a switch() instead of a 'if' only because there may be a need for phase specific processing in the future????
 					case 0: // inital phase is using consensus over all founders if no alignment PBA
-						if((FndrLociPBA = *pFndrLoci) == 0)
+						if((FndrLociPBA = *pFndrLoci) == 0) // if non-aligned (deletion or no coverage?) then use the consensus allele
 							FndrLociPBA = *pConsensusLociPBA;
-						if((ChkFndrLociPBA = *pChkFndrLoci) == 0)
+						if((ChkFndrLociPBA = *pChkFndrLoci) == 0) // if non-aligned (deletion or no coverage?) then use the consensus allele
 							ChkFndrLociPBA = *pConsensusLociPBA;
 						break;
 
@@ -6005,10 +6063,10 @@ do {
 						if(FndrIdx != PrevFndrIdx)
 							{
 							PrevFndrIdx = FndrIdx;
-							if((FndrLociPBA = *pFndrLoci) == 0)
+							if((FndrLociPBA = *pFndrLoci) == 0) // if non-aligned (deletion or no coverage?) then generate and use the consensus allele
 								FndrLociPBA = GenFounderConsensusPBA(FndrIdx, pP1CurHapGroups, pHGBinSpec->ChromID, AlleleLoci, NumFndrs, pFounderPBAs);
 							}
-						if((ChkFndrLociPBA = *pChkFndrLoci) == 0)
+						if((ChkFndrLociPBA = *pChkFndrLoci) == 0)  // if non-aligned (deletion or no coverage?) then generate and use the consensus allele
 							ChkFndrLociPBA = GenFounderConsensusPBA(ChkFndrIdx, pP1CurHapGroups, pHGBinSpec->ChromID, AlleleLoci, NumFndrs, pFounderPBAs);
 						break;
 						}

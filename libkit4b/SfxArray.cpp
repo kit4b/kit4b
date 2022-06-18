@@ -1902,9 +1902,9 @@ while(!bTermThread);
 pSfxArray->m_ReqBlockRslt = eBSFSuccess;
 #ifdef _WIN32
 _endthreadex(0);
-return(eBSFSuccess);
+return(eBSFSuccess); // unreached, but keeps compilers happy!
 #else
-pthread_exit(NULL);
+pthread_exit(&pSfxArray->m_ReqBlockRslt);
 #endif
 }
 

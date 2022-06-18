@@ -411,9 +411,9 @@ while(pThis->ThreadedIterProbes(&ProbesBlock))
 				pPars->Rslt = Rslt;
 #ifdef _WIN32
 				_endthreadex(0);
-				return(eBSFSuccess);
+				return(eBSFSuccess); // unreached, but keeps compilers happy!
 #else
-				pthread_exit(NULL);
+				pthread_exit(&pPars->Rslt);
 #endif
 			}
 		}
@@ -429,9 +429,9 @@ pThis->ReleaseSerialise();
 pPars->Rslt = 1;
 #ifdef _WIN32
 _endthreadex(0);
-return(eBSFSuccess);
+return(eBSFSuccess); // unreached, but keeps compilers happy!
 #else
-pthread_exit(NULL);
+pthread_exit(&pPars->Rslt);
 #endif
 }
 

@@ -1618,9 +1618,9 @@ Rslt = pWorkerInstance->ProcWorkerThread(pPars);
 pPars->Rslt = Rslt;
 #ifdef _WIN32
 _endthreadex(0);
-return(eBSFSuccess);
+return(eBSFSuccess); // unreached, but keeps compilers happy!
 #else
-pthread_exit(NULL);
+pthread_exit(&pPars->Rslt);
 #endif
 }
 

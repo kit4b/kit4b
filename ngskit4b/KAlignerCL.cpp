@@ -327,6 +327,7 @@ if (help->count > 0)
 		printf("\n      To invoke this parameter file then precede its name with '@'");
 		printf("\n      e.g. %s %s @myparams.txt\n",gszProcName,gpszSubProcess->pszName);
 		printf("\nPlease report any issues regarding usage of %s to https://github.com/kit4b/kit4b/issues\n\n",gszProcName);
+		arg_free(argtable);
 		return(1);
 		}
 
@@ -334,6 +335,7 @@ if (help->count > 0)
 if (version->count > 0)
 		{
 		printf("\n%s %s Version %s\n",gszProcName,gpszSubProcess->pszName,kit4bversion);
+		arg_free(argtable);
 		return(1);
 		}
 
@@ -342,6 +344,7 @@ if (!argerrors)
 	if(FileLogLevel->count && !LogFile->count)
 		{
 		printf("\nError: FileLogLevel '-f%d' specified but no logfile '-F<logfile>\n'",FileLogLevel->ival[0]);
+		arg_free(argtable);
 		exit(1);
 		}
 
@@ -370,6 +373,7 @@ if (!argerrors)
 		printf("\nError: Unable to start diagnostics subsystem\n");
 		if(szLogFile[0] != '\0')
 			printf(" Most likely cause is that logfile '%s' can't be opened/created\n",szLogFile);
+		arg_free(argtable);
 		exit(1);
 		}
 
@@ -406,12 +410,14 @@ if (!argerrors)
 		if(strlen(szSQLiteDatabase) < 1)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: After removal of whitespace, no SQLite database specified with '-q<filespec>' option");
+			arg_free(argtable);
 			return(1);
 			}
 
 		if(strlen(szExperimentName) < 1)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: After removal of whitespace, no experiment name specified with '-w<str>' option");
+			arg_free(argtable);
 			return(1);
 			}
 		if(experimentdescr->count)
@@ -1467,6 +1473,7 @@ _ASSERTE( _CrtCheckMemory());
 #endif
 
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Exit code: %d Total processing time: %s",Rslt,gStopWatch.Read());
+	arg_free(argtable);
 	exit(Rslt);
 	}
 else
@@ -1474,6 +1481,7 @@ else
 	printf("\n%s %s %s, Version %s\n", gszProcName,gpszSubProcess->pszName,gpszSubProcess->pszFullDescr,kit4bversion);
 	arg_print_errors(stdout,end,gszProcName);
 	arg_print_syntax(stdout,argtable,"\nUse '-h' to view option and parameter usage\n");
+	arg_free(argtable);
 	exit(1);
 	}
 return 0;
@@ -1536,12 +1544,12 @@ bool bPairStrand;						// 5' and 3' are on same strand
 char szContamFile[_MAX_PATH];			// optional file containing contaminant sequences
 
 int NumIncludeChroms;
-char *pszIncludeChroms[cMaxIncludeChroms];
+char* pszIncludeChroms[cMaxIncludeChroms]{};
 int NumExcludeChroms;
-char *pszExcludeChroms[cMaxExcludeChroms];
+char* pszExcludeChroms[cMaxExcludeChroms]{};
 
-char szExperimentID[cMaxDatasetSpeciesChrom+1];				// experiment identifier
-char szReadsetID[cMaxDatasetSpeciesChrom+1];				// readset identifier
+char szExperimentID[cMaxDatasetSpeciesChrom + 1]{};				// experiment identifier
+char szReadsetID[cMaxDatasetSpeciesChrom + 1]{};				// readset identifier
 
 //
 struct arg_lit  *help    = arg_lit0("h","help",                 "print this help and exit");

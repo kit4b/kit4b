@@ -1800,9 +1800,9 @@ Rslt = pThis->ThreadSimReads(pPars);
 pPars->Rslt = Rslt;
 #ifdef _WIN32
 _endthreadex(0);
-return(eBSFSuccess);
+return(eBSFSuccess); // unreached, but keeps compilers happy!
 #else
-pthread_exit(NULL);
+pthread_exit(&pPars->Rslt);
 #endif
 }
 
@@ -2594,7 +2594,7 @@ while(pWorkerPars->NumGenReads < pWorkerPars->NumReqReads)
 	}
 #ifdef _WIN32
 _endthreadex(0);
-return(eBSFSuccess);
+return(eBSFSuccess); // unreached, but keeps compilers happy!
 #else
 pthread_exit(NULL);
 #endif

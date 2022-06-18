@@ -661,7 +661,7 @@ if((pReadStats = new CReadStats()) == NULL)
 	_endthreadex(0);
 	return(eBSFSuccess);
 #else
-	pthread_exit(NULL);
+	pthread_exit(&pPars->Rslt);
 #endif
 	}
 
@@ -692,7 +692,7 @@ pPars->Rslt = Rslt;
 _endthreadex(0);
 return(eBSFSuccess);
 #else
-pthread_exit(NULL);
+pthread_exit(&pPars->Rslt);
 #endif
 }
 
@@ -1133,7 +1133,7 @@ void *ThreadedNGSQC(void * pThreadPars)
 	_endthreadex(0);
 	return(eBSFSuccess);
 #else
-	pthread_exit(NULL);
+	pthread_exit(&pPars->Rslt);
 #endif
 }
 
