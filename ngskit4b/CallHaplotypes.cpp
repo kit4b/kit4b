@@ -46,6 +46,7 @@ int CallHaplotypes(eModeCSH PMode,	// processing mode 0: report imputation haplo
 			int32_t WWRLProxWindow,		     // proximal window size for Wald-Wolfowitz runs test
 			int32_t OutliersProxWindow,	     // proximal window size for outliers reduction
 			char *pszMaskBPAFile,	         // optional masking input BPA file, only process BPAs which are intersect of these BPAs and progeny plus founder BPAs
+			char* pszChromFile,			// BED file containing reference assembly chromosome names and sizes
 			int NumFounderInputFiles,	     // number of input founder file specs
 			char *pszFounderInputFiles[],	 // names of input founder PBA files (wildcards allowed)
 			int NumProgenyInputFiles,	// number of input progeny file specs
@@ -78,7 +79,7 @@ int NumThreads;				// number of threads (0 defaults to number of CPUs or a maxim
 
 int Idx;
 
-eModeCSH PMode;				// processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons, 3: allelic haplotype grouping,4: coverage haplotype grouping, 5: post-process haplotype groupings for QGLs,  6: post-process to WIG, , 7: Hyperconserved 
+eModeCSH PMode;				// processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons, 3: allelic haplotype grouping,4: coverage haplotype grouping, 5: post-process haplotype groupings for QGLs,  6: post-process to WIG 
 int32_t LimitPrimaryPBAs;   // limit number of loaded primary or founder PBA files to this many. 0: no limits, > 0 sets upper limit
 int32_t ExprID;			    // assign this experiment identifier to this PBA analysis
 int32_t SeedRowID;          // generated CSVs will contain monotonically incremented row identifiers seeded with this identifier  
@@ -95,7 +96,7 @@ int32_t MinQGLGrpMembers;        // groups with fewer than this number of member
 double MinQGLGrpPropTotSamples;  // haplotype groups - in processing mode 5 only -containing less than this proportion of all samples are treated as if containing noise and alleles in these groups are not used when determining QGL group specific major alleles 
 double MinQGLFmeasure;           // only accepting QGL loci with at least this F-measure score
 int32_t MinCentClustDist;        // haplotype groupings - in processing mode 3 only - minimum group centroid clustering distance (default 10, min 1, clamped to bin size)
-int32_t MaxCentClustDist;        // haplotype groupings - in processing mode 3 only - maximum group centroid clustering distance (default mincentclustdist, clamped to bin size)
+int32_t MaxCentClustDist;        // haplotype groupings - in processing mode 3 only - maximum group centroid clustering distance (default 10000, clamped to bin size)
 int32_t MaxClustGrps;            // haplotype groupings - in processing mode 3 only - targeted maximum number of groups (default 5)
 int32_t SparseRepPropGrpMbrs;		// only apply sparse representative imputation if number of haplotype group members at least this 
 double SparseRepProp;				// if highest frequency (consensus) allele is 0x00 (no coverage) then if next highest frequency allele is at least this proportion of all members in haplotype group then treat next highest allele as
@@ -113,6 +114,7 @@ char *pszProgenyInputFiles[cMaxProgenyFileSpecs];		// names of input progeny BPA
 
 char szOutFile[_MAX_PATH];		// Windowed haplotype calls output file base name, progeny readset identifier is appended to this base name
 char szMaskBPAFile[_MAX_PATH];	// optional masking input BPA file, only process BPAs which are intersect of these BPAs and progeny plus founder BPAs
+char szChromFile[_MAX_PATH];	// BED file containing chromosome names and sizes
 
 struct arg_lit *help = arg_lit0 ("h", "help", "print this help and exit");
 struct arg_lit *version = arg_lit0 ("v", "version,ver", "print version information and exit");
@@ -120,7 +122,7 @@ struct arg_int *FileLogLevel = arg_int0 ("f", "FileLogLevel", "<int>", "Level of
 struct arg_file *LogFile = arg_file0 ("F", "log", "<file>", "diagnostics log file");
 
 struct arg_int *pmode = arg_int0 ("m", "mode", "<int>", "processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons, 3: allelic haplotype grouping,4: coverage haplotype grouping, 5: post-process haplotype groupings for QGLs, 6: post-process to WIG (default 0)");
-struct arg_int *limitprimarypbas = arg_int0 ("l", "debug", "<int>", " limit number of loaded primary or founder PBA files to this many. 0: no limits, > 0 sets upper limit (default 0)");
+struct arg_int *limitprimarypbas = arg_int0 ("l", "limit", "<int>", " limit number of loaded primary or founder PBA files to this many. 0: no limits, > 0 sets upper limit (default 0)");
 
 struct arg_int* exprid = arg_int0("e","exprid","<int>","assign this experiment identifier for haplotypes called (default 1");
 struct arg_int* rowid = arg_int0("E","rowid","<int>","use this monotonically incremented row identifier seed in output CSVs (default 1");
@@ -145,12 +147,13 @@ struct arg_int* grphapbinsize = arg_int0("g", "grphapbinsize", "<int>", "haploty
 struct arg_int* maxclustgrps = arg_int0("G", "maxclustgrps", "<int>", "haplotype groupings - in processing mode 3/4 only - targeted maximum number of groups (default 5)");
 struct arg_int* gpphases = arg_int0("p", "gpphases", "<int>", "haplotype groupings - in processing mode 3/4 only - max number of cluster processing phases (default 10)");
 
-struct arg_int* mincentclustdist = arg_int0("c", "mincentclustdist", "<int>", "haplotype groupings - in processing mode 3/4 only - minimum group centroid clustering distance (default 10, min 1, clamped to bin size)");
-struct arg_int* maxcentclustdist = arg_int0("C", "maxcentclustdist", "<int>", "haplotype groupings - in processing mode 3/4 only - maximum group centroid clustering distance (default 10000, clamped to bin size)");
+struct arg_int* mincentclustdist = arg_int0("d", "mincentclustdist", "<int>", "haplotype groupings - in processing mode 3/4 only - minimum group centroid clustering distance (default 10, min 1, clamped to bin size)");
+struct arg_int* maxcentclustdist = arg_int0("D", "maxcentclustdist", "<int>", "haplotype groupings - in processing mode 3/4 only - maximum group centroid clustering distance (default 10000, clamped to bin size)");
 
 struct arg_str  *ExcludeChroms = arg_strn("Z","chromexclude",	"<string>",0,cMaxExcludeChroms,"high priority - regular expressions defining chromosomes to exclude");
 struct arg_str  *IncludeChroms = arg_strn("z","chromeinclude",	"<string>",0,cMaxIncludeChroms,"low priority - regular expressions defining chromosomes to include");
 
+struct arg_file* chromfile = arg_file1("c", "chromfile", "<file>", "input BED file containing chromosome names and sizes");
 	
 struct arg_file *founderfiles = arg_filen("I", "founderfiles", "<file>", 0,cMaxFounderFileSpecs,"founder input BPA file(s), wildcards allowed, limit of 200 founder filespecs supported");
 struct arg_file *progenyfiles = arg_filen("i", "inprogenyfile", "<file>",0, cMaxProgenyFileSpecs, "progeny input BPA file(s), wildcards allowed, limit of 500 progeny filespecs supported");
@@ -162,7 +165,7 @@ struct arg_end *end = arg_end (200);
 void *argtable[] = { help,version,FileLogLevel,LogFile,
 					pmode,exprid,rowid,limitprimarypbas,maxreportgrpQGLs,minQGLgrpmembers,minQGLgrpfmeasure,minQGLgrpprptotsamples,minsparsegrpmbrs,minsparseprop,
 					grphapbinsize,gpphases,mincentclustdist,maxcentclustdist,maxclustgrps,fndrtrim5,fndrtrim3,progtrim5,progtrim3,wwrlproxwindow,outliersproxwindow,
-					maskbpafile,IncludeChroms,ExcludeChroms,progenyfiles,founderfiles, outfile,threads,end };
+					maskbpafile,chromfile,IncludeChroms,ExcludeChroms,progenyfiles,founderfiles, outfile,threads,end };
 
 char **pAllArgs;
 int argerrors;
@@ -466,6 +469,18 @@ if (!argerrors)
 			OutliersProxWindow = 0;
 			}
 
+	if (chromfile->count)
+		{
+		strncpy(szChromFile, chromfile->filename[0], _MAX_PATH);
+		szChromFile[_MAX_PATH-1] = '\0';
+		CUtility::TrimQuotedWhitespcExtd(szChromFile);
+		}
+	else
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "No BED file containing chromosome names and sizes specified");
+		exit(1);
+		}
+
 // show user current resource limits
 #ifndef _WIN32
 	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Resources: %s",CUtility::ReportResourceLimits());
@@ -672,6 +687,7 @@ if (!argerrors)
 				gDiagnostics.DiagOutMsgOnly(eDLInfo, "Progeny file : '%s'", pszProgenyInputFiles[Idx]);
 		}
 
+	gDiagnostics.DiagOutMsgOnly(eDLInfo, "BED containing chromosome names and sizes : '%s'", szChromFile);
 	gDiagnostics.DiagOutMsgOnly (eDLInfo, "Output file : '%s'", szOutFile);
 	gDiagnostics.DiagOutMsgOnly(eDLInfo,"number of threads : %d",NumThreads);
 
@@ -702,6 +718,7 @@ if (!argerrors)
 					WWRLProxWindow,		// proximal window size for Wald-Wolfowitz runs test
 					OutliersProxWindow,	// proximal window size for outliers reduction
 					szMaskBPAFile,			// optional input masking BPA file or Haplotype group clustering specifications file(s)
+					szChromFile,			// BED file containing reference assembly chromosome names and sizes
 					NumFounderInputFiles,	// number of input founder file specs
 					pszFounderInputFiles,	// names of input founder PBA files (wildcards allowed)
 					NumProgenyInputFiles,		// number of input progeny file specs
@@ -749,6 +766,7 @@ int CallHaplotypes(eModeCSH PMode,	// processing mode 0: report imputation haplo
 			int32_t WWRLProxWindow,		// proximal window size for Wald-Wolfowitz runs test
 			int32_t OutliersProxWindow,	// proximal window size for outliers reduction
 			char *pszMaskBPAFile,	// optional masking input BPA file, only process BPAs which are intersect of these BPAs and progeny plus founder BPAs
+			char* pszChromFile,			// BED file containing reference assembly chromosome names and sizes
 			int NumFounderInputFiles,	// number of input founder file specs
 			char *pszFounderInputFiles[],	// names of input founder PBA files (wildcards allowed)
 			int NumProgenyInputFiles,	// number of input progeny file specs
@@ -771,7 +789,7 @@ if((pCallHaplotypes = new CCallHaplotypes) == NULL)
 Rslt = pCallHaplotypes->Process(PMode,ExprID,SeedRowID,LimitPrimaryPBAs,GrpHapBinSize,NumHapGrpPhases,MinCentClustDist,MaxCentClustDist,MaxClustGrps, SparseRepPropGrpMbrs, SparseRepProp,
 				MaxReportGrpQGLs,MinQGLGrpMembers,MinQGLGrpPropTotSamples,MinQGLFmeasure,
 				FndrTrim5, FndrTrim3, ProgTrim5, ProgTrim3, WWRLProxWindow,OutliersProxWindow,
-				pszMaskBPAFile,NumFounderInputFiles,
+				pszMaskBPAFile,pszChromFile,NumFounderInputFiles,
 				pszFounderInputFiles,NumProgenyInputFiles,pszProgenyInputFiles,pszOutFile,NumIncludeChroms,ppszIncludeChroms,NumExcludeChroms,ppszExcludeChroms,NumThreads);
 delete pCallHaplotypes;
 return(Rslt);
@@ -794,6 +812,7 @@ m_hWIGOutFile = -1;
 m_hInFile = -1;
 m_pCSVFile = NULL;
 m_pHGCSVFile = NULL;
+m_pBedFile = NULL;
 m_bMutexesCreated = false;
 Reset();
 }
@@ -819,7 +838,8 @@ if(m_pCSVFile != NULL)
 	delete m_pCSVFile;
 if(m_pHGCSVFile != NULL)
     delete m_pHGCSVFile;
-
+if (m_pBedFile != NULL)
+	delete m_pBedFile;
 if(m_pChromMetadata != NULL)
 	{
 	tsChromMetadata *pChromMetadata = m_pChromMetadata;
@@ -948,6 +968,12 @@ if(m_pszWIGBuff != NULL)
 	{
 	delete []m_pszWIGBuff;
 	m_pszWIGBuff = NULL;
+	}
+
+if (m_pBedFile != NULL)
+	{
+	delete m_pBedFile;
+	m_pBedFile = NULL;
 	}
 
 if(m_pChromMetadata != NULL)
@@ -1087,9 +1113,6 @@ m_szChromNames[0] = '\0';
 memset(m_Fndrs2Proc,0,sizeof(m_Fndrs2Proc));
 m_NumFounders = 0;
 
-m_NumIncludeChroms = 0;
-m_NumExcludeChroms = 0;
-
 if(m_bMutexesCreated)
 	DeleteMutexes();
 m_bMutexesCreated = false;
@@ -1112,6 +1135,7 @@ if(pthread_mutex_init (&m_hSerialiseAccess,NULL)!=0)
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to create mutex");
 	return(eBSFerrInternal);
 	}
+m_FastSerialise = 0;
 m_bMutexesCreated = true;
 return(eBSFSuccess);
 }
@@ -1156,6 +1180,79 @@ pthread_mutex_unlock(&m_hSerialiseAccess);
 #endif
 }
 
+// loading BED which specifies chrom names and sizes
+int		// returning number of chromosomes parsed from BED file and accepted after filtering for wildcards
+CCallHaplotypes::LoadChromSizes(char* pszBEDFile) // BED file containing chromosome names and sizes
+{
+int Rslt;
+uint32_t ChromID;
+int CurFeatureID;
+char szFeatName[cMaxDatasetSpeciesChrom];
+char szChromName[cMaxDatasetSpeciesChrom];
+int32_t StartLoci;
+int32_t EndLoci;
+int NumChroms;
+
+if ((m_pBedFile = new CBEDfile) == NULL)
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to instantiate CBEDfile");
+	return(eBSFerrObj);
+	}
+
+if ((Rslt = m_pBedFile->Open(pszBEDFile, eBTAnyBed)) != eBSFSuccess)
+	{
+	while (m_pBedFile->NumErrMsgs())
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, m_pBedFile->GetErrMsg());
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to open '%s' for processing", pszBEDFile);
+	return(eBSFerrOpnFile);
+	}
+
+NumChroms = 0;
+CurFeatureID = 0;
+while (Rslt == eBSFSuccess && (CurFeatureID = m_pBedFile->GetNextFeatureID(CurFeatureID)) > 0)
+	{
+	m_pBedFile->GetFeature(CurFeatureID,	// feature instance identifier
+		szFeatName,				// where to return feature name
+		szChromName,			// where to return chromosome name
+		&StartLoci,				// where to return feature start on chromosome (0..n) 
+		&EndLoci);				// where to return feature end on chromosome
+
+	// is this chromosome to be be filtered out?
+	if (!AcceptThisChromName(szChromName,false))
+		{
+		gDiagnostics.DiagOut(eDLInfo, gszProcName, "LoadChromSizes: filtered out chromosome '%s'", szChromName);
+		continue;
+		}
+ 
+	if (StartLoci != 0)
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "LoadChromSizes: unable to accept chromosome '%s' because start loci not 0", szChromName);
+		return(eBSFerrChrom);
+		}
+
+	if (EndLoci < 0 || (size_t)EndLoci >= cAllocPackedBaseAlleles)
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "LoadChromSizes: unable to accept chromosome '%s' because end loci not in acceptable range, must be in range 0..%zd", szChromName, cAllocPackedBaseAlleles);
+		return(eBSFerrChrom);
+		}
+
+	// expecting a single instance of each chromosome 
+	if (LocateChrom(szChromName) != 0)	// must be a unique chromosome name
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "LoadChromSizes: multiple instances of chromosome '%s', chromosome names must be unique", szChromName);
+		return(eBSFerrChrom);
+		}
+
+	ChromID = AddChrom(szChromName);		// new chromosome
+	m_ChromSizes[ChromID-1] = EndLoci+1;	// record it's size
+	NumChroms += 1;
+	}
+m_NumChromSizes = NumChroms;
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "LoadChromSizes: accepted %d chromosome sizes from '%s'", NumChroms, pszBEDFile);
+delete m_pBedFile;
+m_pBedFile = NULL;
+return(NumChroms);
+}
 
 int
 CCallHaplotypes::Process(eModeCSH PMode,	// processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons, 3: allelic haplotype grouping,4: coverage haplotype grouping, 5: post-process haplotype groupings for QGLs,  6: post-process to WIG
@@ -1181,6 +1278,7 @@ CCallHaplotypes::Process(eModeCSH PMode,	// processing mode 0: report imputation
 			int32_t WWRLProxWindow,			// proximal window size for Wald-Wolfowitz runs test
 			int32_t OutliersProxWindow,		// proximal window size for outliers reduction
 			char *pszMaskBPAFile,			// optional masking input BPA file, only process BPAs which are intersect of these BPAs and progeny plus founder BPAs
+			char* pszChromFile,			// BED file containing reference assembly chromosome names and sizes
 			int NumFounderInputFiles,		// number of input founder file specs
 			char *pszFounderInputFiles[],	// names of input founder PBA files (wildcards allowed)
 			int NumProgenyInputFiles,		// number of input progeny file specs
@@ -1227,14 +1325,18 @@ m_pszRsltsFileBaseName = pszOutFile;
 m_NumThreads = NumThreads;
 
 // compile include/exclude chromosome regexpr if user has specified alignments to be filtered by chrom
-if(NumIncludeChroms > 0 || NumExcludeChroms > 0)
-	if((Rslt = CompileChromRegExprs(NumIncludeChroms,ppszIncludeChroms,NumExcludeChroms,ppszExcludeChroms)) != eBSFSuccess)
-		{
-		Reset();
-		return(Rslt);
-		}
-m_NumIncludeChroms = NumIncludeChroms;
-m_NumExcludeChroms = NumExcludeChroms;
+if(Rslt = (m_RegExprs.CompileREs(NumIncludeChroms, ppszIncludeChroms,NumExcludeChroms, ppszExcludeChroms)) < eBSFSuccess)
+	{
+	Reset();
+	return(Rslt);
+	}
+
+if ((Rslt = LoadChromSizes(pszChromFile)) < 1) // BED file containing chromosome names and sizes - NOTE chromosomes will be filtered by include/exclude wildcards
+	{
+	Reset();
+	return(Rslt);
+	}
+
 if(NumFounderInputFiles > cMaxFounderFileSpecs)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Can accept at most %d founder wildcarded file specs for processing, %d requested", cMaxFounderFileSpecs, NumFounderInputFiles);
@@ -1699,7 +1801,7 @@ for(PFAIdx = 0; PFAIdx < m_UsedProgenyFndrAligns; PFAIdx++, pCurPFA++)
 	uint32_t FaHap = 0;
 	uint32_t FbHap = 0;
 	memset(NumFndrs, 0, sizeof(NumFndrs));
-	ChkHapStart = max(0,(int64_t)PFAIdx-9);
+	ChkHapStart = max((size_t)0,(size_t)PFAIdx-9);
 	ChkHapEnd = min((int64_t)m_UsedProgenyFndrAligns-1,(int64_t)PFAIdx+10);
 	pChkPFA = &m_pProgenyFndrAligns[ChkHapStart];
 	for(; ChkHapStart <= ChkHapEnd; ChkHapStart++,pChkPFA++)
@@ -2889,143 +2991,32 @@ gDiagnostics.DiagOut(eDLInfo, gszProcName, "ProcessProgenyPBAFile: Located %d pr
 return(eBSFSuccess);
 }
 
-int
-CCallHaplotypes::CompileChromRegExprs(int	NumIncludeChroms,	// number of chromosome regular expressions to include
-		char **ppszIncludeChroms,		// array of include chromosome regular expressions
-		int	NumExcludeChroms,			// number of chromosome expressions to exclude
-		char **ppszExcludeChroms)		// array of exclude chromosome regular expressions
-{
-int Idx = 0;
-
-#ifndef _WIN32
-int RegErr;				// regular expression parsing error
-char szRegErr[128];			// to hold RegErr as textual representation ==> regerror();
-#endif
-
-#ifdef _WIN32
-try {
-	for(Idx=0;Idx < NumIncludeChroms;Idx++)
-		{
-		m_IncludeChromsRE[Idx] = new Regexp();
-		m_IncludeChromsRE[Idx]->Parse(ppszIncludeChroms[Idx],false);	// note case insensitive
-		}
-	}
-catch(...)
-	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to process include regexpr chrom '%s'",ppszIncludeChroms[Idx]);
-	return(eBSFerrMem);
-	}
-try {
-	for(Idx=0;Idx < NumExcludeChroms;Idx++)
-		{
-		m_ExcludeChromsRE[Idx] = new Regexp();
-		m_ExcludeChromsRE[Idx]->Parse(ppszExcludeChroms[Idx],false);	// note case insensitive
-		}
-	}
-catch(...)
-	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to process exclude regexpr chrom '%s'",ppszExcludeChroms[Idx]);
-	return(eBSFerrMem);
-	}
-
-#else
-for(Idx=0;Idx < NumIncludeChroms;Idx++)
-	{
-
-	RegErr=regcomp(&m_IncludeChromsRE[Idx],ppszIncludeChroms[Idx],REG_EXTENDED | REG_ICASE);	// note case insensitive
-	if(RegErr)
-		{
-		regerror(RegErr,&m_IncludeChromsRE[Idx],szRegErr,sizeof(szRegErr));
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to process include chrom '%s' error: %s",ppszIncludeChroms[Idx],szRegErr);
-		return(eBSFerrMem);
-		}
-	}
-for(Idx=0;Idx < NumExcludeChroms;Idx++)
-	{
-	RegErr = regcomp(&m_ExcludeChromsRE[Idx],ppszExcludeChroms[Idx],REG_EXTENDED | REG_ICASE);	// note case insensitive
-	if(RegErr)
-		{
-		regerror(RegErr,&m_ExcludeChromsRE[Idx],szRegErr,sizeof(szRegErr));
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to process exclude chrom '%s' error: %s",ppszExcludeChroms[Idx],szRegErr);
-		return(eBSFerrMem);
-		}
-	}
-#endif
-return(eBSFSuccess);
-}
 
 bool					// true if chrom is accepted, false if chrom not accepted
 CCallHaplotypes::AcceptThisChromID(uint32_t ChromID)
 {
 char *pzChrom;
-if(!(m_NumExcludeChroms || m_NumIncludeChroms))
-	return(true);
 if((pzChrom=LocateChrom(ChromID)) == NULL)
     return(false);
 return(AcceptThisChromName(pzChrom));
 }
 
 bool					// true if chrom is accepted, false if chrom not accepted
-CCallHaplotypes::AcceptThisChromName(char *pszChrom)
+CCallHaplotypes::AcceptThisChromName(char* pszChrom,   // chromosome name
+									 bool bKnown)	// if true then chromosome must have been previously processed and accepted by LoadChromSizes() processing
 {
-uint32_t IncChromIdx;
-uint32_t ExclChromIdx;
-
-bool bProcChrom = false;
-int MatchesFiltOut = 0;
-
-if(!(m_NumExcludeChroms || m_NumIncludeChroms))
-	return(true);
-
-#ifdef _WIN32
-RegexpMatch mc;
-#else
-regmatch_t mc;
-int RegErr;					// regular expression parsing error
-char szRegErr[128];			// to hold RegErr as textual representation ==> regerror();
-#endif
-
+bool bMatch;
+if (bKnown)
+	return(LocateChrom(pszChrom) < 1 ? false : true);
 AcquireSerialise();
-
-	// check if to be excluded
-bProcChrom = true;
-for(ExclChromIdx = 0; ExclChromIdx < m_NumExcludeChroms; ExclChromIdx++)
-	{
-#ifdef _WIN32
-	if(m_ExcludeChromsRE[ExclChromIdx]->Match(pszChrom,&mc))
-#else
-	if(!regexec(&m_ExcludeChromsRE[ExclChromIdx],pszChrom,1,&mc,0))
-#endif
-		{
-		bProcChrom = false;
-		break;
-		}
-	}
-
-	// to be included?
-if(bProcChrom && m_NumIncludeChroms > 0)
-	{
-	bProcChrom = false;
-	for(IncChromIdx = 0; IncChromIdx < m_NumIncludeChroms; IncChromIdx++)
-		{
-#ifdef _WIN32
-		if(m_IncludeChromsRE[IncChromIdx]->Match(pszChrom,&mc))
-#else
-		if(!regexec(&m_IncludeChromsRE[IncChromIdx],pszChrom,1,&mc,0))
-#endif
-			{
-			bProcChrom = true;
-			break;
-			}
-		}
-	}
-
+bMatch = !m_RegExprs.MatchExcludeRegExpr(pszChrom);
+if(bMatch)
+    bMatch = m_RegExprs.MatchIncludeRegExpr(pszChrom);
 ReleaseSerialise();
-
-if(!bProcChrom)
-	return(false);
-return(true);
+return(bMatch);
 }
+
+
 
 
 uint32_t				// returns number of unprocessed bytes in buffer
@@ -3106,7 +3097,7 @@ if(m_hInFile == -1)							// check if file open succeeded
 // attempt to load the readset metadata 
 m_InNumBuffered = 0;
 m_InNumProcessed = 0;
-if((FillInBuffer(500,min(m_AllocInBuff,500)) == 0) || m_InNumBuffered < 9) // 500 will cover the maximally sized header
+if((FillInBuffer(500,min(m_AllocInBuff,500u)) == 0) || m_InNumBuffered < 9) // 500 will cover the maximally sized header
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to read at least a partial header from input file '%s'", pszFile);
 	return(eBSFerrOpnFile);
@@ -3193,8 +3184,14 @@ while(FillInBuffer((uint32_t)110,110)==110) // reading chromosome metadata
 		continue;
 		}
 
-	// accepting the chrom
+		// before accepting chrom then ensure that it's PBA length matches the BED chromosome sizes
 	ChromID = AddChrom(pszChromName);
+	if (ChromLen != m_ChromSizes[ChromID - 1])
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Input file '%s' has chromosome '%s' size mismatch - expected size was %n, actual size %n", pszFile, szReadsetID, m_ChromSizes[ChromID - 1], ChromLen);
+		return(eBSFerrChrom);
+		}
+
 	if((Rslt = AllocChromMetadata()) != eBSFSuccess)
 		return(Rslt);
 
@@ -4899,7 +4896,7 @@ for(AlleleLoci = Loci; AlleleLoci <= EndLoci; AlleleLoci++)
 		pFndrLoci = pFounderPBAs[FndrIdx] + AlleleLoci;
 		if(*pFndrLoci == 0)					
 			{
-			if(m_bAllFndrsLociAligned)           // must all all founders must have alignment alleles at the AlleleLoci
+			if(m_bAllFndrsLociAligned)           // all founders must have alignment alleles at the AlleleLoci
 				{
 				bFndrAllele = false;
 				break;							// founder has no allele - can't have had an alignment to reference at AlleleLoci
@@ -5516,7 +5513,7 @@ for(BinIdx = 0; BinIdx < m_UsedHGBinSpecs; BinIdx++, pHGBinSpec++)
 	// determine number of groups to be characterised as being noise, and if less than 2 groups with meaningful allele counts remaining then skip current bin
 	if(MaxGrpMembers < m_MinQGLGrpMembers)
 		continue;
-	NumQGLGrps = min(5,pHaplotypeGroup->NumHaplotypeGroups); // could be more than 5 groups but only calling QGLs on the first 5 groups
+	NumQGLGrps = min(5u,pHaplotypeGroup->NumHaplotypeGroups); // could be more than 5 groups but only calling QGLs on the first 5 groups
 	NumNoiseGrps = 0;
 	for(GrpIdx = 0; GrpIdx < NumQGLGrps; GrpIdx++)
 		if(NumGrpMembers[GrpIdx] < m_MinQGLGrpMembers || ((double)NumGrpMembers[GrpIdx]/pHaplotypeGroup->NumFndrs) < m_MinQGLGrpPropTotSamples)
@@ -5536,7 +5533,7 @@ for(BinIdx = 0; BinIdx < m_UsedHGBinSpecs; BinIdx++, pHGBinSpec++)
 		GrpRepAllele = 0;
 		for(GrpIdx = 0; GrpIdx < pHaplotypeGroup->NumHaplotypeGroups; GrpIdx++)
 			{
-			pGrpAlleleCnts = &GrpsAlleleCnts[min(GrpIdx,5)*5];
+			pGrpAlleleCnts = &GrpsAlleleCnts[min(GrpIdx,5u)*5];
 			for(uint32_t SampleIdx = 0; SampleIdx < (uint32_t)pHaplotypeGroup->NumFndrs; SampleIdx++)
 				{
 				if(!BitsVectTest(SampleIdx, pHaplotypeGroup->HaplotypeGroup[GrpIdx])) // if sample not member of group then onto next sample
@@ -6070,12 +6067,16 @@ do {
 							ChkFndrLociPBA = GenFounderConsensusPBA(ChkFndrIdx, pP1CurHapGroups, pHGBinSpec->ChromID, AlleleLoci, NumFndrs, pFounderPBAs);
 						break;
 						}
+// here is where to incorporate affine gap processing .... currently all gaps incur a penalty which will be directly equivalent to gap size.
+//				if (FndrLociPBA == 0 && PrevFndrLociPBA != 0) // new gap starting?
+//				*pPrevFndrPBA = FndrLociPBA;				  // 
 
-					if(FndrLociPBA != ChkFndrLociPBA)
-						*pFndrDiff += 1;
-					}
+				
+				if(FndrLociPBA != ChkFndrLociPBA)
+					*pFndrDiff += 1;
 				}
 			}
+		}
 
 		// have a difference matrix, now group haplotypes
 	pCurHaplotypeGroups = GroupHaplotypes(pHGBinSpec->ChromID, pHGBinSpec->StartLoci, pHGBinSpec->NumLoci,pHGBinSpec->MinCentroidDistance, pHGBinSpec->MaxCentroidDistance,pHGBinSpec->MaxNumHaplotypeGroups, pFndrDiffs, NumFndrs);
@@ -6750,7 +6751,7 @@ return(&(m_szReadsetNames[m_szReadsetIdx[Idx -1]+1])); // skipping lead char whi
 
 
 int
-CCallHaplotypes::LoadPBACoverage(char* pszInPBA)   // file containing PBA
+CCallHaplotypes::LoadPBACoverage(char* pszInWIGFile)   // file containing PBA, file name extension will be replaced with 'coverage.wig' which will be expected to be name of file containing the WIG coverage
 {
 int32_t ReadsetID;
 FILE* pInStream;
@@ -6758,7 +6759,7 @@ char szInWIG[1000];
 char* pszInWIG;
 
 // compose WIG file name from PBA file name and check if file can be opened
-CUtility::AppendFileNameSuffix(szInWIG, pszInPBA, (char*)".covsegs.wig", '.');
+CUtility::AppendFileNameSuffix(szInWIG, pszInWIGFile, (char*)".covsegs.wig", '.');
 pszInWIG = szInWIG;
 if((pInStream = fopen(pszInWIG, "r")) == NULL)
 	{
@@ -6769,9 +6770,9 @@ if((pInStream = fopen(pszInWIG, "r")) == NULL)
 fclose(pInStream);
 
 // load PBA file, but skip allocation and loading the actual PBAs
-if((ReadsetID = LoadPBAFile(pszInPBA, 0, true)) <= 0)
+if((ReadsetID = LoadPBAFile(pszInWIGFile, 0, true)) <= 0)
 	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "LoadPBACoverage: Errors loading PBA file '%s'", pszInPBA);
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "LoadPBACoverage: Errors loading WIG file '%s'", pszInWIGFile);
 	fclose(pInStream);
 	Reset();
 	return(ReadsetID);

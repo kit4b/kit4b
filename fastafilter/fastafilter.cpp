@@ -38,22 +38,6 @@ int Process(int PMode,
 			char *pszInFasta,			// load from this fasta file 
 			char *pszOutFile);			// output to this fasta file
 
-#ifdef _WIN32
-// required by str library
-#if !defined(__AFX_H__)  ||  defined(STR_NO_WINSTUFF)
-HANDLE STR_get_stringres()
-{
-	return NULL;	//Works for EXEs; in a DLL, return the instance handle
-}
-#endif
-
-const STRCHAR* STR_get_debugname()
-{
-	return _T("CSVFilter");
-}
-// end of str library required code
-#endif
-
 CStopWatch gStopWatch;
 CDiagnostics gDiagnostics;				// for writing diagnostics messages to log file
 char gszProcName[_MAX_FNAME];			// process name

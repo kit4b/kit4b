@@ -165,7 +165,7 @@ if((EstNumSeqs = Fasta.FastaEstSizes(pszInFastaFile,&FastaSize)) == 0)
 	}
 
 size_t memreq;
-memreq = (size_t)min(FastaSize,0x05fffffff);			// limited to processing contigous fasta sequences which are less than 1.6G
+memreq = (size_t)min((size_t)FastaSize,(size_t)0x05fffffff);			// limited to processing contigous fasta sequences which are less than 1.6G
 
 #ifdef _WIN32
 m_pSeq = (uint8_t *) malloc(memreq);	// initial and perhaps the only allocation

@@ -37,9 +37,9 @@ Original 'BioKanga' copyright notice has been retained and immediately follows t
 #include <pthread.h>
 #include "../libkit4b/commhdrs.h"
 #endif
+#include "./ngskit4b.h"
 
-#include "ngskit4b.h"
-
+CUtility RegExpr;                      // used for regular expression processing    
 
 const int cMaxExtractDescrs = 20;					// at most this number of extraction descriptors can be processed
 
@@ -418,11 +418,7 @@ size_t m_AllocdSeqBuffMem;  // size of memory currently allocated to m_pSeqBuff
 uint8_t *m_pSeqBuff;			// buffers sequences as read from file
 
 int m_NumExtractDescrs;		// number of extract descriptors
-#ifdef _WIN32
-Regexp *m_ExtractDescrsRE[cMaxExtractDescrs];	// compiled regular expressions
-#else
-regex_t m_ExtractDescrsRE[cMaxExtractDescrs];	// compiled regular expressions
-#endif
+regex* m_pRegexDescrs[100]; // to hold precompiled regular expressions
 
 void
 FEReset(void)
@@ -456,7 +452,8 @@ if(m_pSeqBuff != NULL)
 
 m_AllocdSeqBuffMem = 0;
 m_SeqBuffLen = 0;
-
+for (int Idx = 0; Idx < m_NumExtractDescrs; Idx++)
+	delete m_pRegexDescrs[Idx];
 m_NumExtractDescrs = 0;
 }
 
@@ -466,6 +463,8 @@ FEInit(void)
 m_hFEInFile = -1;
 m_hFEOutFile = -1;
 m_pSeqBuff = NULL;
+m_pRegexDescrs[0] = NULL;
+m_NumExtractDescrs = 0;
 FEReset();
 }
 
@@ -518,108 +517,6 @@ else
 	}
 m_AllocdSeqBuffMem = memreq;
 return(m_pSeqBuff);
-}
-
-
-int
-CompileExtractRegExprs(int	NumExtractDescrs,	// number of regular expressions
-		char **ppszExtractDescrs)		// array of regular expressions
-{
-int Idx;
-int Len;
-char szExtract[500];
-
-#ifndef _WIN32
-int RegErr;				// regular expression parsing error
-char szRegErr[128];			// to hold RegErr as textual representation ==> regerror();
-#endif
-
-#ifdef _WIN32
-try {
-	for(Idx=0;Idx < NumExtractDescrs;Idx++)
-		{
-		m_ExtractDescrsRE[Idx] = new Regexp();
-		strcpy(szExtract,ppszExtractDescrs[Idx]);
-		Len = (int)strlen(szExtract);
-		if(szExtract[Len-1] != '$')
-			{
-			szExtract[Len] = '$';
-			szExtract[Len+1] = '\0';
-			}
-		m_ExtractDescrsRE[Idx]->Parse(szExtract,false);	// note case insensitive
-		}
-	}
-catch(...)
-	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to process include regexpr chrom '%s'",szExtract);
-	return(eBSFerrMem);
-	}
-#else
-for(Idx=0;Idx < NumExtractDescrs;Idx++)
-	{
-	strcpy(szExtract,ppszExtractDescrs[Idx]);
-	Len = strlen(szExtract);
-	if(szExtract[Len-1] != '$')
-		{
-		szExtract[Len] = '$';
-		szExtract[Len+1] = '\0';
-		}
-	RegErr=regcomp(&m_ExtractDescrsRE[Idx],szExtract,REG_EXTENDED | REG_ICASE);	// note case insensitive
-	if(RegErr)
-		{
-		regerror(RegErr,&m_ExtractDescrsRE[Idx],szRegErr,sizeof(szRegErr));
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to process include regexpr '%s' error: %s",szExtract,szRegErr);
-		return(eBSFerrMem);
-		}
-	}
-#endif
-m_NumExtractDescrs = NumExtractDescrs;
-return(eBSFSuccess);
-}
-
-bool									// returns true if descriptor accepted for extraction
-ExtractDescrMatches(char *pszSeqDescr)	// descriptor as parsed from input multifasta
-{
-char szDescrIdent[200];
-char Chr;
-bool bAcceptDescr = false;
-int Idx;
-
-#ifdef _WIN32
-RegexpMatch mc;
-#else
-regmatch_t mc;
-int RegErr;					// regular expression parsing error
-char szRegErr[128];			// to hold RegErr as textual representation ==> regerror();
-#endif
-
-for(Idx = 0; Idx < (sizeof(szDescrIdent) - 1); Idx++)
-	{
-	switch(Chr = *pszSeqDescr++) {
-		case '\0': case ' ': case '\t':
-			break;
-		default:
-			szDescrIdent[Idx] = Chr;
-			continue;
-		}
-	break;
-	}
-szDescrIdent[Idx] = '\0';
-
-for(Idx = 0; Idx < m_NumExtractDescrs; Idx++)
-		{
-#ifdef _WIN32
-		if(m_ExtractDescrsRE[Idx]->Match(szDescrIdent,&mc))
-#else
-		if(!regexec(&m_ExtractDescrsRE[Idx],szDescrIdent,1,&mc,0))
-#endif
-			{
-			bAcceptDescr = true;
-			break;
-			}
-		}
-
-return(bAcceptDescr);
 }
 
 int
@@ -709,7 +606,7 @@ FEInit();
 
 if(PMode == 0 && NumDescrs >= 1)
 	{
-	if((Rslt = CompileExtractRegExprs(NumDescrs,pszDescrs))!=eBSFSuccess)
+	if ((Rslt = RegExpr.CompileIncludeREs(NumDescrs, pszDescrs)) <= eBSFSuccess)
 		return(Rslt);
 	}
 
@@ -774,7 +671,7 @@ while((Rslt = SeqLen = Fasta.ReadSequence(&m_pSeqBuff[m_SeqBuffLen],(int)min(Ava
 			bExtract = true;
 			}
 		else	// is this a descriptor of interest?
-			if(!ExtractDescrMatches(szInDescription))
+			if(!RegExpr.MatchIncludeRegExpr(szInDescription))
 				continue;
 		NumMatches += 1;
 		bExtract = true;				// flag that the sequence is to be extracted

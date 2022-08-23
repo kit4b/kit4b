@@ -66,17 +66,7 @@ class CChromFeatures
 
 	tsChromFeatures *LocateChrom(char *pszChrom); 
 
-	int m_NumIncludeChroms;			// number of chromosomes explicitly defined to be included
-	char **m_ppszIncludeChroms;		// ptr to array of reg expressions defining chroms to include - overides exclude
-	int m_NumExcludeChroms;			// number of chromosomes explicitly defined to be excluded
-	char **m_ppszExcludeChroms;		// ptr to array of reg expressions defining chroms to include
-#ifdef _WIN32
-	Regexp *m_IncludeChromsRE[cMaxIncludeChroms];	// compiled regular expressions
-	Regexp *m_ExcludeChromsRE[cMaxExcludeChroms];
-#else
-	regex_t m_IncludeChromsRE[cMaxIncludeChroms];	// compiled regular expressions
-	regex_t m_ExcludeChromsRE[cMaxExcludeChroms];
-#endif
+	CUtility m_RegExprs;            // regular expression processing
 
 	char m_szFiltChrom[_MAX_PATH];	// used to cache last chrom processed	
 	bool m_bFiltChrom;				// and it's filtered status

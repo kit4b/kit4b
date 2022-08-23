@@ -78,7 +78,7 @@
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LinkIncremental>true</LinkIncremental>
+    <LinkIncremental>false</LinkIncremental>
     <OutDir>Release64\</OutDir>
     <IntDir>Release64\</IntDir>
   </PropertyGroup>
@@ -121,6 +121,7 @@
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <HeapReserveSize>100000000</HeapReserveSize>
       <HeapCommitSize>100000000</HeapCommitSize>
+      <LinkTimeCodeGeneration>UseFastLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -177,7 +178,7 @@
     <ClInclude Include="Benchmarker.h" />
     <ClInclude Include="CallHaplotypes.h" />
     <ClInclude Include="GBSmapSNPs.h" />
-    <ClInclude Include="pbafasta.h" />
+    <ClInclude Include="pbautils.h" />
     <ClInclude Include="seghaplotypes.h" />
     <ClInclude Include="repassemb.h" />
     <ClInclude Include="pangenome.h" />
@@ -216,7 +217,7 @@
     <ClCompile Include="Benchmarker.cpp" />
     <ClCompile Include="CallHaplotypes.cpp" />
     <ClCompile Include="GBSmapSNPs.cpp" />
-    <ClCompile Include="pbafasta.cpp" />
+    <ClCompile Include="pbautils.cpp" />
     <ClCompile Include="seghaplotypes.cpp" />
     <ClCompile Include="pangenome.cpp" />
     <ClCompile Include="repassemb.cpp" />

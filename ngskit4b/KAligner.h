@@ -182,7 +182,7 @@ typedef struct TAG_sQScoreDist {
 typedef struct TAG_sReadAlignLoci {
 	uint32_t ReadHitIdx;			// read aligning
 	uint32_t NxtReadAlign;		// next alignment for same read
-	uint16_t  FlagHL:2;			// how read hit loci was choosen (see enum eHLalign) 
+	uint16_t  FlagHL:2;			// how read hit loci was chosen (see enum eHLalign) 
 	uint16_t  FlagMH:1;			// set if this hit is part of a multihit read, reset if a unique read hit
 	uint16_t  FlagMHA:1;			// set if this hit is provisionally accepted as the alignment to report
 	uint16_t  FlagSegs:1;			// set if this hit has been segmented into 2 hit loci - e.g. contains an InDel or splice junctions
@@ -760,16 +760,7 @@ class CKAligner
 	char *m_pszTrackTitle;			// track title if output format is UCSC BED
 	uint8_t *m_pAllocsMultiHitBuff;	  // allocated to hold per thread buffered output when processing all multihit loci
 
-	int m_NumIncludeChroms;				// number of RE include chroms
-	int m_NumExcludeChroms;				// number of RE exclude chroms
-
-	#ifdef _WIN32
-	Regexp *m_IncludeChromsRE[cMaxIncludeChroms];	// compiled regular expressions
-	Regexp *m_ExcludeChromsRE[cMaxExcludeChroms];
-	#else
-	regex_t m_IncludeChromsRE[cMaxIncludeChroms];	// compiled regular expressions
-	regex_t m_ExcludeChromsRE[cMaxExcludeChroms];
-	#endif
+	CUtility m_RegExprs;            // regular expression processing
 
 	uint32_t m_NumReadsProc;		// number of reads thus far processed - note this is total reads handed out to processing threads
 								// and should be treated as a guide only

@@ -171,22 +171,6 @@ tsChromCnts m_ChromCnts[cMaxChromCov];
 int m_NumChromsCov = 0;		
 
 #ifdef _WIN32
-// required by str library
-#if !defined(__AFX_H__)  ||  defined(STR_NO_WINSTUFF)
-HANDLE STR_get_stringres()
-{
-	return NULL;	//Works for EXEs; in a DLL, return the instance handle
-}
-#endif
-
-const STRCHAR* STR_get_debugname()
-{
-	return _T("LocateROL");
-}
-// end of str library required code
-#endif
-
-#ifdef _WIN32
 int _tmain(int argc, char* argv[])
 {
 // determine my process name

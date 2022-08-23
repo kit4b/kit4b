@@ -372,10 +372,6 @@ if(m_pOutBAMfile != NULL)
 m_szFiltChrom[0] = 0;
 m_bFiltChrom = false;
 
-m_NumIncludeChroms = 0;			
-m_ppszIncludeChroms = NULL;		
-m_NumExcludeChroms = 0;			
-m_ppszExcludeChroms = NULL;		
 }
 
 
@@ -421,133 +417,24 @@ return(stricmp(".gz",&pszFile[Len-3]) == 0 ? true : false);
 
 
 
-int			// eBSFSuccess or error code
+int
 CFilterSAMAlignments::SetChromFilters(int NumIncludeChroms,		 // number of chromosome regular expressions to include
 						char **ppszIncludeChroms,	 // array of include chromosome regular expressions
 						int NumExcludeChroms,		 // number of chromosome expressions to exclude
 						char **ppszExcludeChroms)	 // array of exclude chromosome regular expressions
 {
-int Idx;
-
-#ifndef _WIN32
-int RegErr;				// regular expression parsing error
-char szRegErr[128];			// to hold RegErr as textual representation ==> regerror();
-#endif
-
-m_NumIncludeChroms = NumIncludeChroms;		// number of chromosomes explicitly defined to be included
-m_ppszIncludeChroms = NumIncludeChroms == 0 ? NULL : ppszIncludeChroms;	// ptr to array of reg expressions defining chroms to include - overides exclude
-m_NumExcludeChroms = NumExcludeChroms;		// number of chromosomes explicitly defined to be excluded
-m_ppszExcludeChroms =  NumExcludeChroms == 0 ? NULL : ppszExcludeChroms;	// ptr to array of reg expressions defining chroms to include
-
-m_szFiltChrom[0] = 0;
-m_bFiltChrom = false;
-
-if(NumIncludeChroms == 0 && NumExcludeChroms == 0)
-	return(eBSFSuccess);
-
-#ifdef _WIN32
-try {
-	for(Idx=0;Idx < NumIncludeChroms;Idx++)
-		{
-		m_IncludeChromsRE[Idx] = new Regexp();
-		m_IncludeChromsRE[Idx]->Parse(ppszIncludeChroms[Idx],false);	// note case insensitive
-		}
-	}
-catch(...)
-	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to process include regexpr chrom '%s'",ppszIncludeChroms[Idx]);
-	Reset();
-	return(eBSFerrMem);
-	}
-try {
-	for(Idx=0;Idx < NumExcludeChroms;Idx++)
-		{
-		m_ExcludeChromsRE[Idx] = new Regexp();
-		m_ExcludeChromsRE[Idx]->Parse(ppszExcludeChroms[Idx],false);	// note case insensitive
-		}
-	}
-catch(...)
-	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to process exclude regexpr chrom '%s'",ppszExcludeChroms[Idx]);
-	Reset();
-	return(eBSFerrMem);
-	}
-
-#else
-for(Idx=0;Idx < NumIncludeChroms;Idx++)
-	{
-
-	RegErr=regcomp(&m_IncludeChromsRE[Idx],ppszIncludeChroms[Idx],REG_EXTENDED | REG_ICASE);	// note case insensitive
-	if(RegErr)
-		{
-		regerror(RegErr,&m_IncludeChromsRE[Idx],szRegErr,sizeof(szRegErr));
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to process include chrom '%s' error: %s",ppszIncludeChroms[Idx],szRegErr);
-		Reset();
-		return(eBSFerrMem);
-		}
-	}
-for(Idx=0;Idx < NumExcludeChroms;Idx++)
-	{
-	RegErr = regcomp(&m_ExcludeChromsRE[Idx],ppszExcludeChroms[Idx],REG_EXTENDED | REG_ICASE);	// note case insensitive
-	if(RegErr)
-		{
-		regerror(RegErr,&m_ExcludeChromsRE[Idx],szRegErr,sizeof(szRegErr));
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to process exclude chrom '%s' error: %s",ppszExcludeChroms[Idx],szRegErr);
-		Reset();
-		return(eBSFerrMem);
-		}
-	}
-#endif
-return(eBSFSuccess);
+return(m_RegExprs.CompileREs(NumIncludeChroms, ppszIncludeChroms,NumExcludeChroms, ppszExcludeChroms));
 }
 
-// ExcludeThisChrom
-// Returns true if pszChrom is to be excluded from processing
-bool
-CFilterSAMAlignments::ExcludeThisChrom(char *pszChrom)
+bool					// true if chrom is accepted, false if chrom not accepted
+CFilterSAMAlignments::AcceptThisChromName(char* pszChrom)   // chromosome name
 {
-#ifdef _WIN32
-RegexpMatch mc;
-#else
-regmatch_t mc;
-#endif
+bool bMatch;
 
-int Idx;
-if(!m_NumExcludeChroms && !m_NumIncludeChroms)
-	return(false);
-
-if(m_szFiltChrom[0] != 0)
-	{
-	if(!stricmp(m_szFiltChrom,pszChrom))
-		return(m_bFiltChrom);
-	}
-strcpy(m_szFiltChrom,pszChrom);
-m_bFiltChrom = false;
-
-// explicitly to be excluded?
-for(Idx = 0; Idx < m_NumExcludeChroms; Idx++)
-#ifdef _WIN32	
-	if(m_ExcludeChromsRE[Idx]->Match(pszChrom,&mc))
-#else
-	if(!regexec(&m_ExcludeChromsRE[Idx],pszChrom,1,&mc,0))
-#endif
-		return(m_bFiltChrom = true);
-
-// explicitly to be included?
-for(Idx = 0; Idx < m_NumIncludeChroms; Idx++)
-	{
-#ifdef _WIN32
-	if(m_IncludeChromsRE[Idx]->Match(pszChrom,&mc))
-#else
-	if(!regexec(&m_IncludeChromsRE[Idx],pszChrom,1,&mc,0))
-#endif
-		return(m_bFiltChrom = false);
-	}
-
-
-// if chromosomes were defined as to explicitly include then this chrom is to be filtered out
-m_bFiltChrom = m_NumIncludeChroms > 0 ? true : false;
-return(m_bFiltChrom);
+bMatch = !m_RegExprs.MatchExcludeRegExpr(pszChrom);
+if(bMatch)
+    bMatch = m_RegExprs.MatchIncludeRegExpr(pszChrom);
+return(bMatch);
 }
 
 int								// number of alignments which were retained and written to output file after filtering was applied
@@ -692,7 +579,7 @@ while(Rslt >= eBSFSuccess && (LineLen = m_pInBAMfile->GetNxtSAMline(m_szLine)) >
 		if(3 != sscanf(&pTxt[3]," AS:%s SN:%s LN:%d",szGenome,szContig,&ContigLen))
 			continue;
 
-		if(ExcludeThisChrom(szContig))
+		if(!AcceptThisChromName(szContig))
 			continue;
 
 		m_pOutBAMfile->AddRefSeq(szGenome,szContig,ContigLen);

@@ -180,7 +180,7 @@ const uint32_t cMaxAllowSeqLen = 0xfff00000;  // maximum length (nearly 4G) of a
 const uint32_t cMinAllowInMemSeqLen = 0x04;		// minimum allowed length of any individual sequence allowed when constructing in-memory suffix array
 const uint32_t cMaxAllowInMemSeqLen = (cMaxAllowSeqLen/2);		// maximum allowed length of any individual sequence allowed when constructing in-memory suffix array
 const uint64_t cMaxAllowConcatSeqLen = 1000000000000; // max supported concatenation length of all sequences (must fit within 40bits)
-const uint32_t cReallocBlockEls = cMaxAllowSeqLen/10;  // minimum realloc for sfxblock elements
+const uint64_t cReallocBlockEls = (uint64_t)(cMaxAllowSeqLen/10);  // minimum realloc for sfxblock elements
 const uint64_t cThres8ByteSfxEls = 4000000000;  // if concatenated sequence length >= this threshold then use 5bytes per suffix element instead of 4 when creating suffix index
 const uint32_t cMaxMemSfxSeqAlloc = 0x03fffffff;  // when constructing in memory suffix array then defaulting max length sequence to this length, will be realloc'd to larger if required
 const int cMaxCultivars = 20000;	// can handle at most this many different cultivars

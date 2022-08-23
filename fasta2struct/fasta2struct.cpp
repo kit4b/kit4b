@@ -101,7 +101,7 @@ class CProcessConformation  : public CErrorCodes {
 		int *m_pConfRiseValues;			// used to hold windows of conformational rise values
 		int *m_pConfTwistValues;		// used to hold windows of conformational twist values
 		tsConfRange m_ConfRange[eSSNumStatParams]; // used when generating fasta sequence conformation summary stats - medians
-		
+		CUtility m_RegExprs;            // regular expression processing
 		float *m_pMeanRises;
 		float *m_pMeanTwists;
 	
@@ -157,22 +157,6 @@ int TrimQuotes(char *pszTxt);		// removes leading/trailing quotes
 void ShowComposition(char *pszMsg,	// message to display
 					 int Len,		// number of bases ptd to by pSeq
 					 etSeqBase *pSeq); // bases over which to to show basic composition stats
-
-#ifdef _WIN32
-// required by str library
-#if !defined(__AFX_H__)  ||  defined(STR_NO_WINSTUFF)
-HANDLE STR_get_stringres()
-{
-	return NULL;	//Works for EXEs; in a DLL, return the instance handle
-}
-#endif
-
-const STRCHAR* STR_get_debugname()
-{
-	return _T("fasta2struct");
-}
-// end of str library required code
-#endif
 
 #ifdef _WIN32
 int _tmain(int argc, char* argv[])
@@ -1872,69 +1856,13 @@ switch(RMode) {
 		break;
 	}
 
-int Idx;
 bool bProcChrom;
-#ifdef _WIN32
-RegexpMatch mc;
-Regexp *IncludeChromsRE[cMaxIncludeChroms];	// compiled regular expressions
-Regexp *ExcludeChromsRE[cMaxExcludeChroms];
 
-try {
-	for(Idx=0;Idx < NumIncludeChroms;Idx++)
-		{
-		IncludeChromsRE[Idx] = new Regexp();
-		IncludeChromsRE[Idx]->Parse(ppszIncludeChroms[Idx],false);	// note case insensitive
-		}
-	}
-catch(...)
+if ((Rslt = m_RegExprs.CompileREs(NumIncludeChroms, ppszIncludeChroms, NumExcludeChroms, ppszExcludeChroms)) < eBSFSuccess)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to process include regexpr chrom '%s'",ppszIncludeChroms[Idx]);
-	return(eBSFerrMem);
+	Reset();
+	return(Rslt);
 	}
-try {
-	for(Idx=0;Idx < NumExcludeChroms;Idx++)
-		{
-		ExcludeChromsRE[Idx] = new Regexp();
-		ExcludeChromsRE[Idx]->Parse(ppszExcludeChroms[Idx],false);	// note case insensitive
-		}
-	}
-catch(...)
-	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to process exclude regexpr chrom '%s'",ppszExcludeChroms[Idx]);
-	return(eBSFerrMem);
-	}
-
-#else
-regmatch_t mc;
-regex_t IncludeChromsRE[cMaxIncludeChroms];	// compiled regular expressions
-regex_t ExcludeChromsRE[cMaxExcludeChroms];
-
-int RegErr;				// regular expression parsing error
-char szRegErr[128];			// to hold RegErr as textual representation ==> regerror();
-
-for(Idx=0;Idx < NumIncludeChroms;Idx++)
-	{
-
-	RegErr=regcomp(&IncludeChromsRE[Idx],ppszIncludeChroms[Idx],REG_EXTENDED | REG_ICASE);	// note case insensitive
-	if(RegErr)
-		{
-		regerror(RegErr,&IncludeChromsRE[Idx],szRegErr,sizeof(szRegErr));
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to process include chrom '%s' error: %s",ppszIncludeChroms[Idx],szRegErr);
-		return(eBSFerrMem);
-		}
-	}
-for(Idx=0;Idx < NumExcludeChroms;Idx++)
-	{
-	RegErr = regcomp(&ExcludeChromsRE[Idx],ppszExcludeChroms[Idx],REG_EXTENDED | REG_ICASE);	// note case insensitive
-	if(RegErr)
-		{
-		regerror(RegErr,&ExcludeChromsRE[Idx],szRegErr,sizeof(szRegErr));
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to process exclude chrom '%s' error: %s",ppszExcludeChroms[Idx],szRegErr);
-		return(eBSFerrMem);
-		}
-	}
-#endif
-
 
 if(pszIncludeRegionsFile != NULL && pszIncludeRegionsFile[0] != '\0')
 	{
@@ -2021,37 +1949,7 @@ for(CurPermuteMode = 0; CurPermuteMode <= (int)RMode; CurPermuteMode++)
 		m_pBioSeqFile->GetName(CurEntryID,sizeof(szChromName),szChromName);
 
 		// check if chrom to be excluded?
-		bProcChrom = true;
-		for(Idx = 0; Idx < NumExcludeChroms; Idx++)
-#ifdef _WIN32	
-			if(ExcludeChromsRE[Idx]->Match(szChromName,&mc))
-#else
-			if(!regexec(&ExcludeChromsRE[Idx],szChromName,1,&mc,0))
-#endif
-				{
-				bProcChrom = false;
-				break;
-				}
-
-		// if not explicitly excluded then check if to be explicitly included
-		if(bProcChrom == true && NumIncludeChroms > 0)
-			{
-			bProcChrom = false;
-			for(Idx = 0; Idx < NumIncludeChroms; Idx++)
-				{
-#ifdef _WIN32
-				if(IncludeChromsRE[Idx]->Match(szChromName,&mc))
-#else
-				if(!regexec(&IncludeChromsRE[Idx],szChromName,1,&mc,0))
-#endif
-					{
-					bProcChrom = true;
-					break;
-					}
-				}
-			}
-
-
+		bProcChrom = m_RegExprs.Accept(szChromName);
 		
 		if(!bProcChrom)
 			{

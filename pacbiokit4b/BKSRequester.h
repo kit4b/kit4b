@@ -4,7 +4,7 @@
 
 const int cListenBacklog = 5;					// maximum length of the queue of pending connections
 
-const int cMaxConcurrentRequests = min(4095,cMaxServiceInsts * cMaxNumSessions);	// can process at most this many concurrent service requests over all session instances independent of service type
+const int cMaxConcurrentRequests = min(4095,(int)(cMaxServiceInsts * cMaxNumSessions));	// can process at most this many concurrent service requests over all session instances independent of service type
 const int cMaxReqID = cMaxConcurrentRequests;	// request identifiers will range from 1..cMaxConcurrentRequests
 
 // when negotiating with potential service providers then minimal buffer tx/rx buffer sizes are allocated

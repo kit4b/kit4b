@@ -144,7 +144,7 @@ if (m_pszFastqSeq == NULL)
 	if ((m_pszFastqSeq = new char[cMaxFastQSeqLen+10]) == NULL)
 		return(eBSFerrMem);
 	}
-if (m_pszFastqSeq == NULL)
+if (m_pszFastqSeqQ == NULL)
 	{
 	if((m_pszFastqSeqQ = new char[cMaxFastQSeqLen+10]) == NULL)
 		return(eBSFerrMem);

@@ -1450,7 +1450,7 @@ if(m_NumComponents)
 		pStaticComponents = m_pComponents;
 		m_MTqsort.qsort(pStaticComponents,m_NumComponents,sizeof(tsComponent),SortComponentNumVertices);
 		}
-	for(uint32_t Idx = 0; Idx < min(50,m_NumComponents); Idx++)
+	for(uint32_t Idx = 0; Idx < min(50u,m_NumComponents); Idx++)
 		{
 		if(m_pComponents[Idx].NumVertices >= 2)
 			gDiagnostics.DiagOut(eDLInfo,gszProcName,"ComponentID %u, Vertices %u",m_pComponents[Idx].ComponentID,m_pComponents[Idx].NumVertices);
@@ -2034,7 +2034,7 @@ for(CurCompID = 1; CurCompID <= m_NumComponents; CurCompID++,pComponent++)
 
 uint32_t ComponentIdx;
 pComponent = m_pComponents;
-for(ComponentIdx = 0; ComponentIdx < min(50,m_NumComponents); ComponentIdx++,pComponent++)
+for(ComponentIdx = 0; ComponentIdx < min(50u,m_NumComponents); ComponentIdx++,pComponent++)
 	{
 	if(pComponent->NumVertices > 1)
 		gDiagnostics.DiagOut(eDLInfo,gszProcName,"Component: %d Path length: %u Path Vertices: %u Path Score: %zu", pComponent->ComponentID, pComponent->PathLength, pComponent->NumTraceBacks, pComponent->PathScore);

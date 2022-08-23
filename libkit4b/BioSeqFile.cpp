@@ -1005,7 +1005,7 @@ if(ReqDataType == eAsciiType && pEntry->DType == eSeqBaseType)
 	uint32_t NumCvrted = 0;
 	while(NumCvrted < MaxLen && FileSeqLen)
 		{
-		CurReadFileSeqLen = min(FileSeqLen,sizeof(DataBuff));
+		CurReadFileSeqLen = min((size_t)FileSeqLen,sizeof(DataBuff));
 
 		if(CurReadFileSeqLen != (BuffLen = read(m_hFile,DataBuff,CurReadFileSeqLen)))	
 			{

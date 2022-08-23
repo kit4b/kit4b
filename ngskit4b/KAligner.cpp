@@ -270,10 +270,6 @@ m_MaxAcceptReadLen = MaxAcceptReadLen;	// only accepting reads for alignment if 
 
 m_SitePrefsOfs = SitePrefsOfs;			// offset read start sites when processing  octamer preferencing, range -100..100
 
-
-m_NumIncludeChroms = NumIncludeChroms;
-m_NumExcludeChroms = NumExcludeChroms;
-
 m_MaxRptSAMSeqsThres = MaxRptSAMSeqsThres;
 
 if(CreateMutexes()!=eBSFSuccess)
@@ -304,8 +300,8 @@ if(pszContamFile != NULL && pszContamFile[0] != '\0')
 		gDiagnostics.DiagOut(eDLInfo,gszProcName,"No contaminant sequences loaded from '%s'",pszContamFile);
 	}
 
-// compile include/exclude chromosome regexpr if user has specified alignments to be filtered by chrom
-if(NumIncludeChroms > 0 || m_NumExcludeChroms > 0)
+// compile include/exclude chromosome regular expressions
+if(NumIncludeChroms > 0 || NumExcludeChroms > 0)
 	if((Rslt = CompileChromRegExprs(NumIncludeChroms,ppszIncludeChroms,NumExcludeChroms,ppszExcludeChroms)) != eBSFSuccess)
 		{
 		Reset(false);
@@ -2773,65 +2769,19 @@ return(NumIdentified);
 bool					// true if chrom is accepted, false if chrom not accepted
 CKAligner::AcceptThisChromID(uint32_t ChromID)
 {
-int IncChromIdx;
-int ExclChromIdx;
 char szChromName[128];
 bool bProcChrom = false;
 int MatchesFiltOut = 0;
 
-if(!(m_NumExcludeChroms || m_NumIncludeChroms))
-	return(true);
-
-#ifdef _WIN32
-RegexpMatch mc;
-#else
-regmatch_t mc;
-int RegErr;					// regular expression parsing error
-char szRegErr[128];			// to hold RegErr as textual representation ==> regerror();
-#endif
-
 m_pSfxArray->GetIdentName(ChromID,sizeof(szChromName),szChromName);
 
 AcquireSerialise();
-
-	// check if to be excluded
-bProcChrom = true;
-for(ExclChromIdx = 0; ExclChromIdx < m_NumExcludeChroms; ExclChromIdx++)
-	{
-#ifdef _WIN32
-	if(m_ExcludeChromsRE[ExclChromIdx]->Match(szChromName,&mc))
-#else
-	if(!regexec(&m_ExcludeChromsRE[ExclChromIdx],szChromName,1,&mc,0))
-#endif
-		{
-		bProcChrom = false;
-		break;
-		}
-	}
-
-	// to be included?
-if(bProcChrom && m_NumIncludeChroms > 0)
-	{
-	bProcChrom = false;
-	for(IncChromIdx = 0; IncChromIdx < m_NumIncludeChroms; IncChromIdx++)
-		{
-#ifdef _WIN32
-		if(m_IncludeChromsRE[IncChromIdx]->Match(szChromName,&mc))
-#else
-		if(!regexec(&m_IncludeChromsRE[IncChromIdx],szChromName,1,&mc,0))
-#endif
-			{
-			bProcChrom = true;
-			break;
-			}
-		}
-	}
+if((bProcChrom = !m_RegExprs.MatchExcludeRegExpr(szChromName)) == true)
+    bProcChrom = m_RegExprs.MatchIncludeRegExpr(szChromName);
 
 ReleaseSerialise();
 
-if(!bProcChrom)
-	return(false);
-return(true);
+return(bProcChrom);
 }
 
 
@@ -4074,24 +4024,14 @@ CKAligner::FiltByChroms(void)
 {
 tBSFEntryID PrevTargEntry;
 tBSFEntryID ExcludeTargEntryID;
-int IncChromIdx;
-int ExclChromIdx;
 char szChromName[128];
 bool bProcChrom = false;
 int MatchesFiltOut = 0;
 tsReadHit *pReadHit;
 
-#ifdef _WIN32
-RegexpMatch mc;
-#else
-regmatch_t mc;
-int RegErr;					// regular expression parsing error
-char szRegErr[128];			// to hold RegErr as textual representation ==> regerror();
-#endif
-
 SortReadHits(eRSMHitMatch,false);
 
-if(m_NumExcludeChroms || m_NumIncludeChroms)
+if(m_RegExprs.HasRegExprs())
 	{
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Now filtering matches by chromosome");
 	PrevTargEntry = 0;
@@ -4120,37 +4060,8 @@ if(m_NumExcludeChroms || m_NumIncludeChroms)
 				}
 
 			// to be included?
-			bProcChrom = false;
-			for(IncChromIdx = 0; IncChromIdx < m_NumIncludeChroms; IncChromIdx++)
-				{
-#ifdef _WIN32
-				if(m_IncludeChromsRE[IncChromIdx]->Match(szChromName,&mc))
-#else
-				if(!regexec(&m_IncludeChromsRE[IncChromIdx],szChromName,1,&mc,0))
-#endif
-					{
-					bProcChrom = true;
-					break;
-					}
-				}
-
-			// if not explicitly included then check if to be excluded?
-			if(!bProcChrom && !m_NumIncludeChroms)
-				{
-				bProcChrom = true;
-				for(ExclChromIdx = 0; ExclChromIdx < m_NumExcludeChroms; ExclChromIdx++)
-					{
-#ifdef _WIN32
-					if(m_ExcludeChromsRE[ExclChromIdx]->Match(szChromName,&mc))
-#else
-					if(!regexec(&m_ExcludeChromsRE[ExclChromIdx],szChromName,1,&mc,0))
-#endif
-						{
-						bProcChrom = false;
-						break;
-						}
-					}
-				}
+			if((bProcChrom = !m_RegExprs.MatchExcludeRegExpr(szChromName)) == true)
+				bProcChrom = m_RegExprs.MatchIncludeRegExpr(szChromName);
 
 			if(!bProcChrom)
 				{
@@ -4846,63 +4757,7 @@ CKAligner::CompileChromRegExprs(int	NumIncludeChroms,	// number of chromosome re
 		int	NumExcludeChroms,			// number of chromosome expressions to exclude
 		char **ppszExcludeChroms)		// array of exclude chromosome regular expressions
 {
-int Idx;
-
-#ifndef _WIN32
-int RegErr;				// regular expression parsing error
-char szRegErr[128];			// to hold RegErr as textual representation ==> regerror();
-#endif
-
-#ifdef _WIN32
-try {
-	for(Idx=0;Idx < NumIncludeChroms;Idx++)
-		{
-		m_IncludeChromsRE[Idx] = new Regexp();
-		m_IncludeChromsRE[Idx]->Parse(ppszIncludeChroms[Idx],false);	// note case insensitive
-		}
-	}
-catch(...)
-	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to process include regexpr chrom '%s'",ppszIncludeChroms[Idx]);
-	return(eBSFerrMem);
-	}
-try {
-	for(Idx=0;Idx < NumExcludeChroms;Idx++)
-		{
-		m_ExcludeChromsRE[Idx] = new Regexp();
-		m_ExcludeChromsRE[Idx]->Parse(ppszExcludeChroms[Idx],false);	// note case insensitive
-		}
-	}
-catch(...)
-	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to process exclude regexpr chrom '%s'",ppszExcludeChroms[Idx]);
-	return(eBSFerrMem);
-	}
-
-#else
-for(Idx=0;Idx < NumIncludeChroms;Idx++)
-	{
-
-	RegErr=regcomp(&m_IncludeChromsRE[Idx],ppszIncludeChroms[Idx],REG_EXTENDED | REG_ICASE);	// note case insensitive
-	if(RegErr)
-		{
-		regerror(RegErr,&m_IncludeChromsRE[Idx],szRegErr,sizeof(szRegErr));
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to process include chrom '%s' error: %s",ppszIncludeChroms[Idx],szRegErr);
-		return(eBSFerrMem);
-		}
-	}
-for(Idx=0;Idx < NumExcludeChroms;Idx++)
-	{
-	RegErr = regcomp(&m_ExcludeChromsRE[Idx],ppszExcludeChroms[Idx],REG_EXTENDED | REG_ICASE);	// note case insensitive
-	if(RegErr)
-		{
-		regerror(RegErr,&m_ExcludeChromsRE[Idx],szRegErr,sizeof(szRegErr));
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to process exclude chrom '%s' error: %s",ppszExcludeChroms[Idx],szRegErr);
-		return(eBSFerrMem);
-		}
-	}
-#endif
-return(eBSFSuccess);
+return(m_RegExprs.CompileREs(NumIncludeChroms, ppszIncludeChroms,NumExcludeChroms, ppszExcludeChroms));
 }
 
 #ifdef _WIN32
@@ -5066,7 +4921,7 @@ if(NumLeft2Cluster > 0)
 		Num4Thread = NumLeft2Cluster;
 	else
 		{
-		Num4Thread = min(2000,m_NumThreads + (NumLeft2Cluster / (uint32_t)m_NumThreads));
+		Num4Thread = min(2000u,(uint32_t)m_NumThreads + (NumLeft2Cluster / (uint32_t)m_NumThreads));
 		Num4Thread = min(Num4Thread,NumLeft2Cluster);
 		}
 
@@ -5521,7 +5376,7 @@ while((pPE1ReadHit = IterSortedReads(pPE1ReadHit))!=NULL)
 		{
 		if(NumTargIDs && NumPEs)
 			{
-			MedianInsert = MedianInsertLen(min(1000000,NumPEs),pInsertLens);
+			MedianInsert = MedianInsertLen(min(1000000u,NumPEs),pInsertLens);
 			BuffOfs += sprintf(&szDistBuff[BuffOfs],"\"%s\",%u,%u,%u,%u",szTargChromName,TargChromLen,NumPEs,MedianInsert,(uint32_t)(SumInsertLens/NumPEs));
 			for(Idx = 0; Idx < 52; Idx++)
 				BuffOfs += sprintf(&szDistBuff[BuffOfs],",%d",LenDist[Idx]);
@@ -5578,7 +5433,7 @@ if(NumTargIDs)
 	{
 	if(NumPEs)
 		{
-		MedianInsert = MedianInsertLen(min(1000000,NumPEs),pInsertLens);
+		MedianInsert = MedianInsertLen(min((uint32_t)1000000,NumPEs),pInsertLens);
 		BuffOfs += sprintf(&szDistBuff[BuffOfs],"\"%s\",%u,%u,%u,%u",szTargChromName,TargChromLen,NumPEs,MedianInsert,(uint32_t)(SumInsertLens/NumPEs));
 		for(Idx = 0; Idx < 52; Idx++)
 			BuffOfs += sprintf(&szDistBuff[BuffOfs],",%u",LenDist[Idx]);
@@ -7078,7 +6933,7 @@ PrevTargEntry = 0;
 ReadHitBuffIdx = 0;
 
 // check if hits are to chromosomes which are to be retained
-if(NumHits > 0 && (m_NumExcludeChroms || m_NumIncludeChroms))
+if(NumHits > 0 && m_RegExprs.HasRegExprs())
 	{
 	tsHitLoci *pAcceptHit;
 	int AcceptHits;
@@ -7358,10 +7213,9 @@ else
 		m_AllocPackedBaseAllelesMem = memreq;
 		m_NumPackedBaseAlleles = 0;
 
-		// as this the first chromosome being called then generate a fixed size header
-		// This header contains a series of '\n' separated tagname:values
-		// Following the fixed size header are a variable number of chromosomes
-		// The fixed sized header is 1000 bytes in size
+		// as this the first chromosome being called then generate header
+		// This header contains a series of '\n' separated tagname:values 
+		// Following the header are a variable number of chromosomes
 		m_NumPackedBaseAlleles = sprintf((char *)m_pPackedBaseAlleles,"Type:%s\nVersion:1\nExperimentID:%s\nReferenceID:%s\nReadsetID:%s","PbA",m_szExperimentName,m_szTargSpecies,m_pszTrackTitle);
 		m_NumPackedBaseAlleles+=1;	
 		}
@@ -7480,7 +7334,7 @@ else
 	PrevScaledLociCoverage = 0;
 	CoverageSegLen = 0;
 	StartCoverageSegLoci = 0;
-	m_MaxDiSNPSep = min((int)cDfltMaxDiSNPSep, m_pChromSNPs->MeanReadLen);
+	m_MaxDiSNPSep = min(cDfltMaxDiSNPSep, (int32_t)m_pChromSNPs->MeanReadLen);
 	InitialiseWIGSpan();
 	for (Loci = 0; Loci < m_pChromSNPs->ChromLen; Loci++, pSNP++)
 		{
@@ -7775,7 +7629,7 @@ else
 	for (Idx = 0; Idx < (int)m_NumLociPValues; Idx++, pLociPValues++)
 	{
 		m_TotNumSNPs += 1;
-		RelRank = max(1, 999 - ((999 * pLociPValues->Rank) / m_NumLociPValues));
+		RelRank = max(1, (int32_t)(999 - ((999 * pLociPValues->Rank) / m_NumLociPValues)));
 		if (m_FMode == eFMbed)
 		{
 			LineLen += sprintf(&m_pszLineBuff[LineLen], "%s\t%d\t%d\tSNP_%d\t%d\t+\n",
@@ -7802,7 +7656,7 @@ else
 					if (pLociPValues->SNPcnts.NonRefBaseCnts[AltIdx] > CntsThres)
 						CntsThres = pLociPValues->SNPcnts.NonRefBaseCnts[AltIdx];
 				}
-				CntsThres = max((CntsThres + 5) / 10, 1);
+				CntsThres = max((CntsThres + 5) / 10, (uint32_t)1);
 				AltOfs = 0;
 				AltFreqOfs = 0;
 				for (AltIdx = 0; AltIdx < eBaseN; AltIdx++)
@@ -10523,7 +10377,7 @@ pRetBlock->NumReads = 0;
 
 AdjReadsPerBlock = cMaxReadsPerBlock;
 if(m_SampleNthRawRead > 1)
-	AdjReadsPerBlock = min(100,AdjReadsPerBlock/m_SampleNthRawRead);
+	AdjReadsPerBlock = min((uint32_t)100,AdjReadsPerBlock/m_SampleNthRawRead);
 
 ReleaseLock(false);
 while(1) {

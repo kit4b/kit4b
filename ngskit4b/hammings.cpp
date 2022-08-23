@@ -2958,7 +2958,7 @@ for(SeqIdx = 0; SeqIdx < (m_GenomeLen-2); SeqIdx++,pHamDist1++,CurLoci++)
 	CntHist[*pHamDist1] += 1;
 	}
 
-for(SeqIdx = 0; SeqIdx < (uint32_t)min(66,m_SubSeqLen); SeqIdx++)
+for(SeqIdx = 0; SeqIdx < (uint32_t)min(66u,m_SubSeqLen); SeqIdx++)
 	gDiagnostics.DiagOutMsgOnly(eDLInfo,"%d,%d,%1.3f",SeqIdx,CntHist[SeqIdx],(CntHist[SeqIdx]*100.0f)/m_NumSubSeqs);
 
 Reset(true);

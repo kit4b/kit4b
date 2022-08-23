@@ -2462,7 +2462,7 @@ _ASSERTE( _CrtCheckMemory());
 
 if(m_NumFeaturesLoaded < (uint32_t)NumThreads)
 	m_NumDEThreads = m_NumFeaturesLoaded;
-m_FeatsPerThread = min(cMaxFeats2ProcAlloc,m_NumFeaturesLoaded/m_NumDEThreads);
+m_FeatsPerThread = min(cMaxFeats2ProcAlloc,(int32_t)(m_NumFeaturesLoaded/(uint32_t)m_NumDEThreads));
 
 
 m_ProcessingPhase = ePPDDd;

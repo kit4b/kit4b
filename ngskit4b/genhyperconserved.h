@@ -102,18 +102,6 @@ typedef struct TAG_sProcParams
 	bool bMultipleFeatBits;			// if false then stats only generated if a single feature bit is set - e.g if both exons and introns overlapped then no stat generated
 	int hRsltsFile;					// write stats results into this CSV file
 	int hCoreCSVRsltsFile;			// write hypercore loci into this CSV file
-	int NumIncludeChroms;			// number of chromosomes explicitly defined to be included
-	char** ppszIncludeChroms;		// ptr to array of reg expressions defining chroms to include - overides exclude
-	int NumExcludeChroms;			// number of chromosomes explicitly defined to be excluded
-	char** ppszExcludeChroms;		// ptr to array of reg expressions defining chroms to include
-#ifdef _WIN32
-	Regexp* IncludeChromsRE[cMaxIncludeChroms];	// compiled regular expressions
-	Regexp* ExcludeChromsRE[cMaxExcludeChroms];
-#else
-	regex_t IncludeChromsRE[cMaxIncludeChroms];	// compiled regular expressions
-	regex_t ExcludeChromsRE[cMaxExcludeChroms];
-#endif
-
 	bool bAllUniqueSpeciesSeqs;		// true if all species sequences must not overlap any other sequence
 	int NumUniqueSpeciesSeqs;		// number of species in UniqueSpeciesSeqs
 	char UniqueSpeciesSeqs[cMaxAlignedSpecies][cMaxDatasetSpeciesChrom];	// species for which sequences in alignment blocks must not overlap with sequence in any other block

@@ -389,7 +389,7 @@ if(m_pProbe == NULL || m_ProbeAllocd < Len + 100)
 	{
 	if(m_pProbe != NULL)
 		delete m_pProbe;
-	m_ProbeAllocd = max(250000,Len + 100);		// always alloc for at least 250Kbp, reduces the potential for any subsequent reallocs
+	m_ProbeAllocd = max(250000u,Len + 100u);		// always alloc for at least 250Kbp, reduces the potential for any subsequent reallocs
 	m_pProbe = new etSeqBase [m_ProbeAllocd];
 	if(m_pProbe == NULL)
 		return(false);
@@ -636,7 +636,7 @@ if(m_pTarg == NULL || m_TargAllocd < Len + 100)
 	{
 	if(m_pTarg != NULL)
 		delete m_pTarg;
-	m_TargAllocd = max(250000,Len + 100);   // always alloc for at least 250Kbp, reduces the potential for any subsequent reallocs
+	m_TargAllocd = max(250000u,Len + 100u);   // always alloc for at least 250Kbp, reduces the potential for any subsequent reallocs
 	m_pTarg = new etSeqBase [m_TargAllocd];
 	if(m_pTarg == NULL)
 		return(false);
@@ -665,7 +665,7 @@ if(m_pAllocdCells == NULL || (m_AllocdCells < (MaxTargLen + 5)))  // allowing a 
 		m_AllocdCells = 0;
 		m_AllocdCellSize = 0;
 		}
-	m_AllocdCells = min(250000,(uint32_t)( ((uint64_t)MaxTargLen * 3) / 2));		// always allocate for at least 250Kbp, saves on potential for any subsequent reallocation required
+	m_AllocdCells = min(250000u,(uint32_t)( ((uint64_t)MaxTargLen * 3) / 2));		// always allocate for at least 250Kbp, saves on potential for any subsequent reallocation required
 	m_AllocdCellSize = sizeof(tsSSWCell) * m_AllocdCells;
 #ifdef _WIN32
 	m_pAllocdCells = (tsSSWCell *) malloc(m_AllocdCellSize);
@@ -2141,7 +2141,7 @@ bool bCpltdReadMAF;
 uint32_t NumParsedBlocks;
 int ConsSeqLen;
 
-m_AllocMAFAlignBuffSize = min(0x7ff00000,cMaxMAFBlockLen * 5);
+m_AllocMAFAlignBuffSize = min((uint32_t)0x7ff00000,cMaxMAFBlockLen * 5u);
 if(m_pszMAFAlignBuff == NULL)
 	{
 	if((m_pszMAFAlignBuff = new char [m_AllocMAFAlignBuffSize])==NULL)

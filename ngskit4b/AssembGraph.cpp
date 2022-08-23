@@ -1048,7 +1048,7 @@ for(VertexID = 1; VertexID <= m_UsedGraphVertices; VertexID++, pVertex++)
 			EdgeID += 1;
 			}
 		}
-	pVertex->DegreeOut = min(15,NumOutEdges);
+	pVertex->DegreeOut = min(15u,NumOutEdges);
 
 	if(pVertex->InEdgeID != 0)				// check for multiple incoming edges
 		{
@@ -1062,7 +1062,7 @@ for(VertexID = 1; VertexID <= m_UsedGraphVertices; VertexID++, pVertex++)
 			EdgeID += 1;
 			}
 		}
-	pVertex->DegreeIn = min(15,NumInEdges);
+	pVertex->DegreeIn = min(15u,NumInEdges);
 
 	if(NumOutEdges == 0 && NumInEdges == 0)
 		{
@@ -1221,7 +1221,7 @@ if(m_UsedComponents)
 		pStaticComponents = m_pComponents;
 		m_MTqsort.qsort(pStaticComponents,m_UsedComponents,sizeof(tsComponent),SortComponentNumVertices);
 		}
-	for(uint32_t Idx = 0; Idx < min(100,m_UsedComponents); Idx++)
+	for(uint32_t Idx = 0; Idx < min(100u,m_UsedComponents); Idx++)
 		{
 		gDiagnostics.DiagOut(eDLInfo,gszProcName,"ComponentID %u, Vertices %u",m_pComponents[Idx].ComponentID,m_pComponents[Idx].NumVertices);
 		}

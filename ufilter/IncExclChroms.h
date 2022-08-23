@@ -13,16 +13,8 @@ typedef struct TAG_sIncExclChrom {
 
 class CIncExclChroms {
 	tsIncExclChrom *m_pLastmatch;				// pts to last added or matched chromosome
-#ifdef _WIN32
-	Regexp *m_IncludeChromsRE[cMaxIncludeChroms];	// compiled regular expressions
-	Regexp *m_ExcludeChromsRE[cMaxExcludeChroms];
-#else
-	regex_t m_IncludeChromsRE[cMaxIncludeChroms];	// compiled regular expressions
-	regex_t m_ExcludeChromsRE[cMaxExcludeChroms];
-#endif
 
-	int m_NumIncludeChroms;			// number of chromosome regular expressions to include
-	int	m_NumExcludeChroms;			// number of chromosome expressions to exclude
+	CUtility m_RegExprs;                        // regular expression processing
 
 	int m_AllocdIncExclChroms;					// number allocated
 	int m_IncExclChroms;						// number in use

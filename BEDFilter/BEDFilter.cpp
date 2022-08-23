@@ -47,23 +47,6 @@ CDiagnostics gDiagnostics;				// for writing diagnostics messages to log file
 char gszProcName[_MAX_FNAME];			// process name
 
 #ifdef _WIN32
-// required by str library
-#if !defined(__AFX_H__)  ||  defined(STR_NO_WINSTUFF)
-HANDLE STR_get_stringres()
-{
-	return NULL;	//Works for EXEs; in a DLL, return the instance handle
-}
-#endif
-
-const STRCHAR* STR_get_debugname()
-{
-	return _T("BEDFilter");
-}
-// end of str library required code
-#endif
-
-
-#ifdef _WIN32
 int _tmain(int argc, char* argv[])
 {
 // determine my process name
@@ -300,23 +283,12 @@ while((Chr = *pszTxt++))
 return(Len);
 }
 
+CUtility RegExpr;     //regular expression processing
 CBEDfile *m_pBedFile; // BED file from which features are to be filtered
 int m_hOutFile;		  // file handle for output file contained retained features
 int m_BuffIdx;		  // index into pszOutBuff at which to next write
 int m_AllocBuffSize;  // pszOutBuff allocated to hold at most this many chars
 char *m_pszOutBuff;	  // output buffer
-
-int m_NumIncludeChroms;			// number of chromosomes explicitly defined to be included
-char **m_ppszIncludeChroms;		// ptr to array of reg expressions defining chroms to include
-int m_NumExcludeChroms;			// number of chromosomes explicitly defined to be excluded
-char **m_ppszExcludeChroms;		// ptr to array of reg expressions defining chroms to include
-#ifdef _WIN32
-Regexp *m_IncludeChromsRE[cMaxIncludeChroms];	// compiled regular expressions
-Regexp *m_ExcludeChromsRE[cMaxExcludeChroms];
-#else
-regex_t m_IncludeChromsRE[cMaxIncludeChroms];	// compiled regular expressions
-regex_t m_ExcludeChromsRE[cMaxExcludeChroms];
-#endif
 
 char m_szFiltChrom[_MAX_PATH];	// used to cache last chrom processed	
 bool m_bFiltChrom;				// and it's filtered status
@@ -347,11 +319,6 @@ m_AllocBuffSize = 0;
 m_szFiltChrom[0] = 0;
 m_bFiltChrom = false;
 
-m_NumIncludeChroms = 0;			
-m_ppszIncludeChroms = NULL;		
-m_NumExcludeChroms = 0;			
-m_ppszExcludeChroms = NULL;		
-
 }
 
 
@@ -361,8 +328,6 @@ Init(void)
 m_pBedFile = NULL;
 m_pszOutBuff = NULL;
 m_hOutFile = -1;
-m_ppszIncludeChroms = NULL;
-m_ppszExcludeChroms = NULL;
 Reset();
 }
 
@@ -372,75 +337,7 @@ SetChromFilters(int NumIncludeChroms,		 // number of chromosome regular expressi
 						int NumExcludeChroms,		 // number of chromosome expressions to exclude
 						char **ppszExcludeChroms)	 // array of exclude chromosome regular expressions
 {
-int Idx;
-
-#ifndef _WIN32
-int RegErr;				// regular expression parsing error
-char szRegErr[128];			// to hold RegErr as textual representation ==> regerror();
-#endif
-
-m_NumIncludeChroms = NumIncludeChroms;		// number of chromosomes explicitly defined to be included
-m_ppszIncludeChroms = ppszIncludeChroms;	// ptr to array of reg expressions defining chroms to include - overides exclude
-m_NumExcludeChroms = NumExcludeChroms;		// number of chromosomes explicitly defined to be excluded
-m_ppszExcludeChroms = ppszExcludeChroms;	// ptr to array of reg expressions defining chroms to include
-
-if(NumIncludeChroms == 0 && NumExcludeChroms == 0)
-	return(eBSFSuccess);
-
-#ifdef _WIN32
-try {
-	for(Idx=0;Idx < NumIncludeChroms;Idx++)
-		{
-		m_IncludeChromsRE[Idx] = new Regexp();
-		m_IncludeChromsRE[Idx]->Parse(ppszIncludeChroms[Idx],false);	// note case insensitive
-		}
-	}
-catch(...)
-	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to process include regexpr chrom '%s'",ppszIncludeChroms[Idx]);
-	Reset();
-	return(eBSFerrMem);
-	}
-try {
-	for(Idx=0;Idx < NumExcludeChroms;Idx++)
-		{
-		m_ExcludeChromsRE[Idx] = new Regexp();
-		m_ExcludeChromsRE[Idx]->Parse(ppszExcludeChroms[Idx],false);	// note case insensitive
-		}
-	}
-catch(...)
-	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to process exclude regexpr chrom '%s'",ppszExcludeChroms[Idx]);
-	Reset();
-	return(eBSFerrMem);
-	}
-
-#else
-for(Idx=0;Idx < NumIncludeChroms;Idx++)
-	{
-
-	RegErr=regcomp(&m_IncludeChromsRE[Idx],ppszIncludeChroms[Idx],REG_EXTENDED | REG_ICASE);	// note case insensitive
-	if(RegErr)
-		{
-		regerror(RegErr,&m_IncludeChromsRE[Idx],szRegErr,sizeof(szRegErr));
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to process include chrom '%s' error: %s",ppszIncludeChroms[Idx],szRegErr);
-		Reset();
-		return(eBSFerrMem);
-		}
-	}
-for(Idx=0;Idx < NumExcludeChroms;Idx++)
-	{
-	RegErr = regcomp(&m_ExcludeChromsRE[Idx],ppszExcludeChroms[Idx],REG_EXTENDED | REG_ICASE);	// note case insensitive
-	if(RegErr)
-		{
-		regerror(RegErr,&m_ExcludeChromsRE[Idx],szRegErr,sizeof(szRegErr));
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to process exclude chrom '%s' error: %s",ppszExcludeChroms[Idx],szRegErr);
-		Reset();
-		return(eBSFerrMem);
-		}
-	}
-#endif
-return(eBSFSuccess);
+return(RegExpr.CompileREs(NumIncludeChroms, ppszIncludeChroms,NumExcludeChroms, ppszExcludeChroms));
 }
 
 // ExcludeThisChrom
@@ -448,51 +345,10 @@ return(eBSFSuccess);
 bool
 ExcludeThisChrom(char *pszChrom)
 {
-#ifdef _WIN32
-RegexpMatch mc;
-#else
-regmatch_t mc;
-#endif
-
-int Idx;
-if(!m_NumExcludeChroms && !m_NumIncludeChroms)
+if (!RegExpr.MatchExcludeRegExpr(pszChrom) && RegExpr.MatchIncludeRegExpr(pszChrom))
 	return(false);
-
-if(m_szFiltChrom[0] != 0)
-	{
-	if(!stricmp(m_szFiltChrom,pszChrom))
-		return(m_bFiltChrom);
-	}
-strcpy(m_szFiltChrom,pszChrom);
-m_bFiltChrom = false;
-
-// explicitly to be excluded?
-for(Idx = 0; Idx < m_NumExcludeChroms; Idx++)
-#ifdef _WIN32	
-	if(m_ExcludeChromsRE[Idx]->Match(pszChrom,&mc))
-#else
-	if(!regexec(&m_ExcludeChromsRE[Idx],pszChrom,1,&mc,0))
-#endif
-		return(m_bFiltChrom = true);
-
-// explicitly to be included?
-for(Idx = 0; Idx < m_NumIncludeChroms; Idx++)
-	{
-#ifdef _WIN32
-	if(m_IncludeChromsRE[Idx]->Match(pszChrom,&mc))
-#else
-	if(!regexec(&m_IncludeChromsRE[Idx],pszChrom,1,&mc,0))
-#endif
-		return(m_bFiltChrom = false);
-	}
-
-
-// if chromosomes were defined as to explicitly include then this chrom is to be filtered out
-m_bFiltChrom = m_NumIncludeChroms > 0 ? true : false;
-return(m_bFiltChrom);
+return(true);
 }
-
-
 
 int
 Process(etProcMode ProcMode,	// processing mode

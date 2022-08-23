@@ -2124,7 +2124,7 @@ while((Rslt = SeqLen = Fasta.ReadSequence(&pSeqBuff[BuffOfs],(int)min(AvailBuffS
 		SeqLenTrim = AdapterTrim(false,80,Adapter5Len,pAdapter5Seq,SeqLen,&pSeqBuff[BuffOfs]);
 		if(SeqLenTrim < (int)SeqLen)
 			Num5Trimmed += 1;
-		AdaptBasesTrimmed = min(SeqLen-SeqLenTrim,26);
+		AdaptBasesTrimmed = min((int)(SeqLen-SeqLenTrim),26);
 		AdaptBasesTrimmedDist[AdaptBasesTrimmed] += 1;
 		SeqLen = SeqLenTrim;
 		if(SeqLen < 100)
@@ -2135,7 +2135,7 @@ while((Rslt = SeqLen = Fasta.ReadSequence(&pSeqBuff[BuffOfs],(int)min(AvailBuffS
 		SeqLenTrim = AdapterTrim(true,80, Adapter3Len,pAdapter3Seq,SeqLen,&pSeqBuff[BuffOfs]);
 		if(SeqLenTrim < (int)SeqLen)
 			Num3Trimmed += 1;
-		AdaptBasesTrimmed = min(SeqLen-SeqLenTrim,26);
+		AdaptBasesTrimmed = min((int)(SeqLen-SeqLenTrim),26);
 		AdaptBasesTrimmedDist[AdaptBasesTrimmed] += 1;
 		SeqLen = SeqLenTrim;
 		if(SeqLen < 100)
@@ -4861,10 +4861,10 @@ if((pPars->NumCoreHits + 5) > pPars->AllocdCoreHits)	// need to realloc memory t
 
 // non-exhaustive check to see if core is overlapping a previously added core
 // search back over at most 2000 recently added cores for overlaps
-ExpdHitLen = min(50,HitLen * 3); // allowing for some float on the overlap loci and length
+ExpdHitLen = min(50u,HitLen * 3); // allowing for some float on the overlap loci and length
 if(pPars->NumCoreHits > 0)
 	{
-	NumHits2Chk = min(2000,pPars->NumCoreHits);
+	NumHits2Chk = min(2000u,pPars->NumCoreHits);
 	pCurCoreHit=&pPars->pCoreHits[pPars->NumCoreHits-1];
 	for(HitsChkd = 0; HitsChkd < NumHits2Chk; HitsChkd+=1, pCurCoreHit-=1)
 		{

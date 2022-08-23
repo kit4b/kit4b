@@ -455,7 +455,7 @@ else
 		}
 	}
 pSeqName = (tsSeqName *)&pSeqNames[m_UsedMemSeqNames];
-SeqNameLen = (int)min(cMaxLenName-1,strlen(pszSeqName));
+SeqNameLen = (int)min(cMaxLenName-1,(int)strlen(pszSeqName));
 pSeqName->Len = (uint8_t)(sizeof(tsSeqName) + SeqNameLen);
 strncpy((char *)pSeqName->szSeqName,pszSeqName,SeqNameLen);
 pSeqName->szSeqName[SeqNameLen] = '\0';

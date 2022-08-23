@@ -39,5 +39,10 @@
 #include <float.h>
 #include <stddef.h>
 #include <assert.h>
+#include <iostream>
+#include <regex>
+
+using namespace std;
+
 #include "./conservlib.h"
 

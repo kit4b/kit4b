@@ -29,6 +29,197 @@ Original 'BioKanga' copyright notice has been retained and immediately follows t
 #include "./commhdrs.h"
 #endif
 
+
+CUtility::CUtility(void)
+{
+m_NumIncludeREs = 0;
+m_pIncludeREs[0] = nullptr;
+m_NumExcludeREs = 0;
+m_pExcludeREs[0] = nullptr;
+}
+
+CUtility::~CUtility(void)
+{
+int Idx;
+for (Idx = 0; Idx < m_NumIncludeREs; Idx++)
+	if (m_pIncludeREs[Idx] != nullptr)
+		delete m_pIncludeREs[Idx];
+for (Idx = 0; Idx < m_NumExcludeREs; Idx++)
+	if (m_pExcludeREs[Idx] != nullptr)
+		delete m_pExcludeREs[Idx];
+}
+
+
+int               // returns eBSFSuccess if regular expression compilation was successful
+CUtility::CompileREs(int	NumIncludeRegExprs,	        // number of include regular expressions to compile
+					 char** ppszIncludeRegExpr,		// array of include regular expressions to be compiled
+					 int	NumExcludeRegExprs,	        // number of exclude regular expressions to compile
+					 char** ppszExcludeRegExpr)		// array of exclude regular expressions to be compiled
+{
+int Rslt;
+if((Rslt = CompileIncludeREs(NumIncludeRegExprs,ppszIncludeRegExpr)) >= eBSFSuccess)
+     Rslt = CompileExcludeREs(NumExcludeRegExprs,ppszExcludeRegExpr);
+return(Rslt);
+}
+
+int     // compile regular expressions ready for subsequent matching for include matching, returns eBSFSuccess if regular expression compilation was successful 
+CUtility::CompileIncludeREs(int	NumRegExprs,	// number of regular expressions to compile
+						  char** ppszRegExpr)		// array of regular expressions to be compiled
+{
+int Idx;
+int Len;
+char szRE[cMaxLenRE+1];
+
+if (NumRegExprs == 0 || m_NumIncludeREs == cMaxREs)         // silently discarding REs if already at limit
+     return(eBSFSuccess);
+
+
+try {
+	for(Idx=0;Idx < NumRegExprs;Idx++)
+		{
+		if (m_NumIncludeREs == cMaxREs)         // silently discarding REs if already at limit
+            return(eBSFSuccess);
+		strncpy(szRE,ppszRegExpr[Idx],cMaxLenRE);
+		szRE[cMaxLenRE] = '\0';
+		Len = (int)strlen(szRE);
+		m_pIncludeREs[m_NumIncludeREs] = nullptr;
+		m_pIncludeREs[m_NumIncludeREs] = new regex(szRE);
+		m_NumIncludeREs++;
+		}
+	}
+catch(const std::regex_error& err)
+	{
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to compile inclusion regular expression '%s' - '%s'",szRE,err.what());
+	return(eBSFerrParams);
+	}
+
+return(eBSFSuccess);
+}
+
+int     // compile regular expressions ready for subsequent matching for exclusion matching, returns eBSFSuccess if regular expression compilation was successful
+CUtility::CompileExcludeREs(int	NumRegExprs,	// number of regular expressions to compile
+						  char** ppszRegExpr)		// array of regular expressions to be compiled
+{
+int Idx;
+int Len;
+char szRE[cMaxLenRE+1];
+if (NumRegExprs == 0 || m_NumExcludeREs == cMaxREs)         // silently discarding REs if already at limit
+    return(eBSFSuccess);
+
+try {
+	for(Idx=0;Idx < NumRegExprs;Idx++)
+		{
+		if (m_NumExcludeREs == cMaxREs)         // silently discarding REs if already at limit
+            return(eBSFSuccess);
+
+		strncpy(szRE,ppszRegExpr[Idx],cMaxLenRE);
+		szRE[cMaxLenRE] = '\0';
+		Len = (int)strlen(szRE);
+		m_pExcludeREs[m_NumExcludeREs] = nullptr;
+		m_pExcludeREs[m_NumExcludeREs] = new regex(szRE);
+		m_NumExcludeREs++;
+		}
+	}
+catch(const std::regex_error& err)
+	{
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to compile exclusion regular expression '%s' - '%s'",szRE,err.what());
+	return(eBSFerrParams);
+	}
+
+return(eBSFSuccess);
+}
+
+
+bool							// returns true if text matches any compiled RE for inclusion or if there are no inclusion REs
+CUtility::MatchIncludeRegExpr(char *pszText)	// text to match against any of the compiled inclusion REs
+{
+char szText[cMaxLenRE+1];
+char Chr;
+bool bAcceptDescr = false;
+int Idx;
+
+if (m_NumIncludeREs == 0)      // if no REs then accept as if included
+    return(true);
+
+for(Idx = 0; Idx < cMaxLenRE; Idx++)
+	{
+	switch(Chr = *pszText++) {
+		case '\0': case ' ': case '\t':
+			break;
+		default:
+			szText[Idx] = Chr;
+			continue;
+		}
+	break;
+	}
+szText[Idx] = '\0';
+
+for (Idx = 0; Idx < m_NumIncludeREs; Idx++)
+	{
+	if (regex_search(szText, *m_pIncludeREs[Idx]))
+		return(true);
+	}
+return(false);
+}
+
+bool							    // returns true if text matches any compiled RE for exclusion
+CUtility::MatchExcludeRegExpr(char *pszText)	// text to match against any of the compiled exclusion REs
+{
+char szText[cMaxLenRE+1];
+char Chr;
+bool bAcceptDescr = false;
+int Idx;
+
+if (m_NumExcludeREs == 0)           // if no REs then not excluded
+    return(false);
+
+for(Idx = 0; Idx < cMaxLenRE; Idx++)
+	{
+	switch(Chr = *pszText++) {
+		case '\0': case ' ': case '\t':
+			break;
+		default:
+			szText[Idx] = Chr;
+			continue;
+		}
+	break;
+	}
+szText[Idx] = '\0';
+
+for (Idx = 0; Idx < m_NumExcludeREs; Idx++)
+	{
+	if (regex_search(szText, *m_pExcludeREs[Idx]))
+		return(true);
+	}
+return(false);
+}
+
+bool						    // returns true if text does not match any exclude regular expression, and matched include regular expressions
+CUtility::Accept(char* pszText)	// text to match against any of the compiled exclusion REs
+{
+if(MatchExcludeRegExpr(pszText)) // match on exclusions before trying inclusions
+     return(false);
+return(MatchIncludeRegExpr(pszText));
+}
+
+bool 
+CUtility::HasRegExprs(void)        // returns true if any compiled regular expressions available for matching against
+{
+return((m_NumIncludeREs > 0 || m_NumExcludeREs > 0));
+}
+
+bool 
+CUtility::HasIncludeRegExprs(void)        // returns true if any include compiled regular expressions available for matching against
+{
+return(m_NumIncludeREs > 0);
+}
+
+bool 
+CUtility::HasExcludeRegExprs(void)        // returns true if any exlude compiled regular expressions available for matching against
+{
+return(m_NumExcludeREs > 0);
+}
+
 uint16_t			// generated 16bit hash over the lowercased chromosome name; hashes as 0 if pszName == null or is empty
 CUtility::GenHash16(char *pszName)	// name will be lowercased whilst hashing
 {

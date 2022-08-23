@@ -46,23 +46,6 @@ int Process(etPMode PMode,				// processing sensitivity mode
 	char *pszOutVCFfile);				// output Variant Call Format (VCF 4.1) to this file
 
 #ifdef _WIN32
-// required by str library
-#if !defined(__AFX_H__)  ||  defined(STR_NO_WINSTUFF)
-HANDLE STR_get_stringres()
-{
-	return NULL;	//Works for EXEs; in a DLL, return the instance handle
-}
-#endif
-
-const STRCHAR* STR_get_debugname()
-{
-	return _T("kangaRADSeq");
-}
-// end of str library required code
-#endif
-
-
-#ifdef _WIN32
 int _tmain(int argc, char* argv[])
 {
 // determine my process name

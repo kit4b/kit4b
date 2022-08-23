@@ -229,7 +229,7 @@ if(m_pDescrSeqs == NULL)
 	{
 	m_TotStoredSeqsLen = 0;
 	m_UsedDescrSeqsMem = 0;
-	m_AllocdDescrSeqsSize = max(memreq+1,cAllocDescrSeqMem);
+	m_AllocdDescrSeqsSize = max(memreq+1,(size_t)cAllocDescrSeqMem);
 #ifdef _WIN32
 	m_pDescrSeqs = (uint8_t *) malloc(m_AllocdDescrSeqsSize);
 	if(m_pDescrSeqs == NULL)
@@ -253,7 +253,7 @@ else
 	{
 	if(m_AllocdDescrSeqsSize <= m_UsedDescrSeqsMem + memreq + 10)
 		{
-		memreq = m_AllocdDescrSeqsSize + max(memreq+1,cAllocDescrSeqMem);
+		memreq = m_AllocdDescrSeqsSize + max(memreq+1,(size_t)cAllocDescrSeqMem);
 #ifdef _WIN32
 		pAllocd = realloc(m_pDescrSeqs,memreq);
 #else

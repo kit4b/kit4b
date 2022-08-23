@@ -132,34 +132,7 @@ int m_MaxMNaseScore;				// to hold maximum MNase sequence score
 int m_MinMNaseScore;				// to hold minimum MNase sequence score
 int m_MNaseScoreHist[1000];			// used to build a histogram of MNase score distributions 
 
-int m_NumIncludeChroms;				// number of RE include chroms
-int m_NumExcludeChroms;				// number of RE exclude chroms
-
-#ifdef _WIN32
-Regexp *m_IncludeChromsRE[cMaxIncludeChroms];	// compiled regular expressions
-Regexp *m_ExcludeChromsRE[cMaxExcludeChroms];
-#else
-regex_t m_IncludeChromsRE[cMaxIncludeChroms];	// compiled regular expressions
-regex_t m_ExcludeChromsRE[cMaxExcludeChroms];
-#endif
-
-
-#ifdef _WIN32
-// required by str library
-#if !defined(__AFX_H__)  ||  defined(STR_NO_WINSTUFF)
-HANDLE STR_get_stringres()
-{
-	return NULL;	//Works for EXEs; in a DLL, return the instance handle
-}
-#endif
-
-const STRCHAR* STR_get_debugname()
-{
-	return _T("prednucleosomes");
-}
-// end of str library required code
-#endif
-
+CUtility m_RegExprs;            // regular expression processing
 
 #ifdef _WIN32
 int _tmain(int argc, char* argv[])
@@ -585,46 +558,11 @@ return(szSeqBuff);
 int					// 0 if filtered out, 1 if alignment accepted, < 0 if errors
 AddAlignedRead(int ReadID,char *pszChromName,int Loci,int ReadLen,char Strand)
 {
-int Idx;
 tsAlignHit *pAlignHit;
 bool bProcChrom;
-#ifdef _WIN32
-RegexpMatch mc;
-#else
-regmatch_t mc;
-int RegErr;				// regular expression parsing error
-char szRegErr[128];			// to hold RegErr as textual representation ==> regerror();
-#endif
-// check if this chromosome to be processed
 
-bProcChrom = true;
-for(Idx = 0; Idx < m_NumExcludeChroms; Idx++)
-#ifdef _WIN32	
-	if(m_ExcludeChromsRE[Idx]->Match(pszChromName,&mc))
-#else
-	if(!regexec(&m_ExcludeChromsRE[Idx],pszChromName,1,&mc,0))
-#endif
-		{
-		bProcChrom = false;
-		break;
-		}
-
-if(bProcChrom && m_NumIncludeChroms > 0)
-	{
-	bProcChrom = false;
-	for(Idx = 0; Idx < m_NumIncludeChroms; Idx++)
-		{
-#ifdef _WIN32
-		if(m_IncludeChromsRE[Idx]->Match(pszChromName,&mc))
-#else
-		if(!regexec(&m_IncludeChromsRE[Idx],pszChromName,1,&mc,0))
-#endif
-			{
-			bProcChrom = true;
-			break;
-			}
-		}
-	}
+if((bProcChrom = !m_RegExprs.MatchExcludeRegExpr(pszChromName)) == true)
+    bProcChrom = m_RegExprs.MatchIncludeRegExpr(pszChromName);
 	
 if(!bProcChrom)
 	return(0);
@@ -888,70 +826,13 @@ LoadReads(char *pszInFile,				// load reads from this file, could be either CSV 
 			char **ppszExcludeChroms)	// ptr to array of reg expressions defining chroms to exclude
 {
 int Rslt;
-int BuffLen = 0;
-int BuffOfs = 0;
 m_NumAlignHits = 0;
-int Idx;
-m_NumIncludeChroms = 0;
-m_NumExcludeChroms = 0;
-#ifdef _WIN32
-RegexpMatch mc;
-try {
-	for(Idx=0;Idx < NumIncludeChroms;Idx++)
-		{
-		m_IncludeChromsRE[Idx] = new Regexp();
-		m_NumIncludeChroms += 1;
-		m_IncludeChromsRE[Idx]->Parse(ppszIncludeChroms[Idx],false);	// note case insensitive
-		}
-	}
-catch(...)
+// compile include/exclude chromosome regexpr if user has specified alignments to be filtered by chrom
+if((Rslt = m_RegExprs.CompileREs(NumIncludeChroms, ppszIncludeChroms,NumExcludeChroms, ppszExcludeChroms)) < eBSFSuccess)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to process include regexpr chrom '%s'",ppszIncludeChroms[Idx]);
-	return(eBSFerrMem);
+	Reset();
+	return(Rslt);
 	}
-try {
-	for(Idx=0;Idx < NumExcludeChroms;Idx++)
-		{
-		m_ExcludeChromsRE[Idx] = new Regexp();
-		m_NumExcludeChroms += 1;
-		m_ExcludeChromsRE[Idx]->Parse(ppszExcludeChroms[Idx],false);	// note case insensitive
-		}
-	}
-catch(...)
-	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to process exclude regexpr chrom '%s'",ppszExcludeChroms[Idx]);
-	return(eBSFerrMem);
-	}
-
-#else
-regmatch_t mc;
-int RegErr;				// regular expression parsing error
-char szRegErr[128];			// to hold RegErr as textual representation ==> regerror();
-
-for(Idx=0;Idx < NumIncludeChroms;Idx++)
-	{
-
-	RegErr=regcomp(&m_IncludeChromsRE[Idx],ppszIncludeChroms[Idx],REG_EXTENDED | REG_ICASE);	// note case insensitive
-	if(RegErr)
-		{
-		regerror(RegErr,&m_IncludeChromsRE[Idx],szRegErr,sizeof(szRegErr));
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to process include chrom '%s' error: %s",ppszIncludeChroms[Idx],szRegErr);
-		return(eBSFerrMem);
-		}
-	m_NumIncludeChroms += 1;
-	}
-for(Idx=0;Idx < NumExcludeChroms;Idx++)
-	{
-	RegErr = regcomp(&m_IncludeChromsRE[Idx],ppszExcludeChroms[Idx],REG_EXTENDED | REG_ICASE);	// note case insensitive
-	if(RegErr)
-		{
-		regerror(RegErr,&m_ExcludeChromsRE[Idx],szRegErr,sizeof(szRegErr));
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to process exclude chrom '%s' error: %s",ppszExcludeChroms[Idx],szRegErr);
-		return(eBSFerrMem);
-		}
-	m_NumExcludeChroms += 1;
-	}
-#endif
 
 if(m_pAlignHits == NULL)		// initial allocation required?
 	{

@@ -117,22 +117,6 @@ double m_Dyad2Ratio;				// current, immediately flanking, groove ratio to backgr
 double m_Dyad3Ratio;				// current, remainder of flanking grooves, ratio to background
 
 #ifdef _WIN32
-// required by str library
-#if !defined(__AFX_H__)  ||  defined(STR_NO_WINSTUFF)
-HANDLE STR_get_stringres()
-{
-	return NULL;	//Works for EXEs; in a DLL, return the instance handle
-}
-#endif
-
-const STRCHAR* STR_get_debugname()
-{
-	return _T("predconfnucs");
-}
-// end of str library required code
-#endif
-
-#ifdef _WIN32
 int _tmain(int argc, char* argv[])
 {
 // determine my process name

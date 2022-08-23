@@ -692,10 +692,10 @@ if((pInstance->NumCoreHits + 5) > pInstance->AllocdCoreHits)	// need to realloc 
 
 // non-exhaustive check to see if core is overlapping a previously added core
 // search back over at most 2000 recently added cores for overlaps
-ExpdHitLen = min(50,HitLen * 3); // allowing for some float on the overlap loci and length
+ExpdHitLen = min(50u,HitLen * 3); // allowing for some float on the overlap loci and length
 if(pInstance->NumCoreHits > 0)
 	{
-	NumHits2Chk = min(2000,pInstance->NumCoreHits);
+	NumHits2Chk = min(2000u,pInstance->NumCoreHits);
 	pCurCoreHit=&pInstance->pCoreHits[pInstance->NumCoreHits-1];
 	for(HitsChkd = 0; HitsChkd < NumHits2Chk; HitsChkd+=1, pCurCoreHit-=1)
 		{

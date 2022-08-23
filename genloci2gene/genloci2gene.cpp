@@ -141,23 +141,6 @@ int CountBitsSet(int Start,int End,unsigned int *pBitVector);
 
 
 #ifdef _WIN32
-// required by str library
-#if !defined(__AFX_H__)  ||  defined(STR_NO_WINSTUFF)
-HANDLE STR_get_stringres()
-{
-	return NULL;	//Works for EXEs; in a DLL, return the instance handle
-}
-#endif
-
-const STRCHAR* STR_get_debugname()
-{
-	return _T("genloci2gene");
-}
-// end of str library required code
-#endif
-
-
-#ifdef _WIN32
 int _tmain(int argc, char* argv[])
 {
 // determine my process name

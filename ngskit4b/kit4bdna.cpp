@@ -8597,7 +8597,7 @@ if(m_NumProcSeqIDs == 0)
 		m_NumProcSeqIDs = cMaxMultiSeqFlags;
 	else
 		{
-		m_NumProcSeqIDs = min(cMaxMultiSeqFlags,(m_FinalProcSeqID + m_ThreadsProcessing - 1)/(m_ThreadsProcessing * 100));
+		m_NumProcSeqIDs = min(cMaxMultiSeqFlags,(int)(m_FinalProcSeqID + m_ThreadsProcessing - 1)/(m_ThreadsProcessing * 100));
 		if(m_NumProcSeqIDs < 64)
 			m_NumProcSeqIDs = 64;
 		}
@@ -9316,7 +9316,7 @@ if(MaxSeqLen == 0)
 
 SeqLen = GetSeq(pSeqWrds,			// sequence of interest
 					(uint8_t *)szDump,	// where to copy unpacked sequence bases
-					min(MaxSeqLen,sizeof(szDump)-1));	// return at most MaxSeqLen bases
+					min(MaxSeqLen,(uint32_t)(sizeof(szDump)-1)));	// return at most MaxSeqLen bases
 
 if(bRevCpl)
 	RevCplSeq(SeqLen,szDump);
@@ -9362,7 +9362,7 @@ if(MaxSeqLen == 0)
 
 SeqLen = GetSeq(SeqID,				// sequence identifier
 					(uint8_t *)szDump,	// where to copy unpacked sequence bases
-					min(MaxSeqLen,sizeof(szDump)-1));	// return at most MaxSeqLen bases
+					min(MaxSeqLen,(uint32_t)sizeof(szDump)-1));	// return at most MaxSeqLen bases
 
 if(m_pBlockNsLoci != NULL && m_NumBlockNsLoci > 0)
 	{

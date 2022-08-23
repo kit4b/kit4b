@@ -1,6 +1,9 @@
 #pragma once
 #include "commdefs.h"
 
+const int32_t cMaxLenRE = 100;   // limiting regular expressions to be at most this length excluding terminating '\0' 
+const int32_t cMaxREs = 100;     // allowing at most this many regular expressions to be compiled
+
 const int cFileClassifyBuffLen = 8196;	
 const int cMinFileClassifyLen = 100;			// aribarily - don't bother if less than this length
 
@@ -15,11 +18,41 @@ typedef enum eClassifyFileType {
 
 class CUtility
 {
+	int32_t m_NumIncludeREs;                // number of inclusion regular expressions compiled into m_pRegexDescrs
+	regex* m_pIncludeREs[cMaxREs];          // compiled inclusion regular expressions
+	int32_t m_NumExcludeREs;                // number of exclusion regular expressions compiled into m_pRegexDescrs
+	regex* m_pExcludeREs[cMaxREs];          // compiled exclusion regular expressions
 
 public:
-	CUtility(void){};
-	~CUtility(void){};
+	CUtility(void);
+	~CUtility(void);
 
+	int               // returns eBSFSuccess if regular expression compilation was successful
+		CompileREs(int	NumIncludeRegExprs,	        // number of include regular expressions to compile
+					 char** ppszIncludeRegExpr,		// array of include regular expressions to be compiled
+					 int	NumExcludeRegExprs = 0,	        // number of exclude regular expressions to compile
+					 char** ppszExcludeRegExpr = nullptr);		// array of exclude regular expressions to be compiled
+
+	int     // compile regular expressions ready for subsequent matching for include matching
+		CompileIncludeREs(int	NumRegExprs,	// number of regular expressions to compile
+						  char** ppszRegExpr);		// array of regular expressions to be compiled
+
+	bool							// returns true if text matches any compiled RE for inclusion or if no compiled REs
+		MatchIncludeRegExpr(char* pszText);	// text to match against any of the compiled inclusion REs
+
+
+	int     // compile regular expressions ready for subsequent matching for exclusion matching
+		CompileExcludeREs(int	NumRegExprs,	// number of regular expressions to compile
+						  char** ppszRegExpr);		// array of regular expressions to be compiled
+	bool							    // returns true if text matches any compiled RE for exclusion
+		MatchExcludeRegExpr(char* pszText);	// text to match against any of the compiled exclusion REs
+
+	bool				    // returns true if text does not match any exclude regular expression, and matches include regular expressions
+		Accept(char* pszText);	// text to match against any of the compiled exclusion REs
+
+	bool HasRegExprs(void);        // returns true if any compiled regular expressions available for matching against 
+	bool HasIncludeRegExprs(void); // returns true if any include compiled regular expressions available for matching against
+	bool HasExcludeRegExprs(void); // returns true if any exlude compiled regular expressions available for matching against
 
 	// ClassifyFileType
 // Attempt to classify the alignment file as one of CSV, BED or SAM from it's initial 8k char contents

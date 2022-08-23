@@ -1335,7 +1335,7 @@ for(TargSeqIdx = 0; TargSeqIdx < m_NumSeqNames; TargSeqIdx++,pTargSeq++)
 				else
 					{
 					int NormalisedCnts;
-					NormalisedCnts = max(2,(pBin->SmoothedCnts[FounderIdx] * 100000) / pBin->BinLen);		// counts per 100Kbp
+					NormalisedCnts = max(2,(int)((pBin->SmoothedCnts[FounderIdx] * 100000) / pBin->BinLen));		// counts per 100Kbp
 					pBin->CalledHaplotype[FounderIdx] = min(NormalisedCnts, 999);
 					}
 				}

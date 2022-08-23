@@ -104,24 +104,6 @@ int	gProcessingID = 0;					// SQLite processing identifier
 char gszProcName[_MAX_FNAME];			// this processes name
 tsSubProcess *gpszSubProcess;			// selected subprocess
 
-#ifdef UsEtHis
-#ifdef _WIN32
-// required by str library
-#if !defined(__AFX_H__)  ||  defined(STR_NO_WINSTUFF)
-HANDLE STR_get_stringres()
-{
-	return NULL;	//Works for EXEs; in a DLL, return the instance handle
-}
-#endif
-
-const STRCHAR* STR_get_debugname()
-{
-	return _T("biokanga");
-}
-// end of str library required code
-#endif
-#endif
-
 void
 GiveHelpSubProcesses(char *pszProcOverview)
 {

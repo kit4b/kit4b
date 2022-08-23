@@ -2814,7 +2814,7 @@ if((NumHeadNodes = IdentifyHighScorePaths(MinPathScore, MaxPathsToReport,QueryLe
 	return(0);
 
 PathsReported = 0;
-for(SortedPathIdx=0; SortedPathIdx < min((int)NumHeadNodes,MaxPathsToReport); SortedPathIdx++)
+for(SortedPathIdx=0; SortedPathIdx < min(NumHeadNodes,MaxPathsToReport); SortedPathIdx++)
 	{
 	pHeadNode = ppFirst2Rpts[SortedPathIdx];
 	bStrand = pHeadNode->FlgStrand ? true : false;

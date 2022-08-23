@@ -1417,7 +1417,7 @@ else  // reading from BAM
 
 		if(refID == -1 || pos == -1)					// unaligned?
 			{
-			m_CurInBAMIdx += 4 * max(1,(flag_nc & 0x00ff));	// unaligned so slough any cigar ops
+			m_CurInBAMIdx += 4 * max((uint32_t)1,(flag_nc & 0x00ff));	// unaligned so slough any cigar ops
 			strcpy(szCigar,"*");
 			CigarLen = 1;
 			}	

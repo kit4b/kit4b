@@ -294,6 +294,9 @@ class CCallHaplotypes
 	char m_szChromNames[cMaxChromNames * cMaxDatasetSpeciesChrom];	// used to hold concatenated chromosome names, each separated by '\0'
 	uint32_t m_szChromIdx[cMaxChromNames];		// array of indexes into m_szChromNames giving the starts of each chromosome name
 
+	uint32_t m_ChromSizes[cMaxChromNames];	// array of chromosome sizes indexed by ChromNameID-1
+	uint32_t m_NumChromSizes;				// number of chrom sizes accepted from chrom name+sizes BED file - should be same as m_NumChromNames!!!
+
 	uint32_t m_UsedNumChromMetadata;	// current number of chrom metadata used 
 	uint32_t m_AllocdChromMetadata;		// current allocation is for this many 
 	size_t m_AllocdChromMetadataMem;	// current mem allocation size for m_pChromMetadata
@@ -372,28 +375,15 @@ class CCallHaplotypes
 	tsWorkerInstance m_WorkerInstances[cMaxPBAWorkerThreads];	// to hold all worker instance thread parameters
 	tsWorkerLoadChromPBAsInstance m_WorkerLoadChromPBAInstances[cMaxPBAWorkerThreads];	// to hold all worker instance thread parameters for loading chromosome PBAs
 
-
-	uint32_t m_NumIncludeChroms;				// number of RE include chroms
-	uint32_t m_NumExcludeChroms;				// number of RE exclude chroms
-
-	#ifdef _WIN32
-	Regexp *m_IncludeChromsRE[cMaxIncludeChroms];	// compiled regular expressions
-	Regexp *m_ExcludeChromsRE[cMaxExcludeChroms];
-	#else
-	regex_t m_IncludeChromsRE[cMaxIncludeChroms];	// compiled regular expressions
-	regex_t m_ExcludeChromsRE[cMaxExcludeChroms];
-	#endif
-
-	int CompileChromRegExprs(int	NumIncludeChroms,	// number of chromosome regular expressions to include
-		char **ppszIncludeChroms,		// array of include chromosome regular expressions
-		int	NumExcludeChroms,			// number of chromosome expressions to exclude
-		char **ppszExcludeChroms);		// array of exclude chromosome regular expressions
-
+	CBEDfile* m_pBedFile;	// BED file containing reference assembly chromosome names and sizes
+	CUtility m_RegExprs;            // regular expression processing
 	bool					// true if chrom is accepted, false if chrom not accepted
 		AcceptThisChromID(uint32_t ChromID);
 
 	bool					// true if chrom is accepted, false if chrom not accepted
-		AcceptThisChromName(char *pszChrom);
+		AcceptThisChromName(char* pszChrom,   // chromosome name
+						 bool bKnown = true);	// if true then chromosome must have been previously processed and accepted by LoadChromSizes() processing - size is known!
+
 
 	bool m_bMutexesCreated;		// will be set true if synchronisation mutexes have been created
 	int CreateMutexes(void);
@@ -669,12 +659,13 @@ class CCallHaplotypes
 
 	int32_t ReportHaplotypeGroups(uint32_t NumHaplotypes);         // number of haplotypes which have been grouped 
 
+	int	LoadChromSizes(char* pszBEDFile); // BED file containing chromosome names and sizes
 
 	int  CSV2WIG(char* pszInFile, // input file containing haplotype groupings
 			char* pszOutFile); // where to write as WIG formated file
 
 	int  // simulating a in-memory PBA with PBA loci alleles replaced by coverage obtained from a WIG coverage file generated at the same time as the PBA file - enables haplotype coverage grouping
-		LoadPBACoverage(char* pszInPBA);   // file containing PBA, file name extension will be replaced with 'coverage.wig' which will be expected to be name of file containing the PBA coverage
+		LoadPBACoverage(char* pszInPBA);   // file containing PBA, file name extension will be replaced with 'coverage.wig' which will be expected to be name of file containing the WIG format coverage
 
 	uint8_t *LoadPBAChromCoverage(uint32_t ReadsetID, // loading chromosome coverage for this readset and mapping coverage as though PBAs
 						uint32_t ChromID);    // coverage is on this chromosome
@@ -716,6 +707,7 @@ public:
 			int32_t WWRLProxWindow,		// proximal window size for Wald-Wolfowitz runs test
 			int32_t OutliersProxWindow,	// proximal window size for outliers reduction
 			char *pszMaskBPAFile,	// optional masking input BPA file, only process BPAs which are intersect of these BPAs and progeny plus founder BPAs
+			char* pszChromFile,			// BED file containing reference assembly chromosome names and sizes
 			int NumFounderInputFiles,	// number of input founder file specs
 			char *pszFounderInputFiles[],	// names of input founder PBA files (wildcards allowed)
 			int NumProgenyInputFiles,	// number of input progeny file specs

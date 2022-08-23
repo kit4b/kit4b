@@ -1615,7 +1615,7 @@ if(m_pEntriesBlock == NULL)					// will be NULL until at least one entry has bee
 
 	if(m_bBisulfite)
 		{
-		m_AllocBisulfiteMem = sizeof(tsSfxBlock) + max(cReallocBlockEls,SeqLen + 10);
+		m_AllocBisulfiteMem = sizeof(tsSfxBlock) + max(cReallocBlockEls,(uint64_t)SeqLen + 10);
 #ifdef _WIN32
 		m_pBisulfateBases = (uint8_t *) malloc((size_t)m_AllocBisulfiteMem);
 		if(m_pBisulfateBases == NULL)
@@ -1685,7 +1685,7 @@ else	// else already at least one entry
 	if((m_pSfxBlock->ConcatSeqLen + SeqLen + 16) > m_AllocSfxBlockMem) // 10 is to allow for appended eBaseEOS's and slight safety margin
 		{
 		tsSfxBlock *pRealloc;
-		int64_t ReallocSize = m_AllocSfxBlockMem + max(cReallocBlockEls,((int64_t)SeqLen) + 10);	
+		int64_t ReallocSize = m_AllocSfxBlockMem + max(cReallocBlockEls,((uint64_t)SeqLen) + 10);	
 
 #ifdef _WIN32
 		pRealloc = (tsSfxBlock *)realloc(m_pSfxBlock,(size_t)ReallocSize);
@@ -1710,7 +1710,7 @@ else	// else already at least one entry
 		if((m_pSfxBlock->ConcatSeqLen + SeqLen + 10) > m_AllocBisulfiteMem) // 10 is to allow a slight safety margin
 			{
 			uint8_t *pRealloc;
-			int64_t ReallocSize = m_AllocBisulfiteMem + max(cReallocBlockEls,SeqLen + 10);
+			int64_t ReallocSize = m_AllocBisulfiteMem + max(cReallocBlockEls,(uint64_t)SeqLen + 10);
 #ifdef _WIN32
 			pRealloc = (uint8_t *)realloc(m_pBisulfateBases,(size_t)ReallocSize);
 #else
@@ -3610,7 +3610,7 @@ for(ProbeOfs = 0; ProbeOfs < LastProbeOfs; ProbeOfs+=DeltaCoreOfs, pCoreSeq+=Del
 		if((uint32_t)TargLenDiffBp > 0 && ((TargSeqLen > (ProbeSeqLen + (uint32_t)TargLenDiffBp)) || (TargSeqLen < (ProbeSeqLen - (uint32_t)TargLenDiffBp))))
 			continue;
 
-	   TargScoreLen = min(150, TargSeqLen - HitLoci); // attempting to quick SW score over up to 150bp with a minimum of 100bp, this range including the QualCoreLen exactly matching core
+	   TargScoreLen = min((uint32_t)150, TargSeqLen - HitLoci); // attempting to quick SW score over up to 150bp with a minimum of 100bp, this range including the QualCoreLen exactly matching core
 	   if(TargScoreLen < 100)
 			continue;
 
@@ -7391,7 +7391,7 @@ do
 			// explore for a splice junction to the left if matched on core at 3' end of probe (phase 1)
 			if(Phase == 1 && (TargSeqLeftIdx >= (uint32_t)(CurCoreSegOfs + cMinJunctSegLen)))
 				{
-				SpliceJunctLenLimit = (int)min(TargSeqLeftIdx, (uint32_t)MaxSpliceJunctLen);
+				SpliceJunctLenLimit = min((int32_t)TargSeqLeftIdx, (int32_t)MaxSpliceJunctLen);
 				if(SpliceJunctLenLimit >= (cMinJunctAlignSep + cMinJunctSegLen))
 					{
 					SpliceJunctLenLimit -= cMinJunctSegLen;

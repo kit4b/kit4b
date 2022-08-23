@@ -2396,7 +2396,17 @@ if(m_szGFFFile[0] != '\0')
 			}
 
 		memset(pGeneCnts,0,sizeof(tsSummaryFeatCnts));
-		pszTmp = m_pGFFFile->GetNoteValue((char *)"gene_id");
+		if((pszTmp = m_pGFFFile->GetNoteValue((char *)"gene_id"))==NULL) // seems that some GFF generators reference the CDS gene identifier "gene_id" as being simply 'gene'
+			pszTmp = m_pGFFFile->GetNoteValue((char*)"gene");
+		if (pszTmp == NULL)		// if still NULL after trying for both "gene_id" and "gene" then no point in continuing
+			{
+			m_pGFFFile->Close();
+			delete m_pGFFFile;
+			m_pGFFFile = NULL;
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to locate CDS gene identifier ('gene_id' or 'gene') in pszGFFFile '%s'", pszGFFFile);
+			Reset();
+			return(eBSFerrFeature);
+			}
 		strncpy(pGeneCnts->szFeatName, pszTmp, sizeof(pGeneCnts->szFeatName));
 		CUtility::TrimQuotes(pGeneCnts->szFeatName);
 		pszTmp = m_pGFFFile->GetSeqName();

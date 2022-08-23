@@ -87,10 +87,6 @@ m_pCurLocChrom = NULL;
 m_NumBedFiles = 0;
 szOutFile[0] = '\0';
 m_LineBuffIdx = 0;
-m_NumIncludeChroms = 0;
-m_NumExcludeChroms = 0;
-m_ppszIncludeChroms = NULL;
-m_ppszExcludeChroms = NULL;
 m_szFiltChrom[0]='\0';
 m_bFiltChrom = false;
 }
@@ -101,75 +97,7 @@ CChromFeatures::SetChromFilters(int NumIncludeChroms,		 // number of chromosome 
 						int NumExcludeChroms,		 // number of chromosome expressions to exclude
 						char **ppszExcludeChroms)	 // array of exclude chromosome regular expressions
 {
-int Idx;
-
-#ifndef _WIN32
-int RegErr;				// regular expression parsing error
-char szRegErr[128];			// to hold RegErr as textual representation ==> regerror();
-#endif
-
-m_NumIncludeChroms = NumIncludeChroms;		// number of chromosomes explicitly defined to be included
-m_ppszIncludeChroms = ppszIncludeChroms;	// ptr to array of reg expressions defining chroms to include - overides exclude
-m_NumExcludeChroms = NumExcludeChroms;		// number of chromosomes explicitly defined to be excluded
-m_ppszExcludeChroms = ppszExcludeChroms;	// ptr to array of reg expressions defining chroms to include
-
-if(NumIncludeChroms == 0 && NumExcludeChroms == 0)
-	return(eBSFSuccess);
-
-#ifdef _WIN32
-try {
-	for(Idx=0;Idx < NumIncludeChroms;Idx++)
-		{
-		m_IncludeChromsRE[Idx] = new Regexp();
-		m_IncludeChromsRE[Idx]->Parse(ppszIncludeChroms[Idx],false);	// note case insensitive
-		}
-	}
-catch(...)
-	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to process include regexpr chrom '%s'",ppszIncludeChroms[Idx]);
-	Reset();
-	return(eBSFerrMem);
-	}
-try {
-	for(Idx=0;Idx < NumExcludeChroms;Idx++)
-		{
-		m_ExcludeChromsRE[Idx] = new Regexp();
-		m_ExcludeChromsRE[Idx]->Parse(ppszExcludeChroms[Idx],false);	// note case insensitive
-		}
-	}
-catch(...)
-	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to process exclude regexpr chrom '%s'",ppszExcludeChroms[Idx]);
-	Reset();
-	return(eBSFerrMem);
-	}
-
-#else
-for(Idx=0;Idx < NumIncludeChroms;Idx++)
-	{
-
-	RegErr=regcomp(&m_IncludeChromsRE[Idx],ppszIncludeChroms[Idx],REG_EXTENDED | REG_ICASE);	// note case insensitive
-	if(RegErr)
-		{
-		regerror(RegErr,&m_IncludeChromsRE[Idx],szRegErr,sizeof(szRegErr));
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to process include chrom '%s' error: %s",ppszIncludeChroms[Idx],szRegErr);
-		Reset();
-		return(eBSFerrMem);
-		}
-	}
-for(Idx=0;Idx < NumExcludeChroms;Idx++)
-	{
-	RegErr = regcomp(&m_ExcludeChromsRE[Idx],ppszExcludeChroms[Idx],REG_EXTENDED | REG_ICASE);	// note case insensitive
-	if(RegErr)
-		{
-		regerror(RegErr,&m_ExcludeChromsRE[Idx],szRegErr,sizeof(szRegErr));
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to process exclude chrom '%s' error: %s",ppszExcludeChroms[Idx],szRegErr);
-		Reset();
-		return(eBSFerrMem);
-		}
-	}
-#endif
-return(eBSFSuccess);
+return(m_RegExprs.CompileREs(NumIncludeChroms, ppszIncludeChroms,NumExcludeChroms, ppszExcludeChroms));
 }
 
 // ExcludeThisChrom
@@ -177,14 +105,7 @@ return(eBSFSuccess);
 bool
 CChromFeatures::ExcludeThisChrom(char *pszChrom)
 {
-#ifdef _WIN32
-RegexpMatch mc;
-#else
-regmatch_t mc;
-#endif
-
-int Idx;
-if(!m_NumExcludeChroms && !m_NumIncludeChroms)
+if(!m_RegExprs.HasRegExprs())
 	return(false);
 
 if(m_szFiltChrom[0] != 0)
@@ -193,31 +114,7 @@ if(m_szFiltChrom[0] != 0)
 		return(m_bFiltChrom);
 	}
 strcpy(m_szFiltChrom,pszChrom);
-m_bFiltChrom = false;
-
-// explicitly to be excluded?
-for(Idx = 0; Idx < m_NumExcludeChroms; Idx++)
-#ifdef _WIN32	
-	if(m_ExcludeChromsRE[Idx]->Match(pszChrom,&mc))
-#else
-	if(!regexec(&m_ExcludeChromsRE[Idx],pszChrom,1,&mc,0))
-#endif
-		return(m_bFiltChrom = true);
-
-// explicitly to be included?
-for(Idx = 0; Idx < m_NumIncludeChroms; Idx++)
-	{
-#ifdef _WIN32
-	if(m_IncludeChromsRE[Idx]->Match(pszChrom,&mc))
-#else
-	if(!regexec(&m_IncludeChromsRE[Idx],pszChrom,1,&mc,0))
-#endif
-		return(m_bFiltChrom = false);
-	}
-
-
-// if chromosomes were defined as to explicitly include then this chrom is to be filtered out
-m_bFiltChrom = m_NumIncludeChroms > 0 ? true : false;
+m_bFiltChrom = m_RegExprs.Accept(pszChrom);
 return(m_bFiltChrom);
 }
 

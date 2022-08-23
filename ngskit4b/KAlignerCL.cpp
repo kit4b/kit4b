@@ -1517,6 +1517,9 @@ int NumThreads;				// number of threads (0 defaults to number of CPUs)
 int Quality;				// quality scoring for fastq sequence files
 int MinEditDist;			// any matches must have at least this edit distance to the next best match
 int MaxSubs;				// maximum number of substitutions allowed per 100bp of read length
+int MLMode;					// processing mode for multiple loci aligned reads
+int MaxMLmatches;			// accept at most this number of multimached alignments for any read
+bool bClampMaxMLmatches;	// accept as if MaxMLmatches even if more than this number of MaxMLmatches multimached alignments
 int MaxNs;				    // allow at most this number of indeterminate eBaseNs in read before deeming as nonalignable
 int MinFlankExacts;			// trim matched reads on 5' and 3' flanks until at least this number of exactly matching bases in flanks
 int PCRPrimerCorrect;		// initially align with MaxSubs+PCRPrimerCorrect subs allowed but then attempt to correct 5' PCR primer artefacts until read within MaxSubs
@@ -1598,6 +1601,11 @@ struct arg_str  *title = arg_str0("t","title","<string>",       "track title");
 struct arg_str  *ExcludeChroms = arg_strn("Z","chromexclude",	"<string>",0,cMaxExcludeChroms,"high priority - regular expressions defining chromosomes to exclude");
 struct arg_str  *IncludeChroms = arg_strn("z","chromeinclude",	"<string>",0,cMaxIncludeChroms,"low priority - regular expressions defining chromosomes to include");
 
+struct arg_int *maxmlmatches = arg_int0("R","maxmulti","<int>",	"allow any read to match at most this many genome loci then process according to mlmode (default is 5)");
+struct arg_lit *clampmaxmulti = arg_lit0("X","clampmaxmulti",	 "treat reads mapping to more than limit set with '-R<n>' as if exactly <n> matches (default is not to further process reads exceeding limit set with '-R<n>')");
+
+struct arg_int *mlmode = arg_int0("r","mlmode","<int>",			"processing mode for reads mapped to multiple loci: 0 slough, 1 stats only, 2 rand, 3 cluster with uniques only, 4 cluster with uniques + other multi, 5 report all match loci up to '-R<limit>' (default is 0)");
+
 struct arg_int *trim5 = arg_int0("y","trim5","<int>",		"trim this number of bases from 5' end of reads when loading raw reads (default is 0)");
 struct arg_int *trim3 = arg_int0("Y","trim3","<int>",		"trim this number of bases from 3' end of reads when loading raw reads (default is 0)");
 
@@ -1613,7 +1621,7 @@ struct arg_end *end = arg_end(200);
 
 void *argtable[] = {help,version,FileLogLevel,LogFile,
 					experimentid,readsetid,
-					pmode,samplenthrawread,alignstrand,minchimericlen,chimericrpt,solid,pcrartefactwinlen,qual,trim5,trim3,minacceptreadlen,maxacceptreadlen,bisulfite,
+					pmode,samplenthrawread,alignstrand,minchimericlen,chimericrpt,solid,pcrartefactwinlen,qual,mlmode,trim5,trim3,minacceptreadlen,maxacceptreadlen,maxmlmatches,clampmaxmulti,bisulfite,
 					mineditdist,maxsubs,maxns,minflankexacts,pcrprimercorrect,title,
 					pe1inputfiles,peproc,pairminlen,pairmaxlen,pairstrand,pe2inputfiles,sfxfile,
 					outfile,contamsfile,ExcludeChroms,IncludeChroms,threads,
@@ -1760,6 +1768,12 @@ if (!argerrors)
 		exit(1);
 		}
 
+	MLMode = (etMLMode)(mlmode->count ? mlmode->ival[0] : 0);
+	if(MLMode < eMLdefault || MLMode >= eMLplaceholder)
+		{
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: multiple aligned reads processing mode '-r%d' specified outside of range 0..%d\n",MLMode,eMLplaceholder-1);
+		exit(1);
+		}
 
 	MinFlankExacts = minflankexacts->count ? minflankexacts->ival[0] : 0;
 	bBisulfite = bisulfite->count ? true : false;
@@ -1788,6 +1802,11 @@ if (!argerrors)
 		if(bBisulfite)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Sorry, currently bisulfite processing '-b' not supported in paired end '-U%d' processing\n",PEproc);
+			exit(1);
+			}
+		if(MLMode != eMLdefault)
+			{
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Sorry, currently multiloci processing '-r%d' not supported in paired end '-U%d' processing\n",MLMode,PEproc);
 			exit(1);
 			}
 		}
@@ -1878,7 +1897,34 @@ if (!argerrors)
 		exit(1);
 		}
 
-	
+	if(MLMode != eMLdefault)
+		{
+		MaxMLmatches = maxmlmatches->count ? maxmlmatches->ival[0] : cDfltMaxMultiHits;
+		if(MLMode != eMLall)
+			{
+			if(MaxMLmatches < 2 || MaxMLmatches > cMaxMultiHits)
+				{
+				gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: multiple aligned reads '-R%d' specified outside of range 2..%d\n",MaxMLmatches,cMaxMultiHits);
+				exit(1);
+				}
+			}
+		else   
+			{
+			if(MaxMLmatches < 2 || MaxMLmatches > cMaxAllHits)
+				{
+				gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: multiple aligned reads '-R%d' specified outside of range 2..%d\n",MaxMLmatches,cMaxAllHits);
+				exit(1);
+				}
+			}
+		}
+	else
+		MaxMLmatches = 1;
+
+	if(MaxMLmatches > 1)
+		bClampMaxMLmatches = clampmaxmulti->count ? true : false;
+	else
+		bClampMaxMLmatches = false;
+
 	PCRartefactWinLen = pcrartefactwinlen->count ? pcrartefactwinlen->ival[0] : -1;
 	if(PCRartefactWinLen != -1 && (PCRartefactWinLen < 0 || PCRartefactWinLen > 250))
 		{
@@ -2139,6 +2185,37 @@ if (!argerrors)
 
 	gDiagnostics.DiagOutMsgOnly(eDLInfo,"process for: '%s'",pszProcMode);
 
+	switch(MLMode) {
+		case eMLdefault:
+			pszDescr = "slough all reads which match to multiple loci";
+			break;
+		case eMLdist:
+			pszDescr = "accumulate distribution stats not supported, sloughing reads matching to multiple loci";
+			MaxMLmatches = 1;
+			break;
+		case eMLrand:
+			pszDescr = "randomly select one of the aligned loci";
+			break;
+		case eMLuniq:
+			pszDescr = "cluster with reads which are uniquely aligned";
+			break;
+		case eMLcluster:
+			pszDescr = "cluster with unique (high priority) and other multiloci alignments";
+			break;
+		case eMLall:
+			pszDescr = "report all multiple loci to which reads align";
+			break;
+		}
+	gDiagnostics.DiagOutMsgOnly(eDLInfo,"Process multiple alignment reads by: '%s'",pszDescr);
+
+	if(MaxMLmatches == 1)
+		gDiagnostics.DiagOutMsgOnly(eDLInfo,"Only accept reads which uniquely match a single loci");
+	else
+		{
+		gDiagnostics.DiagOutMsgOnly(eDLInfo,"Allow at most any read to match this many loci and then process: %d",MaxMLmatches);
+		gDiagnostics.DiagOutMsgOnly(eDLInfo,"If read aligns to more than %d loci then treat as if aligned to the first %d loci discovered : %s",MaxMLmatches, MaxMLmatches,bClampMaxMLmatches ? "Yes" : "No");
+		}
+
 	for(Idx=0; Idx < NumPE2InputFiles; Idx++)
 		gDiagnostics.DiagOutMsgOnly(eDLInfo,"input PE2 raw reads files (%d): '%s'",Idx+1,pszPE2InputFiles[Idx]);
 
@@ -2171,8 +2248,8 @@ if (!argerrors)
 	gStopWatch.Start();
 	Rslt = KProcess((etPMode)PMode,szExperimentID,SampleNthRawRead,(etFQMethod)Quality,bSOLiD,bBisulfite,(etPEproc)PEproc,PairMinLen,PairMaxLen,bPairStrand,false,false,
 					(eALStrand)AlignStrand,MinChimericLen,false,0,0,
-					0,0.0,0,0,0,PCRartefactWinLen,eMLdefault,
-					1,0,false,
+					0,0.0,0,0,0,PCRartefactWinLen,(etMLMode)MLMode,
+					MaxMLmatches,bClampMaxMLmatches,false,
 					MaxNs,MinEditDist,MaxSubs,Trim5,Trim3,MinAcceptReadLen,MaxAcceptReadLen,MinFlankExacts,PCRPrimerCorrect, 0,
 					eFMPBA,etSAMFformat,0,NumThreads,szReadsetID,
 					NumPE1InputFiles,pszPE1InputFiles,NumPE2InputFiles,pszPE2InputFiles,szEmpty,false,szRsltsFile, szEmpty, szEmpty, szEmpty, szTargFile,

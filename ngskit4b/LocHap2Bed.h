@@ -84,25 +84,12 @@ class CLocHap2Bed
 	int m_AllocdLineBuff;						// 	m_pszLineBuff allocated to a max of this many chars			
 	char *m_pszLineBuff;						// line buffer memory to hold buffered output
 
-	int m_NumREIncludeFiles;				// number of RE include files
-	int m_NumREExcludeFiles;				// number of RE exclude files
-
-#ifdef _WIN32
-	Regexp* m_REIncludeFiles[cMaxREIncludeFiles];	// compiled regular expressions
-	Regexp* m_REExcludeFiles[cMaxREExcludeFiles];
-#else
-	regex_t m_REIncludeFiles[cMaxREIncludeFiles];	// compiled regular expressions
-	regex_t m_REExcludeFiles[cMaxREExcludeFiles];
-#endif
-
-	int Process2BED(void);						// processing to BED format
-	int Process2CSV(void);						// processing to CSV format
+	CUtility m_RegExprs;            // regular expression processing
 
 	int
-		CompileChromRegExprs(int NumREIncludeFiles,	// number of file name regular expressions to include in processing
-				char** ppszREIncludeFiles, // array of file name regular expressions to include in processing
-				int	NumREExcludeFiles,	// number of file name expressions to exclude from processing
-				char** ppszREExcludeFiles); // array of file name regular expressions to exclude from processing
+		Process2BED(void);						// processing to BED format
+	int
+		Process2CSV(void);						// processing to CSV format - currently unimplemented
 
 	bool					// true if file is accepted for processing, false if file not accepted
 		AcceptThisFile(char* pszFileName);

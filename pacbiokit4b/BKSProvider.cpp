@@ -1997,7 +1997,7 @@ if (pCtrl->TotRxd >= sizeof(uint8_t))
 		}
 	}
 
-ExpRxdLen = min(128,pCtrl->AllocdRxdBuff - pCtrl->TotRxd);
+ExpRxdLen = min(128u,pCtrl->AllocdRxdBuff - pCtrl->TotRxd);
 
 	// now try receiving ...
 RxdLen = recv(pCtrl->Socket, (char *)&pCtrl->pRxdBuff[pCtrl->TotRxd], ExpRxdLen, 0);

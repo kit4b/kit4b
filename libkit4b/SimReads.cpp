@@ -606,7 +606,7 @@ if(m_pProfSel == NULL)
 if(pszInProfFile == NULL || pszInProfFile[0] == '\0')
 	{
 	for(OctIdx = 0; OctIdx < 0x010000; OctIdx++)
-		m_pProfSel[OctIdx] = max(0.0000001f,(double)OctIdx/(double)0x0ffff);
+		m_pProfSel[OctIdx] = max(0.0000001f,(float)(OctIdx/(double)0x0ffff));
 	return(eBSFSuccess);
 	}
 

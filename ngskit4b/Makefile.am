@@ -9,7 +9,7 @@ ngskit4b_SOURCES= KAlignerCL.cpp Blitz.cpp genDESeq.cpp kit4bax.cpp LocKMers.cpp
 		AlignsBootstrap.h Blitz.h FilterSAMAlignments.h ngskit4b.h MapLoci2Feat.h Markers.h ReadStats.h SimReads.h SQLiteMarkers.h \
 		SSRdiscovery.h ArtefactReduce.h deNovoAssemb.h genhyperconserved.h LocateROI.h MarkerKMers.h MergeReadPairs.h RemapLoci.h \
 		Benchmarker.cpp Benchmarker.h SQLitePSL.h genbioseq.cpp genbiobed.cpp gengoassoc.cpp gengoterms.cpp goassoc.cpp seghaplotypes.cpp seghaplotypes.h \
-		CallHaplotypes.cpp CallHaplotypes.h pbafasta.cpp pbafasta.h \
+		CallHaplotypes.cpp CallHaplotypes.h pbautils.cpp pbautils.h \
 		hammings.cpp fasta2bed.cpp GBSmapSNPs.cpp GBSmapSNPs.h LocHap2Bed.cpp LocHap2Bed.h pangenome.cpp pangenome.h repassemb.cpp repassemb.h sarscov2ml.cpp sarscov2ml.h
 
 # set the include path found by configure

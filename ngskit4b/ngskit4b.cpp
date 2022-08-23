@@ -95,7 +95,7 @@ extern int sarscov2ml(int argc, char *argv[]);
 extern int kalignerPBA(int argc, char *argv[]);
 extern int callhaplotypes(int argc, char *argv[]);
 extern int gbsmapsnps(int argc, char *argv[]);
-extern int pbafasta(int argc, char* argv[]);
+extern int pbautils(int argc, char* argv[]);
 
 // inplace text cleaning; any leading/trailing or internal quote characters are removed; excessive whitespace is reduced to single
 char *
@@ -175,7 +175,7 @@ tsSubProcess SubProcesses[] = {
 	{"genpba","","Align readsets against a target assembly and report alignments to a packed base alleles (PBA) file",kalignerPBA},
 	{"callhaplotypes","Call skim Haplotypes","Call skim read haplotypes using packed base alleles (PBA) files",callhaplotypes},
 	{"gbsmapsnps","GBS map","SNP GBS to PBA GBS haplotypes",gbsmapsnps},
-	{"pbafasta","Interchange PBA Fasta","Interchange PBA and Fasta",pbafasta},
+	{"pbautils","PBA Utilities","PBA formated file utilities",pbautils}
 
 
 };
@@ -190,23 +190,6 @@ int	gProcessingID = 0;					// SQLite processing identifier
 
 char gszProcName[_MAX_FNAME];			// this processes name
 tsSubProcess *gpszSubProcess;			// selected subprocess
-
-
-#ifdef _WIN32
-// required by str library
-#if !defined(__AFX_H__)  ||  defined(STR_NO_WINSTUFF)
-HANDLE STR_get_stringres()
-{
-	return NULL;	//Works for EXEs; in a DLL, return the instance handle
-}
-#endif
-
-const STRCHAR* STR_get_debugname()
-{
-	return _T("kit4b");
-}
-// end of str library required code
-#endif
 
 
 void

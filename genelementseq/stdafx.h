@@ -10,16 +10,6 @@
 
 #include <stdio.h>
 #include <tchar.h>
-//&&Str Class Support
-//Do not remove any lines from this block; refer to documentation
-//  about conditional defines and their function
-#define STR_WIN32
-#define STR_THREAD_SAFE
-#define STR_DEFINES_DONE
-#define STR_USE_REGEX
-#include "../libkit4b/str.h"
-//&&End of Str Class Support
-
 
 // TODO: reference additional headers your program requires here
 #endif

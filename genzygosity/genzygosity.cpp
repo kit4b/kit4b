@@ -133,23 +133,6 @@ CDiagnostics gDiagnostics;				// for writing diagnostics messages to log file
 char gszProcName[_MAX_FNAME];			// process name
 
 #ifdef _WIN32
-// required by str library
-#if !defined(__AFX_H__)  ||  defined(STR_NO_WINSTUFF)
-HANDLE STR_get_stringres()
-{
-	return NULL;	//Works for EXEs; in a DLL, return the instance handle
-}
-#endif
-
-const STRCHAR* STR_get_debugname()
-{
-	return _T("kanga");
-}
-// end of str library required code
-#endif
-
-
-#ifdef _WIN32
 int _tmain(int argc, char* argv[])
 {
 // determine my process name
@@ -1340,7 +1323,7 @@ if(m_CurSfxEntryProc == 0 || (m_CurSfxEntryStartOfs + m_SubseqLen) > m_CurSfxEnt
 
 // idea is to maximise the number of threads still processing when most subsequences have been processed so that
 // the last thread processing doesn't end up with a large block of subsequences needing lengthly processing
-MaxSubSeqs2Proc = min(cMaxSubseqsPerBlock,250 + ((m_TotSfxEntriesLen - m_NumSubseqsProc) / (uint32_t)m_NumThreads));
+MaxSubSeqs2Proc = min((uint32_t)cMaxSubseqsPerBlock,250u + ((m_TotSfxEntriesLen - m_NumSubseqsProc) / (uint32_t)m_NumThreads));
 
 pRetBlock->NumSubseqs = min(MaxSubSeqs2Proc,1 + m_CurSfxEntryProcLen - (m_CurSfxEntryStartOfs + m_SubseqLen));
 pRetBlock->EntryID = m_CurSfxEntryProc;

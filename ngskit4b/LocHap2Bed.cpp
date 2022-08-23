@@ -767,140 +767,16 @@ CLocHap2Bed::Process2CSV (void)						// processing to CSV format
 return(0);
 }
 
-
-int	
-CLocHap2Bed::CompileChromRegExprs(int NumREIncludeFiles,	// number of file name regular expressions to include in processing
-								  char** ppszREIncludeFiles,	// array of file name regular expressions to include in processing
-								  int	NumREExcludeFiles,	// number of file name expressions to exclude from processing
-								  char** ppszREExcludeFiles)	// array of file name regular expressions to exclude from processing
+bool					// true if chrom is accepted, false if chrom not accepted
+CLocHap2Bed::AcceptThisFile(char* pszFileName)   // file name
 {
-int Idx;
+bool bMatch;
 
-#ifndef _WIN32
-int RegErr;				// regular expression parsing error
-char szRegErr[128];		// to hold RegErr as textual representation ==> regerror();
-#endif
-m_NumREIncludeFiles= NumREIncludeFiles;
-m_NumREExcludeFiles= NumREExcludeFiles;
+bMatch = !m_RegExprs.MatchExcludeRegExpr(pszFileName);
+if(bMatch)
+    bMatch = m_RegExprs.MatchIncludeRegExpr(pszFileName);
 
-#ifdef _WIN32
-if(NumREIncludeFiles)
-{
-try {
-	for(Idx = 0; Idx < NumREIncludeFiles; Idx++)
-		{
-		m_REIncludeFiles[Idx] = new Regexp();
-		m_REIncludeFiles[Idx]->Parse(ppszREIncludeFiles[Idx], false);	// note case insensitive
-		}
-	}
-catch(...)
-	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to process include regexpr file name '%s'", ppszREIncludeFiles[Idx]);
-	return(eBSFerrMem);
-	}
-}
-
-if(NumREExcludeFiles)
-{
-try {
-	for(Idx = 0; Idx < NumREExcludeFiles; Idx++)
-		{
-		m_REExcludeFiles[Idx] = new Regexp();
-		m_REExcludeFiles[Idx]->Parse(ppszREExcludeFiles[Idx], false);	// note case insensitive
-		}
-	}
-catch(...)
-	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to process exclude regexpr file '%s' name", ppszREExcludeFiles[Idx]);
-	return(eBSFerrMem);
-	}
-}
-#else
-if(NumREIncludeFiles)
-{
-for(Idx = 0; Idx < NumREIncludeFiles; Idx++)
-	{
-	RegErr = regcomp(&m_REIncludeFiles[Idx], ppszREIncludeFiles[Idx], REG_EXTENDED | REG_ICASE);	// note case insensitive
-	if(RegErr)
-		{
-		regerror(RegErr, &m_REIncludeFiles[Idx], szRegErr, sizeof(szRegErr));
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to process include file regexpr '%s' error: %s", ppszREIncludeFiles[Idx], szRegErr);
-		return(eBSFerrMem);
-		}
-	}
-}
-if(NumREExcludeFiles)
-{
-for(Idx = 0; Idx < NumREExcludeFiles; Idx++)
-	{
-	RegErr = regcomp(&m_REExcludeFiles[Idx], ppszREExcludeFiles[Idx], REG_EXTENDED | REG_ICASE);	// note case insensitive
-	if(RegErr)
-		{
-		regerror(RegErr, &m_REExcludeFiles[Idx], szRegErr, sizeof(szRegErr));
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to process exclude file regexpr '%s' error: %s", ppszREExcludeFiles[Idx], szRegErr);
-		return(eBSFerrMem);
-		}
-	}
-}
-#endif
-return(eBSFSuccess);
-}
-
-
-
-bool					// true if file is accepted for processing, false if file not accepted
-CLocHap2Bed::AcceptThisFile(char *pszFileName)
-{
-int IncFileIdx;
-int ExclFileIdx;
-bool bProcFile = false;
-int MatchesFiltOut = 0;
-
-if(!(m_NumREExcludeFiles || m_NumREIncludeFiles))
-	return(true);
-
-#ifdef _WIN32
-RegexpMatch mc;
-#else
-regmatch_t mc;
-int RegErr;					// regular expression parsing error
-char szRegErr[128];			// to hold RegErr as textual representation ==> regerror();
-#endif
-
-		// check if to be excluded
-bProcFile = true;
-for(ExclFileIdx = 0; ExclFileIdx < m_NumREExcludeFiles; ExclFileIdx++)
-	{
-#ifdef _WIN32
-	if(m_REExcludeFiles[ExclFileIdx]->Match(pszFileName, &mc))
-#else
-	if(!regexec(&m_REExcludeFiles[ExclFileIdx], pszFileName, 1, &mc, 0))
-#endif
-		{
-		bProcFile = false;
-		break;
-		}
-	}
-
-	// to be included?
-if(bProcFile && m_NumREIncludeFiles > 0)
-	{
-	bProcFile = false;
-	for(IncFileIdx = 0; IncFileIdx < m_NumREIncludeFiles; IncFileIdx++)
-		{
-#ifdef _WIN32
-		if(m_REIncludeFiles[IncFileIdx]->Match(pszFileName, &mc))
-#else
-		if(!regexec(&m_REIncludeFiles[IncFileIdx], pszFileName, 1, &mc, 0))
-#endif
-			{
-			bProcFile = true;
-			break;
-			}
-		}
-	}
-
-return(bProcFile);
+return(bMatch);
 }
 
 
@@ -933,8 +809,12 @@ m_PValueThres = PValueThres;
 m_MinCoverage = MinCoverage;
 m_MinAlleleProp = MinAlleleProp;
 
-if((Rslt=CompileChromRegExprs(NumInWhitelist, ppszWhitelisted, NumInBlackList, ppsBlacklisted)) != eBSFSuccess)
+// compile include/exclude chromosome regexpr if user has specified alignments to be filtered by chrom
+if((Rslt = m_RegExprs.CompileREs(NumInWhitelist, ppszWhitelisted,NumInBlackList, ppsBlacklisted)) < eBSFSuccess)
+	{
+	Reset();
 	return(Rslt);
+	}
 
 if ((m_pszLineBuff = new char[cLHAllocLineBuffSize]) == NULL)
 	{

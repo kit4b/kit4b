@@ -1762,7 +1762,7 @@ if(NumThreads == 1)
 	m_NumProcSeqIDs = cMaxMultiSeqFlags;
 else
 	{
-	m_NumProcSeqIDs = min(cMaxMultiSeqFlags,(m_Sequences.NumSeqs2Assemb + NumThreads - 1)/(NumThreads * 10));
+	m_NumProcSeqIDs = min(cMaxMultiSeqFlags,(int32_t)((m_Sequences.NumSeqs2Assemb + NumThreads - 1)/(NumThreads * 10)));
 	if(m_NumProcSeqIDs < 16)
 		m_NumProcSeqIDs = 16;
 	}
@@ -1933,7 +1933,7 @@ if(NumThreads == 1)
 	m_NumProcSeqIDs = cMaxMultiSeqFlags;
 else
 	{
-	m_NumProcSeqIDs = min(cMaxMultiSeqFlags,(m_Sequences.NumSeqs2Assemb + NumThreads - 1)/(NumThreads * 10));
+	m_NumProcSeqIDs = min(cMaxMultiSeqFlags,(int32_t)(m_Sequences.NumSeqs2Assemb + NumThreads - 1)/(NumThreads * 10));
 	if(m_NumProcSeqIDs < 16)
 		m_NumProcSeqIDs = 16;
 	}
@@ -2214,7 +2214,7 @@ while(GetSeqProcRange(&StartingSeqID,&EndingSeqID,cMaxMultiSeqFlags) > 0)
 
 		if(pPars->MaxSubs1K || pPars->MaxEnd12Subs)
 			{
-			MinOvrlp = min(max(ProbeLen,30),60);			// looking for minimum overlaps of at least 60bp as seed exact matches which will be then extended out to full length allowing any mismatches
+			MinOvrlp = min(max((int32_t)ProbeLen,30),60);			// looking for minimum overlaps of at least 60bp as seed exact matches which will be then extended out to full length allowing any mismatches
 			MaxSubOfs =  min(90,(int)ProbeLen - MinOvrlp);
 			}
 		else
@@ -2437,7 +2437,7 @@ while(GetSeqProcRange(&StartingSeqID,&EndingSeqID,cMaxMultiSeqFlags) > 0)
 
 		if(pPars->MaxSubs1K || pPars->MaxEnd12Subs)
 			{
-			MinOvrlp = min(max(ProbeLen,30),60);			// looking for minimum overlaps of at least 60bp as seed exact matches which will be then extended out to full length allowing any mismatches
+			MinOvrlp = min(max((int32_t)ProbeLen,30),60);			// looking for minimum overlaps of at least 60bp as seed exact matches which will be then extended out to full length allowing any mismatches
 			MaxSubOfs =  min(90,(int)ProbeLen - MinOvrlp);
 			}
 		else

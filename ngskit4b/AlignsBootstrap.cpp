@@ -1288,10 +1288,10 @@ for(CurIdx = 0; CurIdx < pSeqs->NumSeqs; CurIdx++)
 	CurSeqBuffIdx+=sprintf((char *)&pSeqBuff[CurSeqBuffIdx],">bsseq%d\n",CurIdx+1);
 	while(SeqLen > 0)
 		{
-		CSeqTrans::MapSeq2Ascii(pBases,min(SeqLen,70),szLineBuff);
+		CSeqTrans::MapSeq2Ascii(pBases,min(SeqLen,70u),szLineBuff);
 		pBases += 70;
 		CurSeqBuffIdx += sprintf((char *)&pSeqBuff[CurSeqBuffIdx],"%s\n",szLineBuff);
-		SeqLen -= min(SeqLen,70);
+		SeqLen -= min(SeqLen,70u);
 		if((CurSeqBuffIdx + 1000) > cMaxTargSeqLen)
 			{
 			CUtility::RetryWrites(hFile,pSeqBuff,CurSeqBuffIdx);

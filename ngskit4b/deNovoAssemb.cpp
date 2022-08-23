@@ -823,7 +823,7 @@ if(NumThreads > cMaxWorkerThreads)					// clamp number of threads
 m_Sequences.NumProcessed = 0;	
 memset(m_ThreadSeqBlocks,0,sizeof(m_ThreadSeqBlocks));
 m_NxtSeqs2BlockAlloc = 1;		// allocate next thread sequence block starting with this sequence
-m_SeqsPerThreadBlk = max(cMinSeqsThreadBlock,(m_Sequences.NumSeqs2Assemb + m_NumThreads - 1) / ((uint32_t)m_NumThreads * 1000));	// nominal number of sequences per thread processing block
+m_SeqsPerThreadBlk = max((uint32_t)cMinSeqsThreadBlock,(m_Sequences.NumSeqs2Assemb + m_NumThreads - 1) / ((uint32_t)m_NumThreads * 1000));	// nominal number of sequences per thread processing block
 return(m_SeqsPerThreadBlk);
 }
 

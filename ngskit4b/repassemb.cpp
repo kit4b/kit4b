@@ -1219,9 +1219,9 @@ for(FastaIdx = 0; FastaIdx < m_SeqBuffIdx; FastaIdx++,pInChr++)
 		if(bDescr)
 			{
 			if(PMode == eRPMdefault)
-				BasesReplaced += ReplaceSNPBases((char *)szChromName,(uint32_t)min(0x0ffffffff,m_SeqBuffIdx-FastaIdx),(char *)pInChr+1);
+				BasesReplaced += ReplaceSNPBases((char *)szChromName,(uint32_t)min(0x0ffffffff,(uint32_t)(m_SeqBuffIdx-FastaIdx)),(char *)pInChr+1);
 			else
-				BasesReplaced += ReplaceASegmentBases((char *)szChromName,(uint32_t)min(0x0ffffffff,m_SeqBuffIdx-FastaIdx),(char *)pInChr+1);
+				BasesReplaced += ReplaceASegmentBases((char *)szChromName,(uint32_t)min(0x0ffffffff,(uint32_t)(m_SeqBuffIdx-FastaIdx)),(char *)pInChr+1);
 			}
 		bDescr = false;
 		bNL = true;
