@@ -19,7 +19,8 @@ int Process(ePBAuMode PMode,	// ePBAu2Fasta: PBA to Fasta, ePBAu2PBA: Fasta to P
 	int32_t LimitPBAs,			// limit number of loaded PBA files to this many. 1 .. cMaxPBAReadsets
 	int32_t PBAsTrim5,			// trim this many aligned PBAs from 5' end of aligned segments - reduces false alleles due to sequencing errors
 	int32_t PBAsTrim3,			// trim this many aligned PBAs from 3' end of aligned segments - reduces false alleles due to sequencing errors
-	char* pszRefAssemb,			// reference assembly
+	char* pszRefAssemb,			// reference assembly identifier
+	char* pszRefAssembFile,		// PBA file containing reference assembly sequences
 	char* pszChromFile,			// BED file containing reference assembly chromosome names and sizes
 	char* pszSeqID,				// sequence identifier
 	char* pszExprID,			// experiment identifier
@@ -48,6 +49,7 @@ int iFileLogLevel;			// level of file diagnostics
 int iScreenLogLevel;		// level of file diagnostics
 char szLogFile[_MAX_PATH];	// write diagnostics to this file
 char szChromFile[_MAX_PATH];	// BED file containing chromosome names and sizes
+char szRefAssembFile[_MAX_PATH];	// PBA file containing reference assembly sequences
 
 int Rslt = 0;   			// function result code >= 0 represents success, < 0 on failure
 int NumberOfProcessors;		// number of installed CPUs
@@ -55,14 +57,14 @@ int NumThreads;				// number of threads (0 defaults to number of CPUs or a maxim
 
 int Idx;
 
-ePBAuMode PMode;			        // ePBAu2Fasta: PBA to Fasta, ePBAu2PBA: Fasta to PBA, ePBAu2Concordance: report on degree of concordance over all samples
-int32_t LimitPBAs;					// limit number of loaded PBA files to this many. 0: no limits, > 0 sets upper limit
+ePBAuMode PMode;			// ePBAu2Fasta: PBA to Fasta, ePBAu2PBA: Fasta to PBA, ePBAu2Concordance: report on degree of concordance over all samples
+int32_t LimitPBAs;			// limit number of loaded PBA files to this many. 0: no limits, > 0 sets upper limit
 int32_t PBAsTrim5;			// trim this many aligned PBAs from 5' end of aligned segments - reduces false alleles due to sequencing errors
 int32_t PBAsTrim3;			// trim this many aligned PBAs from 3' end of aligned segments - reduces false alleles due to sequencing errors
 
 char szExprID[cMaxRefAssembName + 1];
 char szSeqID[cMaxRefAssembName+1];
-char szRefAssemb[cMaxRefAssembName+1];
+char szRefAssemb[cMaxRefAssembName+1]; 
 int NumIncludeChroms;
 char* pszIncludeChroms[cMaxIncludeChroms];
 int NumExcludeChroms;
@@ -77,7 +79,7 @@ struct arg_lit* version = arg_lit0("v", "version,ver", "print version informatio
 struct arg_int* FileLogLevel = arg_int0("f", "FileLogLevel", "<int>", "Level of diagnostics written to screen and logfile 0=fatal,1=errors,2=info,3=diagnostics,4=debug");
 struct arg_file* LogFile = arg_file0("F", "log", "<file>", "diagnostics log file");
 
-struct arg_int* pmode = arg_int0("m", "mode", "<int>", "processing mode: 0 PBA to Fasta, 1 Fasta to PBA, 2 concordance over PBA samples, 3 concordance over WIG samples");
+struct arg_int* pmode = arg_int0("m", "mode", "<int>", "processing mode: 0 PBA to Fasta, 1 Fasta to PBA, 2 concordance over PBA samples, 3 concordance over WIG samples, 4 allelic differences between 2 PBAs");
 struct arg_int* limitpbas = arg_int0("l", "limitpbas", "<int>", " limit number of loaded PBA files to this many. 0: no limits, > 0 sets upper limit (default 0)");
 struct arg_int* pbastrim5 = arg_int0("x", "trim5", "<int>", "trim this many aligned PBAs from 5' end of aligned segments (default 0, range 0..100)");
 struct arg_int* pbastrim3 = arg_int0("X", "trim3", "<int>", "trim this many aligned PBAs from 3' end of aligned segments (default 0, range 0..100)");
@@ -91,12 +93,14 @@ struct arg_str* IncludeChroms = arg_strn("z", "chromeinclude", "<string>", 0, cM
 struct arg_file* infiles = arg_filen("i", "infiles", "<file>", 0, cMaxWildCardFileSpecs, "input file(s), wildcards allowed, limit of 200 filespecs supported");
 struct arg_file* chromfile = arg_file1("c", "chromfile", "<file>", "input BED file containing chromosome names and sizes");
 
+struct arg_file* refassembfile = arg_file0("R", "refassembfile", "<file>", "reference assembly file, required when generating VCF from PBA files");
+
 struct arg_file* outfile = arg_file1("o", "out", "<file>", "output to this file");
 struct arg_int* threads = arg_int0("T", "threads", "<int>", "number of processing threads 0..64 (defaults to 0 which limits threads to maximum of 64 CPU cores)");
 
 struct arg_end* end = arg_end(200);
 void* argtable[] = {help,version,FileLogLevel,LogFile,
-					pmode,limitpbas, pbastrim5,pbastrim3,refassemb,exprid,seqid,chromfile,ExcludeChroms,IncludeChroms,infiles,outfile,threads,end};
+					pmode,limitpbas, pbastrim5,pbastrim3,refassemb,exprid,seqid,chromfile,refassembfile,ExcludeChroms,IncludeChroms,infiles,outfile,threads,end};
 char** pAllArgs;
 int argerrors;
 argerrors = CUtility::arg_parsefromfile(argc, (char**)argv, &pAllArgs);
@@ -214,7 +218,8 @@ if(!argerrors)
 		NumThreads = MaxAllowedThreads;
 		}
 
-	if (PMode == ePBAu2PBA)
+	szRefAssembFile[0] = '\0';
+	if (PMode == ePBAu2PBA || PMode == ePBAu2VCF)
 		{
 		if (refassemb->count)
 			{
@@ -240,8 +245,7 @@ if(!argerrors)
 			szExprID[0] = '\0';
 		if (szExprID[0] == '\0')
 			strcpy(szExprID, cDfltExprID);
-		szExprID[cMaxRefAssembName] = '\0';
-
+		
 		if (seqid->count)
 			{
 			strncpy(szSeqID, seqid->sval[0], cMaxRefAssembName);
@@ -254,9 +258,26 @@ if(!argerrors)
 		if (szSeqID[0] == '\0')
 			strcpy(szSeqID, cDfltSeqID);
 		szSeqID[cMaxRefAssembName] = '\0';
+		if(PMode == ePBAu2VCF)
+			{
+			if (refassembfile->count)
+				{
+				strncpy(szRefAssembFile, refassembfile->filename[0], _MAX_PATH);
+				szRefAssembFile[_MAX_PATH - 1] = '\0';
+				CUtility::TrimQuotedWhitespcExtd(szRefAssembFile);
+				}
+			else
+				{
+				gDiagnostics.DiagOut(eDLFatal, gszProcName, "No reference PBA assembly file specified, required for VCF generation");
+				exit(1);
+				}
+			}
+		else
+			szRefAssembFile[0] = '\0';
 		}
 	else
 		{
+		szRefAssembFile[0] = '\0';
 		szRefAssemb[0] = '\0';
 		szExprID[0] = '\0';
 		szSeqID[0] = '\0';
@@ -354,6 +375,10 @@ if(!argerrors)
 			break;
 		case ePBAu2WIGConcordance:
 			pszDescr = "generating concordance CSV file from WIG samples";
+			break;
+		case ePBAu2VCF:
+			pszDescr = "output VCF containing allelic differences between two PBAs";
+			break;
 	}
 
 	gDiagnostics.DiagOutMsgOnly(eDLInfo, "PBA utilities : '%s'", pszDescr);
@@ -364,6 +389,8 @@ if(!argerrors)
 	gDiagnostics.DiagOutMsgOnly(eDLInfo, "Trim 5' segments by : %dbp", PBAsTrim5);
 	gDiagnostics.DiagOutMsgOnly(eDLInfo, "Trim 3' segments by : %dbp", PBAsTrim3);
 
+	if(PMode == ePBAu2VCF)
+		gDiagnostics.DiagOutMsgOnly(eDLInfo, "PBA reference assembly : '%s'", szRefAssembFile);
 	gDiagnostics.DiagOutMsgOnly(eDLInfo, "BED containing chromosome names and sizes : '%s'", szChromFile);
 	if (PMode == ePBAu2PBA || PMode == ePBAu2WIGConcordance)
 		{
@@ -392,6 +419,7 @@ if(!argerrors)
 					PBAsTrim5,			// trim this many aligned PBAs from 5' end of aligned segments - reduces false alleles due to sequencing errors
 					PBAsTrim3,			// trim this many aligned PBAs from 3' end of aligned segments - reduces false alleles due to sequencing errors
 					szRefAssemb,		// reference assembly
+					szRefAssembFile,	// PBA file containing reference assembly sequences
 					szChromFile,		// BED file containing chromosome names and sizes
 					szSeqID,			// sequence identifier
 					szExprID,			// experiment identifier
@@ -423,7 +451,8 @@ int Process(ePBAuMode PMode,	// ePBAu2Fasta: PBA to Fasta, ePBAu2PBA: Fasta to P
 	int32_t LimitPBAs,			// limit number of loaded PBA files to this many. 1 .. cMaxPBAReadsets
 	int32_t PBAsTrim5,			// trim this many aligned PBAs from 5' end of aligned segments - reduces false alleles due to sequencing errors
 	int32_t PBAsTrim3,			// trim this many aligned PBAs from 3' end of aligned segments - reduces false alleles due to sequencing errors
-	char* pszRefAssemb,			// reference assembly
+	char* pszRefAssemb,			// reference assembly identifier
+	char* pszRefAssembFile,		// PBA file containing reference assembly sequences
 	char* pszChromFile,			// BED file containing chromosome names and sizes
 	char* pszSeqID,				// sequence identifier
 	char* pszExprID,			// experiment identifier
@@ -443,7 +472,7 @@ if((pPBAutils = new CPBAutils) == NULL)
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to instantiate instance of CHaps2Genotype");
 	return(eBSFerrObj);
 	}
-Rslt = pPBAutils->Process(PMode, LimitPBAs, PBAsTrim5,PBAsTrim3,pszRefAssemb, pszChromFile, pszSeqID, pszExprID, NumInputFiles, pszInputFiles, szOutFile, NumIncludeChroms, pszIncludeChroms, NumExcludeChroms, pszExcludeChroms, NumThreads);
+Rslt = pPBAutils->Process(PMode, LimitPBAs, PBAsTrim5,PBAsTrim3,pszRefAssemb,pszRefAssembFile, pszChromFile, pszSeqID, pszExprID, NumInputFiles, pszInputFiles, szOutFile, NumIncludeChroms, pszIncludeChroms, NumExcludeChroms, pszExcludeChroms, NumThreads);
 delete pPBAutils;
 return(Rslt);
 }
@@ -500,7 +529,8 @@ if(m_pChromMetadata != NULL)
 		munmap(m_pChromMetadata, m_AllocdChromMetadataMem);
 #endif
 	}
-DeleteMutexes();
+if(m_bMutexesCreated)
+	DeleteMutexes();
 }
 
 void
@@ -600,6 +630,7 @@ m_NumIncludeChroms = 0;
 m_NumExcludeChroms = 0;
 
 m_szRefAssemb[0] = '\0';
+m_szRefAssembFile[0] = '\0';
 
 m_NumChromSizes = 0;
 
@@ -727,7 +758,8 @@ CPBAutils::Process(ePBAuMode PMode,	// ePBAu2Fasta: PBA to Fasta, ePBAu2PBA: Fas
 	int32_t LimitPBAs,			// limit number of loaded PBA files to this many. 1...cMaxPBAReadsets
 	int32_t PBAsTrim5,			// trim this many aligned PBAs from 5' end of aligned segments - reduces false alleles due to sequencing errors
 	int32_t PBAsTrim3,			// trim this many aligned PBAs from 3' end of aligned segments - reduces false alleles due to sequencing errors
-	char* pszRefAssemb,			// reference assembly
+	char* pszRefAssemb,			// reference assembly identifier
+	char* pszRefAssembFile,		// PBA file containing reference assembly sequences
 	char* pszChromFile,			// BED file containing chromosome names and sizes
 	char* pszSeqID,				// sequence identifier
 	char* pszExprID,			// experiment identifier
@@ -742,11 +774,13 @@ CPBAutils::Process(ePBAuMode PMode,	// ePBAu2Fasta: PBA to Fasta, ePBAu2PBA: Fas
 {
 int Rslt;
 Reset();
+CreateMutexes();
 m_PBAsTrim5 = PBAsTrim5;
 m_PBAsTrim3 = PBAsTrim3;
 strcpy(m_szRefAssemb, pszRefAssemb);
 strcpy(m_szOutFile, pszOutFile);
-
+if(pszRefAssembFile != nullptr && pszRefAssembFile[0] != '\0')
+	strcpy(m_szRefAssembFile, pszRefAssembFile);
 
 // compile include/exclude chromosome regexpr if user has specified alignments to be filtered by chrom
 if(Rslt = (m_RegExprs.CompileREs(NumIncludeChroms, pszIncludeChroms,NumExcludeChroms, pszExcludeChroms)) < eBSFSuccess)
@@ -797,6 +831,7 @@ m_InNumBuffered = 0;
 int32_t Idx;
 char* pszInFile;
 int32_t ReadsetID = 0;
+int32_t RefReadsetID = 0;
 int32_t NumFiles = 0;
 int32_t TotNumFiles = 0;
 CSimpleGlob glob(SG_GLOB_FULLSORT);
@@ -836,6 +871,70 @@ if (PMode <= ePBAu2PBA)
 	return(Rslt);
 	}
 
+if (PMode == ePBAu2VCF)
+	{
+	glob.Init();
+	if (glob.Add(pszRefAssembFile) < SG_SUCCESS)
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Unable to glob '%s' reference PBA file spec", pszRefAssembFile);
+		Reset();
+		return(eBSFerrOpnFile);	// treat as though unable to open file
+		}
+	if ((NumFiles = glob.FileCount()) <= 0)
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Unable to locate any reference PBA file matching '%s'", pszRefAssembFile);
+		Reset();
+		return(eBSFerrOpnFile);	// treat as though unable to open file
+		}
+	if (NumFiles > 1)
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Only one (%d located) reference PBA file matching '%s' allowed", NumFiles, pszRefAssembFile);
+		Reset();
+		return(eBSFerrOpnFile);	// treat as though unable to open file
+		}
+	pszInFile = glob.File(0);
+	RefReadsetID = LoadPBAFile(pszInFile, 0, true); // loading readset + chrom metadata only, later the PBAs for each individual chrom will be loaded on demand
+	if (RefReadsetID <= 0)
+		{
+		gDiagnostics.DiagOut(eDLInfo, gszProcName, "Process: Errors loading reference PBA file '%s'", pszInFile);
+		Reset();
+		return(RefReadsetID);
+		}
+
+	glob.Init();
+	if (glob.Add(pszInputFiles[0]) < SG_SUCCESS)
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Unable to glob '%s' file spec", pszInputFiles[0]);
+		Reset();
+		return(eBSFerrOpnFile);	// treat as though unable to open file
+		}
+	if ((NumFiles = glob.FileCount()) <= 0)
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Unable to locate any file matching '%s'", pszInputFiles[0]);
+		Reset();
+		return(eBSFerrOpnFile);	// treat as though unable to open file
+		}
+	if (NumFiles > 1)
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Only one (%d located) file matching '%s' allowed", NumFiles, pszInputFiles[0]);
+		Reset();
+		return(eBSFerrOpnFile);	// treat as though unable to open file
+		}
+	pszInFile = glob.File(0);
+	ReadsetID = LoadPBAFile(pszInFile, 0, true); // loading readset + chrom metadata only, later the PBAs for each individual chrom will be loaded on demand
+	if (ReadsetID <= 0)
+		{
+		gDiagnostics.DiagOut(eDLInfo, gszProcName, "Process: Errors loading file '%s'", pszInFile);
+		Reset();
+		return(ReadsetID);
+		}
+
+	Rslt = GenAllelicDiffs(RefReadsetID,		// reference PBA assembly
+						   ReadsetID);			// PBA file with allelic differences
+	Reset();
+	return(Rslt);
+	}
+
 	// concordance analysis
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "Process: Starting to load input PBA files");
 Rslt = eBSFSuccess;		// assume success!
@@ -851,7 +950,7 @@ for (Idx = 0; Idx < NumInputFiles; Idx++)
 		}
 	if ((NumFiles = glob.FileCount()) <= 0)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Unable to locate any input file matching '%s", pszInputFiles[Idx]);
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Unable to locate any input file matching '%s'", pszInputFiles[Idx]);
 		Reset();
 		return(eBSFerrFileName);
 		}
@@ -1776,6 +1875,225 @@ switch (Base) {
 		FastaChar = 'N';
 	}
 return(FastaChar);
+}
+
+int32_t 
+CPBAutils::GenAllelicDiffs(int32_t RefPBAID,	// reference PBAs identifier
+						int32_t AllelicPBAID)	// PBAs with allelic differences
+{
+
+int32_t Rslt = 0;
+etSeqBase RefBase;
+uint8_t* pRefPBAs;
+uint8_t* pAllelicPBAs;
+int32_t ChromID;
+uint32_t ChromIdx;
+uint32_t ChromSize;
+uint32_t Loci;
+uint8_t RefAlleles;
+uint8_t AAleles;
+uint32_t NumChromDiffs;
+uint32_t TotChromsDiffs;
+uint32_t NumChromNA;
+uint32_t NumChromDiffNA;
+uint32_t NumChromMatches;
+char *pszChromName;
+
+tsReadsetMetadata* pReadsetMetadata;
+tsChromMetadata* pChromMetadata;
+
+#ifdef _WIN32
+m_hOutFile = open(m_szOutFile, (O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC), (_S_IREAD | _S_IWRITE));
+#else
+if ((m_hOutFile = open64(m_szOutFile, O_WRONLY | O_CREAT, S_IREAD | S_IWRITE)) != -1)
+if (ftruncate(m_hOutFile, 0) != 0)
+{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to create/truncate %s - %s", m_szOutFile, strerror(errno));
+	Reset();
+	return(eBSFerrCreateFile);
+}
+#endif
+if (m_hOutFile < 0)
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Unable to create/truncate %s - %s", m_szOutFile, strerror(errno));
+	Reset();
+	return(eBSFerrCreateFile);
+	}
+
+if (m_pOutBuffer == NULL)
+	{
+	if ((m_pOutBuffer = new uint8_t[cOutBuffSize]) == NULL) // an overkill in terms of buffer size!
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Memory allocation of %u bytes for output buffering failed - %s", cOutBuffSize, strerror(errno));
+		Reset();
+		return(eBSFerrMem);
+		}
+	m_AllocOutBuff = cOutBuffSize;
+	}
+m_OutBuffIdx = 0;
+
+pReadsetMetadata = &m_Readsets[RefPBAID - 1];
+
+m_OutBuffIdx = sprintf((char *)m_pOutBuffer,"##fileformat=VCFv4.1\n##source=pbautils%s\n##reference=%s\n##INFO=<ID=AF,Number=A,Type=Float,Description=\"Allele Frequency\">\n##FORMAT=<ID=DP,Number=1,Type=Integer,Description=\"Read Depth\">\n",
+				  kit4bversion, (char *)pReadsetMetadata->szRefAssemblyID);
+m_OutBuffIdx += sprintf((char *)&m_pOutBuffer[m_OutBuffIdx],"#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n");
+
+if (!CUtility::RetryWrites(m_hOutFile, m_pOutBuffer, m_OutBuffIdx))
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Fatal error in RetryWrites()");
+	Reset();
+	return(eBSFerrFileAccess);
+	}
+m_OutBuffIdx = 0;
+
+// iterate over chromosomes
+TotChromsDiffs = 0;
+for(ChromIdx = 1; ChromIdx < pReadsetMetadata->NumChroms; ChromIdx++)
+	{
+	pChromMetadata = LocateChromMetadataFor(RefPBAID, ChromIdx);
+	ChromID = pChromMetadata->ChromID;
+	ChromSize = pChromMetadata->ChromLen;
+
+	if((pRefPBAs = LoadSampleChromPBAs(RefPBAID, ChromID)) == nullptr)
+		break;
+
+	if((pAllelicPBAs = LoadSampleChromPBAs(AllelicPBAID, ChromID)) == nullptr)
+		break;
+	pszChromName = LocateChrom(ChromID);
+	NumChromDiffs = 0;
+	NumChromNA = 0;
+	NumChromDiffNA = 0;
+	NumChromMatches = 0;
+	for(Loci = 0; Loci < ChromSize; Loci++,pRefPBAs++,pAllelicPBAs++)
+		{
+		RefAlleles = *pRefPBAs;
+		AAleles = *pAllelicPBAs;
+		RefBase = Alleles2Base(RefAlleles); // processing is dependent on the reference PBA being a consensus PBA, force to be consensus!
+		switch (RefBase) {
+			case eBaseA:
+				RefAlleles = 0x0c0;
+				break;
+			case eBaseC:
+				RefAlleles = 0x030;
+				break;
+			case eBaseG:
+				RefAlleles = 0x0c;
+				break;
+			case eBaseT:
+				RefAlleles = 0x03;
+				break;
+			default:
+				RefAlleles = 0x00;
+			}
+
+		if(RefAlleles == 0 || AAleles == 0) // need both PBAs to have alleles
+			{
+			NumChromNA++;
+			if(RefAlleles || AAleles) // check if one was aligned in which case there was a difference in coverage
+				NumChromDiffNA++;
+			continue;
+			}
+
+		if((RefAlleles & 0x0aa) == (AAleles & 0x0aa)) // matching as dirac or major alleles treated as if exactly matching
+			{
+			NumChromMatches++;
+			continue;
+			}
+
+		// AllelicPBAID has at least one allele which differs from the reference
+		NumChromDiffs++;
+		TotChromsDiffs++;
+		// generate VCF...
+		// determine which alleles differ
+		int BaseIdx;
+		int AltsIdx;
+		int SumFreqs;
+		char szALTs[100];
+		char szALTsFreq[100];
+		uint32_t AlleleMsk;
+		int32_t Shl;
+		SumFreqs = 0;
+		AltsIdx = 0;
+		AlleleMsk = 0x0c0;
+		Shl = 6;
+		for(BaseIdx = 0; AAleles != 0 && BaseIdx < 4; BaseIdx++, AlleleMsk >>= 2, Shl-=2)
+			{
+//			if(BaseIdx == RefBase)			// if reference allele then skip
+//				continue;
+
+			if(!(AAleles & AlleleMsk))			// if no allele then try next allele
+				continue;
+
+			if (AltsIdx > 0)
+				{
+				szALTs[AltsIdx] = ',';
+				szALTsFreq[AltsIdx++] = ',';
+				}
+			szALTs[AltsIdx] = CSeqTrans::MapBase2Ascii(BaseIdx);
+			switch ((AAleles & AlleleMsk) >> Shl) {
+				case 1:
+					szALTsFreq[AltsIdx] = '1';
+					SumFreqs += 1;
+					break;
+				case 2:
+					szALTsFreq[AltsIdx] = '4';
+					SumFreqs += 2;
+					break;
+				case 3:
+					szALTsFreq[AltsIdx] = '5';
+					SumFreqs += 3;
+					break;
+				}
+			AltsIdx++;
+			szALTs[AltsIdx] = '\0';
+			szALTsFreq[AltsIdx] = '\0';
+			AAleles &= ~AlleleMsk;
+			}
+		
+		// for reasons unknown - others have complained! - IGV does not accept GVFs with multiple alleles if one matches the reference base.
+		// but is happy if the reference base is set to be indeterminate 'N'. Go figure ....
+		m_OutBuffIdx += sprintf((char *)&m_pOutBuffer[m_OutBuffIdx], "%s\t%u\tSNP%d\t%c\t%s\t%d\tPASS\tAF=%s;DP=%d\n",
+					pszChromName, Loci + 1, TotChromsDiffs, 'N', // CSeqTrans::MapBase2Ascii(RefBase),
+					szALTs, 100, szALTsFreq, 
+					SumFreqs);		// have no reliable coverage depth so simply default to sum of frequencies
+
+		if(m_OutBuffIdx+1000 > m_AllocOutBuff)
+			{
+			if (!CUtility::RetryWrites(m_hOutFile, m_pOutBuffer, m_OutBuffIdx))
+				{
+				gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Fatal error in RetryWrites()");
+				Reset();
+				return(eBSFerrFileAccess);
+				}
+			m_OutBuffIdx = 0;
+			}
+		}
+	if(m_OutBuffIdx)
+		{
+		if (!CUtility::RetryWrites(m_hOutFile, m_pOutBuffer, m_OutBuffIdx))
+			{
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Fatal error in RetryWrites()");
+			Reset();
+			return(eBSFerrFileAccess);
+			}
+		m_OutBuffIdx = 0;
+		}
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenAllelicDiffs: '%s' - %dbp : matching alleles: %d different alleles: %d non-aligned: %d differential non-aligned: %d", pszChromName, ChromSize, NumChromMatches, NumChromDiffs, NumChromNA,NumChromDiffNA);
+	DeleteSampleChromPBAs(RefPBAID, ChromID);
+	DeleteSampleChromPBAs(AllelicPBAID, ChromID);
+	}
+if (m_hOutFile != -1)
+	{
+	// commit output file
+#ifdef _WIN32
+	_commit(m_hOutFile);
+#else
+	fsync(m_hOutFile);
+#endif
+	close(m_hOutFile);
+	m_hOutFile = -1;
+	}
+return(Rslt);
 }
 
 int

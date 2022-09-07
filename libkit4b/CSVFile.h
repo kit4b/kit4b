@@ -5,8 +5,8 @@ const char cDfltCommentChar = '#';	// default character used as a comment line i
 const char cDfltTextChar = '"';		// default character used to quote text in CSV file
 
 
-const int cCSVMaxFields   = (cMaxCultivars * 9) + 10;	// max number of fields (snpmarkers can generate CSV files containing up to this many fields!!!)
-const int cCSVDfltFields  = 250;	// default number of fields
+const int cCSVMaxFields   = 50000000;	// max number of fields in a CSV file which can be processed
+const int cCSVDfltFields  = 250;	// default number of fields if SetMaxFields() not called
 const int cCSVMinFields   = 10;		// can always handle at least 10 fields
 
 

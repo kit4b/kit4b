@@ -1000,8 +1000,11 @@ class CKAligner
 	void ReleaseSerialise(void);
 	void AcquireSerialiseMH(void);
 	void ReleaseSerialiseMH(void);
-	void AcquireLock(bool bExclusive);
-	void ReleaseLock(bool bExclusive);
+	void AcquireSharedLock(void);
+	void ReleaseSharedLock(void);
+
+	void AcquireExclusiveLock(void);   // acquire exclusive R/W lock for calling thread
+	void ReleaseExclusiveLock(void);   // release exclusive R/W lock previously acquired by calling thread
 
 	int LocateCoredApprox(int MinEditDist,	// any matches must have at least this edit distance to the next best match
 		int MaxSubs);						// maximum number of substitutions allowed per 100bp of actual read length

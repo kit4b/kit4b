@@ -3907,12 +3907,12 @@ uint32_t NumRegionErrs;
 uint32_t NumRegions;
 uint32_t NumHGBinSpecs;
 
-if(m_pCSVFile != NULL) // should be, but better to be sure!
+if(m_pCSVFile != nullptr) // shouldn't have been instantiated, but better to be sure!
 	{
 	delete m_pCSVFile;
-	m_pCSVFile = NULL;
+	m_pCSVFile = nullptr;
 	}
-if((m_pCSVFile = new CCSVFile) == NULL)
+if((m_pCSVFile = new CCSVFile) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to instantiate CCSVfile");
 	Reset();

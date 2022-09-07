@@ -23,8 +23,9 @@ const char cDfltExprID[] = { "E000000" };				// default experiment identifier if
 typedef enum TAG_ePBAuMode {
 	ePBAu2Fasta = 0,	// generate Fasta assembly from PBA
 	ePBAu2PBA,			// generate PBA from Fasta
-	ePBAu2PBAConcordance,	// report on degree of concordance - proportions of loci where all samples had alignments and all samples with exactly same alleles
-	ePBAu2WIGConcordance,	// report on degree of concordance - proportions of coverage depth (WIG) where all samples had alignments and all samples with near same coverage
+	ePBAu2PBAConcordance,	// report on degree of allelic concordance - proportions of loci where all samples had alignments and all samples with exactly same alleles
+	ePBAu2WIGConcordance,	// report on degree of coverage depth concordance - proportions of coverage depth (WIG) where all samples had alignments and all samples with near same coverage
+	ePBAu2VCF,// output a VCF containing allelic differences between a PBA and the original reference assembly from which the PBA was generated
 	ePBAuPlaceholder		// used as a placeholder to mark number of processing modes
 } ePBAuMode;
 
@@ -60,6 +61,7 @@ typedef struct TAG_sReadsetMetadata
 
 class CPBAutils
 {
+	char m_szRefAssembFile[_MAX_PATH];	// PBA file containing reference assembly sequences
 	char m_szRefAssemb[cMaxRefAssembName+1];    // assembly name to use when converting Fasta to PBA
 	char m_szOutFile[_MAX_PATH];				// write converted format into this output file 
 
@@ -255,11 +257,14 @@ class CPBAutils
 	uint8_t* LoadPBAChromCoverage(uint32_t ReadsetID, // loading chromosome coverage for this readset and mapping coverage as though PBAs
 		uint32_t ChromID);    // coverage is on this chromosome
 
-	int GeneratePBAConcordance(void);	// generate allelic concordance across all sample PBAs
+	int32_t GeneratePBAConcordance(void);	// generate allelic concordance across all sample PBAs
 
-	int GenerateWIGConcordance(void);	// generate coverage depth concordance across all sample WIGs
+	int32_t GenerateWIGConcordance(void);	// generate coverage depth concordance across all sample WIGs
 
-	int	LoadChromSizes(char* pszBEDFile); // BED file containing chromosome names and sizes
+	int32_t	LoadChromSizes(char* pszBEDFile); // BED file containing chromosome names and sizes
+
+	int32_t GenAllelicDiffs(int32_t RefPBAID,	// reference PBAs identifier
+						int32_t AllelicPBAID);	// PBAs with allelic differences
 
 public:
 	CPBAutils();	// constructor
@@ -269,7 +274,8 @@ public:
 		int32_t LimitPBAs,			// limit number of loaded PBA files to this many. 1...cMaxPBAReadsets
 		int32_t PBAsTrim5,			// trim this many aligned PBAs from 5' end of aligned segments - reduces false alleles due to sequencing errors
 		int32_t PBAsTrim3,			// trim this many aligned PBAs from 3' end of aligned segments - reduces false alleles due to sequencing errors
-		char* pszRefAssemb,			// reference assembly
+		char* pszRefAssemb,			// reference assembly identifier
+		char* pszRefAssembFile,		// PBA file containing reference assembly sequences
 		char* pszChromFile,			// BED file containing chromosome names and sizes
 		char* pszSeqID,				// sequence identifier
 		char* pszExprID,			// experiment identifier

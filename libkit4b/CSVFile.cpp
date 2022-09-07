@@ -44,7 +44,7 @@ Reset();
 
 // CSVEstSizes
 // Assumes CSV rows are reasonably inter-row field populated
-const int cEstChrsBuff = 500000;		// 1st 500K chars from file should contain sufficient rows to give reasonable estimate for total rows in file
+const int cEstChrsBuff = 1000000000;		// 1st 1GB chars from file should contain sufficient rows to give reasonable estimate for total rows in file
 
 uint32_t									// returns estimated number of rows, 0 if unable to estimate
 CCSVFile::CSVEstSizes(char *pszFile,	// CSV file path+name to estimate sizes
@@ -274,7 +274,7 @@ if(m_hFile == -1)
 	return(Rslt);
 	}
 
-m_MaxBuffered = (int)min(m_StatFileSize+1,(int64_t)cMaxAllocInBuff);
+m_MaxBuffered = max(m_EstMaxChrsRow *10,cMaxAllocInBuff);
 
 strcpy(m_szFileName,pszFileName);
 m_pBuffer = new char[m_MaxBuffered + 16];		// additional 16 as a safety margin

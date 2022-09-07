@@ -9009,15 +9009,13 @@ if(m_FileHdr.NumRds == 0 || m_FileHdr.TotReadsLen == 0)
 
 // initial allocation of memory to hold all pre-processed reads plus a little safety margin (10000) bytes)
 memreq = ((size_t)m_FileHdr.NumRds * sizeof(tsReadHit)) + (size_t)m_FileHdr.TotReadsLen + 10000;
-AcquireSerialise();
-AcquireLock(true);
+AcquireExclusiveLock();
 #ifdef _WIN32
 m_pReadHits = (tsReadHit *) malloc(memreq);	// initial and perhaps the only allocation
 
 if(m_pReadHits == NULL)
 	{
-	ReleaseLock(true);
-	ReleaseSerialise();
+	ReleaseExclusiveLock();
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %zd bytes - %s",(int64_t)memreq,strerror(errno));
 	delete []pReadBuff;
 	close(m_hInFile);
@@ -9031,8 +9029,7 @@ if(m_pReadHits == MAP_FAILED)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %zd bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
 	m_pReadHits = NULL;
-	ReleaseLock(true);
-	ReleaseSerialise();
+	ReleaseExclusiveLock();
 	delete pReadBuff;
 	close(m_hInFile);
 	m_hInFile = -1;
@@ -9045,8 +9042,7 @@ m_UsedReadHitsMem = 0;
 m_FinalReadID = 0;
 m_NumReadsLoaded = 0;
 m_NumDescrReads = 0;
-ReleaseLock(true);
-ReleaseSerialise();
+ReleaseExclusiveLock();
 
 // iterate each read sequence starting from the first
 lseek(m_hInFile,(long)m_FileHdr.RdsOfs,SEEK_SET);
@@ -9083,8 +9079,7 @@ while((RdLen = read(m_hInFile,&pReadBuff[BuffLen],cRdsBuffAlloc - BuffLen)) > 0)
 			// shouldn't but is there a need to allocate more memory?
 		if(m_UsedReadHitsMem + (sizeof(tsReadHit) + CurReadLen + CurDescrLen) >= (m_AllocdReadHitsMem - 5000))
 			{
-			AcquireSerialise();
-			AcquireLock(true);
+			AcquireExclusiveLock();
 			memreq = m_AllocdReadHitsMem + ((sizeof(tsReadHit) + (size_t)cDfltReadLen) * cReadsHitReAlloc);
 			gDiagnostics.DiagOut(eDLInfo,gszProcName,"LoadReads: Needing memory re-allocation to %zd bytes from %zd",(int64_t)m_AllocdReadHitsMem,(int64_t)memreq);
 
@@ -9097,8 +9092,7 @@ while((RdLen = read(m_hInFile,&pReadBuff[BuffLen],cRdsBuffAlloc - BuffLen)) > 0)
 #endif
 			if(pReadHit == NULL)
 				{
-				ReleaseLock(true);
-				ReleaseSerialise();
+				ReleaseExclusiveLock();
 				gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory re-allocation to %zd bytes - %s",(int64_t)(m_AllocdReadHitsMem + ((sizeof(tsReadHit) + cDfltReadLen)*cReadsHitReAlloc)),strerror(errno));
 				delete []pReadBuff;
 				close(m_hInFile);
@@ -9107,8 +9101,7 @@ while((RdLen = read(m_hInFile,&pReadBuff[BuffLen],cRdsBuffAlloc - BuffLen)) > 0)
 				}
 			m_pReadHits = pReadHit;
 			m_AllocdReadHitsMem = memreq;
-			ReleaseLock(true);
-			ReleaseSerialise();
+			ReleaseExclusiveLock();
 			}
 
 		pReadHit = (tsReadHit *)((uint8_t *)m_pReadHits + m_UsedReadHitsMem);
@@ -10017,7 +10010,7 @@ switch (HitRslt) {
 					break;
 			pPars->HitReadsOfs = HitIdx;
 			}
-		// finish handling multiplely aligned reads
+		// finish handling multiple aligned reads
 		break;
 
 	case eHRMMDelta:			// same or a new LowMMCnt unique hit but MMDelta criteria not met
@@ -10054,7 +10047,6 @@ switch (HitRslt) {
 	
 if (Rslt < 0)
 	{
-	ReleaseLock(false);
 	AcquireSerialise();
 	m_ThreadCoredApproxRslt = Rslt;
 	ReleaseSerialise();
@@ -10149,7 +10141,7 @@ pPars->MaxIter = m_pSfxArray->GetMaxIter();
 pPars->bForceNewAlignment = true;
 
 // m_hRwLock will be released and regained within ThreadedIterReads so need to always have acquired a read lock before calling ThreadedIterReads
-AcquireLock(false);
+AcquireSharedLock();
 while(ThreadedIterReads(pReadsHitBlock))
 	{
 	Rslt = 0;
@@ -10162,7 +10154,7 @@ while(ThreadedIterReads(pReadsHitBlock))
 		PE1HitRslt = AlignRead(pPE1ReadHit, pPars);
 		if(PE1HitRslt == eHRFatalError)
 			{
-			ReleaseLock(false);
+			ReleaseSharedLock();
 			free(pReadsHitBlock);
 			return(-1);
 			}
@@ -10175,7 +10167,7 @@ while(ThreadedIterReads(pReadsHitBlock))
 			PE2HitRslt = AlignRead(pPE2ReadHit, pPars);
 			if (PE2HitRslt == eHRFatalError)
 				{
-				ReleaseLock(false);
+				ReleaseSharedLock();
 				free(pReadsHitBlock);
 				return(-1);
 				}
@@ -10237,8 +10229,7 @@ while(ThreadedIterReads(pReadsHitBlock))
 			}
 		}
 	}
-
-ReleaseLock(false);
+ReleaseSharedLock();
 AcquireSerialise();
 m_NumSloughedNs += pPars->NumSloughedNs;
 m_TotNonAligned += pPars->NumNonAligned;
@@ -10337,9 +10328,7 @@ return((int)NumHits);
 }
 
 
-// ThreadedIterReads
-// use to return a block of reads reserved for processing by calling thread instance
-// Returns false if no more reads available for processing
+// ResetThreadedIterReads
 void
 CKAligner::ResetThreadedIterReads(void) // must be called by master thread prior to worker threads calling ThreadedIterReads()
 {
@@ -10366,7 +10355,7 @@ return(NumReadsProc);
 // ThreadedIterReads
 // Iterates over all reads
 // The body of this function is serialised
-bool	// returns false if no more reads availing for processing by calling thread
+bool	// returns false if no more reads avail for processing by calling thread
 CKAligner::ThreadedIterReads(tsReadsHitBlock *pRetBlock)
 {
 uint32_t NumReadsLeft;
@@ -10379,14 +10368,14 @@ AdjReadsPerBlock = cMaxReadsPerBlock;
 if(m_SampleNthRawRead > 1)
 	AdjReadsPerBlock = min((uint32_t)100,AdjReadsPerBlock/m_SampleNthRawRead);
 
-ReleaseLock(false);
+ReleaseSharedLock();
 while(1) {
 	AcquireSerialise();
-	AcquireLock(false);
+	AcquireSharedLock();
 	if(m_bAllReadsLoaded || ((m_NumReadsLoaded - m_NumReadsProc) >= (uint32_t)min(AdjReadsPerBlock,(uint32_t)pRetBlock->MaxReads)) || m_ThreadCoredApproxRslt < 0)
 		break;
 
-	ReleaseLock(false);
+	ReleaseSharedLock();
 	ReleaseSerialise();
 #ifdef _WIN32
 	Sleep(2000);			// must have caught up to the reads loader, allow it some breathing space to parse and load some more reads...
@@ -11221,7 +11210,7 @@ return(0);
 }
 
 void
-CKAligner::AcquireSerialise(void)
+CKAligner::AcquireSerialise(void)  // mutually exclusive lock - only a single thread can own this lock
 {
 #ifdef _WIN32
 WaitForSingleObject(m_hMtxIterReads,INFINITE);
@@ -11231,7 +11220,7 @@ pthread_mutex_lock(&m_hMtxIterReads);
 }
 
 void
-CKAligner::ReleaseSerialise(void)
+CKAligner::ReleaseSerialise(void)  // release lock allowing other threads compete for ownership
 {
 #ifdef _WIN32
 ReleaseMutex(m_hMtxIterReads);
@@ -11261,30 +11250,59 @@ pthread_mutex_unlock(&m_hMtxMHReads);
 }
 
 void
-CKAligner::AcquireLock(bool bExclusive)
+CKAligner::AcquireSharedLock(void)  // acquire SRW lock ownership in shared mode with other threads
 {
 #ifdef _WIN32
-if(bExclusive)
-	AcquireSRWLockExclusive(&m_hRwLock);
-else
-	AcquireSRWLockShared(&m_hRwLock);
+AcquireSRWLockShared(&m_hRwLock); // Acquires an SRW lock in shared mode for calling thread
 #else
-if(bExclusive)
-	pthread_rwlock_wrlock(&m_hRwLock);
-else
-	pthread_rwlock_rdlock(&m_hRwLock);
+pthread_rwlock_rdlock(&m_hRwLock);
 #endif
 }
 
 void
-CKAligner::ReleaseLock(bool bExclusive)
+CKAligner::AcquireExclusiveLock(void)   // acquire exclusive R/W lock for calling thread
 {
+int Rslt = 0;
+int SpinCnt = 500;
+int BackoffMS = 5;
 
+while(1)
+	{
+	AcquireSerialise();     // serialise access to locks
 #ifdef _WIN32
-if(bExclusive)
-	ReleaseSRWLockExclusive(&m_hRwLock);
-else
-	ReleaseSRWLockShared(&m_hRwLock);
+	if(TryAcquireSRWLockExclusive(&m_hRwLock))   // attempt to acquire an exclusive lock
+		break;
+#else
+	Rslt = pthread_rwlock_trywrlock(&m_hRwLock);
+	if(Rslt == 0 || Rslt == EDEADLK)
+		break;
+#endif
+	ReleaseSerialise();   // allow other threads a chance to release shared or their exclusive lock
+	if(SpinCnt -= 1)      
+		continue;
+	CUtility::SleepMillisecs(BackoffMS);
+	SpinCnt = 100;
+	if(BackoffMS < 500)
+		BackoffMS += 2;
+	}
+}
+
+void
+CKAligner::ReleaseExclusiveLock(void)   // release exclusive R/W lock previously acquired by calling thread
+{
+#ifdef _WIN32
+ReleaseSRWLockExclusive(&m_hRwLock); // Releases SRW lock from exclusive mode
+#else
+pthread_rwlock_unlock(&m_hRwLock);
+#endif
+ReleaseSerialise();   // allow other threads to gain shared or exclusive locks
+}
+
+void
+CKAligner::ReleaseSharedLock(void)  // release SRW shared lock ownership
+{
+#ifdef _WIN32
+ReleaseSRWLockShared(&m_hRwLock); // Releases SRW lock from shared mode for calling thread
 #else
 pthread_rwlock_unlock(&m_hRwLock);
 #endif
@@ -11300,10 +11318,10 @@ char *pszInfile;
 
 int NumInputFilesProcessed;
 
-AcquireLock(true);
+AcquireExclusiveLock();
 m_bAllReadsLoaded = false;
 m_LoadReadsRslt = eBSFSuccess;
-ReleaseLock(true);
+ReleaseExclusiveLock();
 
 // first try to load as pre-processed reads '.rds' (as generated by 'simreads' or 'genreads')
 // if unable to load as a '.rds' then try to load as raw fasta/fastq
@@ -11311,10 +11329,10 @@ ReleaseLock(true);
 if(((Rslt = (teBSFrsltCodes)LoadReads(m_ppszPE1InputFiles[0])) < eBSFSuccess) && Rslt != eBSFerrNotBioseq )
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to load reads from %s",m_ppszPE1InputFiles[0]);
-	AcquireLock(true);
+	AcquireExclusiveLock();
 	*pRslt = Rslt;
 	m_bAllReadsLoaded = true;
-	ReleaseLock(true);
+	ReleaseExclusiveLock();
 	return(Rslt);
 	}
 
@@ -11327,10 +11345,10 @@ if(Rslt != eBSFerrNotBioseq)
 		}
 	else
 		Rslt = eBSFSuccess;
-	AcquireLock(true);
+	AcquireExclusiveLock();
 	*pRslt = Rslt;
 	m_bAllReadsLoaded = true;
-	ReleaseLock(true);
+	ReleaseExclusiveLock();
 	return(Rslt);
 	}
 
@@ -11340,7 +11358,7 @@ if(m_hInFile != -1)
 	m_hInFile = -1;
 	}
 
-AcquireLock(true);
+AcquireExclusiveLock();
 m_bAllReadsLoaded = false;
 memset(&m_FileHdr,0,sizeof(tsBSFRdsHdr));
 m_FileHdr.Magic[0] = 'b'; m_FileHdr.Magic[1] = 'i'; m_FileHdr.Magic[2] = 'o'; m_FileHdr.Magic[3] = 'r';
@@ -11358,15 +11376,15 @@ m_NumReadsLoaded = 0;
 m_UsedReadHitsMem = 0;
 m_FinalReadID = 0;
 m_NumDescrReads = 0;
-ReleaseLock(true);
+ReleaseExclusiveLock();
 
 if(m_FileHdr.FlagsPR && (m_NumPE1InputFiles < 1 || (m_NumPE1InputFiles != m_NumPE2InputFiles)))
 	{
 	Rslt = eBSFerrParams;
-	AcquireLock(true);
+	AcquireExclusiveLock();
 	*pRslt = Rslt;
 	m_bAllReadsLoaded = true;
-	ReleaseLock(true);
+	ReleaseExclusiveLock();
 	return(Rslt);
 	}
 
@@ -11381,11 +11399,11 @@ if(!m_FileHdr.FlagsPR)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to glob '%s",m_ppszPE1InputFiles[Idx]);
 			Rslt = eBSFerrOpnFile;
-			AcquireLock(true);
+			AcquireExclusiveLock();
 			*pRslt = Rslt;
 			m_bAllReadsLoaded = true;
 			m_LoadReadsRslt = Rslt;
-			ReleaseLock(true);
+			ReleaseExclusiveLock();
 			return(Rslt);	// treat as though unable to open file
 			}
 
@@ -11406,11 +11424,11 @@ if(!m_FileHdr.FlagsPR)
 				{
 				if(m_TermBackgoundThreads == 0)
 					gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Load failed for input raw sequence file '%s'\n",pszInfile);
-				AcquireLock(true);
+				AcquireExclusiveLock();
 				*pRslt = Rslt;
 				m_bAllReadsLoaded = true;
 				m_LoadReadsRslt = Rslt;
-				ReleaseLock(true);
+				ReleaseExclusiveLock();
 				return(Rslt);
 				}
 			NumInputFilesProcessed += 1;
@@ -11430,11 +11448,11 @@ else
 		if(Rslt != eBSFSuccess)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Load failed for input raw sequence PE files '%s' and '%s'\n",m_ppszPE1InputFiles[FileID],m_ppszPE2InputFiles[FileID]);
-			AcquireLock(true);
+			AcquireExclusiveLock();
 			*pRslt = Rslt;
 			m_bAllReadsLoaded = true;
 			m_LoadReadsRslt = Rslt;
-			ReleaseLock(true);
+			ReleaseExclusiveLock();
 			return(Rslt);
 			}
 		NumInputFilesProcessed += 2;
@@ -11444,16 +11462,16 @@ gDiagnostics.DiagOut(eDLInfo,gszProcName,"%d raw sequence file%s parsed and read
 if(NumInputFilesProcessed == 0)
 	{
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Nothing to do, no raw sequence files to be filtered");
-	AcquireLock(true);
+	AcquireExclusiveLock();
 	*pRslt = Rslt;
 	m_bAllReadsLoaded = true;
 	m_LoadReadsRslt = eBSFerrNoEntries;
-	ReleaseLock(true);
+	ReleaseExclusiveLock();
 	return(Rslt);
 	}
 
 // can now update header with final numbers
-AcquireLock(true);
+AcquireExclusiveLock();
 m_FileHdr.NumRds = m_NumDescrReads;
 m_FileHdr.OrigNumReads = m_NumDescrReads;
 m_FileHdr.TotReadsLen = m_DataBuffOfs;
@@ -11462,7 +11480,7 @@ m_NumReadsLoaded = m_NumDescrReads;
 m_LoadReadsRslt = m_NumReadsLoaded > 0 ? eBSFSuccess : eBSFerrNoEntries;
 m_bAllReadsLoaded = true;
 *pRslt = Rslt;
-ReleaseLock(true);
+ReleaseExclusiveLock();
 return(Rslt);
 }
 
@@ -11485,14 +11503,12 @@ size_t memreq;
 if(m_pReadHits == NULL)
 	{
 	memreq = cDataBuffAlloc;
-	AcquireSerialise();
-	AcquireLock(true);
+	AcquireExclusiveLock();
 #ifdef _WIN32
 	m_pReadHits = (tsReadHit *) malloc((size_t)memreq);
 	if(m_pReadHits == NULL)
 		{
-		ReleaseLock(true);
-		ReleaseSerialise();
+		ReleaseExclusiveLock();
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEntry: Memory allocation of %zd bytes failed",(int64_t)memreq);
 		return(eBSFerrMem);
 		}
@@ -11502,24 +11518,21 @@ if(m_pReadHits == NULL)
 	if(m_pReadHits == MAP_FAILED)
 		{
 		m_pReadHits = NULL;
-		ReleaseLock(true);
-		ReleaseSerialise();
+		ReleaseExclusiveLock();
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEntry: Memory allocation of %zd bytes through mmap()  failed",(int64_t)memreq,strerror(errno));
 		return(eBSFerrMem);
 		}
 #endif
 	m_AllocdReadHitsMem = memreq;
 	m_DataBuffOfs = 0;
-	ReleaseLock(true);
-	ReleaseSerialise();
+	ReleaseExclusiveLock();
 	}
 
 // need to allocate more memory? NOTE: allowing margin of 16K
 if((m_AllocdReadHitsMem - m_DataBuffOfs) < (sizeof(tsReadHit) +  ReadLen + DescrLen + 0x03fff))
 	{
 	memreq = m_AllocdReadHitsMem + cDataBuffAlloc;
-	AcquireSerialise();
-	AcquireLock(true);
+	AcquireExclusiveLock();
 #ifdef _WIN32
 	pTmpAlloc = (uint8_t *) realloc(m_pReadHits,memreq);
 	if(pTmpAlloc == NULL)
@@ -11532,18 +11545,17 @@ if((m_AllocdReadHitsMem - m_DataBuffOfs) < (sizeof(tsReadHit) +  ReadLen + Descr
 #endif
 
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEntry: Memory reallocation to %zd bytes failed - %s",memreq,strerror(errno));
-		ReleaseLock(true);
-		ReleaseSerialise();
+		ReleaseExclusiveLock();
 		return(eBSFerrMem);
 		}
 	m_pReadHits = (tsReadHit *)pTmpAlloc;
 	m_AllocdReadHitsMem = memreq;
-	ReleaseLock(true);
-	ReleaseSerialise();
+	ReleaseExclusiveLock();
 	}
 
 pReadHit = (tsReadHit *)((uint8_t *)m_pReadHits + m_DataBuffOfs);
 m_DataBuffOfs += sizeof(tsReadHit) + ReadLen + DescrLen;
+
 memset(pReadHit,0,sizeof(tsReadHit));
 pReadHit->PrevSizeOf = m_PrevSizeOf;
 pReadHit->ReadID = ++m_NumDescrReads;
@@ -11761,8 +11773,7 @@ if(bIsPairReads)
 		}
 	}
 
-AcquireSerialise();
-AcquireLock(true);
+AcquireExclusiveLock();
 if(m_pReadHits == NULL)
 	{
 	m_AllocdReadHitsMem = (size_t)ReqAllocSize;
@@ -11770,8 +11781,7 @@ if(m_pReadHits == NULL)
 	m_pReadHits = (tsReadHit *) malloc((size_t)m_AllocdReadHitsMem);
 	if(m_pReadHits == NULL)
 		{
-		ReleaseLock(true);
-		ReleaseSerialise();
+		ReleaseExclusiveLock();
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Concatenated sequences memory allocation of %zd bytes - %s",(int64_t)m_AllocdReadHitsMem,strerror(errno));
 		PE1Fasta.Close();
 		m_AllocdReadHitsMem = 0;
@@ -11782,8 +11792,7 @@ if(m_pReadHits == NULL)
 	m_pReadHits = (tsReadHit *)mmap(NULL,m_AllocdReadHitsMem, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pReadHits == MAP_FAILED)
 		{
-		ReleaseLock(true);
-		ReleaseSerialise();
+		ReleaseExclusiveLock();
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Concatenated sequences memory of %zd bytes through mmap()  failed - %s",(int64_t)m_AllocdReadHitsMem,strerror(errno));
 		PE1Fasta.Close();
 		m_pReadHits = NULL;
@@ -11809,6 +11818,7 @@ else
 #endif
 		if(pDstSeq == NULL)
 			{
+			ReleaseExclusiveLock();
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddSeq: Memory re-allocation to %zd bytes - %s",memreq,strerror(errno));
 			PE1Fasta.Close();
 			return(eBSFerrMem);
@@ -11817,8 +11827,7 @@ else
 		m_pReadHits = (tsReadHit *)pDstSeq;
 		}
 	}
-ReleaseLock(true);
-ReleaseSerialise();
+ReleaseExclusiveLock();
 
 PE1NumUnsupportedBases = 0;
 PE1NumDescrReads = 0;
