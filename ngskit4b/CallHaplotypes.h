@@ -32,7 +32,7 @@ const double cScorePBA2MinProp = 0.35;		// score PBA as 2 if allele proportion o
 const double cScorePBA1MinProp = 0.20;		// score PBA as 1 if allele proportion of all counts is >= this threshold and coverage is >= 5
 // when coverage is less than 5 (usually the case with progeny reads) and thus confidence in alleles is reduced then scores are reduced
 const double cScorePBA2MinLCProp = 0.70;		// score PBA as 2 if allele proportion of all counts is >= this threshold and coverage is < 5
-const double cScorePBA1MinLCProp = 0.30;		// score PBA as 1 if allele proportion of all counts is >= this threshold and coverage is >= 5
+const double cScorePBA1MinLCProp = 0.30;		// score PBA as 1 if allele proportion of all counts is >= this threshold and coverage is < 5
 
 const uint32_t cAllocProgenyFndrAligns = 10000000; // initial allocation for progeny to founder allele stacks alignments
 

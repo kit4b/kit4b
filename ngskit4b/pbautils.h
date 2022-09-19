@@ -14,18 +14,20 @@ const uint32_t cOutBuffSize = 0x6fffffff;			// buffer size for file writes
 const int cMaxAXAllocBuffChunk = 0x00ffffff;		// buffer for fasta sequences is realloc'd in this sized chunks 
 const uint32_t cMaxPBAutilityThreads = 16;			// relatively few threads likely to be required
 
-const char cDfltRefAssemb[] = { "Wm82.v2" };			// default reference assembly if none specified
-const char cDfltSeqID[] = { "S000000" };				// default sequence identifier if none specified
-const char cDfltExprID[] = { "E000000" };				// default experiment identifier if none specified
+const double cDfltGTPropThres = 0.05;				// default proportion threshold when processing for genotype VCF for both missing sample alignments and heterozygosity between aligned samples
+const char cDfltRefAssemb[] = { "Wm82.v2" };		// default reference assembly if none specified
+const char cDfltSeqID[] = { "S000000" };			// default sequence identifier if none specified
+const char cDfltExprID[] = { "E000000" };			// default experiment identifier if none specified
 
 
 // currently only the default processing mode
 typedef enum TAG_ePBAuMode {
-	ePBAu2Fasta = 0,	// generate Fasta assembly from PBA
-	ePBAu2PBA,			// generate PBA from Fasta
+	ePBAu2Fasta = 0,		// generate Fasta assembly from PBA
+	ePBAu2PBA,				// generate PBA from Fasta
 	ePBAu2PBAConcordance,	// report on degree of allelic concordance - proportions of loci where all samples had alignments and all samples with exactly same alleles
 	ePBAu2WIGConcordance,	// report on degree of coverage depth concordance - proportions of coverage depth (WIG) where all samples had alignments and all samples with near same coverage
-	ePBAu2VCF,// output a VCF containing allelic differences between a PBA and the original reference assembly from which the PBA was generated
+	ePBAu2AVCF,				// generate a allelic variant VCF
+	ePBAu2GVCF,				// generate a genotype VCF
 	ePBAuPlaceholder		// used as a placeholder to mark number of processing modes
 } ePBAuMode;
 
@@ -106,8 +108,11 @@ class CPBAutils
 	uint32_t m_NumIncludeChroms;				// number of RE include chroms
 	uint32_t m_NumExcludeChroms;				// number of RE exclude chroms
 
-	uint32_t m_PBAsTrim5;			// trim this many aligned PBAs from 5' end of aligned segments - reduces false alleles due to sequencing errors
-	uint32_t m_PBAsTrim3;			// trim this many aligned PBAs from 3' end of aligned segments - reduces false alleles due to sequencing errors
+	uint32_t m_PBAsTrim5;				// trim this many aligned PBAs from 5' end of aligned segments - reduces false alleles due to sequencing errors
+	uint32_t m_PBAsTrim3;				// trim this many aligned PBAs from 3' end of aligned segments - reduces false alleles due to sequencing errors
+
+	double m_GTPropNAThres;				// when genotyping VCF then proportion of non-aligned calls over all samples must be < this threshold
+	double m_GTPropHetThres;			// when genotyping VCF then proportion of heterozygous calls must be >= this threshold
 
 	uint32_t m_WIGChromID;				// current WIG span is on this chromosome
 	uint32_t m_WIGRptdChromID;			// previously reported WIG chrom
@@ -125,12 +130,18 @@ class CPBAutils
 	CBEDfile* m_pBedFile;	// BED file containing reference assembly chromosome names and sizes
 	CUtility m_RegExprs;            // regular expression processing
 
+	int32_t m_MRA_ROIChromID;	// most recently accessed region of interest chrom identifier (ROI BED chrom identifier) 
+	int32_t m_MRA_ChromID;		// most recently accessed chrom identifier (internal chrom identifier)
+	CBEDfile *m_pROIFile;			// BED file containing regions of interest
+
 	bool					// true if chrom is accepted, false if chrom not accepted
 		AcceptThisChromID(uint32_t ChromID);
 
 	bool					// true if chrom is accepted, false if chrom not accepted
 		AcceptThisChromName(char* pszChrom,   // chromosome name
 							bool bKnown = true);	// if true then chromosome must have been previously processed and accepted by LoadChromSizes() processing - size is known!
+
+	uint8_t *m_pReportGTSample; // alloc'd to hold array to hold values for all genotyped samples indexed by SampleID, currently bit 0 flags if that sample is to be reported in VCF GT file
 
 	bool m_bMutexesCreated;		// will be set true if synchronisation mutexes have been created
 	int CreateMutexes(void);
@@ -173,8 +184,11 @@ class CPBAutils
 		LocateReadset(char* pszReadset, // associate unique identifier with this readset name
 			uint8_t ReadsetType);	// 0: founder, 1: progeny, 2: control
 
-	etSeqBase
-		Alleles2Base(uint8_t PBA);           // identify and return consensus base from a possibly diallelic PBA
+	etSeqBase Alleles2Base(uint8_t PBA);         // return consensus base from a possibly diallelic PBA
+
+	uint8_t ConsensusHaploid(uint8_t PBA); // returns consensus haploid allele as PBA from a possibly polyallelic PBA
+
+	uint8_t ConsensusDiploid(uint8_t PBA); // returns consensus diploid alleles as PBA from a possibly polyallelic PBA
 
 	char
 		PBAFastaBase(uint8_t PBA); 	// returns Fasta base char - 'a','c','g','t' or 'n' - as being the consensus allele in PBA
@@ -202,6 +216,8 @@ class CPBAutils
 	bool  // false: no previous memory allocated for containing the chromosome PBAs, true: allocation was present and has been deleted
 		DeleteSampleChromPBAs(uint32_t SampleID,   // Sample identifier
 			uint32_t ChromID);    // chrom identifier
+
+	void DeleteAllChromPBAs(void); // delete all currently loaded PBAs - all sample chroms
 
 	tsChromMetadata*								// returned pointer to chromosome metadata
 		LocateChromMetadataFor(uint32_t ReadSetID,		// readset identifier 
@@ -263,17 +279,32 @@ class CPBAutils
 
 	int32_t	LoadChromSizes(char* pszBEDFile); // BED file containing chromosome names and sizes
 
-	int32_t GenAllelicDiffs(int32_t RefPBAID,	// reference PBAs identifier
+	int32_t GenAllelicVCF(int32_t RefPBAID,	// reference PBAs identifier
 						int32_t AllelicPBAID);	// PBAs with allelic differences
+
+	int32_t GenGenotypeVCF(int32_t RefPBAID,	// reference identifier
+						int32_t NumSamples, 	// number of PBA samples to report on allelic variations relative to reference
+						double GTPropNAThres,		// when genotyping VCF then proportion of non-aligned calls over all samples must be < this threshold
+						double GTPropHetThres);	// when genotyping VCF then proportion of heterozygous calls must be >= this threshold
+
+	int32_t InitialiseGTSampleFiltering(char *pszGTSampleFiltFile); // pszFiltFile contains sample names which are to be reported on in the generated GT VCF file, filter file contains 1 name per line
+
+	bool ReportGTSample(int32_t SampleID); // returns true if this samples genotype is to be reported
+
+	bool AcceptROIChromID(int32_t ChromID);	// testing if this chromosome can be mapped to any ROI chromosome
+	bool AcceptROILoci(int32_t ChromID,		// chromosome to map onto ROI chromosome
+					uint32_t Loci);			// testing if this loci is within any ROI on the mapped ChromID
 
 public:
 	CPBAutils();	// constructor
 	~CPBAutils();	// destructor
 
-	int Process(ePBAuMode PMode,	// ePBAu2Fasta: PBA to Fasta, ePBAu2PBA: Fasta to PBA, ePBAu2PBAConcordance: concordance over all PBA samples, ePBAu2WIGConcordance: concordance over all WIG samples
+	int Process(ePBAuMode PMode,	// processing mode: ePBAu2Fasta PBA to Fasta, ePBAu2PBA Fasta to PBA, ePBAu2PBAConcordance concordance over PBA samples, ePBAu2WIGConcordance concordance over WIG samples, ePBAu2AVCF allelic variant VCF, ePBAu2GVCF allelic genotype VCF
 		int32_t LimitPBAs,			// limit number of loaded PBA files to this many. 1...cMaxPBAReadsets
 		int32_t PBAsTrim5,			// trim this many aligned PBAs from 5' end of aligned segments - reduces false alleles due to sequencing errors
 		int32_t PBAsTrim3,			// trim this many aligned PBAs from 3' end of aligned segments - reduces false alleles due to sequencing errors
+		double GTPropNAThres,		// when genotyping VCF then proportion of non-aligned calls over all samples must be < this threshold
+		double GTPropHetThres,		// when genotyping VCF then proportion of heterozygous calls must be >= this threshold
 		char* pszRefAssemb,			// reference assembly identifier
 		char* pszRefAssembFile,		// PBA file containing reference assembly sequences
 		char* pszChromFile,			// BED file containing chromosome names and sizes
@@ -282,6 +313,8 @@ public:
 		int NumInputFiles,			// number of input founder file specs
 		char* pszInputFiles[],		// names of input founder PBA files (wildcards allowed)
 		char* pszOutFile,			// output to this file
+		char *pszROIFile,			// optional BED file containing regions of interest
+		char *pszGTSampleFiltFile,	// optional file containing those readseq/sample names for whom only their genotypes are to be reported
 		int NumIncludeChroms,		// number of chromosome regular expressions to include
 		char* pszIncludeChroms[],	// array of include chromosome regular expressions
 		int NumExcludeChroms,		// number of chromosome expressions to exclude

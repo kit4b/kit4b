@@ -23,40 +23,40 @@ Please contact Dr Stuart Stephen < stuartjs@g3web.com > if you have any question
 
 #include "../libkit4b/bgzf.h"
 
-int CallHaplotypes(eModeCSH PMode,	// processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons, 3: allelic haplotype grouping,4: coverage haplotype grouping, 5: post-process haplotype groupings for QGLs,  6: post-process to WIG, 7: Hyperconserved
-	        int32_t LimitPrimaryPBAs,        // limit number of loaded primary or founder PBA files to this many. 0: no limits, > 0 sets upper limit
-			int32_t ExprID,			         // assign this experiment identifier for this PBA analysis
-			int32_t SeedRowID,               // generated CSVs will contain monotonically incremented row identifiers seeded with this identifier  
-			int32_t GrpHapBinSize,           // when grouping into haplotypes (processing mode 3) then use this non-overlapping bin size for accumulation of differentials between all founder PBAs
-	        int32_t NumHapGrpPhases,         // number of phases over which to converge group consensus when haplotype clustering into groups - moves the balance between optimal group consensus and processing resource
-			int32_t MinCentClustDist,        // haplotype groupings - in processing mode 3/4 only - minimum group centroid clustering distance
-			int32_t MaxCentClustDist,        // haplotype groupings - in processing mode 3/4 only - maximum group centroid clustering distance
-			int32_t MaxClustGrps,            // haplotype groupings - in processing mode 3 only - targeted maximum number of groups
+int CallHaplotypes(eModeCSH PMode,			// processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons, 3: allelic haplotype grouping,4: coverage haplotype grouping, 5: post-process haplotype groupings for QGLs,  6: post-process to WIG, 7: Hyperconserved
+			int32_t LimitPrimaryPBAs,		// limit number of loaded primary or founder PBA files to this many. 0: no limits, > 0 sets upper limit
+			int32_t ExprID,					// assign this experiment identifier for this PBA analysis
+			int32_t SeedRowID,				// generated CSVs will contain monotonically incremented row identifiers seeded with this identifier  
+			int32_t GrpHapBinSize,			// when grouping into haplotypes (processing mode 3) then use this non-overlapping bin size for accumulation of differentials between all founder PBAs
+			int32_t NumHapGrpPhases,		// number of phases over which to converge group consensus when haplotype clustering into groups - moves the balance between optimal group consensus and processing resource
+			int32_t MinCentClustDist,		// haplotype groupings - in processing mode 3/4 only - minimum group centroid clustering distance
+			int32_t MaxCentClustDist,		// haplotype groupings - in processing mode 3/4 only - maximum group centroid clustering distance
+			int32_t MaxClustGrps,			// haplotype groupings - in processing mode 3 only - targeted maximum number of groups
 			uint32_t SparseRepPropGrpMbrs,	// only apply sparse representative imputation if number of haplotype group members at least this 
 			double SparseRepProp,			// if highest frequency (consensus) allele is 0x00 (no coverage) then if next highest frequency allele is at least this proportion of all members in haplotype group then treat next highest allele as
 											// being as being the consensus. Objective to obtain an imputed allele in regions of sparse haplotype coverage
 			int32_t MaxReportGrpQGLs,		// when calling group QGLs then, if non-zero - report this many highest scoring QGLs
-			int32_t MinQGLGrpMembers,        // groups with fewer than this number of members - in processing mode 5 only -are treated as noise alleles these groups are not used when determining QGL group specific major alleles
-			double MinQGLGrpPropTotSamples,  // haplotype groups - in processing mode 5 only -containing less than this proportion of all samples are treated as if containing noise and alleles in these groups are not used when determining QGL group specific major alleles 
-			double MinQGLFmeasure,           // only accepting QGL loci with at least this F-measure score
-			int32_t FndrTrim5,			     // trim this many aligned PBAs from 5' end of founder aligned segments - reduces false alleles due to sequencing errors
-			int32_t FndrTrim3,			     // trim this many aligned PBAs from 3' end of founder aligned segments - reduces false alleles due to sequencing errors
-			int32_t ProgTrim5,			     // trim this many aligned PBAs from 5' end of progeny aligned segments - reduces false alleles due to sequencing errors
-			int32_t ProgTrim3,			     // trim this many aligned PBAs from 3' end of progeny aligned segments - reduces false alleles due to sequencing errors
-			int32_t WWRLProxWindow,		     // proximal window size for Wald-Wolfowitz runs test
-			int32_t OutliersProxWindow,	     // proximal window size for outliers reduction
-			char *pszMaskBPAFile,	         // optional masking input BPA file, only process BPAs which are intersect of these BPAs and progeny plus founder BPAs
-			char* pszChromFile,			// BED file containing reference assembly chromosome names and sizes
-			int NumFounderInputFiles,	     // number of input founder file specs
-			char *pszFounderInputFiles[],	 // names of input founder PBA files (wildcards allowed)
-			int NumProgenyInputFiles,	// number of input progeny file specs
-			char* pszProgenyInputFiles[],		// names of input progeny PBA files (wildcards allowed)
-			char* pszOutFile,		// loci haplotype calls output file (CSV format)
+			int32_t MinQGLGrpMembers,		// groups with fewer than this number of members - in processing mode 5 only -are treated as noise alleles these groups are not used when determining QGL group specific major alleles
+			double MinQGLGrpPropTotSamples,	// haplotype groups - in processing mode 5 only -containing less than this proportion of all samples are treated as if containing noise and alleles in these groups are not used when determining QGL group specific major alleles 
+			double MinQGLFmeasure,			// only accepting QGL loci with at least this F-measure score
+			int32_t FndrTrim5,				// trim this many aligned PBAs from 5' end of founder aligned segments - reduces false alleles due to sequencing errors
+			int32_t FndrTrim3,				// trim this many aligned PBAs from 3' end of founder aligned segments - reduces false alleles due to sequencing errors
+			int32_t ProgTrim5,				// trim this many aligned PBAs from 5' end of progeny aligned segments - reduces false alleles due to sequencing errors
+			int32_t ProgTrim3,				// trim this many aligned PBAs from 3' end of progeny aligned segments - reduces false alleles due to sequencing errors
+			int32_t WWRLProxWindow,			// proximal window size for Wald-Wolfowitz runs test
+			int32_t OutliersProxWindow,		// proximal window size for outliers reduction
+			char *pszMaskBPAFile,			// optional masking input BPA file, only process BPAs which are intersect of these BPAs and progeny plus founder BPAs
+			char* pszChromFile,				// BED file containing reference assembly chromosome names and sizes
+			int NumFounderInputFiles,		// number of input founder file specs
+			char *pszFounderInputFiles[],	// names of input founder PBA files (wildcards allowed)
+			int NumProgenyInputFiles,		// number of input progeny file specs
+			char* pszProgenyInputFiles[],	// names of input progeny PBA files (wildcards allowed)
+			char* pszOutFile,				// loci haplotype calls output file (CSV format)
 			int	NumIncludeChroms,			// number of chromosome regular expressions to include
 			char **ppszIncludeChroms,		// array of include chromosome regular expressions
 			int	NumExcludeChroms,			// number of chromosome expressions to exclude
 			char **ppszExcludeChroms,		// array of exclude chromosome regular expressions
-			int NumThreads);		// number of worker threads to use
+			int NumThreads);				// number of worker threads to use
 
 #ifdef _WIN32
 int callhaplotypes(int argc, char *argv[])

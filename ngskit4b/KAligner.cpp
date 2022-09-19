@@ -152,7 +152,7 @@ char szOutBAIFile[_MAX_PATH];
 Init(); 
 
 m_bPackedBaseAlleles = (FMode == eFMPBA) ? true : false;
-if(pszExperimentName == NULL || pszExperimentName[0] == '\0')
+if(pszExperimentName == nullptr || pszExperimentName[0] == '\0')
 	strcpy(m_szExperimentName,"Unspecified");
 else
 	strcpy(m_szExperimentName,pszExperimentName);		// labels this experiment
@@ -176,7 +176,7 @@ else
 m_pszOutBAIFile = szOutBAIFile;
 
 m_pszSNPRsltsFile = pszSNPFile;
-if(m_FMode != eFMbed && pszSNPFile != NULL && pszSNPFile[0] != '\0')
+if(m_FMode != eFMbed && pszSNPFile != nullptr && pszSNPFile[0] != '\0')
 	{
 	// check if file extension is VCF, if so then output SNPs as VCF instead of the default CSV
 	int SNPFileNameLen;
@@ -202,7 +202,7 @@ m_pszNoneAlignFile = pszNoneAlignFile;
 m_pszStatsFile = pszStatsFile;
 m_pszSfxFile = pszSfxFile;
 
-if(bPEInsertLenDist && m_pszStatsFile != NULL && m_pszStatsFile[0] != '\0')
+if(bPEInsertLenDist && m_pszStatsFile != nullptr && m_pszStatsFile[0] != '\0')
 	{
 	strcpy(szPEInsertDistFile,pszStatsFile);
 	strcat(szPEInsertDistFile,".peinserts.csv");
@@ -211,7 +211,7 @@ if(bPEInsertLenDist && m_pszStatsFile != NULL && m_pszStatsFile[0] != '\0')
 else
 	{
 	bPEInsertLenDist = false;
-	m_pszPEInsertDistFile = NULL;
+	m_pszPEInsertDistFile = nullptr;
 	}
 
 m_pszSitePrefsFile = pszSitePrefsFile;
@@ -282,9 +282,9 @@ if(CreateMutexes()!=eBSFSuccess)
 m_mtqsort.SetMaxThreads(NumThreads);
 
 // load contaminants if user has specified a contaminant sequence file
-if(pszContamFile != NULL && pszContamFile[0] != '\0')
+if(pszContamFile != nullptr && pszContamFile[0] != '\0')
 	{
-	if((m_pContaminants = new CContaminants)==NULL)
+	if((m_pContaminants = new CContaminants)==nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to instantiate CContaminants");
 		Reset(false);
@@ -309,11 +309,11 @@ if(NumIncludeChroms > 0 || NumExcludeChroms > 0)
 		}
 
 // if specified then load high priority regions from BED file
-m_pPriorityRegionBED = NULL;
-if(pszPriorityRegionFile != NULL && pszPriorityRegionFile[0] != '\0')
+m_pPriorityRegionBED = nullptr;
+if(pszPriorityRegionFile != nullptr && pszPriorityRegionFile[0] != '\0')
 	{
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Loading high priority regions BED file '%s'", pszPriorityRegionFile);
-	if((m_pPriorityRegionBED = new CBEDfile()) == NULL)
+	if((m_pPriorityRegionBED = new CBEDfile()) == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to instantiate CBEDfile");
 		Reset(false);
@@ -321,7 +321,7 @@ if(pszPriorityRegionFile != NULL && pszPriorityRegionFile[0] != '\0')
 		}
 	if((Rslt=m_pPriorityRegionBED->Open(pszPriorityRegionFile))!=eBSFSuccess)
 		{
-		while(m_pSfxArray->NumErrMsgs())
+		while(m_pPriorityRegionBED->NumErrMsgs())
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,m_pPriorityRegionBED->GetErrMsg());
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to open high priority regions BED file '%s'",pszPriorityRegionFile);
 		Reset(false);
@@ -333,7 +333,7 @@ if(pszPriorityRegionFile != NULL && pszPriorityRegionFile[0] != '\0')
 
 // open bioseq file containing suffix array for targeted assembly to align reads against
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Loading suffix array file '%s'", pszSfxFile);
-if((m_pSfxArray = new CSfxArray()) == NULL)
+if((m_pSfxArray = new CSfxArray()) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to instantiate CSfxArray");
 	Reset(false);
@@ -358,7 +358,7 @@ gDiagnostics.DiagOut(eDLInfo,gszProcName,"Genome Assembly Name: '%s' Descr: '%s'
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Assembly has blocks: %d, max block size: %zu",SfxHeader.NumSfxBlocks,SfxHeader.SfxBlockSize);
 
 // if user has specified that there are constraints on loci bases then need to load the loci constraints file
-if(pszLociConstraintsFile != NULL && pszLociConstraintsFile[0] != '\0')
+if(pszLociConstraintsFile != nullptr && pszLociConstraintsFile[0] != '\0')
 	{
 	if((Rslt=LoadLociConstraints(pszLociConstraintsFile)) < 0)
 		{
@@ -403,7 +403,7 @@ if(m_MLMode > eMLrand && m_MLMode < eMLall)
 #ifdef _WIN32
 	m_pMultiHits = (tsReadHit *) malloc(memreq);	// initial and perhaps the only allocation
 
-	if(m_pMultiHits == NULL)
+	if(m_pMultiHits == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %zd bytes - %s",(int64_t)memreq,strerror(errno));
 		Reset(false);
@@ -411,11 +411,11 @@ if(m_MLMode > eMLrand && m_MLMode < eMLall)
 		}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-	m_pMultiHits = (tsReadHit *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+	m_pMultiHits = (tsReadHit *)mmap(nullptr,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pMultiHits == MAP_FAILED)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %zd bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
-		m_pMultiHits = NULL;
+		m_pMultiHits = nullptr;
 		Reset(false);
 		return(eBSFerrMem);
 		}
@@ -435,7 +435,7 @@ if(m_MLMode >= eMLall || m_FMode == eFMsamAll)
 #ifdef _WIN32
 	m_pMultiAll = (tsReadHit *) malloc(memreq);	// initial and perhaps the only allocation
 
-	if(m_pMultiAll == NULL)
+	if(m_pMultiAll == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %zd bytes for multiAll - %s",(int64_t)memreq,strerror(errno));
 		Reset(false);
@@ -443,11 +443,11 @@ if(m_MLMode >= eMLall || m_FMode == eFMsamAll)
 		}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-	m_pMultiAll = (tsReadHit *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+	m_pMultiAll = (tsReadHit *)mmap(nullptr,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pMultiAll == MAP_FAILED)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %zd bytes for multiAll through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
-		m_pMultiAll = NULL;
+		m_pMultiAll = nullptr;
 		Reset(false);
 		return(eBSFerrMem);
 		}
@@ -465,14 +465,14 @@ if((Rslt=CreateOrTruncResultFiles())!=eBSFSuccess)
 	m_TermBackgoundThreads = 1;	// need to immediately self-terminate?
 	m_pSfxArray->Reset(false);
 #ifdef _WIN32
-	if(m_hThreadLoadReads != NULL)
+	if(m_hThreadLoadReads != nullptr)
 		{
 		while(WAIT_TIMEOUT == WaitForSingleObject(m_hThreadLoadReads, 5000))
 			{
 			gDiagnostics.DiagOut(eDLInfo,gszProcName,"Progress: waiting for reads load thread to terminate");
 			}
 		CloseHandle(m_hThreadLoadReads);
-		m_hThreadLoadReads = NULL;
+		m_hThreadLoadReads = nullptr;
 		}
 #else
 	if(m_ThreadLoadReadsID != 0)
@@ -481,7 +481,7 @@ if((Rslt=CreateOrTruncResultFiles())!=eBSFSuccess)
 		int JoinRlt;
 		clock_gettime(CLOCK_REALTIME, &ts);
 		ts.tv_sec += 5;
-		while((JoinRlt = pthread_timedjoin_np(m_ThreadLoadReadsID, NULL, &ts)) != 0)
+		while((JoinRlt = pthread_timedjoin_np(m_ThreadLoadReadsID, nullptr, &ts)) != 0)
 			{
 			gDiagnostics.DiagOut(eDLInfo,gszProcName,"Progress: waiting for reads load thread to terminate");
 			ts.tv_sec += 60;
@@ -572,7 +572,7 @@ m_OrigNumReadsLoaded = m_NumReadsLoaded;		// make a copy of actual number of rea
 if(m_MLMode >= eMLall)		// a little involved as need to reuse m_pReadHits ptrs so sorting and reporting of multi-SAM hits will be same as if normal processing...
 	{
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Treating accepted %d multialigned reads as uniquely aligned %d source reads in subsequent processing",m_TotAcceptedAsMultiAligned,m_TotLociAligned - m_TotAcceptedAsUniqueAligned);
-	if(m_pReadHits != NULL)
+	if(m_pReadHits != nullptr)
 		{
 #ifdef _WIN32
 		free(m_pReadHits);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -580,10 +580,10 @@ if(m_MLMode >= eMLall)		// a little involved as need to reuse m_pReadHits ptrs s
 		if(m_pReadHits != MAP_FAILED)
 			munmap(m_pReadHits,m_AllocdReadHitsMem);
 #endif
-		m_pReadHits = NULL;
+		m_pReadHits = nullptr;
 		}
 	m_pReadHits = m_pMultiAll;
-	m_pMultiAll = NULL;
+	m_pMultiAll = nullptr;
 	m_AllocdReadHitsMem = m_AllocMultiAllMem;
 	m_UsedReadHitsMem = m_NxtMultiAllOfs;
 	m_NumReadsLoaded = m_NumMultiAll;
@@ -591,10 +591,10 @@ if(m_MLMode >= eMLall)		// a little involved as need to reuse m_pReadHits ptrs s
 	m_AllocMultiAllMem = 0;
 	m_NxtMultiAllOfs = 0;
 	m_NumMultiAll = 0;
-	if(m_ppReadHitsIdx != NULL)
+	if(m_ppReadHitsIdx != nullptr)
 		{
 		delete []m_ppReadHitsIdx;
-		m_ppReadHitsIdx = NULL;
+		m_ppReadHitsIdx = nullptr;
 		m_AllocdReadHitsIdx = 0;
 		}
 	m_ppReadHitsIdx = 0;
@@ -702,11 +702,11 @@ if(NumExcludeChroms || NumIncludeChroms)
 	}
 
 // apply priority region filtering if requested
-if(m_pPriorityRegionBED != NULL && m_bFiltPriorityRegions)
+if(m_pPriorityRegionBED != nullptr && m_bFiltPriorityRegions)
 	FiltByPriorityRegions();
 
 // user interested in the nonaligned?
-if(m_hNoneAlignFile != -1 || m_gzNoneAlignFile != NULL)
+if(m_hNoneAlignFile != -1 || m_gzNoneAlignFile != nullptr)
 	{
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Reporting of non-aligned reads started..");
 	if((Rslt=ReportNoneAligned())<eBSFSuccess)
@@ -719,7 +719,7 @@ if(m_hNoneAlignFile != -1 || m_gzNoneAlignFile != NULL)
 
 // user interested in the multialigned?
 // these only include those reads which would otherwise have been accepted but aligned to multiple loci
-if(m_hMultiAlignFile != -1 || m_gzMultiAlignFile != NULL)
+if(m_hMultiAlignFile != -1 || m_gzMultiAlignFile != nullptr)
 	{
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Reporting of multialigned reads started..");
 	if((Rslt=ReportMultiAlign()) < eBSFSuccess)
@@ -834,37 +834,37 @@ m_hSNPCentsfile = -1;
 m_hWIGSpansFile = -1;
 m_hPackedBaseAllelesFile = -1;
 m_bPackedBaseAlleles = false;
-m_gzOutFile = NULL;
-m_gzIndOutFile = NULL;
-m_gzJctOutFile = NULL;
-m_gzNoneAlignFile = NULL;
-m_gzMultiAlignFile = NULL;
-m_gzSNPfile = NULL;
-m_gzSNPCentsfile = NULL;
+m_gzOutFile = nullptr;
+m_gzIndOutFile = nullptr;
+m_gzJctOutFile = nullptr;
+m_gzNoneAlignFile = nullptr;
+m_gzMultiAlignFile = nullptr;
+m_gzSNPfile = nullptr;
+m_gzSNPCentsfile = nullptr;
 
 m_bgzOutFile = false;
 m_bgzNoneAlignFile = false;
 m_bgzMultiAlignFile = false;
 m_AllocdCovSegBuff = 0;
 m_CovSegBuffIdx = 0;
-m_pszCovSegBuff = NULL;
-m_pReadHits = NULL;
-m_ppReadHitsIdx = NULL;
-m_pMultiHits = NULL;
-m_pMultiAll = NULL;
-m_pLociPValues = NULL;
-m_pPackedBaseAlleles = NULL;
-m_pSfxArray = NULL;
-m_pPriorityRegionBED = NULL;
-m_pAllocsIdentNodes = NULL;
-m_pAllocsMultiHitLoci = NULL;
-m_pAllocsMultiHitBuff = NULL;
-m_pChromSNPs = NULL;
-m_pszLineBuff = NULL;
-m_pLenDist = NULL;
-m_pSNPCentroids = NULL;
-m_pConstraintLoci = NULL; 
-m_pContaminants = NULL;
+m_pszCovSegBuff = nullptr;
+m_pReadHits = nullptr;
+m_ppReadHitsIdx = nullptr;
+m_pMultiHits = nullptr;
+m_pMultiAll = nullptr;
+m_pLociPValues = nullptr;
+m_pPackedBaseAlleles = nullptr;
+m_pSfxArray = nullptr;
+m_pPriorityRegionBED = nullptr;
+m_pAllocsIdentNodes = nullptr;
+m_pAllocsMultiHitLoci = nullptr;
+m_pAllocsMultiHitBuff = nullptr;
+m_pChromSNPs = nullptr;
+m_pszLineBuff = nullptr;
+m_pLenDist = nullptr;
+m_pSNPCentroids = nullptr;
+m_pConstraintLoci = nullptr; 
+m_pContaminants = nullptr;
 m_WIGChromID = 0;
 m_WIGSpanLoci = 0;
 m_WIGSpanLen = 0;
@@ -933,14 +933,14 @@ m_TotAcceptedAsMultiAligned = 0;
 m_TotNotAcceptedDelta = 0;
 m_TotAcceptedHitInsts = 0;
 m_SitePrefsOfs = cDfltRelSiteStartOfs;
-m_pszOutFile = NULL;
+m_pszOutFile = nullptr;
 m_szIndRsltsFile[0] = '\0';
 m_szJctRsltsFile[0] = '\0';
 m_szCoverageSegmentsFile[0] = '\0';
 m_szDiSNPFile[0] = '\0';
-m_pszSNPRsltsFile = NULL;
-m_pszSNPCentroidFile = NULL;
-m_pszSitePrefsFile = NULL;
+m_pszSNPRsltsFile = nullptr;
+m_pszSNPCentroidFile = nullptr;
+m_pszSitePrefsFile = nullptr;
 m_MaxReadsLen = 0;
 m_MinReadsLen = 0;
 m_AvReadsLen = 0;
@@ -956,7 +956,7 @@ m_AllocPackedBaseAllelesMem = 0;
 m_NumPackedBaseAlleles = 0;
 
 #ifdef _WIN32
-m_hThreadLoadReads = NULL;
+m_hThreadLoadReads = nullptr;
 #else
 m_ThreadLoadReadsID = 0;
 #endif
@@ -1164,95 +1164,95 @@ if(m_hSNPCentsfile != -1)
 	m_hSNPCentsfile = -1;
 	}
 
-if(m_pSNPCentroids != NULL)
+if(m_pSNPCentroids != nullptr)
 	{
 	delete []m_pSNPCentroids;
-	m_pSNPCentroids = NULL;
+	m_pSNPCentroids = nullptr;
 	}
 
 
-if(m_pConstraintLoci != NULL)
+if(m_pConstraintLoci != nullptr)
 	{
 	delete []m_pConstraintLoci;
-	m_pConstraintLoci = NULL;
+	m_pConstraintLoci = nullptr;
 	}
 
-if(m_gzOutFile != NULL)
+if(m_gzOutFile != nullptr)
 	{
 	gzclose(m_gzOutFile);
-	m_gzOutFile = NULL;
+	m_gzOutFile = nullptr;
 	}
 
-if(m_gzIndOutFile != NULL)
+if(m_gzIndOutFile != nullptr)
 	{
 	gzclose(m_gzIndOutFile);
-	m_gzIndOutFile = NULL;
+	m_gzIndOutFile = nullptr;
 	}
 
-if(m_gzJctOutFile != NULL)
+if(m_gzJctOutFile != nullptr)
 	{
 	gzclose(m_gzJctOutFile);
-	m_gzJctOutFile = NULL;
+	m_gzJctOutFile = nullptr;
 	}
 
-if(m_gzNoneAlignFile != NULL)
+if(m_gzNoneAlignFile != nullptr)
 	{
 	gzclose(m_gzNoneAlignFile);
-	m_gzNoneAlignFile = NULL;
+	m_gzNoneAlignFile = nullptr;
 	}
 
-if(m_gzMultiAlignFile != NULL)
+if(m_gzMultiAlignFile != nullptr)
 	{
 	gzclose(m_gzMultiAlignFile);
-	m_gzMultiAlignFile = NULL;
+	m_gzMultiAlignFile = nullptr;
 	}
 
-if(m_gzSNPfile != NULL)
+if(m_gzSNPfile != nullptr)
 	{
 	gzclose(m_gzSNPfile);
-	m_gzSNPfile = NULL;
+	m_gzSNPfile = nullptr;
 	}
 
-if(m_gzSNPCentsfile != NULL)
+if(m_gzSNPCentsfile != nullptr)
 	{
 	gzclose(m_gzSNPCentsfile);
-	m_gzSNPCentsfile = NULL;
+	m_gzSNPCentsfile = nullptr;
 	}
 
-if(m_pszLineBuff != NULL)
+if(m_pszLineBuff != nullptr)
 	{
 	delete []m_pszLineBuff;
-	m_pszLineBuff = NULL;
+	m_pszLineBuff = nullptr;
 	}
-if(m_pAllocsIdentNodes != NULL)
+if(m_pAllocsIdentNodes != nullptr)
 	{
 	delete []m_pAllocsIdentNodes;
-	m_pAllocsIdentNodes = NULL;
+	m_pAllocsIdentNodes = nullptr;
 	}
 
-if(m_pAllocsMultiHitBuff != NULL)
+if(m_pAllocsMultiHitBuff != nullptr)
 	{
 	delete []m_pAllocsMultiHitBuff;
-	m_pAllocsMultiHitBuff = NULL;
+	m_pAllocsMultiHitBuff = nullptr;
 	}
 
-if(m_pAllocsMultiHitLoci != NULL)
+if(m_pAllocsMultiHitLoci != nullptr)
 	{
 	delete []m_pAllocsMultiHitLoci;
-	m_pAllocsMultiHitLoci = NULL;
+	m_pAllocsMultiHitLoci = nullptr;
 	}
-if(m_pSfxArray != NULL)
+if(m_pSfxArray != nullptr)
 	{
 	delete m_pSfxArray;
-	m_pSfxArray = NULL;
+	m_pSfxArray = nullptr;
 	}
-if(m_pPriorityRegionBED != NULL)
+if(m_pPriorityRegionBED != nullptr)
 	{
 	delete m_pPriorityRegionBED;
-	m_pPriorityRegionBED = NULL;
+	m_pPriorityRegionBED = nullptr;
 	}
 
-if(m_pReadHits != NULL)
+if(m_pReadHits != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pReadHits);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -1260,10 +1260,10 @@ if(m_pReadHits != NULL)
 	if(m_pReadHits != MAP_FAILED)
 		munmap(m_pReadHits,m_AllocdReadHitsMem);
 #endif
-	m_pReadHits = NULL;
+	m_pReadHits = nullptr;
 	}
 
-if(m_pMultiAll != NULL)
+if(m_pMultiAll != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pMultiAll);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -1271,15 +1271,15 @@ if(m_pMultiAll != NULL)
 	if(m_pMultiAll != MAP_FAILED)
 		munmap(m_pMultiAll,m_AllocMultiAllMem);
 #endif
-	m_pMultiAll = NULL;
+	m_pMultiAll = nullptr;
 	}
 
-if(m_ppReadHitsIdx != NULL)
+if(m_ppReadHitsIdx != nullptr)
 	{
 	delete []m_ppReadHitsIdx;
-	m_ppReadHitsIdx = NULL;
+	m_ppReadHitsIdx = nullptr;
 	}
-if(m_pMultiHits != NULL)
+if(m_pMultiHits != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pMultiHits);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -1287,10 +1287,10 @@ if(m_pMultiHits != NULL)
 	if(m_pMultiHits != MAP_FAILED)
 		munmap(m_pMultiHits,m_AllocdMultiHitsMem);
 #endif
-	m_pMultiHits = NULL;
+	m_pMultiHits = nullptr;
 	}
 
-if(m_pLociPValues != NULL)
+if(m_pLociPValues != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pLociPValues);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -1298,10 +1298,10 @@ if(m_pLociPValues != NULL)
 	if(m_pLociPValues != MAP_FAILED)
 		munmap(m_pLociPValues,m_AllocPackedBaseAllelesMem);
 #endif
-	m_pLociPValues = NULL;
+	m_pLociPValues = nullptr;
 	}
 
-if(m_pPackedBaseAlleles != NULL)
+if(m_pPackedBaseAlleles != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pPackedBaseAlleles);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -1309,31 +1309,31 @@ if(m_pPackedBaseAlleles != NULL)
 	if(m_pPackedBaseAlleles != MAP_FAILED)
 		munmap(m_pPackedBaseAlleles,m_AllocLociPValuesMem);
 #endif
-	m_pPackedBaseAlleles = NULL;
+	m_pPackedBaseAlleles = nullptr;
 	}
 
-if(m_pChromSNPs != NULL)
+if(m_pChromSNPs != nullptr)
 	{
 	delete []m_pChromSNPs;
-	m_pChromSNPs = NULL;
+	m_pChromSNPs = nullptr;
 	}
 
-if(m_pLenDist != NULL)
+if(m_pLenDist != nullptr)
 	{
 	delete []m_pLenDist;
-	m_pLenDist = NULL;
+	m_pLenDist = nullptr;
 	}
 
-if(m_pContaminants != NULL)
+if(m_pContaminants != nullptr)
 	{
 	delete m_pContaminants;
-	m_pContaminants = NULL;
+	m_pContaminants = nullptr;
 	}
 
-if(m_pszCovSegBuff != NULL)
+if(m_pszCovSegBuff != nullptr)
 	{
 	delete []m_pszCovSegBuff;
-	m_pszCovSegBuff = NULL;
+	m_pszCovSegBuff = nullptr;
 	}
 
 DeleteMutexes();
@@ -1394,7 +1394,7 @@ if((Rslt=pInFile->Open(pszLociConstraints)) !=eBSFSuccess)
 	return(eBSFerrOpnFile);
 	}
 
-if(m_pConstraintLoci == NULL)
+if(m_pConstraintLoci == nullptr)
 	m_pConstraintLoci = new tsConstraintLoci [cMaxConstrainedLoci];
 
 
@@ -1734,7 +1734,7 @@ if(MinFlankExacts > 0)	// do  3' and 5' autotrim? Note that currently can't trim
 	{
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Starting 5' and 3' flank sequence autotrim processing...");
 	etSeqBase *pHitSeq;
-	pReadHit = NULL;
+	pReadHit = nullptr;
 	int ExactLen;
 	int LeftOfs;
 	int RightOfs;
@@ -1742,7 +1742,7 @@ if(MinFlankExacts > 0)	// do  3' and 5' autotrim? Note that currently can't trim
 	int TrimMismatches;
 
 
-	while((pReadHit = IterReads(pReadHit))!=NULL)
+	while((pReadHit = IterReads(pReadHit))!=nullptr)
 		{
 		pReadHit->HitLoci.FlagTR = 0;
 		if(pReadHit->NAR != eNARAccepted || pReadHit->HitLoci.FlagSegs == 1 || pReadHit->HitLoci.Hit.FlgChimeric == 1)
@@ -1947,7 +1947,7 @@ uint8_t *pTo;
 int CopyLen;
 uint32_t NumReads;
 
-if(pszChimericSeqFile == NULL)
+if(pszChimericSeqFile == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: No chimeric sequences file specified");
 	return(eBSFerrCreateFile);
@@ -1956,8 +1956,8 @@ if(pszChimericSeqFile == NULL)
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Starting to report chimeric flank trimmed read sequences to file '%s' ...", pszChimericSeqFile);
 PrevChromID = 0;
 hChimerics = -1;
-pszLineBuff = NULL;
-if(pszChimericSeqFile != NULL && pszChimericSeqFile[0] != '\0')
+pszLineBuff = nullptr;
+if(pszChimericSeqFile != nullptr && pszChimericSeqFile[0] != '\0')
 	{
 #ifdef _WIN32
 	hChimerics = open(pszChimericSeqFile,( O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC),(_S_IREAD | _S_IWRITE) );
@@ -1975,7 +1975,7 @@ if(pszChimericSeqFile != NULL && pszChimericSeqFile[0] != '\0')
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: unable to create/truncate chimeric sequences file '%s'",pszChimericSeqFile);
 		return(eBSFerrCreateFile);
 		}	
-	if((pszLineBuff = new char [cChimericSeqBuffLen]) == NULL)
+	if((pszLineBuff = new char [cChimericSeqBuffLen]) == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: unable to allocate memory %d for chimeric sequences buffering",cChimericSeqBuffLen);
 		return(eBSFerrMem);
@@ -1996,13 +1996,13 @@ NumLeftRightTrimmed = 0;
 pCurReadHit = m_pReadHits;
 pTo = (uint8_t *)pCurReadHit;
 NumReads = 0;
-while(pCurReadHit != NULL) {
+while(pCurReadHit != nullptr) {
 	NumReads += 1;
 	CopyLen = sizeof(tsReadHit) + pCurReadHit->DescrLen + pCurReadHit->ReadLen;
 	if(pCurReadHit->ReadID != m_FinalReadID)
 		pNxtReadHit = (tsReadHit *)((uint8_t *)pCurReadHit + CopyLen);
 	else
-		pNxtReadHit = NULL;
+		pNxtReadHit = nullptr;
 	pCurReadHit->HitLoci.FlagTR = 0;
 	if(pCurReadHit->NAR != eNARAccepted || pCurReadHit->HitLoci.Hit.FlgChimeric == 0) // only reporting reads which were accepted as being chimeric aligned
 		{
@@ -2104,7 +2104,7 @@ if(hChimerics != -1)
 	close(hChimerics);
 	hChimerics = -1;
 	}
-if(pszLineBuff != NULL)
+if(pszLineBuff != nullptr)
 	delete []pszLineBuff;
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Completed reporting to file '%s'  %u chimeric flanks, %u 5', %u 3', %u both 5' and 3' flanks trimmed",pszChimericSeqFile,NumTrimmed,NumLeftTrimmed,NumRightTrimmed, NumLeftRightTrimmed);
 return(eBSFSuccess);
@@ -2130,7 +2130,7 @@ int NumCorrectedReads;
 int NumCorrectedBases;
 int NumUnacceptedReads;
 etSeqBase *pHitSeq;
-pReadHit = NULL;
+pReadHit = nullptr;
 uint32_t MatchLen;
 uint8_t TargSeq[cMaxFastQSeqLen+ 10000];
 
@@ -2149,7 +2149,7 @@ gDiagnostics.DiagOut(eDLInfo,gszProcName,"Starting PCR 5' %dbp primer correction
 NumCorrectedReads = 0;
 NumCorrectedBases = 0;
 NumUnacceptedReads = 0;
-while((pReadHit = IterReads(pReadHit))!=NULL)
+while((pReadHit = IterReads(pReadHit))!=nullptr)
 	{
 	if(pReadHit->NAR != eNARAccepted || pReadHit->HitLoci.FlagSegs == 1)
 		continue;
@@ -2230,9 +2230,9 @@ return(eBSFSuccess);
 int
 CKAligner::NumUniqueAlignedReads(void)		// return count of accepted uniquely aligned reads
 {
-tsReadHit *pReadHit = NULL;
+tsReadHit *pReadHit = nullptr;
 int NumUniques = 0;
-while((pReadHit = IterReads(pReadHit))!=NULL)
+while((pReadHit = IterReads(pReadHit))!=nullptr)
 	{
 	if(pReadHit->NAR == eNARAccepted)
 		NumUniques += 1;
@@ -2247,19 +2247,19 @@ int NumSubDups;
 
 tsReadHit *pReadHit1;
 tsReadHit *pReadHitMark;
-tsReadHit *pReadHit = NULL;
+tsReadHit *pReadHit = nullptr;
 
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Deduping aligned reads which after substitutions are no longer unique");
 SortReadHits(eRSMHitMatch,false);
 NumSubDups = 0;
-while((pReadHit = IterSortedReads(pReadHit))!=NULL)
+while((pReadHit = IterSortedReads(pReadHit))!=nullptr)
 	{
 	if(pReadHit->NAR != eNARAccepted)		// only interested in reads accepted as aligned
 		continue;
 
 	pReadHit1 = pReadHit;			// start iterating forward checking for multiple probe hits onto same locus
 	pReadHitMark = pReadHit;
-	while((pReadHit1 = IterSortedReads(pReadHit1)) != NULL)
+	while((pReadHit1 = IterSortedReads(pReadHit1)) != nullptr)
 		{
 		if(pReadHit1->NAR != eNARAccepted)	// only interested in reads with a single hits
 			break;
@@ -2315,7 +2315,7 @@ int PropWin;
 
 tsReadHit *pReadHit1;
 tsReadHit *pReadHitMark;
-tsReadHit *pReadHit = NULL;
+tsReadHit *pReadHit = nullptr;
 
 // sort reads by match loci
 if((Rslt=SortReadHits(eRSMHitMatch,false)) < eBSFSuccess)
@@ -2325,7 +2325,7 @@ if((Rslt=SortReadHits(eRSMHitMatch,false)) < eBSFSuccess)
 	}
 
 NumSubDups = 0;
-while((pReadHit = IterSortedReads(pReadHit))!=NULL)
+while((pReadHit = IterSortedReads(pReadHit))!=nullptr)
 	{
 	if(pReadHit->NAR != eNARAccepted)		// only interested in reads with unique hits
 		continue;
@@ -2365,7 +2365,7 @@ while((pReadHit = IterSortedReads(pReadHit))!=NULL)
 	CurStart = AdjStartLoci(&pReadHit->HitLoci.Hit.Seg[0]);
 	CurLen = AdjHitLen(&pReadHit->HitLoci.Hit.Seg[0]);
 	CurStrand = pReadHit->HitLoci.Hit.Seg[0].Strand;
-	while((pReadHit1 = IterSortedReads(pReadHit1)) != NULL)
+	while((pReadHit1 = IterSortedReads(pReadHit1)) != nullptr)
 		{
 		if(pReadHit1->NAR != eNARAccepted)	// only interested in reads with a unique hits
 			continue;
@@ -2413,12 +2413,12 @@ if(SpliceJunctLen > 0)
 	int NumSpliceJuncs = 0;
 	int	NumSpliceAccepted = 0;
 	int	NumSpliceNotAccepted = 0;
-	tsSegJuncts *pSegJuncts = NULL;
+	tsSegJuncts *pSegJuncts = nullptr;
 	tsSegJuncts *pJunct;
 	tsSegJuncts *pNxtJunct;
-	tsReadHit *pCurHit = NULL;
-	tsReadHit *pReadHit = NULL;
-	while((pReadHit = IterReads(pReadHit))!=NULL)
+	tsReadHit *pCurHit = nullptr;
+	tsReadHit *pReadHit = nullptr;
+	while((pReadHit = IterReads(pReadHit))!=nullptr)
 		{
 		if(pReadHit->NAR != eNARAccepted || pReadHit->HitLoci.Hit.FlgSplice == 0)
 			continue;
@@ -2429,15 +2429,15 @@ if(SpliceJunctLen > 0)
 		{
 		// allocate for this number of splice junctions, then sort and dedupe
 		pSegJuncts = new tsSegJuncts[NumSpliceJuncs];
-		if(pSegJuncts == NULL)
+		if(pSegJuncts == nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: unable to allocate memory (%d bytes) for splice junction processing",NumSpliceJuncs * sizeof(tsSegJuncts));
 			Reset(false);
 			return(eBSFerrMem);
 			}
 		pJunct = pSegJuncts;
-		pReadHit = NULL;
-		while((pReadHit = IterReads(pReadHit))!=NULL)
+		pReadHit = nullptr;
+		while((pReadHit = IterReads(pReadHit))!=nullptr)
 			{
 			if(pReadHit->NAR != eNARAccepted || pReadHit->HitLoci.Hit.FlgSplice == 0)
 				continue;
@@ -2480,7 +2480,7 @@ if(SpliceJunctLen > 0)
 		delete []pSegJuncts;
 		}
 	else
-		if(NumSpliceJuncs > 0 && pCurHit != NULL)
+		if(NumSpliceJuncs > 0 && pCurHit != nullptr)
 			{
 			pCurHit->NAR = eNARSpliceJctn;
 			pCurHit->NumHits = 0;	// treat as unaligned
@@ -2505,17 +2505,17 @@ int NumInDelJuncs = 0;
 int	NumInDelsAccepted = 0;
 int	NumInDelsNotAccepted = 0;
 
-tsSegJuncts *pSegJuncts = NULL;
+tsSegJuncts *pSegJuncts = nullptr;
 tsSegJuncts *pJunct;
 tsSegJuncts *pNxtJunct;
-tsReadHit *pCurHit = NULL;
-tsReadHit *pReadHit = NULL;
+tsReadHit *pCurHit = nullptr;
+tsReadHit *pReadHit = nullptr;
 
 if(microInDelLen > 0)
 	{
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Filtering out any orphan microIndel reads");
 	SortReadHits(eRSMHitMatch,false);
-	while((pReadHit = IterReads(pReadHit))!=NULL)
+	while((pReadHit = IterReads(pReadHit))!=nullptr)
 		{
 		if(pReadHit->NAR != eNARAccepted || pReadHit->HitLoci.Hit.FlgInDel == 0)
 			continue;
@@ -2526,15 +2526,15 @@ if(microInDelLen > 0)
 		{
 		// allocate for this number of InDel junctions, then sort and dedupe
 		pSegJuncts = new tsSegJuncts[NumInDelJuncs];
-		if(pSegJuncts == NULL)
+		if(pSegJuncts == nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: unable to allocate memory (%d bytes) for microInDel processing",NumInDelJuncs * sizeof(tsSegJuncts));
 			Reset(false);
 			return(eBSFerrMem);
 			}
 		pJunct = pSegJuncts;
-		pReadHit = NULL;
-		while((pReadHit = IterReads(pReadHit))!=NULL)
+		pReadHit = nullptr;
+		while((pReadHit = IterReads(pReadHit))!=nullptr)
 			{
 			if(pReadHit->NAR != eNARAccepted || pReadHit->HitLoci.Hit.FlgInDel == 0)
 				continue;
@@ -2576,7 +2576,7 @@ if(microInDelLen > 0)
 		delete []pSegJuncts;
 		}
 	else
-		if(NumInDelJuncs > 0 && pCurHit != NULL)
+		if(NumInDelJuncs > 0 && pCurHit != nullptr)
 			{
 			pCurHit->NAR = eNARmicroInDel;
 			pCurHit->NumHits = 0;	// treat as unaligned
@@ -2605,7 +2605,7 @@ etSeqBase TargBase;
 int Rslt;
 tsConstraintLoci *pConstraintLoci;
 
-if(m_NumConstrainedChroms == 0 || m_NumConstraintLoci == 0 || m_pConstraintLoci == NULL) // there may be no constraints!
+if(m_NumConstrainedChroms == 0 || m_NumConstraintLoci == 0 || m_pConstraintLoci == nullptr) // there may be no constraints!
 	return(0);
 
 Rslt = 0;		// assuming no constraints on the targeted ChromID
@@ -2660,10 +2660,10 @@ uint32_t StartLoci;
 uint32_t EndLoci; 
 uint32_t CurLoci;
 
-if(pReadHit == NULL || pReadHit->NAR != eNARAccepted)	  // only interested in reads which have, thus far, been accepted as being aligned
+if(pReadHit == nullptr || pReadHit->NAR != eNARAccepted)	  // only interested in reads which have, thus far, been accepted as being aligned
 	return(true);
 
-if(m_NumConstrainedChroms == 0 || m_NumConstraintLoci == 0 || m_pConstraintLoci == NULL) // there may be no constraints!
+if(m_NumConstrainedChroms == 0 || m_NumConstraintLoci == 0 || m_pConstraintLoci == nullptr) // there may be no constraints!
 	return(true);
 
 ChromID = pReadHit->HitLoci.Hit.Seg[0].ChromID;
@@ -2721,15 +2721,15 @@ int NumIdentified;
 tsReadHit *pReadHit;
 tsReadHit *pPEReadHit;
 bool bIsPE2;
-if(m_NumConstrainedChroms == 0 || m_NumConstraintLoci == 0 || m_pConstraintLoci == NULL)
+if(m_NumConstrainedChroms == 0 || m_NumConstraintLoci == 0 || m_pConstraintLoci == nullptr)
 	return(0);
 
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Identifying %s loci base constraint violations ...",bPEread ? "PE" : "SE");
 SortReadHits(eRSMHitMatch,false);
 
 NumIdentified = 0;
-pReadHit = NULL;
-while((pReadHit = IterSortedReads(pReadHit))!=NULL)
+pReadHit = nullptr;
+while((pReadHit = IterSortedReads(pReadHit))!=nullptr)
 	{
 	if(pReadHit->NAR == eNARAccepted && !AcceptLociConstraints(pReadHit))
 		{
@@ -2968,12 +2968,12 @@ SortReadHits(eRSMPairReadID,false,true);
 
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Starting to associate Paired End reads to be within insert size range ...");
 
-if(m_pLenDist != NULL)
+if(m_pLenDist != nullptr)
 	{
 	delete []m_pLenDist;
-	m_pLenDist = NULL;
+	m_pLenDist = nullptr;
 	}
-if((m_pLenDist = new int[cPairMaxLen+1])==NULL)
+if((m_pLenDist = new int[cPairMaxLen+1])==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate %d bytes memory for paired read sequence length distributions",
 								(int)sizeof(int) * (cPairMaxLen+1));
@@ -3011,9 +3011,9 @@ for (ThreadIdx = 0; ThreadIdx < m_NumThreads; ThreadIdx++, NumThreadsUsed += 1)
 	WorkerThreads[ThreadIdx].PairMinLen = PairMinLen;
 	WorkerThreads[ThreadIdx].PEproc = PEproc;
 #ifdef _WIN32
-	WorkerThreads[ThreadIdx].threadHandle = (HANDLE)_beginthreadex(NULL, 0x0fffff, KProcessPairedEndsThread, &WorkerThreads[ThreadIdx], 0, &WorkerThreads[ThreadIdx].threadID);
+	WorkerThreads[ThreadIdx].threadHandle = (HANDLE)_beginthreadex(nullptr, 0x0fffff, KProcessPairedEndsThread, &WorkerThreads[ThreadIdx], 0, &WorkerThreads[ThreadIdx].threadID);
 #else
-	WorkerThreads[ThreadIdx].threadRslt = pthread_create(&WorkerThreads[ThreadIdx].threadID, NULL, KProcessPairedEndsThread, &WorkerThreads[ThreadIdx]);
+	WorkerThreads[ThreadIdx].threadRslt = pthread_create(&WorkerThreads[ThreadIdx].threadID, nullptr, KProcessPairedEndsThread, &WorkerThreads[ThreadIdx]);
 #endif
 	if((WorkerThreads[ThreadIdx].StartPairIdx + WorkerThreads[ThreadIdx].NumPairsToProcess) == m_NumReadsLoaded / 2)
 		{
@@ -3046,7 +3046,7 @@ for (ThreadIdx = 0; ThreadIdx < NumThreadsUsed; ThreadIdx++)
 	int JoinRlt;
 	clock_gettime(CLOCK_REALTIME, &ts);
 	ts.tv_sec += ReportProgressSecs;
-	while ((JoinRlt = pthread_timedjoin_np(WorkerThreads[ThreadIdx].threadID, NULL, &ts)) != 0)
+	while ((JoinRlt = pthread_timedjoin_np(WorkerThreads[ThreadIdx].threadID, nullptr, &ts)) != 0)
 		{
 		gDiagnostics.DiagOut(eDLInfo, gszProcName, "Progress: Still associating Paired Ends ...");
 		ts.tv_sec += ReportProgressSecs;
@@ -3603,7 +3603,7 @@ uint32_t NumNoMatches = 0;
 uint32_t NumChimeric = 0;
 uint32_t NumMultiMatches = 0;
 uint32_t NumHamming = 0;
-tsReadHit *pReadHit = NULL;
+tsReadHit *pReadHit = nullptr;
 bool bSimReads = false;
 uint32_t NumReads1EdgeAligned = 0;
 uint32_t NumReads2EdgeAligned = 0;
@@ -3638,7 +3638,7 @@ if((Rslt=SortReadHits(eRSMHitMatch,false)) < eBSFSuccess)
 	Reset(false);
 	return(Rslt);
 	}
-while((pReadHit = IterReads(pReadHit))!=NULL)
+while((pReadHit = IterReads(pReadHit))!=nullptr)
 	{
 	switch(pReadHit->NAR) {
 		case eNARUnaligned:				// read has yet to be aligned
@@ -3846,11 +3846,11 @@ int NumHamming = 0;
 int LineLen = 0;
 // user interested in the non-alignable reads?
 // these only include those which had no alignment at all
-if(m_hNoneAlignFile != -1 || m_gzNoneAlignFile != NULL)
+if(m_hNoneAlignFile != -1 || m_gzNoneAlignFile != nullptr)
 	{
 	SortReadHits(eRSMHitMatch,false);
-	pReadHit = NULL;
-	while((pReadHit = IterSortedReads(pReadHit))!=NULL)
+	pReadHit = nullptr;
+	while((pReadHit = IterSortedReads(pReadHit))!=nullptr)
 		{
 		if(!(pReadHit->NAR == eNARNs || pReadHit->NAR == eNARNoHit))
 			continue;
@@ -3918,7 +3918,7 @@ if(m_hNoneAlignFile != -1 || m_gzNoneAlignFile != NULL)
 	else
 		{
 		gzclose(m_gzNoneAlignFile);
-		m_gzNoneAlignFile = NULL;
+		m_gzNoneAlignFile = nullptr;
 		}
 	}
 return(eBSFSuccess);
@@ -3938,11 +3938,11 @@ uint8_t *pSeqVal;
 etSeqBase *pSeq;
 int LineLen = 0;
 
-if(m_hMultiAlignFile != -1 || m_gzMultiAlignFile != NULL)
+if(m_hMultiAlignFile != -1 || m_gzMultiAlignFile != nullptr)
 	{
 	SortReadHits(eRSMHitMatch,false);
-	pReadHit = NULL;
-	while((pReadHit = IterSortedReads(pReadHit))!=NULL)
+	pReadHit = nullptr;
+	while((pReadHit = IterSortedReads(pReadHit))!=nullptr)
 		{
 		if(pReadHit->NAR != eNARMultiAlign)
 			continue;
@@ -4011,7 +4011,7 @@ if(m_hMultiAlignFile != -1 || m_gzMultiAlignFile != NULL)
 	else
 		{
 		gzclose(m_gzMultiAlignFile);
-		m_gzMultiAlignFile = NULL;
+		m_gzMultiAlignFile = nullptr;
 		}
 	}
 return(eBSFSuccess);
@@ -4035,8 +4035,8 @@ if(m_RegExprs.HasRegExprs())
 	{
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Now filtering matches by chromosome");
 	PrevTargEntry = 0;
-	pReadHit = NULL;
-	while((pReadHit = IterSortedReads(pReadHit))!=NULL)
+	pReadHit = nullptr;
+	while((pReadHit = IterSortedReads(pReadHit))!=nullptr)
 		{
 		if(pReadHit->NAR == eNARAccepted)
 			{
@@ -4100,8 +4100,8 @@ uint32_t MatchesFiltIn = 0;
 tsReadHit *pReadHit;
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Now filtering matches by prioritorised regions");
 SortReadHits(eRSMHitMatch,false);
-pReadHit = NULL;
-while((pReadHit = IterSortedReads(pReadHit))!=NULL)
+pReadHit = nullptr;
+while((pReadHit = IterSortedReads(pReadHit))!=nullptr)
 	{
 	if(pReadHit->NAR == eNARAccepted)
 		{
@@ -4138,7 +4138,7 @@ while((pReadHit = IterSortedReads(pReadHit))!=NULL)
 			MatchesFiltIn += 1;
 		}
 	}
-gDiagnostics.DiagOut(eDLInfo,gszProcName,"Filtering by prioritorised regions completed - retained %u, removed %u matches",MatchesFiltIn,MatchesFiltOut);
+gDiagnostics.DiagOut(eDLInfo,gszProcName,"Filtering by prioritised regions completed - retained %u, removed %u matches",MatchesFiltIn,MatchesFiltOut);
 
 if(MatchesFiltOut)
 	SortReadHits(eRSMHitMatch,false,true);
@@ -4302,7 +4302,7 @@ bool								// true if file to be generated compressed with gzopen/gzwrite/gzclo
 CKAligner::FileReqWriteCompr(char *pszFile) // If last 3 chars of file name is ".gz" then this file is assumed to require compression
 {
 int Len;
-if(pszFile == NULL || pszFile[0] == '\0')
+if(pszFile == nullptr || pszFile[0] == '\0')
 	return(false);
 if((Len = (int)strlen(pszFile)) < 4)
 	return(false);
@@ -4385,7 +4385,7 @@ if(m_FMode < eFMsam)
 	else
 		{
 		m_gzOutFile = gzopen(m_pszOutFile,"wb");
-		if(m_gzOutFile == NULL)
+		if(m_gzOutFile == nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: unable to create/truncate output file '%s'",m_pszOutFile);
 			return(eBSFerrCreateFile);
@@ -4396,10 +4396,10 @@ if(m_FMode < eFMsam)
 else
 	{
 	m_hOutFile = -1;
-	m_gzOutFile = NULL;
+	m_gzOutFile = nullptr;
 	}
 
-if((m_pszLineBuff = new char [cAllocLineBuffSize])==NULL)
+if((m_pszLineBuff = new char [cAllocLineBuffSize])==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: unable to allocate memory (%d bytes) for output line buffer",cAllocLineBuffSize);
 	return(eBSFerrMem);
@@ -4465,7 +4465,7 @@ if(m_SpliceJunctLen && (m_FMode == eFMbed || m_FMode == eFMsam || m_FMode == eFM
 	}
 
 
-if(m_pszSitePrefsFile != NULL && m_pszSitePrefsFile[0] != '\0')
+if(m_pszSitePrefsFile != nullptr && m_pszSitePrefsFile[0] != '\0')
 	{
 #ifdef _WIN32
 	m_hSitePrefsFile = open(m_pszSitePrefsFile,( O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC),(_S_IREAD | _S_IWRITE) );
@@ -4488,7 +4488,7 @@ else
 	m_hSitePrefsFile = -1;
 
 
-if(m_pszSNPRsltsFile != NULL && m_pszSNPRsltsFile[0] != '\0' && m_MinSNPreads > 0 && m_FMode <= eFMsam)
+if(m_pszSNPRsltsFile != nullptr && m_pszSNPRsltsFile[0] != '\0' && m_MinSNPreads > 0 && m_FMode <= eFMsam)
 	{
 #ifdef _WIN32
 	m_hSNPfile = open(m_pszSNPRsltsFile,( O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC),(_S_IREAD | _S_IWRITE) );
@@ -4525,7 +4525,7 @@ if(m_pszSNPRsltsFile != NULL && m_pszSNPRsltsFile[0] != '\0' && m_MinSNPreads > 
 		}
 
 
-	if(m_pszSNPCentroidFile != NULL && m_pszSNPCentroidFile[0] != '\0')
+	if(m_pszSNPCentroidFile != nullptr && m_pszSNPCentroidFile[0] != '\0')
 		{
 #ifdef _WIN32
 		m_hSNPCentsfile = open(m_pszSNPCentroidFile,( O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC),(_S_IREAD | _S_IWRITE) );
@@ -4593,7 +4593,7 @@ if(m_pszSNPRsltsFile != NULL && m_pszSNPRsltsFile[0] != '\0' && m_MinSNPreads > 
 		m_hTriSNPfile = -1;
 #endif
 
-	if(m_pszMarkerFile != NULL && m_pszMarkerFile[0] != '\0')
+	if(m_pszMarkerFile != nullptr && m_pszMarkerFile[0] != '\0')
 		{
 #ifdef _WIN32
 		m_hMarkerFile = open(m_pszMarkerFile,( O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC),(_S_IREAD | _S_IWRITE) );
@@ -4624,7 +4624,7 @@ else
 	};
 
 // none-aligned fasta reads file to be also generated?
-if(m_pszNoneAlignFile != NULL && m_pszNoneAlignFile[0] != '\0')
+if(m_pszNoneAlignFile != nullptr && m_pszNoneAlignFile[0] != '\0')
 	{
 	if(!m_bgzNoneAlignFile)
 		{
@@ -4648,7 +4648,7 @@ if(m_pszNoneAlignFile != NULL && m_pszNoneAlignFile[0] != '\0')
 	else
 		{
 		m_gzNoneAlignFile = gzopen(m_pszNoneAlignFile,"wb");
-		if(m_gzNoneAlignFile == NULL)
+		if(m_gzNoneAlignFile == nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: unable to create/truncate nonaligned file '%s'",m_pszNoneAlignFile);
 			return(eBSFerrCreateFile);
@@ -4659,11 +4659,11 @@ if(m_pszNoneAlignFile != NULL && m_pszNoneAlignFile[0] != '\0')
 else
 	{
 	m_hNoneAlignFile = -1;
-	m_gzNoneAlignFile = NULL;
+	m_gzNoneAlignFile = nullptr;
 	}
 
 // multialigned fasta reads file to be also generated?
-if(m_pszMultiAlignFile != NULL && m_pszMultiAlignFile[0] != '\0')
+if(m_pszMultiAlignFile != nullptr && m_pszMultiAlignFile[0] != '\0')
 	{
 	if(!m_bgzMultiAlignFile)
 		{
@@ -4687,7 +4687,7 @@ if(m_pszMultiAlignFile != NULL && m_pszMultiAlignFile[0] != '\0')
 	else
 		{
 		m_gzMultiAlignFile = gzopen(m_pszMultiAlignFile,"wb");
-		if(m_gzMultiAlignFile == NULL)
+		if(m_gzMultiAlignFile == nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: unable to create/truncate multialigned file '%s'",m_pszMultiAlignFile);
 			return(eBSFerrCreateFile);
@@ -4698,11 +4698,11 @@ if(m_pszMultiAlignFile != NULL && m_pszMultiAlignFile[0] != '\0')
 else
 	{
 	m_hMultiAlignFile = -1;
-	m_bgzMultiAlignFile = NULL;
+	m_bgzMultiAlignFile = false;
 	}
 
 // substitution stats to be also generated? Note that these can't be generated for InDels or splice junctions
-if(m_pszStatsFile != NULL && m_pszStatsFile[0] != '\0')
+if(m_pszStatsFile != nullptr && m_pszStatsFile[0] != '\0')
 	{
 #ifdef _WIN32
 	m_hStatsFile = open(m_pszStatsFile,( O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC),(_S_IREAD | _S_IWRITE) );
@@ -4726,7 +4726,7 @@ else
 
 
 // PE insert lengths to be also generated? Note that these can't be generated for InDels or splice junctions
-if(m_pszPEInsertDistFile != NULL && m_pszPEInsertDistFile[0] != '\0')
+if(m_pszPEInsertDistFile != nullptr && m_pszPEInsertDistFile[0] != '\0')
 	{
 #ifdef _WIN32
 	m_hInsertLensFile = open(m_pszPEInsertDistFile,( O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC),(_S_IREAD | _S_IWRITE) );
@@ -4796,14 +4796,14 @@ ThreadPars.Rslt = 0;
 
 
 #ifdef _WIN32
-m_hThreadLoadReads = ThreadPars.threadHandle = (HANDLE)_beginthreadex(NULL,0x0fffff,KLoadReadFilesThread,&ThreadPars,0,&m_ThreadLoadReadsID);
-if (m_hThreadLoadReads == NULL)
+m_hThreadLoadReads = ThreadPars.threadHandle = (HANDLE)_beginthreadex(nullptr,0x0fffff,KLoadReadFilesThread,&ThreadPars,0,&m_ThreadLoadReadsID);
+if (m_hThreadLoadReads == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Failed to initiate read loading thread ...");
 	return(-1);
 	}
 #else
-int ThreadRslt = ThreadPars.threadRslt = pthread_create (&m_ThreadLoadReadsID , NULL , KLoadReadFilesThread , &ThreadPars);
+int ThreadRslt = ThreadPars.threadRslt = pthread_create (&m_ThreadLoadReadsID , nullptr , KLoadReadFilesThread , &ThreadPars);
 if (ThreadRslt != 0)
 	{
 	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Failed to initiate read loading thread ...");
@@ -4823,7 +4823,7 @@ sleep(2);
 if(WaitForSingleObject(m_hThreadLoadReads, 1000) != WAIT_TIMEOUT)
 	{
 	CloseHandle(m_hThreadLoadReads);
-	m_hThreadLoadReads = NULL;
+	m_hThreadLoadReads = nullptr;
 	return(m_ThreadLoadReadsRslt);
 	}
 #else
@@ -4831,7 +4831,7 @@ struct timespec ts;
 int JoinRlt;
 clock_gettime(CLOCK_REALTIME, &ts);
 ts.tv_sec += 1;
-if((JoinRlt = pthread_timedjoin_np(m_ThreadLoadReadsID, NULL, &ts)) == 0)
+if((JoinRlt = pthread_timedjoin_np(m_ThreadLoadReadsID, nullptr, &ts)) == 0)
 	{
 	m_ThreadLoadReadsID = 0;
 	return(m_ThreadLoadReadsRslt);
@@ -4874,9 +4874,9 @@ for(ThreadIdx = 0; ThreadIdx < NumThreads; ThreadIdx++)
 	ClusterThreads[ThreadIdx].ThreadIdx = ThreadIdx + 1;
 	ClusterThreads[ThreadIdx].pThis = this;
 #ifdef _WIN32
-	ClusterThreads[ThreadIdx].threadHandle = (HANDLE)_beginthreadex(NULL,0x0fffff,KAssignMultiMatchesThread,&ClusterThreads[ThreadIdx],0,&ClusterThreads[ThreadIdx].threadID);
+	ClusterThreads[ThreadIdx].threadHandle = (HANDLE)_beginthreadex(nullptr,0x0fffff,KAssignMultiMatchesThread,&ClusterThreads[ThreadIdx],0,&ClusterThreads[ThreadIdx].threadID);
 #else
-	ClusterThreads[ThreadIdx].threadRslt =	pthread_create (&ClusterThreads[ThreadIdx].threadID , NULL , KAssignMultiMatchesThread , &ClusterThreads[ThreadIdx] );
+	ClusterThreads[ThreadIdx].threadRslt =	pthread_create (&ClusterThreads[ThreadIdx].threadID , nullptr , KAssignMultiMatchesThread , &ClusterThreads[ThreadIdx] );
 #endif
 	}
 
@@ -4893,7 +4893,7 @@ for(ThreadIdx = 0; ThreadIdx < NumThreads; ThreadIdx++)
 	int JoinRlt;
 	clock_gettime(CLOCK_REALTIME, &ts);
 	ts.tv_sec += 60;
-	while((JoinRlt = pthread_timedjoin_np(ClusterThreads[ThreadIdx].threadID, NULL, &ts)) != 0)
+	while((JoinRlt = pthread_timedjoin_np(ClusterThreads[ThreadIdx].threadID, nullptr, &ts)) != 0)
 		{
 		gDiagnostics.DiagOut(eDLInfo, gszProcName, "Progress: Still clustering ...");
 		ts.tv_sec += 60;
@@ -4955,13 +4955,13 @@ uint32_t ClustEndLoci;
 while((Rslt = GetClusterStartEnd(&MatchFrom,&MatchUntil)) > 0)
 	{
 	pCurHit = &m_pMultiHits[MatchFrom];
-	pPrevProcCurHit = NULL;
+	pPrevProcCurHit = nullptr;
 	for(HitIdx=MatchFrom;HitIdx <= MatchUntil; HitIdx++,pCurHit++)
 		{
 		if(!pCurHit->HitLoci.FlagMH)			// only interested in assigning reads which align to multiple hit loci
 			continue;							// reads which map to a single hit loci do not require processing
 
-		if(pPrevProcCurHit != NULL &&
+		if(pPrevProcCurHit != nullptr &&
 					AdjStartLoci(&pPrevProcCurHit->HitLoci.Hit.Seg[0]) == AdjStartLoci(&pCurHit->HitLoci.Hit.Seg[0]) &&
 					AdjHitLen(&pPrevProcCurHit->HitLoci.Hit.Seg[0]) == AdjHitLen(&pCurHit->HitLoci.Hit.Seg[0]) &&
 					pPrevProcCurHit->HitLoci.Hit.Seg[0].Strand == pCurHit->HitLoci.Hit.Seg[0].Strand &&
@@ -4971,7 +4971,7 @@ while((Rslt = GetClusterStartEnd(&MatchFrom,&MatchUntil)) > 0)
 			continue;
 			}
 
-		pPrevProcCurHit = NULL;
+		pPrevProcCurHit = nullptr;
 		pCurHit->HitLoci.Hit.Score = 0;
 		pClustHit = pCurHit;
 		ClustHitIdx = HitIdx;
@@ -5224,7 +5224,7 @@ for(HitIdx=0;HitIdx < m_NumMultiHits; HitIdx++,pCurHit++)
 
 	if(bAcceptMulti == true)
 		{
-		if((pAssign2Read = LocateRead(pCurHit->ReadID))==NULL)
+		if((pAssign2Read = LocateRead(pCurHit->ReadID))==nullptr)
 			{
 			if(NumUnlocated++ < 10)
 				gDiagnostics.DiagOut(eDLWarn,gszProcName,"A read (ReadID = %d) was not located in call to LocateRead()",pCurHit->ReadID);
@@ -5265,7 +5265,7 @@ uint32_t CurMedian;
 uint32_t LoMedian;
 uint32_t HiMedian;
 
-if(NumInserts == 0 || pInsertLens == NULL)
+if(NumInserts == 0 || pInsertLens == nullptr)
 	return(0);
 if(NumInserts == 1)
 	return(*pInsertLens);
@@ -5355,16 +5355,16 @@ BuffOfs += sprintf(&szDistBuff[BuffOfs],",\"Insert >600bp\"\n");
 CUtility::RetryWrites(m_hInsertLensFile,szDistBuff,BuffOfs);
 BuffOfs = 0;
 
-pPE1ReadHit = NULL;
+pPE1ReadHit = nullptr;
 CurTargID = 0;
 NumTargIDs = 0;
 NumPEs = 0;
 SumInsertLens = 0;
 memset(LenDist,0,sizeof(LenDist));
 memset(pInsertLens,0,sizeof(uint32_t) * 1000001);
-while((pPE1ReadHit = IterSortedReads(pPE1ReadHit))!=NULL)
+while((pPE1ReadHit = IterSortedReads(pPE1ReadHit))!=nullptr)
 	{
-	if((pPE2ReadHit = IterSortedReads(pPE1ReadHit)) == NULL) // expecting PE2 to immediately follow PE1
+	if((pPE2ReadHit = IterSortedReads(pPE1ReadHit)) == nullptr) // expecting PE2 to immediately follow PE1
 		break;
 
 	// both ends of pair must be accepted as aligned and both must be aligned as PE
@@ -5542,7 +5542,7 @@ if(!CUtility::RetryWrites(hTargHitCnts,szDistBuff,BuffOfs))
 	}
 BuffOfs = 0;
 
-pReadHit = NULL;
+pReadHit = nullptr;
 CurTargID = 0;
 uint32_t ExpTargID = 0;
 TargChromLen = 0;
@@ -5557,11 +5557,11 @@ int64_t NumReadsAligned = 0;
 double RPKM = 0.0;
 
 // how many reads in total? Needed for RPKM calculations
-while ((pReadHit = IterSortedReads(pReadHit)) != NULL)
+while ((pReadHit = IterSortedReads(pReadHit)) != nullptr)
 	NumReads += 1;
 
-pReadHit = NULL;
-while((pReadHit = IterSortedReads(pReadHit))!=NULL)
+pReadHit = nullptr;
+while((pReadHit = IterSortedReads(pReadHit))!=nullptr)
 	{
 	// read must have been accepted as aligned
 	if(pReadHit->NAR != eNARAccepted)
@@ -5737,14 +5737,14 @@ int ChromID;
 uint32_t CurChromID;
 uint16_t EntryFlags;
 
-if((pBAMalign = new tsBAMalign) == NULL)
+if((pBAMalign = new tsBAMalign) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "WriteBAMReadHits: Unable to allocate memory for instance of tsBAMalign");
 	return(eBSFerrInternal);
 	}
 
 
-if((pSAMfile = new CSAMfile) == NULL)
+if((pSAMfile = new CSAMfile) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"WriteBAMReadHits: Unable to instantiate class CSAMfile");
 	return(eBSFerrInternal);
@@ -5774,7 +5774,7 @@ SortReadHits(eRSMHitMatch,false);
 
 // mark entries (chroms/contigs/sequences) for which there is at least one alignment so only these marked entries
 // will be written to the SAM or BAM header
-pReadHit = NULL;
+pReadHit = nullptr;
 PrevTargEntry = 0;
 m_PrevSAMTargEntry = 0;
 CurChromID = 0;
@@ -5783,7 +5783,7 @@ bRptAllChroms = m_MaxRptSAMSeqsThres >= NumChroms ? true : false;
 
 // identify chroms to be reported
 // only reporting those which have accepted alignments unless reporting all chromosomes even if not all have alignments
-while((pReadHit = IterSortedReads(pReadHit))!=NULL)
+while((pReadHit = IterSortedReads(pReadHit))!=nullptr)
 	{
 	if(pReadHit->NAR == eNARAccepted)
 		{
@@ -5823,7 +5823,7 @@ NumAlignedToSeqs = 0;
 NumSeqsInHdr = 0;
 
 // now write out each alignment in BAM format
-pReadHit = NULL;
+pReadHit = nullptr;
 
 PrevTargEntry = 0;
 m_PrevSAMTargEntry = 0;
@@ -5839,7 +5839,7 @@ int  ReadIs;				// 0 if SE, 1 if PE1 of a PE, 2 if PE2 of a PE
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Reported %s %u read alignments",SAMFormat == etSAMFformat ? "SAM" : "BAM",NumReportedBAMreads);
 RefID = 0;
 time_t Started = time(0);
-while((pReadHit = IterSortedReads(pReadHit))!=NULL)
+while((pReadHit = IterSortedReads(pReadHit))!=nullptr)
 	{
 	if(pReadHit->NAR == eNARAccepted || ProcMode == eFMsamAll)
 		{
@@ -5876,7 +5876,7 @@ while((pReadHit = IterSortedReads(pReadHit))!=NULL)
 		if(pReadHit->NAR == eNARAccepted)
 			{
 			pNxtRead = IterSortedReads(pReadHit);
-			if(pNxtRead == NULL || pNxtRead->NAR != eNARAccepted)
+			if(pNxtRead == nullptr || pNxtRead->NAR != eNARAccepted)
 				bLastAligned = true;
 			}
 
@@ -5993,7 +5993,7 @@ int PNext;
 int TLen;
 
 int LimitGapErrs;
-if(pReadHit == NULL)
+if(pReadHit == nullptr)
 	return(eBSFerrInternal);
 
 pBAMalign->block_size = 0; 	
@@ -6026,14 +6026,14 @@ memcpy(szSEQName,(char *)pReadHit->Read,pReadHit->DescrLen+1);
 pszSEQName = szSEQName;
 pszQName = pszSEQName;
 
-pPEReadHit = NULL;
+pPEReadHit = nullptr;
 Flags = 0;
 SEStart = 0;
 SELen = 0;
 PNext = 0;
 TLen = 0;
 pszRNext = (char *)"*";
-pszPEQName = NULL;
+pszPEQName = nullptr;
 
 switch(ReadIs) {
 	case 0:			// reads have been processed as SE reads
@@ -6474,7 +6474,7 @@ tsSegLoci *pSeg;
 
 etSeqBase AssembSeq[cMaxFastQSeqLen+ 10000];	// to hold targeted genome assembly sequence
 
-if(m_hStatsFile == -1 || pReadHit == NULL || pReadHit->NAR != eNARAccepted || pReadHit->HitLoci.FlagSegs !=0) // if read was segmented because of InDel or splice junction then can't handle, simply slough
+if(m_hStatsFile == -1 || pReadHit == nullptr || pReadHit->NAR != eNARAccepted || pReadHit->HitLoci.FlagSegs !=0) // if read was segmented because of InDel or splice junction then can't handle, simply slough
 	return(eBSFSuccess);
 
 pSeg = &pReadHit->HitLoci.Hit.Seg[0];
@@ -6578,7 +6578,7 @@ if(m_hIndOutFile != -1)
 	}
 LineLen = 0;
 
-pReadHit = NULL;
+pReadHit = nullptr;
 LineLen = 0;
 PrevTargEntry = 0;
 const char *pszAlignType;
@@ -6588,7 +6588,7 @@ bool bPrevJunctSeg = false;
 bool bPrevAlignSeg = false;
 bool bSkipBEDformat = false;;
 
-while((pReadHit = IterSortedReads(pReadHit))!=NULL)
+while((pReadHit = IterSortedReads(pReadHit))!=nullptr)
 	{
 	bSkipBEDformat = false;
 	if(pReadHit->NAR == eNARAccepted)
@@ -6883,9 +6883,9 @@ if(m_NxtMultiAllOfs + (2 * HitLen) >= m_AllocMultiAllMem)
 #else
 	pMultiHit = (tsReadHit *)mremap(m_pMultiAll,m_AllocMultiAllMem,memreq,MREMAP_MAYMOVE);
 	if(pMultiHit == MAP_FAILED)
-		pMultiHit = NULL;
+		pMultiHit = nullptr;
 #endif
-	if(pMultiHit == NULL)
+	if(pMultiHit == nullptr)
 		{
 #ifdef _WIN32
 ReleaseMutex(m_hMtxMultiMatches);
@@ -7155,7 +7155,7 @@ tsSNPCentroid* pCentroid;
 int NumCovReads;
 
 m_pSfxArray->GetIdentName(m_pChromSNPs->ChromID, sizeof(szChromName), szChromName);
-if(m_pszCovSegBuff == NULL)
+if(m_pszCovSegBuff == nullptr)
 	{
 	m_pszCovSegBuff = new char [cAllocCovSegSize];
 	m_AllocdCovSegBuff = cAllocCovSegSize;
@@ -7164,22 +7164,22 @@ m_CovSegBuffIdx = 0;
 
 if(!m_bPackedBaseAlleles)			
 	{
-	if (m_pLociPValues == NULL)					// will be NULL first time in
+	if (m_pLociPValues == nullptr)					// will be nullptr first time in
 		{
 		memreq = cAllocLociPValues * sizeof(tsLociPValues);
 #ifdef _WIN32
 		m_pLociPValues = (tsLociPValues*)malloc((size_t)memreq);
-		if (m_pLociPValues == NULL)
+		if (m_pLociPValues == nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, "OutputSNPs: Memory allocation of %zd bytes failed", (int64_t)memreq);
 			return(eBSFerrMem);
 			}
 #else
 		// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-		m_pLociPValues = (tsLociPValues*)mmap(NULL, (size_t)memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+		m_pLociPValues = (tsLociPValues*)mmap(nullptr, (size_t)memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 		if (m_pLociPValues == MAP_FAILED)
 			{
-			m_pLociPValues = NULL;
+			m_pLociPValues = nullptr;
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, "OutputSNPs: Memory allocation of %zd bytes through mmap()  failed", (int64_t)memreq, strerror(errno));
 			return(eBSFerrMem);
 			}
@@ -7190,22 +7190,22 @@ if(!m_bPackedBaseAlleles)
 	}
 else
 	{ // this code block contains the PBA processing
-	if (m_pPackedBaseAlleles == NULL)					// will be NULL first time in
+	if (m_pPackedBaseAlleles == nullptr)					// will be nullptr first time in
 		{
 		memreq = (m_pChromSNPs->ChromLen + 10000) * sizeof(uint8_t);
 #ifdef _WIN32
 		m_pPackedBaseAlleles = (uint8_t*)malloc((size_t)memreq);
-		if (m_pPackedBaseAlleles == NULL)
+		if (m_pPackedBaseAlleles == nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, "OutputSNPs: Memory allocation of %zd bytes failed", (int64_t)memreq);
 			return(eBSFerrMem);
 			}
 #else
 		// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-		m_pPackedBaseAlleles = (uint8_t*)mmap(NULL, (size_t)memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+		m_pPackedBaseAlleles = (uint8_t*)mmap(nullptr, (size_t)memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 		if (m_pPackedBaseAlleles == MAP_FAILED)
 			{
-			m_pPackedBaseAlleles = NULL;
+			m_pPackedBaseAlleles = nullptr;
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, "OutputSNPs: Memory allocation of %zd bytes through mmap()  failed", (int64_t)memreq, strerror(errno));
 			return(eBSFerrMem);
 			}
@@ -7226,7 +7226,7 @@ else
 			size_t memreq = m_AllocPackedBaseAllelesMem + 1000 + (m_pChromSNPs->ChromLen * sizeof(uint8_t));
 #ifdef _WIN32
 			pPackedBaseAlleles = (uint8_t*)realloc(m_pPackedBaseAlleles, memreq);
-			if (pPackedBaseAlleles == NULL)
+			if (pPackedBaseAlleles == nullptr)
 				{
 #else
 				pPackedBaseAlleles = (uint8_t*)mremap(m_pPackedBaseAlleles, m_AllocPackedBaseAllelesMem, memreq, MREMAP_MAYMOVE);
@@ -7401,7 +7401,7 @@ else
 			size_t memreq = m_AllocLociPValuesMem + (cAllocLociPValues * sizeof(tsLociPValues));
 #ifdef _WIN32
 			pLociPValues = (tsLociPValues*)realloc(m_pLociPValues, memreq);
-			if (pLociPValues == NULL)
+			if (pLociPValues == nullptr)
 				{
 #else
 				pLociPValues = (tsLociPValues*)mremap(m_pLociPValues, m_AllocLociPValuesMem, memreq, MREMAP_MAYMOVE);
@@ -7785,7 +7785,7 @@ else
 				PrevSNPs[0].RefBase = (&m_pChromSNPs->Cnts[PrevDiSNPLoci])->RefBase;
 				PrevSNPs[1].RefBase = pSNP->RefBase;
 
-				while ((pCurOverlappingRead = IterateReadsOverlapping(false, m_pChromSNPs, PrevDiSNPLoci, CurDiSNPLoci)) != NULL)
+				while ((pCurOverlappingRead = IterateReadsOverlapping(false, m_pChromSNPs, PrevDiSNPLoci, CurDiSNPLoci)) != nullptr)
 					{
 					// get bases at both SNP loci for current overlapping read
 					PrevDiSNPBase = AdjAlignSNPBase(pCurOverlappingRead, m_pChromSNPs->ChromID, PrevDiSNPLoci);
@@ -7934,7 +7934,7 @@ else
 				PrevSNPs[1].RefBase = (&m_pChromSNPs->Cnts[PrevTriSNPLoci])->RefBase;
 				PrevSNPs[2].RefBase = pSNP->RefBase;
 
-				while ((pCurOverlappingRead = IterateReadsOverlapping(true, m_pChromSNPs, FirstTriSNPLoci, CurTriSNPLoci)) != NULL)
+				while ((pCurOverlappingRead = IterateReadsOverlapping(true, m_pChromSNPs, FirstTriSNPLoci, CurTriSNPLoci)) != nullptr)
 					{
 					// get bases at all three SNP loci
 					FirstTriSNPBase = AdjAlignSNPBase(pCurOverlappingRead, m_pChromSNPs->ChromID, FirstTriSNPLoci);
@@ -8307,11 +8307,11 @@ if(!m_bPackedBaseAlleles)
 	// need to check that there are accepted aligned reads to process for SNPs!!!
 	if(m_hSNPCentsfile != -1)
 		{
-		if(m_pSNPCentroids == NULL)
+		if(m_pSNPCentroids == nullptr)
 			{
 			int CentroidIdx;
 			tsSNPCentroid *pCentroid;
-			if((m_pSNPCentroids = new tsSNPCentroid[cSNPCentroidEls + 16])==NULL)
+			if((m_pSNPCentroids = new tsSNPCentroid[cSNPCentroidEls + 16])==nullptr)
 				{
 				gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessSNPs: Memory allocation of %d SNP centroid elements failed",cSNPCentroidEls + 16);
 				Reset(false);
@@ -8325,12 +8325,12 @@ if(!m_bPackedBaseAlleles)
 		}
 	}
 
-pReadHit = NULL;
+pReadHit = nullptr;
 LineLen = 0;
 PrevTargEntry = 0;
 
 m_TotNumSNPs = 0;
-while((pReadHit = IterSortedReads(pReadHit))!=NULL)
+while((pReadHit = IterSortedReads(pReadHit))!=nullptr)
 	{
 	if(pReadHit->NAR == eNARAccepted)
 		{
@@ -8340,7 +8340,7 @@ while((pReadHit = IterSortedReads(pReadHit))!=NULL)
 		pSeg = &pReadHit->HitLoci.Hit.Seg[0];
 		if(pSeg->ChromID != (uint32_t)PrevTargEntry)
 			{
-			if(m_pChromSNPs != NULL)
+			if(m_pChromSNPs != nullptr)
 				{
 				// this is where the SNPs for the previously processed chrom need to saved off as new chrom is about to be processed
 				m_pChromSNPs->MeanReadLen = (uint32_t)(((m_pChromSNPs->TotReadLen + m_pChromSNPs->NumReads - 1) / m_pChromSNPs->NumReads));
@@ -8353,15 +8353,15 @@ while((pReadHit = IterSortedReads(pReadHit))!=NULL)
 
 			PrevTargEntry = pSeg->ChromID;
 			ChromLen = m_pSfxArray->GetSeqLen(PrevTargEntry);
-			if(m_pChromSNPs == NULL || (m_pChromSNPs != NULL && (ChromLen + 16) > m_pChromSNPs->AllocChromLen))
+			if(m_pChromSNPs == nullptr || (m_pChromSNPs != nullptr && (ChromLen + 16) > m_pChromSNPs->AllocChromLen))
 				{
-				if(m_pChromSNPs != NULL)
+				if(m_pChromSNPs != nullptr)
 					{
 					delete []m_pChromSNPs;
-					m_pChromSNPs = NULL;
+					m_pChromSNPs = nullptr;
 					}
 				size_t AllocSize = sizeof(tsChromSNPs) + ((ChromLen + 16) * sizeof(tsSNPcnts));
-				if((m_pChromSNPs = (tsChromSNPs *)new uint8_t[AllocSize])==NULL)
+				if((m_pChromSNPs = (tsChromSNPs *)new uint8_t[AllocSize])==nullptr)
 					{
 					gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessSNPs: Memory allocation of %zd bytes - %s",(int64_t)AllocSize,strerror(errno));
 					Reset(false);
@@ -8379,14 +8379,14 @@ while((pReadHit = IterSortedReads(pReadHit))!=NULL)
 			m_pChromSNPs->TotReadLen = 0;
 			m_pChromSNPs->AdjacentSNPs[0].StartLoci = 0;
 			m_pChromSNPs->AdjacentSNPs[0].EndLoci = 0;
-			m_pChromSNPs->AdjacentSNPs[0].pFirstIterReadHit = NULL;
+			m_pChromSNPs->AdjacentSNPs[0].pFirstIterReadHit = nullptr;
 			m_pChromSNPs->AdjacentSNPs[0].pPrevIterReadHit = 0;
 			m_pChromSNPs->AdjacentSNPs[1].StartLoci = 0;
 			m_pChromSNPs->AdjacentSNPs[1].EndLoci = 0;
-			m_pChromSNPs->AdjacentSNPs[1].pFirstIterReadHit = NULL;
+			m_pChromSNPs->AdjacentSNPs[1].pFirstIterReadHit = nullptr;
 			m_pChromSNPs->AdjacentSNPs[1].pPrevIterReadHit = 0;
-			m_pChromSNPs->pFirstReadHit = NULL;
-			m_pChromSNPs->pLastReadHit = NULL;
+			m_pChromSNPs->pFirstReadHit = nullptr;
+			m_pChromSNPs->pLastReadHit = nullptr;
 			PrevTargEntry = m_pChromSNPs->ChromID;
 			PrevMMChromID = 0;
 			PrevMMLoci = -1;
@@ -8449,7 +8449,7 @@ while((pReadHit = IterSortedReads(pReadHit))!=NULL)
 				continue;
 			}
 
-		if(m_pChromSNPs->pFirstReadHit == NULL)
+		if(m_pChromSNPs->pFirstReadHit == nullptr)
 			m_pChromSNPs->pFirstReadHit = pReadHit;
 		m_pChromSNPs->pLastReadHit = pReadHit;
 		m_pChromSNPs->TotReadLen += MatchLen;
@@ -8553,7 +8553,7 @@ while((pReadHit = IterSortedReads(pReadHit))!=NULL)
 		}
 	}
 
-if(m_pChromSNPs != NULL)
+if(m_pChromSNPs != nullptr)
 	{
 	m_pChromSNPs->MeanReadLen = (uint32_t)(((m_pChromSNPs->TotReadLen + m_pChromSNPs->NumReads - 1) / m_pChromSNPs->NumReads));
 	if((Rslt=OutputSNPs())!=eBSFSuccess)
@@ -8684,10 +8684,10 @@ else
 	}
 
 
-if(m_pChromSNPs != NULL)
+if(m_pChromSNPs != nullptr)
 	{
 	delete []m_pChromSNPs;
-	m_pChromSNPs = NULL;
+	m_pChromSNPs = nullptr;
 	}
 return(eBSFSuccess);
 }
@@ -8729,14 +8729,14 @@ for(SiteIdx = 0; SiteIdx < cNumOctamers; SiteIdx++,pSitePref++,pSitePrefs++)
 	pSitePref->Octamer = SiteIdx;
 	pSitePrefs->Octamer = SiteIdx;
 	}
-pReadHit = NULL;
+pReadHit = nullptr;
 LineLen = 0;
 PrevTargEntry = 0;
 PrevLoci = -1;
 CurChromLen = -1;
 // iterate all accepted as aligned reads
 // reads are assumed to have been sorted by chrom and start loci
-while((pReadHit = IterSortedReads(pReadHit))!=NULL)
+while((pReadHit = IterSortedReads(pReadHit))!=nullptr)
 	{
 	if(pReadHit->NAR == eNARAccepted)
 		{
@@ -8893,7 +8893,7 @@ for(Idx = 0; Idx < 8; Idx++,pChr--)
 	Octamer >>= 2;
 	}
 return(szOctamer);
-return(NULL);
+return(nullptr);
 }
 
 int
@@ -8974,7 +8974,7 @@ if((Rslt=Disk2Hdr(pszRdsFile))!=eBSFSuccess)
 	return((teBSFrsltCodes)Rslt);
 	}
 
-if((pReadBuff = new uint8_t [cRdsBuffAlloc])==NULL)
+if((pReadBuff = new uint8_t [cRdsBuffAlloc])==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %d bytes - %s",cRdsBuffAlloc,strerror(errno));
 	close(m_hInFile);
@@ -9013,7 +9013,7 @@ AcquireExclusiveLock();
 #ifdef _WIN32
 m_pReadHits = (tsReadHit *) malloc(memreq);	// initial and perhaps the only allocation
 
-if(m_pReadHits == NULL)
+if(m_pReadHits == nullptr)
 	{
 	ReleaseExclusiveLock();
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %zd bytes - %s",(int64_t)memreq,strerror(errno));
@@ -9024,11 +9024,11 @@ if(m_pReadHits == NULL)
 	}
 #else
 // gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-m_pReadHits = (tsReadHit *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+m_pReadHits = (tsReadHit *)mmap(nullptr,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pReadHits == MAP_FAILED)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %zd bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
-	m_pReadHits = NULL;
+	m_pReadHits = nullptr;
 	ReleaseExclusiveLock();
 	delete pReadBuff;
 	close(m_hInFile);
@@ -9088,9 +9088,9 @@ while((RdLen = read(m_hInFile,&pReadBuff[BuffLen],cRdsBuffAlloc - BuffLen)) > 0)
 #else
 			pReadHit = (tsReadHit *)mremap(m_pReadHits,m_AllocdReadHitsMem,memreq,MREMAP_MAYMOVE);
 			if(pReadHit == MAP_FAILED)
-				pReadHit = NULL;
+				pReadHit = nullptr;
 #endif
-			if(pReadHit == NULL)
+			if(pReadHit == nullptr)
 				{
 				ReleaseExclusiveLock();
 				gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory re-allocation to %zd bytes - %s",(int64_t)(m_AllocdReadHitsMem + ((sizeof(tsReadHit) + cDfltReadLen)*cReadsHitReAlloc)),strerror(errno));
@@ -9167,7 +9167,7 @@ if(m_bMutexesCreated)
 #ifdef _WIN32
 InitializeSRWLock(&m_hRwLock);
 #else
-if(pthread_rwlock_init (&m_hRwLock,NULL)!=0)
+if(pthread_rwlock_init (&m_hRwLock,nullptr)!=0)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to create rwlock");
 	return(eBSFerrInternal);
@@ -9175,10 +9175,10 @@ if(pthread_rwlock_init (&m_hRwLock,NULL)!=0)
 #endif
 
 #ifdef _WIN32
-if((m_hMtxIterReads = CreateMutex(NULL,false,NULL))==NULL)
+if((m_hMtxIterReads = CreateMutex(nullptr,false,nullptr))==nullptr)
 	{
 #else
-if(pthread_mutex_init (&m_hMtxIterReads,NULL)!=0)
+if(pthread_mutex_init (&m_hMtxIterReads,nullptr)!=0)
 	{
 	pthread_rwlock_destroy(&m_hRwLock);
 #endif
@@ -9187,10 +9187,10 @@ if(pthread_mutex_init (&m_hMtxIterReads,NULL)!=0)
 	}
 
 #ifdef _WIN32
-if((m_hMtxMHReads = CreateMutex(NULL,false,NULL))==NULL)
+if((m_hMtxMHReads = CreateMutex(nullptr,false,nullptr))==nullptr)
 	{
 #else
-if(pthread_mutex_init (&m_hMtxMHReads,NULL)!=0)
+if(pthread_mutex_init (&m_hMtxMHReads,nullptr)!=0)
 	{
 #endif
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to create mutex");
@@ -9205,12 +9205,12 @@ if(pthread_mutex_init (&m_hMtxMHReads,NULL)!=0)
 if(m_MLMode != eMLdefault)
 	{
 #ifdef _WIN32
-	if((m_hMtxMultiMatches = CreateMutex(NULL,false,NULL))==NULL)
+	if((m_hMtxMultiMatches = CreateMutex(nullptr,false,nullptr))==nullptr)
 		{
 		CloseHandle(m_hMtxIterReads);
 		CloseHandle(m_hMtxMHReads);
 #else
-	if(pthread_mutex_init (&m_hMtxMultiMatches,NULL)!=0)
+	if(pthread_mutex_init (&m_hMtxMultiMatches,nullptr)!=0)
 		{
 		pthread_mutex_destroy(&m_hMtxIterReads);
 		pthread_mutex_destroy(&m_hMtxMHReads);
@@ -9286,7 +9286,7 @@ int MaxNumSlides;
 int ThreadIdx;
 tsThreadMatchPars *pWorkerThreads;
 
-if((pWorkerThreads = new tsThreadMatchPars [m_NumThreads+1])==NULL)
+if((pWorkerThreads = new tsThreadMatchPars [m_NumThreads+1])==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Fatal: unable to allocate memory for %d tsThreadMatchPars", m_NumThreads);
 	Reset(false);
@@ -9295,7 +9295,7 @@ if((pWorkerThreads = new tsThreadMatchPars [m_NumThreads+1])==NULL)
 
 m_PerThreadAllocdIdentNodes = cMaxNumIdentNodes;
 m_TotAllocdIdentNodes = m_PerThreadAllocdIdentNodes * m_NumThreads;
-if((m_pAllocsIdentNodes = new tsIdentNode [m_TotAllocdIdentNodes])==NULL)
+if((m_pAllocsIdentNodes = new tsIdentNode [m_TotAllocdIdentNodes])==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate memory for %d tsIdentNodes",m_TotAllocdIdentNodes);
 	delete []pWorkerThreads;
@@ -9308,7 +9308,7 @@ if(m_PEproc != ePEdefault)
 else
 	m_MaxMLPEmatches = 0;
 
-if((m_pAllocsMultiHitLoci = new tsHitLoci [m_NumThreads * (max(m_MaxMLPEmatches,m_MaxMLmatches) + cPriorityExacts)])==NULL)
+if((m_pAllocsMultiHitLoci = new tsHitLoci [m_NumThreads * (max(m_MaxMLPEmatches,m_MaxMLmatches) + cPriorityExacts)])==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate memory for %d tsHitLoci",m_NumThreads * (m_MaxMLmatches + cPriorityExacts));
 	delete []pWorkerThreads;
@@ -9318,7 +9318,7 @@ if((m_pAllocsMultiHitLoci = new tsHitLoci [m_NumThreads * (max(m_MaxMLPEmatches,
 
 if(m_MLMode == eMLall)
 	{
-	if((m_pAllocsMultiHitBuff = new uint8_t [m_NumThreads * cReadHitBuffLen])==NULL)
+	if((m_pAllocsMultiHitBuff = new uint8_t [m_NumThreads * cReadHitBuffLen])==nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate memory for %d multihit record buffering",m_NumThreads * cReadHitBuffLen);
 		delete []pWorkerThreads;
@@ -9327,7 +9327,7 @@ if(m_MLMode == eMLall)
 		}
 	}
 else
-	m_pAllocsMultiHitBuff = NULL;
+	m_pAllocsMultiHitBuff = nullptr;
 
 // load single SfxBlock, expected to contain all chromosomes, and process all reads against that block
 PlusHits = 0;
@@ -9409,12 +9409,12 @@ for(ThreadIdx = 0; ThreadIdx < m_NumThreads; ThreadIdx++, pWorkerThread++)
 	if(m_MLMode == eMLall)
 		pWorkerThread->pszOutBuff = &m_pAllocsMultiHitBuff[cReadHitBuffLen * ThreadIdx];
 	else
-		pWorkerThread->pszOutBuff = NULL;
+		pWorkerThread->pszOutBuff = nullptr;
 	pWorkerThread->OutBuffIdx = 0;
 #ifdef _WIN32
-	pWorkerThread->threadHandle = (HANDLE)_beginthreadex(NULL,0x0fffff,KCoredApproxThread, pWorkerThread,0,&pWorkerThread->threadID);
+	pWorkerThread->threadHandle = (HANDLE)_beginthreadex(nullptr,0x0fffff,KCoredApproxThread, pWorkerThread,0,&pWorkerThread->threadID);
 #else
-	pWorkerThread->threadRslt =	pthread_create (&pWorkerThread->threadID , NULL , KCoredApproxThread , pWorkerThread);
+	pWorkerThread->threadRslt =	pthread_create (&pWorkerThread->threadID , nullptr , KCoredApproxThread , pWorkerThread);
 #endif
 	}
 
@@ -9453,7 +9453,7 @@ for(ThreadIdx = 0; ThreadIdx < m_NumThreads; ThreadIdx++, pWorkerThread++)
 	int JoinRlt;
 	clock_gettime(CLOCK_REALTIME, &ts);
 	ts.tv_sec += ReportProgressSecs;
-	while((JoinRlt = pthread_timedjoin_np(pWorkerThread->threadID, NULL, &ts)) != 0)
+	while((JoinRlt = pthread_timedjoin_np(pWorkerThread->threadID, nullptr, &ts)) != 0)
 		{
 		ApproxNumReadsProcessed(&CurReadsProcessed,&CurReadsLoaded);
 		if(CurReadsProcessed > PrevReadsProcessed || CurReadsLoaded > PrevReadsLoaded)
@@ -9498,14 +9498,14 @@ for(ThreadIdx = 0; ThreadIdx < m_NumThreads; ThreadIdx++, pWorkerThread++)
 
 // pickup the read loader thread, if the reads processing threads all finished then the loader thread should also have finished
 #ifdef _WIN32
-if(m_hThreadLoadReads != NULL)
+if(m_hThreadLoadReads != nullptr)
 	{
 	while(WAIT_TIMEOUT == WaitForSingleObject(m_hThreadLoadReads, 5000))
 		{
 		gDiagnostics.DiagOut(eDLInfo,gszProcName,"Progress: waiting");
 		}
 	CloseHandle(m_hThreadLoadReads);
-	m_hThreadLoadReads = NULL;
+	m_hThreadLoadReads = nullptr;
 	}
 #else
 if(m_ThreadLoadReadsID != 0)
@@ -9514,7 +9514,7 @@ if(m_ThreadLoadReadsID != 0)
 	int JoinRlt;
 	clock_gettime(CLOCK_REALTIME, &ts);
 	ts.tv_sec += 5;
-	while((JoinRlt = pthread_timedjoin_np(m_ThreadLoadReadsID, NULL, &ts)) != 0)
+	while((JoinRlt = pthread_timedjoin_np(m_ThreadLoadReadsID, nullptr, &ts)) != 0)
 		{
 		gDiagnostics.DiagOut(eDLInfo,gszProcName,"Progress: waiting");
 		ts.tv_sec += 60;
@@ -9535,21 +9535,21 @@ gDiagnostics.DiagOut(eDLInfo,gszProcName,"Alignment of %u from %u loaded complet
 
 m_PerThreadAllocdIdentNodes = 0;
 m_TotAllocdIdentNodes = 0;
-if(m_pAllocsIdentNodes != NULL)
+if(m_pAllocsIdentNodes != nullptr)
 	{
 	delete []m_pAllocsIdentNodes;
-	m_pAllocsIdentNodes = NULL;
+	m_pAllocsIdentNodes = nullptr;
 	}
-if(m_pAllocsMultiHitLoci != NULL)
+if(m_pAllocsMultiHitLoci != nullptr)
 	{
 	delete []m_pAllocsMultiHitLoci;
-	m_pAllocsMultiHitLoci = NULL;
+	m_pAllocsMultiHitLoci = nullptr;
 	}
 
-if(m_pAllocsMultiHitBuff != NULL)
+if(m_pAllocsMultiHitBuff != nullptr)
 	{
 	delete []m_pAllocsMultiHitBuff;
-	m_pAllocsMultiHitBuff = NULL;
+	m_pAllocsMultiHitBuff = nullptr;
 	}
 
 if((m_FMode == eFMsam || m_FMode == eFMsamAll) && m_MLMode == eMLall)
@@ -9621,7 +9621,7 @@ for (SeqIdx = 0; SeqIdx < pReadHit->ReadLen; SeqIdx++, pSeq++, pSeqVal++)
 	}
 if (SeqIdx != pReadHit->ReadLen) // if too many 'N's...
 	{
-	pPars->pPrevReadHit = NULL;
+	pPars->pPrevReadHit = nullptr;
 	pReadHit->NAR = eNARNs;
 	pPars->PrevMatchLen = 0;
 	pPars->NumSloughedNs += 1;
@@ -9675,14 +9675,14 @@ NxtLowMMCnt = pReadHit->NxtLowMMCnt;
 int RefExacts = cPriorityExacts;
 bool bProcNorm;
 
-if (m_pPriorityRegionBED != NULL)
+if (m_pPriorityRegionBED != nullptr)
 	RefExacts = cPriorityExacts;
 else
 	RefExacts = 0;
 
 	// Heuristic is that if read sequence is identical to previously processed sequence then
 	// simply reuse previously AlignReads() hit results - saves a lot of processing time
-if (pPars->pPrevReadHit == NULL || pPars->bForceNewAlignment || pPars->MatchLen != pPars->PrevMatchLen || memcmp(pPars->Sequence, pPars->PrevSequence, pPars->MatchLen))
+if (pPars->pPrevReadHit == nullptr || pPars->bForceNewAlignment || pPars->MatchLen != pPars->PrevMatchLen || memcmp(pPars->Sequence, pPars->PrevSequence, pPars->MatchLen))
 	{
 	memset(pPars->pMultiHits, 0, sizeof(tsHitLoci));
 	bProcNorm = true;
@@ -9710,7 +9710,7 @@ if (pPars->pPrevReadHit == NULL || pPars->bForceNewAlignment || pPars->MatchLen 
 				pPars->NumIdentNodes,			// memory has been allocated by caller for holding up to this many tsIdentNodes
 				pPars->pIdentNodes);			// memory allocated by caller for holding tsIdentNodes
 
-		if (HitRslt == eHRhits && m_pPriorityRegionBED != NULL)
+		if (HitRslt == eHRhits && m_pPriorityRegionBED != nullptr)
 			{
 			int NumInPriorityRegions;
 			int NumInNonPriorityRegions;
@@ -10122,7 +10122,7 @@ tsReadHitLoci PE1ProvHitLoci;				// provisional PE1 hit loci if multiloci hits
 tsReadHitLoci PE2ProvHitLoci;				// provisional PE2 hit loci if multiloci hits
 
 
-if((pReadsHitBlock = (tsReadsHitBlock *)calloc(1,sizeof(tsReadsHitBlock)))==NULL)
+if((pReadsHitBlock = (tsReadsHitBlock *)calloc(1,sizeof(tsReadsHitBlock)))==nullptr)
 	return(-1);
 pReadsHitBlock->MaxReads = cMaxReadsPerBlock;
 
@@ -10132,8 +10132,8 @@ pPars->PlusHits = 0;
 pPars->MinusHits = 0;
 pPars->ChimericHits = 0;
 pPars->NumReadsProc = 0;
-pPE1ReadHit = NULL;
-pPE2ReadHit = NULL;
+pPE1ReadHit = nullptr;
+pPE2ReadHit = nullptr;
 
 pReadsHitBlock->NumReads = 0;
 Rslt = 0;
@@ -10259,8 +10259,8 @@ int Rslt;
 tsReadHit *pProbe;
 int Lo,Mid,Hi;	// search limits
 
-if(m_ppReadHitsIdx == NULL || m_AllocdReadHitsIdx < m_NumReadsLoaded)
-	return(NULL);
+if(m_ppReadHitsIdx == nullptr || m_AllocdReadHitsIdx < m_NumReadsLoaded)
+	return(nullptr);
 
 Lo = 0;
 Hi = m_NumReadsLoaded-1;
@@ -10280,7 +10280,7 @@ while(Hi >= Lo) {
 		}
 	return(pProbe);
 	}
-return(NULL);
+return(nullptr);
 }
 
 
@@ -10304,9 +10304,9 @@ if((m_AllocdMultiHits - m_NumMultiHits) < (NumHits+1000))	// need to realloc? --
 #else
 	pDstHits = (tsReadHit *)mremap(m_pMultiHits,m_AllocdMultiHitsMem,memreq,MREMAP_MAYMOVE);
 	if(pDstHits == MAP_FAILED)
-		pDstHits = NULL;
+		pDstHits = nullptr;
 #endif
-	if(pDstHits == NULL)
+	if(pDstHits == nullptr)
 		{
 		ReleaseSerialiseMH();
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddMHitReads: Memory re-allocation to %zd bytes - %s",memreq,strerror(errno));
@@ -10344,9 +10344,9 @@ CKAligner::ApproxNumReadsProcessed(uint32_t *pNumProcessed,uint32_t *pNumLoaded)
 uint32_t NumReadsProc;
 AcquireSerialise();
 NumReadsProc = m_NumReadsProc;
-if(pNumProcessed != NULL)
+if(pNumProcessed != nullptr)
 	*pNumProcessed = NumReadsProc;
-if(pNumLoaded != NULL)
+if(pNumLoaded != nullptr)
 	*pNumLoaded = m_NumReadsLoaded;
 ReleaseSerialise();
 return(NumReadsProc);
@@ -10384,13 +10384,13 @@ while(1) {
 #endif
 	}
 
-if(m_pReadHits == NULL ||
+if(m_pReadHits == nullptr ||
 	m_ThreadCoredApproxRslt < 0 ||
 	(m_bAllReadsLoaded && (m_LoadReadsRslt != eBSFSuccess)) ||
 	m_bAllReadsLoaded && (m_NumReadsLoaded == 0 || m_NumReadsProc == m_NumReadsLoaded)) // if all reads have been loaded and all processed then time to move onto next processing phase
 	{
 	pRetBlock->NumReads = 0;
-	pRetBlock->pReadHits[0] = NULL;
+	pRetBlock->pReadHits[0] = nullptr;
 	ReleaseSerialise();
 	return(false);
 	}
@@ -10430,13 +10430,13 @@ return(true);
 // IterReads
 // use to iterate over reads returning ptr to next read following the current read
 // Reads need not be sorted
-// To start from first read then pass in NULL as pCurReadHit
-// Returns NULL if all read hits have been iterated
+// To start from first read then pass in nullptr as pCurReadHit
+// Returns nullptr if all read hits have been iterated
 tsReadHit *
-CKAligner::IterReads(tsReadHit *pCurReadHit) // to start from first read then pass in NULL as pCurReadHit
+CKAligner::IterReads(tsReadHit *pCurReadHit) // to start from first read then pass in nullptr as pCurReadHit
 {
-tsReadHit *pNxtReadHit = NULL;
-if(pCurReadHit == NULL)
+tsReadHit *pNxtReadHit = nullptr;
+if(pCurReadHit == nullptr)
 	pNxtReadHit = m_pReadHits;
 else
 	if(pCurReadHit->ReadID != m_FinalReadID)
@@ -10446,13 +10446,13 @@ return(pNxtReadHit);
 
 // IterSortedReads
 // use to iterate over sorted reads returning ptr to next read following the current read
-// To start from first read then pass in NULL as pCurReadHit
-// Returns NULL if all read hits have been iterated
+// To start from first read then pass in nullptr as pCurReadHit
+// Returns nullptr if all read hits have been iterated
 tsReadHit *
 CKAligner::IterSortedReads(tsReadHit *pCurReadHit)
 {
-tsReadHit *pNxtReadHit = NULL;
-if(pCurReadHit == NULL)
+tsReadHit *pNxtReadHit = nullptr;
+if(pCurReadHit == nullptr)
 	pNxtReadHit = m_ppReadHitsIdx[0];
 else
 	if(pCurReadHit->ReadHitIdx < m_NumReadsLoaded)
@@ -10460,7 +10460,7 @@ else
 return(pNxtReadHit);
 }
 
-tsReadHit *		// returned read which overlaps StartLoci and EndLoci, NULL if no read located
+tsReadHit *		// returned read which overlaps StartLoci and EndLoci, nullptr if no read located
 CKAligner::IterateReadsOverlapping(bool bTriSNPs, // false if iterating DiSNPs, true if iterating TriSNPs
 						tsChromSNPs *pChromSNPs, // processing SNPs on this chromosome
 						int StartLoci,				// returned reads are required to overlap both this starting and
@@ -10470,16 +10470,16 @@ bool bNewStartEnd;
 int CurStart;
 int CurEnd;
 tsAdjacentSNPs *pAdjacentSNPs;
-tsReadHit *pNxtReadHit = NULL;
+tsReadHit *pNxtReadHit = nullptr;
 
 pAdjacentSNPs = bTriSNPs ? &pChromSNPs->AdjacentSNPs[1] : &pChromSNPs->AdjacentSNPs[0];
 bNewStartEnd = false;
-if(pAdjacentSNPs->pFirstIterReadHit == NULL ||				// only NULL if iterations just starting for SNPs on this chrom
+if(pAdjacentSNPs->pFirstIterReadHit == nullptr ||				// only nullptr if iterations just starting for SNPs on this chrom
 	StartLoci <  pAdjacentSNPs->StartLoci || EndLoci <  pAdjacentSNPs->EndLoci)	// or if StartLoci/EndLoci now 5' to previous so needing to search from start
 	{
 	pNxtReadHit = pChromSNPs->pFirstReadHit;
 	pAdjacentSNPs->pFirstIterReadHit = pChromSNPs->pFirstReadHit;
-	pAdjacentSNPs->pPrevIterReadHit = NULL;
+	pAdjacentSNPs->pPrevIterReadHit = nullptr;
 	pAdjacentSNPs->StartLoci = StartLoci;
 	pAdjacentSNPs->EndLoci = EndLoci;
 	bNewStartEnd = true;
@@ -10489,7 +10489,7 @@ else
 	if(StartLoci == pAdjacentSNPs->StartLoci && EndLoci == pAdjacentSNPs->EndLoci) // same start/end loci as previous so must be iterating same start/end loci
 		{
 		if(pAdjacentSNPs->pPrevIterReadHit == pChromSNPs->pLastReadHit)		// check if last returned was last on chrom
-			return(NULL);
+			return(nullptr);
 
 		pNxtReadHit = m_ppReadHitsIdx[pAdjacentSNPs->pPrevIterReadHit->ReadHitIdx]; // recommence search from next
 		}
@@ -10505,13 +10505,13 @@ else
 
 	// have the current read, iterate forward returning reads until reads align past the StartLoci
 do {
-	if(pNxtReadHit == NULL)
-		return(NULL);
+	if(pNxtReadHit == nullptr)
+		return(nullptr);
 	if(pNxtReadHit->NAR == eNARAccepted &&
 		!(pNxtReadHit->HitLoci.Hit.FlgInDel || pNxtReadHit->HitLoci.Hit.FlgSplice))
 		{
 		if(pNxtReadHit->HitLoci.Hit.Seg[0].ChromID !=  pChromSNPs->ChromID) // double check read is aligning on to expected chrom
-			return(NULL);
+			return(nullptr);
 
 		CurStart = AdjStartLoci(&pNxtReadHit->HitLoci.Hit.Seg[0]); 
 		CurEnd = AdjEndLoci(&pNxtReadHit->HitLoci.Hit.Seg[0]);
@@ -10525,13 +10525,13 @@ do {
 			}
 		else
 			if(CurStart > StartLoci)
-				return(NULL);
+				return(nullptr);
 		}
 
 	}
-while((pNxtReadHit != pChromSNPs->pLastReadHit) && (pNxtReadHit = m_ppReadHitsIdx[pNxtReadHit->ReadHitIdx])!=NULL);
+while((pNxtReadHit != pChromSNPs->pLastReadHit) && (pNxtReadHit = m_ppReadHitsIdx[pNxtReadHit->ReadHitIdx])!=nullptr);
 
-return(NULL);
+return(nullptr);
 }
 
 
@@ -10549,14 +10549,14 @@ int FrameShift;
 int FrameCodonIdx;
 int RelLoci;
 etSeqBase LociBase;
-tsReadHit* pCurReadHit = NULL;
-if(pCodons == NULL)
+tsReadHit* pCurReadHit = nullptr;
+if(pCodons == nullptr)
 	return(0);
 
 memset(pCodons,0,sizeof(InFrameCodons));
 memset(InFrameCodons, 0, sizeof(InFrameCodons));
 
-if((pCurReadHit = Locate1stReadOverlapLoci(ChromID,Loci))==NULL)
+if((pCurReadHit = Locate1stReadOverlapLoci(ChromID,Loci))==nullptr)
 	return(0);
 NumReads = 0;
 do
@@ -10579,12 +10579,12 @@ do
 			InFrameCodons[FrameShift][FrameCodonIdx] += 1;
 		}
 	}
-while((pCurReadHit = IterReadsOverlapLoci(ChromID, Loci, pCurReadHit))!=NULL);
+while((pCurReadHit = IterReadsOverlapLoci(ChromID, Loci, pCurReadHit))!=nullptr);
 memcpy(pCodons,InFrameCodons,sizeof(InFrameCodons));
 return(NumReads);
 }
 
-tsReadHit *				// returned lowest sorted read which overlaps ChromID.Loci, NULL if non overlaps
+tsReadHit *				// returned lowest sorted read which overlaps ChromID.Loci, nullptr if non overlaps
 CKAligner::Locate1stReadOverlapLoci(uint32_t ChromID,				// loci is on this chromosome
 				 int Loci)							// returned read is lowest sorted read which overlaps this loci
 {
@@ -10596,7 +10596,7 @@ int64_t MidIdx;
 int64_t HiIdx = m_NumReadsLoaded - 1;
 int64_t LoIdx = 0;
 int Start1st = 0;
-tsReadHit* p1stOverlapRead = NULL;
+tsReadHit* p1stOverlapRead = nullptr;
 while(HiIdx >= LoIdx) {
 	MidIdx = (HiIdx + LoIdx)/2;
 	pCurRead = m_ppReadHitsIdx[MidIdx];
@@ -10647,27 +10647,27 @@ while(HiIdx >= LoIdx) {
 return(p1stOverlapRead);
 }
 
-tsReadHit*													// located read, or NULL if unable to locate any more reads overlapping loci
+tsReadHit*													// located read, or nullptr if unable to locate any more reads overlapping loci
 CKAligner::IterReadsOverlapLoci(uint32_t ChromID,				// loci is on this chromosome
 						   int Loci,						// returned reads are required to overlap this loci
-						   tsReadHit* pPrevRead)			// any previously returned read which overlapped loci, NULL if no read previously returned
+						   tsReadHit* pPrevRead)			// any previously returned read which overlapped loci, nullptr if no read previously returned
 {
 bool bNewChrom;
 int CurStart;
 int CurEnd;
-tsReadHit* pNxtReadHit = NULL;
+tsReadHit* pNxtReadHit = nullptr;
 
 if(pPrevRead->NAR != eNARAccepted)
-	pPrevRead = NULL;
+	pPrevRead = nullptr;
 
-bNewChrom = (pPrevRead == NULL || pPrevRead->HitLoci.Hit.Seg[0].ChromID != ChromID) ? true : false;
-if(pPrevRead != NULL)
+bNewChrom = (pPrevRead == nullptr || pPrevRead->HitLoci.Hit.Seg[0].ChromID != ChromID) ? true : false;
+if(pPrevRead != nullptr)
 	{
 	CurStart = AdjStartLoci(&pPrevRead->HitLoci.Hit.Seg[0]);
 	if(pPrevRead->HitLoci.Hit.Seg[0].ChromID < ChromID || Loci < CurStart)
-		pPrevRead = NULL;
+		pPrevRead = nullptr;
 	}
-while((pNxtReadHit = IterSortedReads(pPrevRead))!=NULL)
+while((pNxtReadHit = IterSortedReads(pPrevRead))!=nullptr)
 	{
 	if(pNxtReadHit->NAR == eNARAccepted &&
 	   !(pNxtReadHit->HitLoci.Hit.FlgInDel || pNxtReadHit->HitLoci.Hit.FlgSplice))
@@ -10675,12 +10675,12 @@ while((pNxtReadHit = IterSortedReads(pPrevRead))!=NULL)
 		if(pNxtReadHit->HitLoci.Hit.Seg[0].ChromID != ChromID)	// double check read is aligning on to expected chrom
 			if(bNewChrom)		// loci is on a different chromosome to that previously iterated so keep iterating 
 				{
-				if((pPrevRead = pNxtReadHit) == NULL)
-					return(NULL);
+				if((pPrevRead = pNxtReadHit) == nullptr)
+					return(nullptr);
 				continue;
 				}
 			else
-				return(NULL);
+				return(nullptr);
 		bNewChrom = false;
 		CurStart = AdjStartLoci(&pNxtReadHit->HitLoci.Hit.Seg[0]);
 		CurEnd = AdjEndLoci(&pNxtReadHit->HitLoci.Hit.Seg[0]);
@@ -10688,12 +10688,12 @@ while((pNxtReadHit = IterSortedReads(pPrevRead))!=NULL)
 		if(CurStart <= Loci && CurEnd >= Loci)					// this read overlaps loci?
 			return(pNxtReadHit);
 		if(CurStart > Loci)
-			return(NULL);
+			return(nullptr);
 		}
-	if((pPrevRead = pNxtReadHit) == NULL)
+	if((pPrevRead = pNxtReadHit) == nullptr)
 		break;
 	}
-return(NULL);
+return(nullptr);
 }
 
 
@@ -10711,9 +10711,9 @@ int CurStart;
 int NxtStart;
 int PrvNxtStart;
 uint32_t NxtReadIdx;
-tsReadHit *pNxtReadHit = NULL;
+tsReadHit *pNxtReadHit = nullptr;
 
-if (pCurReadHit == NULL)									// if NULL then start from first
+if (pCurReadHit == nullptr)									// if nullptr then start from first
 	{
 	NxtReadIdx = 0;
 	pCurReadHit = m_ppReadHitsIdx[NxtReadIdx];
@@ -10768,9 +10768,9 @@ int CurStart;
 int NxtStart;
 int PrvNxtStart;
 uint32_t NxtReadIdx;
-tsReadHit *pNxtReadHit = NULL;
+tsReadHit *pNxtReadHit = nullptr;
 
-if(pCurReadHit == NULL || (NxtReadIdx = pCurReadHit->ReadHitIdx)==1) // if NULL or first then
+if(pCurReadHit == nullptr || (NxtReadIdx = pCurReadHit->ReadHitIdx)==1) // if nullptr or first then
 	return(0);								// can't be any upstream from the first!
 
 CurChromID = pCurReadHit->HitLoci.Hit.Seg[0].ChromID;
@@ -10810,18 +10810,18 @@ CKAligner::SortReadHits(etReadsSortMode SortMode,		// sort mode required
 tsReadHit *pReadHit;
 uint32_t Idx;
 
-if(!bForce && SortMode == m_CurReadsSortMode && m_ppReadHitsIdx != NULL && m_AllocdReadHitsIdx >= m_NumReadsLoaded)
+if(!bForce && SortMode == m_CurReadsSortMode && m_ppReadHitsIdx != nullptr && m_AllocdReadHitsIdx >= m_NumReadsLoaded)
 	return(eBSFSuccess);					// if already in requested mode
 
-if(m_ppReadHitsIdx == NULL || m_AllocdReadHitsIdx < m_NumReadsLoaded)
+if(m_ppReadHitsIdx == nullptr || m_AllocdReadHitsIdx < m_NumReadsLoaded)
 	{
-	if(m_ppReadHitsIdx != NULL)
+	if(m_ppReadHitsIdx != nullptr)
 		{
 		delete []m_ppReadHitsIdx;
-		m_ppReadHitsIdx = NULL;
+		m_ppReadHitsIdx = nullptr;
 		m_AllocdReadHitsIdx = 0;
 		}
-	if((m_ppReadHitsIdx = (tsReadHit **) new tsReadHit * [m_NumReadsLoaded])==NULL)
+	if((m_ppReadHitsIdx = (tsReadHit **) new tsReadHit * [m_NumReadsLoaded])==nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"SortReadHits: Memory reads index allocation for %d ptrs - %s",m_NumReadsLoaded,strerror(errno));
 		return(eBSFerrMem);
@@ -10831,9 +10831,9 @@ if(m_ppReadHitsIdx == NULL || m_AllocdReadHitsIdx < m_NumReadsLoaded)
 
 if(SortMode != eRSMSeq || bSeqSorted)
 	{
-	pReadHit = NULL;
+	pReadHit = nullptr;
 	tsReadHit **pIdx = m_ppReadHitsIdx;
-	while((pReadHit = IterReads(pReadHit))!=NULL)
+	while((pReadHit = IterReads(pReadHit))!=nullptr)
 		*pIdx++ = pReadHit;
 	}
 else
@@ -11370,7 +11370,7 @@ m_FileHdr.PMode = (uint8_t)0;
 m_FileHdr.QMode = m_QMethod;
 m_FileHdr.Trim5 = m_Trim5;
 m_FileHdr.Trim3 = m_Trim3;
-m_pReadHits = NULL;
+m_pReadHits = nullptr;
 m_AllocdReadHitsMem = 0;
 m_NumReadsLoaded = 0;
 m_UsedReadHitsMem = 0;
@@ -11419,7 +11419,7 @@ if(!m_FileHdr.FlagsPR)
 			pszInfile = glob.File(FileID);
 
 			gDiagnostics.DiagOut(eDLInfo,gszProcName,"Loading and parsing reads from raw sequence file '%s'\n",pszInfile);
-			Rslt = LoadRawReads(false,NumInputFilesProcessed+1,pszInfile,NULL);
+			Rslt = LoadRawReads(false,NumInputFilesProcessed+1,pszInfile,nullptr);
 			if(Rslt != eBSFSuccess)
 				{
 				if(m_TermBackgoundThreads == 0)
@@ -11500,13 +11500,13 @@ uint8_t *pTmpAlloc;
 tsReadHit *pReadHit;
 size_t memreq;
 
-if(m_pReadHits == NULL)
+if(m_pReadHits == nullptr)
 	{
 	memreq = cDataBuffAlloc;
 	AcquireExclusiveLock();
 #ifdef _WIN32
 	m_pReadHits = (tsReadHit *) malloc((size_t)memreq);
-	if(m_pReadHits == NULL)
+	if(m_pReadHits == nullptr)
 		{
 		ReleaseExclusiveLock();
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEntry: Memory allocation of %zd bytes failed",(int64_t)memreq);
@@ -11514,10 +11514,10 @@ if(m_pReadHits == NULL)
 		}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-	m_pReadHits = (tsReadHit *)mmap(NULL,(size_t)memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+	m_pReadHits = (tsReadHit *)mmap(nullptr,(size_t)memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pReadHits == MAP_FAILED)
 		{
-		m_pReadHits = NULL;
+		m_pReadHits = nullptr;
 		ReleaseExclusiveLock();
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEntry: Memory allocation of %zd bytes through mmap()  failed",(int64_t)memreq,strerror(errno));
 		return(eBSFerrMem);
@@ -11535,13 +11535,13 @@ if((m_AllocdReadHitsMem - m_DataBuffOfs) < (sizeof(tsReadHit) +  ReadLen + Descr
 	AcquireExclusiveLock();
 #ifdef _WIN32
 	pTmpAlloc = (uint8_t *) realloc(m_pReadHits,memreq);
-	if(pTmpAlloc == NULL)
+	if(pTmpAlloc == nullptr)
 		{
 #else
 	pTmpAlloc = (uint8_t *)mremap(m_pReadHits,m_AllocdReadHitsMem,memreq,MREMAP_MAYMOVE);
 	if(pTmpAlloc == MAP_FAILED)
 		{
-		pTmpAlloc = NULL;
+		pTmpAlloc = nullptr;
 #endif
 
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEntry: Memory reallocation to %zd bytes failed - %s",memreq,strerror(errno));
@@ -11599,7 +11599,7 @@ int SeqOfs;
 int Score;
 double ProbErr;
 double ProbNoReadErr;
-if(QSSchema == 0 || ReadLen < 1 || pQScores == NULL || pQScores[0] == '\0')		// if can't score then have to assume the best - read is sequencing base call error free
+if(QSSchema == 0 || ReadLen < 1 || pQScores == nullptr || pQScores[0] == '\0')		// if can't score then have to assume the best - read is sequencing base call error free
 	return(1.0);
 
 ProbNoReadErr = 1.0;
@@ -11653,8 +11653,8 @@ int PE1DescrLen;
 uint8_t szPE1DescrBuff[cMaxKADescrLen+1];
 int PE1ReadLen;
 int PE1QualLen;
-uint8_t* pszPE1ReadBuff = NULL;
-uint8_t *pszPE1QualBuff = NULL;
+uint8_t* pszPE1ReadBuff = nullptr;
+uint8_t *pszPE1QualBuff = nullptr;
 int PE1NumReadsAccepted;
 int PE1NumInvalValues;
 int PE1NumUnsupportedBases;
@@ -11667,8 +11667,8 @@ uint8_t szPE2DescrBuff[cMaxKADescrLen+1];
 int PE2ReadLen;
 
 int PE2QualLen;
-uint8_t* pszPE2ReadBuff = NULL;
-uint8_t *pszPE2QualBuff = NULL;
+uint8_t* pszPE2ReadBuff = nullptr;
+uint8_t *pszPE2QualBuff = nullptr;
 int PE2NumReadsAccepted;
 int PE2NumInvalValues;
 int PE2NumUnsupportedBases;
@@ -11697,7 +11697,7 @@ uint32_t EstNumSeqs;
 int64_t ReqAllocSize;
 
 // try and guestimate memory requirements so these can be allocated upfront - will be realloc'd if guestimate is wrong
-if((EstNumSeqs = (teBSFrsltCodes)PE1Fasta.FastaEstSizes(pszPE1File,NULL,NULL,&EstDescrLen,NULL,&EstSeqLen,&EstScoreSchema)) == 0)
+if((EstNumSeqs = (teBSFrsltCodes)PE1Fasta.FastaEstSizes(pszPE1File,nullptr,nullptr,&EstDescrLen,nullptr,&EstSeqLen,&EstScoreSchema)) == 0)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to estimate memory requirements for file '%s'",pszPE1File);
 	return(eBSFerrOpnFile);
@@ -11774,12 +11774,12 @@ if(bIsPairReads)
 	}
 
 AcquireExclusiveLock();
-if(m_pReadHits == NULL)
+if(m_pReadHits == nullptr)
 	{
 	m_AllocdReadHitsMem = (size_t)ReqAllocSize;
 #ifdef _WIN32
 	m_pReadHits = (tsReadHit *) malloc((size_t)m_AllocdReadHitsMem);
-	if(m_pReadHits == NULL)
+	if(m_pReadHits == nullptr)
 		{
 		ReleaseExclusiveLock();
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Concatenated sequences memory allocation of %zd bytes - %s",(int64_t)m_AllocdReadHitsMem,strerror(errno));
@@ -11789,13 +11789,13 @@ if(m_pReadHits == NULL)
 		}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-	m_pReadHits = (tsReadHit *)mmap(NULL,m_AllocdReadHitsMem, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+	m_pReadHits = (tsReadHit *)mmap(nullptr,m_AllocdReadHitsMem, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pReadHits == MAP_FAILED)
 		{
 		ReleaseExclusiveLock();
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Concatenated sequences memory of %zd bytes through mmap()  failed - %s",(int64_t)m_AllocdReadHitsMem,strerror(errno));
 		PE1Fasta.Close();
-		m_pReadHits = NULL;
+		m_pReadHits = nullptr;
 		return(eBSFerrMem);
 		}
 #endif
@@ -11814,9 +11814,9 @@ else
 #else
 		pDstSeq = (uint8_t *)mremap(m_pReadHits,m_AllocdReadHitsMem,memreq,MREMAP_MAYMOVE);
 		if(pDstSeq == MAP_FAILED)
-			pDstSeq = NULL;
+			pDstSeq = nullptr;
 #endif
-		if(pDstSeq == NULL)
+		if(pDstSeq == nullptr)
 			{
 			ReleaseExclusiveLock();
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddSeq: Memory re-allocation to %zd bytes - %s",memreq,strerror(errno));
@@ -11879,13 +11879,13 @@ while((Rslt = (teBSFrsltCodes)(PE1ReadLen = PE1Fasta.ReadSequence(pszPE1ReadBuff
 			PE1Fasta.Close();
 			if(bIsPairReads)
 				PE2Fasta.Close();
-			if (pszPE1ReadBuff != NULL)
+			if (pszPE1ReadBuff != nullptr)
 				delete []pszPE1ReadBuff;
-			if (pszPE2ReadBuff != NULL)
+			if (pszPE2ReadBuff != nullptr)
 				delete[]pszPE2ReadBuff;
-			if (pszPE1QualBuff != NULL)
+			if (pszPE1QualBuff != nullptr)
 				delete []pszPE1QualBuff;
-			if (pszPE2QualBuff != NULL)
+			if (pszPE2QualBuff != nullptr)
 				delete[]pszPE2QualBuff;
 			return(eBSFerrParse);
 			}
@@ -11913,13 +11913,13 @@ while((Rslt = (teBSFrsltCodes)(PE1ReadLen = PE1Fasta.ReadSequence(pszPE1ReadBuff
 					gDiagnostics.DiagOut(eDLFatal,gszProcName,"Last PE2 descriptor parsed: %s",szPE2DescrBuff);
 				PE1Fasta.Close();
 				PE2Fasta.Close();
-				if (pszPE1ReadBuff != NULL)
+				if (pszPE1ReadBuff != nullptr)
 					delete[]pszPE1ReadBuff;
-				if (pszPE2ReadBuff != NULL)
+				if (pszPE2ReadBuff != nullptr)
 					delete[]pszPE2ReadBuff;
-				if (pszPE1QualBuff != NULL)
+				if (pszPE1QualBuff != nullptr)
 					delete[]pszPE1QualBuff;
-				if (pszPE2QualBuff != NULL)
+				if (pszPE2QualBuff != nullptr)
 					delete[]pszPE2QualBuff;
 				return(eBSFerrParse);
 				}
@@ -11939,13 +11939,13 @@ while((Rslt = (teBSFrsltCodes)(PE1ReadLen = PE1Fasta.ReadSequence(pszPE1ReadBuff
 					gDiagnostics.DiagOut(eDLFatal,gszProcName,"Last descriptor parsed: %s",szPE2DescrBuff);
 					PE1Fasta.Close();
 					PE2Fasta.Close();
-					if (pszPE1ReadBuff != NULL)
+					if (pszPE1ReadBuff != nullptr)
 						delete[]pszPE1ReadBuff;
-					if (pszPE2ReadBuff != NULL)
+					if (pszPE2ReadBuff != nullptr)
 						delete[]pszPE2ReadBuff;
-					if (pszPE1QualBuff != NULL)
+					if (pszPE1QualBuff != nullptr)
 						delete[]pszPE1QualBuff;
-					if (pszPE2QualBuff != NULL)
+					if (pszPE2QualBuff != nullptr)
 						delete[]pszPE2QualBuff;
 					return(eBSFerrParse);
 					}
@@ -11957,13 +11957,13 @@ while((Rslt = (teBSFrsltCodes)(PE1ReadLen = PE1Fasta.ReadSequence(pszPE1ReadBuff
 				PE1Fasta.Close();
 				if(bIsPairReads)
 					PE2Fasta.Close();
-				if (pszPE1ReadBuff != NULL)
+				if (pszPE1ReadBuff != nullptr)
 					delete[]pszPE1ReadBuff;
-				if (pszPE2ReadBuff != NULL)
+				if (pszPE2ReadBuff != nullptr)
 					delete[]pszPE2ReadBuff;
-				if (pszPE1QualBuff != NULL)
+				if (pszPE1QualBuff != nullptr)
 					delete[]pszPE1QualBuff;
-				if (pszPE2QualBuff != NULL)
+				if (pszPE2QualBuff != nullptr)
 					delete[]pszPE2QualBuff;
 				return(eBSFerrParse);
 				}
@@ -11978,7 +11978,7 @@ while((Rslt = (teBSFrsltCodes)(PE1ReadLen = PE1Fasta.ReadSequence(pszPE1ReadBuff
 			}
 
 
-		if(m_pContaminants != NULL)
+		if(m_pContaminants != nullptr)
 			{
 			// currently treating any contaminant match errors as if simply there was no overlap - should really report these!!!
 			if((ContamLen5PE1 = m_pContaminants->MatchContaminants(eAOF5PE1Targ,1,m_Trim5+1,PE1ReadLen,pszPE1ReadBuff)) <= m_Trim5)
@@ -12072,13 +12072,13 @@ while((Rslt = (teBSFrsltCodes)(PE1ReadLen = PE1Fasta.ReadSequence(pszPE1ReadBuff
 				PE1Fasta.Close();
 				if(bIsPairReads)
 					PE2Fasta.Close();
-				if (pszPE1ReadBuff != NULL)
+				if (pszPE1ReadBuff != nullptr)
 					delete[]pszPE1ReadBuff;
-				if (pszPE2ReadBuff != NULL)
+				if (pszPE2ReadBuff != nullptr)
 					delete[]pszPE2ReadBuff;
-				if (pszPE1QualBuff != NULL)
+				if (pszPE1QualBuff != nullptr)
 					delete[]pszPE1QualBuff;
-				if (pszPE2QualBuff != NULL)
+				if (pszPE2QualBuff != nullptr)
 					delete[]pszPE2QualBuff;
 				return(eBSFerrParse);
 				}
@@ -12159,13 +12159,13 @@ while((Rslt = (teBSFrsltCodes)(PE1ReadLen = PE1Fasta.ReadSequence(pszPE1ReadBuff
 					gDiagnostics.DiagOut(eDLFatal,gszProcName,"Load: quality length (%d) not same as read length (%d) for '%s' entry in file '%s'",PE2QualLen,PE2ReadLen,szPE2DescrBuff,pszPE2File);
 					PE1Fasta.Close();
 					PE2Fasta.Close();
-					if (pszPE1ReadBuff != NULL)
+					if (pszPE1ReadBuff != nullptr)
 						delete[]pszPE1ReadBuff;
-					if (pszPE2ReadBuff != NULL)
+					if (pszPE2ReadBuff != nullptr)
 						delete[]pszPE2ReadBuff;
-					if (pszPE1QualBuff != NULL)
+					if (pszPE1QualBuff != nullptr)
 						delete[]pszPE1QualBuff;
-					if (pszPE2QualBuff != NULL)
+					if (pszPE2QualBuff != nullptr)
 						delete[]pszPE2QualBuff;
 					return(eBSFerrParse);
 					}
@@ -12317,13 +12317,13 @@ while((Rslt = (teBSFrsltCodes)(PE1ReadLen = PE1Fasta.ReadSequence(pszPE1ReadBuff
 		PE1Fasta.Close();
 		if(bIsPairReads)
 			PE2Fasta.Close();
-		if (pszPE1ReadBuff != NULL)
+		if (pszPE1ReadBuff != nullptr)
 			delete[]pszPE1ReadBuff;
-		if (pszPE2ReadBuff != NULL)
+		if (pszPE2ReadBuff != nullptr)
 			delete[]pszPE2ReadBuff;
-		if (pszPE1QualBuff != NULL)
+		if (pszPE1QualBuff != nullptr)
 			delete[]pszPE1QualBuff;
-		if (pszPE2QualBuff != NULL)
+		if (pszPE2QualBuff != nullptr)
 			delete[]pszPE2QualBuff;
 		return(eBSFerrParse);
 		}
@@ -12340,26 +12340,26 @@ if(Rslt != eBSFSuccess)
 	PE1Fasta.Close();
 	if(bIsPairReads)
 		PE2Fasta.Close();
-	if (pszPE1ReadBuff != NULL)
+	if (pszPE1ReadBuff != nullptr)
 		delete[]pszPE1ReadBuff;
-	if (pszPE2ReadBuff != NULL)
+	if (pszPE2ReadBuff != nullptr)
 		delete[]pszPE2ReadBuff;
-	if (pszPE1QualBuff != NULL)
+	if (pszPE1QualBuff != nullptr)
 		delete[]pszPE1QualBuff;
-	if (pszPE2QualBuff != NULL)
+	if (pszPE2QualBuff != nullptr)
 		delete[]pszPE2QualBuff;
 	return(Rslt);
 	}
 PE1Fasta.Close();
 if(bIsPairReads)
 	PE2Fasta.Close();
-if (pszPE1ReadBuff != NULL)
+if (pszPE1ReadBuff != nullptr)
 delete[]pszPE1ReadBuff;
-if (pszPE2ReadBuff != NULL)
+if (pszPE2ReadBuff != nullptr)
 delete[]pszPE2ReadBuff;
-if (pszPE1QualBuff != NULL)
+if (pszPE1QualBuff != nullptr)
 delete[]pszPE1QualBuff;
-if (pszPE2QualBuff != NULL)
+if (pszPE2QualBuff != nullptr)
 delete[]pszPE2QualBuff;
 if(m_TermBackgoundThreads != 0)	// need to immediately self-terminate?
 	return(eBSErrSession);
@@ -12378,7 +12378,7 @@ if(PE1NumUnderlength > 0)
 	gDiagnostics.DiagOut(eDLWarn,gszProcName,"Load: total of %d under length sequences sloughed from file '%s'",PE1NumUnderlength,pszPE1File);
 if(PE1NumOverlength > 0)
 	gDiagnostics.DiagOut(eDLWarn,gszProcName,"Load: total of %d over length sequences sloughed from file '%s'",PE1NumOverlength,pszPE1File);
-if(m_pContaminants != NULL)
+if(m_pContaminants != nullptr)
 	{
 	gDiagnostics.DiagOut(eDLWarn,gszProcName,"Load: total of %d sequences PE1 sequences were 5' contaminate trimmed",NumContamLen5PE1);
 	gDiagnostics.DiagOut(eDLWarn,gszProcName,"Load: total of %d sequences PE1 sequences were 3' contaminate trimmed",NumContamLen3PE1);
@@ -12395,7 +12395,7 @@ if(bIsPairReads)
 		gDiagnostics.DiagOut(eDLWarn,gszProcName,"Load: total of %d under length sequences sloughed from file '%s'",PE2NumUnderlength,pszPE2File);
 	if(PE2NumOverlength > 0)
 		gDiagnostics.DiagOut(eDLWarn,gszProcName,"Load: total of %d over length sequences sloughed from file '%s'",PE2NumOverlength,pszPE2File);
-	if(m_pContaminants != NULL)
+	if(m_pContaminants != nullptr)
 		{
 		gDiagnostics.DiagOut(eDLWarn,gszProcName,"Load: total of %d sequences PE1 sequences were 5' contaminant trimmed",NumContamLen5PE2);
 		gDiagnostics.DiagOut(eDLWarn,gszProcName,"Load: total of %d sequences PE1 sequences were 3' contaminant trimmed",NumContamLen3PE2);

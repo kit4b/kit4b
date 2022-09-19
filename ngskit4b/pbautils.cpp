@@ -15,10 +15,12 @@
 #include "./ngskit4b.h"
 #include "./pbautils.h"
 
-int Process(ePBAuMode PMode,	// ePBAu2Fasta: PBA to Fasta, ePBAu2PBA: Fasta to PBA, ePBAu2PBAConcordance: concordance over all PBA samples, ePBAu2WIGConcordance: concordance over all WIG samples
+int Process(ePBAuMode PMode,	// processing mode: ePBAu2Fasta PBA to Fasta, ePBAu2PBA Fasta to PBA, ePBAu2PBAConcordance concordance over PBA samples, ePBAu2WIGConcordance concordance over WIG samples, ePBAu2AVCF allelic variant VCF, ePBAu2GVCF allelic genotype VCF
 	int32_t LimitPBAs,			// limit number of loaded PBA files to this many. 1 .. cMaxPBAReadsets
 	int32_t PBAsTrim5,			// trim this many aligned PBAs from 5' end of aligned segments - reduces false alleles due to sequencing errors
 	int32_t PBAsTrim3,			// trim this many aligned PBAs from 3' end of aligned segments - reduces false alleles due to sequencing errors
+	double GTPropNAThres,		// when genotyping VCF then proportion of non-aligned calls over all samples must be < this threshold
+	double GTPropHetThres,		// when genotyping VCF then proportion of heterozygous calls must be >= this threshold
 	char* pszRefAssemb,			// reference assembly identifier
 	char* pszRefAssembFile,		// PBA file containing reference assembly sequences
 	char* pszChromFile,			// BED file containing reference assembly chromosome names and sizes
@@ -27,6 +29,8 @@ int Process(ePBAuMode PMode,	// ePBAu2Fasta: PBA to Fasta, ePBAu2PBA: Fasta to P
 	int NumInputFiles,			// number of input founder file specs
 	char *pszInputFiles[],		// names of input founder PBA files (wildcards allowed)
 	char *szOutFile,			// output to this file
+	char *pszROIFile,			// optional BED file containing regions of interest
+	char *pszGTSampleFiltFile,	// optional file containing those readseq/sample names for whom only their genotypes are to be reported
 	int NumIncludeChroms,		// number of chromosome regular expressions to include
 	char *pszIncludeChroms[],	// array of include chromosome regular expressions
 	int NumExcludeChroms,		// number of chromosome expressions to exclude
@@ -37,13 +41,13 @@ int Process(ePBAuMode PMode,	// ePBAu2Fasta: PBA to Fasta, ePBAu2PBA: Fasta to P
 int pbautils(int argc, char* argv[])
 {
 	// determine my process name
-_splitpath(argv[0], NULL, NULL, gszProcName, NULL);
+_splitpath(argv[0], nullptr, nullptr, gszProcName, nullptr);
 #else
 int
 pbautils(int argc, char** argv)
 {
 	// determine my process name
-CUtility::splitpath((char*)argv[0], NULL, gszProcName);
+CUtility::splitpath((char*)argv[0], nullptr, gszProcName);
 #endif
 int iFileLogLevel;			// level of file diagnostics
 int iScreenLogLevel;		// level of file diagnostics
@@ -57,11 +61,12 @@ int NumThreads;				// number of threads (0 defaults to number of CPUs or a maxim
 
 int Idx;
 
-ePBAuMode PMode;			// ePBAu2Fasta: PBA to Fasta, ePBAu2PBA: Fasta to PBA, ePBAu2Concordance: report on degree of concordance over all samples
+ePBAuMode PMode;			// processing mode: ePBAu2Fasta PBA to Fasta, ePBAu2PBA Fasta to PBA, ePBAu2PBAConcordance concordance over PBA samples, ePBAu2WIGConcordance concordance over WIG samples, ePBAu2AVCF allelic variant VCF, ePBAu2GVCF allelic genotype VCF
 int32_t LimitPBAs;			// limit number of loaded PBA files to this many. 0: no limits, > 0 sets upper limit
 int32_t PBAsTrim5;			// trim this many aligned PBAs from 5' end of aligned segments - reduces false alleles due to sequencing errors
 int32_t PBAsTrim3;			// trim this many aligned PBAs from 3' end of aligned segments - reduces false alleles due to sequencing errors
-
+double GTPropNAThres;		// when genotyping VCF then proportion of non-aligned calls over all samples must be < this threshold
+double GTPropHetThres;		// when genotyping VCF then proportion of heterozygous calls must be >= this threshold
 char szExprID[cMaxRefAssembName + 1];
 char szSeqID[cMaxRefAssembName+1];
 char szRefAssemb[cMaxRefAssembName+1]; 
@@ -73,16 +78,21 @@ char* pszExcludeChroms[cMaxExcludeChroms];
 int NumInputFiles;		// number of input files
 char* pszInputFiles[cMaxWildCardFileSpecs];		// names of input files (wildcards allowed)
 char szOutFile[_MAX_PATH];		// output converted to this file
-
+char szROIFile[_MAX_PATH];		// optional BED file containing regions of interest
+char szGTSampleFiltFile[_MAX_PATH];	// optional file containing those readseq/sample names for whom only their genotypes are to be reported
 struct arg_lit* help = arg_lit0("h", "help", "print this help and exit");
 struct arg_lit* version = arg_lit0("v", "version,ver", "print version information and exit");
 struct arg_int* FileLogLevel = arg_int0("f", "FileLogLevel", "<int>", "Level of diagnostics written to screen and logfile 0=fatal,1=errors,2=info,3=diagnostics,4=debug");
 struct arg_file* LogFile = arg_file0("F", "log", "<file>", "diagnostics log file");
 
-struct arg_int* pmode = arg_int0("m", "mode", "<int>", "processing mode: 0 PBA to Fasta, 1 Fasta to PBA, 2 concordance over PBA samples, 3 concordance over WIG samples, 4 allelic differences between 2 PBAs");
+struct arg_int* pmode = arg_int0("m", "mode", "<int>", "processing mode: 0 PBA to Fasta, 1 Fasta to PBA, 2 concordance over PBA samples, 3 concordance over WIG samples, 4 allelic variant VCF, 5 allelic genotype VCF");
 struct arg_int* limitpbas = arg_int0("l", "limitpbas", "<int>", " limit number of loaded PBA files to this many. 0: no limits, > 0 sets upper limit (default 0)");
 struct arg_int* pbastrim5 = arg_int0("x", "trim5", "<int>", "trim this many aligned PBAs from 5' end of aligned segments (default 0, range 0..100)");
 struct arg_int* pbastrim3 = arg_int0("X", "trim3", "<int>", "trim this many aligned PBAs from 3' end of aligned segments (default 0, range 0..100)");
+
+struct arg_dbl* mingthet = arg_dbl0("y", "mingthet", "<dbl>", "minimum proportion required genotyping aligned sample heterozygosity (default 0.05, range 0.00 .. 0.25)");
+struct arg_dbl* maxgtpropna = arg_dbl0("Y", "maxgtpropna", "<dbl>", "maximum proportion allowed genotyping non-aligned samples (default 0.05, range 0.00 .. 0.25)");
+
 
 struct arg_str* exprid = arg_str0("e", "exprid", "<str>", "assign this experiment identifier, mode 1 only (default is 'E000000')");
 struct arg_str* seqid = arg_str0("s", "seqid", "<str>", "sequence identifier, mode 1 only (default is 'S000000')");
@@ -93,14 +103,16 @@ struct arg_str* IncludeChroms = arg_strn("z", "chromeinclude", "<string>", 0, cM
 struct arg_file* infiles = arg_filen("i", "infiles", "<file>", 0, cMaxWildCardFileSpecs, "input file(s), wildcards allowed, limit of 200 filespecs supported");
 struct arg_file* chromfile = arg_file1("c", "chromfile", "<file>", "input BED file containing chromosome names and sizes");
 
-struct arg_file* refassembfile = arg_file0("R", "refassembfile", "<file>", "reference assembly file, required when generating VCF from PBA files");
-
+struct arg_file* refassembfile = arg_file0("R", "refassembfile", "<file>", "reference PBA file, required when generating VCF from PBA files");
+struct arg_file* roifile = arg_file0("C", "roifile", "<file>", "BED file containing regions of interest - optional - when generating VCFs from PBA files");
+struct arg_file* gtfiltsamplefile = arg_file0("g", "gtfiltsampleile", "<file>", "text file containing names (spaces,quotes,or line separated) of readsets/samples - optional - to actually report in GT VCF file");
 struct arg_file* outfile = arg_file1("o", "out", "<file>", "output to this file");
 struct arg_int* threads = arg_int0("T", "threads", "<int>", "number of processing threads 0..64 (defaults to 0 which limits threads to maximum of 64 CPU cores)");
 
 struct arg_end* end = arg_end(200);
 void* argtable[] = {help,version,FileLogLevel,LogFile,
-					pmode,limitpbas, pbastrim5,pbastrim3,refassemb,exprid,seqid,chromfile,refassembfile,ExcludeChroms,IncludeChroms,infiles,outfile,threads,end};
+					pmode,limitpbas, pbastrim5,pbastrim3,mingthet,maxgtpropna, refassemb,exprid,seqid,chromfile,refassembfile,
+					ExcludeChroms,IncludeChroms,infiles,outfile,roifile,gtfiltsamplefile,threads,end};
 char** pAllArgs;
 int argerrors;
 argerrors = CUtility::arg_parsefromfile(argc, (char**)argv, &pAllArgs);
@@ -196,6 +208,28 @@ if(!argerrors)
 		if (PBAsTrim3 > 100)
 			PBAsTrim3 = 100;
 
+	if(PMode == ePBAu2GVCF)
+		{
+		GTPropNAThres = mingthet->count ? mingthet->dval[0] : cDfltGTPropThres;
+		if(GTPropNAThres < 0.00)	// silently force to be in accepted range
+			GTPropNAThres = 0.00;
+		else
+			if(GTPropNAThres > 0.25)
+				GTPropNAThres = 0.25;
+			
+		GTPropHetThres = maxgtpropna->count ? maxgtpropna->dval[0] : cDfltGTPropThres;
+		if(GTPropHetThres < 0.00)	// silently force to be in accepted range
+			GTPropHetThres = 0.00;
+		else
+			if(GTPropHetThres > 0.25)
+				GTPropHetThres = 0.25;
+		}
+	else
+		{
+		GTPropNAThres = 0.0;
+		GTPropHetThres = 0.0;
+		}
+
 // show user current resource limits
 #ifndef _WIN32
 	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Resources: %s", CUtility::ReportResourceLimits());
@@ -219,7 +253,7 @@ if(!argerrors)
 		}
 
 	szRefAssembFile[0] = '\0';
-	if (PMode == ePBAu2PBA || PMode == ePBAu2VCF)
+	if (PMode == ePBAu2PBA || PMode == ePBAu2AVCF || PMode == ePBAu2GVCF)
 		{
 		if (refassemb->count)
 			{
@@ -258,7 +292,7 @@ if(!argerrors)
 		if (szSeqID[0] == '\0')
 			strcpy(szSeqID, cDfltSeqID);
 		szSeqID[cMaxRefAssembName] = '\0';
-		if(PMode == ePBAu2VCF)
+		if(PMode == ePBAu2AVCF || PMode == ePBAu2GVCF)
 			{
 			if (refassembfile->count)
 				{
@@ -300,8 +334,8 @@ if(!argerrors)
 		{
 		for (NumIncludeChroms = Idx = 0; NumIncludeChroms < cMaxIncludeChroms && Idx < IncludeChroms->count; Idx++)
 			{
-			pszIncludeChroms[Idx] = NULL;
-			if (pszIncludeChroms[NumIncludeChroms] == NULL)
+			pszIncludeChroms[Idx] = nullptr;
+			if (pszIncludeChroms[NumIncludeChroms] == nullptr)
 				pszIncludeChroms[NumIncludeChroms] = new char[_MAX_PATH];
 			strncpy(pszIncludeChroms[NumIncludeChroms], IncludeChroms->sval[Idx], _MAX_PATH);
 			pszIncludeChroms[NumIncludeChroms][_MAX_PATH - 1] = '\0';
@@ -318,8 +352,8 @@ if(!argerrors)
 		{
 		for (NumExcludeChroms = Idx = 0; NumExcludeChroms < cMaxExcludeChroms && Idx < ExcludeChroms->count; Idx++)
 			{
-			pszExcludeChroms[Idx] = NULL;
-			if (pszExcludeChroms[NumExcludeChroms] == NULL)
+			pszExcludeChroms[Idx] = nullptr;
+			if (pszExcludeChroms[NumExcludeChroms] == nullptr)
 				pszExcludeChroms[NumExcludeChroms] = new char[_MAX_PATH];
 			strncpy(pszExcludeChroms[NumExcludeChroms], ExcludeChroms->sval[Idx], _MAX_PATH);
 			pszExcludeChroms[NumExcludeChroms][_MAX_PATH - 1] = '\0';
@@ -336,8 +370,8 @@ if(!argerrors)
 		{
 		for (Idx = 0; NumInputFiles < cMaxWildCardFileSpecs && Idx < infiles->count; Idx++)
 			{
-			pszInputFiles[Idx] = NULL;
-			if (pszInputFiles[NumInputFiles] == NULL)
+			pszInputFiles[Idx] = nullptr;
+			if (pszInputFiles[NumInputFiles] == nullptr)
 				pszInputFiles[NumInputFiles] = new char[_MAX_PATH];
 			strncpy(pszInputFiles[NumInputFiles], infiles->filename[Idx], _MAX_PATH);
 			pszInputFiles[NumInputFiles][_MAX_PATH - 1] = '\0';
@@ -361,6 +395,26 @@ if(!argerrors)
 		exit(1);
 		}
 
+
+	szROIFile[0] = '\0';
+	szGTSampleFiltFile[0] = '\0';
+	if((PMode == ePBAu2AVCF || PMode == ePBAu2GVCF))
+		{
+		if(roifile->count)
+			{
+			strncpy(szROIFile, roifile->filename[0], _MAX_PATH);
+			szROIFile[_MAX_PATH-1] = '\0';
+			CUtility::TrimQuotedWhitespcExtd(szROIFile);
+			}
+
+		if(PMode == ePBAu2GVCF && gtfiltsamplefile)
+			{
+			strncpy(szGTSampleFiltFile, gtfiltsamplefile->filename[0], _MAX_PATH);
+			szGTSampleFiltFile[_MAX_PATH-1] = '\0';
+			CUtility::TrimQuotedWhitespcExtd(szGTSampleFiltFile);
+			}
+		}
+
 	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Processing parameters:");
 	const char* pszDescr;
 	switch(PMode) {
@@ -376,8 +430,11 @@ if(!argerrors)
 		case ePBAu2WIGConcordance:
 			pszDescr = "generating concordance CSV file from WIG samples";
 			break;
-		case ePBAu2VCF:
-			pszDescr = "output VCF containing allelic differences between two PBAs";
+		case ePBAu2AVCF:
+			pszDescr = "generate allelic VCF file";
+			break;
+		case ePBAu2GVCF:
+			pszDescr = "generate genotype VCF file";
 			break;
 	}
 
@@ -389,7 +446,14 @@ if(!argerrors)
 	gDiagnostics.DiagOutMsgOnly(eDLInfo, "Trim 5' segments by : %dbp", PBAsTrim5);
 	gDiagnostics.DiagOutMsgOnly(eDLInfo, "Trim 3' segments by : %dbp", PBAsTrim3);
 
-	if(PMode == ePBAu2VCF)
+	if(PMode == ePBAu2GVCF)
+		{
+		gDiagnostics.DiagOutMsgOnly(eDLInfo, "Maximum proportion unaligned samples : %.3f", GTPropNAThres);
+		gDiagnostics.DiagOutMsgOnly(eDLInfo, "Minimum proportion heterozygosity between aligned samples : %.3f", GTPropHetThres);
+		}
+
+
+	if(PMode == ePBAu2AVCF || PMode == ePBAu2GVCF)
 		gDiagnostics.DiagOutMsgOnly(eDLInfo, "PBA reference assembly : '%s'", szRefAssembFile);
 	gDiagnostics.DiagOutMsgOnly(eDLInfo, "BED containing chromosome names and sizes : '%s'", szChromFile);
 	if (PMode == ePBAu2PBA || PMode == ePBAu2WIGConcordance)
@@ -398,6 +462,12 @@ if(!argerrors)
 		gDiagnostics.DiagOutMsgOnly(eDLInfo, "Experiment identifier : '%s'", szExprID);
 		gDiagnostics.DiagOutMsgOnly(eDLInfo, "Sequence identifier : '%s'", szSeqID);
 		}
+
+	if(szROIFile[0] != '\0')
+		gDiagnostics.DiagOutMsgOnly(eDLInfo, "Regions of interest file : '%s'", szROIFile);
+
+	if(szGTSampleFiltFile[0] != '\0')
+		gDiagnostics.DiagOutMsgOnly(eDLInfo, "Only report on GT samples in this file : '%s'", szGTSampleFiltFile);
 
 	for (Idx = 0; Idx < NumIncludeChroms; Idx++)
 		gDiagnostics.DiagOutMsgOnly(eDLInfo, "reg expressions defining chroms to include: '%s'", pszIncludeChroms[Idx]);
@@ -418,6 +488,8 @@ if(!argerrors)
 					LimitPBAs,			// limit number of loaded PBA files to this many. 1 .. cMaxPBAReadsets
 					PBAsTrim5,			// trim this many aligned PBAs from 5' end of aligned segments - reduces false alleles due to sequencing errors
 					PBAsTrim3,			// trim this many aligned PBAs from 3' end of aligned segments - reduces false alleles due to sequencing errors
+					GTPropNAThres,		// when genotyping VCF then proportion of non-aligned calls over all samples must be < this threshold
+					GTPropHetThres,		// when genotyping VCF then proportion of heterozygous calls must be >= this threshold
 					szRefAssemb,		// reference assembly
 					szRefAssembFile,	// PBA file containing reference assembly sequences
 					szChromFile,		// BED file containing chromosome names and sizes
@@ -426,6 +498,8 @@ if(!argerrors)
 					NumInputFiles,		// number of input founder file specs
 					pszInputFiles,		// names of input founder PBA files (wildcards allowed)
 					szOutFile,			// output to this file
+					szROIFile,			// optional BED file containing regions of interest
+					szGTSampleFiltFile,	// optional file containing those readseq/sample names for whom only their genotypes are to be reported
 					NumIncludeChroms,	// number of chromosome regular expressions to include
 					pszIncludeChroms,	// array of include chromosome regular expressions
 					NumExcludeChroms,	// number of chromosome expressions to exclude
@@ -447,10 +521,12 @@ else
 	}
 }
 
-int Process(ePBAuMode PMode,	// ePBAu2Fasta: PBA to Fasta, ePBAu2PBA: Fasta to PBA, ePBAu2PBAConcordance: concordance over all PBA samples, ePBAu2WIGConcordance: concordance over all WIG samples
+int Process(ePBAuMode PMode,	// processing mode: ePBAu2Fasta PBA to Fasta, ePBAu2PBA Fasta to PBA, ePBAu2PBAConcordance concordance over PBA samples, ePBAu2WIGConcordance concordance over WIG samples, ePBAu2AVCF allelic variant VCF, ePBAu2GVCF allelic genotype VCF
 	int32_t LimitPBAs,			// limit number of loaded PBA files to this many. 1 .. cMaxPBAReadsets
 	int32_t PBAsTrim5,			// trim this many aligned PBAs from 5' end of aligned segments - reduces false alleles due to sequencing errors
 	int32_t PBAsTrim3,			// trim this many aligned PBAs from 3' end of aligned segments - reduces false alleles due to sequencing errors
+	double GTPropNAThres,		// when genotyping VCF then proportion of non-aligned calls over all samples must be < this threshold
+	double GTPropHetThres,		// when genotyping VCF then proportion of heterozygous calls must be >= this threshold
 	char* pszRefAssemb,			// reference assembly identifier
 	char* pszRefAssembFile,		// PBA file containing reference assembly sequences
 	char* pszChromFile,			// BED file containing chromosome names and sizes
@@ -458,7 +534,9 @@ int Process(ePBAuMode PMode,	// ePBAu2Fasta: PBA to Fasta, ePBAu2PBA: Fasta to P
 	char* pszExprID,			// experiment identifier
 	int NumInputFiles,			// number of input founder file specs
 	char* pszInputFiles[],		// names of input founder PBA files (wildcards allowed)
-	char* szOutFile,			// output to this file
+	char* pszOutFile,			// output to this file
+	char *pszROIFile,			// optional BED file containing regions of interest
+	char *pszGTSampleFiltFile,	// optional file containing those readseq/sample names for whom only their genotypes are to be reported
 	int NumIncludeChroms,		// number of chromosome regular expressions to include
 	char* pszIncludeChroms[],	// array of include chromosome regular expressions
 	int NumExcludeChroms,		// number of chromosome expressions to exclude 
@@ -467,12 +545,14 @@ int Process(ePBAuMode PMode,	// ePBAu2Fasta: PBA to Fasta, ePBAu2PBA: Fasta to P
 {
 int Rslt;
 CPBAutils *pPBAutils;
-if((pPBAutils = new CPBAutils) == NULL)
+if((pPBAutils = new CPBAutils) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to instantiate instance of CHaps2Genotype");
 	return(eBSFerrObj);
 	}
-Rslt = pPBAutils->Process(PMode, LimitPBAs, PBAsTrim5,PBAsTrim3,pszRefAssemb,pszRefAssembFile, pszChromFile, pszSeqID, pszExprID, NumInputFiles, pszInputFiles, szOutFile, NumIncludeChroms, pszIncludeChroms, NumExcludeChroms, pszExcludeChroms, NumThreads);
+Rslt = pPBAutils->Process(PMode, LimitPBAs, PBAsTrim5,PBAsTrim3,GTPropNAThres,GTPropHetThres,pszRefAssemb,pszRefAssembFile, pszChromFile, pszSeqID, pszExprID,
+					NumInputFiles, pszInputFiles, pszOutFile, pszROIFile,pszGTSampleFiltFile,
+					NumIncludeChroms, pszIncludeChroms, NumExcludeChroms, pszExcludeChroms, NumThreads);
 delete pPBAutils;
 return(Rslt);
 }
@@ -483,11 +563,13 @@ m_hInFile = -1;
 m_hOutFile = -1;
 m_hWIGOutFile = -1;
 
-m_pChromMetadata = NULL;
-m_pInBuffer = NULL;
-m_pOutBuffer = NULL;
-m_pszWIGBuff = NULL;
-m_pBedFile = NULL;
+m_pChromMetadata = nullptr;
+m_pInBuffer = nullptr;
+m_pOutBuffer = nullptr;
+m_pszWIGBuff = nullptr;
+m_pBedFile = nullptr;
+m_pROIFile = nullptr;
+m_pReportGTSample = nullptr;
 m_bMutexesCreated = false;
 }
 
@@ -500,20 +582,26 @@ if (m_hOutFile != -1)
 if (m_hWIGOutFile != -1)
 	close(m_hWIGOutFile);
 
-if (m_pInBuffer != NULL)
+if (m_pInBuffer != nullptr)
 	delete[]m_pInBuffer;
-if (m_pOutBuffer != NULL)
+if (m_pOutBuffer != nullptr)
 	delete[]m_pOutBuffer;
-if (m_pszWIGBuff != NULL)
+if (m_pszWIGBuff != nullptr)
 	delete []m_pszWIGBuff;
-if (m_pBedFile != NULL)
+if (m_pBedFile != nullptr)
 	delete m_pBedFile;
-if(m_pChromMetadata != NULL)
+if(m_pROIFile != nullptr)
+	delete m_pROIFile;
+
+if(m_pReportGTSample != nullptr)
+	delete []m_pReportGTSample;
+
+if(m_pChromMetadata != nullptr)
 	{
 	tsChromMetadata* pChromMetadata = m_pChromMetadata;
 	for (uint32_t Idx = 0; Idx < m_UsedNumChromMetadata; Idx++, pChromMetadata++)
 		{
-		if (pChromMetadata->pPBAs != NULL)
+		if (pChromMetadata->pPBAs != nullptr)
 #ifdef _WIN32
 			free(pChromMetadata->pPBAs);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
 #else
@@ -553,36 +641,48 @@ if (m_hWIGOutFile != -1)
 	m_hWIGOutFile = -1;
 	}
 
-if (m_pInBuffer != NULL)
+if (m_pInBuffer != nullptr)
 	{
 	delete[]m_pInBuffer;
-	m_pInBuffer = NULL;
+	m_pInBuffer = nullptr;
 	}
 
-if (m_pOutBuffer != NULL)
+if (m_pOutBuffer != nullptr)
 	{
 	delete[]m_pOutBuffer;
-	m_pOutBuffer = NULL;
+	m_pOutBuffer = nullptr;
 	}
 
-if (m_pszWIGBuff != NULL)
+if (m_pszWIGBuff != nullptr)
 	{
 	delete[]m_pszWIGBuff;
-	m_pszWIGBuff = NULL;
+	m_pszWIGBuff = nullptr;
 	}
 
-if (m_pBedFile != NULL)
+if (m_pBedFile != nullptr)
 	{
 	delete m_pBedFile;
-	m_pBedFile = NULL;
+	m_pBedFile = nullptr;
 	}
 
-if (m_pChromMetadata != NULL)
+if(m_pROIFile != nullptr)
+	{
+	delete m_pROIFile;
+	m_pROIFile = nullptr;
+	}
+
+if(m_pReportGTSample != nullptr)
+	{
+	delete []m_pReportGTSample;
+	m_pReportGTSample = nullptr;
+	}
+
+if (m_pChromMetadata != nullptr)
 	{
 	tsChromMetadata* pChromMetadata = m_pChromMetadata;
 	for (uint32_t Idx = 0; Idx < m_UsedNumChromMetadata; Idx++, pChromMetadata++)
 		{
-		if (pChromMetadata->pPBAs != NULL)
+		if (pChromMetadata->pPBAs != nullptr)
 #ifdef _WIN32
 			free(pChromMetadata->pPBAs);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
 #else
@@ -597,7 +697,7 @@ if (m_pChromMetadata != NULL)
 	if (m_pChromMetadata != MAP_FAILED)
 		munmap(m_pChromMetadata, m_AllocdChromMetadataMem);
 #endif
-	m_pChromMetadata = NULL;
+	m_pChromMetadata = nullptr;
 	}
 
 m_FastSerialise = 0;
@@ -640,6 +740,9 @@ m_NumThreads = cMaxPBAutilityThreads;
 m_PBAsTrim5 = 0;
 m_PBAsTrim3 = 0;
 
+m_GTPropNAThres = 0.0;
+m_GTPropHetThres = 0.0;
+
 m_WIGChromID = 0;
 m_WIGRptdChromID = 0;
 m_WIGSpanLoci = 0;
@@ -648,6 +751,9 @@ m_WIGRptdSpanLen = 0;
 m_WIGSpanCnts = 0;
 m_WIGBuffIdx = 0;
 m_AllocWIGBuff = 0;
+
+m_MRA_ROIChromID = 0;
+m_MRA_ChromID = 0;
 
 if (m_bMutexesCreated)
 	DeleteMutexes();
@@ -754,10 +860,12 @@ CPBAutils::AccumWIGCnts(uint32_t ChromID,	// accumulate wiggle counts into varia
 }
 
 int 
-CPBAutils::Process(ePBAuMode PMode,	// ePBAu2Fasta: PBA to Fasta, ePBAu2PBA: Fasta to PBA, ePBAu2PBAConcordance: concordance over all PBA samples, ePBAu2WIGConcordance: concordance over all WIG samples
+CPBAutils::Process(ePBAuMode PMode,	// processing mode: ePBAu2Fasta PBA to Fasta, ePBAu2PBA Fasta to PBA, ePBAu2PBAConcordance concordance over PBA samples, ePBAu2WIGConcordance concordance over WIG samples, ePBAu2AVCF allelic variant VCF, ePBAu2GVCF allelic genotype VCF
 	int32_t LimitPBAs,			// limit number of loaded PBA files to this many. 1...cMaxPBAReadsets
 	int32_t PBAsTrim5,			// trim this many aligned PBAs from 5' end of aligned segments - reduces false alleles due to sequencing errors
 	int32_t PBAsTrim3,			// trim this many aligned PBAs from 3' end of aligned segments - reduces false alleles due to sequencing errors
+	double GTPropNAThres,		// when genotyping VCF then proportion of non-aligned calls over all samples must be < this threshold
+	double GTPropHetThres,		// when genotyping VCF then proportion of heterozygous calls must be >= this threshold
 	char* pszRefAssemb,			// reference assembly identifier
 	char* pszRefAssembFile,		// PBA file containing reference assembly sequences
 	char* pszChromFile,			// BED file containing chromosome names and sizes
@@ -766,6 +874,8 @@ CPBAutils::Process(ePBAuMode PMode,	// ePBAu2Fasta: PBA to Fasta, ePBAu2PBA: Fas
 	int NumInputFiles,			// number of input founder file specs
 	char* pszInputFiles[],		// names of input founder PBA files (wildcards allowed)
 	char* pszOutFile,			// output to this file
+	char *pszROIFile,			// optional BED file containing regions of interest
+	char *pszGTSampleFiltFile,	// optional file containing those readseq/sample names for whom only their genotypes are to be reported
 	int NumIncludeChroms,		// number of chromosome regular expressions to include
 	char* pszIncludeChroms[],	// array of include chromosome regular expressions
 	int NumExcludeChroms,		// number of chromosome expressions to exclude
@@ -777,6 +887,8 @@ Reset();
 CreateMutexes();
 m_PBAsTrim5 = PBAsTrim5;
 m_PBAsTrim3 = PBAsTrim3;
+m_GTPropNAThres = GTPropNAThres;
+m_GTPropHetThres = GTPropHetThres;
 strcpy(m_szRefAssemb, pszRefAssemb);
 strcpy(m_szOutFile, pszOutFile);
 if(pszRefAssembFile != nullptr && pszRefAssembFile[0] != '\0')
@@ -789,29 +901,52 @@ if(Rslt = (m_RegExprs.CompileREs(NumIncludeChroms, pszIncludeChroms,NumExcludeCh
 	return(Rslt);
 	}
 
+// if specified then load regions of interest from file
+m_pROIFile = nullptr;
+if(pszROIFile != nullptr && pszROIFile[0] != '\0')
+	{
+	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Loading regions of interest file '%s'", pszROIFile);
+	if((m_pROIFile = new CBEDfile()) == nullptr)
+		{
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to instantiate CBEDfile");
+		Reset();
+		return(eBSFerrObj);
+		}
+	if((Rslt=m_pROIFile->Open(pszROIFile))!=eBSFSuccess)
+		{
+		while(m_pROIFile->NumErrMsgs())
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,m_pROIFile->GetErrMsg());
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to open regions of interest file '%s'",pszROIFile);
+		Reset();
+		return(Rslt);
+		}
+	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Regions of interest file '%s' loaded", pszROIFile);
+	}
+
 if ((Rslt = LoadChromSizes(pszChromFile)) < 1) // BED file containing chromosome names and sizes - NOTE chromosomes will be filtered by include/exclude wildcards
 	{
 	Reset();
 	return(Rslt);
 	}
+
 m_NumThreads = NumThreads;
 
 	// initial allocation, will be realloc'd if more memory required
 size_t memreq = (size_t)cAllocChromMetadata * sizeof(tsChromMetadata);
 #ifdef _WIN32
 m_pChromMetadata = (tsChromMetadata*)malloc(memreq);	// initial and perhaps the only allocation
-if (m_pChromMetadata == NULL)
+if (m_pChromMetadata == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Initial memory allocation of %zd bytes for chromosome metadata failed - %s", (int64_t)memreq, strerror(errno));
 	Reset();
 	return(eBSFerrMem);
 	}
 #else
-m_pChromMetadata = (tsChromMetadata*)mmap(NULL, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+m_pChromMetadata = (tsChromMetadata*)mmap(nullptr, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 if (m_pChromMetadata == MAP_FAILED)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Memory allocation of %zd bytes through mmap() for chromosome metadata failed - %s", (int64_t)memreq, strerror(errno));
-	m_pChromMetadata = NULL;
+	m_pChromMetadata = nullptr;
 	Reset();
 	return(eBSFerrMem);
 	}
@@ -820,7 +955,7 @@ m_AllocdChromMetadataMem = memreq;
 m_UsedNumChromMetadata = 0;
 m_AllocdChromMetadata = cAllocChromMetadata;
 
-if ((m_pInBuffer = new uint8_t[cInBuffSize]) == NULL)
+if ((m_pInBuffer = new uint8_t[cInBuffSize]) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Memory allocation of %u bytes for input buffering failed - %s", cInBuffSize, strerror(errno));
 	Reset();
@@ -871,7 +1006,7 @@ if (PMode <= ePBAu2PBA)
 	return(Rslt);
 	}
 
-if (PMode == ePBAu2VCF)
+if (PMode == ePBAu2AVCF)
 	{
 	glob.Init();
 	if (glob.Add(pszRefAssembFile) < SG_SUCCESS)
@@ -929,8 +1064,95 @@ if (PMode == ePBAu2VCF)
 		return(ReadsetID);
 		}
 
-	Rslt = GenAllelicDiffs(RefReadsetID,		// reference PBA assembly
-						   ReadsetID);			// PBA file with allelic differences
+	Rslt = GenAllelicVCF(RefReadsetID,		// reference PBA assembly
+						   ReadsetID);		// PBA file with allelic differences
+	Reset();
+	return(Rslt);
+	}
+
+if (PMode == ePBAu2GVCF)
+	{
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Process: Starting to load input PBA files");
+	Rslt = eBSFSuccess;		// assume success!
+	TotNumFiles = 0;
+	glob.Init();
+	if (glob.Add(pszRefAssembFile) < SG_SUCCESS)
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Unable to glob '%s' reference PBA file spec", pszRefAssembFile);
+		Reset();
+		return(eBSFerrOpnFile);	// treat as though unable to open file
+		}
+	if ((NumFiles = glob.FileCount()) <= 0)
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Unable to locate any reference PBA file matching '%s'", pszRefAssembFile);
+		Reset();
+		return(eBSFerrOpnFile);	// treat as though unable to open file
+		}
+	if (NumFiles > 1)
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Only one (%d located) reference PBA file matching '%s' allowed", NumFiles, pszRefAssembFile);
+		Reset();
+		return(eBSFerrOpnFile);	// treat as though unable to open file
+		}
+	pszInFile = glob.File(0);
+	RefReadsetID = LoadPBAFile(pszInFile, 0, true); // loading readset + chrom metadata only, later the PBAs for each individual chrom will be loaded on demand
+	if (RefReadsetID <= 0)
+		{
+		gDiagnostics.DiagOut(eDLInfo, gszProcName, "Process: Errors loading reference PBA file '%s'", pszInFile);
+		Reset();
+		return(RefReadsetID);
+		}
+
+	for (Idx = 0; Idx < NumInputFiles; Idx++)
+		{
+		glob.Init();
+		if (glob.Add(pszInputFiles[Idx]) < SG_SUCCESS)
+			{
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Unable to glob '%s' input file spec", pszInputFiles[Idx]);
+			Reset();
+			return(eBSFerrOpnFile);	// treat as though unable to open file
+			}
+		if ((NumFiles = glob.FileCount()) <= 0)
+			{
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Unable to locate any input file matching '%s'", pszInputFiles[Idx]);
+			Reset();
+			return(eBSFerrFileName);
+			}
+
+		TotNumFiles += NumFiles;
+
+		Rslt = eBSFSuccess;
+		for (int FileID = 0; Rslt >= eBSFSuccess && FileID < NumFiles; ++FileID)
+			{
+			pszInFile = glob.File(FileID);
+			ReadsetID = LoadPBAFile(pszInFile, 0, true); // loading readset + chrom metadata only, later the PBAs for each individual chrom will be loaded on demand
+			if (ReadsetID <= 0)
+				{
+				gDiagnostics.DiagOut(eDLInfo, gszProcName, "Process: Errors loading file '%s'", pszInFile);
+				Reset();
+				return(ReadsetID);
+				}
+			if (ReadsetID == LimitPBAs)
+				break;
+			}
+		if (ReadsetID == LimitPBAs)
+			{
+			gDiagnostics.DiagOut(eDLWarn, gszProcName, "Process: Loaded maximum supported (%d) number of PBA files", LimitPBAs);
+			break;
+			}
+		}
+	m_NumReadsetIDs = ReadsetID;
+
+	if((Rslt = InitialiseGTSampleFiltering(pszGTSampleFiltFile)) < 0)
+		{
+		Reset();
+		return(Rslt);
+		}
+
+	Rslt = GenGenotypeVCF(RefReadsetID,		// reference PBA assembly
+						   m_NumReadsetIDs-1,			// number of PBA samples to report on genotypes relative to reference
+						   GTPropNAThres,		// when genotyping VCF then proportion of non-aligned calls over all samples must be < this threshold
+							GTPropHetThres);		// when genotyping VCF then proportion of heterozygous calls must be >= this threshold
 	Reset();
 	return(Rslt);
 	}
@@ -938,7 +1160,7 @@ if (PMode == ePBAu2VCF)
 	// concordance analysis
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "Process: Starting to load input PBA files");
 Rslt = eBSFSuccess;		// assume success!
-
+TotNumFiles = 0;
 for (Idx = 0; Idx < NumInputFiles; Idx++)
 	{
 	glob.Init();
@@ -975,7 +1197,10 @@ for (Idx = 0; Idx < NumInputFiles; Idx++)
 			break;
 		}
 	if (ReadsetID == LimitPBAs)
+		{
+		gDiagnostics.DiagOut(eDLWarn, gszProcName, "Process: Loaded maximum supported (%d) number of PBA files", LimitPBAs);
 		break;
+		}
 	}
 m_NumReadsetIDs = ReadsetID;
 
@@ -983,7 +1208,76 @@ Rslt = GeneratePBAConcordance();
 return(Rslt);
 }
 
+int32_t
+CPBAutils::InitialiseGTSampleFiltering(char *pszGTSampleFiltFile) // pszFiltFile contains sample names which are to be reported on in the generated GT VCF file, filter file contains 1 name per line
+{
+int Num2Accept;
+int32_t NameLen;
+int32_t SampleID;
+char *pTxt;
+char Chr;
+int32_t LineNum;
+FILE *pStream;
+char szSampleName[200];
+m_pReportGTSample = nullptr;
+if(pszGTSampleFiltFile == nullptr || pszGTSampleFiltFile[0] == '\0')
+	return(0);
 
+m_pReportGTSample = new uint8_t[m_NumReadsetIDs];
+memset(m_pReportGTSample,0,m_NumReadsetIDs); // default - assume no samples will be accepted for reporting
+
+if((pStream = fopen(pszGTSampleFiltFile,"r"))==NULL)
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "InitialiseGTSampleFiltering: Unable to access '%s' error: %s", pszGTSampleFiltFile,strerror(errno));
+	return(eBSFerrOpnFile);
+	}
+LineNum = 0;
+while(fgets((char *)m_pInBuffer,m_AllocInBuff-1,pStream)!= NULL)
+	{
+	LineNum += 1;
+	pTxt = (char *)m_pInBuffer;
+	pTxt = CUtility::TrimQuotedWhitespcExtd(pTxt);
+	NameLen = 0;
+	while((Chr = *pTxt++) != '\0')
+		{
+		if(!isspace(Chr) && Chr != '\'' && Chr != '"' && Chr != ',')
+			{
+			if(NameLen < sizeof(szSampleName) - 1)
+				szSampleName[NameLen++] = Chr;
+			continue;
+			}
+		if(NameLen == 0)
+			continue;
+		szSampleName[NameLen] = '\0';
+		NameLen = 0;
+		if((SampleID = LocateReadset(szSampleName,0)) <= 1)
+			continue;
+		m_pReportGTSample[SampleID-1] |= 0x01;
+		}
+	if(NameLen > 0)
+		{
+		szSampleName[NameLen] = '\0';
+		if((SampleID = LocateReadset(szSampleName,0)) <= 1)
+			continue;
+		m_pReportGTSample[SampleID-1] |= 0x01;
+		}
+	}
+fclose(pStream);
+
+// count number of accepted samples
+Num2Accept = 0;
+for(SampleID = 1; SampleID < m_NumReadsetIDs; SampleID++)
+	if(m_pReportGTSample[SampleID] & 0x01)
+		Num2Accept++;
+if(Num2Accept == 0)
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "InitialiseGTSampleFiltering: No readset sample names in '%s' specified which match any loaded readsets - nothing to do!", pszGTSampleFiltFile);
+	return(eBSFerrOpnFile);
+	}
+else
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "InitialiseGTSampleFiltering: Reporting on %d genotyped samples out of %d to be processed ", Num2Accept,m_NumReadsetIDs-1);
+return(Num2Accept);
+}
 
 // loading BED which specifies chrom names and sizes
 int		// returning number of chromosomes parsed from BED file and accepted after filtering for wildcards
@@ -998,7 +1292,7 @@ int32_t StartLoci;
 int32_t EndLoci;
 int NumChroms;
 
-if ((m_pBedFile = new CBEDfile) == NULL)
+if ((m_pBedFile = new CBEDfile) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to instantiate CBEDfile");
 	return(eBSFerrObj);
@@ -1055,7 +1349,7 @@ while (Rslt == eBSFSuccess && (CurFeatureID = m_pBedFile->GetNextFeatureID(CurFe
 m_NumChromSizes = NumChroms;
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "LoadChromSizes: accepted %d chromosome sizes from '%s'", NumChroms, pszBEDFile);
 delete m_pBedFile;
-m_pBedFile = NULL;
+m_pBedFile = nullptr;
 return(NumChroms);
 }
 
@@ -1063,9 +1357,9 @@ return(NumChroms);
 int
 CPBAutils::GeneratePBAConcordance(void)	// generate allelic concordance across all sample PBAs
 {
-if (m_pOutBuffer == NULL)
+if (m_pOutBuffer == nullptr)
 	{
-	if ((m_pOutBuffer = new uint8_t[cOutBuffSize]) == NULL) // an overkill in terms of buffer size!
+	if ((m_pOutBuffer = new uint8_t[cOutBuffSize]) == nullptr) // an overkill in terms of buffer size!
 		{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Memory allocation of %u bytes for output buffering failed - %s", cOutBuffSize, strerror(errno));
 		Reset();
@@ -1075,9 +1369,9 @@ if (m_pOutBuffer == NULL)
 	}
 m_OutBuffIdx = 0;
 
-if (m_pszWIGBuff == NULL)
+if (m_pszWIGBuff == nullptr)
 {
-	if ((m_pszWIGBuff = new uint8_t[cOutBuffSize]) == NULL) // an overkill in terms of buffer size!
+	if ((m_pszWIGBuff = new uint8_t[cOutBuffSize]) == nullptr) // an overkill in terms of buffer size!
 	{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Memory allocation of %u bytes for WIG output buffering failed - %s", cOutBuffSize, strerror(errno));
 		Reset();
@@ -1186,7 +1480,7 @@ for (ChromID = 1; (int)ChromID < m_NumChromNames; ChromID++)
 			// cache the PBAs for each sample
 			if (CurLoci == 0)
 				{
-				if ((pSamplePBAs[CurSampleID-1] = LocatePBAfor(CurSampleID, pChromMetadata->ChromID)) == NULL)
+				if ((pSamplePBAs[CurSampleID-1] = LocatePBAfor(CurSampleID, pChromMetadata->ChromID)) == nullptr)
 					{
 					gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Unable to locate PBAs for '%s' in sample %d",pszChrom, CurSampleID);
 					delete[]pSamplePBAs;
@@ -1248,11 +1542,10 @@ for (ChromID = 1; (int)ChromID < m_NumChromNames; ChromID++)
 		return(eBSFerrFileAccess);
 		}
 	m_OutBuffIdx = 0;
-	for (CurSampleID = 1; (int)CurSampleID <= m_NumReadsetIDs; CurSampleID++)
-		DeleteSampleChromPBAs(CurSampleID, ChromID);
+	DeleteAllChromPBAs();
 	}
 CompleteWIGSpan(true);
-if (pSamplePBAs != NULL)
+if (pSamplePBAs != nullptr)
 	delete[]pSamplePBAs;
 
 if (m_hOutFile != -1)
@@ -1284,9 +1577,9 @@ return(eBSFSuccess);
 int
 CPBAutils::GenerateWIGConcordance(void)	// generate coverage depth concordance across all sample WIGs
 {
-	if (m_pOutBuffer == NULL)
+	if (m_pOutBuffer == nullptr)
 	{
-		if ((m_pOutBuffer = new uint8_t[cOutBuffSize]) == NULL) // an overkill in terms of buffer size!
+		if ((m_pOutBuffer = new uint8_t[cOutBuffSize]) == nullptr) // an overkill in terms of buffer size!
 		{
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Memory allocation of %u bytes for output buffering failed - %s", cOutBuffSize, strerror(errno));
 			Reset();
@@ -1296,9 +1589,9 @@ CPBAutils::GenerateWIGConcordance(void)	// generate coverage depth concordance a
 	}
 	m_OutBuffIdx = 0;
 
-	if (m_pszWIGBuff == NULL)
+	if (m_pszWIGBuff == nullptr)
 	{
-		if ((m_pszWIGBuff = new uint8_t[cOutBuffSize]) == NULL) // an overkill in terms of buffer size!
+		if ((m_pszWIGBuff = new uint8_t[cOutBuffSize]) == nullptr) // an overkill in terms of buffer size!
 		{
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Memory allocation of %u bytes for WIG output buffering failed - %s", cOutBuffSize, strerror(errno));
 			Reset();
@@ -1406,7 +1699,7 @@ CPBAutils::GenerateWIGConcordance(void)	// generate coverage depth concordance a
 				{
 				if (CurLoci == 0)
 					{
-					if ((pSamplePBAs[CurSampleID - 1] = LoadPBAChromCoverage(CurSampleID, pChromMetadata->ChromID)) == NULL)
+					if ((pSamplePBAs[CurSampleID - 1] = LoadPBAChromCoverage(CurSampleID, pChromMetadata->ChromID)) == nullptr)
 						{
 						gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Unable to locate PBAs for '%s' in sample %d", pszChrom, CurSampleID);
 						delete[]pSamplePBAs;
@@ -1469,38 +1762,75 @@ CPBAutils::GenerateWIGConcordance(void)	// generate coverage depth concordance a
 			Reset();
 			return(eBSFerrFileAccess);
 		}
-		m_OutBuffIdx = 0;
-		for (CurSampleID = 1; (int)CurSampleID <= m_NumReadsetIDs; CurSampleID++)
-			DeleteSampleChromPBAs(CurSampleID, ChromID);
+	m_OutBuffIdx = 0;
+	DeleteAllChromPBAs();
 	}
-	CompleteWIGSpan(true);
-	if (pSamplePBAs != NULL)
-		delete[]pSamplePBAs;
+CompleteWIGSpan(true);
+if (pSamplePBAs != nullptr)
+	delete[]pSamplePBAs;
 
-	if (m_hOutFile != -1)
+if (m_hOutFile != -1)
+	{
+	// commit output file
+#ifdef _WIN32
+	_commit(m_hOutFile);
+#else
+	fsync(m_hOutFile);
+#endif
+	close(m_hOutFile);
+	m_hOutFile = -1;
+	}
+
+if (m_hWIGOutFile != -1)
 	{
 		// commit output file
 #ifdef _WIN32
-		_commit(m_hOutFile);
+	_commit(m_hWIGOutFile);
 #else
-		fsync(m_hOutFile);
+	fsync(m_hWIGOutFile);
 #endif
-		close(m_hOutFile);
-		m_hOutFile = -1;
+	close(m_hWIGOutFile);
+	m_hWIGOutFile = -1;
 	}
+return(eBSFSuccess);
+}
 
-	if (m_hWIGOutFile != -1)
+
+bool 
+CPBAutils::AcceptROIChromID(int32_t ChromID)	// testing if this chromosome can be mapped to any ROI chromosome
+{
+char *pszMRAChrom;
+
+if(m_pROIFile == nullptr)			// if no ROIs then all chroms will be accepted
+	return(true);
+
+if(ChromID != m_MRA_ChromID)
 	{
-		// commit output file
-#ifdef _WIN32
-		_commit(m_hWIGOutFile);
-#else
-		fsync(m_hWIGOutFile);
-#endif
-		close(m_hWIGOutFile);
-		m_hWIGOutFile = -1;
+	pszMRAChrom = LocateChrom(ChromID);
+	if((m_MRA_ROIChromID = m_pROIFile->LocateChromIDbyName(pszMRAChrom)) < 1)
+		return(false);
+	m_MRA_ChromID = ChromID;
 	}
-	return(eBSFSuccess);
+return(true);
+}
+
+bool 
+CPBAutils::AcceptROILoci(int32_t ChromID,	// chromosome to map onto ROI chromosome
+					uint32_t Loci)	// testing if this loci is within any ROI on the mapped ChromID
+{
+char *pszMRAChrom;
+
+if(m_pROIFile == nullptr)			// if no ROIs then all chrom.loci will be accepted
+	return(true);
+
+if(ChromID != m_MRA_ChromID)
+	{
+	pszMRAChrom = LocateChrom(ChromID);
+	if((m_MRA_ROIChromID = m_pROIFile->LocateChromIDbyName(pszMRAChrom)) < 1)
+		return(false);
+	m_MRA_ChromID = ChromID;
+	}
+return(m_pROIFile->InAnyFeature(m_MRA_ROIChromID,Loci,Loci));
 }
 
 int
@@ -1514,7 +1844,7 @@ char* pszInWIG;
 // compose WIG file name from PBA file name and check if file can be opened
 CUtility::AppendFileNameSuffix(szInWIG, pszInWIGFile, (char*)".covsegs.wig", '.');
 pszInWIG = szInWIG;
-if ((pInStream = fopen(pszInWIG, "r")) == NULL)
+if ((pInStream = fopen(pszInWIG, "r")) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "LoadPBACoverage: Unable to open WIG file %s for reading, error: %s", pszInWIG, strerror(errno));
 	Reset();
@@ -1535,7 +1865,7 @@ return(ReadsetID);
 
 
 // Note: an assumption is that within the WIG input file ordering is by chromosome ascending
-uint8_t* // loaded PBAs for requested chromosome or NULL if unable to load
+uint8_t* // loaded PBAs for requested chromosome or nullptr if unable to load
 CPBAutils::LoadPBAChromCoverage(uint32_t ReadsetID, // loading chromosome coverage for this readset and mapping coverage as though PBAs
 	uint32_t ChromID)    // coverage is for this chromosome
 {
@@ -1566,27 +1896,27 @@ pReadsetMetadata = &m_Readsets[ReadsetID - 1];
 CUtility::AppendFileNameSuffix(szInWIG, pReadsetMetadata->szFileName, (char*)".covsegs.wig", '.');
 pszInWIG = szInWIG;
 
-if ((pszReadset = LocateReadset(ReadsetID)) == NULL)
-	return(NULL);
+if ((pszReadset = LocateReadset(ReadsetID)) == nullptr)
+	return(nullptr);
 if (ChromID == 1)
 	pReadsetMetadata->NxtFileChromOfs = 0;
 
-if ((pszChrom = LocateChrom(ChromID)) == NULL)
-	return(NULL);
+if ((pszChrom = LocateChrom(ChromID)) == nullptr)
+	return(nullptr);
 
 pChromMetadata = LocateChromMetadataFor(ReadsetID, ChromID);
-if (pChromMetadata->pPBAs == NULL)
+if (pChromMetadata->pPBAs == nullptr)
 	{
-	if ((pChromMetadata->pPBAs = AllocPBAs(pChromMetadata->ChromLen)) == NULL)
-		return(NULL);
+	if ((pChromMetadata->pPBAs = AllocPBAs(pChromMetadata->ChromLen)) == nullptr)
+		return(nullptr);
 	}
 memset(pChromMetadata->pPBAs, 0, pChromMetadata->ChromLen);
 
 // WIG file can now be opened and coverage for requested chromosome parsed and mapped as though PBAs
-if ((pInStream = fopen(pszInWIG, "r")) == NULL)
+if ((pInStream = fopen(pszInWIG, "r")) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "LoadPBACoverage: Unable to open WIG file %s for reading, error: %s", pszInWIG, strerror(errno));
-	return(NULL);
+	return(nullptr);
 	}
 #if _WIN32
 _fseeki64(pInStream, pReadsetMetadata->NxtFileChromOfs, SEEK_SET);
@@ -1601,11 +1931,11 @@ WIGtype = 0;
 CurChromID = 0;
 Rslt = eBSFSuccess;
 
-while (fgets(szLineBuff, sizeof(szLineBuff) - 1, pInStream) != NULL)
+while (fgets(szLineBuff, sizeof(szLineBuff) - 1, pInStream) != nullptr)
 	{
 	LineNumb++;
 	pszInBuff = CUtility::ReduceWhitespace(szLineBuff);
-	if (pszInBuff == NULL || *pszInBuff == '\0' || *pszInBuff == '\n')
+	if (pszInBuff == nullptr || *pszInBuff == '\0' || *pszInBuff == '\n')
 		continue;
 
 	if (pszInBuff[0] == 'v' && !strnicmp(pszInBuff, "variableStep", 12))
@@ -1715,7 +2045,7 @@ fclose(pInStream);
 if (Rslt < 0)
 	{
 	DeleteSampleChromPBAs(ReadsetID, CurChromID);
-	pChromMetadata->pPBAs = NULL;
+	pChromMetadata->pPBAs = nullptr;
 	}
 return(pChromMetadata->pPBAs);
 }
@@ -1733,7 +2063,7 @@ if (EndSampleID == 0)
 
 for (CurSampleID = StartSampleID; CurSampleID <= EndSampleID; CurSampleID++)
 	{
-	if ((pPBAs = LoadSampleChromPBAs(CurSampleID, ChromID)) == NULL)
+	if ((pPBAs = LoadSampleChromPBAs(CurSampleID, ChromID)) == nullptr)
 		break;
 }
 if (CurSampleID <= EndSampleID)
@@ -1749,7 +2079,7 @@ CPBAutils::LocateReadsetChromLociAlleles(uint32_t ReadsetID,	// return alleles f
 	uint32_t Loci)		// at this loci
 {
 	uint8_t* pPBA;
-	if ((pPBA = LocatePBAfor(ReadsetID, ChromID)) == NULL)
+	if ((pPBA = LocatePBAfor(ReadsetID, ChromID)) == nullptr)
 		return(0);
 
 	return(pPBA[Loci]);
@@ -1763,7 +2093,64 @@ CPBAutils::LocateReadsetChromLociAlleles(uint32_t ReadsetID,	// return alleles f
 //const double cScorePBA1MinProp = 0.20;		// score PBA as 1 if allele proportion of all counts is >= this threshold and coverage is >= 5
 // when coverage is less than 5 (usually the case with progeny reads) and thus confidence in alleles is reduced then scores are reduced
 //const double cScorePBA2MinLCProp = 0.70;		// score PBA as 2 if allele proportion of all counts is >= this threshold and coverage is < 5
-//const double cScorePBA1MinLCProp = 0.30;		// score PBA as 1 if allele proportion of all counts is >= this threshold and coverage is >= 5
+//const double cScorePBA1MinLCProp = 0.30;		// score PBA as 1 if allele proportion of all counts is >= this threshold and coverage is < 5
+
+uint8_t
+CPBAutils::ConsensusHaploid(uint8_t PBA) // returns consensus haploid allele as PBA from a possibly polyallelic PBA
+{
+if(PBA == 0)	// no alleles
+	return(0);
+
+// process for unambiguous A,C,G or T - values 3
+if((PBA & 0x0c0) == 0x0c0)
+	return(0x0c0);
+if((PBA & 0x030) == 0x030)
+	return(0x030);
+if((PBA & 0x0c)==0x0c)
+	return(0x0c);
+if((PBA & 0x03)==0x03)
+	return(0x03);
+
+// try for allele with value 2
+if((PBA & 0x0c0) == 0x080)
+	return(0x0c0);
+if((PBA & 0x030) == 0x020)
+	return(0x030);
+if((PBA & 0x0c)==0x08)
+	return(0x0c);
+if((PBA & 0x03)==0x02)
+	return(0x03);
+
+// bottom of barrel, alleles are low coverage
+// try for allele with value 1
+if(PBA & 0x0c0)
+	return(0x0c0);
+if(PBA & 0x030)
+	return(0x030);
+if(PBA & 0x0c)
+	return(0x0c);
+return(0x03); // PBA contained at least 1 allele so to have reached here then must have been T with value 1
+}
+
+uint8_t
+CPBAutils::ConsensusDiploid(uint8_t PBA) // returns consensus diploid alleles as PBA from a possibly polyallelic PBA
+{
+uint8_t Mono;
+uint8_t Di;
+if(PBA == 0)
+	return(0);
+Mono = ConsensusHaploid(PBA);
+if((PBA & Mono) == Mono) // if top value was 3 then there was at least 5 reads and at least 75% of these were this allele so accept as only a single allele present
+	return(Mono);
+
+if((PBA & ~Mono) == 0)	// any other alleles present?
+	return(Mono);		// just a single allele
+
+Di = ConsensusHaploid(PBA & ~Mono);
+return(Mono | Di);
+}
+
+
 etSeqBase
 CPBAutils::Alleles2Base(uint8_t PBA) // identify and return consensus base from a possibly diallelic PBA
 {
@@ -1877,8 +2264,9 @@ switch (Base) {
 return(FastaChar);
 }
 
+
 int32_t 
-CPBAutils::GenAllelicDiffs(int32_t RefPBAID,	// reference PBAs identifier
+CPBAutils::GenAllelicVCF(int32_t RefPBAID,	// reference PBAs identifier
 						int32_t AllelicPBAID)	// PBAs with allelic differences
 {
 
@@ -1908,23 +2296,23 @@ m_hOutFile = open(m_szOutFile, (O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT 
 if ((m_hOutFile = open64(m_szOutFile, O_WRONLY | O_CREAT, S_IREAD | S_IWRITE)) != -1)
 if (ftruncate(m_hOutFile, 0) != 0)
 {
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to create/truncate %s - %s", m_szOutFile, strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenAllelicVCF: Unable to create/truncate %s - %s", m_szOutFile, strerror(errno));
 	Reset();
 	return(eBSFerrCreateFile);
 }
 #endif
 if (m_hOutFile < 0)
 	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Unable to create/truncate %s - %s", m_szOutFile, strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenAllelicVCF: Unable to create/truncate %s - %s", m_szOutFile, strerror(errno));
 	Reset();
 	return(eBSFerrCreateFile);
 	}
 
-if (m_pOutBuffer == NULL)
+if (m_pOutBuffer == nullptr)
 	{
-	if ((m_pOutBuffer = new uint8_t[cOutBuffSize]) == NULL) // an overkill in terms of buffer size!
+	if ((m_pOutBuffer = new uint8_t[cOutBuffSize]) == nullptr) // an overkill in terms of buffer size!
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Memory allocation of %u bytes for output buffering failed - %s", cOutBuffSize, strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenAllelicVCF: Memory allocation of %u bytes for output buffering failed - %s", cOutBuffSize, strerror(errno));
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -1940,7 +2328,7 @@ m_OutBuffIdx += sprintf((char *)&m_pOutBuffer[m_OutBuffIdx],"#CHROM\tPOS\tID\tRE
 
 if (!CUtility::RetryWrites(m_hOutFile, m_pOutBuffer, m_OutBuffIdx))
 	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Fatal error in RetryWrites()");
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenAllelicVCF: Fatal error in RetryWrites()");
 	Reset();
 	return(eBSFerrFileAccess);
 	}
@@ -1952,6 +2340,8 @@ for(ChromIdx = 1; ChromIdx < pReadsetMetadata->NumChroms; ChromIdx++)
 	{
 	pChromMetadata = LocateChromMetadataFor(RefPBAID, ChromIdx);
 	ChromID = pChromMetadata->ChromID;
+	if(!AcceptROIChromID(ChromID))
+		continue;
 	ChromSize = pChromMetadata->ChromLen;
 
 	if((pRefPBAs = LoadSampleChromPBAs(RefPBAID, ChromID)) == nullptr)
@@ -1966,26 +2356,10 @@ for(ChromIdx = 1; ChromIdx < pReadsetMetadata->NumChroms; ChromIdx++)
 	NumChromMatches = 0;
 	for(Loci = 0; Loci < ChromSize; Loci++,pRefPBAs++,pAllelicPBAs++)
 		{
-		RefAlleles = *pRefPBAs;
+		if(!AcceptROILoci(ChromID,Loci))
+			continue;
+		RefAlleles = ConsensusHaploid(*pRefPBAs); // processing is dependent on the reference PBA being a consensus PBA, force to be consensus!
 		AAleles = *pAllelicPBAs;
-		RefBase = Alleles2Base(RefAlleles); // processing is dependent on the reference PBA being a consensus PBA, force to be consensus!
-		switch (RefBase) {
-			case eBaseA:
-				RefAlleles = 0x0c0;
-				break;
-			case eBaseC:
-				RefAlleles = 0x030;
-				break;
-			case eBaseG:
-				RefAlleles = 0x0c;
-				break;
-			case eBaseT:
-				RefAlleles = 0x03;
-				break;
-			default:
-				RefAlleles = 0x00;
-			}
-
 		if(RefAlleles == 0 || AAleles == 0) // need both PBAs to have alleles
 			{
 			NumChromNA++;
@@ -2018,9 +2392,6 @@ for(ChromIdx = 1; ChromIdx < pReadsetMetadata->NumChroms; ChromIdx++)
 		Shl = 6;
 		for(BaseIdx = 0; AAleles != 0 && BaseIdx < 4; BaseIdx++, AlleleMsk >>= 2, Shl-=2)
 			{
-//			if(BaseIdx == RefBase)			// if reference allele then skip
-//				continue;
-
 			if(!(AAleles & AlleleMsk))			// if no allele then try next allele
 				continue;
 
@@ -2050,7 +2421,14 @@ for(ChromIdx = 1; ChromIdx < pReadsetMetadata->NumChroms; ChromIdx++)
 			AAleles &= ~AlleleMsk;
 			}
 		
-		// for reasons unknown - others have complained! - IGV does not accept GVFs with multiple alleles if one matches the reference base.
+		AlleleMsk = 0xc0;
+		for(RefBase = 0; RefBase < 4; RefBase++,AlleleMsk >>= 2)
+			{
+			if(AlleleMsk & RefAlleles)
+				break;
+			}
+
+		// for reasons I do not understand - others have complained! - IGV does not accept GVFs with multiple alleles if one matches the reference base.
 		// but is happy if the reference base is set to be indeterminate 'N'. Go figure ....
 		m_OutBuffIdx += sprintf((char *)&m_pOutBuffer[m_OutBuffIdx], "%s\t%u\tSNP%d\t%c\t%s\t%d\tPASS\tAF=%s;DP=%d\n",
 					pszChromName, Loci + 1, TotChromsDiffs, 'N', // CSeqTrans::MapBase2Ascii(RefBase),
@@ -2061,7 +2439,7 @@ for(ChromIdx = 1; ChromIdx < pReadsetMetadata->NumChroms; ChromIdx++)
 			{
 			if (!CUtility::RetryWrites(m_hOutFile, m_pOutBuffer, m_OutBuffIdx))
 				{
-				gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Fatal error in RetryWrites()");
+				gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenAllelicVCF: Fatal error in RetryWrites()");
 				Reset();
 				return(eBSFerrFileAccess);
 				}
@@ -2072,16 +2450,358 @@ for(ChromIdx = 1; ChromIdx < pReadsetMetadata->NumChroms; ChromIdx++)
 		{
 		if (!CUtility::RetryWrites(m_hOutFile, m_pOutBuffer, m_OutBuffIdx))
 			{
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Fatal error in RetryWrites()");
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenAllelicVCF: Fatal error in RetryWrites()");
 			Reset();
 			return(eBSFerrFileAccess);
 			}
 		m_OutBuffIdx = 0;
 		}
-	gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenAllelicDiffs: '%s' - %dbp : matching alleles: %d different alleles: %d non-aligned: %d differential non-aligned: %d", pszChromName, ChromSize, NumChromMatches, NumChromDiffs, NumChromNA,NumChromDiffNA);
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenAllelicVCF: '%s' - %dbp : homo alleles: %d, hetro alleles: %d, non-aligned: %d, differential non-aligned: %d", pszChromName, ChromSize, NumChromMatches, NumChromDiffs, NumChromNA,NumChromDiffNA);
 	DeleteSampleChromPBAs(RefPBAID, ChromID);
 	DeleteSampleChromPBAs(AllelicPBAID, ChromID);
 	}
+if (m_hOutFile != -1)
+	{
+	// commit output file
+#ifdef _WIN32
+	_commit(m_hOutFile);
+#else
+	fsync(m_hOutFile);
+#endif
+	close(m_hOutFile);
+	m_hOutFile = -1;
+	}
+return(Rslt);
+}
+
+
+bool
+CPBAutils::ReportGTSample(int32_t SampleID) // returns true if this samples genotype is to be reported
+{
+if(m_pReportGTSample == NULL || (m_pReportGTSample[SampleID] & 0x01))
+	return(true);
+return(false);
+}
+
+int32_t 
+CPBAutils::GenGenotypeVCF(int32_t RefSampleID,	// reference identifier
+						int32_t NumSamples,		// number of samples to genotype relative to reference
+						double GTPropNAThres,		// when genotyping VCF then proportion of non-aligned calls over all samples must be < this threshold
+						double GTPropHetThres)		// when genotyping VCF then proportion of heterozygous calls must be >= this threshold	
+{
+int32_t Rslt = 0;
+etSeqBase RefBase;
+uint8_t* pRefPBAs;
+uint8_t *pAllelicPBAs;
+uint8_t **ppChromPBAs;
+char *pszSampleHaps;
+int32_t SampleHapsIdx;
+int32_t ChromID;
+uint32_t ChromIdx;
+uint32_t ChromSize;
+uint32_t Loci;
+uint8_t RefAlleles;
+uint8_t SampleAlleles;
+uint8_t AltAlleles;
+int SampleID;
+char *pszChromName;
+char szALTs[100];
+uint32_t TotGTIDs;
+uint32_t ChromGTIDs;
+
+tsReadsetMetadata* pReadsetMetadata;
+tsChromMetadata* pChromMetadata;
+
+#ifdef _WIN32
+m_hOutFile = open(m_szOutFile, (O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC), (_S_IREAD | _S_IWRITE));
+#else
+if ((m_hOutFile = open64(m_szOutFile, O_WRONLY | O_CREAT, S_IREAD | S_IWRITE)) != -1)
+if (ftruncate(m_hOutFile, 0) != 0)
+{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenGenotypeVCF: Unable to create/truncate %s - %s", m_szOutFile, strerror(errno));
+	Reset();
+	return(eBSFerrCreateFile);
+}
+#endif
+if (m_hOutFile < 0)
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenGenotypeVCF: Unable to create/truncate %s - %s", m_szOutFile, strerror(errno));
+	Reset();
+	return(eBSFerrCreateFile);
+	}
+
+if (m_pOutBuffer == nullptr)
+	{
+	if ((m_pOutBuffer = new uint8_t[cOutBuffSize]) == nullptr) // an overkill in terms of buffer size!
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenGenotypeVCF: Memory allocation of %u bytes for output buffering failed - %s", cOutBuffSize, strerror(errno));
+		Reset();
+		return(eBSFerrMem);
+		}
+	m_AllocOutBuff = cOutBuffSize;
+	}
+m_OutBuffIdx = 0;
+
+pReadsetMetadata = &m_Readsets[RefSampleID - 1];
+
+m_OutBuffIdx = sprintf((char *)m_pOutBuffer,"##fileformat=VCFv4.1\n##source=pbautils%s\n##reference=%s\n##INFO=<ID=AF,Number=A,Type=Float,Description=\"Allele Frequency\">\n##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Unphased genotypes\">\n",
+				  kit4bversion, (char *)pReadsetMetadata->szRefAssemblyID);
+m_OutBuffIdx += sprintf((char *)&m_pOutBuffer[m_OutBuffIdx],"#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT");
+for(SampleID = RefSampleID+1; SampleID <= NumSamples+1; SampleID++)
+	{
+	if(!ReportGTSample(SampleID))
+		continue;
+	char *pszSampleName = LocateReadset(SampleID);
+	m_OutBuffIdx += sprintf((char *)&m_pOutBuffer[m_OutBuffIdx],"\t%s",pszSampleName);
+	}
+m_OutBuffIdx += sprintf((char *)&m_pOutBuffer[m_OutBuffIdx],"\n");
+
+if (!CUtility::RetryWrites(m_hOutFile, m_pOutBuffer, m_OutBuffIdx))
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenGenotypeVCF: Fatal error in RetryWrites()");
+	Reset();
+	return(eBSFerrFileAccess);
+	}
+m_OutBuffIdx = 0;
+
+ppChromPBAs = new uint8_t * [NumSamples];
+pszSampleHaps = new char [NumSamples * 10];
+
+// iterate over chromosomes
+ChromGTIDs = 0;
+TotGTIDs = 0;
+for(ChromIdx = 1; ChromIdx < pReadsetMetadata->NumChroms; ChromIdx++)
+	{
+	ChromGTIDs = 0;
+	pChromMetadata = LocateChromMetadataFor(RefSampleID, ChromIdx);
+	ChromID = pChromMetadata->ChromID;
+	if(!AcceptROIChromID(ChromID))
+		continue;
+	pszChromName = LocateChrom(ChromID);
+	ChromSize = pChromMetadata->ChromLen;
+
+	if((pRefPBAs = LoadSampleChromPBAs(RefSampleID, ChromID)) == nullptr)
+		break;
+
+	// normalise reference alleles to be consensus monoallelic - VCF assumes that alignments were to a consensus reference
+	uint8_t *pPBA = pRefPBAs;
+	for(Loci = 0; Loci < ChromSize; Loci++,pPBA++)
+		*pPBA = ConsensusHaploid(*pPBA);
+
+	// load chrom PBAs for each sample and normalise these to be ConsensusDiploid
+	for(SampleID = RefSampleID+1; SampleID <= NumSamples+1; SampleID++)
+		{
+		if((ppChromPBAs[SampleID-2] = LoadSampleChromPBAs(SampleID, ChromID)) == nullptr)
+			{
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Fatal error loading chrom PBAs");
+			if(ppChromPBAs != nullptr)
+				delete []ppChromPBAs;
+			if(pszSampleHaps != nullptr)
+				delete []pszSampleHaps;
+			Reset();
+			return(eBSFerrChrom);
+			}
+		pPBA = ppChromPBAs[SampleID-2];
+		for(Loci = 0; Loci < ChromSize; Loci++,pPBA++)
+			*pPBA = ConsensusDiploid(*pPBA);
+		}
+
+	uint32_t AlleleCnts[256]; // counts of all possible allele combinations
+
+	// both reference and all samples have been normalised over the current chromosomes full length
+	for(Loci = 0; Loci < ChromSize; Loci++,pRefPBAs++)
+		{
+		if(!AcceptROILoci(ChromID,Loci))
+			continue;
+
+		if((RefAlleles = *pRefPBAs)==0) // reference must have coverage before comparing with samples
+			continue;
+		memset(AlleleCnts,0,sizeof(AlleleCnts));
+
+		// if all samples same then no differential alleles at this loci
+		uint8_t PrevSampleAlleles = 0;
+		uint32_t NumDiffAlleles = 0;
+		uint32_t NumMissing = 0;
+		AltAlleles = 0;
+		for(SampleID = RefSampleID+1; SampleID <= NumSamples+1; SampleID++)
+			{
+			pAllelicPBAs = ppChromPBAs[SampleID-2];
+			SampleAlleles = pAllelicPBAs[Loci];
+			AlleleCnts[SampleAlleles]++;
+			if(SampleAlleles != 0)
+				AltAlleles |= SampleAlleles;
+			}
+		if(AlleleCnts[0] == NumSamples ||						// if no samples aligned then try next loci
+			(GTPropNAThres == 0.0 && AlleleCnts[0] > 0))		// explicitly checking if all samples must be aligned, bypasses any double comparison errors in next statement
+			continue;
+
+		if(((double)AlleleCnts[0] / NumSamples) > GTPropNAThres)		// if proportion with no coverage higher than threshold then onto next loci
+			continue;
+		if(AltAlleles == RefAlleles)									// if only reference alleles were present in all aligned samples then that means only deletions or no coverage present between samples
+			continue;
+
+		if(GTPropHetThres > 0.0)
+			{
+			// need highest frequency and sum of other frequencies to determine heterozygosity between samples and then compare against GTPropHetThres
+			uint32_t HighAlleleCnt;
+			uint32_t LowAlleleCnts;
+			HighAlleleCnt = 0;
+			LowAlleleCnts = 0;
+			for(int CntsIdx = 1; CntsIdx <= 255; CntsIdx++) // note that missing are not included, already filtered for GTPropNAThres, interest is in heterozygosity between aligned samples
+				{
+				if(AlleleCnts[CntsIdx] > HighAlleleCnt) // new highest allelic count?
+					{
+					LowAlleleCnts += HighAlleleCnt;		// previous highest count is back summed into the lowest 
+					HighAlleleCnt = AlleleCnts[CntsIdx];
+					}
+				else
+					LowAlleleCnts += AlleleCnts[CntsIdx];
+				}
+			if ((double)LowAlleleCnts / (NumSamples - AlleleCnts[0]) < GTPropHetThres)	// if very little heterozygosity in samples excluding non-aligned then onto next loci
+				continue;
+			}
+
+		AltAlleles &= ~RefAlleles;				// remove consensus ref allele from alternative alleles
+
+		// at least one sample has alleles which differ from the reference
+		SampleHapsIdx = 0;
+		for(SampleID = RefSampleID+1; SampleID <= NumSamples+1; SampleID++)
+			{
+			if(!ReportGTSample(SampleID))
+				continue;
+			pAllelicPBAs = ppChromPBAs[SampleID-2];
+			SampleAlleles = pAllelicPBAs[Loci];
+
+			// reference had coverage, if sample has no coverage then sample has a deletion - or just had no sequenced read covering that loci!!
+			if(SampleAlleles == 0) 
+				{
+				SampleHapsIdx += sprintf(&pszSampleHaps[SampleHapsIdx],"\t./.");
+				continue;
+				}
+
+			if(RefAlleles == SampleAlleles) // does sample exactly match reference?
+				{
+				SampleHapsIdx += sprintf(&pszSampleHaps[SampleHapsIdx],"\t0/0");
+				continue;
+				}
+
+			// sample has at least one allele which doesn't match the reference
+			uint32_t Msk;
+			uint32_t AltIdx1;
+			int32_t AltIdx2;
+			AltIdx1 = 0;
+			Msk = 0x0c0;
+			if(RefAlleles & SampleAlleles)	// does one of the sample allele(s) match the reference?
+				{
+				do
+					{
+					if(Msk & RefAlleles)
+						continue;
+					if(!(Msk & AltAlleles))
+						continue;
+					AltIdx1++;
+					if(Msk & SampleAlleles)
+						{
+						SampleHapsIdx += sprintf(&pszSampleHaps[SampleHapsIdx],"\t0/%d",AltIdx1);
+						break;
+						}
+					}
+				while(Msk >>= 2);
+				continue;
+				}
+
+			// sample alleles do not include the reference allele
+			AltIdx1 = -1;
+			AltIdx2   = 0;
+			Msk = 0x0c0;
+			do
+				{
+				if(!(Msk & AltAlleles))
+					continue;
+				AltIdx2++;
+				if(Msk & SampleAlleles)
+					{
+					if(AltIdx1 == -1)
+						AltIdx1 = AltIdx2;
+					SampleAlleles &= ~Msk;
+					}
+				}
+			while((SampleAlleles != 0) && (Msk >>= 2));
+			SampleHapsIdx += sprintf(&pszSampleHaps[SampleHapsIdx],"\t%d/%d",AltIdx1,AltIdx2);
+			continue;
+			}
+
+		uint8_t AltBase;
+		uint8_t AltsMsk = 0xc0;
+		uint32_t ALTsIdx = 0;
+		if(AltAlleles == 0)
+			ALTsIdx += sprintf(&szALTs[ALTsIdx],"N");
+		else
+			{
+			for(AltBase = 0; AltBase < 4; AltBase++,AltsMsk >>= 2)
+				{
+				if(AltsMsk & AltAlleles)
+					{
+					if(ALTsIdx != 0)
+						ALTsIdx += sprintf(&szALTs[ALTsIdx],",");
+					ALTsIdx += sprintf(&szALTs[ALTsIdx],"%c",CSeqTrans::MapBase2Ascii(AltBase));
+					}
+				}
+			}
+
+		AltsMsk = 0xc0;
+		for(RefBase = 0; RefBase < 4; RefBase++,AltsMsk >>= 2)
+			{
+			if(AltsMsk & RefAlleles)
+				break;
+			}
+
+		TotGTIDs += 1;
+		ChromGTIDs += 1;
+		m_OutBuffIdx += sprintf((char *)&m_pOutBuffer[m_OutBuffIdx], "%s\t%u\tGT%u\t%c\t%s\t.\tPASS\t.\tGT%s\n",
+						pszChromName, Loci + 1, TotGTIDs, CSeqTrans::MapBase2Ascii(RefBase),
+						szALTs,pszSampleHaps);
+
+		
+		if((m_OutBuffIdx + 10000) >= m_AllocOutBuff)
+			{
+			if (!CUtility::RetryWrites(m_hOutFile, m_pOutBuffer, m_OutBuffIdx))
+				{
+				gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenGenotypeVCF: Fatal error in RetryWrites()");
+				DeleteAllChromPBAs();
+				if(ppChromPBAs != nullptr)
+					delete []ppChromPBAs;
+				if(pszSampleHaps != nullptr)
+					delete []pszSampleHaps;
+				Reset();
+				return(eBSFerrFileAccess);
+				}
+			m_OutBuffIdx = 0;
+			}
+		}
+	if(m_OutBuffIdx)
+		{
+		if (!CUtility::RetryWrites(m_hOutFile, m_pOutBuffer, m_OutBuffIdx))
+			{
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenGenotypeVCF: Fatal error in RetryWrites()");
+			DeleteAllChromPBAs();
+			if(ppChromPBAs != nullptr)
+				delete []ppChromPBAs;
+			if(pszSampleHaps != nullptr)
+				delete []pszSampleHaps;
+			Reset();
+			return(eBSFerrFileAccess);
+			}
+		m_OutBuffIdx = 0;
+		}
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenGenotypeVCF: '%s' (%dbp) : reported GTs - chrom: %u, total: %u",pszChromName,ChromSize,ChromGTIDs,TotGTIDs);
+	DeleteAllChromPBAs();
+	}
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenGenotypeVCF: Over all chromosomes there are a total of %u reported GTs",TotGTIDs);
+if(ppChromPBAs != nullptr)
+	delete []ppChromPBAs;
+if(pszSampleHaps != nullptr)
+	delete []pszSampleHaps;
 if (m_hOutFile != -1)
 	{
 	// commit output file
@@ -2117,9 +2837,9 @@ m_NumMonoAllelic = 0;
 m_NumNonAllelic = 0;
 
 
-if (m_pOutBuffer == NULL)
+if (m_pOutBuffer == nullptr)
 	{
-	if ((m_pOutBuffer = new uint8_t[cOutBuffSize]) == NULL)
+	if ((m_pOutBuffer = new uint8_t[cOutBuffSize]) == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "PBA2Fasta: Memory allocation of %u bytes for output buffering failed - %s", cOutBuffSize, strerror(errno));
 		Reset();
@@ -2155,7 +2875,7 @@ for(ChromIdx = 1; ChromIdx < pReadsetMetadata->NumChroms; ChromIdx++)
 	{
 	pChromMetadata = LocateChromMetadataFor(ReadSetID, ChromIdx);
 	ChromID = pChromMetadata->ChromID;
-	if((pPBAs = LoadSampleChromPBAs(ReadSetID, ChromID)) == NULL)
+	if((pPBAs = LoadSampleChromPBAs(ReadSetID, ChromID)) == nullptr)
 		break;
 	if (ChromIdx > 1 && LineLen > 0)
 		m_pOutBuffer[m_OutBuffIdx++] = '\n';
@@ -2220,10 +2940,10 @@ if (m_bMutexesCreated)
 	return(eBSFSuccess);
 
 #ifdef _WIN32
-if ((m_hSerialiseAccess = CreateMutex(NULL, false, NULL)) == NULL)
+if ((m_hSerialiseAccess = CreateMutex(nullptr, false, nullptr)) == nullptr)
 	{
 #else
-if (pthread_mutex_init(&m_hSerialiseAccess, NULL) != 0)
+if (pthread_mutex_init(&m_hSerialiseAccess, nullptr) != 0)
 	{
 #endif
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Fatal: unable to create mutex");
@@ -2326,7 +3046,7 @@ CPBAutils::AddReadset(char* pszReadset, // associate unique identifier with this
 	Type = '0' + (char)ReadsetType;
 
 	// with any luck the sequence name will be same as the last accessed
-	if ((pszLAname = LocateReadset(m_LAReadsetNameID)) != NULL)
+	if ((pszLAname = LocateReadset(m_LAReadsetNameID)) != nullptr)
 	{
 		if (pszLAname[-1] == Type &&	// prefixed with ReadsetType
 			!stricmp(pszReadset, pszLAname))
@@ -2372,7 +3092,7 @@ CPBAutils::LocateReadset(char* pszReadset, // return unique identifier associate
 
 	Type = '0' + (char)ReadsetType;
 	// with any luck the Readset name will be same as the last accessed
-	if ((pszLAReadset = LocateReadset(m_LAReadsetNameID)) != NULL)
+	if ((pszLAReadset = LocateReadset(m_LAReadsetNameID)) != nullptr)
 	{
 		if (pszLAReadset[-1] == Type &&	// prefixed with ReadsetType
 			!stricmp(pszReadset, pszLAReadset))
@@ -2400,7 +3120,7 @@ CPBAutils::LocateReadset(uint32_t ReadsetID)
 	uint32_t Idx;
 	Idx = ReadsetID & 0x0fffffff;			// mask out any potential ReadsetType
 	if (Idx < 1 || Idx > m_NumReadsetNames)
-		return(NULL);
+		return(nullptr);
 	return(&(m_szReadsetNames[m_szReadsetIdx[Idx - 1] + 1])); // skipping lead char which is the ReadsetType
 }
 
@@ -2414,7 +3134,7 @@ int ChromNameLen;
 char* pszLAname;
 
 // with any luck the sequence name will be same as the last accessed
-if ((pszLAname = LocateChrom(m_LAChromNameID)) != NULL)
+if ((pszLAname = LocateChrom(m_LAChromNameID)) != nullptr)
 	if (!stricmp(pszChrom, pszLAname))
 		return(m_LAChromNameID);
 
@@ -2448,7 +3168,7 @@ CPBAutils::LocateChrom(char* pszChrom) // return unique identifier associated wi
 	char* pszLAname;
 
 	// with any luck the sequence name will be same as the last accessed
-	if ((pszLAname = LocateChrom(m_LAChromNameID)) != NULL)
+	if ((pszLAname = LocateChrom(m_LAChromNameID)) != nullptr)
 		if (!stricmp(pszChrom, pszLAname))
 			return(m_LAChromNameID);
 
@@ -2466,7 +3186,7 @@ char*
 CPBAutils::LocateChrom(uint32_t ChromID)
 {
 	if (ChromID < 1 || (int32_t)ChromID > m_NumChromNames)
-		return(NULL);
+		return(nullptr);
 	return(&m_szChromNames[m_szChromIdx[ChromID - 1]]);
 }
 
@@ -2475,7 +3195,7 @@ bool					// true if chrom is accepted, false if chrom not accepted
 CPBAutils::AcceptThisChromID(uint32_t ChromID)
 {
 char* pzChrom;
-if ((pzChrom = LocateChrom(ChromID)) == NULL)
+if ((pzChrom = LocateChrom(ChromID)) == nullptr)
 	return(false);
 return(AcceptThisChromName(pzChrom));
 }
@@ -2503,21 +3223,21 @@ CPBAutils::AllocChromMetadata(void)
 	uint32_t ToAllocdChromMetadata;
 	tsChromMetadata* pChromMetadata;
 	size_t memreq;
-	if (m_pChromMetadata == NULL)					// may be NULL first time in
+	if (m_pChromMetadata == nullptr)					// may be nullptr first time in
 	{
 		memreq = cAllocChromMetadata * sizeof(tsChromMetadata);
 #ifdef _WIN32
 		m_pChromMetadata = (tsChromMetadata*)malloc((size_t)memreq);
-		if (m_pChromMetadata == NULL)
+		if (m_pChromMetadata == nullptr)
 		{
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, "AllocChromMetadata: Memory allocation of %zd bytes failed", (int64_t)memreq);
 			return(eBSFerrMem);
 		}
 #else
-		m_pChromMetadata = (tsChromMetadata*)mmap(NULL, (size_t)memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+		m_pChromMetadata = (tsChromMetadata*)mmap(nullptr, (size_t)memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 		if (m_pChromMetadata == MAP_FAILED)
 		{
-			m_pChromMetadata = NULL;
+			m_pChromMetadata = nullptr;
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, "AllocChromMetadata: Memory allocation of %zd bytes through mmap()  failed", (int64_t)memreq, strerror(errno));
 			return(eBSFerrMem);
 		}
@@ -2534,7 +3254,7 @@ CPBAutils::AllocChromMetadata(void)
 			size_t memreq = ToAllocdChromMetadata * sizeof(tsChromMetadata);
 #ifdef _WIN32
 			pChromMetadata = (tsChromMetadata*)realloc(m_pChromMetadata, memreq);
-			if (pChromMetadata == NULL)
+			if (pChromMetadata == nullptr)
 			{
 #else
 			pChromMetadata = (tsChromMetadata*)mremap(m_pChromMetadata, m_AllocdChromMetadataMem, memreq, MREMAP_MAYMOVE);
@@ -2559,14 +3279,14 @@ CPBAutils::AllocPBAs(uint32_t ChromLen)	// allocate memory to hold at least this
 	memreq = (size_t)ChromLen;	// no safety margin!
 #ifdef _WIN32
 	pPBAs = (uint8_t*)malloc((size_t)memreq);
-	if (pPBAs == NULL)
+	if (pPBAs == nullptr)
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "AllocPBAs Memory allocation of %zd bytes failed", (int64_t)memreq);
 #else
-	pPBAs = (uint8_t*)mmap(NULL, (size_t)memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	pPBAs = (uint8_t*)mmap(nullptr, (size_t)memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	if (pPBAs == MAP_FAILED)
 	{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "AllocPBAs: Memory allocation of %zd bytes through mmap()  failed", (int64_t)memreq, strerror(errno));
-		pPBAs = NULL;
+		pPBAs = nullptr;
 	}
 #endif
 	return(pPBAs);
@@ -2582,7 +3302,7 @@ CPBAutils::LocatePBAfor(uint32_t ReadSetID,		// readset identifier
 	uint32_t CurChromMetadataIdx;
 
 	if (ReadSetID > m_NumReadsetNames || ReadSetID == 0)
-		return(NULL);
+		return(nullptr);
 	pReadsetMetadata = &m_Readsets[ReadSetID - 1];
 	CurChromMetadataIdx = pReadsetMetadata->StartChromMetadataIdx;
 	for (uint32_t ChromIdx = 0; ChromIdx < pReadsetMetadata->NumChroms && CurChromMetadataIdx != 0; ChromIdx++)
@@ -2592,7 +3312,7 @@ CPBAutils::LocatePBAfor(uint32_t ReadSetID,		// readset identifier
 			return(pChromMetadata->pPBAs);
 		CurChromMetadataIdx = pChromMetadata->NxtChromMetadataIdx;
 	}
-	return(NULL);
+	return(nullptr);
 }
 
 tsChromMetadata*								// returned pointer to chromosome metadata
@@ -2604,7 +3324,7 @@ CPBAutils::LocateChromMetadataFor(uint32_t ReadSetID,		// readset identifier
 	uint32_t CurChromMetadataIdx;
 
 	if (ReadSetID > m_NumReadsetNames || ReadSetID == 0)
-		return(NULL);
+		return(nullptr);
 	pReadsetMetadata = &m_Readsets[ReadSetID - 1];
 	CurChromMetadataIdx = pReadsetMetadata->StartChromMetadataIdx;
 	for (uint32_t ChromIdx = 0; ChromIdx < pReadsetMetadata->NumChroms && CurChromMetadataIdx != 0; ChromIdx++)
@@ -2614,7 +3334,7 @@ CPBAutils::LocateChromMetadataFor(uint32_t ReadSetID,		// readset identifier
 			return(pChromMetadata);
 		CurChromMetadataIdx = pChromMetadata->NxtChromMetadataIdx;
 	}
-	return(NULL);
+	return(nullptr);
 }
 
 
@@ -2679,10 +3399,12 @@ CPBAutils::Fasta2PBA(char *pszExperimentID, // experiment identifier
 	int Descrlen;
 	bool bChromSeq;
 	int Rslt;
+	int ChromID;
 	uint32_t PBAIdx;
 	uint32_t ChromPBAlen;
 	uint32_t ChromLenIdx;
 	uint32_t ChromIndeterminates;
+	uint32_t NumPBAChroms;
 	size_t AssemblyChromIndeterminates;
 	size_t AssembSeqLen;
 
@@ -2695,7 +3417,7 @@ CPBAutils::Fasta2PBA(char *pszExperimentID, // experiment identifier
 
 	m_AllocInBuff = (size_t)cMaxAXAllocBuffChunk * 16;	// allocating to hold each fasta input sequence, will be reallocated as required to hold complete sequences
 	// note malloc is used as can then simply realloc to expand as may later be required
-	if ((m_pInBuffer = (uint8_t*)malloc(m_AllocInBuff)) == NULL)
+	if ((m_pInBuffer = (uint8_t*)malloc(m_AllocInBuff)) == nullptr)
 	{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Fasta2PBA:- Unable to allocate memory (%zd bytes) for sequence buffer", m_AllocInBuff);
 		Fasta.Close();
@@ -2740,6 +3462,7 @@ ChromPBAlen = 0;
 ChromIndeterminates = 0;
 AssemblyChromIndeterminates = 0;
 AssembSeqLen = 0;
+NumPBAChroms = 0;
 while ((Rslt = SeqLen = Fasta.ReadSequence(&m_pInBuffer[m_InNumBuffered], (int)(m_AllocInBuff - m_InNumBuffered), true, false)) > eBSFSuccess)
 	{
 	if (SeqLen == eBSFFastaDescr)		// just read a descriptor line
@@ -2749,6 +3472,14 @@ while ((Rslt = SeqLen = Fasta.ReadSequence(&m_pInBuffer[m_InNumBuffered], (int)(
 			// check if chromosome is to retained
 			if(AcceptThisChromName(szChromName))
 				{
+				// before accepting chrom then ensure that it's sequence length matches the BED chromosome sizes
+				ChromID = LocateChrom(szChromName);
+				if (ChromPBAlen != m_ChromSizes[ChromID - 1])
+					{
+					gDiagnostics.DiagOut(eDLFatal, gszProcName, "Input file '%s' has chromosome '%s' size mismatch - expected size was %u, actual size %u", pszInFile, szChromName, m_ChromSizes[ChromID - 1], ChromPBAlen);
+					return(eBSFerrChrom);
+					}
+
 				*(uint32_t*)&m_pInBuffer[ChromLenIdx] = ChromPBAlen;
 				if (!CUtility::RetryWrites(m_hOutFile, m_pInBuffer, m_InNumBuffered))
 					{
@@ -2756,6 +3487,9 @@ while ((Rslt = SeqLen = Fasta.ReadSequence(&m_pInBuffer[m_InNumBuffered], (int)(
 					return(eBSFerrWrite);
 					}
 				gDiagnostics.DiagOut(eDLInfo, gszProcName, "Chrom '%s' is length %d and has %d indeterminate bases", szChromName, ChromPBAlen, ChromIndeterminates);
+				AssembSeqLen += (size_t)ChromPBAlen;
+				AssemblyChromIndeterminates += (size_t)ChromIndeterminates;
+				NumPBAChroms++;
 				}
 			}
 		ChromIndeterminates = 0;
@@ -2793,7 +3527,6 @@ while ((Rslt = SeqLen = Fasta.ReadSequence(&m_pInBuffer[m_InNumBuffered], (int)(
 				break;
 			default:
 				ChromIndeterminates++;
-				AssemblyChromIndeterminates++;
 				*pPackedBaseAlleles = 0x00;
 				break;
 			}
@@ -2803,13 +3536,12 @@ while ((Rslt = SeqLen = Fasta.ReadSequence(&m_pInBuffer[m_InNumBuffered], (int)(
 	bChromSeq = true;
 	m_InNumBuffered += SeqLen;
 	ChromPBAlen += SeqLen;
-	AssembSeqLen += SeqLen;
 	AvailBuffSize = m_AllocInBuff - m_InNumBuffered;
 	if (AvailBuffSize < (size_t)(cMaxAXAllocBuffChunk / 8))
 		{
 		size_t NewSize = (size_t)cMaxAXAllocBuffChunk + m_AllocInBuff;
 		uint8_t* pTmp;
-		if ((pTmp = (uint8_t*)realloc(m_pInBuffer, NewSize)) == NULL)
+		if ((pTmp = (uint8_t*)realloc(m_pInBuffer, NewSize)) == nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessFastaFile:- Unable to reallocate memory (%u bytes) for sequence buffer", (uint32_t)NewSize);
 			return(eBSFerrMem);
@@ -2819,15 +3551,37 @@ while ((Rslt = SeqLen = Fasta.ReadSequence(&m_pInBuffer[m_InNumBuffered], (int)(
 		}
 	}
 
-if (bChromSeq && m_InNumBuffered)	
+if (Rslt == eBSFSuccess && bChromSeq && m_InNumBuffered)	
 	{
-	m_pInBuffer[ChromLenIdx] = ChromPBAlen;
-	if (!CUtility::RetryWrites(m_hOutFile, m_pInBuffer, m_InNumBuffered))
+	// check if chromosome is to retained
+	if(AcceptThisChromName(szChromName))
 		{
-		gDiagnostics.DiagOut(eDLInfo, gszProcName, "RetryWrites() error");
-		return(eBSFerrWrite);
+		// before accepting chrom then ensure that it's sequence length matches the BED chromosome sizes
+		ChromID = LocateChrom(szChromName);
+		if (ChromPBAlen != m_ChromSizes[ChromID - 1])
+			{
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Input file '%s' has chromosome '%s' size mismatch - expected size was %u, actual size %u", pszInFile, szChromName, m_ChromSizes[ChromID - 1], ChromPBAlen);
+			return(eBSFerrChrom);
+			}
+
+		*(uint32_t*)&m_pInBuffer[ChromLenIdx] = ChromPBAlen;
+		if (!CUtility::RetryWrites(m_hOutFile, m_pInBuffer, m_InNumBuffered))
+			{
+			gDiagnostics.DiagOut(eDLInfo, gszProcName, "RetryWrites() error");
+			return(eBSFerrWrite);
+			}
+		gDiagnostics.DiagOut(eDLInfo, gszProcName, "Chrom '%s' is length %d and has %d indeterminate bases", szChromName, ChromPBAlen, ChromIndeterminates);
+		AssembSeqLen += (size_t)ChromPBAlen;
+		AssemblyChromIndeterminates += (size_t)ChromIndeterminates;
+		NumPBAChroms++;
 		}
-	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Assembly is length %d and has %d indeterminate bases", AssembSeqLen, AssemblyChromIndeterminates);
+	}
+if(Rslt == eBSFSuccess)
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Generated PBA contains %d sequences totaling %dbp with %d indeterminate bases",NumPBAChroms, AssembSeqLen, AssemblyChromIndeterminates);
+else
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Fasta2PBA: Processing errors..");
+	return(Rslt);
 	}
 if (m_hOutFile != -1)
 	{
@@ -2974,7 +3728,7 @@ CPBAutils::LoadPBAFile(char* pszFile,	// load chromosome metadata and PBA data f
 		ChromID = AddChrom(pszChromName);
 		if (ChromLen != m_ChromSizes[ChromID - 1])
 			{
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Input file '%s' has chromosome '%s' size mismatch - expected size was %n, actual size %n", pszFile, szReadsetID, m_ChromSizes[ChromID - 1], ChromLen);
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Input file '%s' has chromosome '%s' size mismatch - expected size was %u, actual size %u", pszFile, pszChromName, m_ChromSizes[ChromID - 1], ChromLen);
 			return(eBSFerrChrom);
 			}
 
@@ -2983,15 +3737,15 @@ CPBAutils::LoadPBAFile(char* pszFile,	// load chromosome metadata and PBA data f
 
 		pChromMetadata = &m_pChromMetadata[m_UsedNumChromMetadata++];
 		if (PrevChromMetadataIdx != 0)
-		{
+			{
 			pPrevChromMetadata = &m_pChromMetadata[PrevChromMetadataIdx - 1];
 			pPrevChromMetadata->NxtChromMetadataIdx = m_UsedNumChromMetadata;
-		}
+			}
 		else
-		{
+			{
 			pReadsetMetadata->StartChromID = ChromID;
 			pReadsetMetadata->StartChromMetadataIdx = m_UsedNumChromMetadata;
-		}
+			}
 		pReadsetMetadata->NumChroms++;
 		PrevChromMetadataIdx = m_UsedNumChromMetadata;
 		pChromMetadata->ChromID = ChromID;
@@ -3001,16 +3755,16 @@ CPBAutils::LoadPBAFile(char* pszFile,	// load chromosome metadata and PBA data f
 		pChromMetadata->ReadsetID = ReadsetID;
 		pChromMetadata->HGBinID = 0;
 		pChromMetadata->FileOfsPBA = FileOfsPBA;
-		pChromMetadata->pPBAs = NULL;
+		pChromMetadata->pPBAs = nullptr;
 		if (bChromMetaOnly) // loading chrom metadata only without actually loading the chromosome PBAs?
-		{
+			{
 			m_InFileOfs = pReadsetMetadata->NxtFileChromOfs;         // skip over curent chrom's PBAs to start of next chromosome
 			if ((pReadsetMetadata->NxtFileChromOfs = _lseeki64(m_hInFile, m_InFileOfs, SEEK_SET)) != m_InFileOfs)
 				break;
 			m_InNumProcessed = 0;
 			m_InNumBuffered = 0;
 			continue;
-		}
+			}
 		// loading PBAs
 		pChromMetadata->pPBAs = AllocPBAs(ChromLen);
 		m_InNumProcessed += ChromNameLen + 5;
@@ -3058,7 +3812,7 @@ CPBAutils::TrimPBAs(uint32_t Trim5,	// trim 5' this many aligned PBA bases from 
 	uint32_t ToTrim;
 	uint32_t Loci;
 	uint8_t* pPBA;
-	if (pPBAs == NULL || PBALen == 0)
+	if (pPBAs == nullptr || PBALen == 0)
 		return(0);
 	if (Trim5 == 0 && Trim3 == 0)
 		return(PBALen);
@@ -3107,6 +3861,25 @@ CPBAutils::TrimPBAs(uint32_t Trim5,	// trim 5' this many aligned PBA bases from 
 	return(NonTrimmed);
 }
 
+void
+CPBAutils::DeleteAllChromPBAs(void) // delete all currently loaded PBAs - all sample chroms
+{
+if (m_pChromMetadata != nullptr)
+	{
+	tsChromMetadata* pChromMetadata = m_pChromMetadata;
+	for (uint32_t Idx = 0; Idx < m_UsedNumChromMetadata; Idx++, pChromMetadata++)
+		{
+		if (pChromMetadata->pPBAs != nullptr)
+#ifdef _WIN32
+			free(pChromMetadata->pPBAs);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
+#else
+		if (pChromMetadata->pPBAs != MAP_FAILED)
+				munmap(pChromMetadata->pPBAs, pChromMetadata->ChromLen);
+#endif
+		pChromMetadata->pPBAs = nullptr; 
+		}
+	}
+}
 
 bool  // false: no previous memory allocated for containing the chromosome PBAs, true: allocation was present and has been deleted
 CPBAutils::DeleteSampleChromPBAs(uint32_t SampleID,   // Sample identifier
@@ -3115,9 +3888,9 @@ CPBAutils::DeleteSampleChromPBAs(uint32_t SampleID,   // Sample identifier
 	tsChromMetadata* pChromMetadata;
 
 	// returned pointer to chromosome metadata
-	if ((pChromMetadata = LocateChromMetadataFor(SampleID, ChromID)) == NULL)
-		return(0);
-	if (pChromMetadata->pPBAs == NULL)
+	if ((pChromMetadata = LocateChromMetadataFor(SampleID, ChromID)) == nullptr)
+		return(false);
+	if (pChromMetadata->pPBAs == nullptr)
 		return(false);
 #ifdef _WIN32
 	free(pChromMetadata->pPBAs);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -3125,11 +3898,11 @@ CPBAutils::DeleteSampleChromPBAs(uint32_t SampleID,   // Sample identifier
 	if (pChromMetadata->pPBAs != MAP_FAILED)
 		munmap(pChromMetadata->pPBAs, pChromMetadata->ChromLen);
 #endif
-	pChromMetadata->pPBAs = NULL;
+	pChromMetadata->pPBAs = nullptr;
 	return(true);
 }
 
-uint8_t*  // returned PBA or NULL if unable to load PBAs for requested sample.chrom 
+uint8_t*  // returned PBA or nullptr if unable to load PBAs for requested sample.chrom 
 CPBAutils::LoadSampleChromPBAs(uint32_t SampleID,   // Sample identifier
 	uint32_t ChromID)    // chrom identifier specifying which PBAs is to be loaded from SampleID file
 {
@@ -3142,12 +3915,12 @@ CPBAutils::LoadSampleChromPBAs(uint32_t SampleID,   // Sample identifier
 	uint32_t NumLoaded;
 
 	// returned pointer to chromosome metadata
-	if ((pChromMetadata = LocateChromMetadataFor(SampleID, ChromID)) == NULL)
-		return(NULL);
+	if ((pChromMetadata = LocateChromMetadataFor(SampleID, ChromID)) == nullptr)
+		return(nullptr);
 
 	pszChrom = LocateChrom(ChromID);
 
-	if (pChromMetadata->pPBAs != NULL) // PBAs may already have been loaded for this chromosome, delete as may be stale
+	if (pChromMetadata->pPBAs != nullptr) // PBAs may already have been loaded for this chromosome, delete as may be stale
 	{
 #ifdef _WIN32
 		free(pChromMetadata->pPBAs);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -3155,7 +3928,7 @@ CPBAutils::LoadSampleChromPBAs(uint32_t SampleID,   // Sample identifier
 		if (pChromMetadata->pPBAs != MAP_FAILED)
 			munmap(pChromMetadata->pPBAs, pChromMetadata->ChromLen);
 #endif
-		pChromMetadata->pPBAs = NULL;
+		pChromMetadata->pPBAs = nullptr;
 	}
 
 	// need to actually load from file
@@ -3168,7 +3941,7 @@ CPBAutils::LoadSampleChromPBAs(uint32_t SampleID,   // Sample identifier
 	if (hInFile == -1)							// check if file open succeeded
 	{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "LoadSampleChromPBA: Unable to open input file '%s' : %s", pReadsetMetadata->szFileName, strerror(errno));
-		return(NULL);
+		return(nullptr);
 	}
 	if ((ChromSeekOfs = _lseeki64(hInFile, pChromMetadata->FileOfsPBA, SEEK_SET)) != pChromMetadata->FileOfsPBA)
 	{
@@ -3176,7 +3949,7 @@ CPBAutils::LoadSampleChromPBAs(uint32_t SampleID,   // Sample identifier
 			pReadsetMetadata->szFileName, pChromMetadata->FileOfsPBA, ChromSeekOfs, pszChrom, strerror(errno));
 		close(hInFile);
 		hInFile = -1;
-		return(NULL);
+		return(nullptr);
 	}
 	pChromMetadata->pPBAs = AllocPBAs(pChromMetadata->ChromLen);
 	// attempt to load Chromosomes PBAs from file
@@ -3187,16 +3960,16 @@ CPBAutils::LoadSampleChromPBAs(uint32_t SampleID,   // Sample identifier
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Error %s attempting to read chromosome '%s' from file '%s'", strerror(errno), pszChrom, pReadsetMetadata->szFileName);
 			close(hInFile);
 			hInFile = -1;
-			if (pChromMetadata->pPBAs == NULL)
-				return(NULL);
+			if (pChromMetadata->pPBAs == nullptr)
+				return(nullptr);
 #ifdef _WIN32
 			free(pChromMetadata->pPBAs);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
 #else
 			if (pChromMetadata->pPBAs != MAP_FAILED)
 				munmap(pChromMetadata->pPBAs, pChromMetadata->ChromLen);
 #endif
-			pChromMetadata->pPBAs = NULL;
-			return(NULL);
+			pChromMetadata->pPBAs = nullptr;
+			return(nullptr);
 		}
 		NumLoaded += NumRead;
 	} while (NumRead > 0 && NumLoaded < pChromMetadata->ChromLen);
