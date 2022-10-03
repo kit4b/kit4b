@@ -142,20 +142,19 @@ if (!argerrors)
 		exit(1);
 		}
 
+	GeneType = (etGGFFGeneType)(genes->count ? genes->ival[0] : 1);
+	if(GeneType < 0 || GeneType >= eGGFFplaceholder)
+		{
+		printf("\nError: Gene type '-g%d' specified outside of range %d..%d",GeneType,0,(int)eGGFFplaceholder-1);
+		exit(1);
+		}
 	if(PMode == ePMdefault)
 		{
-		GeneType = (etGGFFGeneType)(genes->count ? genes->ival[0] : 1);
-		if(GeneType < 0 || GeneType >= eGGFFplaceholder)
-			{
-			printf("\nError: Gene type '-g%d' specified outside of range %d..%d",GeneType,0,(int)eGGFFplaceholder-1);
-			exit(1);
-			}
 		szName[0] = '\0';
 		ScaleFact = 1.0f;
 		}
 	else
 		{
-		GeneType = eGGFFany;
 		ScaleFact = (double)(scalefact->count ? scalefact->dval[0] : 1.0f);
 		if(name->count)
 			{

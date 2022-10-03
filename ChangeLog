@@ -85,3 +85,4 @@ Release 1.10.0- Further code cleanups - reduction is function stack frame size r
 Release 1.10.4- Further code cleanups - regular expression handling now using c++11 std::regex library.
 Release 1.10.6- PBA to VCF initial implementation in 'pbautils'. Rare deadlock in 'kalign' resolved.
 Release 1.10.8 - Added genotyping VCF functionality to 'ngskit4b pbautils'.
+Release 1.11.0 - BED file processing can now accept GFF3 formatted file input and process as if BED gene/exons. 'ngskit4b pbautils' can generate genotyping VCFs constaining subsets of regions and samples.

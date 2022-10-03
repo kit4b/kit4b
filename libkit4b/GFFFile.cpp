@@ -167,7 +167,7 @@ switch(GGFFGeneType) {
 	case eGGFFany:			// any GFF record
 		break;
 	case eGGFFgene:			// only gene related records
-		pszNoteVal = (char *)"protein_coding_gene";
+		pszNoteVal = NULL;
 		pszGFFtype = (char *)"gene";
 		break;
 	case eGGFFtransposon:	// only transposon related records
@@ -205,6 +205,10 @@ while((Rslt = NextLine()) > 0)
 		continue;
 	if(GGFFGeneType == eGGFFany)
 		return(1);
+
+	if(!(GGFFGeneType == eGGFFgene && !stricmp(m_Fields.szFeature,pszGFFtype)))
+		continue;
+
 	if(!stricmp(m_Fields.szFeature,pszGFFtype) || (GGFFGeneType == eGGFFtransposon && !stricmp(m_Fields.szFeature,"transposable_element")))
 		{
 		if(pszNoteVal!=NULL)

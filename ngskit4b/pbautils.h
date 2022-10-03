@@ -295,6 +295,8 @@ class CPBAutils
 	bool AcceptROILoci(int32_t ChromID,		// chromosome to map onto ROI chromosome
 					uint32_t Loci);			// testing if this loci is within any ROI on the mapped ChromID
 
+	bool CheckIfAscii(int Len,	// length to check
+			 uint8_t* pAscii);	// assumed ascii - should only contain printable characters
 public:
 	CPBAutils();	// constructor
 	~CPBAutils();	// destructor

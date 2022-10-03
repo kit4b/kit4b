@@ -923,6 +923,7 @@ if(pszROIFile != nullptr && pszROIFile[0] != '\0')
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Regions of interest file '%s' loaded", pszROIFile);
 	}
 
+gDiagnostics.DiagOut(eDLInfo,gszProcName,"Processing chromosome sizes from file '%s'", pszChromFile);
 if ((Rslt = LoadChromSizes(pszChromFile)) < 1) // BED file containing chromosome names and sizes - NOTE chromosomes will be filtered by include/exclude wildcards
 	{
 	Reset();
@@ -1208,6 +1209,20 @@ Rslt = GeneratePBAConcordance();
 return(Rslt);
 }
 
+// check if assumed ascii string only contains ascii chars
+bool
+CPBAutils::CheckIfAscii(int Len,	// length to check
+			 uint8_t* pAscii)	// assumed ascii - should only contain printable characters
+{
+if(Len > 0)
+	{
+	while(Len--)
+		if(!isascii((char) * pAscii++))
+			return(false);
+	}
+return(true);
+}
+
 int32_t
 CPBAutils::InitialiseGTSampleFiltering(char *pszGTSampleFiltFile) // pszFiltFile contains sample names which are to be reported on in the generated GT VCF file, filter file contains 1 name per line
 {
@@ -1217,6 +1232,7 @@ int32_t SampleID;
 char *pTxt;
 char Chr;
 int32_t LineNum;
+int32_t LineLen;
 FILE *pStream;
 char szSampleName[200];
 m_pReportGTSample = nullptr;
@@ -1235,6 +1251,14 @@ LineNum = 0;
 while(fgets((char *)m_pInBuffer,m_AllocInBuff-1,pStream)!= NULL)
 	{
 	LineNum += 1;
+	LineLen = (int32_t)strlen((char *)m_pInBuffer);
+	if(!CheckIfAscii(LineLen,m_pInBuffer))
+		{
+		fclose(pStream);
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "InitialiseGTSampleFiltering: Unable to parse '%s' at line", pszGTSampleFiltFile,LineNum);
+		return(eBSFerrParse);
+		}
+
 	pTxt = (char *)m_pInBuffer;
 	pTxt = CUtility::TrimQuotedWhitespcExtd(pTxt);
 	NameLen = 0;
@@ -1302,7 +1326,7 @@ if ((Rslt = m_pBedFile->Open(pszBEDFile, eBTAnyBed)) != eBSFSuccess)
 	{
 	while (m_pBedFile->NumErrMsgs())
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, m_pBedFile->GetErrMsg());
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to open '%s' for processing", pszBEDFile);
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "LoadChromSizes: Unable to process '%s' as BED", pszBEDFile);
 	return(eBSFerrOpnFile);
 	}
 

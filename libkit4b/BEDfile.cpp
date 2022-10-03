@@ -396,28 +396,30 @@ else // else opening existing file which could be a bioseq bed, raw bed file or 
 		// initially assume BED
 		if((Rslt=ProcessBedFile(pszBioBed))!=eBSFSuccess)	// file to process
 			{
-#ifdef PROCESSGFF3s
 			if(Rslt != eBSFerrFileType)
-#endif
 				{
 				AddErrMsg("CBEDfile::Open","Unable to process raw BED file %s",pszBioBed);
 				Reset(false);
 				return(Rslt);
 				}
-#ifdef PROCESSGFF3s
 			// failed to parse as BED, try as GFF3
-			if((Rslt=ProcessGFF3File(pszBioBed))!=eBSFSuccess)	// file to process
+			if ((Rslt = ProcessGFF3File(pszBioBed)) < eBSFSuccess)	// file to process
 				{
 				AddErrMsg("CBEDfile::Open","Unable to process raw BED or GFF3 file %s",pszBioBed);
 				Reset(false);
 				return(Rslt);
 				}
-#endif
+			if(Rslt == 0)
+				{
+				AddErrMsg("CBEDfile::Open","Unable to process raw BED or GFF3 file %s",pszBioBed);
+				Reset(false);
+				return(Rslt);
+				}
 			}
 
 		if((Rslt=SortFeatures())!=eBSFSuccess)
 			{
-			AddErrMsg("CBEDfile::Flush2Disk","Unable to sort features %s",m_szFile);
+			AddErrMsg("CBEDfile","Unable to load any features from '%s'",m_szFile);
 			Reset(false);
 			return(Rslt);
 			}
@@ -541,13 +543,146 @@ pTxt[2] = '\0';
 return(pStart);
 }
 
+
+teBSFrsltCodes
+CBEDfile::AddGFF3Feat2BED(char *pszFeatName,			// feature name
+						char *pszChromName,			// chromosome name
+						int iScore,					// feature score
+						char cStrand,				// on which strand feature is located
+						int NumGFFFeats,
+						tsGFFFeat* pGFFGeneFeats)
+{
+int Rslt;
+int Idx;
+int Tmp;
+int NumExons;
+int RelExonStarts[10000];
+int ExonSizes[10000];
+int MinCDSLoci;
+int MaxCDSLoci;
+int ChromStart;
+int ChromEnd;
+char szFeatName[100];
+szFeatName[0] = '\0';
+tsGFFFeat *pFeat;
+if(NumGFFFeats < 1)
+	return((teBSFrsltCodes)NumGFFFeats);
+
+// iterate and ensure start loci is always before end loci
+pFeat = pGFFGeneFeats;
+for(Idx = 0; Idx < NumGFFFeats; Idx++,pFeat++)
+	{
+	if(pFeat->FeatStart > pFeat->FeatEnd)
+		{
+		Tmp = pFeat->FeatStart;
+		pFeat->FeatStart = pFeat->FeatEnd;
+		pFeat->FeatEnd = Tmp;
+		}
+	pFeat->FeatStart -= 1;
+	}
+
+
+// sort by start loci ascending
+if(NumGFFFeats > 1)
+	qsort(pGFFGeneFeats,NumGFFFeats,sizeof(tsGFFFeat),SortGFFGeneFeats);
+
+NumExons = 0;
+MinCDSLoci = 0;
+MaxCDSLoci = 0;
+ChromStart = 0;
+ChromEnd = 0;
+pFeat = pGFFGeneFeats;
+
+if(pFeat->FeatTypeID != eGFF3FTgene)
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddGFF3Feat2BED: Expected feature '%s' to have type 'gene' with chrom '%s' start loci <= any other loci for same feature", pszFeatName,pszChromName);
+	return(eBSFerrOpnFile);
+	}
+
+ChromStart = 0;
+ChromEnd = 0;
+for(Idx = 0; Idx < NumGFFFeats; Idx++,pFeat++)
+	{
+	switch(pFeat->FeatTypeID) {
+		case eGFF3FTgene:
+			ChromStart = pFeat->FeatStart;
+			ChromEnd = pFeat->FeatEnd;
+			break;
+
+		case eGFF3FTexon:
+			RelExonStarts[NumExons] = pFeat->FeatStart - ChromStart;
+			ExonSizes[NumExons] = pFeat->FeatEnd - pFeat->FeatStart;
+			NumExons++;
+			break;
+
+		case eGFF3FTCDS:
+			if(MinCDSLoci == 0 || MinCDSLoci > pFeat->FeatStart)
+				MinCDSLoci = pFeat->FeatStart;
+			if(MaxCDSLoci == 0 || MaxCDSLoci < pFeat->FeatEnd)
+				MaxCDSLoci = pFeat->FeatEnd;
+			break;
+		}
+	}
+
+if(NumExons == 0)
+	{
+	NumExons = 1;
+	RelExonStarts[0] = 0;
+	ExonSizes[0] = ChromEnd - ChromStart;
+	}
+if(MinCDSLoci == 0)
+	MinCDSLoci = ChromStart;
+if(MaxCDSLoci == 0)
+	MaxCDSLoci = ChromEnd;
+
+int ExonIdx;
+int SuppInfoOfs;
+char *pszSuppInfo;
+pszSuppInfo = new char [1000000];
+
+SuppInfoOfs = sprintf(pszSuppInfo,"%d %d 0 %d", MinCDSLoci,MaxCDSLoci,NumExons);
+
+SuppInfoOfs += sprintf(&pszSuppInfo[SuppInfoOfs], " %d", ExonSizes[0]);
+for(ExonIdx = 1; ExonIdx < NumExons; ExonIdx++)
+	SuppInfoOfs += sprintf(&pszSuppInfo[SuppInfoOfs], ",%d", ExonSizes[ExonIdx]);
+SuppInfoOfs += sprintf(&pszSuppInfo[SuppInfoOfs], " %d", RelExonStarts[0]);
+for(ExonIdx = 0; ExonIdx < NumExons; ExonIdx++)
+	SuppInfoOfs += sprintf(&pszSuppInfo[SuppInfoOfs], ",%d", RelExonStarts[Idx]);
+
+if((Rslt = AddFeature(pszFeatName, pszChromName, ChromStart, ChromEnd, iScore, cStrand,	pszSuppInfo)) < eBSFSuccess)
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddGFF3Feat2BED: Errors converting GFF feature '%s' on chrom '%s' starting loci %d", pszFeatName,pszChromName,ChromStart);
+
+delete []pszSuppInfo;
+return((teBSFrsltCodes)Rslt);
+}
+
+// SortGFFGeneFeats
+// Used to sort GFF features by FeatStart ascending
+// If same FeatStart then sorts by FeatTypeID ascending
+int 
+CBEDfile::SortGFFGeneFeats( const void *arg1, const void *arg2) // sort GFF features by FeatStart ascending
+{
+tsGFFFeat *pEl1 = (tsGFFFeat *)arg1;
+tsGFFFeat *pEl2 = (tsGFFFeat *)arg2;
+if (pEl1->FeatStart < pEl2->FeatStart)
+	return(-1);
+if (pEl1->FeatStart > pEl2->FeatStart)
+	return(1);
+if(pEl1->FeatTypeID > pEl2->FeatTypeID)
+	return(1);
+if(pEl1->FeatTypeID < pEl2->FeatTypeID)
+	return(-1);
+return(0);
+}
+
+
 // ProcessGFF3File
 // Opens and parses GFF3 format file
 // <seqid>\t<source>\t<type>\t<start>\t<end>\t<score>\t<strand>\t<phase>\t<attributes>
 teBSFrsltCodes 
 CBEDfile::ProcessGFF3File(char *pszFileName)		// process/parse as a GFF2 or GFF3 format file
 {
-teBSFrsltCodes Rslt;
+int Rslt;
 FILE *pGFFStream;
 int LineNum;
 int NumFields;
@@ -556,18 +691,25 @@ teGFFFeatureType FeatTypeID;
 tsGFF3FeatureType *pFeatType;
 
 teGFF3AttribType AttribTypeID;
-tsGFF3AttribValue AttribValues[cNumGFF3AttribTypes];
+
 tsGFF3AttribType *pAttribType;
+tsGFF3AttribValue *pAttribValues;
 tsGFF3AttribValue *pAttribValue;
+
+int32_t NumGFFGeneFeats;
+tsGFFFeat *pGFFGeneFeats;
+tsGFFFeat *pCurGFFGeneFeat;
 
 char *pTxt;
 char szSeqName[cMaxFeatNameLen+1];
 char szSource[cMaxFeatNameLen+1];
 char szFeature[cMaxFeatNameLen+1];
 char szScore[cMaxFeatNameLen+1];
+char szFeatName[cMaxFeatNameLen+1];
 char cStrand;
 char cFrame;
 
+int LineLen;
 int iScore;
 int iFrame;
 int ChromStart;
@@ -575,84 +717,132 @@ int ChromEnd;
 int AttribStart;
 int AttribLen;
 int Idx;
+int TypeIdx;
+int AttribIdx;
 char Chr;
 
 if(pszFileName == NULL || *pszFileName == '\0')
 	return(eBSFerrParams);
 if((pGFFStream = fopen(pszFileName,"r"))==NULL)
 	{
-	AddErrMsg("CBEDfile::ProcessGFF23File","Unable to fopen GFF2/3 format file %s error: %s",pszFileName,strerror(errno));
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessGFF3File: Error accessing GFF file '%s' - ", pszFileName,strerror(errno));
 	return(eBSFerrOpnFile);
 	}
+
+pGFFGeneFeats = new tsGFFFeat [cMaxGFFGeneFeats];
+NumGFFGeneFeats = 0;
 LineNum = 0;
 FeatNum = 0;
+szFeatName[0] = '\0';
 while(fgets(m_szLineBuff,sizeof(m_szLineBuff)-1,pGFFStream)!= NULL)
 	{
 	LineNum += 1;
-	if(!FeatNum && LineNum >= 20)	// if can't load at least one feature from 1st 20 lines then can't be GFF format
+	LineLen = (int)strlen(m_szLineBuff);
+	if (!CheckIfAscii(LineLen,(uint8_t *)m_szLineBuff))
 		{
+		AddErrMsg("CBEDfile::ProcessGFF3File","Errors whilst parsing - %s - non-ascii chars at line %d",pszFileName,LineNum);
+		delete []pGFFGeneFeats;
+		fclose(pGFFStream);
+		return(eBSFerrParse); // if at least one feature processed then treat rubbish as error
+		}
+	if(FeatNum == 0 && NumGFFGeneFeats == 0 && LineNum >= 100)	// if can't load at least one feature from 1st 100 lines then assuming that it can't be in GFF format
+		{
+		delete []pGFFGeneFeats;
 		fclose(pGFFStream);
 		return(eBSFerrFileType);
 		}
 	pTxt = TrimWhitespace(m_szLineBuff);
 	if(*pTxt=='\0' || *pTxt=='#')	// simply slough lines which were just whitespace or start with '#'
 		continue;
-	NumFields = sscanf(pTxt," %50s %50s %50s %d %d %50s %c %c %n",
+	NumFields = sscanf(pTxt," %80s %80s %50s %d %d %50s %c %c %n",
 			szSeqName,szSource,szFeature,&ChromStart,&ChromEnd,szScore,&cStrand,&cFrame,&AttribStart);
 	if(NumFields < 8)
 		{
-		AddErrMsg("CBEDfile::ProcessGFF23File","Errors whilst parsing - %s",m_szFile);
-		Rslt = eBSFerrParse; // if at least one feature processed then treat rubbish as error
-		break;
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessGFF3File: Errors parsing GFF file '%s' at line %d", pszFileName,LineNum);
+		delete []pGFFGeneFeats;
+		fclose(pGFFStream);
+		return(eBSFerrParse);
 		}
 
 	// only interested in a subset of feature types - those relating to genes and transcripts
 	pFeatType = GFF3FeatureTypes;
-	for(Idx=0; Idx < cNumGFF3FeatTypes; Idx++,pFeatType++)
+	for(TypeIdx=0; TypeIdx < cNumGFF3FeatTypes; TypeIdx++,pFeatType++)
 		{
 		if(!stricmp(szFeature,pFeatType->pszFeatType))
 			break;
 		}
-	if(Idx == cNumGFF3FeatTypes)
+	if(TypeIdx == cNumGFF3FeatTypes)
 		continue;
+	switch(pFeatType->FeatTypeID) {
+		case eGFF3FTgene:				// only interested in these GFF feature types
+			break;
+		case eGFF3FTexon:
+			break;
+		case eGFF3FTCDS:
+			break;
+		default:
+			continue;
+		}
+
+	if(pFeatType->FeatTypeID == eGFF3FTgene)	// gene features starting?
+		{
+		if (NumGFFGeneFeats) // add to BED any previously parsed gene features
+			{
+			if((Rslt = (int)AddGFF3Feat2BED(szFeatName,szSeqName,iScore,cStrand,NumGFFGeneFeats,pGFFGeneFeats)) < 0)
+				{
+				delete []pGFFGeneFeats;
+				fclose(pGFFStream);
+				return((teBSFrsltCodes)Rslt);
+				}
+			FeatNum++;
+			szFeatName[0] = '\0';
+			}
+		
+		// starting features for a new gene
+		szFeatName[0] = '\0';
+		NumGFFGeneFeats = 0;
+		}
 
 	// accepting this feature type
 	FeatTypeID = pFeatType->FeatTypeID;
 
-	// some fields may have '.' to indicate that that field value is unknown or not applicable
-	// replace these instances with defaults
-
-	// Source could be '.'; default these to be 'unknown'
-	if(szSource[0] == '.')
-		strcpy(szSource,"Unknown");
-
-	// Score allowed to be '.' instead of a floating point if no score available; default 0
-	if(szScore[0] == '.')
-		iScore = 0;
-	else
+	if(pFeatType->FeatTypeID == eGFF3FTgene)
 		{
-		iScore = (int)atof(szScore);
-		if(iScore < 0)
+		// some fields may have '.' to indicate that that field value is unknown or not applicable
+		// replace these instances with defaults
+
+		// Source could be '.'; default these to be 'unknown'
+		if(szSource[0] == '.')
+			strcpy(szSource,"Unknown");
+
+		// Score allowed to be '.' instead of a floating point if no score available; default 0
+		if(szScore[0] == '.')
 			iScore = 0;
 		else
-			if(iScore > 999)
-				iScore = 999;
-		}
+			{
+			iScore = (int)atof(szScore);
+			if(iScore < 0)
+				iScore = 0;
+			else
+				if(iScore > 999)
+					iScore = 999;
+			}
 
-	// Strand allowed to be '.' or '?'; if not '-' then default '+'
-	if(cStrand != '-')
-		cStrand = '+';
-	// Frame allowed to be '.'; if '.' then default to be '0'
-	switch(cFrame) {
-		case '1':
-			iFrame = 1;
-			break;
-		case '2':
-			iFrame = 2;
-			break;
-		default:
-			iFrame = 0;
-			break;
+		// Strand allowed to be '.' or '?'; if not '-' then default '+'
+		if(cStrand != '-')
+			cStrand = '+';
+		// Frame allowed to be '.'; if '.' then default to be '0'
+		switch(cFrame) {
+			case '1':
+				iFrame = 1;
+				break;
+			case '2':
+				iFrame = 2;
+				break;
+			default:
+				iFrame = 0;
+				break;
+			}
 		}
 
 	// parse out attributes of interest and their associated values
@@ -661,76 +851,100 @@ while(fgets(m_szLineBuff,sizeof(m_szLineBuff)-1,pGFFStream)!= NULL)
 
 	int ParseState;		// 0 whilst looking for attribute; 1 looking for '='; 2 looking for associated value(s)
 	int IdentLen;
-	pAttribValue = AttribValues;
-	for(Idx = 0; Idx < cNumGFF3AttribTypes; Idx++,pAttribValue++)
-		{
-		pAttribValue->AttribTypeID = Idx+1;
-		pAttribValue->szAttribValue[0] = '\0';
-		}
-
+	pCurGFFGeneFeat = &pGFFGeneFeats[NumGFFGeneFeats++];
+	memset(pCurGFFGeneFeat,0,sizeof(*pCurGFFGeneFeat));
+	pCurGFFGeneFeat->FeatTypeID = FeatTypeID;
+	pCurGFFGeneFeat->FeatStart = ChromStart;
+	pCurGFFGeneFeat->FeatEnd = ChromEnd;
+	pAttribValues = pCurGFFGeneFeat->AttribValues;
 	ParseState = 0;
 	for(Idx = 0; Idx < AttribLen; Idx++,pTxt++)
 		{
 		Chr = *pTxt;
-		switch(Chr) {
-			case '=':					
-				if(ParseState != 1)				// if not in this parse state then reset state back to expecting to parse attribute
-					ParseState = 0;
-				else
+		if(ParseState == 0 && (Chr == ';' || Chr == '='))	// not allowed within attribute types
+			{
+			ParseState = 0;				// back to expecting attribute identifier
+			continue;
+			}
+
+		switch(ParseState) {
+			case 0:							// trying to parse out attribute identifier
+				pAttribType = GFF3AttribTypes;
+				for(AttribIdx=0; AttribIdx < cNumGFF3AttribTypes; AttribIdx++,pAttribType++)
 					{
-					ParseState = 2;				// now expecting to parse out the attribute value
-					pAttribValue = &AttribValues[AttribTypeID-1];
-					IdentLen = 0;
-					}
-				continue;
-
-			case ' ':							// in any parse state just slough whitespace
-			case '\t':
-				continue;
-
-			default:
-				switch(ParseState) {
-					case 0:							// trying to parse out attribute identifier
-						pAttribType = GFF3AttribTypes;
-						for(Idx=0; Idx < cNumGFF3AttribTypes; Idx++,pAttribType++)
-							{
-							if(!strcmp(pTxt,pAttribType->pszAttribType))
-								break;
-							}
-						if(Idx == cNumGFF3FeatTypes)
-							continue;
-						IdentLen = (int)strlen(pAttribType->pszAttribType);
-						AttribTypeID = pAttribType->AttribTypeID;
-						Idx += IdentLen - 1; 
-						pTxt += IdentLen - 1;
-						ParseState = 1;
-						continue;
-					case 1:							// expecting '='
-						ParseState = 0;				// so back to expecting attribute identifier
-						continue;
-					default:						// parsing out the attribute value
-						if(Chr == ';' || Chr == '=')	// not allowed within attribute values
-							{
-							ParseState = 0;				// back to expecting attribute identifier
-							continue;
-							}
+					IdentLen = (int)strlen(pAttribType->pszAttribType);
+					if(!strncmp(pTxt,pAttribType->pszAttribType,IdentLen))
 						break;
 					}
+				if(AttribIdx == cNumGFF3AttribTypes || pTxt[IdentLen] != '=')
+					continue;
+				AttribTypeID = pAttribType->AttribTypeID;
+				pAttribValue = &pAttribValues[AttribTypeID-1];
+				if(pAttribValue->AttribTypeID == 0)
+					pCurGFFGeneFeat->NumAttribValues++;
+				pAttribValue->AttribTypeID = AttribTypeID;
+				pAttribValue->AttribValueLen = 0;
+				pAttribValue->szAttribValue[0] = '\0';
+				Idx += IdentLen; 
+				pTxt += IdentLen;
+				ParseState = 1;				// parsing out the attribute value into pAttribValue
+				continue;
+
+			case 1:							// parsing of attribute value, terminated by semicolon, any internal whitespace is simply sloughed
+				if(isspace(Chr))
+					continue;
+				if(Chr == ';' || (Idx + 1) == AttribLen)				// terminates current attribute value - may be starting a new attribute
+					{
+					if(FeatTypeID == eGFF3FTgene && AttribTypeID == eGFF3AName)
+						strncpy(szFeatName,pAttribValue->szAttribValue,sizeof(szFeatName)-1);
+					ParseState = 0;
+					continue;
+					}
+
+				if(pAttribValue->AttribValueLen < cMaxGFF3AttribValueLen)
+					{
+					pAttribValue->szAttribValue[pAttribValue->AttribValueLen++] = Chr;
+					pAttribValue->szAttribValue[pAttribValue->AttribValueLen] = '\0';
+					}
+				continue;
+
+			default:						// currently only two parse states but in future who knows ....
 				break;
 			}
-
-		if(IdentLen < cMaxGFF3AttribValueLen)
-			{
-			pAttribValue->szAttribValue[IdentLen++] = Chr;
-			pAttribValue->szAttribValue[IdentLen] = '\0';
-			}
 		}
-	// this is where this entry needs to be added to other entries
 	}
-// sort the entries and then iterate building BED entries
 
+if (NumGFFGeneFeats) // add to BED any previously parsed gene features
+	{
+	if((Rslt = AddGFF3Feat2BED(szFeatName,szSeqName,iScore,cStrand,NumGFFGeneFeats,pGFFGeneFeats)) < 0)
+		{
+		delete []pGFFGeneFeats;
+		fclose(pGFFStream);
+		return((teBSFrsltCodes)Rslt);
+		}
+	FeatNum++;
+	}
+
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "ProcessGFF3File: Parsed and accepted %d features from GFF file '%s'",FeatNum, pszFileName);
+
+delete []pGFFGeneFeats;
 fclose(pGFFStream);
-return(FeatNum ? Rslt : eBSFerrParse);
+
+return((teBSFrsltCodes)FeatNum);
+}
+
+// check if assumed ascii string only contains ascii chars
+bool
+CBEDfile::CheckIfAscii(int Len,	// length to check
+			 uint8_t* pAscii)	// assumed ascii - should only contain printable characters
+{
+if(Len > 0)
+	{
+	while(Len--)
+		if(!isascii((char) * pAscii++))
+			return(false);
+	}
+return(true);
 }
 
 // ProcessBedFile
@@ -770,6 +984,7 @@ int Cnt;
 int FeatNum;
 teBSFrsltCodes Rslt;
 bool bCSV;
+int LineLen;
 char *pTxt;
 
 if(pszFileName == NULL || *pszFileName == '\0')
@@ -787,6 +1002,15 @@ Rslt = eBSFerrFileType; // assume the worst..., no features parsed
 while(fgets(m_szLineBuff,sizeof(m_szLineBuff)-1,pBEDStream)!= NULL)
 	{
 	LineNum += 1;
+	// double check each line for non-ascii characters
+	LineLen = (int)strlen(m_szLineBuff);
+	if (!CheckIfAscii(LineLen,(uint8_t *)m_szLineBuff))
+		{
+		AddErrMsg("CBEDfile::ProcessBedFile","Errors whilst parsing - %s - non-ascii chars at line %d",m_szFile,LineNum);
+		Rslt = eBSFerrParse; // if at least one feature processed then treat rubbish as error
+		break;
+		}
+
 	if(!FeatNum && LineNum >= 20)	// if can't load at least one feature from 1st 20 lines then can't be BED format
 		{
 		fclose(pBEDStream);
@@ -927,6 +1151,7 @@ char *pChr;
 char *pTxt;
 char Chr;
 int LineNum;
+int LineLen;
 int TotLen;
 int LeftFlankLen;
 int CoreLen;
@@ -955,6 +1180,13 @@ LineNum = 0;
 FeatNum = 1;
 while(fgets(szLineBuff,sizeof(szLineBuff),pBEDStream)!= NULL)
 	{
+	LineLen = (int)strlen(szLineBuff);
+	if (!CheckIfAscii(LineLen,(uint8_t *)szLineBuff))
+		{
+		AddErrMsg("CBEDfile::ProcessUltraCoreFile","Errors whilst parsing - %s - non-ascii chars at line %d",m_szFile,LineNum);
+		fclose(pBEDStream);
+		return(eBSFerrParse); // if at least one feature processed then treat rubbish as error
+		}
 	pTxt = TrimWhitespace(szLineBuff);
 	if(*pTxt=='\0' || *pTxt=='#')	// simply slough lines which were just whitespace or comment lines
 		continue;

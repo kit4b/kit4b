@@ -6,11 +6,13 @@ const uint32_t cBSFFeatVersionBack = 11;	// can handle all versions starting fro
 
 const int cMaxNumChroms   = 50000000;		 // maximum number of chromosomes or contigs supported
 const int cMaxFeatNameLen = cMaxGeneNameLen;	// max feature name length
-const int cMaxNumFeats    = 100000000;	 // max number of features supported
+const int cMaxNumFeats    = 100000000;	 // max number total number of features supported
 const int cMaxNumExons	  = 8000;		 // max number of exons supported for gene features
 const int cLineBuffLen    = 128 + (cMaxNumExons * 8); // max length BED line expected
 const int cAllocFeatIncr = 100000000;	 // alloc/realloc memory for features in this increment (bytes) 
 const int cAllocBEDChromNamesIncr = 250000000; // alloc/realloc memory for chromosome names in this increment (bytes)
+
+const int cMaxGFFGeneFeats = cMaxNumExons; // max number of gff feature lines for any single gene
 
 const int cMinRegLen  = 0;			// min regulatory length
 const int cDfltRegLen = 2000;		// default regulatory region length
@@ -79,11 +81,20 @@ typedef struct TAG_sGFF3AttribType {
 
 const int cMaxGFF3AttribValueLen = 200;	// truncate GFF3 attribute values to this length
 typedef struct TAG_sGFF3AttribValue {
-	int AttribTypeID;		// attribute type identifier
+	teGFF3AttribType AttribTypeID;		// attribute type identifier
+	int AttribValueLen;					// value length
 	char szAttribValue[cMaxGFF3AttribValueLen + 1];	// value associated with this attribute
 } tsGFF3AttribValue;
 
 
+typedef struct TAG_sGFFFeat {
+	teGFFFeatureType FeatTypeID;		// feature type	
+	int32_t FeatStart;					// feature start loci
+	int32_t FeatEnd;					// feature start loci
+	char Strand;						// feature is on this strand
+	int32_t NumAttribValues;			// number of attribute values in AttribValues
+	tsGFF3AttribValue AttribValues[3];	// at most only this number of attribute values supported - ID, Name and Parent
+	} tsGFFFeat;
 
 typedef struct TAG_sUnsortToSortID {    // used whilst intialising feature to chrom identifier mapping
 	uint32_t OldID;		// previous identifier
@@ -211,7 +222,8 @@ class CBEDfile  : protected CEndian, public CErrorCodes
 					 int FiltInFlags, // filter out any features which do not have at least one of the specified filter flags set
 					 int FiltOutFlags); // filter out any features which have at least one of the specified filter flags set
 
-	
+	bool CheckIfAscii(int Len,	// length to check
+			 uint8_t* pAscii);	// assumed ascii - should only contain printable characters
 
 	 bool InInternFeat(int FeatBits,int ChromID,int StartOfs,int EndOfs);
 
@@ -221,6 +233,7 @@ class CBEDfile  : protected CEndian, public CErrorCodes
 	static int SortChromStarts(const void *arg1, const void *arg2);  // used to sort by feature chromid->start->end
 	static int SortChromNames( const void *arg1, const void *arg2);  // used to sort chromosome names
 	static int SortU2S( const void *arg1, const void *arg2);	// used to sort chrom ids when mapping features on to chrom initialisation
+	static int SortGFFGeneFeats( const void *arg1, const void *arg2); // sort GFF features by FeatStart ascending
 
 public:
 	CBEDfile(void);
@@ -254,6 +267,13 @@ public:
 					 int Score,					// feature score
 					 char Strand,				// on which strand feature is located
 					 char *pszSuppInfo);		// supplementary information
+
+	teBSFrsltCodes	AddGFF3Feat2BED(char *pszFeatName,			// feature name
+						char *pszChromName,			// chromosome name
+						int iScore,					// feature score
+						char cStrand,				// on which strand feature is located
+						int NumGFFFeats,
+						tsGFFFeat* pGFFGeneFeats);
 
 
 	teBSFrsltCodes SetFilter(char *pszFeatName,uint32_t FiltFlags = cFeatFiltIn);	// sets specified feature to have FiltFlags
