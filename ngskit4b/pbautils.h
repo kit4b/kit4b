@@ -12,7 +12,7 @@ const size_t cAllocPackedBaseAlleles = 0x3fffffff;	// allocate packed base allel
 const uint32_t cInBuffSize = 0x7fffffff;			// buffer size for file reads
 const uint32_t cOutBuffSize = 0x6fffffff;			// buffer size for file writes
 const int cMaxAXAllocBuffChunk = 0x00ffffff;		// buffer for fasta sequences is realloc'd in this sized chunks 
-const uint32_t cMaxPBAutilityThreads = 16;			// relatively few threads likely to be required
+const uint32_t cMaxPBAutilityThreads = 8;			// relatively few threads likely to be required
 
 const double cDfltGTPropThres = 0.05;				// default proportion threshold when processing for genotype VCF for both missing sample alignments and heterozygosity between aligned samples
 const char cDfltRefAssemb[] = { "Wm82.v2" };		// default reference assembly if none specified
@@ -33,7 +33,7 @@ typedef enum TAG_ePBAuMode {
 
 #pragma pack(1)
 
-typedef struct TAG_sChromMetadata
+typedef struct TAG_sPUChromMetadata
 {
 	uint32_t ReadsetID;			// chromosome is from this readset
 	uint32_t ChromMetadataIdx;	// index of this metadata
@@ -43,9 +43,9 @@ typedef struct TAG_sChromMetadata
 	uint32_t HGBinID;            // initial haplotype grouping bin identifier for this chromosome
 	int64_t FileOfsPBA;         // PBAs for this chromosome starts at this file offset
 	uint8_t* pPBAs;				// pts to memory allocation holding packed base alleles for this chromosome
-} tsChromMetadata;
+} tsPUChromMetadata;
 
-typedef struct TAG_sReadsetMetadata
+typedef struct TAG_sPUReadsetMetadata
 {
 	uint32_t ReadsetID;				// identifies from which readset these packed base alleles were generated
 	char szExperimentID[100];		// sequencing experiment
@@ -56,7 +56,7 @@ typedef struct TAG_sReadsetMetadata
 	uint32_t StartChromMetadataIdx;	// index of starting chrom metadata for this readset
 	uint32_t StartChromID;			// starting chrom for this readset
 	int64_t NxtFileChromOfs;        // file offset at which the next file chromosome metadata can be read from 
-} tsReadsetMetadata;
+} tsPUReadsetMetadata;
 
 
 #pragma pack()
@@ -77,7 +77,7 @@ class CPBAutils
 	uint32_t m_NxtszReadsetIdx;			// current concatenated (names separated by '\0') of all readset names in m_szReadsets, note that the readset type (founder 0, progeny 1 or control 2) is prepended to each name
 	char m_szReadsetNames[cMaxPBAReadsets * (cMaxDatasetSpeciesChrom + 1)];	// used to hold concatenated readset names, each separated by '\0'
 	uint32_t m_szReadsetIdx[cMaxPBAReadsets];	// array of indexes into m_szReadsetNames giving the starts of each name
-	tsReadsetMetadata m_Readsets[cMaxPBAReadsets];	// array of all readset metadata
+	tsPUReadsetMetadata m_Readsets[cMaxPBAReadsets];	// array of all readset metadata
 
 	int32_t m_LAChromNameID;						// last accessed chromosome identifier from call to AddChrom()
 	int32_t m_NumChromNames;						// number of chromosome names currently in m_szChromNames
@@ -89,7 +89,7 @@ class CPBAutils
 	uint32_t m_UsedNumChromMetadata;	// current number of chrom metadata used 
 	uint32_t m_AllocdChromMetadata;		// current allocation is for this many 
 	size_t m_AllocdChromMetadataMem;	// current mem allocation size for m_pChromMetadata
-	tsChromMetadata* m_pChromMetadata;	// allocated to hold metadata for all founder chromosomes
+	tsPUChromMetadata* m_pChromMetadata;	// allocated to hold metadata for all founder chromosomes
 
 	uint32_t m_InNumProcessed;	// this number of input bytes have been processed
 	uint32_t m_InNumBuffered;	// currently buffering this many input bytes
@@ -219,7 +219,7 @@ class CPBAutils
 
 	void DeleteAllChromPBAs(void); // delete all currently loaded PBAs - all sample chroms
 
-	tsChromMetadata*								// returned pointer to chromosome metadata
+	tsPUChromMetadata*								// returned pointer to chromosome metadata
 		LocateChromMetadataFor(uint32_t ReadSetID,		// readset identifier 
 			uint32_t ChromID);			// chrom identifier
 

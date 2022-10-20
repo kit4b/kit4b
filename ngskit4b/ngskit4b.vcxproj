@@ -73,6 +73,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <IncludePath>$(IncludePath);</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -110,6 +111,11 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <MinimalRebuild>false</MinimalRebuild>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <SDLCheck>false</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -121,7 +127,9 @@
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <HeapReserveSize>100000000</HeapReserveSize>
       <HeapCommitSize>100000000</HeapCommitSize>
-      <LinkTimeCodeGeneration>UseFastLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+      <LinkTimeCodeGeneration>
+      </LinkTimeCodeGeneration>
+      <AdditionalOptions>/EDITANDCONTINUE %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -178,6 +186,7 @@
     <ClInclude Include="Benchmarker.h" />
     <ClInclude Include="CallHaplotypes.h" />
     <ClInclude Include="CGenMLdatasets.h" />
+    <ClInclude Include="CWIGutils.h" />
     <ClInclude Include="GBSmapSNPs.h" />
     <ClInclude Include="pbautils.h" />
     <ClInclude Include="seghaplotypes.h" />
@@ -218,6 +227,7 @@
     <ClCompile Include="Benchmarker.cpp" />
     <ClCompile Include="CallHaplotypes.cpp" />
     <ClCompile Include="CGenMLdatasets.cpp" />
+    <ClCompile Include="CWIGutils.cpp" />
     <ClCompile Include="GBSmapSNPs.cpp" />
     <ClCompile Include="pbautils.cpp" />
     <ClCompile Include="seghaplotypes.cpp" />

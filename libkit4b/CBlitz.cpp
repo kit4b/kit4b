@@ -2495,10 +2495,10 @@ CBlitz::ReportKMerDist(uint32_t KMerLen,// KMer count distributions are for this
 {
 uint32_t DistIdx;
 uint32_t *pOccsDist;
-uint64_t CumulativeQKmers;
-uint64_t CumulativeTKmers;
-uint64_t TotalCumulativeQKmers;
-uint64_t TotalCumulativeTKmers;
+int64_t CumulativeQKmers;
+int64_t CumulativeTKmers;
+int64_t TotalCumulativeQKmers;
+int64_t TotalCumulativeTKmers;
 double PropCumulativeQKmers;
 double PropCumulativeTKmers;
 
@@ -2522,11 +2522,7 @@ for(DistIdx = 0; DistIdx <= MaxKMerCnts; DistIdx++, pKmerOccsDist++)
 	CumulativeTKmers += DistIdx * (uint64_t)*pKmerOccsDist;
 	PropCumulativeQKmers = (double)CumulativeQKmers/(double)TotalCumulativeQKmers;
 	PropCumulativeTKmers = (double)CumulativeTKmers / (double)TotalCumulativeTKmers;
-#if _WIN32
-	m_szLineBuffIdx += sprintf(&m_pszLineBuff[m_szLineBuffIdx], "%u,%u,%Iu,%Iu,%f,%f\n",
-#else
-	m_szLineBuffIdx += sprintf(&m_pszLineBuff[m_szLineBuffIdx], "%u,%u,%lu,%lu,%f,%f\n",
-#endif
+	m_szLineBuffIdx += sprintf(&m_pszLineBuff[m_szLineBuffIdx], "%u,%u,%zd,%zd,%f,%f\n",
 							DistIdx, *pKmerOccsDist, CumulativeQKmers, CumulativeTKmers, PropCumulativeTKmers, PropCumulativeQKmers);
 	if (m_szLineBuffIdx > (cAlignBlitzRprtBufferSize * 9) / 10)
 		{

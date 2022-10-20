@@ -13,6 +13,7 @@ const int cAllocFeatIncr = 100000000;	 // alloc/realloc memory for features in t
 const int cAllocBEDChromNamesIncr = 250000000; // alloc/realloc memory for chromosome names in this increment (bytes)
 
 const int cMaxGFFGeneFeats = cMaxNumExons; // max number of gff feature lines for any single gene
+const int cMaxGFF3IDs = (1000 * cMaxGFFGeneFeats);	   // allowing for at most this many GFF3 identifiers
 
 const int cMinRegLen  = 0;			// min regulatory length
 const int cDfltRegLen = 2000;		// default regulatory region length
@@ -41,9 +42,9 @@ const int cNumCharRegs = 9;
 
 // following are not priority ordered and are handled separately
 const int cFeatBitFeature = 0x0100;		// note: feature could be a gene
-const int cFeatBitExons   = 0x0200;		// 5'UTR or CDS or 3'UTR
+const int cFeatBitExons   = (cFeatBit5UTR | cFeatBitCDS | cFeatBit3UTR);		// 5'UTR or CDS or 3'UTR
 									
-const int cAnyFeatBits = cFeatBitUpstream | cFeatBit5UTR | cFeatBitCDS | cFeatBitIntrons | cFeatBit3UTR | cFeatBitDnstream | cFeatBitFeature;
+const int cAnyFeatBits = (cFeatBitUpstream | cFeatBit5UTR | cFeatBitCDS | cFeatBitIntrons | cFeatBit3UTR | cFeatBitDnstream | cFeatBitFeature);
 const int cRegionFeatBits = cFeatBitUpstream | cFeatBit5UTR | cFeatBitCDS | cFeatBitIntrons | cFeatBit3UTR | cFeatBitDnstream;
 const int cOverlaysSpliceSites = cIntronExonSpliceSite | cExonIntronSpliceSite;
 
@@ -63,7 +64,10 @@ typedef enum eGFFFeatureType {          // GFF3 file gene feature regions which 
 
 typedef enum eGFF3AttribType { // GFF3 file gene features can have associated attribute types
 	eGFF3AID = 1,eGFF3AParent,eGFF3AName
-	}teGFF3AttribType;
+	} teGFF3AttribType;
+
+
+
 #pragma pack(1)
 
 typedef struct TAG_sGFF3FeatureType {
@@ -80,21 +84,17 @@ typedef struct TAG_sGFF3AttribType {
 
 
 const int cMaxGFF3AttribValueLen = 200;	// truncate GFF3 attribute values to this length
+
 typedef struct TAG_sGFF3AttribValue {
 	teGFF3AttribType AttribTypeID;		// attribute type identifier
 	int AttribValueLen;					// value length
 	char szAttribValue[cMaxGFF3AttribValueLen + 1];	// value associated with this attribute
 } tsGFF3AttribValue;
 
-
-typedef struct TAG_sGFFFeat {
-	teGFFFeatureType FeatTypeID;		// feature type	
-	int32_t FeatStart;					// feature start loci
-	int32_t FeatEnd;					// feature start loci
-	char Strand;						// feature is on this strand
-	int32_t NumAttribValues;			// number of attribute values in AttribValues
-	tsGFF3AttribValue AttribValues[3];	// at most only this number of attribute values supported - ID, Name and Parent
-	} tsGFFFeat;
+typedef struct TAG_sExonStartSize {
+	int32_t RelStart;	// exon starts at this gene start relative loci
+	int32_t Size;		// exon is this size
+	} tsExonStartSize;
 
 typedef struct TAG_sUnsortToSortID {    // used whilst intialising feature to chrom identifier mapping
 	uint32_t OldID;		// previous identifier
@@ -196,6 +196,12 @@ class CBEDfile  : protected CEndian, public CErrorCodes
 	 tsBEDchromname *m_pCacheChromName;  // caches last chromosome name located through LocateChromName()
 	 char m_OnStrand;					// which strand features must be on '+'/'-' or '*' for either
 
+	int m_NumGFFFeats;			// number of features parsed from gene
+	int m_NumGFFGenes;				// number of genes parsed
+
+	uint32_t m_AllocdFeatBM;		// bytes allocated to m_pFeatBM for holding packed bitmap
+	uint8_t *m_pFeatBM;				// allocated to hold packed bitmap with bits set to represent exon, cds and utr coverage within gene
+
 	void InitHdr(void);
 	void Reset(bool Flush = false);
 
@@ -233,7 +239,6 @@ class CBEDfile  : protected CEndian, public CErrorCodes
 	static int SortChromStarts(const void *arg1, const void *arg2);  // used to sort by feature chromid->start->end
 	static int SortChromNames( const void *arg1, const void *arg2);  // used to sort chromosome names
 	static int SortU2S( const void *arg1, const void *arg2);	// used to sort chrom ids when mapping features on to chrom initialisation
-	static int SortGFFGeneFeats( const void *arg1, const void *arg2); // sort GFF features by FeatStart ascending
 
 public:
 	CBEDfile(void);
@@ -254,7 +259,19 @@ public:
 	teBSFrsltCodes Close(bool bFlush2Disk = false);
 
 	teBSFrsltCodes ProcessBedFile(char *pszFileName);		// process/parse BED format file
-	teBSFrsltCodes ProcessGFF3File(char *pszFileName);		// process/parse as a GFF3 format file
+	teBSFrsltCodes ParseGFF3FileGFFFeats(char *pszFileName); // Opens and parses, calls ParseGFFline(), GFF3 format file. Features for each gene are processed into a packed bitmap allowing identification of all exonic sequences for each gene in the presence of multiple gene isoforms
+	teGFFFeatureType		// parsed GFF line was for this feature type (0 if type not accepted, -1 if parsing errors)
+			ParseGFFline(char *pszLine,	// GFF file line
+				char *pszSeqName,		// returned sequence name		
+				char *pszSource,		// returned source
+				int *pScore,			// returned score,
+				int32_t *pStart,		// start loci , 1+
+				int32_t *pEnd,			// end loci, inclusive
+				char *pStrand,			// is on this strand
+				int *pFrame,			// frame start
+				char *pszName,			// name
+				char *pszParentOfID,	// top level parent identifier
+				char *pszParentID);		// has this parent
 
 	teBSFrsltCodes ProcessUltraCoreFile(char *pszFileName); // process/parse UltraCore format file
 	teBSFrsltCodes ProcessGroupCoreFile(char *pszFileName,int MinLen = INT_MIN, int MaxLen = INT_MAX); // process/parse group - multispecies - UltraCores  format file
@@ -268,12 +285,14 @@ public:
 					 char Strand,				// on which strand feature is located
 					 char *pszSuppInfo);		// supplementary information
 
-	teBSFrsltCodes	AddGFF3Feat2BED(char *pszFeatName,			// feature name
-						char *pszChromName,			// chromosome name
-						int iScore,					// feature score
-						char cStrand,				// on which strand feature is located
-						int NumGFFFeats,
-						tsGFFFeat* pGFFGeneFeats);
+	int
+		AddGFF3Gene2BED(char *pszGeneName,	// gene name
+			 char *pszChrom,		// gene is on this chrom
+			 char Strand,			// transcribed on this strand
+			 int Score,				// GFF scored
+			 int32_t GeneStart,		// gene starts at this loci
+			 int32_t GeneEnd,		// gene ends at this loci inclusive
+			 uint8_t* pLociRange);	// allocated to hold bitmap containing all gene exon loci, 2bits per loci - see AddFeatExonsBitmap()
 
 
 	teBSFrsltCodes SetFilter(char *pszFeatName,uint32_t FiltFlags = cFeatFiltIn);	// sets specified feature to have FiltFlags
@@ -283,6 +302,7 @@ public:
 	bool SetStrand(char Strand);				// sets which strand features must be on in subsequent processing '+'/'-' or '*' for either
 
 	bool ContainsGeneDetail(void);			// returns true if file contains gene detail (utr/cds/intron etc)
+	int GetNextChromFeatureID(int ChromID,int CurFeatureID,int MinScore = INT_MIN,int MaxScore = INT_MAX);
 	int GetNextFeatureID(int CurFeatureID,int MinScore = INT_MIN,int MaxScore = INT_MAX);
 	int GetPrevFeatureID(int CurFeatureID,int MinScore = INT_MIN,int MaxScore = INT_MAX);
 

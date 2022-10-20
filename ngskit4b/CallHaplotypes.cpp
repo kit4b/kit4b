@@ -842,7 +842,7 @@ if (m_pBedFile != NULL)
 	delete m_pBedFile;
 if(m_pChromMetadata != NULL)
 	{
-	tsChromMetadata *pChromMetadata = m_pChromMetadata;
+	tsCHChromMetadata *pChromMetadata = m_pChromMetadata;
 	for(uint32_t Idx = 0; Idx < m_UsedNumChromMetadata; Idx++, pChromMetadata++)
 		{
 		if(pChromMetadata->pPBAs != NULL)
@@ -978,7 +978,7 @@ if (m_pBedFile != NULL)
 
 if(m_pChromMetadata != NULL)
 	{
-	tsChromMetadata *pChromMetadata = m_pChromMetadata;
+	tsCHChromMetadata *pChromMetadata = m_pChromMetadata;
 	for(uint32_t Idx = 0; Idx < m_UsedNumChromMetadata; Idx++, pChromMetadata++)
 		{
 		if(pChromMetadata->pPBAs != NULL)
@@ -1365,9 +1365,9 @@ if(PMode == eMCSHGrpDist2WIG)
 
 
 // initial allocation, will be realloc'd as required if more memory required
-memreq = (size_t)cAllocChromMetadata * sizeof(tsChromMetadata);
+memreq = (size_t)cAllocChromMetadata * sizeof(tsCHChromMetadata);
 #ifdef _WIN32
-m_pChromMetadata = (tsChromMetadata *)malloc(memreq);	// initial and perhaps the only allocation
+m_pChromMetadata = (tsCHChromMetadata *)malloc(memreq);	// initial and perhaps the only allocation
 if(m_pChromMetadata == NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Initial memory allocation of %zd bytes for chromosome metadata failed - %s", (int64_t)memreq, strerror(errno));
@@ -1375,7 +1375,7 @@ if(m_pChromMetadata == NULL)
 	return(eBSFerrMem);
 	}
 #else
-m_pChromMetadata = (tsChromMetadata *)mmap(NULL, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+m_pChromMetadata = (tsCHChromMetadata *)mmap(NULL, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 if(m_pChromMetadata == MAP_FAILED)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Memory allocation of %zd bytes through mmap() for chromosome metadata failed - %s", (int64_t)memreq, strerror(errno));
@@ -1711,7 +1711,7 @@ else // else (eMCSHAllelicHapsGrps or eMCSHCoverageHapsGrps or eMCSHQGLHapsGrps 
 			uint32_t CurChromID;
 			uint32_t HGBinID;
 			tsHGBinSpec* pHGBinSpec;
-			tsChromMetadata* pChromMetadata;
+			tsCHChromMetadata* pChromMetadata;
 			CurChromID = 0;
 			pHGBinSpec = m_pHGBinSpecs;
 			for(HGBinID = 1; HGBinID <= m_UsedHGBinSpecs; HGBinID++, pHGBinSpec++)
@@ -2864,7 +2864,7 @@ m_OutBuffIdx = 0;
 
 char *pszProgenyReadset = LocateReadset(m_CurProgenyReadsetID);
 
-tsReadsetMetadata *pProgeny = &m_Readsets[m_CurProgenyReadsetID -1];
+tsCHReadsetMetadata *pProgeny = &m_Readsets[m_CurProgenyReadsetID -1];
 tsProgenyFndrAligns ProgenyFndrAligns;
 int32_t NumFndrUniques;
 int32_t NumOverlapping;
@@ -2973,7 +2973,7 @@ for(AlleleStackIdx = 0; AlleleStackIdx < m_UsedAlleleStacks; AlleleStackIdx++, p
 	}
 	
 // remove all PBAs for this progeny as no longer required and memory resources could be limited
-tsChromMetadata *pChromMetadata;
+tsCHChromMetadata *pChromMetadata;
 uint32_t CurChromMetadataIdx = pProgeny->StartChromMetadataIdx;
 for(uint32_t ChromIdx = 0; ChromIdx < pProgeny->NumChroms && CurChromMetadataIdx != 0; ChromIdx++)
 	{
@@ -3074,9 +3074,9 @@ char szReadsetID[100];
 uint32_t PrevChromMetadataIdx;
 uint32_t ChromID;
 uint32_t ReadsetID;
-tsReadsetMetadata *pReadsetMetadata;
-tsChromMetadata *pChromMetadata;
-tsChromMetadata *pPrevChromMetadata;
+tsCHReadsetMetadata *pReadsetMetadata;
+tsCHChromMetadata *pChromMetadata;
+tsCHChromMetadata *pPrevChromMetadata;
 int64_t FileOfsPBA;
 uint8_t* pBuff;
 int scanlen;
@@ -3251,7 +3251,7 @@ bool  // false: no previous memory allocated for containing the chromosome PBAs,
 CCallHaplotypes::DeleteSampleChromPBAs(uint32_t SampleID,   // Sample identifier
 									 uint32_t ChromID)    // chrom identifier
 {
-tsChromMetadata* pChromMetadata;
+tsCHChromMetadata* pChromMetadata;
 
 // returned pointer to chromosome metadata
 if((pChromMetadata = LocateChromMetadataFor(SampleID, ChromID)) == NULL)
@@ -3275,8 +3275,8 @@ CCallHaplotypes::LoadSampleChromPBAs(uint32_t SampleID,   // Sample identifier
 int hInFile;
 char* pszChrom;
 int64_t ChromSeekOfs;
-tsChromMetadata* pChromMetadata;
-tsReadsetMetadata *pReadsetMetadata;
+tsCHChromMetadata* pChromMetadata;
+tsCHReadsetMetadata *pReadsetMetadata;
 uint32_t NumRead;
 uint32_t NumLoaded;
 
@@ -3416,20 +3416,20 @@ int
 CCallHaplotypes::AllocChromMetadata(void)
 {
 uint32_t ToAllocdChromMetadata;
-tsChromMetadata *pChromMetadata;
+tsCHChromMetadata *pChromMetadata;
 size_t memreq;
 if (m_pChromMetadata == NULL)					// may be NULL first time in
 	{
-	memreq = cAllocChromMetadata * sizeof(tsChromMetadata);
+	memreq = cAllocChromMetadata * sizeof(tsCHChromMetadata);
 #ifdef _WIN32
-	m_pChromMetadata = (tsChromMetadata *)malloc((size_t)memreq);
+	m_pChromMetadata = (tsCHChromMetadata *)malloc((size_t)memreq);
 	if (m_pChromMetadata == NULL)
 		{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "AllocChromMetadata: Memory allocation of %zd bytes failed",(int64_t)memreq);
 		return(eBSFerrMem);
 		}
 #else
-	m_pChromMetadata = (tsChromMetadata *)mmap(NULL, (size_t)memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	m_pChromMetadata = (tsCHChromMetadata *)mmap(NULL, (size_t)memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	if (m_pChromMetadata == MAP_FAILED)
 		{
 		m_pChromMetadata = NULL;
@@ -3446,13 +3446,13 @@ else
 	if (m_UsedNumChromMetadata == m_AllocdChromMetadata)
 		{
 		ToAllocdChromMetadata = m_UsedNumChromMetadata + cAllocChromMetadata;
-		size_t memreq = ToAllocdChromMetadata * sizeof(tsChromMetadata);
+		size_t memreq = ToAllocdChromMetadata * sizeof(tsCHChromMetadata);
 #ifdef _WIN32
-		pChromMetadata = (tsChromMetadata*)realloc(m_pChromMetadata, memreq);
+		pChromMetadata = (tsCHChromMetadata*)realloc(m_pChromMetadata, memreq);
 		if (pChromMetadata == NULL)
 			{
 #else
-			pChromMetadata = (tsChromMetadata*)mremap(m_pChromMetadata, m_AllocdChromMetadataMem, memreq, MREMAP_MAYMOVE);
+			pChromMetadata = (tsCHChromMetadata*)mremap(m_pChromMetadata, m_AllocdChromMetadataMem, memreq, MREMAP_MAYMOVE);
 			if (pChromMetadata == MAP_FAILED)
 			{
 #endif
@@ -3492,8 +3492,8 @@ uint8_t *								// returned pointer to start of PBA
 CCallHaplotypes::LocatePBAfor(uint32_t ReadSetID,		// readset identifier 
 			 uint32_t ChromID)			// chrom identifier
 {
-tsReadsetMetadata *pReadsetMetadata;
-tsChromMetadata *pChromMetadata;
+tsCHReadsetMetadata *pReadsetMetadata;
+tsCHChromMetadata *pChromMetadata;
 uint32_t CurChromMetadataIdx;
 
 if(ReadSetID > m_NumReadsetNames || ReadSetID == 0)
@@ -3510,12 +3510,12 @@ for(uint32_t ChromIdx = 0; ChromIdx < pReadsetMetadata->NumChroms && CurChromMet
 return(NULL);
 }
 
-tsChromMetadata *								// returned pointer to chromosome metadata
+tsCHChromMetadata *								// returned pointer to chromosome metadata
 CCallHaplotypes::LocateChromMetadataFor(uint32_t ReadSetID,		// readset identifier 
 			 uint32_t ChromID)			// chrom identifier
 {
-tsReadsetMetadata *pReadsetMetadata;
-tsChromMetadata *pChromMetadata;
+tsCHReadsetMetadata *pReadsetMetadata;
+tsCHChromMetadata *pChromMetadata;
 uint32_t CurChromMetadataIdx;
 
 if(ReadSetID > m_NumReadsetNames || ReadSetID == 0)
@@ -3901,7 +3901,7 @@ uint32_t MaxNumHaplotypeGroups;// attempt to constrain number of haplotype group
 char *pszChrom;
 uint32_t ChromID;
 uint32_t CurChromID;
-tsChromMetadata* pChromMetadata;
+tsCHChromMetadata* pChromMetadata;
 uint32_t NumUnrecognisedChroms;
 uint32_t NumRegionErrs;
 uint32_t NumRegions;
@@ -4128,7 +4128,7 @@ uint32_t MaxHaplotypeGroups;// attempt to constrain number of haplotype groups t
 char *pszChrom;
 uint32_t ChromID;
 uint32_t CurChromID;
-tsChromMetadata* pChromMetadata;
+tsCHChromMetadata* pChromMetadata;
 uint32_t NumUnrecognisedChroms;
 uint32_t NumBinSpecErrs;
 uint32_t NumAccepedBins;
@@ -4454,7 +4454,7 @@ void * WorkerLoadChromPBAInstance(void * pThreadPars)
 #endif
 {
 int Rslt;
-tsWorkerLoadChromPBAsInstance *pPars = (tsWorkerLoadChromPBAsInstance *)pThreadPars;			// makes it easier not having to deal with casts!
+tsCHWorkerLoadChromPBAsInstance *pPars = (tsCHWorkerLoadChromPBAsInstance *)pThreadPars;			// makes it easier not having to deal with casts!
 CCallHaplotypes *pWorkerInstance = (CCallHaplotypes *)pPars->pThis;
 
 Rslt = pWorkerInstance->ProcWorkerLoadChromPBAThread(pPars);
@@ -4475,7 +4475,7 @@ void *WorkerPBAInstance(void * pThreadPars)
 #endif
 {
 int Rslt;
-tsWorkerInstance *pPars = (tsWorkerInstance *)pThreadPars;			// makes it easier not having to deal with casts!
+tsCHWorkerInstance *pPars = (tsCHWorkerInstance *)pThreadPars;			// makes it easier not having to deal with casts!
 CCallHaplotypes *pWorkerInstance = (CCallHaplotypes *)pPars->pThis;
 
 Rslt = pWorkerInstance->ProcWorkerThread(pPars);
@@ -4501,14 +4501,14 @@ uint32_t NumSamples;
 uint32_t SamplesThisThread;
 uint32_t ThreadIdx;
 uint32_t StartedInstances;
-tsWorkerLoadChromPBAsInstance *pThreadPar;
+tsCHWorkerLoadChromPBAsInstance *pThreadPar;
 
 NumSamples = 1 + EndSampleID - StartSampleID;
 NumThreads = min(NumSamples, NumThreads);
 pThreadPar = m_WorkerLoadChromPBAInstances;
 for(ThreadIdx = 0; ThreadIdx < NumThreads; ThreadIdx++,pThreadPar++)
 	{
-	memset(pThreadPar,0,sizeof(tsWorkerLoadChromPBAsInstance));
+	memset(pThreadPar,0,sizeof(tsCHWorkerLoadChromPBAsInstance));
 #ifdef _WIN32
 	pThreadPar->threadHandle = NULL;
 #else
@@ -4523,7 +4523,7 @@ m_ReqTerminate = 0;
 pThreadPar = m_WorkerLoadChromPBAInstances;
 for (ThreadIdx = 1; ThreadIdx <= NumThreads; ThreadIdx++, pThreadPar++)
 	{
-	memset(pThreadPar,0,sizeof(tsWorkerLoadChromPBAsInstance));
+	memset(pThreadPar,0,sizeof(tsCHWorkerLoadChromPBAsInstance));
 	pThreadPar->ChromID = ChromID;
 	SamplesThisThread = NumSamples / (1 + NumThreads - ThreadIdx);
 	NumSamples -= SamplesThisThread;
@@ -4573,13 +4573,13 @@ uint32_t MaxWait;
 uint32_t StartQuerySeqIdx;
 uint32_t ThreadIdx;
 uint32_t StartedInstances;
-tsWorkerInstance *pThreadPar;
+tsCHWorkerInstance *pThreadPar;
 
 StartQuerySeqIdx = 0;
 pThreadPar = m_WorkerInstances;
 for(ThreadIdx = 0; ThreadIdx < NumThreads; ThreadIdx++,pThreadPar++)
 	{
-	memset(pThreadPar,0,sizeof(tsWorkerInstance));
+	memset(pThreadPar,0,sizeof(tsCHWorkerInstance));
 #ifdef _WIN32
 	pThreadPar->threadHandle = NULL;
 #else
@@ -4594,7 +4594,7 @@ m_ReqTerminate = 0;
 pThreadPar = m_WorkerInstances;
 for (ThreadIdx = 1; ThreadIdx <= NumThreads; ThreadIdx++, pThreadPar++)
 	{
-	memset(pThreadPar,0,sizeof(tsWorkerInstance));
+	memset(pThreadPar,0,sizeof(tsCHWorkerInstance));
 	pThreadPar->ThreadIdx = ThreadIdx;
 	pThreadPar->pThis = this;
 #ifdef _WIN32
@@ -4634,7 +4634,7 @@ CCallHaplotypes::TerminateWorkerThreads(int WaitSecs)				// allow at most this m
 int NumForceTerminated;
 uint32_t Idx;
 uint32_t StartedInstances; 
-tsWorkerInstance *pThreadPar;
+tsCHWorkerInstance *pThreadPar;
 time_t Then;
 time_t Now;
 
@@ -4695,7 +4695,7 @@ for(Idx = 0; Idx < StartedInstances; Idx++, pThreadPar += 1)
 
 pThreadPar = m_WorkerInstances;
 for(Idx = 0; Idx < StartedInstances; Idx++, pThreadPar += 1)
-	memset(pThreadPar,0,sizeof(tsWorkerInstance));
+	memset(pThreadPar,0,sizeof(tsCHWorkerInstance));
 
 m_ReqTerminate = 0;	
 return(NumForceTerminated);
@@ -4705,7 +4705,7 @@ return(NumForceTerminated);
 // Using threads to concurrently load chromosome PBAs
 // ChromID is specified and range of sample identifiers
 int
-CCallHaplotypes::ProcWorkerLoadChromPBAThread(tsWorkerLoadChromPBAsInstance* pThreadPar)	// worker thread parameters
+CCallHaplotypes::ProcWorkerLoadChromPBAThread(tsCHWorkerLoadChromPBAsInstance* pThreadPar)	// worker thread parameters
 {
 int Rslt;
 uint8_t* pPBAs;
@@ -4739,12 +4739,12 @@ return(Rslt);
 }
 
 int
-CCallHaplotypes::ProcWorkerThread(tsWorkerInstance *pThreadPar)	// worker thread parameters
+CCallHaplotypes::ProcWorkerThread(tsCHWorkerInstance *pThreadPar)	// worker thread parameters
 {
 int Rslt;
 int CurBinID;
 uint32_t NumQueueElsProcessed;
-tsWorkQueueEl *pWorkQueueEl;
+tsCHWorkQueueEl *pWorkQueueEl;
 uint32_t ReqTerminate;
 // this thread has started, one more worker thread
 AcquireSerialise();
@@ -5294,7 +5294,7 @@ for(ChromID = 1; ChromID <= m_NumChromNames; ChromID++)
 
 	for(SampleID = 1; SampleID <= m_NumFounders; SampleID++)
 		{
-		tsChromMetadata *pChromMetadata;
+		tsCHChromMetadata *pChromMetadata;
 		// returned pointer to chromosome metadata
 		if((pChromMetadata = LocateChromMetadataFor(SampleID, ChromID)) == NULL)
 			{
@@ -6111,17 +6111,17 @@ CCallHaplotypes::AlignAlleleStacks(uint32_t NumFndrs,			// number of founders to
 									uint32_t MaxNumLoci)		// work queue items specify this number of loci for processing by threads
 {
 uint32_t FounderID;
-tsReadsetMetadata *pReadsetMetadata;
-tsChromMetadata *pChromMetadata;
+tsCHReadsetMetadata *pReadsetMetadata;
+tsCHChromMetadata *pChromMetadata;
 uint32_t CurChromID;
 char* pszChrom;
-tsWorkQueueEl *pWorkQueueEl;
+tsCHWorkQueueEl *pWorkQueueEl;
 uint32_t CurChromMetadataIdx;
 uint8_t *pPBAs[cMaxFounderReadsets+1];							// additional is to allow for the progeny readset PBAs
 uint8_t *pMskPBA;
 uint32_t ChromIdx;
 uint32_t MaximalChromLen;
-uint32_t NumUnits;			// NumUnits is the total number of work units to be distributed over available threads for processing chromosomes
+uint32_t NumUnits;			// NumUnits is the total number of work units to be distributed over available threads for processing an individual chromosome
 uint32_t UnitSize;
 
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"AlignAlleleStacks: Starting to generate allele stacks over %d founders ",NumFndrs);
@@ -6155,8 +6155,8 @@ if(NumUnits == 0)
 
 // sizing work queue to contain NumUnits elements
 m_AllocWorkQueueEls = NumUnits;
-m_pWorkQueueEls = new tsWorkQueueEl[m_AllocWorkQueueEls];
-memset(m_pWorkQueueEls, 0, sizeof(tsWorkQueueEl) * m_AllocWorkQueueEls);
+m_pWorkQueueEls = new tsCHWorkQueueEl[m_AllocWorkQueueEls];
+memset(m_pWorkQueueEls, 0, sizeof(tsCHWorkQueueEl) * m_AllocWorkQueueEls);
 m_TotWorkQueueEls = 0;
 m_NumQueueElsProcessed = 0;
 m_FastSerialise = 0;
@@ -6185,7 +6185,7 @@ for(ChromIdx = 0; ChromIdx < pReadsetMetadata->NumChroms && CurChromMetadataIdx 
 
 	for(FounderID = 1; FounderID <= m_NumFounders; FounderID++)
 		{
-		tsChromMetadata *pChromMetadata;
+		tsCHChromMetadata *pChromMetadata;
 		// returned pointer to chromosome metadata
 		if((pChromMetadata = LocateChromMetadataFor(FounderID, CurChromID)) == NULL)
 			{
@@ -6220,8 +6220,9 @@ for(ChromIdx = 0; ChromIdx < pReadsetMetadata->NumChroms && CurChromMetadataIdx 
 		UnitSize = MaxNumLoci;
 
 	uint32_t StartLoci = 0;
-	memset(m_pWorkQueueEls, 0, sizeof(tsWorkQueueEl) * m_AllocWorkQueueEls);
+	memset(m_pWorkQueueEls, 0, sizeof(tsCHWorkQueueEl) * m_AllocWorkQueueEls);
 	pWorkQueueEl = m_pWorkQueueEls;
+	m_NumQueueElsProcessed = 0;
 	m_TotWorkQueueEls = 0;
 	while(StartLoci < pChromMetadata->ChromLen)
 		{
@@ -6242,8 +6243,9 @@ for(ChromIdx = 0; ChromIdx < pReadsetMetadata->NumChroms && CurChromMetadataIdx 
 		// startup threads
 	StartWorkerThreads(m_NumThreads, 1);		            // processing a single chromosome at a time otherwise memory resources could be exhausted when processing thousands of samples with large chromosome sizes
 
-	while(!WaitAlignments(60))
+	do {
 		gDiagnostics.DiagOut(eDLInfo,gszProcName,"AlignAlleleStacks: Generating allele stacks for '%s' over %d founders",pszChrom,NumFndrs);
+		} while(!WaitAlignments(60));
 	}
 
 if(CurChromID > 0)
@@ -6268,14 +6270,14 @@ CCallHaplotypes::AlignFounderHaps(uint32_t NumFndrs)			// number of founders to 
 {
 int Rslt;
 uint32_t FounderID;
-tsReadsetMetadata *pReadsetMetadata;
-tsChromMetadata *pChromMetadata;
+tsCHReadsetMetadata *pReadsetMetadata;
+tsCHChromMetadata *pChromMetadata;
 uint32_t CurChromID;
 char* pszChrom;
 uint32_t StartLoci;
 uint32_t BinSize;
 
-tsWorkQueueEl *pWorkQueueEl;
+tsCHWorkQueueEl *pWorkQueueEl;
 uint32_t CurChromMetadataIdx;
 uint8_t *pPBAs[cMaxFounderReadsets+1];							// additional is to allow for the progeny readset PBAs
 uint8_t *pMskPBA;
@@ -6304,8 +6306,8 @@ CurChromMetadataIdx = pReadsetMetadata->StartChromMetadataIdx;
 // one work unit corresponds to haplotype processing for a single chromosome at a time, and chromosomes are iterated
 NumUnits = 1;
 m_AllocWorkQueueEls = NumUnits + 1;  // 1 additional as a safety measure - shouldn't be any accesses beyond the one and only work element but ....
-m_pWorkQueueEls = new tsWorkQueueEl[m_AllocWorkQueueEls];
-memset(m_pWorkQueueEls, 0, sizeof(tsWorkQueueEl) * m_AllocWorkQueueEls);
+m_pWorkQueueEls = new tsCHWorkQueueEl[m_AllocWorkQueueEls];
+memset(m_pWorkQueueEls, 0, sizeof(tsCHWorkQueueEl) * m_AllocWorkQueueEls);
 m_TotWorkQueueEls = 0;
 m_NumQueueElsProcessed = 0;
 m_FastSerialise = 0;
@@ -6792,8 +6794,8 @@ int Rslt;
 char szInWIG[_MAX_PATH];
 char* pszInWIG;
 char szLineBuff[1000];
-tsReadsetMetadata* pReadsetMetadata;
-tsChromMetadata* pChromMetadata;
+tsCHReadsetMetadata* pReadsetMetadata;
+tsCHChromMetadata* pChromMetadata;
 char* pszReadset;
 FILE* pInStream;
 uint32_t LineNumb;

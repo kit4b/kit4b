@@ -166,7 +166,7 @@ typedef struct TAG_sProgenyFndrAligns {
 	ts4096Bits ProgenyFounders;		// bitmap of potential progeny founders - progeny has a minor/major allele shared with corresponding founder
 } tsProgenyFndrAligns;
 
-typedef struct TAG_sChromMetadata
+typedef struct TAG_sCHChromMetadata
 {
 uint32_t ReadsetID;			// chromosome is from this readset
 uint32_t ChromMetadataIdx;	// index of this metadata
@@ -176,9 +176,9 @@ uint32_t ChromLen;			// has this many loci bases
 uint32_t HGBinID;            // initial haplotype grouping bin identifier for this chromosome
 int64_t FileOfsPBA;         // PBAs for this chromosome starts at this file offset
 uint8_t *pPBAs;				// pts to memory allocation holding packed base alleles for this chromosome
-} tsChromMetadata;
+} tsCHChromMetadata;
 
-typedef struct TAG_sReadsetMetadata
+typedef struct TAG_sCHReadsetMetadata
 {
 uint32_t ReadsetID;				// identifies from which readset these packed base alleles were generated
 char szExperimentID[100];		// sequencing experiment
@@ -189,9 +189,9 @@ uint32_t NumChroms;				// readset has this number of chromosomes
 uint32_t StartChromMetadataIdx;	// index of starting chrom metadata for this readset
 uint32_t StartChromID;			// starting chrom for this readset
 int64_t NxtFileChromOfs;        // file offset at which the next file chromosome metadata can be read from 
-} tsReadsetMetadata;
+} tsCHReadsetMetadata;
 
-typedef struct TAG_sWorkQueueEl 
+typedef struct TAG_sCHWorkQueueEl 
 {
 uint32_t ChromID;				// processing is for this chromosome
 uint32_t StartLoci;				// starting from this loci inclusive
@@ -201,9 +201,9 @@ uint32_t NumFndrs;				// number of founders to be processed against the progeny 
 uint8_t *pFounderPBAs[cMaxFounderReadsets]; // ptrs to each of the chromosome founder PBAs indexed in FounderID ascending order
 uint8_t *pMskPBA;				// pts to optional chromosome masking PBA, scoring only for segments contained in mask which are non-zero and where progeny and founder PBAs also have an allele.
 								// enables a founder to be processed as if a progeny, restricting scoring Kmers to be same as if a progeny
-} tsWorkQueueEl;
+} tsCHWorkQueueEl;
 
-typedef struct TAG_sWorkerInstance {
+typedef struct TAG_sCHWorkerInstance {
 	int ThreadIdx;					// uniquely identifies this thread
 	void *pThis;					// will be initialised to pt to class instance
 #ifdef _WIN32
@@ -214,9 +214,9 @@ typedef struct TAG_sWorkerInstance {
 	pthread_t threadID;				// identifier as set by pthread_create ()
 #endif
 	int Rslt;						// processing result
-} tsWorkerInstance;
+} tsCHWorkerInstance;
 
-typedef struct TAG_sWorkerLoadChromPBAsInstance {
+typedef struct TAG_sCHWorkerLoadChromPBAsInstance {
 	int ThreadIdx;					// uniquely identifies this thread
 	void *pThis;					// will be initialised to pt to class instance
 #ifdef _WIN32
@@ -230,7 +230,7 @@ typedef struct TAG_sWorkerLoadChromPBAsInstance {
 	uint32_t EndSampleID;           // ending with this sample identifier inclusive
 	uint32_t ChromID;               // loading PBAs for this chromosome
 	int Rslt;						// processing result
-} tsWorkerLoadChromPBAsInstance;
+} tsCHWorkerLoadChromPBAsInstance;
 
 
 #pragma pack()
@@ -286,7 +286,7 @@ class CCallHaplotypes
 	uint32_t m_NxtszReadsetIdx;			// current concatenated (names separated by '\0') of all readset names in m_szReadsets, note that the readset type (founder 0, progeny 1 or control 2) is prepended to each name
 	char m_szReadsetNames[(cMaxFounderReadsets + cMaxProgenyReadsets + 1) * (cMaxDatasetSpeciesChrom + 1)];	// used to hold concatenated readset names, each separated by '\0', allowing for 1 progeny readset
 	uint32_t m_szReadsetIdx[cMaxFounderReadsets + cMaxProgenyReadsets + 1];	// array of indexes into m_szReadsetNames giving the starts of each founder or progeny  name. , allowing for a control readset name
-	tsReadsetMetadata m_Readsets[cMaxFounderReadsets + cMaxProgenyReadsets + 1];	// array of all readset metadata
+	tsCHReadsetMetadata m_Readsets[cMaxFounderReadsets + cMaxProgenyReadsets + 1];	// array of all readset metadata
 
 	uint32_t m_LAChromNameID;						// last accessed chromosome identifier from call to AddChrom()
 	uint32_t m_NumChromNames;						// number of chromosome names currently in m_szChromNames
@@ -300,7 +300,7 @@ class CCallHaplotypes
 	uint32_t m_UsedNumChromMetadata;	// current number of chrom metadata used 
 	uint32_t m_AllocdChromMetadata;		// current allocation is for this many 
 	size_t m_AllocdChromMetadataMem;	// current mem allocation size for m_pChromMetadata
-	tsChromMetadata *m_pChromMetadata;	// allocated to hold metadata for all founder chromosomes
+	tsCHChromMetadata *m_pChromMetadata;	// allocated to hold metadata for all founder chromosomes
 
 	size_t m_UsedProgenyFndrAligns;			// number of actually used progeny to founder alignments
 	size_t m_AllocdProgenyFndrAligns;			// number of allocated founder alignments
@@ -333,7 +333,7 @@ class CCallHaplotypes
 	__attribute__((aligned(4))) volatile uint32_t m_NumQueueElsProcessed;	// number of work queue elements processed
 	__attribute__((aligned(4))) volatile uint32_t m_FastSerialise;	// fast serialised access to founder stack allocator - AcquireFastSerialise()
 #endif
-	tsWorkQueueEl *m_pWorkQueueEls;	// thread work queue elements - currently really a list that is iterated over but in future may be adapted to become a queue
+	tsCHWorkQueueEl *m_pWorkQueueEls;	// thread work queue elements - currently really a list that is iterated over but in future may be adapted to become a queue
 
 	uint32_t m_Fndrs2Proc[cMaxFounderReadsets];	// array of founders which are to be processed, indexed by FounderID-1. If LSB is set then that founder is marked for processing
 
@@ -372,8 +372,8 @@ class CCallHaplotypes
 	__attribute__((aligned(4))) volatile unsigned int m_CompletedWorkerInsts; // used with synchronous compare and swap (CAS) for serialising access to  number of completed worker instances
 #endif
 
-	tsWorkerInstance m_WorkerInstances[cMaxPBAWorkerThreads];	// to hold all worker instance thread parameters
-	tsWorkerLoadChromPBAsInstance m_WorkerLoadChromPBAInstances[cMaxPBAWorkerThreads];	// to hold all worker instance thread parameters for loading chromosome PBAs
+	tsCHWorkerInstance m_WorkerInstances[cMaxPBAWorkerThreads];	// to hold all worker instance thread parameters
+	tsCHWorkerLoadChromPBAsInstance m_WorkerLoadChromPBAInstances[cMaxPBAWorkerThreads];	// to hold all worker instance thread parameters for loading chromosome PBAs
 
 	CBEDfile* m_pBedFile;	// BED file containing reference assembly chromosome names and sizes
 	CUtility m_RegExprs;            // regular expression processing
@@ -472,7 +472,7 @@ class CCallHaplotypes
 		LocatePBAfor(uint32_t ReadSetID,	// readset identifier 
 			 uint32_t ChromID);				// chrom identifier
 
-	tsChromMetadata *								// returned pointer to chromosome metadata
+	tsCHChromMetadata *								// returned pointer to chromosome metadata
 		LocateChromMetadataFor(uint32_t ReadSetID,		// readset identifier 
 			 uint32_t ChromID);			// chrom identifier
 
@@ -719,8 +719,8 @@ public:
 			char **ppszExcludeChroms,		// array of exclude chromosome regular expressions
 			int NumThreads);		// number of worker threads to use
 
-	int ProcWorkerThread(tsWorkerInstance* pThreadPar);	// worker thread parameters
-	int ProcWorkerLoadChromPBAThread(tsWorkerLoadChromPBAsInstance* pThreadPar);	// worker thread parameters
+	int ProcWorkerThread(tsCHWorkerInstance* pThreadPar);	// worker thread parameters
+	int ProcWorkerLoadChromPBAThread(tsCHWorkerLoadChromPBAsInstance* pThreadPar);	// worker thread parameters
 
 };
 

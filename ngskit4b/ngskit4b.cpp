@@ -96,6 +96,7 @@ extern int kalignerPBA(int argc, char *argv[]);
 extern int callhaplotypes(int argc, char *argv[]);
 extern int gbsmapsnps(int argc, char *argv[]);
 extern int pbautils(int argc, char* argv[]);
+extern int wigutils(int argc, char* argv[]);
 extern int genmldatasets(int argc, char* argv[]);
 
 // inplace text cleaning; any leading/trailing or internal quote characters are removed; excessive whitespace is reduced to single
@@ -177,6 +178,7 @@ tsSubProcess SubProcesses[] = {
 	{"callhaplotypes","Call skim Haplotypes","Call skim read haplotypes using packed base alleles (PBA) files",callhaplotypes},
 	{"gbsmapsnps","GBS map","SNP GBS to PBA GBS haplotypes",gbsmapsnps},
 	{"pbautils","PBA Utilities","PBA formated file utilities",pbautils},
+	{"wigutils","WIG Utilities","WIG formated file utilities",wigutils},
 	{"genmlds","Gen ML dataset","Generate ML sample features CSV dataset",genmldatasets}
 
 };

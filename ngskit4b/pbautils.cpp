@@ -107,7 +107,7 @@ struct arg_file* refassembfile = arg_file0("R", "refassembfile", "<file>", "refe
 struct arg_file* roifile = arg_file0("C", "roifile", "<file>", "BED file containing regions of interest - optional - when generating VCFs from PBA files");
 struct arg_file* gtfiltsamplefile = arg_file0("g", "gtfiltsampleile", "<file>", "text file containing names (spaces,quotes,or line separated) of readsets/samples - optional - to actually report in GT VCF file");
 struct arg_file* outfile = arg_file1("o", "out", "<file>", "output to this file");
-struct arg_int* threads = arg_int0("T", "threads", "<int>", "number of processing threads 0..64 (defaults to 0 which limits threads to maximum of 64 CPU cores)");
+struct arg_int* threads = arg_int0("T", "threads", "<int>", "number of processing threads 0..8 (defaults to 0 which limits threads to maximum of 8 CPU cores)");
 
 struct arg_end* end = arg_end(200);
 void* argtable[] = {help,version,FileLogLevel,LogFile,
@@ -210,14 +210,14 @@ if(!argerrors)
 
 	if(PMode == ePBAu2GVCF)
 		{
-		GTPropNAThres = mingthet->count ? mingthet->dval[0] : cDfltGTPropThres;
+		GTPropNAThres = maxgtpropna->count ? maxgtpropna->dval[0] : cDfltGTPropThres;
 		if(GTPropNAThres < 0.00)	// silently force to be in accepted range
 			GTPropNAThres = 0.00;
 		else
 			if(GTPropNAThres > 0.25)
 				GTPropNAThres = 0.25;
 			
-		GTPropHetThres = maxgtpropna->count ? maxgtpropna->dval[0] : cDfltGTPropThres;
+		GTPropHetThres = mingthet->count ? mingthet->dval[0] : cDfltGTPropThres;
 		if(GTPropHetThres < 0.00)	// silently force to be in accepted range
 			GTPropHetThres = 0.00;
 		else
@@ -344,8 +344,7 @@ if(!argerrors)
 				NumIncludeChroms++;
 			}
 		}
-	else
-		NumIncludeChroms = 0;
+	
 
 	NumExcludeChroms = 0;
 	if (ExcludeChroms->count)
@@ -362,8 +361,6 @@ if(!argerrors)
 				NumExcludeChroms++;
 			}
 		}
-	else
-		NumExcludeChroms = 0;
 
 	NumInputFiles = 0;
 	if (infiles->count)
@@ -532,7 +529,7 @@ int Process(ePBAuMode PMode,	// processing mode: ePBAu2Fasta PBA to Fasta, ePBAu
 	char* pszChromFile,			// BED file containing chromosome names and sizes
 	char* pszSeqID,				// sequence identifier
 	char* pszExprID,			// experiment identifier
-	int NumInputFiles,			// number of input founder file specs
+	int32_t NumInputFiles,			// number of input founder file specs
 	char* pszInputFiles[],		// names of input founder PBA files (wildcards allowed)
 	char* pszOutFile,			// output to this file
 	char *pszROIFile,			// optional BED file containing regions of interest
@@ -547,7 +544,7 @@ int Rslt;
 CPBAutils *pPBAutils;
 if((pPBAutils = new CPBAutils) == nullptr)
 	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to instantiate instance of CHaps2Genotype");
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to instantiate instance of CPBAutils");
 	return(eBSFerrObj);
 	}
 Rslt = pPBAutils->Process(PMode, LimitPBAs, PBAsTrim5,PBAsTrim3,GTPropNAThres,GTPropHetThres,pszRefAssemb,pszRefAssembFile, pszChromFile, pszSeqID, pszExprID,
@@ -598,7 +595,7 @@ if(m_pReportGTSample != nullptr)
 
 if(m_pChromMetadata != nullptr)
 	{
-	tsChromMetadata* pChromMetadata = m_pChromMetadata;
+	tsPUChromMetadata* pChromMetadata = m_pChromMetadata;
 	for (uint32_t Idx = 0; Idx < m_UsedNumChromMetadata; Idx++, pChromMetadata++)
 		{
 		if (pChromMetadata->pPBAs != nullptr)
@@ -679,7 +676,7 @@ if(m_pReportGTSample != nullptr)
 
 if (m_pChromMetadata != nullptr)
 	{
-	tsChromMetadata* pChromMetadata = m_pChromMetadata;
+	tsPUChromMetadata* pChromMetadata = m_pChromMetadata;
 	for (uint32_t Idx = 0; Idx < m_UsedNumChromMetadata; Idx++, pChromMetadata++)
 		{
 		if (pChromMetadata->pPBAs != nullptr)
@@ -705,8 +702,6 @@ m_FastSerialise = 0;
 m_UsedNumChromMetadata = 0;
 m_AllocdChromMetadata = 0;
 m_AllocdChromMetadataMem = 0;
-
-DeleteMutexes();
 
 m_InNumBuffered = 0;
 m_AllocInBuff = 0;
@@ -933,9 +928,9 @@ if ((Rslt = LoadChromSizes(pszChromFile)) < 1) // BED file containing chromosome
 m_NumThreads = NumThreads;
 
 	// initial allocation, will be realloc'd if more memory required
-size_t memreq = (size_t)cAllocChromMetadata * sizeof(tsChromMetadata);
+size_t memreq = (size_t)cAllocChromMetadata * sizeof(tsPUChromMetadata);
 #ifdef _WIN32
-m_pChromMetadata = (tsChromMetadata*)malloc(memreq);	// initial and perhaps the only allocation
+m_pChromMetadata = (tsPUChromMetadata*)malloc(memreq);	// initial and perhaps the only allocation
 if (m_pChromMetadata == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Initial memory allocation of %zd bytes for chromosome metadata failed - %s", (int64_t)memreq, strerror(errno));
@@ -943,7 +938,7 @@ if (m_pChromMetadata == nullptr)
 	return(eBSFerrMem);
 	}
 #else
-m_pChromMetadata = (tsChromMetadata*)mmap(nullptr, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+m_pChromMetadata = (tsPUChromMetadata*)mmap(nullptr, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 if (m_pChromMetadata == MAP_FAILED)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Memory allocation of %zd bytes through mmap() for chromosome metadata failed - %s", (int64_t)memreq, strerror(errno));
@@ -1184,7 +1179,7 @@ for (Idx = 0; Idx < NumInputFiles; Idx++)
 	for (int FileID = 0; Rslt >= eBSFSuccess && FileID < NumFiles; ++FileID)
 		{
 		pszInFile = glob.File(FileID);
-		if (PMode == 1)
+		if (PMode == ePBAu2PBA)
 			ReadsetID = LoadPBACoverage(pszInFile);		 // will load readset + chrom metadata only from PBA after checking that coverage WIG file actually exists
 		else
 			ReadsetID = LoadPBAFile(pszInFile, 0, true); // loading readset + chrom metadata only, later the PBAs for each individual chrom will be loaded on demand
@@ -1264,7 +1259,7 @@ while(fgets((char *)m_pInBuffer,m_AllocInBuff-1,pStream)!= NULL)
 	NameLen = 0;
 	while((Chr = *pTxt++) != '\0')
 		{
-		if(!isspace(Chr) && Chr != '\'' && Chr != '"' && Chr != ',')
+		if(!isspace(Chr) && Chr != '\'' && Chr != '"' && Chr != ',' && Chr != ';')
 			{
 			if(NameLen < sizeof(szSampleName) - 1)
 				szSampleName[NameLen++] = Chr;
@@ -1478,7 +1473,7 @@ for (ChromID = 1; (int)ChromID < m_NumChromNames; ChromID++)
 	LoadChromPBAs(ChromID);			// load PBAs for this chromosome
 	uint32_t ChromLen;
 	uint32_t NumNoAlleles;
-	tsChromMetadata* pChromMetadata;
+	tsPUChromMetadata* pChromMetadata;
 	pChromMetadata = LocateChromMetadataFor(1, ChromID);			// major assumption is that each sample has same length chromosomes as 1st sample
 	char* pszChrom = LocateChrom(pChromMetadata->ChromID);
 	ChromLen = pChromMetadata->ChromLen;
@@ -1698,7 +1693,7 @@ CPBAutils::GenerateWIGConcordance(void)	// generate coverage depth concordance a
 		LoadChromPBAs(ChromID);			// load PBAs for this chromosome
 		uint32_t ChromLen;
 		uint32_t NumNoAlleles;
-		tsChromMetadata* pChromMetadata;
+		tsPUChromMetadata* pChromMetadata;
 		pChromMetadata = LocateChromMetadataFor(1, ChromID);			// major assumption is that each sample has same length chromosomes as 1st sample
 		char* pszChrom = LocateChrom(pChromMetadata->ChromID);
 		ChromLen = pChromMetadata->ChromLen;
@@ -1898,8 +1893,8 @@ int Rslt;
 char szInWIG[_MAX_PATH];
 char* pszInWIG;
 char szLineBuff[1000];
-tsReadsetMetadata* pReadsetMetadata;
-tsChromMetadata* pChromMetadata;
+tsPUReadsetMetadata* pReadsetMetadata;
+tsPUChromMetadata* pChromMetadata;
 char* pszReadset;
 FILE* pInStream;
 uint32_t LineNumb;
@@ -2311,8 +2306,8 @@ uint32_t NumChromDiffNA;
 uint32_t NumChromMatches;
 char *pszChromName;
 
-tsReadsetMetadata* pReadsetMetadata;
-tsChromMetadata* pChromMetadata;
+tsPUReadsetMetadata* pReadsetMetadata;
+tsPUChromMetadata* pChromMetadata;
 
 #ifdef _WIN32
 m_hOutFile = open(m_szOutFile, (O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC), (_S_IREAD | _S_IWRITE));
@@ -2533,8 +2528,8 @@ char szALTs[100];
 uint32_t TotGTIDs;
 uint32_t ChromGTIDs;
 
-tsReadsetMetadata* pReadsetMetadata;
-tsChromMetadata* pChromMetadata;
+tsPUReadsetMetadata* pReadsetMetadata;
+tsPUChromMetadata* pChromMetadata;
 
 #ifdef _WIN32
 m_hOutFile = open(m_szOutFile, (O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC), (_S_IREAD | _S_IWRITE));
@@ -2852,8 +2847,8 @@ uint8_t* pPBAs;
 int32_t ChromID;
 uint32_t ChromIdx;
 
-tsReadsetMetadata* pReadsetMetadata;
-tsChromMetadata* pChromMetadata;
+tsPUReadsetMetadata* pReadsetMetadata;
+tsPUChromMetadata* pChromMetadata;
 
 m_NumPBAbases = 0;
 m_NumDiAllelic = 0;
@@ -3245,20 +3240,20 @@ int
 CPBAutils::AllocChromMetadata(void)
 {
 	uint32_t ToAllocdChromMetadata;
-	tsChromMetadata* pChromMetadata;
+	tsPUChromMetadata* pChromMetadata;
 	size_t memreq;
 	if (m_pChromMetadata == nullptr)					// may be nullptr first time in
 	{
-		memreq = cAllocChromMetadata * sizeof(tsChromMetadata);
+		memreq = cAllocChromMetadata * sizeof(tsPUChromMetadata);
 #ifdef _WIN32
-		m_pChromMetadata = (tsChromMetadata*)malloc((size_t)memreq);
+		m_pChromMetadata = (tsPUChromMetadata*)malloc((size_t)memreq);
 		if (m_pChromMetadata == nullptr)
 		{
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, "AllocChromMetadata: Memory allocation of %zd bytes failed", (int64_t)memreq);
 			return(eBSFerrMem);
 		}
 #else
-		m_pChromMetadata = (tsChromMetadata*)mmap(nullptr, (size_t)memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+		m_pChromMetadata = (tsPUChromMetadata*)mmap(nullptr, (size_t)memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 		if (m_pChromMetadata == MAP_FAILED)
 		{
 			m_pChromMetadata = nullptr;
@@ -3275,13 +3270,13 @@ CPBAutils::AllocChromMetadata(void)
 		if (m_UsedNumChromMetadata == m_AllocdChromMetadata)
 		{
 			ToAllocdChromMetadata = m_UsedNumChromMetadata + cAllocChromMetadata;
-			size_t memreq = ToAllocdChromMetadata * sizeof(tsChromMetadata);
+			size_t memreq = ToAllocdChromMetadata * sizeof(tsPUChromMetadata);
 #ifdef _WIN32
-			pChromMetadata = (tsChromMetadata*)realloc(m_pChromMetadata, memreq);
+			pChromMetadata = (tsPUChromMetadata*)realloc(m_pChromMetadata, memreq);
 			if (pChromMetadata == nullptr)
 			{
 #else
-			pChromMetadata = (tsChromMetadata*)mremap(m_pChromMetadata, m_AllocdChromMetadataMem, memreq, MREMAP_MAYMOVE);
+			pChromMetadata = (tsPUChromMetadata*)mremap(m_pChromMetadata, m_AllocdChromMetadataMem, memreq, MREMAP_MAYMOVE);
 			if (pChromMetadata == MAP_FAILED)
 			{
 #endif
@@ -3321,8 +3316,8 @@ uint8_t*								// returned pointer to start of PBA
 CPBAutils::LocatePBAfor(uint32_t ReadSetID,		// readset identifier 
 	uint32_t ChromID)			// chrom identifier
 {
-	tsReadsetMetadata* pReadsetMetadata;
-	tsChromMetadata* pChromMetadata;
+	tsPUReadsetMetadata* pReadsetMetadata;
+	tsPUChromMetadata* pChromMetadata;
 	uint32_t CurChromMetadataIdx;
 
 	if (ReadSetID > m_NumReadsetNames || ReadSetID == 0)
@@ -3339,12 +3334,12 @@ CPBAutils::LocatePBAfor(uint32_t ReadSetID,		// readset identifier
 	return(nullptr);
 }
 
-tsChromMetadata*								// returned pointer to chromosome metadata
+tsPUChromMetadata*								// returned pointer to chromosome metadata
 CPBAutils::LocateChromMetadataFor(uint32_t ReadSetID,		// readset identifier 
 	uint32_t ChromID)			// chrom identifier
 {
-	tsReadsetMetadata* pReadsetMetadata;
-	tsChromMetadata* pChromMetadata;
+	tsPUReadsetMetadata* pReadsetMetadata;
+	tsPUChromMetadata* pChromMetadata;
 	uint32_t CurChromMetadataIdx;
 
 	if (ReadSetID > m_NumReadsetNames || ReadSetID == 0)
@@ -3637,9 +3632,9 @@ CPBAutils::LoadPBAFile(char* pszFile,	// load chromosome metadata and PBA data f
 	uint32_t PrevChromMetadataIdx;
 	uint32_t ChromID;
 	uint32_t ReadsetID;
-	tsReadsetMetadata* pReadsetMetadata;
-	tsChromMetadata* pChromMetadata;
-	tsChromMetadata* pPrevChromMetadata;
+	tsPUReadsetMetadata* pReadsetMetadata;
+	tsPUChromMetadata* pChromMetadata;
+	tsPUChromMetadata* pPrevChromMetadata;
 	int64_t FileOfsPBA;
 	uint8_t* pBuff;
 	int scanlen;
@@ -3890,7 +3885,7 @@ CPBAutils::DeleteAllChromPBAs(void) // delete all currently loaded PBAs - all sa
 {
 if (m_pChromMetadata != nullptr)
 	{
-	tsChromMetadata* pChromMetadata = m_pChromMetadata;
+	tsPUChromMetadata* pChromMetadata = m_pChromMetadata;
 	for (uint32_t Idx = 0; Idx < m_UsedNumChromMetadata; Idx++, pChromMetadata++)
 		{
 		if (pChromMetadata->pPBAs != nullptr)
@@ -3909,7 +3904,7 @@ bool  // false: no previous memory allocated for containing the chromosome PBAs,
 CPBAutils::DeleteSampleChromPBAs(uint32_t SampleID,   // Sample identifier
 	uint32_t ChromID)    // chrom identifier
 {
-	tsChromMetadata* pChromMetadata;
+	tsPUChromMetadata* pChromMetadata;
 
 	// returned pointer to chromosome metadata
 	if ((pChromMetadata = LocateChromMetadataFor(SampleID, ChromID)) == nullptr)
@@ -3933,8 +3928,8 @@ CPBAutils::LoadSampleChromPBAs(uint32_t SampleID,   // Sample identifier
 	int hInFile;
 	char* pszChrom;
 	int64_t ChromSeekOfs;
-	tsChromMetadata* pChromMetadata;
-	tsReadsetMetadata* pReadsetMetadata;
+	tsPUChromMetadata* pChromMetadata;
+	tsPUReadsetMetadata* pReadsetMetadata;
 	uint32_t NumRead;
 	uint32_t NumLoaded;
 

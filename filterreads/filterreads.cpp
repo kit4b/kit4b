@@ -178,6 +178,7 @@ void *argtable[] = {help,version,FileLogLevel,LogFile,
 
 char **pAllArgs;
 int argerrors;
+
 argerrors = CUtility::arg_parsefromfile(argc,(char **)argv,&pAllArgs);
 if(argerrors >= 0)
 	argerrors = arg_parse(argerrors,pAllArgs,argtable);

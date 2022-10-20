@@ -615,8 +615,6 @@ int32_t CurLineNumber;
 int32_t NumFields;
 int32_t LastSampleRefIdx;
 int32_t SampleRefNameOfs;
-int32_t FeatRefNameOfs;
-char szSampleRef[100];
 char *pszSampleRef;
 char szFeatRef[200];
 char *pszFeatChrom;

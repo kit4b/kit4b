@@ -112,7 +112,8 @@
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <StackReserveSize>100000000</StackReserveSize>
       <StackCommitSize>10000000</StackCommitSize>
-      <AssemblyDebug>true</AssemblyDebug>
+      <AssemblyDebug>
+      </AssemblyDebug>
       <AdditionalLibraryDirectories>
       </AdditionalLibraryDirectories>
     </Link>
