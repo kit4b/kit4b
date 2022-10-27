@@ -87,4 +87,4 @@ Release 1.10.6- PBA to VCF initial implementation in 'pbautils'. Rare deadlock i
 Release 1.10.8 - Added genotyping VCF functionality to 'ngskit4b pbautils'.
 Release 1.11.0 - BED file processing can now accept GFF3 formatted file input and process as if BED gene/exons. 'ngskit4b pbautils' can generate genotyping VCFs constaining subsets of regions and samples.
 Release 1.11.2 - New module added 'ngskit4b wigutils' which transforms WIG coverage formated files into feature/gene counts CSV formated files suitable for import into DESeq2.
-
+Release 1.11.5 - 'ngskit4b callhaplotypes' new processing mode for generating GBS all vs. WGS all identity mattrix at the chromosome level.

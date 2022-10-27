@@ -17,10 +17,10 @@ const int32_t cAllocChromMetadata = 100000;			// allocate chrom metadata in this
 const size_t cAllocPackedBaseAlleles = 0x3fffffff;	// allocate packed base alleles to this maximal size, 1 allocation per chromosome per readset
 const uint32_t cInBuffSize = 0x7fffffff;			// buffer size for file reads
 const uint32_t cOutBuffSize = 0x6fffffff;			// buffer size for file writes
-const int32_t cDfltFndrTrim5 = 0;					// default is for no trimming - can trim PBAs from 5' end of founder aligned segments - reduces false alleles due to sequencing errors
-const int32_t cDfltFndrTrim3 = 0;					// default is for no trimming - can trim PBAs from 3' end of founder aligned segments - reduces false alleles due to sequencing errors
-const int32_t cDfltProgTrim5 = 0;					// default is for no trimming - can trim PBAs 5' end of progeny aligned segments - reduces false alleles due to sequencing errors
-const int32_t cDfltProgTrim3 = 0;					// default is for no trimming - can trim PBAs 3' end of progeny aligned segments - reduces false alleles due to sequencing errors
+const int32_t cDfltFndrTrim5 = 5;					// default is for no trimming - can trim PBAs from 5' end of founder aligned segments - reduces false alleles due to sequencing errors
+const int32_t cDfltFndrTrim3 = 5;					// default is for no trimming - can trim PBAs from 3' end of founder aligned segments - reduces false alleles due to sequencing errors
+const int32_t cDfltProgTrim5 = 5;					// default is for no trimming - can trim PBAs 5' end of progeny aligned segments - reduces false alleles due to sequencing errors
+const int32_t cDfltProgTrim3 = 5;					// default is for no trimming - can trim PBAs 3' end of progeny aligned segments - reduces false alleles due to sequencing errors
 
 const int32_t cDfltWWRLProxWindow = 1000000;			// default for proximal window size for Wald-Wolfowitz runs test
 const int32_t cDlftOutliersProxWindow = 1000000;		// default for proximal window size for outliers reduction
@@ -68,6 +68,7 @@ typedef enum TAG_eModeCSH {
 	eMCSHCoverageHapsGrps,  // generating coverage haplotype groupings
 	eMCSHQGLHapsGrps,       // post-processing haplotype groupings for differential QGL loci
 	eMCSHGrpDist2WIG,       // post-processing haplotype grouping centroid distances into WIG format
+	eMCSHGBSvFndrs,			// generating GBS vs. WGS association scores
 	eMCSHPlaceHolder		// used to mark end of processing modes
 	}eModeCSH;
 
@@ -191,6 +192,13 @@ uint32_t StartChromID;			// starting chrom for this readset
 int64_t NxtFileChromOfs;        // file offset at which the next file chromosome metadata can be read from 
 } tsCHReadsetMetadata;
 
+typedef struct TAG_sCHChromScores {
+	uint32_t NumExactMatches;	// number of loci having exact matches
+	uint32_t NumPartialMatches; // number of loci having at least one allele which matched
+	uint32_t AlignLen;			// number of loci in which loci PBAs were matched - effective alignment length
+	double Score;
+	} tsCHChromScores;
+
 typedef struct TAG_sCHWorkQueueEl 
 {
 uint32_t ChromID;				// processing is for this chromosome
@@ -237,7 +245,7 @@ typedef struct TAG_sCHWorkerLoadChromPBAsInstance {
 
 class CCallHaplotypes
 {
-	eModeCSH m_PMode;				// processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons, 3: allelic haplotype grouping,4: coverage haplotype grouping, 5: post-process haplotype groupings for QGLs,  6: post-process to WIG
+	eModeCSH m_PMode;				// processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons, 3: allelic haplotype grouping,4: coverage haplotype grouping, 5: post-process haplotype groupings for QGLs,  6: post-process to WIG, 7 generating GBS vs. WGS association scores
 	uint32_t m_LimitPrimaryPBAs;    // limit number of loaded primary or founder PBA files to this many. 0: no limits, > 0 sets upper limit
 
 	uint32_t m_MaxReportGrpQGLs;    // when calling group QGLs then, if non-zero - report this many highest scoring QGLs
@@ -520,6 +528,10 @@ class CCallHaplotypes
 	int ProcessProgenyPBAFile(char* pszProgenyPBAFile,	// load, process and call haplotypes for this progeny PBA file against previously loaded panel founder PBAs
 							char *pszRsltsFileBaseName);		// results are written to this file base name with progeny readset identifier and type appended
 
+	int ProcessGBSvsWGS(int32_t NumGBSPBAs,			// number of GBS PBAs to be processed
+								 int32_t NumWGSPBAs,			// number of WGSPBAs to be processed
+								 char* pszRsltsFileBaseName);	// results are written to this file base name
+
 	int				// < 0 if errors, otherwise success
 		GenChromAlleleStacks(uint32_t ChromID,	// processing is for this chromosome
 												  uint32_t ChromSize,		// chromosome is this size
@@ -684,12 +696,12 @@ public:
 	CCallHaplotypes();
 	~CCallHaplotypes();
 	void Reset(void);	// resets class instance state back to that immediately following instantiation
-	int Process(eModeCSH PMode,	// processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons, 3: allelic haplotype grouping,4: coverage haplotype grouping, 5: post-process haplotype groupings for QGLs,  6: post-process to WIG
+	int Process(eModeCSH PMode,	// processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons, 3: allelic haplotype grouping,4: coverage haplotype grouping, 5: post-process haplotype groupings for QGLs,  6: post-process to WIG7 generating GBS vs. WGS association scores
 			int32_t ExprID,			         // assign this experiment identifier for this PBA analysis
 			int32_t SeedRowID,                  // generated CSVs will contain monotonically unique row identifiers seeded with this row identifier  
 			int32_t LimitPrimaryPBAs,        // limit number of loaded primary or founder PBA files to this many. 0: no limits, > 0 sets upper limit
 			int32_t GrpHapBinSize,           // when grouping into haplotypes (processing mode 3) then use this non-overlapping bin size for accumulation of differentials between all founder PBAs
-	        int32_t NumHapGrpPhases,         // number of phases over which to converge group consensus when haplotype clustering into groups - moves the balance between optimal group consensus and processing resource
+			int32_t NumHapGrpPhases,         // number of phases over which to converge group consensus when haplotype clustering into groups - moves the balance between optimal group consensus and processing resource
 			int32_t MinCentClustDist,        // haplotype groupings - in processing mode 3/4 only - minimum group centroid clustering distance
 			int32_t MaxCentClustDist,        // haplotype groupings - in processing mode 3/4 only - maximum group centroid clustering distance
 			int32_t MaxClustGrps,            // haplotype groupings - in processing mode 3 only - targeted maximum number of groups

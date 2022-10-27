@@ -1589,9 +1589,13 @@ for (ChromIdx = 0; ChromIdx < pReadsetMetadata->NumChroms && CurChromMetadataIdx
 	DeleteAllChromCnts();	// ready for next chromosome
 	}
 DeleteAllChromCnts();
+fflush(pOutFeatExonTurnOver);
 fclose(pOutFeatExonTurnOver);
+fflush(pOutFeatTurnOver);
 fclose(pOutFeatTurnOver);
+fflush(pOutFeatExonCnts);
 fclose(pOutFeatExonCnts);
+fflush(pOutFeatCnts);
 fclose(pOutFeatCnts);
 delete []pRSChromROI;
 delete []pszLineBuff;
