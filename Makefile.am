@@ -34,7 +34,6 @@ SUBDIRS = libkit4b \
     genNormWiggle \
     gennucstats \
     genrollups \
-    gensampler \
     genseqcandidates \
     genstructprofile \
     genstructstats \

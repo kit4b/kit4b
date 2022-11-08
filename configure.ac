@@ -49,7 +49,6 @@ AC_OUTPUT(Makefile
     genNormWiggle/Makefile
     gennucstats/Makefile
     genrollups/Makefile
-    gensampler/Makefile
     genseqcandidates/Makefile
     genstructprofile/Makefile
     genstructstats/Makefile

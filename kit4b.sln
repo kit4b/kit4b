@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.29230.47
+# Visual Studio Version 17
+VisualStudioVersion = 17.3.32929.385
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "genbiomultialign", "genbiomultialign\genbiomultialign.vcxproj", "{6F95EE3A-F21D-4B80-B46F-029010EE22C0}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -75,11 +75,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "psl2csv", "psl2csv\psl2csv.
 		{1993DF20-CD76-4FA0-9831-B30AF743CF54} = {1993DF20-CD76-4FA0-9831-B30AF743CF54}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gensampler", "gensampler\gensampler.vcxproj", "{88F7067C-746A-4D38-9C47-C34F6D7BC71D}"
-	ProjectSection(ProjectDependencies) = postProject
-		{1993DF20-CD76-4FA0-9831-B30AF743CF54} = {1993DF20-CD76-4FA0-9831-B30AF743CF54}
-	EndProjectSection
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "genloci2gene", "genloci2gene\genloci2gene.vcxproj", "{31F0AF80-0520-4A4E-AEEF-F545679214AB}"
 	ProjectSection(ProjectDependencies) = postProject
 		{1993DF20-CD76-4FA0-9831-B30AF743CF54} = {1993DF20-CD76-4FA0-9831-B30AF743CF54}
@@ -117,7 +112,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gencomposition", "gencompos
 		{FA01A337-8819-434E-A920-27AB942C0B3A} = {FA01A337-8819-434E-A920-27AB942C0B3A}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CSVMerge", "CSVMerge\CSVMerge.vcxproj", "{CA3C70E5-E67D-4B86-BC83-1DF83F015265}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CSVMerge", "csvmerge\CSVMerge.vcxproj", "{CA3C70E5-E67D-4B86-BC83-1DF83F015265}"
 	ProjectSection(ProjectDependencies) = postProject
 		{1993DF20-CD76-4FA0-9831-B30AF743CF54} = {1993DF20-CD76-4FA0-9831-B30AF743CF54}
 		{FA01A337-8819-434E-A920-27AB942C0B3A} = {FA01A337-8819-434E-A920-27AB942C0B3A}
@@ -213,7 +208,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GTFfilter", "GTFfilter\GTFf
 		{1993DF20-CD76-4FA0-9831-B30AF743CF54} = {1993DF20-CD76-4FA0-9831-B30AF743CF54}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BedMerge", "BedMerge\BedMerge.vcxproj", "{CA3C70E5-E67D-4B86-BCA3-1DF83F015265}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BedMerge", "BEDMerge\BedMerge.vcxproj", "{CA3C70E5-E67D-4B86-BCA3-1DF83F015265}"
 	ProjectSection(ProjectDependencies) = postProject
 		{1993DF20-CD76-4FA0-9831-B30AF743CF54} = {1993DF20-CD76-4FA0-9831-B30AF743CF54}
 		{FA01A337-8819-434E-A920-27AB942C0B3A} = {FA01A337-8819-434E-A920-27AB942C0B3A}
@@ -631,26 +626,6 @@ Global
 		{E73A771F-36D2-49C0-A900-0B18973220AD}.Template|Win32.ActiveCfg = Release|x64
 		{E73A771F-36D2-49C0-A900-0B18973220AD}.Template|x64.ActiveCfg = Release|x64
 		{E73A771F-36D2-49C0-A900-0B18973220AD}.Template|x64.Build.0 = Release|x64
-		{88F7067C-746A-4D38-9C47-C34F6D7BC71D}.Debug|Any CPU.ActiveCfg = Debug|Win32
-		{88F7067C-746A-4D38-9C47-C34F6D7BC71D}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
-		{88F7067C-746A-4D38-9C47-C34F6D7BC71D}.Debug|Mixed Platforms.Build.0 = Debug|Win32
-		{88F7067C-746A-4D38-9C47-C34F6D7BC71D}.Debug|Win32.ActiveCfg = Debug|Win32
-		{88F7067C-746A-4D38-9C47-C34F6D7BC71D}.Debug|Win32.Build.0 = Debug|Win32
-		{88F7067C-746A-4D38-9C47-C34F6D7BC71D}.Debug|x64.ActiveCfg = Debug|x64
-		{88F7067C-746A-4D38-9C47-C34F6D7BC71D}.Debug|x64.Build.0 = Debug|x64
-		{88F7067C-746A-4D38-9C47-C34F6D7BC71D}.Release|Any CPU.ActiveCfg = Release|Win32
-		{88F7067C-746A-4D38-9C47-C34F6D7BC71D}.Release|Mixed Platforms.ActiveCfg = Release|Win32
-		{88F7067C-746A-4D38-9C47-C34F6D7BC71D}.Release|Mixed Platforms.Build.0 = Release|Win32
-		{88F7067C-746A-4D38-9C47-C34F6D7BC71D}.Release|Win32.ActiveCfg = Release|Win32
-		{88F7067C-746A-4D38-9C47-C34F6D7BC71D}.Release|Win32.Build.0 = Release|Win32
-		{88F7067C-746A-4D38-9C47-C34F6D7BC71D}.Release|x64.ActiveCfg = Release|x64
-		{88F7067C-746A-4D38-9C47-C34F6D7BC71D}.Release|x64.Build.0 = Release|x64
-		{88F7067C-746A-4D38-9C47-C34F6D7BC71D}.Template|Any CPU.ActiveCfg = Release|x64
-		{88F7067C-746A-4D38-9C47-C34F6D7BC71D}.Template|Mixed Platforms.ActiveCfg = Release|x64
-		{88F7067C-746A-4D38-9C47-C34F6D7BC71D}.Template|Mixed Platforms.Build.0 = Release|x64
-		{88F7067C-746A-4D38-9C47-C34F6D7BC71D}.Template|Win32.ActiveCfg = Release|x64
-		{88F7067C-746A-4D38-9C47-C34F6D7BC71D}.Template|x64.ActiveCfg = Release|x64
-		{88F7067C-746A-4D38-9C47-C34F6D7BC71D}.Template|x64.Build.0 = Release|x64
 		{31F0AF80-0520-4A4E-AEEF-F545679214AB}.Debug|Any CPU.ActiveCfg = Debug|Win32
 		{31F0AF80-0520-4A4E-AEEF-F545679214AB}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
 		{31F0AF80-0520-4A4E-AEEF-F545679214AB}.Debug|Mixed Platforms.Build.0 = Debug|Win32

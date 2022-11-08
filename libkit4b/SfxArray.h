@@ -28,20 +28,20 @@ const int cMinJunctSegLen  = 10;		// splice junction segments must be at least t
 const int cMaxPutInDelOfss = 80;	    // absolute maximum number of putative InDels that can be explored in any probe
 
 // scoring for alignments, InDels and splice junctions
-const int cBaseScore = 500;			// base score before add/sub matches etc
-const int cMaxScore = 1000;			// clamp scores to be no larger than this value
-const int cScoreMatch = 3;			// score (add) matches as this
-const int cScoreMismatch = 5;		// score (subtract) mismatches as this
-const int cSpliceDonorAccept = 50; // score (add) for presence of splice donor+acceptor sites
-const int cSpliceLen = 10;			// score (subtract) for every 1K of separation between splice junctions
-const int cScoreInDelOpn = 20;		// score (subtract) opening an InDel as this
-const int cScoreInDelExtn = 1;		// score (subtract) extending an opened InDel as this
-const int cMaxAlignOpcodesLen = 256;  // limit alignment opcodes + length bytes to be at most this length
+const int cBaseScore = 500;					// base score before add/sub matches etc
+const int cMaxScore = 1000;					// clamp scores to be no larger than this value
+const int cScoreMatch = 3;					// score (add) matches as this
+const int cScoreMismatch = 5;				// score (subtract) mismatches as this
+const int cSpliceDonorAccept = 50;			// score (add) for presence of splice donor+acceptor sites
+const int cSpliceLen = 10;					// score (subtract) for every 1K of separation between splice junctions
+const int cScoreInDelOpn = 20;				// score (subtract) opening an InDel as this
+const int cScoreInDelExtn = 1;				// score (subtract) extending an opened InDel as this
+const int cMaxAlignOpcodesLen = 256;		// limit alignment opcodes + length bytes to be at most this length
 
-const int cGapSAExtendCost = 1;		// cost for extending gap per 10bp extension when scoring path
-const int cGapSAExtendCostLimit = 10;	// clamp gap extension cost to be no more than this
-const int cGapSAMaxLength = 500000;   // treat any gaps longer than this length as being not on same path - allows for RNA-seq with skipped exons
-const int cMaxSAOverlapFloat = 8;		// allowing for overlap float of at most this many bases, needed because the cores with extensions are independent and may be overextended
+const int cGapSAExtendCost = 1;				// cost for extending gap per 10bp extension when scoring path
+const int cGapSAExtendCostLimit = 10;		// clamp gap extension cost to be no more than this
+const int cGapSAMaxLength = 500000;			// treat any gaps longer than this length as being not on same path - allows for RNA-seq with skipped exons
+const int cMaxSAOverlapFloat = 8;			// allowing for overlap float of at most this many bases, needed because the cores with extensions are independent and may be overextended
 
 // scoring used with IdentifyHighScorePaths() and HighScoreSW()
 const int cDfltSAExactMatchScore = 1;		// default sparse SW default score for an exact match
@@ -50,15 +50,15 @@ const int cDfltSAGapOpenScore = 5;			// default cost for opening path gap when s
 const int cDfltSAMinQueryLenAlignedPct = 75;  // to be accepted a query sequence must align over at least this percentage (1..100) of it's length onto target
 
 // PacBio processing
-const int cMinPacBioSeedCoreLen = 8;							// user can specify seed cores down to this minimum length
-const int cMaxPacBioSeedCoreLen = 100;							// user can specify seed cores up to to this maximum length
-const int cMaxPacBioSeedExtn = 25;                              // if seed core < this limit then extend seed matches looking for near matches
+const int cMinPacBioSeedCoreLen = 8;		// user can specify seed cores down to this minimum length
+const int cMaxPacBioSeedCoreLen = 100;		// user can specify seed cores up to to this maximum length
+const int cMaxPacBioSeedExtn = 25;			// if seed core < this limit then extend seed matches looking for near matches
 
-const int cPacBioSeedCoreExtn = 100;							// looking for matches over this length seed core extension
-const int cPacBiokExtnKMerLen = 4;								// matches in seed core extension must be of at least this length
-const int cPacBioMinKmersExtn = 15;							    // require at least this many cPacBiokExtnKMerLen-mer matches over cPacBioSeedCoreExtn core extension
+const int cPacBioSeedCoreExtn = 100;		// looking for matches over this length seed core extension
+const int cPacBiokExtnKMerLen = 4;			// matches in seed core extension must be of at least this length
+const int cPacBioMinKmersExtn = 15;			// require at least this many cPacBiokExtnKMerLen-mer matches over cPacBioSeedCoreExtn core extension
 
-const int cMaxQualTargs = 10000;				// can process at most this many qualified targets
+const int cMaxQualTargs = 10000;			// can process at most this many qualified targets
 
 // adaptive trimming related constants
 const uint32_t cMinATSeqLen = 25;				// sequences to be adaptively trimmed must be at least this length
@@ -87,86 +87,86 @@ typedef enum etHRslt {
 } tHRslt;
 
 typedef enum eRPTMasking {
-	eRPTHignor = 0,		// treat all bases as not being a repeat (ignore any cRptMskFlg)
-	eRPTHmasked,		// treat any base cRptMskFlg as a repeat masked base 
-	eRPTHunmasked		// treat any base without cRptMskFlg as a repeat masked base 
+	eRPTHignor = 0,						// treat all bases as not being a repeat (ignore any cRptMskFlg)
+	eRPTHmasked,						// treat any base cRptMskFlg as a repeat masked base 
+	eRPTHunmasked						// treat any base without cRptMskFlg as a repeat masked base 
 } etRPTMasking;
 
 #pragma pack(1)
 
 // each entry for sequences is described by the following fixed size structure
 typedef struct TAG_sSfxEntry {
-	uint32_t EntryID;						// identifies each entry (1..n), unique within this suffix file
+	uint32_t EntryID;					// identifies each entry (1..n), unique within this suffix file
 	uint32_t fBlockID;					// which SfxBlock contains sequence for this entry
 	uint8_t szSeqName[cMaxDatasetSpeciesChrom];	// entry name - typically a chromosome name
 	uint16_t NameHash;					// hash over szSeqName
-	uint32_t SeqLen;						// sequence length - excludes sequence terminator eSeqEOS
+	uint32_t SeqLen;					// sequence length - excludes sequence terminator eSeqEOS
 	uint64_t StartOfs;					// offset into concatenated sequences of where this sequence starts
-	uint64_t EndOfs;						// offset into concatenated sequences of where this sequence ends
+	uint64_t EndOfs;					// offset into concatenated sequences of where this sequence ends
 } tsSfxEntry;
 
 
 // file contains 0 or 1 entry blocks containing all entry descriptors
 typedef struct TAG_sSfxEntriesBlock {
-	uint32_t NumEntries;					// current number of entries
-	uint32_t MaxEntries;					// can contain at most this number of entries
+	uint32_t NumEntries;				// current number of entries
+	uint32_t MaxEntries;				// can contain at most this number of entries
 	tsSfxEntry Entries[1];				// entry descriptors
 	} tsSfxEntriesBlock;
 
 // file contains 0 or 1 SfxBlocks
 typedef struct TAG_sSfxBlock {
-	uint32_t BlockID;						// identifies (1..n) this suffix block within this file
-	uint32_t NumEntries;					// number of entries contained in this block
+	uint32_t BlockID;					// identifies (1..n) this suffix block within this file
+	uint32_t NumEntries;				// number of entries contained in this block
 	uint64_t ConcatSeqLen;				// total length (including terminators) of all concatenated sequences (is also the number of elements in suffix array)
 	uint32_t SfxElSize;					// number of bytes per suffix array element = will be either 4 or 5
-	uint8_t SeqSuffix[1];					// concatenated sequences followed by suffix array
+	uint8_t SeqSuffix[1];				// concatenated sequences followed by suffix array
 	} tsSfxBlock;
 
 // each entry for sequences is described by the following fixed size structure
 typedef struct TAG_sSfxEntryV3 {
-	uint32_t EntryID;						// identifies each entry (1..n), unique within this suffix file
+	uint32_t EntryID;					// identifies each entry (1..n), unique within this suffix file
 	uint32_t fBlockID;					// which SfxBlock contains sequence for this entry
 	uint8_t szSeqName[cMaxDatasetSpeciesChromV3];	// entry name - typically a chromosome name
 	uint16_t NameHash;					// hash over szSeqName
-	uint32_t SeqLen;						// sequence length - excludes sequence terminator eSeqEOS
+	uint32_t SeqLen;					// sequence length - excludes sequence terminator eSeqEOS
 	uint64_t StartOfs;					// offset into concatenated sequences of where this sequence starts
-	uint64_t EndOfs;						// offset into concatenated sequences of where this sequence ends
+	uint64_t EndOfs;					// offset into concatenated sequences of where this sequence ends
 } tsSfxEntryV3;
 
 // file contains 0 or 1 entry blocks containing all entry descriptors
 typedef struct TAG_sSfxEntriesBlockV3 {
-	uint32_t NumEntries;					// current number of entries
-	uint32_t MaxEntries;					// can contain at most this number of entries
-	tsSfxEntryV3 Entries[1];				// entry descriptors
+	uint32_t NumEntries;				// current number of entries
+	uint32_t MaxEntries;				// can contain at most this number of entries
+	tsSfxEntryV3 Entries[1];			// entry descriptors
 	} tsSfxEntriesBlockV3;
 
 
-typedef struct TAG_sIdentNode {							// TargSeqIDs are hash linked into tsIdentNodes
+typedef struct TAG_sIdentNode {			// TargSeqIDs are hash linked into tsIdentNodes
 	uint32_t TargSeqID;
-	struct TAG_sIdentNode *pNxt;						// will be NULL if last linked in current hash chain
+	struct TAG_sIdentNode *pNxt;		// will be NULL if last linked in current hash chain
 } tsIdentNode;
 
 typedef struct TAG_sQueryAlignNodes {					
-	uint32_t AlignNodeID;									// alignment node identifier
-	uint8_t FlgStrand:1;									// 0 if aligning query sense, 1 if aligning query antisense
-	uint8_t FlgFirst2tRpt:1;								// set 1 if this node determined to be the 1st node in path which meets minimum scoring critera
-	uint8_t Flg2Rpt:1;									// set 1 if this node part of path which meets minimum scoring critera
-	uint8_t FlgScored:1;									// set 0 if unscored, 1 if scored and HiScore, HiScorePathNextIdx are valid
-	uint8_t FlgRedundant:1;								// set if this alignment node is considered as being redundant and not to be further processed
-	int32_t QueryID;										// query sequence identifer
-	uint32_t QueryStartOfs;								// alignment is starting from this query sequence offset
-	uint32_t AlignLen;									// alignment length
-	uint32_t TargSeqID;									// aligning to thid target sequence identifer
-	uint32_t TargSeqLoci;									// starting at this loci
-	uint32_t NumMismatches;								// aligns with this number of mismatching nucleotides
-	int32_t HiScore;										// highest cumulative score for nodes along highest scoring path starting with this node (includes this node's score)
-	uint32_t HiScorePathNextIdx;							// if > 0 then idex-1 of next node on currently highest scoring path; 0 if no other nodes on path
-	uint32_t NxtHashMatch;								// aligned nodes with same hash over same target and alignment sense are linked 
+	uint32_t AlignNodeID;				// alignment node identifier
+	uint8_t FlgStrand:1;				// 0 if aligning query sense, 1 if aligning query antisense
+	uint8_t FlgFirst2tRpt:1;			// set 1 if this node determined to be the 1st node in path which meets minimum scoring critera
+	uint8_t Flg2Rpt:1;					// set 1 if this node part of path which meets minimum scoring critera
+	uint8_t FlgScored:1;				// set 0 if unscored, 1 if scored and HiScore, HiScorePathNextIdx are valid
+	uint8_t FlgRedundant:1;				// set if this alignment node is considered as being redundant and not to be further processed
+	int32_t QueryID;					// query sequence identifer
+	uint32_t QueryStartOfs;				// alignment is starting from this query sequence offset
+	uint32_t AlignLen;					// alignment length
+	uint32_t TargSeqID;					// aligning to thid target sequence identifer
+	uint32_t TargSeqLoci;				// starting at this loci
+	uint32_t NumMismatches;				// aligns with this number of mismatching nucleotides
+	int32_t HiScore;					// highest cumulative score for nodes along highest scoring path starting with this node (includes this node's score)
+	uint32_t HiScorePathNextIdx;		// if > 0 then idex-1 of next node on currently highest scoring path; 0 if no other nodes on path
+	uint32_t NxtHashMatch;				// aligned nodes with same hash over same target and alignment sense are linked 
 } tsQueryAlignNodes;
 
 typedef struct TAG_sQualTarg {
-	uint32_t TargEntryID;		// identifies sequence
-	uint8_t  Hits;			// against which there are this many hits (clamped to be at most 255)
+	uint32_t TargEntryID;				// identifies sequence
+	uint8_t  Hits;						// against which there are this many hits (clamped to be at most 255)
 	} tsQualTarg;
 
 #pragma pack()
@@ -193,14 +193,14 @@ const int cTotCultivarKMerLen   = 300;	// prefix + suffix length combined no lon
 // fixed size V3 file header with cMaxDatasetSpeciesChrom increased to 81
 typedef struct TAG_sSfxHeaderV3 {
 	uint8_t Magic[4];			 		// magic chars to identify this file as a SfxArray file
-	int32_t Version;							// file structure version
-	uint32_t Attributes;						// file attributes - currently bit 0 bisulfite processing, bit 1 for colorspace
-	uint64_t FileLen;							// current file length (write psn for newly created blocks)
-	uint64_t EntriesOfs;						// offset in file to tsSfxEntryBlock, 0 if no entries
-	uint32_t EntriesSize;						// allocation size for loading tsSfxEntriesBlock into memory from file
-	uint32_t NumSfxBlocks;					// current number of tsSfxBlock blocks in file, either 0 or 1
-	uint64_t SfxBlockSize;						// size of SfxBlock in file - used if preallocing memory to hold SfxBlock
-	uint64_t SfxBlockOfs;						// file offset at which tsSfxBlock starts
+	int32_t Version;					// file structure version
+	uint32_t Attributes;				// file attributes - currently bit 0 bisulfite processing, bit 1 for colorspace
+	uint64_t FileLen;					// current file length (write psn for newly created blocks)
+	uint64_t EntriesOfs;				// offset in file to tsSfxEntryBlock, 0 if no entries
+	uint32_t EntriesSize;				// allocation size for loading tsSfxEntriesBlock into memory from file
+	uint32_t NumSfxBlocks;				// current number of tsSfxBlock blocks in file, either 0 or 1
+	uint64_t SfxBlockSize;				// size of SfxBlock in file - used if preallocing memory to hold SfxBlock
+	uint64_t SfxBlockOfs;				// file offset at which tsSfxBlock starts
 	uint8_t szDatasetName[cMaxDatasetSpeciesChrom]; // dataset name - usually the genome species name
 	uint8_t szDescription[cMBSFFileDescrLen];	// describes contents of file
 	uint8_t szTitle[cMBSFShortFileDescrLen];	// short title by which this file can be distingished from other files in dropdown lists etc
@@ -209,14 +209,14 @@ typedef struct TAG_sSfxHeaderV3 {
 // original fixed size V3 file header with cMaxDatasetSpeciesChrom set to 36
 typedef struct TAG_sSfxHeaderVv {
 	uint8_t Magic[4];			 		// magic chars to identify this file as a SfxArray file
-	int32_t Version;							// file structure version
-	uint32_t Attributes;						// file attributes - currently bit 0 bisulfite processing, bit 1 for colorspace
-	uint64_t FileLen;							// current file length (write psn for newly created blocks)
-	uint64_t EntriesOfs;						// offset in file to tsSfxEntryBlock, 0 if no entries
-	uint32_t EntriesSize;						// allocation size for loading tsSfxEntriesBlock into memory from file
-	uint32_t NumSfxBlocks;					// current number of tsSfxBlock blocks in file, either 0 or 1
-	uint64_t SfxBlockSize;						// size of SfxBlock in file - used if preallocing memory to hold SfxBlock
-	uint64_t SfxBlockOfs;						// file offset at which tsSfxBlock starts
+	int32_t Version;					// file structure version
+	uint32_t Attributes;				// file attributes - currently bit 0 bisulfite processing, bit 1 for colorspace
+	uint64_t FileLen;					// current file length (write psn for newly created blocks)
+	uint64_t EntriesOfs;				// offset in file to tsSfxEntryBlock, 0 if no entries
+	uint32_t EntriesSize;				// allocation size for loading tsSfxEntriesBlock into memory from file
+	uint32_t NumSfxBlocks;				// current number of tsSfxBlock blocks in file, either 0 or 1
+	uint64_t SfxBlockSize;				// size of SfxBlock in file - used if preallocing memory to hold SfxBlock
+	uint64_t SfxBlockOfs;				// file offset at which tsSfxBlock starts
 	uint8_t szDatasetName[cMaxDatasetSpeciesChromV3]; // dataset name - usually the genome species name
 	uint8_t szDescription[cMBSFFileDescrLen];	// describes contents of file
 	uint8_t szTitle[cMBSFShortFileDescrLen];	// short title by which this file can be distingished from other files in dropdown lists etc
@@ -228,39 +228,39 @@ typedef struct TAG_sSfxHeaderVv {
 
 // adaptive trimming (also referenced as chimeric trimming) sequence regions
 typedef struct TAG_sATRegion {
-	uint16_t RegionOfs;		// region starts at this offset (0..n) relative to probe sequence start
-	uint16_t RegionLen;		// region is this length
-	uint8_t flgMM:1;			// if 0: region contains exact matches, if 1: region contains mismatches
-	uint8_t flgTrim5:1;		// region offset can be used as putative adaptive trim start
-	uint8_t flgTrim3:1;		// end of this region can be used as putative adaptive trim end
+	uint16_t RegionOfs;					// region starts at this offset (0..n) relative to probe sequence start
+	uint16_t RegionLen;					// region is this length
+	uint8_t flgMM:1;					// if 0: region contains exact matches, if 1: region contains mismatches
+	uint8_t flgTrim5:1;					// region offset can be used as putative adaptive trim start
+	uint8_t flgTrim3:1;					// end of this region can be used as putative adaptive trim end
 	} tsATRegion;
 
 // returned multiple hit loci, note that can have 2 segments if microInDel of read spans splice junction
 typedef struct TAG_sSegLoci {
 		uint16_t ReadOfs;				// Original match started at this read sequence offset
-		uint8_t Strand;				// matched on this strand
+		uint8_t Strand;					// matched on this strand
 		uint32_t ChromID;				// suffix entry (chromosome) matched on
-		uint64_t MatchLoci;			// original match loci
-		uint16_t MatchLen;			// original match length
-		uint8_t Mismatches;			// original number of mismatches
-		uint16_t TrimLeft;			// left flank trimming removes this many bases
-		uint16_t TrimRight;			// right flank trimming removes this many bases
-		uint8_t TrimMismatches;		// after trimming there are this many mismatches
+		uint64_t MatchLoci;				// original match loci
+		uint16_t MatchLen;				// original match length
+		uint8_t Mismatches;				// original number of mismatches
+		uint16_t TrimLeft;				// left flank trimming removes this many bases
+		uint16_t TrimRight;				// right flank trimming removes this many bases
+		uint8_t TrimMismatches;			// after trimming there are this many mismatches
 }	tsSegLoci;
 
 typedef struct TAG_tsHitLoci {
-	 etSeqBase BisBase;				// bisulfite mapping base if appropriate
-	 uint8_t FlgChimeric:1;			// set if chimeric alignment with TrimLeft and/or TrimRight flank trimming required
+	 etSeqBase BisBase;					// bisulfite mapping base if appropriate
+	 uint8_t FlgChimeric:1;				// set if chimeric alignment with TrimLeft and/or TrimRight flank trimming required
 	 uint8_t FlgInDel:1;				// set if microInDel alignment with 2 segments
 	 uint8_t FlgInsert:1;				// set if alignment with insertion into read relative to reference, false if deletion from read
 	 uint8_t FlgSplice:1;				// set if splice junction with 2 segments
 	 uint8_t FlgNonOrphan:1;			// set if determined that at least two splice or InDels sharing intersegment start/ends
 	 uint16_t Score;					// alignment match score
-	 tsSegLoci Seg[2];				// both used if InDel or splice junction	
+	 tsSegLoci Seg[2];					// both used if InDel or splice junction	
  } tsHitLoci;
 
 typedef struct TAG_sKMerCultCnts {
-	uint32_t EntryID;						// counts are for this sfx entry
+	uint32_t EntryID;					// counts are for this sfx entry
 	uint32_t SenseCnts;					// total number of K-Mers on the sense strand
 	uint32_t AntisenseCnts;				// total number of K-Mers on the antisense strand
 } tsKMerCultDist;
@@ -295,10 +295,10 @@ class CAlignOpCode : public CErrorCodes, protected CEndian {
 public:
 	CAlignOpCode(void);
 	~CAlignOpCode(void);
-	void Reset(void);							// clears m_CurNumAlignOpCodes
-	void Clone(CAlignOpCode &CloneFrom);		// clone from
-	bool Init(int Len,uint8_t *pOpCodes);			// initialise using these pre-existing opcodes
-	bool TruncNthMM(int NthMM);						// truncate at the Nth mismatch
+	void Reset(void);						// clears m_CurNumAlignOpCodes
+	void Clone(CAlignOpCode &CloneFrom);	// clone from
+	bool Init(int Len,uint8_t *pOpCodes);	// initialise using these pre-existing opcodes
+	bool TruncNthMM(int NthMM);				// truncate at the Nth mismatch
 	bool Append(int Len,uint8_t *pOpCodes);
 	bool Append(CAlignOpCode &ApendFrom);
 	bool AppendNthMM(int NthMM,CAlignOpCode &AppendFrom); // first truncate at the Nth mismatch then append AppendFrom 
@@ -363,7 +363,7 @@ class CSfxArray : public CErrorCodes, protected CEndian
 	tsCoreKMer *m_pCoreKMers;					// memory preallocd of m_AllocdCoreKMersSize size to hold core KMers
 
 	uint32_t m_MaxKMerCnts;						// max KMer target count
-	uint32_t *m_pKMerCntDist;						// record count distributions into this array sized MaxKMerCnts+1
+	uint32_t *m_pKMerCntDist;					// record count distributions into this array sized MaxKMerCnts+1
 
 
 #ifdef _WIN32
@@ -588,7 +588,7 @@ public:
 
 	int64_t						// returned number of cultivar sequences
 		LocateMultiCultivarMarkers(int PrefixKMerLen,	// prefix K-mer length
-						   int SuffixMerLen,			// prefix K-mer length
+						   int SuffixKMerLen,			// suffix K-mer length
 						   int NumCultivars,			// number of cultivars in pCultivars
 						   uint32_t *pEntryIDs,			// sequences of interest will be on these
 						   void *pThis,					// class instance for callback
@@ -612,7 +612,7 @@ public:
 
 			int											// < 0 if errors, 0 if no matches or change, 1 if mumber of matches accepted, 2 MMDelta criteria not met, 3 too many match instances  
 				AlignReads(uint32_t ExtdProcFlags,		// flags indicating if lower levels need to do any form of extended processing with this specific read...
-						 uint32_t ReadID,					// identifies this read
+						 uint32_t ReadID,				// identifies this read
 						 int MinChimericLen,			// if checking for chimerics then minimim length required, set to 0 if not checking for chimerics
 						 int TotMM,						// max number of mismatches allowed including any core
 						 int CoreLen,					// core window length 
@@ -776,22 +776,22 @@ public:
 						 tsIdentNode *pAllocsIdentNodes); // memory allocated by caller for holding tsIdentNodes
 
 		int						// < 0 if errors, 0 if no matches or change, 1 if mumber of matches accepted, 2 MMDelta criteria not met, 3 too many match instances
-			LocateQuerySeqs(uint32_t QuerySeqID,			// identifies this query sequence
+			LocateQuerySeqs(uint32_t QuerySeqID,		// identifies this query sequence
 						 etSeqBase *pProbeSeq,			// probe
 						 uint32_t ProbeLen,				// probe length
 						 uint32_t CoreLen,				// core window length
-						 uint32_t CoreDelta,				// core window offset increment (1..n)
+						 uint32_t CoreDelta,			// core window offset increment (1..n)
 						 eALStrand Align2Strand,		// align to this strand
 						 uint32_t MaxHits,				// (IN) process for at most this number of hits
 						 tsQueryAlignNodes *pHits,		// where to return hits (at most MaxHits)
-						 uint32_t CurMaxIter,				// max allowed iterations per subsegmented sequence when matching that subsegment
+						 uint32_t CurMaxIter,			// max allowed iterations per subsegmented sequence when matching that subsegment
 						 int BaseMatchPts = 1,			// award this many points for matching bases when extending 5' and 3' flanks
 						 int BaseMismatchPts = 3);		// penalise this many points for mismatching bases when extending 5' and 3' flanks
 
 			
 	int						// < 0 if errors, 0 if no matches, 1..MaxHits, or MaxHits+1 if additional matches have been sloughed
-		LocateBestMatches(uint32_t ReadID,			// identifies this read
-						 int MaxTotMM,			        // return matches having at most this number of mismatches
+		LocateBestMatches(uint32_t ReadID,				// identifies this read
+						 int MaxTotMM,					// return matches having at most this number of mismatches
 						 int CoreLen,					// core window length
 						 int CoreDelta,					// core window offset increment (1..n)
 						 int MaxNumCoreSlides,			// max number of times to slide core on each strand
@@ -805,17 +805,17 @@ public:
 						 int NumAllocdIdentNodes,		// memory has been allocated by caller for holding up to this many tsIdentNodes
 						 tsIdentNode *pAllocsIdentNodes); // memory allocated by caller for holding tsIdentNodes
 
-	int											// if < eBSFSuccess then errors, 0 if unable to adaptively trim, >= MinTrimLen if able to adaptively trim
+	int													// if < eBSFSuccess then errors, 0 if unable to adaptively trim, >= MinTrimLen if able to adaptively trim
 		AdaptiveTrim(uint32_t SeqLen,					// untrimmed probe and target sequence are both this bp long
-				etSeqBase *pProbeSeq,			// end trimming this probe sequence
-				etSeqBase *pTargSeq,			// when aligned against this target sequence
-				uint32_t MinTrimLen,				// accepted trimmed probe sequence must be at least this minimum length
-				uint32_t MaxMM,					// and contain at most this many mismatches proportional to a 100bp trimmed sequence match
-				uint32_t MinFlankMatches,			// 5' and 3' flanks of trimmed probe must start/end with at least this many exactly matching bases
-				uint32_t *pTrimSeqLen,			// trimmed probe is this length
-				uint32_t *pTrimStart,				// accepted trimmed probe has this many bp trimmed from start (5') of probe
-				uint32_t *pTrimEnd,				// accepted trimmed probe has this many bp trimmed from end (3') of probe
-				uint32_t *pTrimMMs);				// after trimming there are this many mismatches in the trimmed probe
+				etSeqBase *pProbeSeq,					// end trimming this probe sequence
+				etSeqBase *pTargSeq,					// when aligned against this target sequence
+				uint32_t MinTrimLen,					// accepted trimmed probe sequence must be at least this minimum length
+				uint32_t MaxMM,							// and contain at most this many mismatches proportional to a 100bp trimmed sequence match
+				uint32_t MinFlankMatches,				// 5' and 3' flanks of trimmed probe must start/end with at least this many exactly matching bases
+				uint32_t *pTrimSeqLen,					// trimmed probe is this length
+				uint32_t *pTrimStart,					// accepted trimmed probe has this many bp trimmed from start (5') of probe
+				uint32_t *pTrimEnd,						// accepted trimmed probe has this many bp trimmed from end (3') of probe
+				uint32_t *pTrimMMs);					// after trimming there are this many mismatches in the trimmed probe
 
 
 	int						// < 0 if errors or if probe sequence non-unique local to ProbeEntry, 0 if no matches, otherwise the total match instances  (see genzygosity.cpp)

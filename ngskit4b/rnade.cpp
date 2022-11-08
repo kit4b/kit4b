@@ -3688,7 +3688,7 @@ switch(FileType) {
 		return(eBSFerrOpnFile);
 
 	case eCFTlenerr:		// file length is insufficent to classify type
-		gDiagnostics.DiagOut(eDLInfo,gszProcName,"Unable to classify file type (insuffient data points): '%s'",pszInAlignFile);
+		gDiagnostics.DiagOut(eDLInfo,gszProcName,"Unable to classify file type (insufficient data points): '%s'",pszInAlignFile);
 		return(eBSFerrFileAccess);
 
 	case eCFTunknown:		// unable to reliably classify

@@ -28,6 +28,7 @@ typedef enum TAG_ePBAuMode {
 	ePBAu2WIGConcordance,	// report on degree of coverage depth concordance - proportions of coverage depth (WIG) where all samples had alignments and all samples with near same coverage
 	ePBAu2AVCF,				// generate a allelic variant VCF
 	ePBAu2GVCF,				// generate a genotype VCF
+	ePBAu2DVCF,				// generate a deletion VCF
 	ePBAuPlaceholder		// used as a placeholder to mark number of processing modes
 } ePBAuMode;
 
@@ -282,7 +283,8 @@ class CPBAutils
 	int32_t GenAllelicVCF(int32_t RefPBAID,	// reference PBAs identifier
 						int32_t AllelicPBAID);	// PBAs with allelic differences
 
-	int32_t GenGenotypeVCF(int32_t RefPBAID,	// reference identifier
+	int32_t GenGenotypeVCF(ePBAuMode PMode, // will be either ePBAu2GVCF allelic genotype VCF or ePBAu2DVCF deletion genotype VCF
+						int32_t RefPBAID,	// reference identifier
 						int32_t NumSamples, 	// number of PBA samples to report on allelic variations relative to reference
 						double GTPropNAThres,		// when genotyping VCF then proportion of non-aligned calls over all samples must be < this threshold
 						double GTPropHetThres);	// when genotyping VCF then proportion of heterozygous calls must be >= this threshold
@@ -301,7 +303,7 @@ public:
 	CPBAutils();	// constructor
 	~CPBAutils();	// destructor
 
-	int Process(ePBAuMode PMode,	// processing mode: ePBAu2Fasta PBA to Fasta, ePBAu2PBA Fasta to PBA, ePBAu2PBAConcordance concordance over PBA samples, ePBAu2WIGConcordance concordance over WIG samples, ePBAu2AVCF allelic variant VCF, ePBAu2GVCF allelic genotype VCF
+	int Process(ePBAuMode PMode,	// processing mode: ePBAu2Fasta PBA to Fasta, ePBAu2PBA Fasta to PBA, ePBAu2PBAConcordance concordance over PBA samples, ePBAu2WIGConcordance concordance over WIG samples, ePBAu2AVCF allelic variant VCF, ePBAu2GVCF allelic genotype VCF, ePBAu2DVCF deletion genotype VCF
 		int32_t LimitPBAs,			// limit number of loaded PBA files to this many. 1...cMaxPBAReadsets
 		int32_t PBAsTrim5,			// trim this many aligned PBAs from 5' end of aligned segments - reduces false alleles due to sequencing errors
 		int32_t PBAsTrim3,			// trim this many aligned PBAs from 3' end of aligned segments - reduces false alleles due to sequencing errors

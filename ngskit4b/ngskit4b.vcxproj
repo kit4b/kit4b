@@ -230,6 +230,7 @@
     <ClCompile Include="CWIGutils.cpp" />
     <ClCompile Include="GBSmapSNPs.cpp" />
     <ClCompile Include="pbautils.cpp" />
+    <ClCompile Include="xroiseqs.cpp" />
     <ClCompile Include="seghaplotypes.cpp" />
     <ClCompile Include="pangenome.cpp" />
     <ClCompile Include="repassemb.cpp" />

@@ -7,7 +7,7 @@ g++  -static -g -O2   -o ngskit4bs KAlignerCL.o Blitz.o genDESeq.o kit4bax.o Loc
     genmarkerseq.o kit4bdna.o MarkerKMers.o psl2sqlite.o SQLiteDE.o AssembGraph.o FastaNxx.o genpseudogenome.o kmermarkers.o Markers.o \
     ReadStats.o SQLiteMarkers.o Assemble.o FilterSAMAlignments.o gensnpmarkers.o LocateROI.o MarkerSeq.o RemapLoci.o Benchmarker.o \
     genbioseq.o genbiobed.o gengoassoc.o gengoterms.o goassoc.o seghaplotypes.o hammings.o fasta2bed.o LocHap2Bed.o pangenome.o GBSmapSNPs.o \
-    CWIGutils.o repassemb.o sarscov2ml.o pbautils.o CGenMLdatasets.o \
+    CWIGutils.o repassemb.o sarscov2ml.o pbautils.o CGenMLdatasets.o xroiseqs.o \
     ../libkit4b/libkit4b.a ../libzlib/libzlib.a ../libBKPLPlot/libBKPLPlot.a -lrt -ldl -lpthread
 cp ngskit4bs ~/bin
 

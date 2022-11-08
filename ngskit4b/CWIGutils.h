@@ -49,6 +49,7 @@ typedef struct TAG_sChromROICnts {
 	uint64_t Tot50ExonCnts;			// total counts over 1st 50% of region within exons only
 	double ExonTurnOver;			// exon turnover ratio
 	double TurnOver;				// exon+intron turn over ratio
+	double FeatExonRatio;			// ratio of total feature counts to only exon counts 
 	} tsChromROICnts;
 
 typedef struct TAG_sChromROI {

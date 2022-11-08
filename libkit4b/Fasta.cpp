@@ -1165,9 +1165,8 @@ while(bMoreToDo) {
 						Chr = 'n';
 					}
 				if(Chr != '-' && !isalpha(Chr))		// slough any non-alpha except for '-' outside of Descriptors
-					{
 					continue;
-					}
+
 				if(pRetSeq != NULL)
 					{
 					*pAscii++ = Chr;
@@ -1215,7 +1214,7 @@ return(eBSFSuccess);
 // LocateDescriptor
 // locates a descriptor whose text matches that specified
 // If bFromStart==false then the search starts from the previous descriptor (or start of file if first call)
-// If bFromStart==false then the search starts from the start of file
+// If bFromStart==true then the search starts from the start of file
 // Returns eBSFSuccess if descriptor is located
 int32_t													// eBSFSuccess if matched and descriptor is available
 CFasta::LocateDescriptor(char *pszPrefixToMatch,	// prefix to match or NULL if match any
@@ -1550,11 +1549,11 @@ return(eBSFFastaDescr);
 
 // ReadSubsequence
 // Reads a subsubsequence from fasta starting at SeqOfs within the next sequence to be located in the fasta file
-int32_t											// number actually read
+int32_t										// number actually read
 CFasta::ReadSubsequence(etSeqBase *pSeq,	// where to return subsequence (NO TERMINATING eBaseEOS)
-				 uint32_t MaxLen,		// reads upto MaxLen sequence bases from file
-				 uint32_t SeqOfs,		// relative offset in sequence at which to read
-				 bool bFromStart)			// true: from start, false: from next sequence
+				 uint32_t MaxLen,			// reads upto MaxLen sequence bases from file
+				 uint32_t SeqOfs,			// relative offset in sequence at which to read
+				 bool bFromStart)			// true: from start of fasta file, false: from start of currently buffered sequence
 {
 char Buffer[0x2fff];
 uint32_t CurSeqOfs = 0;
@@ -1562,15 +1561,14 @@ uint32_t SeqLen = 0;
 int32_t Cnt;
 int32_t CpyLen;
 int32_t CpyFromIdx;
-char *pAscii = (char *)pSeq;
-   
+
 if (m_gzFile == NULL && m_hFile == -1 || m_pCurFastaBlock == NULL || m_pCurFastaBlock->pBlock == NULL)
 	return(eBSFerrClosed);
 
 if(!m_bRead)
 	return(eBSFerrRead);
 
-if(bFromStart)
+if(bFromStart) // if from start of source Fasta file
 	{
 	int32_t FileOfs;
 	m_pCurFastaBlock->BuffCnt = 0;
@@ -1590,16 +1588,16 @@ if(bFromStart)
 
 m_bDescrAvail = false;
 CurSeqOfs = 0;
-while(SeqLen < MaxLen && (Cnt = ReadSequence(Buffer,sizeof(Buffer),true))>=0)
+while(SeqLen < MaxLen && (Cnt = ReadSequence(Buffer,sizeof(Buffer),true)) > 0)
 	{
-	if(Cnt == 0)		// slough descriptors, looking for a sequence...
+	if(Cnt == eBSFFastaDescr)		// slough descriptors, looking for a sequence...
 		{
-		if(SeqLen)		// any descriptor terminates the current sequence
+		if(SeqLen)		// any descriptor terminates the currently accumulating sequence
 			{
 			m_bDescrAvail = true;
 			break;
 			}
-		continue;
+		continue; // no currently accumulating sequence so bypass descriptor
 		}
 	if(Cnt + CurSeqOfs < (int32_t)SeqOfs)
 		{

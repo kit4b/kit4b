@@ -92,7 +92,7 @@ public:
 	int32_t Reset(int64_t FileOfs = 0l);				// reset context to that following an Open() with option to start processing at FileOfs
 												// NOTE: gzip library can't handle file offsets which are greater than 2^31 - 1
 
-	int32_t Open(char *pszFile,bool Read = true,uint32_t BufferSize = cDfltStageBuffSize);
+	int32_t Open(char *pszFile,bool Read = true,uint32_t BufferSize = cMaxStageBuffSize);
 	bool IsFastq(void);							// true if opened file is in fastq format
 	bool IsSOLiD(void);							// true if opened file is in SOLiD or colorspace format
 	uint64_t InitialFileSize(void);				// file size when initially opened for reading
@@ -108,13 +108,13 @@ public:
 	
 	int32_t Close(void);							 // close opened fasta file
 	int32_t	LocateDescriptor(char *pszPrefixToMatch=NULL,// prefix to match or NULL if match any
-						 bool bFromStart=false);	 // true: from start, false: from next descriptor
+						 bool bFromStart=false);	 // true: from start of file, false: from next descriptor
 
-	int32_t											// number actually read
+	int32_t										// number actually read
 		ReadSubsequence(etSeqBase *pSeq,		// where to return subsequence (NO TERMINATING eBaseEOS)
-					 uint32_t MaxLen,		// reads upto MaxLen sequence bases from file
-					 uint32_t SeqOfs=0,		// relative offset in sequence at which to read
-					 bool bFromStart=false);	// true: from fasta file start, false: from next sequence
+					 uint32_t MaxLen,			// reads upto MaxLen sequence bases from file
+					 uint32_t SeqOfs=0,			// relative offset in sequence at which to read
+					 bool bFromStart=false);	// true: from start of fasta file, false: from start of currently buffered sequence
 
 	int32_t ReadSequence(void *pRetSeq = NULL,		// where to return sequence, can be NULL if only interested in the sequence length
 					 int32_t Max2Ret = 0,			// max to return, ignored if pRetSeq is NULL

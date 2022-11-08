@@ -15,7 +15,7 @@
 #include "./ngskit4b.h"
 #include "./pbautils.h"
 
-int Process(ePBAuMode PMode,	// processing mode: ePBAu2Fasta PBA to Fasta, ePBAu2PBA Fasta to PBA, ePBAu2PBAConcordance concordance over PBA samples, ePBAu2WIGConcordance concordance over WIG samples, ePBAu2AVCF allelic variant VCF, ePBAu2GVCF allelic genotype VCF
+int Process(ePBAuMode PMode,	// processing mode: ePBAu2Fasta PBA to Fasta, ePBAu2PBA Fasta to PBA, ePBAu2PBAConcordance concordance over PBA samples, ePBAu2WIGConcordance concordance over WIG samples, ePBAu2AVCF allelic variant VCF, ePBAu2GVCF allelic genotype VCF,ePBAu2DVCF deletion genotype VCF
 	int32_t LimitPBAs,			// limit number of loaded PBA files to this many. 1 .. cMaxPBAReadsets
 	int32_t PBAsTrim5,			// trim this many aligned PBAs from 5' end of aligned segments - reduces false alleles due to sequencing errors
 	int32_t PBAsTrim3,			// trim this many aligned PBAs from 3' end of aligned segments - reduces false alleles due to sequencing errors
@@ -61,7 +61,7 @@ int NumThreads;				// number of threads (0 defaults to number of CPUs or a maxim
 
 int Idx;
 
-ePBAuMode PMode;			// processing mode: ePBAu2Fasta PBA to Fasta, ePBAu2PBA Fasta to PBA, ePBAu2PBAConcordance concordance over PBA samples, ePBAu2WIGConcordance concordance over WIG samples, ePBAu2AVCF allelic variant VCF, ePBAu2GVCF allelic genotype VCF
+ePBAuMode PMode;			// processing mode: ePBAu2Fasta PBA to Fasta, ePBAu2PBA Fasta to PBA, ePBAu2PBAConcordance concordance over PBA samples, ePBAu2WIGConcordance concordance over WIG samples, ePBAu2AVCF allelic variant VCF, ePBAu2GVCF allelic genotype VCF, ePBAu2DVCF deletion genotype VCF
 int32_t LimitPBAs;			// limit number of loaded PBA files to this many. 0: no limits, > 0 sets upper limit
 int32_t PBAsTrim5;			// trim this many aligned PBAs from 5' end of aligned segments - reduces false alleles due to sequencing errors
 int32_t PBAsTrim3;			// trim this many aligned PBAs from 3' end of aligned segments - reduces false alleles due to sequencing errors
@@ -85,7 +85,7 @@ struct arg_lit* version = arg_lit0("v", "version,ver", "print version informatio
 struct arg_int* FileLogLevel = arg_int0("f", "FileLogLevel", "<int>", "Level of diagnostics written to screen and logfile 0=fatal,1=errors,2=info,3=diagnostics,4=debug");
 struct arg_file* LogFile = arg_file0("F", "log", "<file>", "diagnostics log file");
 
-struct arg_int* pmode = arg_int0("m", "mode", "<int>", "processing mode: 0 PBA to Fasta, 1 Fasta to PBA, 2 concordance over PBA samples, 3 concordance over WIG samples, 4 allelic variant VCF, 5 allelic genotype VCF");
+struct arg_int* pmode = arg_int0("m", "mode", "<int>", "processing mode: 0 PBA to Fasta, 1 Fasta to PBA, 2 concordance over PBA samples, 3 concordance over WIG samples, 4 allelic variant VCF, 5 allelic genotype VCF, deletion genotype VCF");
 struct arg_int* limitpbas = arg_int0("l", "limitpbas", "<int>", " limit number of loaded PBA files to this many. 0: no limits, > 0 sets upper limit (default 0)");
 struct arg_int* pbastrim5 = arg_int0("x", "trim5", "<int>", "trim this many aligned PBAs from 5' end of aligned segments (default 0, range 0..100)");
 struct arg_int* pbastrim3 = arg_int0("X", "trim3", "<int>", "trim this many aligned PBAs from 3' end of aligned segments (default 0, range 0..100)");
@@ -96,7 +96,7 @@ struct arg_dbl* maxgtpropna = arg_dbl0("Y", "maxgtpropna", "<dbl>", "maximum pro
 
 struct arg_str* exprid = arg_str0("e", "exprid", "<str>", "assign this experiment identifier, mode 1 only (default is 'E000000')");
 struct arg_str* seqid = arg_str0("s", "seqid", "<str>", "sequence identifier, mode 1 only (default is 'S000000')");
-struct arg_str* refassemb = arg_str0("r", "refassemb", "<str>", "reference assembly, mode 1 only (default is 'Wm82v2')");
+struct arg_str* refassemb = arg_str0("r", "refassemb", "<str>", "reference assembly, mode 1 only (default is 'Wm82v4')");
 
 struct arg_str* ExcludeChroms = arg_strn("Z", "chromexclude", "<string>", 0, cMaxExcludeChroms, "high priority - regular expressions defining chromosomes to exclude");
 struct arg_str* IncludeChroms = arg_strn("z", "chromeinclude", "<string>", 0, cMaxIncludeChroms, "low priority - regular expressions defining chromosomes to include");
@@ -208,7 +208,7 @@ if(!argerrors)
 		if (PBAsTrim3 > 100)
 			PBAsTrim3 = 100;
 
-	if(PMode == ePBAu2GVCF)
+	if(PMode == ePBAu2GVCF || PMode == ePBAu2DVCF)
 		{
 		GTPropNAThres = maxgtpropna->count ? maxgtpropna->dval[0] : cDfltGTPropThres;
 		if(GTPropNAThres < 0.00)	// silently force to be in accepted range
@@ -253,7 +253,7 @@ if(!argerrors)
 		}
 
 	szRefAssembFile[0] = '\0';
-	if (PMode == ePBAu2PBA || PMode == ePBAu2AVCF || PMode == ePBAu2GVCF)
+	if (PMode == ePBAu2PBA || PMode == ePBAu2AVCF || PMode == ePBAu2GVCF || PMode == ePBAu2DVCF)
 		{
 		if (refassemb->count)
 			{
@@ -292,7 +292,7 @@ if(!argerrors)
 		if (szSeqID[0] == '\0')
 			strcpy(szSeqID, cDfltSeqID);
 		szSeqID[cMaxRefAssembName] = '\0';
-		if(PMode == ePBAu2AVCF || PMode == ePBAu2GVCF)
+		if(PMode == ePBAu2AVCF || PMode == ePBAu2GVCF || PMode == ePBAu2DVCF)
 			{
 			if (refassembfile->count)
 				{
@@ -395,7 +395,7 @@ if(!argerrors)
 
 	szROIFile[0] = '\0';
 	szGTSampleFiltFile[0] = '\0';
-	if((PMode == ePBAu2AVCF || PMode == ePBAu2GVCF))
+	if((PMode == ePBAu2AVCF || PMode == ePBAu2GVCF || PMode == ePBAu2DVCF))
 		{
 		if(roifile->count)
 			{
@@ -404,7 +404,7 @@ if(!argerrors)
 			CUtility::TrimQuotedWhitespcExtd(szROIFile);
 			}
 
-		if(PMode == ePBAu2GVCF && gtfiltsamplefile)
+		if((PMode == ePBAu2GVCF  || PMode == ePBAu2DVCF) && gtfiltsamplefile)
 			{
 			strncpy(szGTSampleFiltFile, gtfiltsamplefile->filename[0], _MAX_PATH);
 			szGTSampleFiltFile[_MAX_PATH-1] = '\0';
@@ -433,6 +433,9 @@ if(!argerrors)
 		case ePBAu2GVCF:
 			pszDescr = "generate genotype VCF file";
 			break;
+		case ePBAu2DVCF:
+			pszDescr = "generate a deletion VCF";
+			break;
 	}
 
 	gDiagnostics.DiagOutMsgOnly(eDLInfo, "PBA utilities : '%s'", pszDescr);
@@ -443,14 +446,17 @@ if(!argerrors)
 	gDiagnostics.DiagOutMsgOnly(eDLInfo, "Trim 5' segments by : %dbp", PBAsTrim5);
 	gDiagnostics.DiagOutMsgOnly(eDLInfo, "Trim 3' segments by : %dbp", PBAsTrim3);
 
-	if(PMode == ePBAu2GVCF)
+	if(PMode == ePBAu2GVCF || PMode == ePBAu2DVCF)
 		{
 		gDiagnostics.DiagOutMsgOnly(eDLInfo, "Maximum proportion unaligned samples : %.3f", GTPropNAThres);
-		gDiagnostics.DiagOutMsgOnly(eDLInfo, "Minimum proportion heterozygosity between aligned samples : %.3f", GTPropHetThres);
+		if(PMode == ePBAu2GVCF)
+			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Minimum proportion heterozygosity between aligned samples : %.3f", GTPropHetThres);
+		else
+			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Minimum proportion unaligned samples : %.3f", GTPropHetThres);
 		}
 
 
-	if(PMode == ePBAu2AVCF || PMode == ePBAu2GVCF)
+	if(PMode == ePBAu2AVCF || PMode == ePBAu2GVCF || PMode == ePBAu2DVCF)
 		gDiagnostics.DiagOutMsgOnly(eDLInfo, "PBA reference assembly : '%s'", szRefAssembFile);
 	gDiagnostics.DiagOutMsgOnly(eDLInfo, "BED containing chromosome names and sizes : '%s'", szChromFile);
 	if (PMode == ePBAu2PBA || PMode == ePBAu2WIGConcordance)
@@ -481,7 +487,7 @@ if(!argerrors)
 #endif
 	gStopWatch.Start();
 	Rslt = 0;
-	Rslt = Process(PMode,	// ePBAu2Fasta: PBA to Fasta, ePBAu2PBA: Fasta to PBA, ePBAu2PBAConcordance: concordance over all PBA samples, ePBAu2WIGConcordance: concordance over all WIG samples
+	Rslt = Process(PMode,	// processing mode: ePBAu2Fasta PBA to Fasta, ePBAu2PBA Fasta to PBA, ePBAu2PBAConcordance concordance over PBA samples, ePBAu2WIGConcordance concordance over WIG samples, ePBAu2AVCF allelic variant VCF, ePBAu2GVCF allelic genotype VCF, ePBAu2DVCF deletion genotype VCF
 					LimitPBAs,			// limit number of loaded PBA files to this many. 1 .. cMaxPBAReadsets
 					PBAsTrim5,			// trim this many aligned PBAs from 5' end of aligned segments - reduces false alleles due to sequencing errors
 					PBAsTrim3,			// trim this many aligned PBAs from 3' end of aligned segments - reduces false alleles due to sequencing errors
@@ -518,7 +524,7 @@ else
 	}
 }
 
-int Process(ePBAuMode PMode,	// processing mode: ePBAu2Fasta PBA to Fasta, ePBAu2PBA Fasta to PBA, ePBAu2PBAConcordance concordance over PBA samples, ePBAu2WIGConcordance concordance over WIG samples, ePBAu2AVCF allelic variant VCF, ePBAu2GVCF allelic genotype VCF
+int Process(ePBAuMode PMode,	// processing mode: ePBAu2Fasta PBA to Fasta, ePBAu2PBA Fasta to PBA, ePBAu2PBAConcordance concordance over PBA samples, ePBAu2WIGConcordance concordance over WIG samples, ePBAu2AVCF allelic variant VCF, ePBAu2GVCF allelic genotype VCF, ePBAu2DVCF deletion genotype VCF
 	int32_t LimitPBAs,			// limit number of loaded PBA files to this many. 1 .. cMaxPBAReadsets
 	int32_t PBAsTrim5,			// trim this many aligned PBAs from 5' end of aligned segments - reduces false alleles due to sequencing errors
 	int32_t PBAsTrim3,			// trim this many aligned PBAs from 3' end of aligned segments - reduces false alleles due to sequencing errors
@@ -855,7 +861,7 @@ CPBAutils::AccumWIGCnts(uint32_t ChromID,	// accumulate wiggle counts into varia
 }
 
 int 
-CPBAutils::Process(ePBAuMode PMode,	// processing mode: ePBAu2Fasta PBA to Fasta, ePBAu2PBA Fasta to PBA, ePBAu2PBAConcordance concordance over PBA samples, ePBAu2WIGConcordance concordance over WIG samples, ePBAu2AVCF allelic variant VCF, ePBAu2GVCF allelic genotype VCF
+CPBAutils::Process(ePBAuMode PMode,	// processing mode: ePBAu2Fasta PBA to Fasta, ePBAu2PBA Fasta to PBA, ePBAu2PBAConcordance concordance over PBA samples, ePBAu2WIGConcordance concordance over WIG samples, ePBAu2AVCF allelic variant VCF, ePBAu2GVCF allelic genotype VCF, ePBAu2DVCF deletion genotype VCF
 	int32_t LimitPBAs,			// limit number of loaded PBA files to this many. 1...cMaxPBAReadsets
 	int32_t PBAsTrim5,			// trim this many aligned PBAs from 5' end of aligned segments - reduces false alleles due to sequencing errors
 	int32_t PBAsTrim3,			// trim this many aligned PBAs from 3' end of aligned segments - reduces false alleles due to sequencing errors
@@ -1066,7 +1072,7 @@ if (PMode == ePBAu2AVCF)
 	return(Rslt);
 	}
 
-if (PMode == ePBAu2GVCF)
+if (PMode == ePBAu2GVCF || PMode == ePBAu2DVCF)
 	{
 	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Process: Starting to load input PBA files");
 	Rslt = eBSFSuccess;		// assume success!
@@ -1139,13 +1145,14 @@ if (PMode == ePBAu2GVCF)
 		}
 	m_NumReadsetIDs = ReadsetID;
 
-	if((Rslt = InitialiseGTSampleFiltering(pszGTSampleFiltFile)) < 0)
+	if(pszGTSampleFiltFile != nullptr && (Rslt = InitialiseGTSampleFiltering(pszGTSampleFiltFile)) < 0)
 		{
 		Reset();
 		return(Rslt);
 		}
 
-	Rslt = GenGenotypeVCF(RefReadsetID,		// reference PBA assembly
+	Rslt = GenGenotypeVCF(PMode,			// will be either ePBAu2GVCF allelic genotype VCF or ePBAu2DVCF deletion genotype VCF
+						RefReadsetID,		// reference PBA assembly
 						   m_NumReadsetIDs-1,			// number of PBA samples to report on genotypes relative to reference
 						   GTPropNAThres,		// when genotyping VCF then proportion of non-aligned calls over all samples must be < this threshold
 							GTPropHetThres);		// when genotyping VCF then proportion of heterozygous calls must be >= this threshold
@@ -2355,7 +2362,7 @@ m_OutBuffIdx = 0;
 
 // iterate over chromosomes
 TotChromsDiffs = 0;
-for(ChromIdx = 1; ChromIdx < pReadsetMetadata->NumChroms; ChromIdx++)
+for(ChromIdx = 1; ChromIdx <= pReadsetMetadata->NumChroms; ChromIdx++)
 	{
 	pChromMetadata = LocateChromMetadataFor(RefPBAID, ChromIdx);
 	ChromID = pChromMetadata->ChromID;
@@ -2503,7 +2510,8 @@ return(false);
 }
 
 int32_t 
-CPBAutils::GenGenotypeVCF(int32_t RefSampleID,	// reference identifier
+CPBAutils::GenGenotypeVCF(ePBAuMode PMode, // will be either ePBAu2GVCF allelic genotype VCF or ePBAu2DVCF deletion genotype VCF
+						int32_t RefSampleID,	// reference identifier
 						int32_t NumSamples,		// number of samples to genotype relative to reference
 						double GTPropNAThres,		// when genotyping VCF then proportion of non-aligned calls over all samples must be < this threshold
 						double GTPropHetThres)		// when genotyping VCF then proportion of heterozygous calls must be >= this threshold	
@@ -2524,7 +2532,7 @@ uint8_t SampleAlleles;
 uint8_t AltAlleles;
 int SampleID;
 char *pszChromName;
-char szALTs[100];
+char szALTs[2048];
 uint32_t TotGTIDs;
 uint32_t ChromGTIDs;
 
@@ -2589,7 +2597,7 @@ pszSampleHaps = new char [NumSamples * 10];
 // iterate over chromosomes
 ChromGTIDs = 0;
 TotGTIDs = 0;
-for(ChromIdx = 1; ChromIdx < pReadsetMetadata->NumChroms; ChromIdx++)
+for(ChromIdx = 1; ChromIdx <= pReadsetMetadata->NumChroms; ChromIdx++)
 	{
 	ChromGTIDs = 0;
 	pChromMetadata = LocateChromMetadataFor(RefSampleID, ChromIdx);
@@ -2598,16 +2606,18 @@ for(ChromIdx = 1; ChromIdx < pReadsetMetadata->NumChroms; ChromIdx++)
 		continue;
 	pszChromName = LocateChrom(ChromID);
 	ChromSize = pChromMetadata->ChromLen;
-
+	
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenGenotypeVCF: Processing chrom: '%s'",pszChromName);
 	if((pRefPBAs = LoadSampleChromPBAs(RefSampleID, ChromID)) == nullptr)
 		break;
 
-	// normalise reference alleles to be consensus monoallelic - VCF assumes that alignments were to a consensus reference
 	uint8_t *pPBA = pRefPBAs;
+		// normalise reference alleles to be consensus monoallelic - VCF assumes that alignments were to a consensus reference
 	for(Loci = 0; Loci < ChromSize; Loci++,pPBA++)
 		*pPBA = ConsensusHaploid(*pPBA);
 
-	// load chrom PBAs for each sample and normalise these to be ConsensusDiploid
+
+	// load chrom PBAs for each sample
 	for(SampleID = RefSampleID+1; SampleID <= NumSamples+1; SampleID++)
 		{
 		if((ppChromPBAs[SampleID-2] = LoadSampleChromPBAs(SampleID, ChromID)) == nullptr)
@@ -2620,6 +2630,8 @@ for(ChromIdx = 1; ChromIdx < pReadsetMetadata->NumChroms; ChromIdx++)
 			Reset();
 			return(eBSFerrChrom);
 			}
+
+			// normalise these to be ConsensusDiploid
 		pPBA = ppChromPBAs[SampleID-2];
 		for(Loci = 0; Loci < ChromSize; Loci++,pPBA++)
 			*pPBA = ConsensusDiploid(*pPBA);
@@ -2654,19 +2666,24 @@ for(ChromIdx = 1; ChromIdx < pReadsetMetadata->NumChroms; ChromIdx++)
 			(GTPropNAThres == 0.0 && AlleleCnts[0] > 0))		// explicitly checking if all samples must be aligned, bypasses any double comparison errors in next statement
 			continue;
 
-		if(((double)AlleleCnts[0] / NumSamples) > GTPropNAThres)		// if proportion with no coverage higher than threshold then onto next loci
-			continue;
-		if(AltAlleles == RefAlleles)									// if only reference alleles were present in all aligned samples then that means only deletions or no coverage present between samples
-			continue;
+		if(PMode == ePBAu2GVCF)
+			{
+			if(((double)AlleleCnts[0] / NumSamples) > GTPropNAThres)		// ePBAu2GVCF: if proportion with no coverage higher than threshold then onto next loci
+				continue;
+			if(AltAlleles == RefAlleles)									// ePBAu2GVCF: if only reference alleles were present in all aligned samples then that means only deletions or no coverage present between samples
+				continue;
+			}
 
 		if(GTPropHetThres > 0.0)
 			{
 			// need highest frequency and sum of other frequencies to determine heterozygosity between samples and then compare against GTPropHetThres
 			uint32_t HighAlleleCnt;
 			uint32_t LowAlleleCnts;
+			uint32_t CntsIdx;
+
 			HighAlleleCnt = 0;
 			LowAlleleCnts = 0;
-			for(int CntsIdx = 1; CntsIdx <= 255; CntsIdx++) // note that missing are not included, already filtered for GTPropNAThres, interest is in heterozygosity between aligned samples
+			for(CntsIdx = PMode == ePBAu2GVCF ? 1 : 0; CntsIdx <= 255; CntsIdx++) // note that missing are not included, already filtered for GTPropNAThres, interest is in heterozygosity between aligned samples
 				{
 				if(AlleleCnts[CntsIdx] > HighAlleleCnt) // new highest allelic count?
 					{
@@ -2676,14 +2693,23 @@ for(ChromIdx = 1; ChromIdx < pReadsetMetadata->NumChroms; ChromIdx++)
 				else
 					LowAlleleCnts += AlleleCnts[CntsIdx];
 				}
-			if ((double)LowAlleleCnts / (NumSamples - AlleleCnts[0]) < GTPropHetThres)	// if very little heterozygosity in samples excluding non-aligned then onto next loci
-				continue;
+			if(PMode == ePBAu2GVCF)
+				{
+				if ((double)LowAlleleCnts / (NumSamples - AlleleCnts[0]) < GTPropHetThres)	// if very little heterozygosity in samples excluding non-aligned then onto next loci
+					continue;
+				}
+			else
+				{
+				if ((double)LowAlleleCnts / NumSamples < GTPropHetThres)	// if very little heterozygosity in samples excluding non-aligned then onto next loci
+					continue;
+				}
 			}
 
 		AltAlleles &= ~RefAlleles;				// remove consensus ref allele from alternative alleles
 
 		// at least one sample has alleles which differ from the reference
 		SampleHapsIdx = 0;
+		pszSampleHaps[0] = '\0';
 		for(SampleID = RefSampleID+1; SampleID <= NumSamples+1; SampleID++)
 			{
 			if(!ReportGTSample(SampleID))
@@ -2710,7 +2736,7 @@ for(ChromIdx = 1; ChromIdx < pReadsetMetadata->NumChroms; ChromIdx++)
 			int32_t AltIdx2;
 			AltIdx1 = 0;
 			Msk = 0x0c0;
-			if(RefAlleles & SampleAlleles)	// does one of the sample allele(s) match the reference?
+			if(RefAlleles & SampleAlleles)	// does at least one of the sample allele(s) match the reference?
 				{
 				do
 					{
@@ -2768,6 +2794,7 @@ for(ChromIdx = 1; ChromIdx < pReadsetMetadata->NumChroms; ChromIdx++)
 				}
 			}
 
+
 		AltsMsk = 0xc0;
 		for(RefBase = 0; RefBase < 4; RefBase++,AltsMsk >>= 2)
 			{
@@ -2780,7 +2807,6 @@ for(ChromIdx = 1; ChromIdx < pReadsetMetadata->NumChroms; ChromIdx++)
 		m_OutBuffIdx += sprintf((char *)&m_pOutBuffer[m_OutBuffIdx], "%s\t%u\tGT%u\t%c\t%s\t.\tPASS\t.\tGT%s\n",
 						pszChromName, Loci + 1, TotGTIDs, CSeqTrans::MapBase2Ascii(RefBase),
 						szALTs,pszSampleHaps);
-
 		
 		if((m_OutBuffIdx + 10000) >= m_AllocOutBuff)
 			{
@@ -2890,7 +2916,7 @@ if (m_hOutFile < 0)
 	}
 
 // iterate over chromosomes
-for(ChromIdx = 1; ChromIdx < pReadsetMetadata->NumChroms; ChromIdx++)
+for(ChromIdx = 1; ChromIdx <= pReadsetMetadata->NumChroms; ChromIdx++)
 	{
 	pChromMetadata = LocateChromMetadataFor(ReadSetID, ChromIdx);
 	ChromID = pChromMetadata->ChromID;

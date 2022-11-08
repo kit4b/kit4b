@@ -1414,11 +1414,13 @@ char szFileFeatTurnOver[_MAX_FNAME];
 FILE *pOutFeatTurnOver;
 char szFileFeatCnts[_MAX_FNAME];
 FILE *pOutFeatCnts;
-
+char szFileFeatExonRatio[_MAX_FNAME];
+FILE *pOutFeatExonRatio;
 CUtility::AppendFileNameSuffix(szFileFeatExonTurnOver,m_szOutFile,(char *)".exonturnover.csv",'.');
 CUtility::AppendFileNameSuffix(szFileFeatTurnOver,m_szOutFile,(char *)".featturnover.csv",'.');
 CUtility::AppendFileNameSuffix(szFileFeatExonCnts,m_szOutFile,(char *)".exoncnts.csv",'.');
 CUtility::AppendFileNameSuffix(szFileFeatCnts,m_szOutFile,(char *)".featcnts.csv",'.');
+CUtility::AppendFileNameSuffix(szFileFeatExonRatio,m_szOutFile,(char *)".featexonratio.csv",'.');
 
 pszLineBuff = new char [500000];
 pRSChromROI = new tsChromROI[m_NumReadsetIDs];
@@ -1453,6 +1455,17 @@ if((pOutFeatExonCnts = fopen(szFileFeatExonCnts,"w"))==NULL)
 	Reset();
 	return(eBSFerrOpnFile);
 	}
+if((pOutFeatExonRatio = fopen(szFileFeatExonRatio,"w"))==NULL)
+	{
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate file %s for writing error: %s",szFileFeatExonRatio,strerror(errno));
+	fclose(pOutFeatExonTurnOver);
+	fclose(pOutFeatTurnOver);
+	fclose(pOutFeatCnts);
+	fclose(pOutFeatExonCnts);
+	Reset();
+	return(eBSFerrOpnFile);
+	}
+
 LineOfs = sprintf(pszLineBuff,"\"Feature\",\"Chrom\",\"Start\",\"End\",\"Strand\",\"NumExons\",\"FeatLength\",\"TransLength\"");
 for (ReadsetID = 1; ReadsetID <= m_NumReadsetIDs; ReadsetID++)
 	LineOfs += sprintf(&pszLineBuff[LineOfs],",\"%s\"",LocateReadset(ReadsetID));
@@ -1461,6 +1474,7 @@ fwrite(pszLineBuff,1,LineOfs,pOutFeatExonTurnOver);
 fwrite(pszLineBuff,1,LineOfs,pOutFeatTurnOver);
 fwrite(pszLineBuff,1,LineOfs,pOutFeatCnts);
 fwrite(pszLineBuff,1,LineOfs,pOutFeatExonCnts);
+fwrite(pszLineBuff,1,LineOfs,pOutFeatExonRatio);
 LineOfs = 0;
 pReadsetMetadata = &m_Readsets[0];
 CurChromMetadataIdx = pReadsetMetadata->StartChromMetadataIdx;
@@ -1555,6 +1569,12 @@ for (ChromIdx = 0; ChromIdx < pReadsetMetadata->NumChroms && CurChromMetadataIdx
 				pCurRS->ROICnts.TurnOver = max(0.05,(double)pCurRS->ROICnts.Tot50Cnts / pCurRS->ROICnts.TotCnts);
 			else
 				pCurRS->ROICnts.TurnOver = 0.0;
+
+			if(pCurRS->ROICnts.TotExonCnts >= 1000 && pCurRS->ROICnts.TotCnts >= 1000 )	// have to have a threshold else may be too noisy!
+				pCurRS->ROICnts.FeatExonRatio = max(1.0,(double)pCurRS->ROICnts.TotCnts / pCurRS->ROICnts.TotExonCnts);
+			else
+				pCurRS->ROICnts.FeatExonRatio = 0.0;
+
 			}
 		pCurRS = pRSChromROI;
 		LineOfs = MarkVarOfs;
@@ -1583,6 +1603,14 @@ for (ChromIdx = 0; ChromIdx < pReadsetMetadata->NumChroms && CurChromMetadataIdx
 			LineOfs+=sprintf(&pszLineBuff[LineOfs],",%zd",pCurRS->ROICnts.TotExonCnts);
 		LineOfs+=sprintf(&pszLineBuff[LineOfs],"\n");
 		fwrite(pszLineBuff,1,LineOfs,pOutFeatExonCnts);
+
+		pCurRS = pRSChromROI;
+		LineOfs = MarkVarOfs;
+		for (ReadsetID = 0; ReadsetID < m_NumReadsetIDs; ReadsetID++,pCurRS++)
+			LineOfs+=sprintf(&pszLineBuff[LineOfs],",%.5f",pCurRS->ROICnts.FeatExonRatio);
+		LineOfs+=sprintf(&pszLineBuff[LineOfs],"\n");
+		fwrite(pszLineBuff,1,LineOfs,pOutFeatExonRatio);
+		
 		LineOfs = 0;
 		}
 	CurChromMetadataIdx = pChromMetadata->NxtChromMetadataIdx;
@@ -1594,9 +1622,11 @@ fclose(pOutFeatExonTurnOver);
 fflush(pOutFeatTurnOver);
 fclose(pOutFeatTurnOver);
 fflush(pOutFeatExonCnts);
+fflush(pOutFeatExonRatio);
 fclose(pOutFeatExonCnts);
 fflush(pOutFeatCnts);
 fclose(pOutFeatCnts);
+fclose(pOutFeatExonRatio);
 delete []pRSChromROI;
 delete []pszLineBuff;
 Reset();

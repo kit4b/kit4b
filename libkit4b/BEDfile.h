@@ -16,7 +16,7 @@ const int cMaxGFFGeneFeats = cMaxNumExons; // max number of gff feature lines fo
 const int cMaxGFF3IDs = (1000 * cMaxGFFGeneFeats);	   // allowing for at most this many GFF3 identifiers
 
 const int cMinRegLen  = 0;			// min regulatory length
-const int cDfltRegLen = 2000;		// default regulatory region length
+const int cDfltRegLen = 0;			// default regulatory region length
 const int cMaxRegLen  = 1000000;	// max regulatory region length
 const int cMinSpliceOverlap = 2;	 // overlaps of features between introns and exons must be at least this to count as a splice site overlap
 
