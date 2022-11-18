@@ -5557,14 +5557,16 @@ return(eHRnone);				// no putative hits
 
 
 int											// if < eBSFSuccess then errors, 0 if unable to adaptively trim, >= MinTrimLen if able to adaptively trim
-CSfxArray::AdaptiveTrim(uint32_t SeqLen,					// untrimmed probe and target sequence are both this bp long
+CSfxArray::AdaptiveTrim(uint32_t SeqLen,	// untrimmed probe and target sequence are both this bp long
 			etSeqBase *pProbeSeq,			// end trimming this probe sequence
 			etSeqBase *pTargSeq,			// when aligned against this target sequence
-			uint32_t MinTrimLen,				// accepted trimmed probe sequence must be at least this minimum length
+			uint32_t ChromID,				// target sequence is part of this chromosome sequence
+			uint32_t ChromSeqLen,			// chrom sequence is this length
+			uint32_t MinTrimLen,			// accepted trimmed probe sequence must be at least this minimum length
 			uint32_t MaxMM,					// and contain at most this many mismatches proportional to a 100bp trimmed sequence match
-			uint32_t MinFlankMatches,			// 5' and 3' flanks of trimmed probe must start/end with at least this many exactly matching bases
+			uint32_t MinFlankMatches,		// 5' and 3' flanks of trimmed probe must start/end with at least this many exactly matching bases
 			uint32_t *pTrimSeqLen,			// trimmed probe is this length
-			uint32_t *pTrimStart,				// accepted trimmed probe has this many bp trimmed from start (5') of probe
+			uint32_t *pTrimStart,			// accepted trimmed probe has this many bp trimmed from start (5') of probe
 			uint32_t *pTrimEnd,				// accepted trimmed probe has this many bp trimmed from end (3') of probe
 			uint32_t *pTrimMMs)				// after trimming there are this many mismatches in the trimmed probe
 {
@@ -5602,6 +5604,38 @@ if(SeqLen < cMinATSeqLen || SeqLen > cMaxATSeqLen ||
 	return(eBSFerrParams);
 if(MinFlankMatches == 0)					// ensuring adaptively trimmed sequence always start/end on an exact match
 	MinFlankMatches = 1;
+
+pProbeBase = pProbeSeq;
+pTargBase = pTargSeq;
+
+if(MinTrimLen == SeqLen) // if MinTrimLen same as SeqLen then simply need to total up number of mismatches
+	{
+	uint32_t MaxAllowedMMs = ((SeqLen * MaxMM)+99)/100;
+	uint32_t SeqMMs = 0;
+	for(Ofs=0; Ofs < SeqLen; Ofs+=1, pProbeBase+=1, pTargBase+=1)
+		{
+		bCurMM = (*pProbeBase & 0x0f) == (*pTargBase & 0x0f) ? false : true;
+		if(bCurMM)
+			{
+			if(++SeqMMs > MaxAllowedMMs)
+				break;
+			if(Ofs < MinFlankMatches || (SeqLen - Ofs) < MinFlankMatches)
+				{
+				SeqMMs = MaxAllowedMMs+1;
+				break;
+				}
+			}
+		}
+	if(SeqMMs <= MaxAllowedMMs)
+		{
+		if(pTrimSeqLen != NULL)
+			*pTrimSeqLen = SeqLen;
+		if(pTrimMMs != NULL)
+			*pTrimMMs = SeqMMs;
+		return(SeqLen);
+		}
+	return(0);
+	}
 
 // determine number and sizes of regions containing either mismatches or exact matches
 pProbeBase = pProbeSeq;
@@ -6057,7 +6091,9 @@ do
 				uint32_t TrimmedLeftFlankLen;
 				uint32_t TrimmedRightFlankLen;
 				uint32_t TrimmedMM;
-				AdaptiveTrimRslt = AdaptiveTrim(TargMatchLen,pProbeSeq,&pTarg[TargSeqLeftIdx],MinProbeChimericLen,MaxTotMM,3,&TrimmedSeqLen,&TrimmedLeftFlankLen,&TrimmedRightFlankLen,&TrimmedMM);
+				uint32_t TargSeqLen;
+				TargSeqLen = GetSeqLen(TargSeqID);
+				AdaptiveTrimRslt = AdaptiveTrim(TargMatchLen,pProbeSeq,&pTarg[TargSeqLeftIdx], TargSeqID,TargSeqLen,MinProbeChimericLen,MaxTotMM,3,&TrimmedSeqLen,&TrimmedLeftFlankLen,&TrimmedRightFlankLen,&TrimmedMM);
 				MaxChimericLen = TrimmedSeqLen; 				
 				MaxChimericMMs = TrimmedMM;
 				Trim5Flank = TrimmedLeftFlankLen;
@@ -8533,11 +8569,11 @@ return(PushAlignOpCode(eAOPMismatch,((RefBase & 0x07) << 3) | (ProbeBase & 0x07)
 int									// -1 if errors, 0 if no match, 1 if mismatches only, 2 InDel and insertion into probe, 3 InDel and deletion from probe
 CSfxArray::AlignPairedRead(bool b3primeExtend,	// if false extend towards 5' of targeted chrom, if true extend towards 3' of targeted chrom
 			bool bAntisense,		// if false extend with read sense, if true extend with read RevCpl'd (antisense)
-			uint32_t ChromID,		  // accepted aligned read was on this chromosome
-			uint32_t StartLoci,	  // accepted aligned read started at this loci
-			uint32_t EndLoci,		  // and ending at this loci
-			int MinDistance,	  // expecting partner to align at least this distance away from accepted aligned read (inclusive of read lengths)
-			int MaxDistance,	  // but no more than this distance away (inclusive of read length)
+			uint32_t ChromID,		// accepted aligned read was on this chromosome
+			uint32_t StartLoci,		// accepted aligned read started at this loci
+			uint32_t EndLoci,		// and ending at this loci
+			int MinInsertSize,	  // expecting partner to align at least this distance away from accepted aligned read (inclusive of read lengths)
+			int MaxInsertSize,	  // but no more than this distance away (inclusive of read length)
 			int MaxAllowedMM,	  // any accepted alignment can have at most this many mismatches
 			int MinHamming,		  // and must be at least this Hamming away from the next best putative alignment
 			int ReadLen,		  // length of read excluding any eBaseEOS
@@ -8548,11 +8584,8 @@ CSfxArray::AlignPairedRead(bool b3primeExtend,	// if false extend towards 5' of 
 		    etSeqBase *pRead,	  // pts to 5' start of read sequence
 		    tsHitLoci *pAlign)	  // where to return any paired read alignment loci
 {
-
-etSeqBase *pTarg;
 int LowestNumMM;
 int LowestMMcnt;
-int TargLoci;
 int AlignLoci;
 uint32_t PutChromLen;
 etSeqBase *pPutChromSeq;
@@ -8563,35 +8596,66 @@ int64_t NxtPutHitIdx;
 uint32_t StartPutTargLoci;
 uint32_t EndPutTargLoci;
 
-uint32_t MinPutLen;
+int32_t MinPutLen;
 
-uint32_t TargSeqLen;
+uint32_t ChromSeqLen;
 etSeqBase ReadSeq[cMaxReadLen+1];
 
-memset(pAlign,0,sizeof(tsHitLoci));
-if(MinDistance < ReadLen || MinDistance > MaxDistance)
-	return(0);
-if((TargSeqLen = GetSeqLen(ChromID)) == 0)
-	return(0);
+if(pAlign != nullptr)
+	memset(pAlign,0,sizeof(tsHitLoci));
 
-// check if any putative extension would fit onto chrom
-if(b3primeExtend)
+// double check that the Start/End loci are within the chromosome length
+if((ChromSeqLen = GetSeqLen(ChromID)) == 0)
+	return(-1);
+if(StartLoci >= EndLoci ||
+	EndLoci >= ChromSeqLen)
+	return(-1);
+
+// calc actual minimum alignment length that would be accepted after any 5/3' chimeric trimming
+if(CoreLen > 0 && MinChimericLen >= 15 && MinChimericLen <= 99) // if MinChimericLen > 0 then has to be in range 15% .. 99% otherwise will treat as if no chimeric trimming required
 	{
-	TargLoci = StartLoci;
-	if((uint32_t)(TargLoci + MinDistance) > TargSeqLen)
-		return(0);
+	MinPutLen = ((ReadLen * MinChimericLen) + 50) / 100;
+	if(CoreLen > MinPutLen)
+		CoreLen = MinPutLen;
 	}
 else
+	MinPutLen = ReadLen;
+if (MinPutLen == ReadLen)
 	{
-	TargLoci = EndLoci;
-	if(TargLoci < MinDistance || (uint32_t)TargLoci >= TargSeqLen)
+	MinChimericLen = 0;
+	CoreLen = 0;
+	}
+
+// ensure insert sizes are reasonable, min can't be more than max
+if(MinInsertSize > MaxInsertSize)
+	return(0);
+// force minimum has to be a least the untrimmed read length
+ if(MinInsertSize < ReadLen)
+	{
+	MaxInsertSize += ReadLen - MinInsertSize;
+	MinInsertSize = ReadLen;
+	}
+
+// check if any putative extension would still be within targeted ChromSeqLen
+if(b3primeExtend)
+	{
+	if((uint32_t)(StartLoci + MinInsertSize) >= ChromSeqLen)	// MaxInsertSize could extend over chromosome boundary so will be explicitly later checking for this...
 		return(0);
+	StartPutTargLoci = StartLoci + MinInsertSize - ReadLen;
+	EndPutTargLoci = min(ChromSeqLen-ReadLen,(uint32_t)(StartLoci + MaxInsertSize - ReadLen));
+	}
+else // else must be 5' extension
+	{
+	if(EndLoci < (uint32_t)MinInsertSize)
+		return(0);
+	if(EndLoci <= (uint32_t)MaxInsertSize)
+		StartPutTargLoci = 0;
+	else
+		StartPutTargLoci = EndLoci - MaxInsertSize;
+	EndPutTargLoci = EndLoci - MinInsertSize;
 	}
 
 if((pPutChromSeq = GetPtrSeq(ChromID))==NULL)
-	return(0);
-
-if((pTarg = GetPtrSeq(ChromID,TargLoci))==NULL)
 	return(0);
 
 memmove(ReadSeq,pRead,ReadLen);
@@ -8609,27 +8673,7 @@ if(bAntisense)
 
 LowestNumMM = MaxAllowedMM+2;
 LowestMMcnt = 0;
-AlignLoci = TargLoci;
 
-if(MinChimericLen  > 0)
-	MinPutLen = ((ReadLen * MinChimericLen) + 50) / 100;
-else
-	MinPutLen = ReadLen;
-if (b3primeExtend)
-	{
-	StartPutTargLoci = TargLoci + MinDistance;
-	if((StartPutTargLoci + (uint32_t)MinPutLen) >= TargSeqLen)
-		return(0);
-	EndPutTargLoci = (uint32_t)(TargLoci + MaxDistance);
-	}
-else
-	{
-	if(EndLoci < (uint32_t)MaxDistance)
-		StartPutTargLoci = 0;
-	else
-		StartPutTargLoci = EndLoci - (uint32_t)MaxDistance;
-	EndPutTargLoci = EndLoci - MinDistance;
-	}
 int Rslt;
 uint32_t TrimSeqLen;
 uint32_t Trim5Flank;
@@ -8645,10 +8689,10 @@ if((EndPutTargLoci - StartPutTargLoci) >= 1000)		// if a relatively large insert
 		NxtPutHitIdx = 0;
 		while ((NxtPutHitIdx = IterateExactsRange(&ReadSeq[PutCoreOfs],CoreLen, PutHitIdx,ChromID, StartPutTargLoci, EndPutTargLoci,&PutHitLoci,&PutChromLen,&pPutChromSeq)) > 0)
 			{
-			if(PutCoreOfs > PutHitLoci || (PutHitLoci + ReadLen - PutCoreOfs) >= TargSeqLen)
+			if(PutCoreOfs > PutHitLoci || (PutHitLoci + ReadLen - PutCoreOfs) >= ChromSeqLen)
 				continue;
 
-			Rslt = AdaptiveTrim(ReadLen,ReadSeq,&pPutChromSeq[PutHitLoci - PutCoreOfs], MinPutLen, MaxAllowedMM,3,&TrimSeqLen,&Trim5Flank,&Trim3Flank,&MaxChimericMMs);
+			Rslt = AdaptiveTrim(ReadLen,ReadSeq,&pPutChromSeq[PutHitLoci - PutCoreOfs], ChromID,ChromSeqLen,MinPutLen,MaxAllowedMM,3,&TrimSeqLen,&Trim5Flank,&Trim3Flank,&MaxChimericMMs);
 			if(Rslt > (int)MinPutLen || (Rslt == (int)MinPutLen && MaxChimericMMs < PrevBestMaxChimericMMs))
 				{
 				 PrevBestMaxChimericMMs = MaxChimericMMs;
@@ -8681,11 +8725,11 @@ if((EndPutTargLoci - StartPutTargLoci) >= 1000)		// if a relatively large insert
 			}
 		}
 	}
-else  // else if relatively small maximum insert size ( < 1000bp ) as is likely with WGS DNA then quicker to do a linear scan for target loci against which the read can be matched
+else  // else if relatively small maximum insert size ( < 1000bp ) as is likely with WGS or GBS DNA then quicker to do a linear scan for target loci against which the read can be matched
 	{
 	for(PutHitLoci = StartPutTargLoci; PutHitLoci <= EndPutTargLoci; PutHitLoci++)
 		{
-		Rslt = AdaptiveTrim(ReadLen, ReadSeq, &pPutChromSeq[PutHitLoci], MinPutLen, MaxAllowedMM, 3, &TrimSeqLen, &Trim5Flank, &Trim3Flank, &MaxChimericMMs);
+		Rslt = AdaptiveTrim(ReadLen, ReadSeq, &pPutChromSeq[PutHitLoci], ChromID,ChromSeqLen,MinPutLen, MaxAllowedMM, 3, &TrimSeqLen, &Trim5Flank, &Trim3Flank, &MaxChimericMMs);
 		if (Rslt > (int)MinPutLen || (Rslt == (int)MinPutLen && MaxChimericMMs < PrevBestMaxChimericMMs))
 			{
 			PrevBestMaxChimericMMs = MaxChimericMMs;
@@ -8713,6 +8757,8 @@ else  // else if relatively small maximum insert size ( < 1000bp ) as is likely 
 			pAlign->Seg[0].MatchLen = ReadLen;
 			pAlign->Seg[0].Mismatches = MaxChimericMMs;
 			pAlign->Seg[0].TrimMismatches = MaxChimericMMs;
+			if(MinPutLen == ReadLen && MaxChimericMMs == 0)
+				break;
 			}
 		}
 	}

@@ -2535,6 +2535,10 @@ char *pszChromName;
 char szALTs[2048];
 uint32_t TotGTIDs;
 uint32_t ChromGTIDs;
+bool bRptThisLoci = false;
+uint32_t LastReportedLoci = 0;
+uint32_t ReportUpToLoci = 0;
+uint32_t AlleleCnts[256]; // counts of all possible allele combinations
 
 tsPUReadsetMetadata* pReadsetMetadata;
 tsPUChromMetadata* pChromMetadata;
@@ -2637,22 +2641,40 @@ for(ChromIdx = 1; ChromIdx <= pReadsetMetadata->NumChroms; ChromIdx++)
 			*pPBA = ConsensusDiploid(*pPBA);
 		}
 
-	uint32_t AlleleCnts[256]; // counts of all possible allele combinations
 
 	// both reference and all samples have been normalised over the current chromosomes full length
 	for(Loci = 0; Loci < ChromSize; Loci++,pRefPBAs++)
 		{
 		if(!AcceptROILoci(ChromID,Loci))
+			{
+			// flush out any genotypes yet to be reported
+			if(m_OutBuffIdx)
+				{
+				if (!CUtility::RetryWrites(m_hOutFile, m_pOutBuffer, m_OutBuffIdx))
+					{
+					gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenGenotypeVCF: Fatal error in RetryWrites()");
+					DeleteAllChromPBAs();
+					if(ppChromPBAs != nullptr)
+						delete []ppChromPBAs;
+					if(pszSampleHaps != nullptr)
+						delete []pszSampleHaps;
+					Reset();
+					return(eBSFerrFileAccess);
+					}
+				m_OutBuffIdx = 0;
+				}
 			continue;
+			}
 
 		if((RefAlleles = *pRefPBAs)==0) // reference must have coverage before comparing with samples
 			continue;
-		memset(AlleleCnts,0,sizeof(AlleleCnts));
 
 		// if all samples same then no differential alleles at this loci
 		uint8_t PrevSampleAlleles = 0;
 		uint32_t NumDiffAlleles = 0;
 		uint32_t NumMissing = 0;
+
+		memset(AlleleCnts,0,sizeof(AlleleCnts));
 		AltAlleles = 0;
 		for(SampleID = RefSampleID+1; SampleID <= NumSamples+1; SampleID++)
 			{
@@ -2662,28 +2684,34 @@ for(ChromIdx = 1; ChromIdx <= pReadsetMetadata->NumChroms; ChromIdx++)
 			if(SampleAlleles != 0)
 				AltAlleles |= SampleAlleles;
 			}
-		if(AlleleCnts[0] == NumSamples ||						// if no samples aligned then try next loci
-			(GTPropNAThres == 0.0 && AlleleCnts[0] > 0))		// explicitly checking if all samples must be aligned, bypasses any double comparison errors in next statement
-			continue;
 
-		if(PMode == ePBAu2GVCF)
+
+
+		bRptThisLoci = false;
+		bool bCoverageInRange = false;
+		double CovProportion = 1.0 - (double)AlleleCnts[0] / NumSamples;
+		if(PMode == ePBAu2DVCF)
 			{
-			if(((double)AlleleCnts[0] / NumSamples) > GTPropNAThres)		// ePBAu2GVCF: if proportion with no coverage higher than threshold then onto next loci
-				continue;
-			if(AltAlleles == RefAlleles)									// ePBAu2GVCF: if only reference alleles were present in all aligned samples then that means only deletions or no coverage present between samples
-				continue;
+			if(CovProportion >= GTPropNAThres)			// deletion processing needs to have min coverage of at least GTPropNAThres
+				bCoverageInRange = true;
+			}
+		else			// else ePBAu2GVCF
+			{
+			if(CovProportion >= (1.0 - GTPropNAThres)) //  if only processing for alleles then coverage must be at least (1.0 - GTPropNAThres)
+				bCoverageInRange = true;
 			}
 
-		if(GTPropHetThres > 0.0)
+		if(bCoverageInRange) // bCoverageInRange will be true if meeting requirements for proportions of aligned samples at current loci
 			{
-			// need highest frequency and sum of other frequencies to determine heterozygosity between samples and then compare against GTPropHetThres
+			// need highest frequency and sum of other frequencies to determine proportion of heterozygosity between samples and then compare against GTPropHetThres
+			// if PMode == ePBAu2DVCF then missing coverage is treated as if allelic variation!
 			uint32_t HighAlleleCnt;
 			uint32_t LowAlleleCnts;
 			uint32_t CntsIdx;
 
 			HighAlleleCnt = 0;
 			LowAlleleCnts = 0;
-			for(CntsIdx = PMode == ePBAu2GVCF ? 1 : 0; CntsIdx <= 255; CntsIdx++) // note that missing are not included, already filtered for GTPropNAThres, interest is in heterozygosity between aligned samples
+			for(CntsIdx = PMode == ePBAu2GVCF ? 1 : 0; CntsIdx <= 255; CntsIdx++) // ePBAu2GVCF excludes non-aligned samples (assumed deletions)
 				{
 				if(AlleleCnts[CntsIdx] > HighAlleleCnt) // new highest allelic count?
 					{
@@ -2693,21 +2721,45 @@ for(ChromIdx = 1; ChromIdx <= pReadsetMetadata->NumChroms; ChromIdx++)
 				else
 					LowAlleleCnts += AlleleCnts[CntsIdx];
 				}
-			if(PMode == ePBAu2GVCF)
+
+			// now know highest frequency allelic count and sum of all others so can determine if sufficient heterozygosity
+			if(PMode == ePBAu2GVCF) // ePBAu2GVCF excludes deletions, only using alleles when determining heterozygosity
 				{
-				if ((double)LowAlleleCnts / (NumSamples - AlleleCnts[0]) < GTPropHetThres)	// if very little heterozygosity in samples excluding non-aligned then onto next loci
-					continue;
+				if ((double)LowAlleleCnts / (NumSamples - AlleleCnts[0]) >= GTPropHetThres)	// if very little heterozygosity in samples excluding non-aligned then not forced to report
+					bRptThisLoci = true;
 				}
-			else
+			else  // ePBAu2DVCF heterozygosity includes deletions as well as allelic
 				{
-				if ((double)LowAlleleCnts / NumSamples < GTPropHetThres)	// if very little heterozygosity in samples excluding non-aligned then onto next loci
-					continue;
+				if ((double)LowAlleleCnts / NumSamples >= GTPropHetThres)	// if very little heterozygosity in samples including non-aligned then not forced to report
+					bRptThisLoci = true;;
 				}
 			}
 
-		AltAlleles &= ~RefAlleles;				// remove consensus ref allele from alternative alleles
+		if(!bRptThisLoci && Loci > ReportUpToLoci)
+			{
+			ReportUpToLoci = 0;
+			continue;
+			}
 
-		// at least one sample has alleles which differ from the reference
+		uint32_t PrevToReport;
+		if(bRptThisLoci)  // if some samples have alleles which differ from the reference and/or multiple samples have no alignments at the current loci and will be reported
+			{			  // report 3bp loci up/down from this loci which has been identified as needed to be reported
+			if(ReportUpToLoci == 0)
+				{
+				PrevToReport = min((uint32_t)4,Loci - LastReportedLoci); // ensure that a max of 3 previous unreported loci are also being reported
+				if(PrevToReport > 1)
+					{
+					Loci -= PrevToReport;
+					pRefPBAs -= PrevToReport;
+					ReportUpToLoci = Loci+3;
+					continue;
+					}
+				}
+			ReportUpToLoci = Loci+3;  // ensure that will always report next 10 even if no heterozygosity or unaligned samples in these 10 loci
+			}
+
+		LastReportedLoci = Loci;
+		AltAlleles &= ~RefAlleles;				// remove consensus ref allele from alternative alleles
 		SampleHapsIdx = 0;
 		pszSampleHaps[0] = '\0';
 		for(SampleID = RefSampleID+1; SampleID <= NumSamples+1; SampleID++)
@@ -2807,8 +2859,10 @@ for(ChromIdx = 1; ChromIdx <= pReadsetMetadata->NumChroms; ChromIdx++)
 		m_OutBuffIdx += sprintf((char *)&m_pOutBuffer[m_OutBuffIdx], "%s\t%u\tGT%u\t%c\t%s\t.\tPASS\t.\tGT%s\n",
 						pszChromName, Loci + 1, TotGTIDs, CSeqTrans::MapBase2Ascii(RefBase),
 						szALTs,pszSampleHaps);
-		
-		if((m_OutBuffIdx + 10000) >= m_AllocOutBuff)
+
+		// ensure no buffer overflows
+		// every sample requires 4 chars per loci plus an overhead (allowing 500 per loci for fixed fields)
+		if((m_OutBuffIdx + 500 + (NumSamples * 4)) >= m_AllocOutBuff)
 			{
 			if (!CUtility::RetryWrites(m_hOutFile, m_pOutBuffer, m_OutBuffIdx))
 				{

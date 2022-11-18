@@ -89,3 +89,4 @@ Release 1.11.0 - BED file processing can now accept GFF3 formatted file input an
 Release 1.11.2 - New module added 'ngskit4b wigutils' which transforms WIG coverage formated files into feature/gene counts CSV formated files suitable for import into DESeq2.
 Release 1.11.5 - 'ngskit4b callhaplotypes' new processing mode for generating GBS all vs. WGS all identity mattrix at the chromosome level.
 Release 1.11.8 - New module added 'ngskit4b xroiseqs' allowing extraction of BED ROI fasta sequences from suffix assembly file into multifasta file. Removed 'gensampler' as separate application.
+Release 1.11.10 - Bug fix to both 'ngskit4b kalign' and 'ngskit4b genpbas' when PE orphan recovering '-U3' with differing length reads in any PE pair and achor alignment is at extreme 5' or 3' end of chromosome.

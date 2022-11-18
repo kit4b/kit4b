@@ -809,6 +809,8 @@ public:
 		AdaptiveTrim(uint32_t SeqLen,					// untrimmed probe and target sequence are both this bp long
 				etSeqBase *pProbeSeq,					// end trimming this probe sequence
 				etSeqBase *pTargSeq,					// when aligned against this target sequence
+				uint32_t ChromID,						// target sequence is part of this chromosome sequence
+				uint32_t ChromSeqLen,					// chrom sequence is this length
 				uint32_t MinTrimLen,					// accepted trimmed probe sequence must be at least this minimum length
 				uint32_t MaxMM,							// and contain at most this many mismatches proportional to a 100bp trimmed sequence match
 				uint32_t MinFlankMatches,				// 5' and 3' flanks of trimmed probe must start/end with at least this many exactly matching bases
@@ -880,12 +882,11 @@ public:
 					uint32_t ChromID,		  // accepted aligned read was on this chromosome
 					uint32_t StartLoci,	  // accepted aligned read started at this loci
 					uint32_t EndLoci,		  // and ending at this loci
-					int MinDistance,	  // expecting partner to align at least this distance away from accepted aligned read (inclusive of read lengths)
-					int MaxDistance,	  // but no more than this distance away (inclusive of read lengths)
+					int MinInsertSize,	  // expecting partner to align at least this distance away from accepted aligned read (inclusive of read lengths)
+					int MaxInsertSize,	  // but no more than this distance away (inclusive of read lengths)
 					int MaxAllowedMM,	  // any accepted alignment can have at most this many mismatches
 					int MinHamming,		  // and must be at least this Hamming away from the next best putative alignment
 					int ReadLen,		  // length of read excluding any eBaseEOS
-
 					int MinChimericLen,		// minimum chimeric length as a percentage (0 to disable, otherwise 50..99) of probe sequence
 					int CoreLen,			// core window length, 0 to disable
 					int CoreDelta,			// core window offset increment (1..n)

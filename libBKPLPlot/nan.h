@@ -1,7 +1,7 @@
 //--------------------------------------------------------------------------
 //
 // File:           nan.h
-//
+// //#include "nan.h" // no longer required as using NAN defined in <math.h>
 // Created:        18/10/2001
 //
 // Author:         Pavel Sakov

@@ -34,7 +34,7 @@
 #include <assert.h>
 #include <string.h>
 #include <errno.h>
-#include "nan.h"
+//#include "nan.h" // no longer required as using NAN defined in <math.h>
 #include "csa.h"
 
 int csa_verbose = 0;
@@ -311,7 +311,7 @@ static square* square_create( csa* parent, double xmin, double ymin, int i, int 
     }
 
     for ( ii = 0; ii < 25; ++ii )
-        s->coeffs[ii] = NaN;
+        s->coeffs[ii] = NAN; //NaN;
 
     return s;
 }
@@ -362,7 +362,7 @@ csa* csa_create()
 
     a->ni      = 0;
     a->nj      = 0;
-    a->h       = NaN;
+    a->h       = NAN; //used to be NaN
     a->squares = NULL;
 
     a->npt = 0;
@@ -1684,7 +1684,7 @@ void csa_approximate_point( csa* a, point* p )
 
     if ( ii < 0.0 || jj < 0.0 || ii > (double) a->ni - 1.0 || jj > (double) a->nj - 1.0 )
     {
-        p->z = NaN;
+        p->z = NAN; //used to be NaN
         return;
     }
 
@@ -1712,7 +1712,7 @@ void csa_approximate_point( csa* a, point* p )
     t = s->triangles[ti];
     if ( !t->hascoeffs )
     {
-        p->z = NaN;
+        p->z = NAN; //used to be NaN
         return;
     }
     triangle_calculatebc( t, p, bc );
@@ -1823,7 +1823,7 @@ static int str2double( char* token, double* value )
 
     if ( token == NULL )
     {
-        *value = NaN;
+        *value = NAN; //used to be NaN
         return 0;
     }
 
@@ -1831,7 +1831,7 @@ static int str2double( char* token, double* value )
 
     if ( end == token )
     {
-        *value = NaN;
+        *value = NAN; //used to be NaN
         return 0;
     }
 
@@ -1901,7 +1901,7 @@ void points_read( char* fname, int dim, int* n, point** points )
         if ( !str2double( token, &p->y ) )
             continue;
         if ( dim == 2 )
-            p->z = NaN;
+            p->z = NAN; //used to be NaN
         else
         {
             if ( ( token = strtok( NULL, seps ) ) == NULL )
@@ -1947,7 +1947,7 @@ static double points_scaletosquare( int n, point* points )
     int    i;
 
     if ( n <= 0 )
-        return NaN;
+        return NAN; //used to be NaN
 
     xmin = xmax = points[0].x;
     ymin = ymax = points[0].y;
@@ -1967,7 +1967,7 @@ static double points_scaletosquare( int n, point* points )
     }
 
     if ( xmin == xmax || ymin == ymax )
-        return NaN;
+        return NAN; //used to be NaN
     else
         k = ( ymax - ymin ) / ( xmax - xmin );
 
@@ -2169,8 +2169,8 @@ int main( int argc, char* argv[] )
     csa    * a  = NULL;
     int    nppc = -1;
     int    k    = -1;
-    double ks   = NaN;
-    double zoom = NaN;
+    double ks   = NAN; //used to be NaN
+    double zoom = NAN; //used to be NaN
 
     parse_commandline( argc, argv, &fdata, &fpoints, &invariant, &square, &generate_points, &nx, &ny, &nppc, &k, &zoom );
 

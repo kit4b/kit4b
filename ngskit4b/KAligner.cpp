@@ -3227,7 +3227,7 @@ CKAligner::ProcessPairedEnds(tsPEThreadPars *pPars)	   // paired reads parameter
 		// at least one end had a unique hit accepted, but if other end had no potential hits at all then
 		// can't recover into an aligned PE with both ends aligned
 		if (pPars->PEproc == ePEunique && (bFwdUnaligned || bRevUnaligned))
-		{
+			{
 			pFwdReadHit->NumHits = 0;
 			pRevReadHit->NumHits = 0;
 			pFwdReadHit->LowHitInstances = 0;
@@ -3238,7 +3238,7 @@ CKAligner::ProcessPairedEnds(tsPEThreadPars *pPars)	   // paired reads parameter
 				pRevReadHit->NAR = eNARPENoHit;
 			PartnerUnpaired += 1;
 			continue;
-		}
+			}
 
 		// even if both ends have been accepted as aligned it could be that these alignments can't be accepted as a PE - may be to different chroms, or overlength etc
 		if (pFwdReadHit->NAR == eNARAccepted && pRevReadHit->NAR == eNARAccepted)
@@ -3329,7 +3329,7 @@ CKAligner::ProcessPairedEnds(tsPEThreadPars *pPars)	   // paired reads parameter
 				{
 					// first try using the 5' alignment as an anchor, if that doesn't provide a pair then will later try using the 3' as the anchor
 					bPartnerPaired = false;
-					pHitSeq = &pRevReadHit->Read[pRevReadHit->DescrLen + 1];
+					pHitSeq = &pRevReadHit->Read[pRevReadHit->DescrLen + 1];   // forward read uniquely aligned so will try to align the other read within insert distance
 					pSeq = ReadSeq;
 					for (SeqIdx = 0; SeqIdx < pRevReadHit->ReadLen; SeqIdx++)
 						*pSeq++ = *pHitSeq++ & 0x07;
@@ -3349,15 +3349,19 @@ CKAligner::ProcessPairedEnds(tsPEThreadPars *pPars)	   // paired reads parameter
 						bAntisense = pFwdReadHit->HitLoci.Hit.Seg[0].Strand == '+' ? true : false;
 					if (m_bPEcircularised)
 						b3primeExtend = !b3primeExtend;
-
+					
+					bool bCheckMe;
+					if(pFwdReadHit->ReadLen == pFwdReadHit->HitLoci.Hit.Seg[0].MatchLen)
+						bCheckMe = true;
+					else
+						bCheckMe = false;
 					OrphStartLoci = AdjStartLoci(&pFwdReadHit->HitLoci.Hit.Seg[0]);
 					OrphEndLoci = AdjEndLoci(&pFwdReadHit->HitLoci.Hit.Seg[0]);
 
 					// note: MaxSubs is specified by user as being per 100bp of read length, e.g. if user specified '-s5' and a read is 200bp then 
 					// 10 mismatches will be allowed for that specific read
 					ProbeLen = pRevReadHit->ReadLen;
-					MatchLen = ProbeLen - 1;
-					MaxTotMM = m_MaxSubs == 0 ? 0 : max(1, (int)(0.5 + (MatchLen * m_MaxSubs) / 100.0));
+					MaxTotMM = m_MaxSubs == 0 ? 0 : max(1, (int)(0.5 + ((ProbeLen - 1) * m_MaxSubs) / 100.0));
 
 					if (MaxTotMM > cMaxTotAllowedSubs)		// irrespective of length allow at most this many subs
 						MaxTotMM = cMaxTotAllowedSubs;
@@ -3365,10 +3369,9 @@ CKAligner::ProcessPairedEnds(tsPEThreadPars *pPars)	   // paired reads parameter
 					// The window core length is set to be read length / (subs+1) for minimum Hamming difference of 1, and
 					// to be read length / (subs+2) for minimum Hamming difference of 2
 					// The window core length is clamped to be at least m_MinCoreLen
-					CoreLen = max(m_MinCoreLen, pRevReadHit->ReadLen / (m_MinEditDist == 1 ? MaxTotMM + 1 : MaxTotMM + 2));
+					CoreLen = max(m_MinCoreLen, ProbeLen / (m_MinEditDist == 1 ? MaxTotMM + 1 : MaxTotMM + 2));
 					MaxNumSlides = max(1, ((m_MaxNumSlides * ProbeLen) + 99) / 100);
 					CoreDelta = max(ProbeLen / m_MaxNumSlides - 1, CoreLen);
-
 
 					Rslt = m_pSfxArray->AlignPairedRead(b3primeExtend, bAntisense,
 						pFwdReadHit->HitLoci.Hit.Seg[0].ChromID,	  // accepted aligned read was on this chromosome
@@ -3387,14 +3390,14 @@ CKAligner::ProcessPairedEnds(tsPEThreadPars *pPars)	   // paired reads parameter
 						&HitLoci);			// where to return any paired read alignment loci
 
 					if (Rslt == 1)
-					{
+						{
 						SeqFragLen = PEInsertSize(pPars->PairMinLen, pPars->PairMaxLen, pPars->bPairStrand, pFwdReadHit->HitLoci.Hit.Seg[0].Strand, OrphStartLoci, OrphEndLoci, HitLoci.Seg[0].Strand, AdjStartLoci(&HitLoci.Seg[0]), AdjEndLoci(&HitLoci.Seg[0]));
 						if (SeqFragLen <= 0)
 							Rslt = 0;
-					}
+						}
 
 					if (Rslt == 1)
-					{
+						{
 						// with 5' anchor was able to find an alignment within the min/max insert size and it is known chrom accepted
 						pRevReadHit->HitLoci.Hit = HitLoci;
 						pRevReadHit->NumHits = 1;
@@ -3410,8 +3413,8 @@ CKAligner::ProcessPairedEnds(tsPEThreadPars *pPars)	   // paired reads parameter
 						AcceptedNumPaired += 1;
 						PartnerPaired += 1;
 						continue;	// try next pair
+						}
 					}
-				}
 				else
 					if (pFwdReadHit->NAR == eNARAccepted)
 					{
@@ -3426,7 +3429,7 @@ CKAligner::ProcessPairedEnds(tsPEThreadPars *pPars)	   // paired reads parameter
 			{
 				if (AcceptThisChromID(pRevReadHit->HitLoci.Hit.Seg[0].ChromID))
 				{
-					pHitSeq = &pFwdReadHit->Read[pFwdReadHit->DescrLen + 1];
+					pHitSeq = &pFwdReadHit->Read[pFwdReadHit->DescrLen + 1];    // reverse read uniquely aligned so will try to align the other read within insert distance
 					pSeq = ReadSeq;
 					for (SeqIdx = 0; SeqIdx < pFwdReadHit->ReadLen; SeqIdx++)
 						*pSeq++ = *pHitSeq++ & 0x07;
@@ -3448,14 +3451,18 @@ CKAligner::ProcessPairedEnds(tsPEThreadPars *pPars)	   // paired reads parameter
 					if (m_bPEcircularised)
 						b3primeExtend = !b3primeExtend;
 
+					bool bCheckMe;
+					if(pRevReadHit->ReadLen == pRevReadHit->HitLoci.Hit.Seg[0].MatchLen)
+						bCheckMe = true;
+					else
+						bCheckMe = false;
 					OrphStartLoci = AdjStartLoci(&pRevReadHit->HitLoci.Hit.Seg[0]);
 					OrphEndLoci = AdjEndLoci(&pRevReadHit->HitLoci.Hit.Seg[0]);
 
 					// note: MaxSubs is specified by user as being per 100bp of read length, e.g. if user specified '-s5' and a read is 200bp then 
 					// 10 mismatches will be allowed for that specific read
 					ProbeLen = pFwdReadHit->ReadLen;
-					MatchLen = ProbeLen - 1;
-					MaxTotMM = m_MaxSubs == 0 ? 0 : max(1, (int)(0.5 + (MatchLen * m_MaxSubs) / 100.0));
+					MaxTotMM = m_MaxSubs == 0 ? 0 : max(1, (int)(0.5 + ((ProbeLen - 1) * m_MaxSubs) / 100.0));
 
 					if (MaxTotMM > cMaxTotAllowedSubs)		// irrespective of length allow at most this many subs
 						MaxTotMM = cMaxTotAllowedSubs;
@@ -3485,11 +3492,11 @@ CKAligner::ProcessPairedEnds(tsPEThreadPars *pPars)	   // paired reads parameter
 						&HitLoci);	  // where to return any paired read alignment loci
 
 					if (Rslt == 1)
-					{
+						{
 						SeqFragLen = PEInsertSize(pPars->PairMinLen, pPars->PairMaxLen, pPars->bPairStrand, HitLoci.Seg[0].Strand, AdjStartLoci(&HitLoci.Seg[0]), AdjEndLoci(&HitLoci.Seg[0]), pRevReadHit->HitLoci.Hit.Seg[0].Strand, OrphStartLoci, OrphEndLoci);
 						if (SeqFragLen <= 0)
 							Rslt = 0;
-					}
+						}
 
 					if (Rslt == 1)
 					{
@@ -8410,7 +8417,9 @@ while((pReadHit = IterSortedReads(pReadHit))!=nullptr)
 			// get target assembly sequence for entry starting at offset and of length len
 			MatchLen = AdjHitLen(pSeg);
 			HitLoci = AdjStartLoci(pSeg);
-			m_pSfxArray->GetSeq(pSeg->ChromID,HitLoci,AssembSeq,MatchLen);
+			uint32_t RetSeqLen;
+			if((RetSeqLen = m_pSfxArray->GetSeq(pSeg->ChromID,HitLoci,AssembSeq,MatchLen)) != MatchLen)
+				continue;
 			pAssembSeq = AssembSeq;
 			for(SeqIdx = 0; SeqIdx < MatchLen; SeqIdx++,pAssembSeq++)
 				*pAssembSeq = *pAssembSeq & 0x07;
