@@ -3164,15 +3164,11 @@ CKAligner::ProcessPairedEnds(tsPEThreadPars *pPars)	   // paired reads parameter
 	uint32_t PairReadIdx;
 	tsReadHit *pFwdReadHit;
 	tsReadHit *pRevReadHit;
-
 	uint32_t OrphStartLoci;
 	uint32_t OrphEndLoci;
-
 	bool bFwdUnaligned;
 	bool bRevUnaligned;
-
 	int ProbeLen;
-	int MatchLen;
 	int MaxTotMM;
 	int CoreLen;
 	int MaxNumSlides;

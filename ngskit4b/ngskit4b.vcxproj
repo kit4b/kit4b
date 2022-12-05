@@ -186,6 +186,8 @@
     <ClInclude Include="Benchmarker.h" />
     <ClInclude Include="CallHaplotypes.h" />
     <ClInclude Include="CGenMLdatasets.h" />
+    <ClInclude Include="rnade.h" />
+    <ClInclude Include="rnaexpr.h" />
     <ClInclude Include="CWIGutils.h" />
     <ClInclude Include="GBSmapSNPs.h" />
     <ClInclude Include="pbautils.h" />
@@ -227,6 +229,7 @@
     <ClCompile Include="Benchmarker.cpp" />
     <ClCompile Include="CallHaplotypes.cpp" />
     <ClCompile Include="CGenMLdatasets.cpp" />
+    <ClCompile Include="rnaexpr.cpp" />
     <ClCompile Include="CWIGutils.cpp" />
     <ClCompile Include="GBSmapSNPs.cpp" />
     <ClCompile Include="pbautils.cpp" />

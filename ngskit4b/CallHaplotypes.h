@@ -68,7 +68,7 @@ typedef enum TAG_eModeCSH {
 	eMCSHCoverageHapsGrps,  // generating coverage haplotype groupings
 	eMCSHQGLHapsGrps,       // post-processing haplotype groupings for differential QGL loci
 	eMCSHGrpDist2WIG,       // post-processing haplotype grouping centroid distances into WIG format
-	eMCSHGBSvFndrs,			// generating GBS vs. WGS association scores
+	eMCSHProgVsFndrs,		// progeny PBAs vs. founder PBAs allelic association scores
 	eMCSHPlaceHolder		// used to mark end of processing modes
 	}eModeCSH;
 
@@ -196,7 +196,7 @@ typedef struct TAG_sCHChromScores {
 	uint32_t NumExactMatches;	// number of loci having exact matches
 	uint32_t NumPartialMatches; // number of loci having at least one allele which matched
 	uint32_t AlignLen;			// number of loci in which loci PBAs were matched - effective alignment length
-	double Score;
+	double Score;			// score
 	} tsCHChromScores;
 
 typedef struct TAG_sCHWorkQueueEl 
@@ -528,8 +528,8 @@ class CCallHaplotypes
 	int ProcessProgenyPBAFile(char* pszProgenyPBAFile,	// load, process and call haplotypes for this progeny PBA file against previously loaded panel founder PBAs
 							char *pszRsltsFileBaseName);		// results are written to this file base name with progeny readset identifier and type appended
 
-	int ProcessGBSvsWGS(int32_t NumGBSPBAs,			// number of GBS PBAs to be processed
-								 int32_t NumWGSPBAs,			// number of WGSPBAs to be processed
+	int GenProgVsFndrs(int32_t NumProgPBAs,			// number of progeny PBAs to be processed
+								 int32_t NumFndrPBAs,			// number of founder PBAs to be processed
 								 char* pszRsltsFileBaseName);	// results are written to this file base name
 
 	int				// < 0 if errors, otherwise success
@@ -696,7 +696,7 @@ public:
 	CCallHaplotypes();
 	~CCallHaplotypes();
 	void Reset(void);	// resets class instance state back to that immediately following instantiation
-	int Process(eModeCSH PMode,	// processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons, 3: allelic haplotype grouping,4: coverage haplotype grouping, 5: post-process haplotype groupings for QGLs,  6: post-process to WIG7 generating GBS vs. WGS association scores
+	int Process(eModeCSH PMode,	// processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons, 3: allelic haplotype grouping,4: coverage haplotype grouping, 5: post-process haplotype groupings for QGLs,  6: post-process to WIG, 7: progeny PBAs vs. founder PBAs allelic association scores
 			int32_t ExprID,			         // assign this experiment identifier for this PBA analysis
 			int32_t SeedRowID,                  // generated CSVs will contain monotonically unique row identifiers seeded with this row identifier  
 			int32_t LimitPrimaryPBAs,        // limit number of loaded primary or founder PBA files to this many. 0: no limits, > 0 sets upper limit

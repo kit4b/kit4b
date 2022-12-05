@@ -409,7 +409,7 @@ if(m_pSampleFeatsMem != nullptr)
 	}
 m_AllocdSampleFeatsMem = 0;
 m_UsedSampleFeatsMem = 0;
-
+m_SampleFeatsSize = sizeof(tsSampleFeats);
 m_PMode = eGMLDDefault;
 m_FType = eTGMLDDefault;
 m_RMode = eRGMLDDefault;
@@ -490,8 +490,8 @@ m_AllocdFeatRefsMem = memreq;
 m_NumFeatRefs = 0;
 m_UsedFeatRefsMem = 0;
 
-
-memreq = (size_t)NumSamples * ((size_t)NumFeatures + (sizeof(tsSampleFeats) - 1));
+m_SampleFeatsSize = sizeof(tsSampleFeats);
+memreq = (size_t)NumSamples * ((size_t)NumFeatures + m_SampleFeatsSize);
 #ifdef _WIN32
 m_pSampleFeatsMem = (uint8_t*)malloc(memreq);	// initial and perhaps the only allocation
 if (m_pSampleFeatsMem == NULL)
@@ -639,7 +639,7 @@ if ((EstNumRows = m_pSFFile->CSVEstSizes(pszInSampleFeats, &FileSize, &MaxFields
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to estimate number of rows in file: '%s'", pszInSampleFeats);
 	Reset();
-	return(Rslt);
+	return(eBSFerrFieldCnt);
 	}
 
 m_pSFFile->SetMaxFields(MaxFields);
@@ -662,20 +662,18 @@ FeatID = 0;
 while((Rslt = m_pSFFile->NextLine()) > 0)		// onto next line containing fields
 	{
 	CurLineNumber++;
-	if((NumFields = m_pSFFile->GetCurFields()) < 11)	// must contain at least 7 fields
+	if((NumFields = m_pSFFile->GetCurFields()) < 11)	// must contain at least 11 fields
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Haplotype group bin specification file '%s' expected to contain a minimum of 7 fields, it contains %d at line %d", pszInSampleFeats, NumFields, CurLineNumber);
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Haplotype group bin specification file '%s' expected to contain a minimum of 11 fields, it contains %d at line %d", pszInSampleFeats, NumFields, CurLineNumber);
 		Reset();
 		return(eBSFerrParse);
 		}
 	if (CurLineNumber == 1) // 1 if header containing sample identifiers
 		{
 		// parse in sample identifiers until last column
-		for(FieldIdx = 1; FieldIdx < NumFields; FieldIdx++)
+		for(FieldIdx = 11; FieldIdx <= NumFields; FieldIdx++)
 			{
 			m_pSFFile->GetText(FieldIdx, &pszSampleRef);
-			if(FieldIdx < 11)
-				continue;
 			if(!strncmp((char *)"GrpMembers:1", pszSampleRef,37))
 				{
 				LastSampleRefIdx = FieldIdx;
@@ -683,9 +681,7 @@ while((Rslt = m_pSFFile->NextLine()) > 0)		// onto next line containing fields
 				}
 			// sample reference name parsed out
 			SampleRefNameOfs = AddSampleRefName(pszSampleRef);
-
 			}
-		// add sample reference
 		continue;
 		}
 
@@ -704,7 +700,8 @@ while((Rslt = m_pSFFile->NextLine()) > 0)		// onto next line containing fields
 		AddSampleFeatValue(SampleID,FeatID,FeatValue);
 		}
 	}
-
+delete m_pSFFile;
+m_pSFFile = nullptr;
 return(Rslt);
 }
 

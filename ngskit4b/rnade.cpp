@@ -41,246 +41,8 @@ Original 'BioKanga' copyright notice has been retained and immediately follows t
 #endif
 
 #include "ngskit4b.h"
+#include "rnade.h"
 
-const double cNormCntsScale = 0.0;			// default normalise experiment to control counts is autoscaling
-
-const double cClampFoldChange = 25.0;		// clamp fold changes to be at most cClampFoldChange
-
-const int cMaxInFileSpecs = 100;				// allow at most a total of this many wildcarded control or experiment input read alignment loci files
-
-const int cMinNumBins= 5;					// min number of bins
-const int cDfltNumBins = 10;				// default number of bins
-const int cMaxNumBins = 200;				// max number of bins
-
-const int cMinStartLociThres = 1;			// user specified min number of unique start loci
-const int cDfltStartLociThres = 5;			// default min number of unique start loci
-const int cMaxStartLociThres = 200;			// user specified max number of unique start loci
-
-const int cMinFeatCntThres = 1;				// user specified min feature read counts
-const int cDfltFeatCntThres = 10;			// default min feature read counts
-const int cMaxFeatCntThres = 200;			// user specified max min feature read counts
-
-const int cMaxCoalesceWinLen = 20;			// maximum counts coalescing window length
-const int cDfltCoalesceWinLen = 1;			// default counts coalescing window length
-
-const int cMaxFeats2ProcAlloc = 200;		// allocate at most this many FeatureIDs to a thread for processing at any time
-
-const int cWrtBinBuffSize = 0x03fffff;		// use a 4 MB write buffer size
-const int cWrtStatBuffSize = 0x0fffff;		// use a 1 MB write buffer size
-
-const int cAlignReadsLociInitalAlloc  = 30000000;	// initial allocation to hold this many read alignment loci
-const int cAlignReadsLociRealloc	  = 15000000;	// realloc read alignments allocation in this sized increments
-
-// there are some assumptions here in terms of the max number of aligned read loci within the max length transcripts
-// one day these assumptions may be shown to be invalid but let's see....
-const int cMaxAssumTransLen = 2000000;					// assume no transcribed region will be longer than this
-const int cMaxAssumTransLoci = cMaxAssumTransLen/10;	// assume very long transcribed regions will be low abundance reads and number of unique read aligned loci will be at most 10% of cMaxAssumTransLen
-
-const int cMaxConfidenceIterations = 10000;	// max number of iterations when calculating confidence intervals and PValues
-
-const int cMaxExclZones = 1000;			// max allowed number of exclusion zones within which reads are to be excluded
-
-// following thresholds are used for characterisation of differential transcription state
-// characterisation is into high, moderate, low and none with none including both negatively correlated and corelections less than cLoPeason
-const double cHiPearsonThres = 0.8;					// >= this Pearson if control and experiment highly correlated in their reads distributions
-const double cModPearsonThes = 0.5;					// >= this Pearson if control and experiment moderately correlated
-const double cLoPearsonThres = 0.3;					// >= this Pearson if control and experiment have low correlated
-const double cNoPearsonThres = cLoPearsonThres;		// < this Pearson if control and experiment have either negative or no correlated
-
-const double cNoFoldChange = 1.25;				// if less than this fold change then characterise as none
-const double cLoFoldChange = 1.50;				// if less than this fold change then characterise as low
-const double cModFoldChange = 1.75;				// if less than this fold change then characterise as moderate
-const double cHiFoldChange = cModFoldChange;	// if equal or more than this fold change then characterise as hi
-
-// There are multiple processing phases
-typedef enum TAG_eProcPhase {
-	ePPInit = 0,								// initial initialisation
-	ePPLoadFeatures,							// loading features of interest from BED file
-	ePPLoadFeatClass,							// loading gene feature classifications
-	ePPLoadExclZones,							// loading loci of reads which are to be excluded from any processing
-	ePPLoadReads,								// loading read alignments from disk
-	ePPReducePCRartifacts,						// reducing library PCR excessive read count artifacts
-	ePPCoalesceReads,							// coalescing reads
-	ePPNormLibCnts,								// normalise library counts to be very nearly the same
-	ePPAllocDEmem,								// allocating memory for usage by threads and to hold feature DE fold changes etc
-	ePPDDd,										// attempting to determine transcripts DE status for both counts and Pearson with PValue on transcript counts
-	ePPReport,									// report to file transcript status, fold changes and Pearson
-	ePPCompleted								// processing completed
-	} etProcPhase;
-
-typedef enum TAG_ePearsonScore {
-	ePSIndeterminate = 0,						// insufficent counts, or other filtering criteria, by which Pearson can be calculated
-	ePSNone,									// control and experiment have either negative or correlated below that of cLoPearsonThres
-	ePSLow,										// lowly correlated Pearsons (cLoPearsonThres)
-	ePSMod,										// moderately correlated Pearsons (cModPearsonThres)
-	ePSHi										// highly correlated Pearsons (cHiPearsonThres)
-} etPearsonScore;
-
-typedef enum TAG_eCntsScore {
-	eDEIndeterminate = 0,						// insufficent counts, or other filtering criteria, by which foldchange can be calculated
-	eDEHi = 1,									// high changes in DE counts (cHiFoldChange)
-	eDESMod,									// moderate changes in DE counts (cModFoldChange)
-	eDSElow,									// low change in DE lowly correlated Pearsons (cLoFoldChange)
-	eDESNone,									// no or very little change in DE counts (cNoFoldChange)
-} etCntsScore;
-
-// processing modes
-typedef enum TAG_eDEPMode {
-	eDEPMdefault = 0,				// Standard sensitivity (2500 iterations)
-	eDEPMMoreSens,				// More sensitive (slower 5000 iterations)
-	eDEPMUltraSens,				// Ultra sensitive (very slow 10000 iterations)
-	eDEPMLessSens,				// Less sensitive (quicker 1000 iterations)
-	eDEPMplaceholder				// used to set the enumeration range
-	} etDEPMode;
-
-
-typedef enum eDEBEDRegion {
-	eDEMEGRAny = 0,				// process any region
-	eDEMEGRExons,					// only process exons
-	eDEMEGRIntrons,				// only process introns
-	eDEMEGRCDS,					// only process CDSs
-	eDEMEGUTR,					// only process UTRs
-	eDEMEG5UTR,					// only process 5'UTRs
-	eDEMEG3UTR					// only process 3'UTRs
-} etDEBEDRegion;
-
-// strand processing modes
-typedef enum TAG_eStrandProc {
-		eStrandDflt,			// default is to ignore the strand
-		eStrandWatson,			// process for Watson or sense
-		eStrandCrick,			// process for Crick or antisense
-		eStrandPlaceholder
-} etStrandProc;
-
-#pragma pack(1)
-
-typedef struct TAG_sExclZone {
-	int RegionID;			// identifies this loci exclusion
-	int ChromID;			// loci on this chrom, as generated by IDtoChrom()
-	char Strand;		    // loci on this strand
-	int StartLoci;			// loci starts inclusive
-	int EndLoci;			// loci ends inclusive
-} tsExclZone;
-
-typedef struct TAG_sRefIDChrom {
-	uint32_t ChromID;			// uniquely identifies chromosome
-	uint32_t Hash;			// hash on chromosome name - GenHash24()
-	uint32_t Next;			// used to link chroms with same Hash 
-	char szChromName[cMaxDatasetSpeciesChrom+1];	// chromosome name
-} tsRefIDChrom;
-
-typedef struct TAG_sAlignReadLoci {
-	uint8_t ExprFlag:1;			// 0 if aligned read from control, 1 if from experiment
-	uint8_t Sense:1;				// 0 if '-' or antisense crick, 1 if '+' or sense watson
-	uint8_t FileID:5;				// from which reads alignment file was this alignment loaded
-	uint32_t NormCnts;			// coalesced counts with control vs experiment library size normalisation
-	uint32_t ArtCnts;				// used as temp count storage during artefact reduction processing
-	uint32_t AlignHitIdx;			// current read hit index + 1 for this read
-	uint32_t ChromID;				// identifies hit chromosome - ChromToID(pszChrom)
-	uint32_t Loci;				// 5' start loci on chromosome of this alignment
-	uint32_t ReadLen;				// read length
-} tsAlignReadLoci;
-
-typedef struct TAG_sAlignLociInstStarts {
-	uint32_t Bin;					// instance counts are for this bin
-	uint32_t RelLoci;				// instance counts are at this loci
-	uint32_t NumCtrlStarts;		// number of control start loci instances at this loci instance
-	uint32_t NumExprStarts;		// number of experiment start loci instances at this loci instance
-} tsAlignLociInstStarts ;
-
-typedef struct TAG_sAlignBin {
-	uint32_t Bin;					// poisson counts are from this bin (1..n)
-	uint32_t BinRelStartLoci;		// bin starts at this relative loci
-	uint32_t BinRelEndLoci;		// bin starts at this relative loci
-	uint32_t NumCtrlInstStarts;	// number of control start loci instances in this bin
-	uint32_t NumExprInstStarts;	// number of experiment start loci instances in this bin
-	uint32_t ControlCnts;			// original total control counts in this bin over control start loci instances
-	uint32_t ExperimentCnts;		// original total experiment counts in this bin over experiment start loci instances
-	uint32_t ControlCoverage;     // coverage apportioned to this bin (control reads likely to overlap multiple bins)
-	uint32_t ExperimentCoverage;  // coverage apportioned to this bin (experiment reads likely to overlap multiple bins)
-	uint32_t ControlPoissonCnts;	 // after poisson control counts
-	uint32_t ExperimentPoissonCnts;// after poisson experiment counts
-} tsAlignBin;
-
-typedef struct TAG_sFeatDE {
-		char szFeatName[128];	// feature name
-		int FeatLen;			// feature transcribed length
-		int NumExons;			// number of exons
-		int UserClass;			// user classification for this feature
-		int DEscore;			// transformed DE score (range 0..9)
-		int CntsScore;			// score for DE cnts (range 0..4)
-		int PearsonScore;		// score for Pearson (range 0..4)
-		int CtrlCnts;			// control read counts
-		int ExprCnts;			// expression read counts
-		int SumCtrlExprCnts;	// sum control + expression counts
-		double PValueMedian;	// median P-value (0..1.0)
-		double PValueLow95;		// low 95 P-value (0..1.0)
-		double PValueHi95;		// high 95 P-value (0..1.0)
-		double ObsFoldChange;	// observed fold change (0..n) if less than 1.0 then negative fold change
-		double FoldMedian;		// fold change median (0..50.0) if less than 1.0 then negative fold change
-		double FoldLow95;		// fold change low 95 percentile (0..50.0) if less than 1.0 then negative fold change
-		double FoldHi95;		// fold change high 95 percentile (0..50.0) if less than 1.0 then negative fold change
-		double PearsonObs;		// Pearson observed	(-1.0 to 1.0)
-		double PearsonMedian;	// Pearson median (-1.0 to 1.0)
-		double PearsonLow95;	// Pearson low 95 percentile (-1.0 to 1.0)
-		double PearsonHi95;		// Pearson high 95 percentile (-1.0 to 1.0)
-		int TotCtrlStartLoci;	// total number of unique control start loci in this transcript
-		int TotExprStartLoci;	// total number of unique experiment start loci in this transcript
-		int BinsShared;			// number of bins with both control and experiment counts
-		int BinsExclCtrl;		// number of bins holding counts exclusive to control
-		int BinsExclExpr;		// number of bins holding counts exclusive to experiment
-		uint32_t BinsCtrlDepth[cMaxNumBins];	// to hold read coverage depth in each control bin
-		uint32_t BinsExprDepth[cMaxNumBins];	// to hold read coverage depth in each experiment bin
-} tsFeatDE;
-
-
-// each thread has it's own instance of the following
-typedef struct TAG_ThreadInstData {
-	uint32_t ThreadInst;				// uniquely identifies this thread instance
-#ifdef _WIN32
-	HANDLE threadHandle;			// handle as returned by _beginthreadex()
-	unsigned int threadID;			// identifier as set by _beginthreadex()
-#else
-	int threadRslt;					// result as returned by pthread_create ()
-	pthread_t threadID;				// identifier as set by pthread_create ()
-#endif
-	CStats *pStats;						// used for ChiSquare processing
-	teBSFrsltCodes Rslt;				// thread processing completed result - eBSFSuccess if no errors
-	int FeatureID;						// currently processing this feature
-
-	uint32_t CurFeatLen;					// current feature length over which counts are being processed
-	int CurRegionLen;					// region length for curent gene or feature being processed
-
-	double *pPValues;					// to hold PValues for transcript
-	double *pFeatFoldChanges;			// to hold feature fold changes (Ctrl + 0.001)/(Expr + 0.001)) whilst determining feature confidence interval
-	double *pPearsons;					 // prealocated to hold Pearsons whilst determining confidence interval
-	uint32_t NumBinsWithLoci;				// pAlignBins currently contains this number of bin instances with at least one aligned loci instance
-	tsAlignBin *pAlignBins;				// preallocated to hold alignment bin cnts reserved for this thread
-
-	tsAlignBin *pPoissonAlignBins;		// to hold alignment bins with poisson applied
-	uint32_t NumBinInstStarts;				// m_pBinInstsCnts currently contains this many experiment and control start instances
-	tsAlignLociInstStarts *pBinLociInstStarts;	// preallocated pts to list of control and experiment start instance counts for all bins
-	int MaxFeats2Proc;					// max number of FeatureIDs which can be allocated for processing by this thread by GetFeats2Proc() into Feats2Proc[]
-	int NumFeats2Proc;					// process this number of features in Feats2Proc[]
-	int NumFeatsProcessed;				// number features processed currently from Feats2Proc
-	int Feats2Proc[cMaxFeats2ProcAlloc];	// these are the feature identifiers for the features to be processed
-	CSimpleRNG *pSimpleRNG;				// random generator exclusively for use by this thread
-} tsThreadInstData;
-
-#pragma pack()
-
-#ifdef _WIN32
-CRITICAL_SECTION m_hSCritSect;	// used to serialise
-unsigned __stdcall ThreadedDEproc(void * pThreadPars);
-#else
-pthread_spinlock_t m_hSpinLock;
-void *ThreadedDEproc(void * pThreadPars);
-#endif
-
-char *Region2Txt(etDEBEDRegion Region);
-char ReportStrand(etStrandProc StrandProc);
-void DEReset(void);
-void DEInit(void);
 
 teBSFrsltCodes Process(etDEPMode PMode,					// processing mode
 					int NumThreads,						// number of threads (0 defaults to number of CPUs)
@@ -290,7 +52,7 @@ teBSFrsltCodes Process(etDEPMode PMode,					// processing mode
 					bool bFiltNonaligned,				// true if only features having at least one read aligned are to be be reported
 					char AlignStrand,					// process for reads aligning to this strand only
 					char FeatStrand,					// process for genes or features on this strand only
-					etDEBEDRegion Region,					// process for this genomic region only
+					etDEBEDRegion Region,				// process for this genomic region only
 					int	NumBins,						// number of non-overlapping count bins
 					int MinFeatCntThres,				// minimum feature count threshold, control or experiment, required (1 to 200, defaults to 20)
 					int MinStartLociThres,				// minimum feature unique start loci threshold, control or experiment, required (1 to 200, defaults to 10)
@@ -305,99 +67,6 @@ teBSFrsltCodes Process(etDEPMode PMode,					// processing mode
 					char *pszExclZonesFile,				// exclude reads overlaying zone loci specified from this file
 					char *pszOutfile,					// output into this file
 					char *pszBinCountsFile);			// output bin counts to this file
-
-double ClampFoldChange(double Scale);
-
-teBSFrsltCodes
-LoadGeneFeatures(char Strand,			// features on this strand
-				 char *pszInFeatFile);	// from this BED file
-
-int
-LoadAlignedReadFiles(char Strand,		// process for this strand '+' or '-' or for either '*'
-			int FType,					// input element file format: 0 - auto, 1 - CSV, 2 - BED, 3 - SAM/BAM
-			int NumInputControlSpecs,	// number of input file specs
-			char **pszInControlFiles,	// input control aligned reads files
-			int NumInputExperimentSpecs,// number of input file specs
-			char **pszInExperimentFiles);	// input experiment aligned reads files
-
-teBSFrsltCodes
-LoadAlignedReadsBED(bool bIsExperiment,		// false if control file, true if experiment
-			int FileID,						// uniquely identifies this file
-			char *pszInFile,
-			char FiltStrand);
-
-teBSFrsltCodes
-LoadAlignedReadsCSV(bool bIsExperiment,		// false if control file, true if experiment
-			int FileID,						// uniquely identifies this file
-			char *pszInFile,
-			char FiltStrand);
-
-
-
-int
-CoalesceReadAlignments(int WinLen,				// coalescing window length 1..20
-					   bool bSamesense,			// if true then only coalesce reads with same sense
-					   bool bExperiment);		// if true then coalesce experiment read loci otherwise control read loci
-
-teBSFrsltCodes
-ReducePCRartifacts(int FlankLen,				// 5' and 3' flank length over which the background mean rate is to be measured
-			int ArtifactCntsThres);				// if counts at any loci are >= this threshold then process for PCR artifact reduction
-
-teBSFrsltCodes NormaliseLibraryCounts(void);	// normalise library sizes
-
-teBSFrsltCodes GenPoissonLibraryCounts(void);   // generate poisson noise over all library counts
-
-int
-AddDEPearsons(tsThreadInstData *pThreadInst,
-			char *pszFeatName,        	// counts DE and Pearson is for this feature
-			int NumExons,				// feature has this number of exons
-			int UserClass);				// user classification for this feature
-
-double								    // returned median PValue
-PearsonsPValue(tsThreadInstData *pThreadInst,	// thread instance
-		double Pearson,					// observed pearson
-		int MaxPerms,					// maximum number of permutions
-		tsAlignBin *pAlignBins,			// bins containing alignment counts
-		double *pPValueLow95,			// returned low 95 percentile
-		double *pPValueHi95,			// returned upper 95 percentile
-		double *pLow95,					// returned low 95 percentile
-		double *pHi95,					// returned upper 95 percentile
-		double *pMedian,				// returned median
-		double *pFeatLow95,				// returned low 95 percentile for feature
-		double *pFeatHi95,				// returned upper 95 percentile for feature
-		double *pFeatMedian);			// returned median for feature
-
-teBSFrsltCodes
-GenBinAlignStarts(tsThreadInstData *pThreadInst,	// thread instance
-				  uint32_t RegionOfs,			// StartLoci is at this region offset
-				  char *pszChrom,			// alignments are on this chrom
-				  uint32_t StartLoci,			// must start on or after this loci
-				  uint32_t EndLoci);			// must start on or before this loci
-
-
-teBSFrsltCodes
-AddAlignBinCnts(tsThreadInstData *pThreadInst,	// thread instance data
-			int RelLoci,			// relative offset within  pThreadInst->CurRegionLen from which these cnts were derived
-			int MeanControlReadLen,	// control reads were of this mean length
-			bool bSense,				// 1 if aligned sense, 0 if antisense
-			int ControlCnts,		// attribute this many control counts (alignments) to relevant bin(s)
-			int MeanExperimentReadLen,	// experiment reads were of this mean length
-			int ExperimentCnts);		// attribute this many experiment counts (alignments) to relevant bin(s)
-
-int ReportDEandPearsons(void);
-int ReportDEandPearsonBinCounts(void);
-
-char *IDtoChrom(uint32_t ChromID);			// returns ptr to chrom for ChromID
-uint32_t					  // unique identifier or 0 if chromosome not known
-ChromToID(char *pszChrom, // get unique chromosome identifier for this chrom
-			bool bAdd);	  // if true and chromosome not already known then add and return it's identifier
-
-double	poz (double	z);						/* returns cumulative probability from -oo to z */
-
-static int SortAlignments(const void *arg1, const void *arg2);
-static int SortDoubles(const void *arg1, const void *arg2);
-static int SortDEScore(const void *arg1, const void *arg2);
-static int SortFoldMedian(const void *arg1, const void *arg2);
 
 #ifdef _WIN32
 int rnade(int argc, char* argv[])
@@ -830,11 +499,11 @@ if (!argerrors)
 	else
 		gDiagnostics.DiagOutMsgOnly(eDLInfo,"Process at most this number of aligned reads: No Limit");
 
-	gDiagnostics.DiagOutMsgOnly(eDLInfo,"Process aligned reads strand: '%c'",ReportStrand((etStrandProc)AlignStrand));
+	gDiagnostics.DiagOutMsgOnly(eDLInfo,"Process aligned reads strand: '%c'",CRNA_DE::ReportStrand((etStrandProc)AlignStrand));
 
-	gDiagnostics.DiagOutMsgOnly(eDLInfo,"Process gene or feature strand: '%c'",ReportStrand((etStrandProc)FeatStrand));
+	gDiagnostics.DiagOutMsgOnly(eDLInfo,"Process gene or feature strand: '%c'",CRNA_DE::ReportStrand((etStrandProc)FeatStrand));
 
-	gDiagnostics.DiagOutMsgOnly(eDLInfo,"Process cnts in region: %s",Region2Txt((etDEBEDRegion)Region));
+	gDiagnostics.DiagOutMsgOnly(eDLInfo,"Process cnts in region: %s",CRNA_DE::Region2Txt((etDEBEDRegion)Region));
 
 	gDiagnostics.DiagOutMsgOnly(eDLInfo,"artifact loci read count reduction threshold: %d",ArtifactCntsThres);
 
@@ -936,8 +605,8 @@ if (!argerrors)
 					ArtifactCntsThres,			// if counts at any loci are >= this then process for PCR artifact reduction
 					LimitAligned,				// for test/evaluation can limit number of reads parsed to be no more than this number (0 for no limit)
 					bFiltNonaligned,			// true if only features having at least one read aligned are to be be reported
-					ReportStrand((etStrandProc)AlignStrand),	// process for reads on this strand only
-					ReportStrand((etStrandProc)FeatStrand),	// process for genes or features on this strand only
+					CRNA_DE::ReportStrand((etStrandProc)AlignStrand),	// process for reads on this strand only
+					CRNA_DE::ReportStrand((etStrandProc)FeatStrand),	// process for genes or features on this strand only
 					(etDEBEDRegion)Region,						// which genomic region is to be processed
 					NumBins,					// number of non-overlapping count bins
 					MinFeatCntThres,			// minimum feature count threshold, control + experiment, required (1 to 200, defaults to 20)
@@ -974,8 +643,67 @@ else
 return 0;
 }
 
+teBSFrsltCodes Process(etDEPMode PMode,					// processing mode
+					   int NumThreads,						// number of threads (0 defaults to number of CPUs)
+					   int  CoWinLen,						// counts coalescing window length
+					   int ArtifactCntsThres,				// if counts at any loci are >= this threshold then process for PCR artifact reduction
+					   uint32_t LimitAligned,				// for test/evaluation can limit number of reads parsed to be no more than this number (0 for no limit)
+					   bool bFiltNonaligned,				// true if only features having at least one read aligned are to be be reported
+					   char AlignStrand,					// process for reads aligning to this strand only
+					   char FeatStrand,					// process for genes or features on this strand only
+					   etDEBEDRegion Region,					// process for this genomic region only
+					   int	NumBins,						// number of non-overlapping count bins
+					   int MinFeatCntThres,				// minimum feature count threshold, control or experiment, required (1 to 200, defaults to 20)
+					   int MinStartLociThres,				// minimum feature unique start loci threshold, control or experiment, required (1 to 200, defaults to 10)
+					   double NormCntsScale,				// counts normalisation scale factor
+					   int FType,							// input element file format: 0 - auto, 1 - CSV, 2 - BED, 3 - SAM/BAM
+					   int NumInputControlSpecs,			// number of input file specs
+					   char** pszInControlFiles,			// input control aligned reads files
+					   int NumInputExperimentSpecs,		// number of input file specs
+					   char** pszInExperimentFiles,		// input experiment aligned reads files
+					   char* pszInFeatFile,				// input gene or feature BED file
+					   char* pszFeatClassFile,				// classify genes or features from this file
+					   char* pszExclZonesFile,				// exclude reads overlaying zone loci specified from this file
+					   char* pszOutfile,					// output into this file
+					   char* pszBinCountsFile)				// output bin counts to this file
+{
+teBSFrsltCodes Rslt;
+CRNA_DE* pCRNA_DE;
+
+if((pCRNA_DE = new CRNA_DE) == NULL)
+	{
+	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Unable to instantiate instance of CRNA_DE");
+	return(eBSFerrObj);
+	}
+Rslt = pCRNA_DE->Process(PMode,					// processing mode
+					   NumThreads,				// number of threads (0 defaults to number of CPUs)
+					   CoWinLen,				// counts coalescing window length
+					   ArtifactCntsThres,		// if counts at any loci are >= this threshold then process for PCR artifact reduction
+					   LimitAligned,			// for test/evaluation can limit number of reads parsed to be no more than this number (0 for no limit)
+					   bFiltNonaligned,			// true if only features having at least one read aligned are to be be reported
+					   AlignStrand,				// process for reads aligning to this strand only
+					   FeatStrand,				// process for genes or features on this strand only
+					   Region,					// process for this genomic region only
+					   NumBins,					// number of non-overlapping count bins
+					   MinFeatCntThres,			// minimum feature count threshold, control or experiment, required (1 to 200, defaults to 20)
+					   MinStartLociThres,		// minimum feature unique start loci threshold, control or experiment, required (1 to 200, defaults to 10)
+					   NormCntsScale,			// counts normalisation scale factor
+					   FType,					// input element file format: 0 - auto, 1 - CSV, 2 - BED, 3 - SAM/BAM
+					   NumInputControlSpecs,	// number of input file specs
+					   pszInControlFiles,		// input control aligned reads files
+					   NumInputExperimentSpecs,	// number of input file specs
+					   pszInExperimentFiles,	// input experiment aligned reads files
+					   pszInFeatFile,			// input gene or feature BED file
+					   pszFeatClassFile,		// classify genes or features from this file
+					   pszExclZonesFile,		// exclude reads overlaying zone loci specified from this file
+					   pszOutfile,				// output into this file
+					   pszBinCountsFile);		// output bin counts to this file
+delete pCRNA_DE;
+return(Rslt);
+}
+
 char *
-Region2Txt(etDEBEDRegion Region)
+CRNA_DE::Region2Txt(etDEBEDRegion Region)
 {
 switch(Region) {
 	case etDEBEDRegion::eDEMEGRAny:		// process any region
@@ -1007,7 +735,7 @@ return((char *)"Unsupported");
 
 
 char
-ReportStrand(etStrandProc StrandProc)
+CRNA_DE::ReportStrand(etStrandProc StrandProc)
 {
 static char Strand;
 
@@ -1025,142 +753,9 @@ switch(StrandProc) {
 return(Strand);
 }
 
-const int cDataBuffAlloc = 0x0fffffff;		// allocation size to hold gene features
-bool m_bDEMutexesCreated = false;				// true if mutexes for serialisation have been created
-int m_NumDEThreads;							// number of processing threads
-int m_MaxConfidenceIterations;				// max number of iterations over start loci when inducing random poisson noise
-tsThreadInstData *m_pThreadsInstData;		// all allocated thread instance data
-
-
-etDEPMode m_DEPMode;					// processing mode
-etProcPhase m_ProcessingPhase;		// current processing phase
-bool m_bFiltNonaligned;				// true if only features having at least one read aligned are to be be reported
-
-int m_NumExclZones;					// total number of read exclusion zones loaded
-int m_NumExclReads;					// total number of reads which were excluded because they overlaid an exclusion zone
-tsExclZone *m_pExclZones;			// pts to exclusion zones to which overlaying reads are to be excluded from processing
-
-uint32_t m_LimitAligned;				// for test/evaluation can limit number of reads parsed to be no more than this number (0 for no limit)
-int m_CoWinLen;						// counts coalescing window length
-
-tsAlignReadLoci *m_pCtrlAlignReadLoci = NULL; // memory allocated to hold control read alignment loci, reads are written contiguously into this memory
-uint32_t m_AllocdCtrlAlignReadsLoci;			  // how many instances of control tsAlignReadLoci have been allocated
-size_t m_AllocdCtrlAlignReadsMem;			 // size of allocated memory
-uint32_t m_CurNumCtrlAlignReadsLoci;			  // m_pAlignReadLoci currently contains a total of this many control read alignment loci
-uint64_t m_CurSumCtrlReadsLen;				  // current summed control reads length
-
-tsAlignReadLoci *m_pExprAlignReadLoci = NULL;	// memory allocated to hold experiment read alignment loci, reads are written contiguously into this memory
-uint32_t m_AllocdExprAlignReadsLoci;			// how instances of experiment tsAlignReadLoci have been allocated
-size_t m_AllocdExprAlignReadsMem;			 // size of allocated memory
-uint32_t m_CurNumExprAlignReadsLoci;			// m_pAlignReadLoci currently contains a total of this many experiment read alignment loci
-uint64_t m_CurSumExprReadsLen;				// current summed control reads length
-
-uint32_t m_NumLoadedCtrlReads;			// total number of control reads actually loaded prior to any  coalescing and library size normalisation
-uint32_t m_NumLoadedExprReads;			// total number of expression reads loaded loaded prior to any coalescing and library size normalisation
-uint32_t m_MeanLenCtrlReads;				// mean length of loaded control reads
-uint32_t m_MeanLenExprReads;				// mean length of loaded experiment reads
-
-
-uint32_t m_NumNormCtrlReads;				// total number of control reads after library size normalisation
-uint32_t m_NumNormExprReads;				// total number of expression reads after library size normalisation
-
-uint32_t m_NumPoissonNormCtrlReads;		// total number of control reads after poisson noise
-uint32_t m_NumPoissonNormExprReads;		// total number of expression after after poisson noise
-
-uint32_t m_NumFeaturesLoaded;				// total number of features loaded for processing
-uint32_t m_NumFeaturesProcessed;			// current number of features processed
-
-tsAlignBin *m_pAlignBins = NULL;		// memory allocated to hold alignment bin cnts
-uint32_t m_AllocdAlignBins = 0;			// how instances of tsAlignBin have been allocated
-tsAlignLociInstStarts *m_pBinInstsStarts;	// pts to list of control and experiment start instance counts for all bins
-uint32_t m_AllocBinInstStarts = 0;			// m_pBinInstsCnts is currently allocated to hold at most this number of start loci instance counts
-
-int m_FeatsPerThread;					// number of features to be processed as a block by each thread
-
-double *m_pPearsons;					// to hold Pearsons whilst determining confidence interval
-size_t m_AllocNumPearsons;				// number allocated
-
-
-tsThreadInstData *m_pThreadInst;		// pts to current thread instance
-
-char m_DEAlignStrand;				// process for reads on this strand only
-char m_FeatStrand;					// process for genes or features on this strand only
-etDEBEDRegion m_Region;				// process for this genomic region only
-int m_NumBins;						// Bin regions into this many non-overlapping bins
-
-double m_LibSizeNormExpToCtrl;		// factor by which experiment counts can be normalised to that of control counts (accounts for library size ratio)
-
-CBEDfile *m_pBEDFeatFile;
-
-size_t m_AllocBinWrtBuff = 0;		// memory allocated for output bin write buffers
-size_t m_AllocStatsWrtBuff = 0;		// memory allocated for output stats write buffers
-size_t m_WrtBinBuffOfs = 0;			// offset at which to next write
-size_t m_WrtStatsBuffOfs = 0;		// offset at which to next write
-uint8_t *m_pWrtBinBuff;				// used to buffer output writes to bin counts file
-uint8_t *m_pWrtStatsBuff;				// used to buffer output writes to stats file
-int m_hOutStatsFile;				// output stats results file
-bool m_bWrtStatHdr;					// true if stats file requires header
-int m_hOutBinFile;					// output bin counts file
-bool m_bWrtBinHdr;					// true if bin counts file requires header row
-
-double *m_pFeatFoldChanges;			// to hold feature fold changes (Ctrl + 0.001)/(Expr + 0.001)) whilst determining feature confidence interval
-size_t m_AllocNumFeatFoldChanges;	// number allocated
-
-double *m_pPValues;					// to hold feature PValues
-size_t m_AllocNumPValues;			// number allocated
-
-tsAlignBin *m_pPoissonAlignBins;	 // to hold bin poisson counts whilst determining pearson confidence interval
-size_t m_AllocNumPoissonCnts;		 // number allocated
-
-CSimpleRNG m_SimpleRNG;				// used to generate Poisson distributed random cnts
-
-int m_NumFeatsDEd;					// number of features processed into tsFeatDE's
-int m_AllocdFeatsDEd;				// number alloc'd
-tsFeatDE *m_pFeatDEs;				// allocated to hold features processed for DE
-
-int m_NumNoneDEd;					// number of features which are candidates for determining as being none DE'd in phase ePPAllocDEmem
-
-int m_MinFeatCntThres;				// minimum feature count threshold, control or experiment, required (1 to 200, defaults to 20)
-int m_MinStartLociThres;			// minimum feature unique start loci threshold, control or experiment, required (1 to 200, defaults to 10)
-
-
-tsRefIDChrom *m_pChroms = NULL;
-int m_NumChromsAllocd = 0;
-int m_CurNumChroms = 0;
-int m_MRAChromID = 0;
-uint32_t *m_pChromHashes;			// allocated to provide hash index for chroms
-
-int m_LastFeatureAllocProc = 0;					// set to the last FeatureID allocated to a thread for processing, 0 if starting feature allocation, -1 if all features have been allocated
-
-
-CMTqsort m_mtqsort;					// multithreaded quicksort
-
-
-const int cPossion1SeqLen = 10000;
-const int cPossion2SeqLen = 20000;
-const int cPossion3SeqLen = 40000;
-const int cPossion4SeqLen = 80000;
-const int cPossion5SeqLen = 100000;
-const int cPossion6SeqLen = 200000;
-const int cPossion7SeqLen = 400000;
-const int cPossion8SeqLen = 800000;
-const int cPossion9SeqLen = 1000000;
-const int cPossion10SeqLen = 2000000;
-
-int m_Possion1[cPossion1SeqLen];
-int m_Possion2[cPossion2SeqLen];
-int m_Possion3[cPossion3SeqLen];
-int m_Possion4[cPossion4SeqLen];
-int m_Possion5[cPossion5SeqLen];
-int m_Possion6[cPossion6SeqLen];
-int m_Possion7[cPossion7SeqLen];
-int m_Possion8[cPossion8SeqLen];
-int m_Possion9[cPossion9SeqLen];
-int m_Possion10[cPossion10SeqLen];
-
 // GenPoissonSeqs
 void
-InitPoissonSeqs(tsThreadInstData *pThreadInst)
+CRNA_DE::InitPoissonSeqs(tsThreadInstData *pThreadInst)
 {
 int Idx;
 int Len;
@@ -1221,7 +816,7 @@ for(Lambda = 1; Lambda <= 10; Lambda++)
 }
 
 int
-RandPoisson(tsThreadInstData *pThreadInst,int Lambda)
+CRNA_DE::RandPoisson(tsThreadInstData *pThreadInst,int Lambda)
 {
 uint32_t IdxPoisson;
 int *pPoissons;
@@ -1283,7 +878,7 @@ return(pPoissons[IdxPoisson  % Range]);
 
 
 int
-DECreateMutexes(void)
+CRNA_DE::DECreateMutexes(void)
 {
 if(m_bDEMutexesCreated)
 	return(eBSFSuccess);
@@ -1303,7 +898,7 @@ return(eBSFSuccess);
 }
 
 void
-DEDeleteMutexes(void)
+CRNA_DE::DEDeleteMutexes(void)
 {
 if(!m_bDEMutexesCreated)
 	return;
@@ -1318,8 +913,8 @@ m_bDEMutexesCreated = false;
 
 
 
-inline void
-DEAcquireSerialise(void)
+void
+CRNA_DE::DEAcquireSerialise(void)
 {
 int SpinCnt = 5000;
 #ifdef _WIN32
@@ -1342,7 +937,7 @@ while(pthread_spin_trylock(&m_hSpinLock)==EBUSY)
 }
 
 inline void
-DEReleaseSerialise(void)
+CRNA_DE::ReleaseSerialise(void)
 {
 #ifdef _WIN32
 LeaveCriticalSection(&m_hSCritSect);
@@ -1351,9 +946,7 @@ pthread_spin_unlock(&m_hSpinLock);
 #endif
 }
 
-
-void
-DEInit(void)
+CRNA_DE::CRNA_DE()	// constructor
 {
 m_pThreadsInstData = NULL;
 m_pCtrlAlignReadLoci = NULL;
@@ -1374,12 +967,140 @@ m_pFeatDEs = NULL;
 m_hOutStatsFile = -1;
 m_hOutBinFile = -1;
 m_bDEMutexesCreated = false;
-DEReset();
-InitPoissonSeqs(NULL);
+Reset();
+}
+
+CRNA_DE::~CRNA_DE()	// destructor
+{
+if(m_hOutStatsFile != -1)
+	close(m_hOutStatsFile);
+
+if(m_hOutBinFile != -1)
+	close(m_hOutBinFile);
+
+if(m_pFeatDEs != NULL)
+	{
+#ifdef _WIN32
+	free(m_pFeatDEs);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
+#else
+	if(m_pFeatDEs != MAP_FAILED)
+		munmap(m_pFeatDEs,m_AllocdFeatsDEd * sizeof(tsFeatDE));
+#endif
+	}
+
+if(m_pThreadsInstData != NULL)
+	delete m_pThreadsInstData;
+
+if(m_pChroms != NULL)
+	delete m_pChroms;
+
+if(m_pChromHashes != NULL)
+	m_pChromHashes = NULL;
+
+if(m_pCtrlAlignReadLoci != NULL)
+	{
+#ifdef _WIN32
+	free(m_pCtrlAlignReadLoci);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
+#else
+	if(m_pCtrlAlignReadLoci != MAP_FAILED)
+		munmap(m_pCtrlAlignReadLoci,m_AllocdCtrlAlignReadsLoci * sizeof(tsAlignReadLoci));
+#endif
+	}
+
+if(m_pExprAlignReadLoci != NULL)
+	{
+#ifdef _WIN32
+	free(m_pExprAlignReadLoci);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
+#else
+	if(m_pExprAlignReadLoci != MAP_FAILED)
+		munmap(m_pExprAlignReadLoci,m_AllocdExprAlignReadsLoci * sizeof(tsAlignReadLoci));
+#endif
+	}
+
+if(m_pAlignBins != NULL)
+	{
+#ifdef _WIN32
+	free(m_pAlignBins);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
+#else
+	if(m_pAlignBins != MAP_FAILED)
+		munmap(m_pAlignBins,m_AllocdAlignBins * sizeof(tsAlignBin));
+#endif
+	}
+
+if(m_pBinInstsStarts != NULL)
+	{
+#ifdef _WIN32
+	free(m_pBinInstsStarts);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
+#else
+	if(m_pBinInstsStarts != MAP_FAILED)
+		munmap(m_pBinInstsStarts,m_AllocBinInstStarts * sizeof(tsAlignLociInstStarts));
+#endif
+	}
+
+if(m_pPoissonAlignBins != NULL)
+	{
+#ifdef _WIN32
+	free(m_pPoissonAlignBins);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
+#else
+	if(m_pPoissonAlignBins != MAP_FAILED)
+		munmap(m_pPoissonAlignBins,m_AllocNumPoissonCnts * sizeof(tsAlignBin));
+#endif
+	}
+
+if(m_pFeatFoldChanges != NULL)
+	{
+#ifdef _WIN32
+	free(m_pFeatFoldChanges);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
+#else
+	if(m_pFeatFoldChanges != MAP_FAILED)
+		munmap(m_pFeatFoldChanges,m_AllocNumFeatFoldChanges * sizeof(double));
+#endif
+	}
+
+if(m_pPValues != NULL)
+	{
+#ifdef _WIN32
+	free(m_pPValues);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
+#else
+	if(m_pPValues != MAP_FAILED)
+		munmap(m_pPValues,m_AllocNumPValues * sizeof(double));
+#endif
+	}
+
+if(m_pPearsons != NULL)
+	{
+#ifdef _WIN32
+	free(m_pPearsons);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
+#else
+	if(m_pPearsons != MAP_FAILED)
+		munmap(m_pPearsons,m_AllocNumPearsons * sizeof(double));
+#endif
+	}
+
+if(m_pExclZones != NULL)
+	delete m_pExclZones;
+
+if(m_pBEDFeatFile != NULL)
+	delete m_pBEDFeatFile;
+
+if(m_pWrtBinBuff != NULL)
+	delete m_pWrtBinBuff;
+
+if(m_pWrtStatsBuff != NULL)
+	delete m_pWrtStatsBuff;
+
+if(m_bDEMutexesCreated)
+	{
+#ifdef _WIN32
+	DeleteCriticalSection(&m_hSCritSect);
+#else
+	pthread_spin_destroy(&m_hSpinLock);
+#endif
+	}
 }
 
 void
-DEReset(void)
+CRNA_DE::Reset(void)
 {
 if(m_hOutStatsFile != -1)
 	{
@@ -1593,11 +1314,12 @@ m_FeatsPerThread = 0;
 m_NumFeatsDEd = 0;
 m_AllocdFeatsDEd = 0;
 m_MaxConfidenceIterations = cMaxConfidenceIterations;
+InitPoissonSeqs(NULL);
 }
 
-// thread entry
+
 int
-ProcessFeature(tsThreadInstData *pThreadInst)
+CRNA_DE::ProcessFeature(tsThreadInstData *pThreadInst) // instance data for this individual thread
 {
 teBSFrsltCodes Rslt;
 int RegionOfs;
@@ -1833,8 +1555,29 @@ if(!m_bFiltNonaligned || pThreadInst->NumBinsWithLoci)
 return(eBSFSuccess);
 }
 
+#ifdef _WIN32
+unsigned __stdcall ThreadedDEprocInstance(void * pThreadPars)
+#else
+void * ThreadedDEprocInstance(void * pThreadPars)
+#endif
+{
+int Rslt;
+tsThreadInstData *pPars = (tsThreadInstData *)pThreadPars;			// makes it easier not having to deal with casts!
+CRNA_DE *pWorkerInstance = (CRNA_DE *)pPars->pThis;
+
+Rslt = pWorkerInstance->ProcThreadRNADE(pPars);
+pPars->Rslt = (teBSFrsltCodes)Rslt;
+#ifdef _WIN32
+_endthreadex(0);
+return(eBSFSuccess);
+#else
+pthread_exit(&pPars->Rslt);
+#endif
+}
+
+
 teBSFrsltCodes
-ProcessReads4DE(void)
+CRNA_DE::ProcessReads4DE(void)
 {
 teBSFrsltCodes Rslt;
 tsThreadInstData *pThreadInst;
@@ -1867,6 +1610,7 @@ for(ThreadInst = 1; ThreadInst <= (uint32_t)m_NumDEThreads; ThreadInst++,pThread
 										pFeatFoldChanges += cMaxConfidenceIterations)
 	{
 	pThreadInst->ThreadInst = ThreadInst;
+	pThreadInst->pThis = this;
 	pThreadInst->pSimpleRNG = new CSimpleRNG();
 	pThreadInst->pSimpleRNG->Reset();
 	pThreadInst->pStats = new CStats();
@@ -1879,9 +1623,9 @@ for(ThreadInst = 1; ThreadInst <= (uint32_t)m_NumDEThreads; ThreadInst++,pThread
 	pThreadInst->pFeatFoldChanges = pFeatFoldChanges;
 	pThreadInst->pPValues = pPValues;
 #ifdef _WIN32
-	pThreadInst->threadHandle = (HANDLE)_beginthreadex(NULL,0x0fffff,ThreadedDEproc,pThreadInst,0,&pThreadInst->threadID);
+	pThreadInst->threadHandle = (HANDLE)_beginthreadex(NULL,0x0fffff,&ThreadedDEprocInstance,pThreadInst,0,&pThreadInst->threadID);
 #else
-	pThreadInst->threadRslt =	pthread_create (&pThreadInst->threadID, NULL , ThreadedDEproc , pThreadInst );
+	pThreadInst->threadRslt =	pthread_create (&pThreadInst->threadID, NULL , ThreadedDEprocInstance , pThreadInst );
 #endif
 	}
 
@@ -1908,7 +1652,7 @@ for(ThreadInst = 1;ThreadInst <= (uint32_t)m_NumDEThreads; ThreadInst++,pThreadI
 		// report on progress
 		DEAcquireSerialise();
 		NumFeaturesProcessed = m_NumFeaturesProcessed;
-		DEReleaseSerialise();
+		ReleaseSerialise();
 		gDiagnostics.DiagOut(eDLInfo,gszProcName,"Progress: %u (%1.2f%%) features processed from %d loaded",NumFeaturesProcessed,(NumFeaturesProcessed * 100.0)/m_NumFeaturesLoaded,m_NumFeaturesLoaded);
 		}
 	CloseHandle( pThreadInst->threadHandle);
@@ -1922,7 +1666,7 @@ for(ThreadInst = 1;ThreadInst <= (uint32_t)m_NumDEThreads; ThreadInst++,pThreadI
 		// report on progress
 		DEAcquireSerialise();
 		NumFeaturesProcessed = m_NumFeaturesProcessed;
-		DEReleaseSerialise();
+		ReleaseSerialise();
 		gDiagnostics.DiagOut(eDLInfo,gszProcName,"Progress: %u (%1.2f%%) features processed from %d loaded",NumFeaturesProcessed,(NumFeaturesProcessed * 100.0)/m_NumFeaturesLoaded,m_NumFeaturesLoaded);
 		ts.tv_sec += 60;
 		}
@@ -1949,7 +1693,7 @@ return(Rslt);
 //        0 -> unclassified
 //        1 -> spikein
 int
-LoadGeneFeatClasses(char *pszFeatClassFile)
+CRNA_DE::LoadGeneFeatClasses(char *pszFeatClassFile) // // Loads gene or feature classification from a CSV or tab delimited file
 {
 int Rslt;
 int NumFields;
@@ -2008,7 +1752,7 @@ return(eBSFSuccess);
 // Loads read start/end loci for which any covering reads are to be excluded
 // These regions are expected to be defined as chrom, start, end, with an optional strand
 int
-LoadExclZones(char *pszExclZonesFile)
+CRNA_DE::LoadExclZones(char *pszExclZonesFile) // Loads read start/end loci for which any covering reads are to be excluded
 {
 int Rslt;
 int NumFields;
@@ -2090,7 +1834,7 @@ return(eBSFSuccess);
 
 
 teBSFrsltCodes
-Process(etDEPMode PMode,									// processing mode
+CRNA_DE::Process(etDEPMode PMode,									// processing mode
 					int NumThreads,						// number of threads (0 defaults to number of CPUs)
 					int CoWinLen,						// counts coalescing window length
 					int ArtifactCntsThres,				// if counts at any loci are >= this threshold then process for PCR artifact reduction
@@ -2110,14 +1854,14 @@ Process(etDEPMode PMode,									// processing mode
 					char **pszInExperimentFiles,		// input experiment aligned reads files
 					char *pszInFeatFile,				// input gene or feature BED file
 					char *pszFeatClassFile,				// classify genes or features from this file
-					char *pszExclZonesFile,			// exclude from processing genes and features from this file
+					char *pszExclZonesFile,				// exclude from processing genes and features from this file
 					char *pszOutfile,					// output into this file
 					char *pszBinCountsFile)				// output bin counts to this file
 {
 teBSFrsltCodes Rslt;
 int ArtifactFlankLen;
 
-DEInit();
+Reset();
 m_DEPMode = PMode;
 m_NumDEThreads = NumThreads;
 m_LibSizeNormExpToCtrl = NormCntsScale;
@@ -2159,7 +1903,7 @@ if((m_hOutStatsFile = open(pszOutfile, O_RDWR | O_CREAT |O_TRUNC, S_IREAD | S_IW
 #endif
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create or truncate %s - %s",pszOutfile,strerror(errno));
-	DEReset();
+	Reset();
 	return(eBSFerrCreateFile);
 	}
 m_bWrtStatHdr = true;
@@ -2167,7 +1911,7 @@ gDiagnostics.DiagOut(eDLInfo,gszProcName,"Output results file created/truncated:
 if((m_pWrtStatsBuff = new uint8_t [cWrtStatBuffSize])==NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate %d bytes for output write buffering",cWrtStatBuffSize);
-	DEReset();
+	Reset();
 	return(eBSFerrMem);
 	}
 m_AllocStatsWrtBuff = cWrtStatBuffSize;
@@ -2182,7 +1926,7 @@ if(pszBinCountsFile != NULL && pszBinCountsFile[0] != '\0')
 #endif
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create or truncate %s - %s",pszBinCountsFile,strerror(errno));
-		DEReset();
+		Reset();
 		return(eBSFerrCreateFile);
 		}
 
@@ -2191,7 +1935,7 @@ if(pszBinCountsFile != NULL && pszBinCountsFile[0] != '\0')
 	if((m_pWrtBinBuff = new uint8_t [cWrtBinBuffSize])==NULL)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate %d bytes for output write buffering",cWrtBinBuffSize);
-		DEReset();
+		Reset();
 		return(eBSFerrMem);
 		}
 	m_AllocBinWrtBuff = cWrtBinBuffSize;
@@ -2210,7 +1954,7 @@ m_ProcessingPhase = ePPLoadFeatures;
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Loading gene features from '%s'...",pszInFeatFile);
 if((Rslt = (teBSFrsltCodes)LoadGeneFeatures(FeatStrand,pszInFeatFile))!=eBSFSuccess)
 	{
-	DEReset();
+	Reset();
 	return(Rslt);
 	}
 m_NumFeaturesLoaded = m_pBEDFeatFile->GetNumFeatures();
@@ -2223,7 +1967,7 @@ if(pszFeatClassFile != NULL && pszFeatClassFile[0] != '\0')
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Loading gene feature classifications from '%s'...",pszFeatClassFile);
 	if((Rslt = (teBSFrsltCodes)LoadGeneFeatClasses(pszFeatClassFile))!=eBSFSuccess)
 		{
-		DEReset();
+		Reset();
 		return(Rslt);
 		}
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Completed loading gene feature classifications");
@@ -2235,7 +1979,7 @@ if(pszExclZonesFile != NULL && pszExclZonesFile[0] != '\0')
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Loading read exclusion zone loci from '%s'...",pszExclZonesFile);
 	if((Rslt = (teBSFrsltCodes)LoadExclZones(pszExclZonesFile))!=eBSFSuccess)
 		{
-		DEReset();
+		Reset();
 		return(Rslt);
 		}
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Completed loading read exclusion zone loci");
@@ -2246,7 +1990,7 @@ m_ProcessingPhase = ePPLoadReads;
 // load the aligned reads for both control and experiment
 if((Rslt = (teBSFrsltCodes)LoadAlignedReadFiles(AlignStrand,FType,NumInputControlSpecs,pszInControlFiles,NumInputExperimentSpecs,pszInExperimentFiles)) < eBSFSuccess)
 	{
-	DEReset();
+	Reset();
 	return(Rslt);
 	}
 
@@ -2256,12 +2000,12 @@ m_ProcessingPhase = ePPCoalesceReads;
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Starting to coalese read alignments with window size %d, there are %d control reads and %u experiment reads",CoWinLen,m_CurNumCtrlAlignReadsLoci,m_CurNumExprAlignReadsLoci);
 if((Rslt = (teBSFrsltCodes)CoalesceReadAlignments(CoWinLen,false,false))!=eBSFSuccess)
 	{
-	DEReset();
+	Reset();
 	return(Rslt);
 	}
 if((Rslt = (teBSFrsltCodes)CoalesceReadAlignments(CoWinLen,false,true))!=eBSFSuccess)
 	{
-	DEReset();
+	Reset();
 	return(Rslt);
 	}
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Completed coalesence, there are %d unique control loci sites and %u unique experiment loci sites",m_CurNumCtrlAlignReadsLoci,m_CurNumExprAlignReadsLoci);
@@ -2278,7 +2022,7 @@ Rslt = NormaliseLibraryCounts();
 if(Rslt < eBSFSuccess)
 	{
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Normalisation of library counts failed");
-	DEReset();
+	Reset();
 	return(Rslt);
 	}
 
@@ -2287,7 +2031,7 @@ m_ProcessingPhase = ePPAllocDEmem;
 if((m_pThreadsInstData = new tsThreadInstData [NumThreads])==NULL)
 	{
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Failed allocating memory for thread instance data");
-	DEReset();
+	Reset();
 	return(eBSFerrMem);
 	}
 
@@ -2300,7 +2044,7 @@ m_pAlignBins = (tsAlignBin *) malloc((size_t)memreq);
 if(m_pAlignBins == NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %zd bytes for bins failed",(int64_t)memreq);
-	DEReset();
+	Reset();
 	return(eBSFerrMem);
 	}
 #else
@@ -2310,7 +2054,7 @@ if(m_pAlignBins == MAP_FAILED)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %zd bytes for bins through mmap()  failed",(int64_t)memreq,strerror(errno));
 	m_pAlignBins = NULL;
-	DEReset();
+	Reset();
 	return(eBSFerrMem);
 	}
 #endif
@@ -2323,7 +2067,7 @@ m_pPoissonAlignBins = (tsAlignBin *) malloc((size_t)memreq);
 if(m_pPoissonAlignBins == NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %zd bytes for bins failed",(int64_t)memreq);
-	DEReset();
+	Reset();
 	return(eBSFerrMem);
 	}
 #else
@@ -2333,7 +2077,7 @@ if(m_pPoissonAlignBins == MAP_FAILED)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %zd bytes for bins through mmap()  failed",(int64_t)memreq,strerror(errno));
 	m_pPoissonAlignBins = NULL;
-	DEReset();
+	Reset();
 	return(eBSFerrMem);
 	}
 #endif
@@ -2346,7 +2090,7 @@ m_pBinInstsStarts = (tsAlignLociInstStarts *) malloc((size_t)memreq);
 if(m_pBinInstsStarts == NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %zd bytes for bin loci instances failed",(int64_t)memreq);
-	DEReset();
+	Reset();
 	return(eBSFerrMem);
 	}
 #else
@@ -2356,7 +2100,7 @@ if(m_pBinInstsStarts == MAP_FAILED)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %zd bytes for bin loci instances through mmap()  failed",(int64_t)memreq,strerror(errno));
 	m_pBinInstsStarts = NULL;
-	DEReset();
+	Reset();
 	return(eBSFerrMem);
 	}
 #endif
@@ -2369,7 +2113,7 @@ m_pFeatFoldChanges = (double *) malloc((size_t)memreq);
 if(m_pFeatFoldChanges == NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %zd bytes for fold change instances failed",(int64_t)memreq);
-	DEReset();
+	Reset();
 	return(eBSFerrMem);
 	}
 #else
@@ -2379,7 +2123,7 @@ if(m_pFeatFoldChanges == MAP_FAILED)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %zd bytes for fold change instances through mmap()  failed",(int64_t)memreq,strerror(errno));
 	m_pFeatFoldChanges = NULL;
-	DEReset();
+	Reset();
 	return(eBSFerrMem);
 	}
 #endif
@@ -2391,7 +2135,7 @@ m_pPValues = (double *) malloc((size_t)memreq);
 if(m_pPValues == NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %zd bytes for PValue instances failed",(int64_t)memreq);
-	DEReset();
+	Reset();
 	return(eBSFerrMem);
 	}
 #else
@@ -2401,7 +2145,7 @@ if(m_pPValues == MAP_FAILED)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %zd bytes for PValue instances through mmap()  failed",(int64_t)memreq,strerror(errno));
 	m_pPValues = NULL;
-	DEReset();
+	Reset();
 	return(eBSFerrMem);
 	}
 #endif
@@ -2413,7 +2157,7 @@ m_pPearsons = (double *) malloc((size_t)memreq);
 if(m_pPearsons == NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %zd bytes for fold change pearsons instances failed",(int64_t)memreq);
-	DEReset();
+	Reset();
 	return(eBSFerrMem);
 	}
 #else
@@ -2423,7 +2167,7 @@ if(m_pFeatFoldChanges == MAP_FAILED)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %zd bytes for fold change instances through mmap()  failed",(int64_t)memreq,strerror(errno));
 	m_pFeatFoldChanges = NULL;
-	DEReset();
+	Reset();
 	return(eBSFerrMem);
 	}
 #endif
@@ -2435,7 +2179,7 @@ m_pFeatDEs = (tsFeatDE *) malloc((size_t)memreq);
 if(m_pFeatDEs == NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %zd bytes for processed feature instances failed",(int64_t)memreq);
-	DEReset();
+	Reset();
 	return(eBSFerrMem);
 	}
 #else
@@ -2445,7 +2189,7 @@ if(m_pFeatDEs == MAP_FAILED)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %zd bytes for processed feature instances through mmap()  failed",(int64_t)memreq,strerror(errno));
 	m_pFeatDEs = NULL;
-	DEReset();
+	Reset();
 	return(eBSFerrMem);
 	}
 #endif
@@ -2516,14 +2260,14 @@ _ASSERTE( _CrtCheckMemory());
 #endif
 #endif
 
-DEReset();
+Reset();
 
 return(eBSFSuccess);
 }
 
 
 bool													// true if at least one FeatureID to be processed, false if all FeatureIDs have been already allocated for processing
-GetFeats2Proc(tsThreadInstData *pThreadInst)
+CRNA_DE::GetFeats2Proc(tsThreadInstData *pThreadInst)	// thread instance data
 {
 int CurFeatureID;
 pThreadInst->NumFeats2Proc = 0;
@@ -2533,7 +2277,7 @@ if(pThreadInst->MaxFeats2Proc > cMaxFeats2ProcAlloc)	// sanity check!
 DEAcquireSerialise();
 if((CurFeatureID = m_LastFeatureAllocProc) < 0)			// all features already allocated for processing?
 	{
-	DEReleaseSerialise();
+	ReleaseSerialise();
 	return(false);
 	}
 
@@ -2544,42 +2288,38 @@ while((CurFeatureID = m_pBEDFeatFile->GetNextFeatureID(CurFeatureID)) > 0)
 		break;
 	}
 m_LastFeatureAllocProc = CurFeatureID > 0 ? CurFeatureID : -1;
-DEReleaseSerialise();
+ReleaseSerialise();
 return(pThreadInst->NumFeats2Proc > 0 ? true : false);
 }
 
 
-#ifdef _WIN32
-unsigned __stdcall ThreadedDEproc(void * pThreadPars)
-#else
-void *ThreadedDEproc(void * pThreadPars)
-#endif
+int
+CRNA_DE::ProcThreadRNADE(tsThreadInstData* pThreadPar)	// worker thread parameters
 {
-tsThreadInstData *pThreadInst = (tsThreadInstData *)pThreadPars; // makes it easier not having to deal with casts!
 int Rslt = eBSFSuccess;
 int NumProcessed = 0;
 int DeltaNumProcessed;
 int PrevNumProcessed = 0;
 
-pThreadInst->Rslt = (teBSFrsltCodes)-1;
-while(GetFeats2Proc(pThreadInst))
+pThreadPar->Rslt = (teBSFrsltCodes)-1;
+while(GetFeats2Proc(pThreadPar))
 	{
-	pThreadInst->NumFeatsProcessed = 0;
+	pThreadPar->NumFeatsProcessed = 0;
 	do
 		{
-		pThreadInst->FeatureID = pThreadInst->Feats2Proc[pThreadInst->NumFeatsProcessed++];
-		ProcessFeature(pThreadInst);
+		pThreadPar->FeatureID = pThreadPar->Feats2Proc[pThreadPar->NumFeatsProcessed++];
+		ProcessFeature(pThreadPar);
 		NumProcessed += 1;
 		DeltaNumProcessed = NumProcessed - PrevNumProcessed;
 		if(DeltaNumProcessed > 20)
 			{
 			DEAcquireSerialise();
 			m_NumFeaturesProcessed += DeltaNumProcessed;
-			DEReleaseSerialise();
+			ReleaseSerialise();
 			PrevNumProcessed = NumProcessed;
 			}
 		}
-	while(pThreadInst->NumFeatsProcessed < pThreadInst->NumFeats2Proc);
+	while(pThreadPar->NumFeatsProcessed < pThreadPar->NumFeats2Proc);
 	}
 
 DeltaNumProcessed = NumProcessed - PrevNumProcessed;
@@ -2587,29 +2327,21 @@ if(DeltaNumProcessed > 0)
 	{
 	DEAcquireSerialise();
 	m_NumFeaturesProcessed += DeltaNumProcessed;
-	DEReleaseSerialise();
+	ReleaseSerialise();
 	}
-pThreadInst->Rslt = eBSFSuccess;
-#ifdef _WIN32
-_endthreadex(0);
 return(eBSFSuccess);
-#else
-pthread_exit(&pThreadInst->Rslt);
-#endif
 }
 
 
 teBSFrsltCodes
-LoadGeneFeatures(char Strand,			// features on this strand
+CRNA_DE::LoadGeneFeatures(char Strand,			// features on this strand
 				 char *pszInFeatFile)	// from this BED file
 {
 teBSFrsltCodes Rslt;
-
-
 if((m_pBEDFeatFile = new CBEDfile)==NULL)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to instantiate CBEDfile");
-	DEReset();
+	Reset();
 	return(eBSFerrObj);
 	}
 
@@ -2617,7 +2349,7 @@ if((Rslt=m_pBEDFeatFile->Open(pszInFeatFile,eBTAnyBed)) !=eBSFSuccess)
 	{
 	while(m_pBEDFeatFile->NumErrMsgs())
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,m_pBEDFeatFile->GetErrMsg());
-	DEReset();
+	Reset();
 	return(eBSFerrOpnFile);
 	}
 
@@ -2625,7 +2357,7 @@ return(eBSFSuccess);
 }
 
 tsAlignLociInstStarts *
-UpdateBinLociInstStarts(tsThreadInstData *pThreadInst,			// thread instance
+CRNA_DE::UpdateBinLociInstStarts(tsThreadInstData *pThreadInst,			// thread instance
 					uint32_t Bin,								// starts are in this bin
 					int RelLoci,							// starts at this relative (to start of binned transcript) loci
 					uint32_t CtrlStarts,						// this number of control reads start at RelLoci
@@ -2656,7 +2388,7 @@ return(pBinLociInstStarts);
 
 
 teBSFrsltCodes
-AddAlignBinCnts(tsThreadInstData *pThreadInst,	// thread instance data
+CRNA_DE::AddAlignBinCnts(tsThreadInstData *pThreadInst,	// thread instance data
 			uint32_t RelLoci,			// relative offset within  pThreadInst->CurRegionLen from which these cnts were derived
 			uint32_t MeanControlReadLen,	// control reads were of this mean length
 			bool bSense,				// 1 if aligned sense, 0 if antisense
@@ -2776,7 +2508,7 @@ return(eBSFSuccess);
 
 
 teBSFrsltCodes						// if > eBSFSuccess then read was silently sloughed because it was in an exclusion loci
-AddReadHit(int FileID,				// parsed from this file
+CRNA_DE::AddReadHit(int FileID,				// parsed from this file
 			bool bIsExperiment,		// true if this is an experimental read
 			char *pszChrom,			// hit to this chrom
 			char Strand,			// on this strand
@@ -2804,7 +2536,7 @@ if(bIsExperiment)
 		if(pTmpAlloc == NULL)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddReadLoci: Memory reallocation to %zd bytes failed - %s",memreq,strerror(errno));
-			DEReset();
+			Reset();
 			return(eBSFerrMem);
 			}
 		m_pExprAlignReadLoci = (tsAlignReadLoci *)pTmpAlloc;
@@ -2829,7 +2561,7 @@ else
 		if(pTmpAlloc == NULL)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddReadLoci: Memory reallocation to %zd bytes failed - %s",memreq,strerror(errno));
-			DEReset();
+			Reset();
 			return(eBSFerrMem);
 			}
 		m_pCtrlAlignReadLoci = (tsAlignReadLoci *)pTmpAlloc;
@@ -2893,7 +2625,7 @@ return(eBSFSuccess);
 // Coalesce the read alignments by coalescing those alignments starting at, or very near, the same loci
 // A user specified sliding window of WinLen is used and reads within the window are coalesced
 int
-CoalesceReadAlignments(int WinLen,		// coalescing window length 1..20
+CRNA_DE::CoalesceReadAlignments(int WinLen,		// coalescing window length 1..20
 					   bool bSamesense,	 // if true then only coalesce reads with same sense
 					   bool bExperiment) // if true then coalesce experiment read loci otherwise control read loci
 {
@@ -2988,7 +2720,7 @@ if(bExperiment)
 		if(pTmpAlloc == NULL)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"CoalesceReadAlignments: Memory reallocation to %zd bytes failed - %s",memreq,strerror(errno));
-			DEReset();
+			Reset();
 			return(eBSFerrMem);
 			}
 		m_pExprAlignReadLoci = (tsAlignReadLoci *)pTmpAlloc;
@@ -3013,7 +2745,7 @@ else
 		if(pTmpAlloc == NULL)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"CoalesceReadAlignments: Memory reallocation to %zd bytes failed - %s",memreq,strerror(errno));
-			DEReset();
+			Reset();
 			return(eBSFerrMem);
 			}
 		m_pCtrlAlignReadLoci = (tsAlignReadLoci *)pTmpAlloc;
@@ -3030,7 +2762,7 @@ return(eBSFSuccess);
 // Scale the counts such that the control and library total number of reads are very nearly equal, e.g. +/- 1 count is near enough :-)
 // Scaling is on the coalesced reads and will scale the library with lowest number of reads up to the library with highest number of reads
 teBSFrsltCodes
-NormaliseLibraryCounts(void)
+CRNA_DE::NormaliseLibraryCounts(void)
 {
 bool bScaleExpr;
 uint32_t TargTotal;
@@ -3126,7 +2858,7 @@ return(eBSFSuccess);
 }
 
 uint32_t										// reduced total counts by this
-ReducePCR(int FlankLen,						// 5' and 3' flank length over which the background mean rate is to be measured
+CRNA_DE::ReducePCR(int FlankLen,						// 5' and 3' flank length over which the background mean rate is to be measured
 		int ArtifactCntsThres,				// if counts at any loci are >= this threshold then process for PCR artifact reduction
 		uint32_t NumAlignReadsLoci,tsAlignReadLoci *pAlignReadLoci)
 {
@@ -3217,7 +2949,7 @@ for(Idx = 0; Idx < NumAlignReadsLoci; Idx++,pTargLoci++)
 // Attempt to reduce read counts resulting from significant PCR amplification artifacts
 // These artifacts show as aligned loci to which reads were aligned at a rate significantly above the background rate within a window centered at the read loci being processed
 teBSFrsltCodes
-ReducePCRartifacts(int FlankLen,		// 5' and 3' flank length over which the background mean rate is to be measured
+CRNA_DE::ReducePCRartifacts(int FlankLen,		// 5' and 3' flank length over which the background mean rate is to be measured
 	int ArtifactCntsThres)		// if counts at any loci are >= this threshold then process for PCR artifact reduction
 {
 	uint32_t ReducedBy;
@@ -3257,9 +2989,9 @@ TrimWhitespace(char* pTxt)
 	return(pStart);
 }
 
-// Load aligned reads from SAM/BAM alignment files
-teBSFrsltCodes
-LoadAlignedReadsSAM(bool bIsExperiment,		// false if control file, true if experiment
+
+teBSFrsltCodes				// Load aligned reads from SAM/BAM alignment files
+CRNA_DE::LoadAlignedReadsSAM(bool bIsExperiment,		// false if control file, true if experiment
 	int FileID,						// uniquely identifies this file
 	char* pszInFile,
 	char FiltStrand)
@@ -3356,7 +3088,7 @@ return(eBSFSuccess);
 
 
 teBSFrsltCodes
-LoadAlignedReadsBED(bool bIsExperiment,		// false if control file, true if experiment
+CRNA_DE::LoadAlignedReadsBED(bool bIsExperiment,		// false if control file, true if experiment
 			int FileID,						// uniquely identifies this file
 			char *pszInFile,
 			char FiltStrand)
@@ -3445,7 +3177,7 @@ return(eBSFSuccess);
 
 
 teBSFrsltCodes
-LoadAlignedReadsCSV(bool bIsExperiment,		// false if control file, true if experiment
+CRNA_DE::LoadAlignedReadsCSV(bool bIsExperiment,		// false if control file, true if experiment
 			int FileID,						// uniquely identifies this file
 			char *pszInFile,				// load reads from this file
 			char FiltStrand)					// process for this strand '+' or '-' or for both '*'
@@ -3556,12 +3288,12 @@ return(Rslt);
 }
 
 char *
-IDtoChrom(uint32_t ChromID)	// returns ptr to chrom for ChromID
+CRNA_DE::IDtoChrom(uint32_t ChromID)	// returns ptr to chrom for ChromID
 {
 char *pszChrom;
 if(m_pChroms == NULL || m_pChromHashes == NULL || ChromID == 0 || ChromID > (uint32_t)m_CurNumChroms)
 	{
-	DEReleaseSerialise();
+	ReleaseSerialise();
 	return(NULL);
 	}
 pszChrom = m_pChroms[ChromID-1].szChromName;
@@ -3569,7 +3301,7 @@ return(pszChrom);
 }
 
 uint32_t					  // unique identifier or 0 if chromosome not known
-ChromToID(char *pszChrom, // get unique chromosome identifier for this chrom
+CRNA_DE::ChromToID(char *pszChrom, // get unique chromosome identifier for this chrom
 			bool bAdd)	  // if true and chromosome not already known then add and return it's identifier
 {
 tsRefIDChrom *pNewChrom;
@@ -3581,7 +3313,7 @@ if(m_pChromHashes == NULL)		// NULL if first time..
 	m_pChromHashes = new uint32_t [0x01000000];	// 24bit hashes
 	if(m_pChromHashes == NULL)
 		{
-		DEReleaseSerialise();
+		ReleaseSerialise();
 		return(0);
 		}
 	memset(m_pChromHashes,0,sizeof(uint32_t) * 0x01000000);
@@ -3592,7 +3324,7 @@ if(m_pChroms == NULL)		// NULL if first time...
 	m_pChroms = new tsRefIDChrom [cChromsInitalAllocNum*10];
 	if(m_pChroms == NULL)
 		{
-		DEReleaseSerialise();
+		ReleaseSerialise();
 		return(0);
 		}
 	m_NumChromsAllocd = cChromsInitalAllocNum * 10;
@@ -3609,7 +3341,7 @@ if(m_CurNumChroms != 0)
 		pNewChrom = &m_pChroms[m_MRAChromID-1];
 		if(aHash == pNewChrom->Hash && !stricmp(pszChrom,pNewChrom->szChromName))
 			{
-			DEReleaseSerialise();
+			ReleaseSerialise();
 			return(pNewChrom->ChromID);
 			}
 		}
@@ -3621,7 +3353,7 @@ if(m_CurNumChroms != 0)
 			if(!stricmp(pszChrom,pNewChrom->szChromName))
 				{
 				m_MRAChromID = pNewChrom->ChromID;
-				DEReleaseSerialise();
+				ReleaseSerialise();
 				return(m_MRAChromID);
 				}
 			if(pNewChrom->Next == 0)
@@ -3634,7 +3366,7 @@ if(m_CurNumChroms != 0)
 
 if(!bAdd)
 	{
-	DEReleaseSerialise();
+	ReleaseSerialise();
 	return(0);
 	}
 
@@ -3644,7 +3376,7 @@ if(m_CurNumChroms >= m_NumChromsAllocd - 1)
 	pNewChrom = new tsRefIDChrom [m_NumChromsAllocd + (cChromsGrowAllocNum * 10)];
 	if(pNewChrom == NULL)
 		{
-		DEReleaseSerialise();
+		ReleaseSerialise();
 		return(0);
 		}
 	memmove(pNewChrom,m_pChroms,sizeof(tsRefIDChrom) * m_CurNumChroms);
@@ -3664,12 +3396,12 @@ if(m_pChromHashes[aHash - 1] != 0)
 else
 	pNewChrom->Next = 0;
 m_pChromHashes[aHash - 1] = m_CurNumChroms;
-DEReleaseSerialise();
+ReleaseSerialise();
 return((uint32_t)m_CurNumChroms);
 }
 
 int
-LoadAlignedReads(bool bExpr,	// false if loading control, true if loading experiment
+CRNA_DE::LoadAlignedReads(bool bExpr,	// false if loading control, true if loading experiment
 			char Strand,		// process for this strand '+' or '-' or for both '*'
 			int FType,				// input element file format: 0 - auto, 1 - CSV, 2 - BED, 3 - SAM/SAM
 			int FileID,			// uniquely identifies this input file
@@ -3711,7 +3443,7 @@ return(Rslt);
 }
 
 int
-LoadAlignedReadFiles(char Strand,		// process for this strand '+' or '-' or for both '*'
+CRNA_DE::LoadAlignedReadFiles(char Strand,		// process for this strand '+' or '-' or for both '*'
 			int FType,					// input element file format: 0 - auto, 1 - CSV, 2 - BED, 3 - SAM/BAM
 			int NumInputControlSpecs,	// number of input file specs
 			char **pszInControlFiles,	// input control aligned reads files
@@ -3732,7 +3464,7 @@ if(m_pCtrlAlignReadLoci == NULL)
 	if(m_pCtrlAlignReadLoci == NULL)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEntry: Memory allocation of %zd bytes failed",(int64_t)memreq);
-		DEReset();
+		Reset();
 		return(eBSFerrMem);
 		}
 #else
@@ -3742,7 +3474,7 @@ if(m_pCtrlAlignReadLoci == NULL)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadAlignedReadFiles: Memory allocation of %zd bytes through mmap()  failed",(int64_t)memreq,strerror(errno));
 		m_pCtrlAlignReadLoci = NULL;
-		DEReset();
+		Reset();
 		return(eBSFerrMem);
 		}
 #endif
@@ -3760,7 +3492,7 @@ if(m_pExprAlignReadLoci == NULL)
 	if(m_pExprAlignReadLoci == NULL)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEntry: Memory allocation of %zd bytes failed",(int64_t)memreq);
-		DEReset();
+		Reset();
 		return(eBSFerrMem);
 		}
 #else
@@ -3770,7 +3502,7 @@ if(m_pExprAlignReadLoci == NULL)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadAlignedReadFiles: Memory allocation of %zd bytes through mmap()  failed",(int64_t)memreq,strerror(errno));
 		m_pExprAlignReadLoci = NULL;
-		DEReset();
+		Reset();
 		return(eBSFerrMem);
 		}
 #endif
@@ -3789,7 +3521,7 @@ for(Idx = 0; Idx < NumInputControlSpecs; Idx++)
 	if(glob.Add(pszInControlFiles[Idx]) < SG_SUCCESS)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to glob '%s",pszInControlFiles[Idx]);
-		DEReset();
+		Reset();
 		return(eBSFerrOpnFile);	// treat as though unable to open file
 		}
 	if(glob.FileCount() <= 0)
@@ -3808,7 +3540,7 @@ for(Idx = 0; Idx < NumInputControlSpecs; Idx++)
 		if(Rslt < 0)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadAlignedReadFiles: Failed loading control read alignments from file: %s",pszInfile);
-			DEReset();
+			Reset();
 			return(Rslt);
 			}
 		}
@@ -3817,7 +3549,7 @@ for(Idx = 0; Idx < NumInputControlSpecs; Idx++)
 if(NumInputFilesProcessed == 0 || m_CurNumCtrlAlignReadsLoci == 0)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadAlignedReadFiles: Failed to load any control read alignments from any file");
-	DEReset();
+	Reset();
 	return(eBSFerrOpnFile);
 	}
 m_NumLoadedCtrlReads = m_CurNumCtrlAlignReadsLoci;
@@ -3832,7 +3564,7 @@ for(Idx = 0; Idx < NumInputExperimentSpecs; Idx++)
 	if(glob.Add(pszInExperimentFiles[Idx]) < SG_SUCCESS)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to glob '%s",pszInExperimentFiles[Idx]);
-		DEReset();
+		Reset();
 		return(eBSFerrOpnFile);	// treat as though unable to open file
 		}
 	if(glob.FileCount() <= 0)
@@ -3851,7 +3583,7 @@ for(Idx = 0; Idx < NumInputExperimentSpecs; Idx++)
 		if(Rslt < 0)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadAlignedReadFiles: Failed loading experiment read alignments from file: %s",pszInfile);
-			DEReset();
+			Reset();
 			return(Rslt);
 			}
 		}
@@ -3864,7 +3596,7 @@ if(m_NumLoadedExprReads)
 if(NumInputFilesProcessed == 0 || m_NumLoadedExprReads == 0)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadAlignedReadFiles: Failed to load any experiment read alignments from any file");
-	DEReset();
+	Reset();
 	return(eBSFerrOpnFile);
 	}
 
@@ -3892,7 +3624,7 @@ return(Rslt);
 
 
 int
-LocateStartAlignment(char Strand,uint32_t ChromID,uint32_t StartLoci,uint32_t EndLoci, uint32_t NumAlignReadsLoci,tsAlignReadLoci *pAlignReadLoci)
+CRNA_DE::LocateStartAlignment(char Strand,uint32_t ChromID,uint32_t StartLoci,uint32_t EndLoci, uint32_t NumAlignReadsLoci,tsAlignReadLoci *pAlignReadLoci)
 {
 if(pAlignReadLoci == NULL|| NumAlignReadsLoci == 0)
 	return(0);
@@ -3968,7 +3700,7 @@ return(0);	// unable to locate any alignment instances
 
 
 teBSFrsltCodes
-GenBinStarts(tsThreadInstData *pThreadInst,	// thread instance
+CRNA_DE::GenBinStarts(tsThreadInstData *pThreadInst,	// thread instance
 				  uint32_t RegionOfs,			// StartLoci is at this rlative offset within the current region
 				  uint32_t ChromID,			// alignments are on this chrom
 				  uint32_t StartLoci,			// must start on or after this loci
@@ -4067,7 +3799,7 @@ return(eBSFSuccess);
 
 
 teBSFrsltCodes
-GenBinAlignStarts(tsThreadInstData *pThreadInst,	// thread instance
+CRNA_DE::GenBinAlignStarts(tsThreadInstData *pThreadInst,	// thread instance
 				  uint32_t RegionOfs,			// StartLoci is at this relative offset within the current region
 				  char *pszChrom,			// alignments are on this chrom
 				  uint32_t StartLoci,			// must start on or after this loci
@@ -4094,9 +3826,9 @@ return(Rslt);
 const double cConfInterval95 = 1.959963984540;
 const double cConfInterval99 = 2.575829303549;
 
-// Convert Fisher z' to Pearson r
+
 double
-z2r(double z)
+CRNA_DE::z2r(double z) // Convert Fisher z' to Pearson r
 {
 if(z >= 17.6163615864504)
 	return(1.0);
@@ -4109,7 +3841,7 @@ return((e-1)*(e+1));
 // Convert Pearson r to Fisher z'
 // Note that Pearson is checked for the possiblity of an underflow
 double
-r2z(double r)
+CRNA_DE::r2z(double r) // Convert Pearson r to Fisher z'
 {
 if(r > 0.999999999999999)
 	return(17.6163615864504);
@@ -4119,7 +3851,7 @@ return(log((1.0+r)/(1.0-r))/2.0);
 }
 
 double								// returns *pUpper - *pLower
-ConfInterval95(int N,				// number of bins containing at least one count
+CRNA_DE::ConfInterval95(int N,				// number of bins containing at least one count
 			   double Pearson,		// Pearsons r
 			   double *pUpper,		// returned upper for a confidence interval of 95
 			   double *pLower)		// returned lower for a confidence interval of 95
@@ -4153,7 +3885,7 @@ return(*pUpper - *pLower);
 }
 
 double								// returns *pUpper - *pLower
-ConfInterval99(int N,				// number of bins containing at least one count
+CRNA_DE::ConfInterval99(int N,				// number of bins containing at least one count
 			   double Pearson,		// Pearsons r
 			   double *pUpper,		// returned upper for a confidence interval of 95
 			   double *pLower)		// returned lower for a confidence interval of 95
@@ -4191,8 +3923,8 @@ return(*pUpper - *pLower);
 // Pearson sample correlation coefficient
 // Defined as the covariance of the two variables divided by the product of their standard deviations
 // A count of 1 is added to both control and experiment so as to provide for Laplaces smoothing and prevent divide by zero errors
-double									// returned Pearson
-Pearsons(tsAlignBin *pAlignBins)		// bins containing alignment counts
+double									// returned Pearson sample correlation coefficient
+CRNA_DE::Pearsons(tsAlignBin *pAlignBins)		// bins containing alignment counts
 {
 tsAlignBin *pACnts;
 int Idx;
@@ -4257,7 +3989,7 @@ return(Correl);
 }
 
 double										// returned Pearson
-PoissonPearsons(tsAlignBin *pAlignBins)		// bins containing alignment counts
+CRNA_DE::PoissonPearsons(tsAlignBin *pAlignBins)		// bins containing alignment counts
 {
 tsAlignBin *pACnts;
 int Idx;
@@ -4323,7 +4055,7 @@ return(Correl);
 
 // Clamps fold changes to be no more than cClampFoldChange fold
 double
-ClampFoldChange(double Scale)
+CRNA_DE::ClampFoldChange(double Scale)
 {
 if(Scale < (1.0/(2.0*cClampFoldChange)))
 	return(0.0);
@@ -4338,7 +4070,7 @@ return(Scale);
 // Calculate a PValue for fold change through a counts permutation test
 // Independently poisson permutes counts for both control and experiment
 double								    // returned median PValue
-PearsonsPValue(tsThreadInstData *pThreadInst,	// thread instance
+CRNA_DE::PearsonsPValue(tsThreadInstData *pThreadInst,	// thread instance
 		double Pearson,					// observed pearson
 		int MaxPerms,					// maximum number of permutions
 		tsAlignBin *pAlignBins,			// bins containing alignment counts
@@ -4487,7 +4219,7 @@ return(PValue);
 
 
 int
-ReportDEandPearsonBinCounts(void)
+CRNA_DE::ReportDEandPearsonBinCounts(void)
 {
 int Idx;
 tsFeatDE *pFeatDE;
@@ -4579,7 +4311,7 @@ return(eBSFSuccess);
 }
 
 int
-ReportDEandPearsons(void)
+CRNA_DE::ReportDEandPearsons(void)
 {
 tsFeatDE *pFeatDE;
 int Idx;
@@ -4646,7 +4378,7 @@ return(eBSFSuccess);
 
 
 int
-AddDEPearsons(tsThreadInstData *pThreadInst,
+CRNA_DE::AddDEPearsons(tsThreadInstData *pThreadInst,
 			char *pszFeatName,	// Pearson is for this feature
 			int NumExons,      // number of exons
 			int UserClass)		// user classification for this feature
@@ -4663,7 +4395,7 @@ int Idx;
 DEAcquireSerialise();
 pFeatDE = &m_pFeatDEs[m_NumFeatsDEd++];
 CurFeatID = m_NumFeatsDEd;
-DEReleaseSerialise();
+ReleaseSerialise();
 
 memset(pFeatDE,0,sizeof(tsFeatDE));
 strcpy(pFeatDE->szFeatName,pszFeatName);
@@ -4791,8 +4523,8 @@ return(CurFeatID);
 
 // SortAlignments
 // Sort by ascending chrom identifier, loci, strand, control, experiment
-static int
-SortAlignments(const void *arg1, const void *arg2)
+int
+CRNA_DE::SortAlignments(const void *arg1, const void *arg2)
 {
 tsAlignReadLoci *pEl1 = (tsAlignReadLoci *)arg1;
 tsAlignReadLoci *pEl2 = (tsAlignReadLoci *)arg2;
@@ -4821,8 +4553,8 @@ return(0);
 
 // CmpLoose
 // Returns 0 if Ctrl within Delta of Expr, -1 if Ctrl more than Delta below Expr, 1 if Ctrl more than Delta above Expr
-int
-CmpLoose(double Delta,double Ctrl, double Expr)
+int  // Returns 0 if Ctrl within Delta of Expr, -1 if Ctrl more than Delta below Expr, 1 if Ctrl more than Delta above Expr
+CRNA_DE::CmpLoose(double Delta,double Ctrl, double Expr)
 {
 if(Ctrl < (Expr - Delta))
 	return(1);
@@ -4834,8 +4566,8 @@ return(0);
 
 // SortDEScore
 // Sort by DEscore decending then FoldMedian ascending values
-static int
-SortDEScore(const void *arg1, const void *arg2)
+int
+CRNA_DE::SortDEScore(const void *arg1, const void *arg2)
 {
 tsFeatDE *pEl1 = (tsFeatDE *)arg1;
 tsFeatDE *pEl2 = (tsFeatDE *)arg2;
@@ -4853,8 +4585,8 @@ return(0);
 }
 
 // SortFoldMedian
-static int
-SortFoldMedian(const void *arg1, const void *arg2)
+int
+CRNA_DE::SortFoldMedian(const void *arg1, const void *arg2)
 {
 tsFeatDE *pEl1 = *(tsFeatDE **)arg1;
 tsFeatDE *pEl2 = *(tsFeatDE **)arg2;
@@ -4876,8 +4608,8 @@ return(0);
 
 // SortDoubles
 // Sort by ascending values (lower values at start of sorted array)
-static int
-SortDoubles(const void *arg1, const void *arg2)
+int
+CRNA_DE::SortDoubles(const void *arg1, const void *arg2)
 {
 double *pEl1 = (double *)arg1;
 double *pEl2 = (double *)arg2;
