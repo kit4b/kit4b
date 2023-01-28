@@ -21,6 +21,7 @@ Please contact Dr Stuart Stephen < stuartjs@g3web.com > if you have any question
 #include "./ngskit4b.h"
 #include "rnaexpr.h"
 
+
 // forward declaration
 int procrnaexpr(eModeRNAE PMode,			// processing mode
 				char* pszMaterialRNAGBSWGSFile, // load RNA/GBS/WIG sample names and RNA associated metadata
@@ -61,7 +62,7 @@ struct arg_lit *version = arg_lit0 ("v", "version,ver", "print version informati
 struct arg_int *FileLogLevel = arg_int0 ("f", "FileLogLevel", "<int>", "Level of diagnostics written to screen and logfile 0=fatal,1=errors,2=info,3=diagnostics,4=debug");
 struct arg_file *LogFile = arg_file0 ("F", "log", "<file>", "diagnostics log file");
 
-struct arg_int *pmode = arg_int0 ("m", "mode", "<int>", "processing mode 0: RNA replicates inconsistencies 1: RNA replicate WGS homozygosity score matching (default 0)");
+struct arg_int *pmode = arg_int0 ("m", "mode", "<int>", "processing mode 0: RNA replicates inconsistencies 1: RNA replicate vs. WGS homozygosity score matching (default 0)");
 struct arg_file* cntsfile = arg_file0("i", "cntsfile", "<file>", "input RNA expression level counts file");
 struct arg_file* samplesfile = arg_file1("c", "samplesfile", "<file>", "input RNA/GBS/WIG sample names and RNA associated metadata file");
 struct arg_file* wgsscorefile = arg_file0("w", "wgsscorefile", "<file>", "input WGS vs. WGS homozygosity scores file");
@@ -471,6 +472,12 @@ m_NumChromNames = 0;
 m_NxtszChromNameIdx = 0;
 memset(m_szChromNames,0,sizeof(m_szChromNames));
 memset(m_szChromNamesIdx,0,sizeof(m_szChromNamesIdx));
+
+m_LARNAMetaNameID = 0;
+m_NumRNAMetaNames = 0;
+m_NxtszRNAMetaNameIdx = 0;
+memset(m_szRNAMetaNames,0,sizeof(m_szRNAMetaNames));
+memset(m_szRNAMetaNamesIdx,0,sizeof(m_szRNAMetaNamesIdx));
 }
 
 
@@ -676,6 +683,10 @@ int NumbRNASamples;
 uint32_t RNASampleID;
 uint32_t WGSSampleID;
 uint32_t MaterialID;
+uint32_t SampleNum;
+uint32_t PlotNum;
+uint32_t RangeNum;
+uint32_t RowNum;
 
 if(m_pRNAGBSWGSFile != nullptr) // shouldn't have been instantiated, but better to be sure!
 	{
@@ -779,6 +790,7 @@ while((Rslt = m_pRNAGBSWGSFile->NextLine()) > 0)		// onto next line containing f
 		Reset();
 		return(eBSFerrParse);
 		}
+	m_RNAGBSWGSMaterials[RNASampleID-1].RNASampleID = RNASampleID;
 
 	m_pRNAGBSWGSFile->GetText(3, &pszValue);			// expected to be WGSSampleName
 	if((WGSSampleID = AddWGSSampleName(pszValue)) == 0) // can be multiple instances of WGS sample names
@@ -792,7 +804,8 @@ while((Rslt = m_pRNAGBSWGSFile->NextLine()) > 0)		// onto next line containing f
 		Reset();
 		return(eBSFerrParse);
 		}
-	
+	m_RNAGBSWGSMaterials[RNASampleID-1].WGSSampleID = WGSSampleID;
+
 	m_pRNAGBSWGSFile->GetText(4, &pszValue);			// expected to be MaterialName
 	if((MaterialID = AddMaterialName(pszValue)) == 0)	// can be multiple instances of same material
 		MaterialID = LocateMaterialNameID(pszValue);
@@ -805,9 +818,26 @@ while((Rslt = m_pRNAGBSWGSFile->NextLine()) > 0)		// onto next line containing f
 		Reset();
 		return(eBSFerrParse);
 		}
-	m_RNAGBSWGSMaterials[RNASampleID-1].RNASampleID = RNASampleID;
-	m_RNAGBSWGSMaterials[RNASampleID-1].WGSSampleID = WGSSampleID;
 	m_RNAGBSWGSMaterials[RNASampleID-1].MaterialID = MaterialID;
+
+
+	m_pRNAGBSWGSFile->GetText(6, &pszValue);	// expected to be location
+	m_RNAGBSWGSMaterials[RNASampleID-1].LocationID = AddRNAMetaName(pszValue);
+
+	m_pRNAGBSWGSFile->GetText(7, &pszValue);	// expected to be entry book name
+	m_RNAGBSWGSMaterials[RNASampleID-1].EntryBookID = AddRNAMetaName(pszValue);
+
+	m_pRNAGBSWGSFile->GetUint(8, &SampleNum);		// expected to be sample number (rep 1 or 2)
+	m_RNAGBSWGSMaterials[RNASampleID-1].SampleNum = SampleNum;
+
+	m_pRNAGBSWGSFile->GetUint(9, &PlotNum);		// expected to be plot
+	m_RNAGBSWGSMaterials[RNASampleID-1].PlotNum = PlotNum;
+
+	m_pRNAGBSWGSFile->GetUint(10, &RangeNum);	// expected to be range number
+	m_RNAGBSWGSMaterials[RNASampleID-1].RangeNum = RangeNum;
+
+	m_pRNAGBSWGSFile->GetUint(11, &RowNum);	// expected to be row number
+	m_RNAGBSWGSMaterials[RNASampleID-1].RowNum = RowNum;
 	}
 
 delete m_pRNAGBSWGSFile;
@@ -912,6 +942,10 @@ CRNAExpr::GenExprCntsPearsons(eModeRNAE PMode,			// processing mode
 					char* pszOutRsltsFile)				// write results to this file, will be suffixed appropriately
 {
 int32_t SampleID;
+int32_t ChkSampleID;
+double Maximalr;
+int32_t MaxSampleID;
+int32_t PartnerSampleID;
 int32_t BuffIdx;
 char *pszSample1;
 char *pszSample2;
@@ -922,7 +956,10 @@ char szOutFile[_MAX_PATH];
 FILE *pOutStream;
 
 double r;
-sprintf(szOutFile,"%s%s",pszOutRsltsFile,".csv");
+double ExpPearson;
+CStats Stats;
+
+sprintf(szOutFile,"%s%s",pszOutRsltsFile,".RNAvRNA.csv");
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Generating Pearson correlation coefficient 'r' for labeled biological replicates over all features into file '%s'",szOutFile);
 
 if((pOutStream = fopen(szOutFile,"w"))==NULL)
@@ -932,44 +969,21 @@ if((pOutStream = fopen(szOutFile,"w"))==NULL)
 	return(eBSFerrOpnFile);
 	}
 
-BuffIdx = sprintf(szOutBuff,"\"SampleRep1\",\"SampleRep2\",\"Pearson\",\"Material1\",\"Material2\"");
-for(SampleID = 1; SampleID <= (int32_t)m_NumbHdrRNAMappings; SampleID+=2)
-	{
-	r = PearsonCorrelation(1,m_NumFeatureNames,SampleID,SampleID+1);
-	pszSample1 = LocateRNASampleName(m_HdrRNAMappings[SampleID-1]);
-	pszSample2 = LocateRNASampleName(m_HdrRNAMappings[SampleID]);
-	pszMaterial1 = LocateMaterialName(m_RNAGBSWGSMaterials[m_HdrRNAMappings[SampleID-1]-1].MaterialID);
-	pszMaterial2 = LocateMaterialName(m_RNAGBSWGSMaterials[m_HdrRNAMappings[SampleID]-1].MaterialID);
-	BuffIdx += sprintf(&szOutBuff[BuffIdx],"\n\"%s\",\"%s\",%.5f,\"%s\",\"%s\"",pszSample1,pszSample2,r,pszMaterial1,pszMaterial2);
-	if(BuffIdx + 200 > sizeof(szOutBuff))
-		{
-		fwrite(szOutBuff,1,BuffIdx,pOutStream);
-		BuffIdx = 0;
-		}
-	}
-if(BuffIdx)
-	fwrite(szOutBuff,1,BuffIdx,pOutStream);
-fflush(pOutStream);
-fclose(pOutStream);
+BuffIdx = sprintf(szOutBuff,"\"RNA Rep\",\"RNA Rep Material\",\"RNA Rep Pearson\",\"Match RNA Rep\",\"Match RNA Rep Material\",\"Match RNA Pearson\",\"Zobs\",\"PValue(Rep==MatchRep\"");
+BuffIdx += sprintf(&szOutBuff[BuffIdx], ",\"RNA Rep Location\",\"RNA Rep EntryBook\",\"RNA Rep SampleNum\",\"RNA Rep PlotNum\",\"RNA Rep RangeNum\",\"RNA Rep RowNum\"");
+BuffIdx += sprintf(&szOutBuff[BuffIdx], ",\"Match RNA Rep Location\",\"Match RNA Rep EntryBook\",\"Match RNA Rep SampleNum\",\"Match RNA Rep PlotNum\",\"Match RNA Rep RangeNum\",\"Match RNA Rep RowNum\"");
+fwrite(szOutBuff,1,BuffIdx,pOutStream);
+BuffIdx = 0;
 
-// let's try finding the best pairings assuming that the low r's in some pairs are due to a mixup in replicate labeling
-sprintf(szOutFile,"%s%s",pszOutRsltsFile,"recoverreps.csv");
-gDiagnostics.DiagOut(eDLInfo,gszProcName,"Generating Pearson correlation coefficient 'r' targeting discovery of potentially mislabeled replicates over all features into file '%s'",szOutFile);
-if ((pOutStream = fopen(szOutFile, "w")) == NULL)
-	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate file %s for writing error: %s",szOutFile,strerror(errno));
-	Reset();
-	return(eBSFerrOpnFile);
-	}
-
-double Maximalr;
-int32_t ChkSampleID;
-int32_t ClosestSampleID;
-BuffIdx = sprintf(szOutBuff,"\"SampleRep1\",\"ClosestRep2\",\"Pearson\",\"Material1\",\"Material2\"");
-for(SampleID = 1; SampleID <= (int32_t)m_NumbHdrRNAMappings; SampleID+=2)
+for(SampleID = 1; SampleID <= (int32_t)m_NumbHdrRNAMappings; SampleID++)
 	{
 	Maximalr = 0.0;
-	ClosestSampleID = 0;
+	ExpPearson = 0.0;
+	MaxSampleID = 0;
+	if(((SampleID-1) % 2) == 0)
+		PartnerSampleID = SampleID+1;
+	else
+		PartnerSampleID = SampleID-1;
 	for(ChkSampleID = 1; ChkSampleID <= (int32_t)m_NumbHdrRNAMappings; ChkSampleID++)
 		{
 		if(ChkSampleID == SampleID)
@@ -977,15 +991,31 @@ for(SampleID = 1; SampleID <= (int32_t)m_NumbHdrRNAMappings; SampleID+=2)
 		r = PearsonCorrelation(1,m_NumFeatureNames,SampleID,ChkSampleID);
 		if(r > Maximalr)
 			{
-			ClosestSampleID = ChkSampleID;
 			Maximalr = r;
+			MaxSampleID = ChkSampleID;
 			}
+		if(PartnerSampleID == ChkSampleID)
+			ExpPearson = r;
 		}
+
+	tsRNAGBSWGSMaterial *pRNARep;
+	tsRNAGBSWGSMaterial *pMatchRNARep;
+	pRNARep = &m_RNAGBSWGSMaterials[m_HdrRNAMappings[SampleID-1]-1];
+	pMatchRNARep = &m_RNAGBSWGSMaterials[m_HdrRNAMappings[MaxSampleID-1]-1];
 	pszSample1 = LocateRNASampleName(m_HdrRNAMappings[SampleID-1]);
-	pszSample2 = LocateRNASampleName(m_HdrRNAMappings[ClosestSampleID-1]);
-	pszMaterial1 = LocateMaterialName(m_RNAGBSWGSMaterials[m_HdrRNAMappings[SampleID-1]-1].MaterialID);
-	pszMaterial2 = LocateMaterialName(m_RNAGBSWGSMaterials[m_HdrRNAMappings[ClosestSampleID-1]-1].MaterialID);
-	BuffIdx += sprintf(&szOutBuff[BuffIdx],"\n\"%s\",\"%s\",%.5f,\"%s\",\"%s\"",pszSample1,pszSample2,Maximalr,pszMaterial1,pszMaterial2);
+	pszSample2 = LocateRNASampleName(m_HdrRNAMappings[MaxSampleID-1]);
+	pszMaterial1 = LocateMaterialName(pRNARep->MaterialID);
+	pszMaterial2 = LocateMaterialName(pMatchRNARep->MaterialID);
+
+	double zMax = atanh(Maximalr);	// using Fisher transformation: artanh(r)
+	double zExp = atanh(ExpPearson);
+	double ZObs = (zMax-zExp) / sqrt(2.0 / (m_NumbHdrRNAMappings-3));
+	double PValue = 2*(1.0-Stats.phi(ZObs));
+
+	BuffIdx += sprintf(&szOutBuff[BuffIdx],"\n\"%s\",\"%s\",%.6f,\"%s\",\"%s\",%.6f,%.6f,%.6f,\"%s\",\"%s\",%d,%d,%d,%d,\"%s\",\"%s\",%d,%d,%d,%d",
+							pszSample1,pszMaterial1,ExpPearson,pszSample2,pszMaterial2,Maximalr,ZObs,PValue,
+							LocateRNAMetaName(pRNARep->LocationID), LocateRNAMetaName(pRNARep->EntryBookID), pRNARep->SampleNum, pRNARep->PlotNum, pRNARep->RangeNum, pRNARep->RowNum,
+							LocateRNAMetaName(pMatchRNARep->LocationID), LocateRNAMetaName(pMatchRNARep->EntryBookID), pMatchRNARep->SampleNum, pMatchRNARep->PlotNum, pMatchRNARep->RangeNum, pMatchRNARep->RowNum);
 	if(BuffIdx + 200 > sizeof(szOutBuff))
 		{
 		fwrite(szOutBuff,1,BuffIdx,pOutStream);
@@ -1305,6 +1335,7 @@ char szOutBuff[4000];
 char szOutFile[_MAX_PATH];
 FILE *pOutStream;
 Reset();
+CStats Stats;
 
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Loading RNA material mappings from '%s'",pszMaterialRNAGBSWGSFile);
 Rslt = LoadMaterialRNAGBSWGSFile(pszMaterialRNAGBSWGSFile);
@@ -1363,15 +1394,19 @@ if((pOutStream = fopen(szOutFile,"w"))==NULL)
 	}
 	
 
-BuffIdx = sprintf(szOutBuff,"\"RNA Rep\",\"RNA Rep Material\",\"Match WGS\",\"Match WGS Material\",\"Match Pearson\"");
+BuffIdx = sprintf(szOutBuff,"\"RNA Rep\",\"RNA Rep Material\",\"RNA Rep Pearson\",\"Match WGS\",\"Match WGS Material\",\"Match WGS Pearson\",\"Zobs\",\"PValue(Rep=WGS)\"");
+uint32_t ExpWGSSampleID;
 int32_t RNArowIdx;
 int32_t WGSrowIdx;
 int32_t MaxWGSrowIdx = 0;
 double MaxPearson = 0.0;
+double ExpPearson = 0.0;
 for (RNArowIdx = 0; RNArowIdx < (int32_t)m_NumbRowRNAMappings; RNArowIdx++)
 	{
 	MaxWGSrowIdx = 0;
 	MaxPearson = 0.0;
+	ExpPearson = 0.0;
+	ExpWGSSampleID = m_RNAGBSWGSMaterials[m_HdrRNAMappings[RNArowIdx]-1].WGSSampleID;
 	for(WGSrowIdx = 0; WGSrowIdx < (int32_t)m_NumbRowWGSMappings; WGSrowIdx++)
 		{
 		r = PearsonCorrelation(RNArowIdx,WGSrowIdx);
@@ -1380,6 +1415,8 @@ for (RNArowIdx = 0; RNArowIdx < (int32_t)m_NumbRowRNAMappings; RNArowIdx++)
 			MaxPearson = r;
 			MaxWGSrowIdx = WGSrowIdx;
 			}
+		if(m_RowWGSMappings[WGSrowIdx] == ExpWGSSampleID)
+			ExpPearson = r;
 		}
 	char *pWGSname = LocateWGSSampleName(m_RowWGSMappings[MaxWGSrowIdx]);
 	char *pRNAname = LocateRNASampleName(m_RowRNAMappings[RNArowIdx]);
@@ -1394,8 +1431,12 @@ for (RNArowIdx = 0; RNArowIdx < (int32_t)m_NumbRowRNAMappings; RNArowIdx++)
 	if(pszWGSmaterial == nullptr)
 		pszWGSmaterial = (char *)"#N/A";
 
-	BuffIdx += sprintf(&szOutBuff[BuffIdx],"\n\"%s\",\"%s\",\"%s\",\"%s\",%.6f",
-						pRNAname,pszRNAmaterial,pWGSname,pszWGSmaterial,MaxPearson);
+	double zMax = atanh(MaxPearson);	// using Fisher transformation: artanh(r)
+	double zExp = atanh(ExpPearson);
+	double ZObs = (zMax-zExp) / sqrt(2.0 / (m_NumbRowRNAMappings-3));
+	double PValue = 2*(1.0-Stats.phi(ZObs));
+	BuffIdx += sprintf(&szOutBuff[BuffIdx],"\n\"%s\",\"%s\",%.6f,\"%s\",\"%s\",%.6f,%.6f,%.6f",
+						pRNAname,pszRNAmaterial,ExpPearson,pWGSname,pszWGSmaterial,MaxPearson,ZObs,PValue);
 	if((BuffIdx + 500) > sizeof(szOutBuff))
 		{
 		fwrite(szOutBuff,1,BuffIdx,pOutStream);
@@ -1410,10 +1451,6 @@ fclose(pOutStream);
 Reset();
 return(Rslt);
 }
-
-
-
-
 
 // NOTE: SampleNames are checked for uniqueness as SampleNames must be unique
 uint32_t		// returned SampleName identifier, 0 if unable to accept this SampleName name
@@ -1723,7 +1760,69 @@ if (Idx < 1 || Idx > m_NumFeatureNames)
 return(&(m_szFeatureNames[m_szFeatureNamesIdx[Idx - 1]])); 
 }
 
+uint32_t		// returned RNA metadata name identifier, 0 if unable to accept this metadata name
+CRNAExpr::AddRNAMetaName(char* pszRNAMetaName) // associate unique identifier with this chromosome name
+{
+uint32_t NameIdx;
+int NameLen;
+char* pszLAname;
 
+// with any luck the sequence name will be same as the last accessed
+if ((pszLAname = LocateRNAMetaName(m_LARNAMetaNameID)) != nullptr)
+	if (!stricmp(pszRNAMetaName, pszLAname))
+		return(m_LARNAMetaNameID);
+
+// iterate over all known RNA metanames in case this metaname to add is a duplicate
+for (NameIdx = 0; NameIdx < m_NumRNAMetaNames; NameIdx++)
+	if (!stricmp(pszRNAMetaName, &m_szRNAMetaNames[m_szRNAMetaNamesIdx[NameIdx]]))
+	{
+	m_LARNAMetaNameID = NameIdx + 1;
+	return(m_LARNAMetaNameID);
+	}
+
+// RNA metaname is not a duplicate
+NameLen = (int)strlen(pszRNAMetaName);
+if ((m_NxtszRNAMetaNameIdx + NameLen + 1) > (int)sizeof(m_szRNAMetaNames))
+	return(0);
+if (m_NumRNAMetaNames == 2*cMaxRNAESamples)
+	return(0);
+
+m_szRNAMetaNamesIdx[m_NumRNAMetaNames++] = m_NxtszRNAMetaNameIdx;
+strcpy(&m_szRNAMetaNames[m_NxtszRNAMetaNameIdx], pszRNAMetaName);
+m_NxtszRNAMetaNameIdx += NameLen + 1;
+m_LARNAMetaNameID = m_NumRNAMetaNames;
+return(m_LARNAMetaNameID);
+}
+
+char*	// returns RNA metadata name associated with 
+CRNAExpr::LocateRNAMetaName(uint32_t RNAMetaNameID) // metadata identifier
+{
+uint32_t Idx = RNAMetaNameID & 0x0fffffff;			// mask out any potential flag bits
+if (Idx < 1 || (int32_t)Idx > m_NumRNAMetaNames)
+	return(nullptr);
+return(&m_szRNAMetaNames[m_szRNAMetaNamesIdx[Idx - 1]]);
+}
+
+uint32_t		// returned RNA metadata name identifier, 0 if unable to locate this metadata name
+CRNAExpr::LocateRNAMetaNameID(char* pszRNAMetaName) // return unique identifier associated with this metadata name
+{
+uint32_t NameIdx;
+char* pszLAname;
+
+// with any luck the sequence name will be same as the last accessed
+if ((pszLAname = LocateRNAMetaName(m_LARNAMetaNameID)) != nullptr)
+	if (!stricmp(pszRNAMetaName, pszLAname))
+		return(m_LARNAMetaNameID);
+
+// iterate over all known chroms
+for (NameIdx = 0; NameIdx < m_NumRNAMetaNames; NameIdx++)
+	if (!stricmp(pszRNAMetaName, &m_szRNAMetaNames[m_szRNAMetaNamesIdx[NameIdx]]))
+	{
+		m_LARNAMetaNameID = NameIdx + 1;
+		return(m_LARNAMetaNameID);
+	}
+return(0);
+}
 
 uint32_t		// returned chrom identifier, 0 if unable to accept this chromosome name
 CRNAExpr::AddChromName(char* pszChromName) // associate unique identifier with this chromosome name

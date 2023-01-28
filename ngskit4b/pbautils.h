@@ -14,6 +14,7 @@ const uint32_t cOutBuffSize = 0x6fffffff;			// buffer size for file writes
 const int cMaxAXAllocBuffChunk = 0x00ffffff;		// buffer for fasta sequences is realloc'd in this sized chunks 
 const uint32_t cMaxPBAutilityThreads = 8;			// relatively few threads likely to be required
 
+const uint32_t cMinSegLen = 50;						// minimum length of any transcribed segment to be reported in processing mode ePBAu2BED
 const double cDfltGTPropThres = 0.05;				// default proportion threshold when processing for genotype VCF for both missing sample alignments and heterozygosity between aligned samples
 const char cDfltRefAssemb[] = { "Wm82.v2" };		// default reference assembly if none specified
 const char cDfltSeqID[] = { "S000000" };			// default sequence identifier if none specified
@@ -29,6 +30,7 @@ typedef enum TAG_ePBAuMode {
 	ePBAu2AVCF,				// generate a allelic variant VCF
 	ePBAu2GVCF,				// generate a genotype VCF
 	ePBAu2DVCF,				// generate a deletion VCF
+	ePBAu2BED,				// generate BED containing all transcribed regions
 	ePBAuPlaceholder		// used as a placeholder to mark number of processing modes
 } ePBAuMode;
 
@@ -126,7 +128,7 @@ class CPBAutils
 	uint32_t m_AllocWIGBuff;	// m_pszOutBuffer allocated to hold this many output bytes
 	uint8_t* m_pszWIGBuff;	    // allocated for buffering output
 	int m_hWIGOutFile;			// file handle for writing results
-	char m_szWIGFile[_MAX_PATH];// write WIG format coverage into this output file 
+	char m_szWIGFile[_MAX_PATH];// write WIG format, or BED format coverage into this output file 
 
 	CBEDfile* m_pBedFile;	// BED file containing reference assembly chromosome names and sizes
 	CUtility m_RegExprs;            // regular expression processing
@@ -277,6 +279,10 @@ class CPBAutils
 	int32_t GeneratePBAConcordance(void);	// generate allelic concordance across all sample PBAs
 
 	int32_t GenerateWIGConcordance(void);	// generate coverage depth concordance across all sample WIGs
+
+	int32_t GeneratePBASegsBed(double MinCovThres = 0.10,	// deem as coverage initiation if previously not meeting coverage threshold and now at least this proportion of all PBA samples have coverage
+							double ContCovThres = 0.05,		// deem as coverage continuation if coverage stays above this proportional threshold and,
+							int32_t MinLen = 100);			// coverage continues for at least this many bp
 
 	int32_t	LoadChromSizes(char* pszBEDFile); // BED file containing chromosome names and sizes
 

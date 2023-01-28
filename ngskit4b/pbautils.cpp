@@ -15,7 +15,7 @@
 #include "./ngskit4b.h"
 #include "./pbautils.h"
 
-int Process(ePBAuMode PMode,	// processing mode: ePBAu2Fasta PBA to Fasta, ePBAu2PBA Fasta to PBA, ePBAu2PBAConcordance concordance over PBA samples, ePBAu2WIGConcordance concordance over WIG samples, ePBAu2AVCF allelic variant VCF, ePBAu2GVCF allelic genotype VCF,ePBAu2DVCF deletion genotype VCF
+int Process(ePBAuMode PMode,	// processing mode: ePBAu2Fasta PBA to Fasta, ePBAu2PBA Fasta to PBA, ePBAu2PBAConcordance concordance over PBA samples, ePBAu2WIGConcordance concordance over WIG samples, ePBAu2AVCF allelic variant VCF, ePBAu2GVCF allelic genotype VCF,ePBAu2DVCF deletion genotype VCF,ePBAu2BED generate BED containing all transcribed regions
 	int32_t LimitPBAs,			// limit number of loaded PBA files to this many. 1 .. cMaxPBAReadsets
 	int32_t PBAsTrim5,			// trim this many aligned PBAs from 5' end of aligned segments - reduces false alleles due to sequencing errors
 	int32_t PBAsTrim3,			// trim this many aligned PBAs from 3' end of aligned segments - reduces false alleles due to sequencing errors
@@ -61,7 +61,7 @@ int NumThreads;				// number of threads (0 defaults to number of CPUs or a maxim
 
 int Idx;
 
-ePBAuMode PMode;			// processing mode: ePBAu2Fasta PBA to Fasta, ePBAu2PBA Fasta to PBA, ePBAu2PBAConcordance concordance over PBA samples, ePBAu2WIGConcordance concordance over WIG samples, ePBAu2AVCF allelic variant VCF, ePBAu2GVCF allelic genotype VCF, ePBAu2DVCF deletion genotype VCF
+ePBAuMode PMode;			// processing mode: ePBAu2Fasta PBA to Fasta, ePBAu2PBA Fasta to PBA, ePBAu2PBAConcordance concordance over PBA samples, ePBAu2WIGConcordance concordance over WIG samples, ePBAu2AVCF allelic variant VCF, ePBAu2GVCF allelic genotype VCF, ePBAu2DVCF deletion genotype VC,FePBAu2BED generate BED containing all transcribed regions
 int32_t LimitPBAs;			// limit number of loaded PBA files to this many. 0: no limits, > 0 sets upper limit
 int32_t PBAsTrim5;			// trim this many aligned PBAs from 5' end of aligned segments - reduces false alleles due to sequencing errors
 int32_t PBAsTrim3;			// trim this many aligned PBAs from 3' end of aligned segments - reduces false alleles due to sequencing errors
@@ -85,19 +85,18 @@ struct arg_lit* version = arg_lit0("v", "version,ver", "print version informatio
 struct arg_int* FileLogLevel = arg_int0("f", "FileLogLevel", "<int>", "Level of diagnostics written to screen and logfile 0=fatal,1=errors,2=info,3=diagnostics,4=debug");
 struct arg_file* LogFile = arg_file0("F", "log", "<file>", "diagnostics log file");
 
-struct arg_int* pmode = arg_int0("m", "mode", "<int>", "processing mode: 0 PBA to Fasta, 1 Fasta to PBA, 2 concordance over PBA samples, 3 concordance over WIG samples, 4 allelic variant VCF, 5 allelic genotype VCF, deletion genotype VCF");
+struct arg_int* pmode = arg_int0("m", "mode", "<int>", "processing mode: 0 PBA to Fasta, 1 Fasta to PBA, 2 concordance over PBA samples, 3 concordance over WIG samples, 4 allelic variant VCF, 5 allelic genotype VCF, 6 deletion genotype VCF, 7 segment BED");
 struct arg_int* limitpbas = arg_int0("l", "limitpbas", "<int>", " limit number of loaded PBA files to this many. 0: no limits, > 0 sets upper limit (default 0)");
 struct arg_int* pbastrim5 = arg_int0("x", "trim5", "<int>", "trim this many aligned PBAs from 5' end of aligned segments (default 0, range 0..100)");
 struct arg_int* pbastrim3 = arg_int0("X", "trim3", "<int>", "trim this many aligned PBAs from 3' end of aligned segments (default 0, range 0..100)");
 
-struct arg_dbl* mingthet = arg_dbl0("y", "mingthet", "<dbl>", "minimum proportion required genotyping aligned sample heterozygosity (default 0.05, range 0.00 .. 0.25)");
-struct arg_dbl* maxgtpropna = arg_dbl0("Y", "maxgtpropna", "<dbl>", "maximum proportion allowed genotyping non-aligned samples (default 0.05, range 0.00 .. 0.25)");
+struct arg_dbl* mingthet = arg_dbl0("y", "mingthet", "<dbl>", "(mode 5,6) minimum proportion required genotyping aligned sample heterozygosity or (mode 7) min proportion of samples for segment initiation");
+struct arg_dbl* maxgtpropna = arg_dbl0("Y", "maxgtpropna", "<dbl>", "(mode 5,6) maximum proportion allowed genotyping non-aligned samples  or (mode 7) min proportion of samples for segment extension");
 
 
 struct arg_str* exprid = arg_str0("e", "exprid", "<str>", "assign this experiment identifier, mode 1 only (default is 'E000000')");
 struct arg_str* seqid = arg_str0("s", "seqid", "<str>", "sequence identifier, mode 1 only (default is 'S000000')");
 struct arg_str* refassemb = arg_str0("r", "refassemb", "<str>", "reference assembly, mode 1 only (default is 'Wm82v4')");
-
 struct arg_str* ExcludeChroms = arg_strn("Z", "chromexclude", "<string>", 0, cMaxExcludeChroms, "high priority - regular expressions defining chromosomes to exclude");
 struct arg_str* IncludeChroms = arg_strn("z", "chromeinclude", "<string>", 0, cMaxIncludeChroms, "low priority - regular expressions defining chromosomes to include");
 struct arg_file* infiles = arg_filen("i", "infiles", "<file>", 0, cMaxWildCardFileSpecs, "input file(s), wildcards allowed, limit of 200 filespecs supported");
@@ -185,7 +184,7 @@ if(!argerrors)
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Error: Unsupported processing mode '-m%d'\n", PMode);
 		exit(1);
 		}
-	if (PMode == ePBAu2PBAConcordance || PMode == ePBAu2WIGConcordance)
+	if (PMode == ePBAu2PBAConcordance || PMode == ePBAu2BED || PMode == ePBAu2WIGConcordance)
 		{
 		LimitPBAs = limitpbas->count ? limitpbas->ival[0] : cMaxPBAReadsets;
 		if (LimitPBAs < 1 || LimitPBAs > cMaxPBAReadsets)
@@ -208,27 +207,42 @@ if(!argerrors)
 		if (PBAsTrim3 > 100)
 			PBAsTrim3 = 100;
 
-	if(PMode == ePBAu2GVCF || PMode == ePBAu2DVCF)
+	GTPropNAThres = 0.0;
+	GTPropHetThres = 0.0;
+	if (PMode == ePBAu2BED)
 		{
-		GTPropNAThres = maxgtpropna->count ? maxgtpropna->dval[0] : cDfltGTPropThres;
-		if(GTPropNAThres < 0.00)	// silently force to be in accepted range
-			GTPropNAThres = 0.00;
+		GTPropNAThres = maxgtpropna->count ? maxgtpropna->dval[0] : cDfltGTPropThres; // repurposing for minimum proportion aligned samples segment initiation 
+		if(GTPropNAThres < 0.001)	// silently force to be in accepted range
+			GTPropNAThres = 0.001;
 		else
-			if(GTPropNAThres > 0.25)
-				GTPropNAThres = 0.25;
+			if(GTPropNAThres > 0.50)
+				GTPropNAThres = 0.50;
 			
-		GTPropHetThres = mingthet->count ? mingthet->dval[0] : cDfltGTPropThres;
-		if(GTPropHetThres < 0.00)	// silently force to be in accepted range
-			GTPropHetThres = 0.00;
+		GTPropHetThres = mingthet->count ? mingthet->dval[0] : GTPropNAThres/2.0; // repurposing for minimum proportion aligned samples segment continuation
+		if(GTPropHetThres < 0.001)	// silently force to be in accepted range
+			GTPropHetThres = 0.001;
 		else
-			if(GTPropHetThres > 0.25)
-				GTPropHetThres = 0.25;
+			if(GTPropHetThres > GTPropNAThres)
+				GTPropHetThres = GTPropNAThres;
 		}
 	else
-		{
-		GTPropNAThres = 0.0;
-		GTPropHetThres = 0.0;
-		}
+		if(PMode == ePBAu2GVCF || PMode == ePBAu2DVCF)
+			{
+			GTPropNAThres = maxgtpropna->count ? maxgtpropna->dval[0] : cDfltGTPropThres;
+			if(GTPropNAThres < 0.00)	// silently force to be in accepted range
+				GTPropNAThres = 0.00;
+			else
+				if(GTPropNAThres > 0.25)
+					GTPropNAThres = 0.25;
+			
+			GTPropHetThres = mingthet->count ? mingthet->dval[0] : cDfltGTPropThres;
+			if(GTPropHetThres < 0.00)	// silently force to be in accepted range
+				GTPropHetThres = 0.00;
+			else
+				if(GTPropHetThres > 0.25)
+					GTPropHetThres = 0.25;
+			}
+	
 
 // show user current resource limits
 #ifndef _WIN32
@@ -436,11 +450,14 @@ if(!argerrors)
 		case ePBAu2DVCF:
 			pszDescr = "generate a deletion VCF";
 			break;
+		case ePBAu2BED:
+			pszDescr = "generate BED containing all transcribed regions";
+			break;
 	}
 
 	gDiagnostics.DiagOutMsgOnly(eDLInfo, "PBA utilities : '%s'", pszDescr);
 
-	if (PMode == ePBAu2PBAConcordance || PMode == ePBAu2WIGConcordance)
+	if (PMode == ePBAu2PBAConcordance || PMode == ePBAu2BED || PMode == ePBAu2WIGConcordance)
 		gDiagnostics.DiagOutMsgOnly(eDLInfo, "Limit number of processed PBAs or WIGs to : %d", LimitPBAs);
 
 	gDiagnostics.DiagOutMsgOnly(eDLInfo, "Trim 5' segments by : %dbp", PBAsTrim5);
@@ -455,6 +472,11 @@ if(!argerrors)
 			gDiagnostics.DiagOutMsgOnly(eDLInfo, "Minimum proportion unaligned samples : %.3f", GTPropHetThres);
 		}
 
+	if(PMode == ePBAu2BED)
+		{
+		gDiagnostics.DiagOutMsgOnly(eDLInfo, "Minimum proportion aligned samples segment initiation : %.3f", GTPropNAThres);
+		gDiagnostics.DiagOutMsgOnly(eDLInfo, "Minimum proportion aligned samples segment continuation : %.3f", GTPropHetThres);
+		}
 
 	if(PMode == ePBAu2AVCF || PMode == ePBAu2GVCF || PMode == ePBAu2DVCF)
 		gDiagnostics.DiagOutMsgOnly(eDLInfo, "PBA reference assembly : '%s'", szRefAssembFile);
@@ -487,7 +509,7 @@ if(!argerrors)
 #endif
 	gStopWatch.Start();
 	Rslt = 0;
-	Rslt = Process(PMode,	// processing mode: ePBAu2Fasta PBA to Fasta, ePBAu2PBA Fasta to PBA, ePBAu2PBAConcordance concordance over PBA samples, ePBAu2WIGConcordance concordance over WIG samples, ePBAu2AVCF allelic variant VCF, ePBAu2GVCF allelic genotype VCF, ePBAu2DVCF deletion genotype VCF
+	Rslt = Process(PMode,	// processing mode: ePBAu2Fasta PBA to Fasta, ePBAu2PBA Fasta to PBA, ePBAu2PBAConcordance concordance over PBA samples, ePBAu2WIGConcordance concordance over WIG samples, ePBAu2AVCF allelic variant VCF, ePBAu2GVCF allelic genotype VCF, ePBAu2DVCF deletion genotype VCF, ePBAu2BED generate BED containing all transcribed regions
 					LimitPBAs,			// limit number of loaded PBA files to this many. 1 .. cMaxPBAReadsets
 					PBAsTrim5,			// trim this many aligned PBAs from 5' end of aligned segments - reduces false alleles due to sequencing errors
 					PBAsTrim3,			// trim this many aligned PBAs from 3' end of aligned segments - reduces false alleles due to sequencing errors
@@ -524,7 +546,7 @@ else
 	}
 }
 
-int Process(ePBAuMode PMode,	// processing mode: ePBAu2Fasta PBA to Fasta, ePBAu2PBA Fasta to PBA, ePBAu2PBAConcordance concordance over PBA samples, ePBAu2WIGConcordance concordance over WIG samples, ePBAu2AVCF allelic variant VCF, ePBAu2GVCF allelic genotype VCF, ePBAu2DVCF deletion genotype VCF
+int Process(ePBAuMode PMode,	// processing mode: ePBAu2Fasta PBA to Fasta, ePBAu2PBA Fasta to PBA, ePBAu2PBAConcordance concordance over PBA samples, ePBAu2WIGConcordance concordance over WIG samples, ePBAu2AVCF allelic variant VCF, ePBAu2GVCF allelic genotype VCF, ePBAu2DVCF deletion genotype VCF,ePBAu2BED generate BED containing all transcribed regions
 	int32_t LimitPBAs,			// limit number of loaded PBA files to this many. 1 .. cMaxPBAReadsets
 	int32_t PBAsTrim5,			// trim this many aligned PBAs from 5' end of aligned segments - reduces false alleles due to sequencing errors
 	int32_t PBAsTrim3,			// trim this many aligned PBAs from 3' end of aligned segments - reduces false alleles due to sequencing errors
@@ -1206,8 +1228,10 @@ for (Idx = 0; Idx < NumInputFiles; Idx++)
 		}
 	}
 m_NumReadsetIDs = ReadsetID;
-
-Rslt = GeneratePBAConcordance();
+if(PMode == ePBAu2BED)
+	Rslt = GeneratePBASegsBed(m_GTPropNAThres,m_GTPropHetThres,cMinSegLen);
+else
+	Rslt = GeneratePBAConcordance();
 return(Rslt);
 }
 
@@ -1821,6 +1845,175 @@ if (m_hWIGOutFile != -1)
 return(eBSFSuccess);
 }
 
+// generate coverage (usually, but not restricted to, RNA-seq alignments) segments and output to BED
+// intent is that this may allow discovery of novel transcripts and if currently annotated features require extension or are not actually transcribed
+int
+CPBAutils::GeneratePBASegsBed(double MinCovThres,	// segment coverage initiation if previously not meeting coverage threshold and now at least this proportion of all PBA samples have coverage
+							double ContCovThres,	// coverage continuation if coverage stays above this proportional threshold and,
+							int32_t MinLen)			// coverage continues for at least this many bp
+{
+char szBEDFile[_MAX_PATH+1];
+
+if (m_pOutBuffer == nullptr)
+	{
+	if ((m_pOutBuffer = new uint8_t[cOutBuffSize]) == nullptr) // an overkill in terms of buffer size!
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Memory allocation of %u bytes for output buffering failed - %s", cOutBuffSize, strerror(errno));
+		Reset();
+		return(eBSFerrMem);
+		}
+	m_AllocOutBuff = cOutBuffSize;
+	}
+m_OutBuffIdx = 0;
+
+CUtility::AppendFileNameSuffix(szBEDFile, m_szOutFile, (char *)".bed", '.');
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "Generating coverage segments, segment initiated if %.3f of all samples have coverage, coverage stays above %.3f of all samples and extends at least %dbp", MinCovThres, ContCovThres,MinLen);
+gDiagnostics.DiagOut(eDLInfo, gszProcName,"Coverage segments will be written to '%s' in BED format",szBEDFile);
+#ifdef _WIN32
+m_hOutFile = open(szBEDFile, (O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC), (_S_IREAD | _S_IWRITE));
+#else
+if ((m_hOutFile = open64(szBEDFile, O_WRONLY | O_CREAT, S_IREAD | S_IWRITE)) != -1)
+if (ftruncate(m_hOutFile, 0) != 0)
+{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to create/truncate '%s' - %s", szBEDFile, strerror(errno));
+	Reset();
+	return(eBSFerrCreateFile);
+}
+#endif
+if (m_hOutFile < 0)
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Unable to create/truncate '%s' - %s", szBEDFile, strerror(errno));
+	Reset();
+	return(eBSFerrCreateFile);
+	}
+
+if (!CUtility::RetryWrites(m_hOutFile, m_pOutBuffer, m_OutBuffIdx))
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Fatal error in RetryWrites()");
+	Reset();
+	return(eBSFerrFileAccess);
+	}
+m_OutBuffIdx = 0;
+
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "Process: Completed loading %d input PBA files\n\tStarting segment discovery for each chromosome", m_NumReadsetIDs);
+uint32_t ChromID;
+uint32_t ChromLen;
+uint32_t CurLoci;
+uint32_t CurSampleID;
+uint32_t NumbLociSamplesWithCoverage;
+double PropLociSamplesWithCoverage;
+int32_t CurSegStartLoci;
+int32_t CurSegLen;
+uint8_t **pSamplePBAs;
+uint8_t* pPBAs;
+tsPUChromMetadata* pChromMetadata;
+pSamplePBAs = new uint8_t * [m_NumReadsetIDs];
+uint64_t AllChromsSegsLen;
+uint64_t NumAllChromSegs;
+uint32_t CurChromSegsLen;
+uint32_t CurNumChromSegs;
+AllChromsSegsLen = 0;
+NumAllChromSegs = 0;
+for (ChromID = 1; (int)ChromID < m_NumChromNames; ChromID++)
+	{
+	LoadChromPBAs(ChromID);			// load PBAs for this chromosome
+	pChromMetadata = LocateChromMetadataFor(1, ChromID);			// major assumption is that each sample has same length chromosomes as 1st sample
+	char* pszChrom = LocateChrom(pChromMetadata->ChromID);
+	gDiagnostics.DiagOut(eDLInfo, gszProcName,"Processing chrom '%s'",pszChrom);
+
+	ChromLen = pChromMetadata->ChromLen;
+	memset(pSamplePBAs, 0, sizeof(uint8_t*)* m_NumReadsetIDs);
+	for (CurSampleID = 1; (int)CurSampleID <= m_NumReadsetIDs; CurSampleID++)
+		{
+		if ((pSamplePBAs[CurSampleID-1] = LocatePBAfor(CurSampleID, pChromMetadata->ChromID)) == nullptr)
+			{
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Unable to locate PBAs for '%s' in sample %d",pszChrom, CurSampleID);
+			delete[]pSamplePBAs;
+			return(eBSFerrChrom);
+			}
+		}
+	gDiagnostics.DiagOut(eDLInfo, gszProcName,"Processing chrom '%s'. %d sample PBAs loaded",pszChrom,m_NumReadsetIDs);
+	NumbLociSamplesWithCoverage = 0;
+	CurSegLen = 0;
+	CurSegStartLoci = 0;
+	CurChromSegsLen = 0;
+	CurNumChromSegs = 0;
+	// process for intersection of samples with read coverage at each loci
+	for (CurLoci = 0; CurLoci < ChromLen; CurLoci++)
+		{
+		NumbLociSamplesWithCoverage = 0;
+		for (CurSampleID = 1; (int)CurSampleID <= m_NumReadsetIDs; CurSampleID++)
+			{
+			pPBAs = pSamplePBAs[CurSampleID-1];
+			if(pPBAs[CurLoci] != 0)
+				NumbLociSamplesWithCoverage++;;
+			}
+
+		PropLociSamplesWithCoverage = (double)(NumbLociSamplesWithCoverage+1)/m_NumReadsetIDs;
+		if(CurSegLen == 0 && PropLociSamplesWithCoverage < MinCovThres)
+			continue;
+		if (CurLoci == ChromLen -1 ||  PropLociSamplesWithCoverage < ContCovThres)	// dropped below the min?
+			{
+			if(CurSegLen < MinLen)
+				{
+				CurSegLen = 0;
+				continue;
+				}
+			// accepting coverage, starts at DeemedCoverageStartLoci and is of length CurSegLen
+			CurNumChromSegs++;
+			m_OutBuffIdx += sprintf((char *)&m_pOutBuffer[m_OutBuffIdx], "%.80s\t%d\t%d\t%.80s.%d\t0\t+\t0\t%d\t0\t1\t%d,\t0\n", pszChrom, CurSegStartLoci, CurSegLen, pszChrom, CurNumChromSegs, CurSegLen, CurSegLen);
+			if((m_OutBuffIdx + 10000) > m_AllocOutBuff)
+				{
+				if (!CUtility::RetryWrites(m_hOutFile, m_pOutBuffer, m_OutBuffIdx))
+					{
+					gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Fatal error in RetryWrites()");
+					Reset();
+					return(eBSFerrFileAccess);
+					}
+				m_OutBuffIdx = 0;
+				}
+
+			CurChromSegsLen+=CurSegLen;
+			CurSegLen = 0;
+			continue;
+			}
+		if(CurSegLen ==0)	// if just starting segment coverage then record loci at which it starts
+			CurSegStartLoci = CurLoci;
+		CurSegLen++;
+		}
+
+	NumAllChromSegs += CurNumChromSegs;
+	AllChromsSegsLen += CurChromSegsLen;
+	gDiagnostics.DiagOut(eDLInfo, gszProcName,"Completed chrom '%s', discovered %u segments totaling %u in length",pszChrom,CurNumChromSegs,CurChromSegsLen);
+	DeleteAllChromPBAs();
+	}
+gDiagnostics.DiagOut(eDLInfo, gszProcName,"Completed processing, over all chroms discovered %zd segments totaling %zd in length",NumAllChromSegs,AllChromsSegsLen);
+if (pSamplePBAs != nullptr)
+	delete[]pSamplePBAs;
+if(m_OutBuffIdx)
+	{
+	if (!CUtility::RetryWrites(m_hOutFile, m_pOutBuffer, m_OutBuffIdx))
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Fatal error in RetryWrites()");
+		Reset();
+		return(eBSFerrFileAccess);
+		}
+	m_OutBuffIdx = 0;
+	}
+if (m_hOutFile != -1)
+	{
+	// commit output file
+#ifdef _WIN32
+	_commit(m_hOutFile);
+#else
+	fsync(m_hOutFile);
+#endif
+	close(m_hOutFile);
+	m_hOutFile = -1;
+	}
+
+return(eBSFSuccess);
+}
 
 bool 
 CPBAutils::AcceptROIChromID(int32_t ChromID)	// testing if this chromosome can be mapped to any ROI chromosome

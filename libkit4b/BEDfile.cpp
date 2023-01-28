@@ -408,7 +408,7 @@ else // else opening existing file which could be a bioseq bed, raw bed file or 
 		// initially assume BED
 		if((Rslt=ProcessBedFile(pszBioBed))!=eBSFSuccess)	// file to process
 			{
-			if(Rslt != eBSFerrFileType)
+			if(Rslt != eBSFerrFileType && Rslt != eBSFerrParse)
 				{
 				AddErrMsg("CBEDfile::Open","Unable to process raw BED file %s",pszBioBed);
 				Reset(false);

@@ -18,20 +18,26 @@
 #include "./ngskit4b.h"
 
 const int cAllocSeqLen = 1000000;	 // allocate for sequences in this sized chunks
+const int cDfltSubSeqLen = 50;		// default subsequence length - eSMPSubSeq
+const int cMinSubSeqLen = 15;		// minimum subsequence length - eSMPSubSeq
+const int cMaxSubSeqLen = 50;		// default subsequence length - eSMPSubSeq
 
 typedef enum eSamplingProcMode {
-	eSMPdefault = 0				// currently default processing only
+	eSMPdefault = 0,			// default processing is to return the complete ROI fasta sequence
+	eSMPSubSeq,					// break the ROI fasta sequence into overlapping subsequences
+	eSMPplaceholder				// used to set the enumeration range
 } etSamplingProcMode;
 
 int ParseRegions(char *pszRegionList);
 char *Regions2Txt(int Regions);
 int TrimQuotes(char *pszTxt);
 
-int Process(int PMode,						// currently just the single default which is the complete sequence for each ROI
-			char *pszROIFile,		// input BED file containing regions to be sampled
-			char *pszSamplesFile,	// output ROI sequences to this multifasta file
-			char *pszSfxFile);	// source ROI sequences from this suffix array file
-
+int
+Process(int PMode,				// 0: complete fasta sequence for each ROI, 1: overlapping ROI fasta subsequences
+		int SubSeqLen,			// subsequences of this length, will be overlapping by 50%
+		char *pszROIFile,		// input BED file containing regions to be sampled
+		char *pszSamplesFile,	// output ROI sequences to this multifasta file
+		char *pszSfxFile);		// source ROI sequences from this suffix array file
 
 #ifdef _WIN32
 int xroiseqs(int argc, char* argv[])
@@ -51,7 +57,8 @@ char szLogFile[_MAX_PATH];	// write diagnostics to this file
 
 int Rslt;
 
-int PMode;						// currently just the single default which is the complete sequence for each ROI
+int PMode;						// default is the complete sequence for each ROI, else split into overlapping subsequences
+int SubSeqLen;					// split ROI sequences into this length overlapping subsequences
 char szROIFile[_MAX_PATH];		// input BED file containing regions to be sampled
 char szSamplesFile[_MAX_PATH];	// output ROI sequences to this multifasta file
 char szSfxFile[_MAX_PATH];	// source ROI sequences from this fasta assembly file
@@ -63,7 +70,9 @@ struct arg_int *FileLogLevel=arg_int0("f", "FileLogLevel",		"<int>","Level of di
 struct arg_int *ScreenLogLevel=arg_int0("S", "ScreenLogLevel",	"<int>","Level of diagnostics written to logfile 0=fatal,1=errors,2=info,3=diagnostics,4=debug");
 struct arg_file *LogFile = arg_file0("F","log","<file>",		"diagnostics log file");
 
-struct arg_int  *procmode = arg_int0("m","procmode","<int>",	"processing mode 0:default");
+struct arg_int  *procmode = arg_int0("m","procmode","<int>",			"processing mode 0: single fasta sequence for each ROI, 1: split ROI fasta into overlapping subsequences");
+struct arg_int  *subseqlen = arg_int0("s","subseqlen","<int>",			"if splitting into overlapping subsequences then use this subsequence length, overlap will be 0.5 this length");
+
 struct arg_file* roifile = arg_file1("i", "roifile", "<file>",			"input BED file containing ROI specifying regions containing fasta sequences to be extracted");
 struct arg_file* samplesfile = arg_file1("o", "samplesfile","<file>",	"output ROI sequences to this multifasta file");
 struct arg_file *sfxfile = arg_file1("I","sfxfile","<file>",			"source ROI sequences from this suffix array assembly file");
@@ -71,7 +80,7 @@ struct arg_file *sfxfile = arg_file1("I","sfxfile","<file>",			"source ROI seque
 struct arg_end *end = arg_end(20);
 
 void *argtable[] = {help,version,FileLogLevel,ScreenLogLevel,LogFile,
-					procmode,roifile,samplesfile,sfxfile,
+					procmode,subseqlen,roifile,samplesfile,sfxfile,
 					end};
 
 char **pAllArgs;
@@ -128,8 +137,20 @@ if (!argerrors)
 		}
 
 	PMode = procmode->count ? procmode->ival[0] : eSMPdefault;
-	if(PMode < eSMPdefault || PMode > eSMPdefault)
+	if(PMode < eSMPdefault || PMode > eSMPplaceholder)
 		PMode = eSMPdefault;
+
+	if(PMode == eSMPSubSeq)
+		{
+		SubSeqLen = subseqlen->count ? subseqlen->ival[0] : cDfltSubSeqLen;
+		if(SubSeqLen < cMinSubSeqLen)
+			SubSeqLen = cMinSubSeqLen;
+		else
+			if(SubSeqLen > cMaxSubSeqLen)
+				SubSeqLen = cMaxSubSeqLen;
+		}
+	else
+		SubSeqLen = 0;
 
 	strncpy(szROIFile,roifile->filename[0],sizeof(szROIFile)-1);
 	CUtility::TrimQuotedWhitespcExtd (szROIFile);
@@ -166,7 +187,19 @@ if (!argerrors)
 		}
 
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Version: %s Processing parameters:", kit4bversion);
-	gDiagnostics.DiagOutMsgOnly(eDLInfo,"Processing mode: Default");
+	const char *pszDescr;
+	switch (PMode) {
+		case eSMPdefault:
+			pszDescr = "extract ROI fasta sequences into multifasta file";
+			break;
+		case eSMPSubSeq:
+			pszDescr = "extract and split ROI fasta as overlapping subsequences into multifasta file";
+			break;
+		}
+
+	gDiagnostics.DiagOutMsgOnly(eDLInfo,"Processing mode: '%s'",pszDescr);
+	if(PMode == eSMPSubSeq)
+		gDiagnostics.DiagOutMsgOnly(eDLInfo,"Subsequence lengths: %d",SubSeqLen);
 	gDiagnostics.DiagOutMsgOnly(eDLInfo,"Input suffix assembly file: '%s'",szSfxFile);
 	gDiagnostics.DiagOutMsgOnly(eDLInfo,"Output ROI fasta sequences to this file: '%s'",szSamplesFile);
 	gDiagnostics.DiagOutMsgOnly(eDLInfo,"Input ROI BED file: '%s'",szROIFile);
@@ -174,7 +207,8 @@ if (!argerrors)
 	SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
 #endif
 	gStopWatch.Start();
-	Rslt = Process(PMode,						// currently just the single default which is the complete sequence for each ROI
+	Rslt = Process(PMode,			// 0: complete fasta sequence for each ROI, 1: overlapping ROI fasta subsequences
+					SubSeqLen,		// subsequences of this length, will overlap by 50%
 					szROIFile,		// input BED file containing regions to be sampled
 					szSamplesFile,	// output ROI sequences to this multifasta file
 					szSfxFile);	// source ROI sequences from this suffix assembly file);
@@ -313,7 +347,8 @@ return(Len);
 
 
 int
-Process(int PMode,				// currently just the single default which is the complete sequence for each ROI
+Process(int PMode,				// 0: complete fasta sequence for each ROI, 1: overlapping fasta subsequences
+		int SubSeqLen,			// subsequences of this length, will be overlapping by 50%
 		char *pszROIFile,		// input BED file containing regions to be sampled
 		char *pszSamplesFile,	// output ROI sequences to this multifasta file
 		char *pszSfxFile)	// source ROI sequences from this suffix array file
@@ -464,28 +499,57 @@ while ((NxtFeatureID = pBED->GetNextFeatureID(CurFeatureID)) > 0)
 		continue;
 		}
 
-	if(NumFeatures++ == 0)
-		SeqBuffOfs += sprintf(&pszSeqBuffer[SeqBuffOfs], ">%s %s:%d:%d", szFeatureName, szChrom, FeatStart, SeqLen);
-	else
-		SeqBuffOfs += sprintf(&pszSeqBuffer[SeqBuffOfs], "\n>%s %s:%d:%d", szFeatureName, szChrom, FeatStart, SeqLen);
-
 	int NumCols;
-	int SeqOfs = 0;
+	int SeqOfs;
+	int SubFeatLen;
+	int DeltaSubSeqOfs;
 	int NxtFastaCol = 0;
-	while(SeqLen)
+	uint8_t *pSubSeq;
+	int SubSeqOfs;
+	if (PMode == eSMPSubSeq && SubSeqLen > 0 && SubSeqLen < FeatLen)
 		{
-		NumCols = SeqLen > 70 ? 70 : SeqLen;
-		if(NumCols > 70)
-			NumCols = 70;
-		SeqBuffOfs += sprintf(&pszSeqBuffer[SeqBuffOfs],"\n");
-		CSeqTrans::MapSeq2Ascii(&pSeqBuffer[SeqOfs],NumCols,&pszSeqBuffer[SeqBuffOfs]);
-		SeqBuffOfs += NumCols;
-		SeqLen -= NumCols;
-		SeqOfs += NumCols;
-		if((SeqBuffOfs + 1000) > AllocszSeqLen)
+		SubFeatLen = SubSeqLen;
+		DeltaSubSeqOfs = (SubFeatLen+1)/2;
+		}
+	else
+		{
+		SubSeqLen = 0;
+		SubFeatLen = FeatLen;
+		DeltaSubSeqOfs = FeatLen;
+		}
+	for (SubSeqOfs = 0; SubSeqOfs < FeatLen;SubSeqOfs += DeltaSubSeqOfs)
+		{
+		if(SubFeatLen == 0)
+			SubFeatLen = SubSeqLen;
+		if (SubSeqLen != 0 && (FeatLen - SubSeqOfs ) <= SubSeqLen)
 			{
-			CUtility::RetryWrites(hRsltsFile,pszSeqBuffer,SeqBuffOfs);
-			SeqBuffOfs = 0;
+			SubFeatLen = FeatLen - SubSeqOfs;
+			DeltaSubSeqOfs = SubFeatLen;
+			}
+		pSubSeq = &pSeqBuffer[SubSeqOfs];
+		if(NumFeatures++ != 0)
+			SeqBuffOfs += sprintf(&pszSeqBuffer[SeqBuffOfs], "\n");
+		if(SubSeqLen != 0)
+			SeqBuffOfs += sprintf(&pszSeqBuffer[SeqBuffOfs], ">%s.%d %s:%d:%d", szFeatureName,SubSeqOfs, szChrom, FeatStart + SubSeqOfs, SubFeatLen);
+		else
+			SeqBuffOfs += sprintf(&pszSeqBuffer[SeqBuffOfs], ">%s %s:%d:%d", szFeatureName, szChrom, FeatStart, SubFeatLen);
+		SeqOfs = 0;
+		NxtFastaCol = 0;
+		while(SubFeatLen)
+			{
+			NumCols = SubFeatLen > 70 ? 70 : SubFeatLen;
+			if(NumCols > 70)
+				NumCols = 70;
+			SeqBuffOfs += sprintf(&pszSeqBuffer[SeqBuffOfs],"\n");
+			CSeqTrans::MapSeq2Ascii(&pSubSeq[SeqOfs],NumCols,&pszSeqBuffer[SeqBuffOfs]);
+			SeqBuffOfs += NumCols;
+			SubFeatLen -= NumCols;
+			SeqOfs += NumCols;
+			if((SeqBuffOfs + 1000) > AllocszSeqLen)
+				{
+				CUtility::RetryWrites(hRsltsFile,pszSeqBuffer,SeqBuffOfs);
+				SeqBuffOfs = 0;
+				}
 			}
 		}
 	}

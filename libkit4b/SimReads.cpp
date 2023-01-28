@@ -656,11 +656,6 @@ return(eBSFSuccess);
 }
 
 
-
-
-
-
-
 int
 CSimReads::LoadFasta(size_t *pTotLen,int MinChromLen,char *pszFastaFile)
 {
@@ -2124,7 +2119,7 @@ do {
 	bFirst = false;
 
 
-	// wait for all threads to terminate - be patient, could be a long, long wait if dynamic Hamming dist determinations
+	// wait for all threads to terminate - be patient, could be a long, long wait
     PrevNumGenReads = 0;
 	for(ThreadIdx = 0; ThreadIdx < NumThreads; ThreadIdx++)
 		{
@@ -2170,7 +2165,7 @@ do {
 	if(ExhustedChroms < NumThreads)
 		{
 		ReportedReads = ReportReads(bPEgen,		// true if paired end simulated reads being simulated
-		        Region,						// Hamming regional processing?
+		        Region,						// regional processing?
 				ReadLen,					// read length
 			    TotReportedReads,			// number of reads thus far reported on
 				m_TotReqReads,				// maximum number of reads required to be reported on

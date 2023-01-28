@@ -37,13 +37,24 @@ typedef struct TAG_sRNAGBSWGSMaterial {
 	uint32_t RNASampleID;	// RNA sample name identifier
 	uint32_t WGSSampleID;	// WGS sample name identifier
 	uint32_t MaterialID;	// Material name identifier
+	uint32_t LocationID;	// RNA location
+	uint32_t EntryBookID;	// RNA entry name
+	uint32_t SampleNum;			// RNA replicate number - currently just 1 or 2
+	uint32_t PlotNum;			// RNA plot number
+	uint32_t RangeNum;			// RNA range number
+	uint32_t RowNum;				// RNA row number
 	} tsRNAGBSWGSMaterial;
 
 #pragma pack()
 
 class CRNAExpr
 {
-	
+	uint32_t m_LARNAMetaNameID;			// name identifier last returned by AddRNAMetaName()
+	uint32_t m_NumRNAMetaNames;			// number of RNAMetaNames names currently in m_szRNAMetaNames
+	uint32_t m_NxtszRNAMetaNameIdx;			// current concatenated (names separated by '\0') size of all Meta names in m_szRNAMetaNames - offset at which to add new name
+	char m_szRNAMetaNames[cMaxRNAESamples * (2*cMaxSampleRefNameLen + 1)];	// used to hold concatenated RNAMetaName (Location,EntryBook names, each separated by '\0'
+	uint32_t m_szRNAMetaNamesIdx[2*cMaxRNAESamples];	// array of indexes into m_szRNAMetaNames giving the start offsets of each name - location or entry boo;
+
 	uint32_t m_LARNASampleNameID;			// name identifier last returned by AddRNASampleName()
 	uint32_t m_NumRNASampleNames;			// number of RNASampleNames names currently in m_szRNASampleNames
 	uint32_t m_NxtszRNASampleNameIdx;			// current concatenated (names separated by '\0') size of all SampleName names in m_szRNASampleNames - offset at which to add new name
@@ -118,6 +129,16 @@ class CRNAExpr
 
 	uint32_t		// returned chrom identifier, 0 if unable to locate this chromosome name
 		LocateChromID(char* pszChrom); // return unique identifier associated with this chromosome name
+
+	uint32_t		// returned RNA metadata name identifier, 0 if unable to accept this metadata name
+		AddRNAMetaName(char* pszRNAMetaName); // associate unique identifier with this chromosome name
+
+	char*	// returns RNA metadata name associated with 
+		LocateRNAMetaName(uint32_t RNAMetaNameID); // metadata identifier
+
+	uint32_t		// returned RNA metadata name identifier, 0 if unable to locate this metadata name
+		LocateRNAMetaNameID(char* pszRNAMetaName); // return unique identifier associated with this metadata name
+
 
 	uint32_t		// returned material identifier, 0 if unable to accept this material name
 		AddMaterialName(char* pszMaterialName); // associate unique identifier with this material name

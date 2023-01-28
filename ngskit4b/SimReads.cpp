@@ -151,7 +151,7 @@ struct arg_lit  *version = arg_lit0("v","version,ver",			"print version informat
 struct arg_int *FileLogLevel=arg_int0("f", "FileLogLevel",		"<int>","Level of diagnostics written to screen and logfile 0=fatal,1=errors,2=info,3=diagnostics,4=debug");
 struct arg_file *LogFile = arg_file0("F","log","<file>",		"diagnostics log file");
 
-struct arg_int *pmode = arg_int0("m","mode","<int>",		    "processing mode: 0 - random start and end, 1 - Profiled start with random end sites, 2 - random start with profiled end sites,  3 - profiled start with profiled end sites, 4 - same as standard with Hammings (0 - default)");
+struct arg_int *pmode = arg_int0("m","mode","<int>",		    "processing mode: 0 - random start and end, 1 - Profiled start with random end sites, 2 - random start with profiled end sites,  3 - profiled start with profiled end sites (0 - default)");
 struct arg_int *fmode = arg_int0("M","format","<int>",		    "output format: 0 - multifasta wrapped, 1 - multifasta non-wrapped");
 struct arg_int *numreads = arg_int0("n","nreads","<int>",	    "number of reads required, minimum 5, maximum 500000000 (default = 10000000)");
 

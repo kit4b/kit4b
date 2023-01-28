@@ -23,7 +23,7 @@ Please contact Dr Stuart Stephen < stuartjs@g3web.com > if you have any question
 
 #include "../libkit4b/bgzf.h"
 
-int CallHaplotypes(eModeCSH PMode,			// processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons, 3: allelic haplotype grouping,4: coverage haplotype grouping, 5: post-process haplotype groupings for QGLs,  6: post-process to WIG,  7 progeny PBAs vs. founder PBAs allelic association scores
+int CallHaplotypes(eModeCSH PMode,			// processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons, 3: allelic haplotype grouping,4: coverage haplotype grouping, 5: post-process haplotype groupings for QGLs,  6: post-process to WIG,  7 progeny PBAs vs. founder PBAs allelic association scores, 8 founder PBAs vs. founder PBAs allelic association scores
 			int32_t LimitPrimaryPBAs,		// limit number of loaded primary or founder PBA files to this many. 0: no limits, > 0 sets upper limit
 			int32_t ExprID,					// assign this experiment identifier for this PBA analysis
 			int32_t SeedRowID,				// generated CSVs will contain monotonically incremented row identifiers seeded with this identifier  
@@ -122,7 +122,7 @@ struct arg_lit *version = arg_lit0 ("v", "version,ver", "print version informati
 struct arg_int *FileLogLevel = arg_int0 ("f", "FileLogLevel", "<int>", "Level of diagnostics written to screen and logfile 0=fatal,1=errors,2=info,3=diagnostics,4=debug");
 struct arg_file *LogFile = arg_file0 ("F", "log", "<file>", "diagnostics log file");
 
-struct arg_int *pmode = arg_int0 ("m", "mode", "<int>", "processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons, 3: allelic haplotype grouping,4: coverage haplotype grouping, 5: post-process haplotype groupings for QGLs, 6: post-process to WIG, 7 progeny PBAs vs. founder PBAs allelic association scores (default 0)");
+struct arg_int *pmode = arg_int0 ("m", "mode", "<int>", "processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons, 3: allelic haplotype grouping,4: coverage haplotype grouping, 5: post-process haplotype groupings for QGLs, 6: post-process to WIG, 7 progeny PBAs vs. founder PBAs, 8 progeny PBAs vs. founder PBAs  allelic association scores (default 0)");
 struct arg_int *limitprimarypbas = arg_int0 ("l", "limit", "<int>", " limit number of loaded primary or founder PBA files to this many. 0: no limits, > 0 sets upper limit (default 0)");
 
 struct arg_int* exprid = arg_int0("e","exprid","<int>","assign this experiment identifier for haplotypes called (default 1");
@@ -156,7 +156,7 @@ struct arg_str  *IncludeChroms = arg_strn("z","chromeinclude",	"<string>",0,cMax
 
 struct arg_file* chromfile = arg_file1("c", "chromfile", "<file>", "input BED file containing chromosome names and sizes");
 	
-struct arg_file *founderfiles = arg_filen("I", "founderfiles", "<file>", 0,cMaxFounderFileSpecs,"founder input BPA file(s), wildcards allowed, limit of 200 founder filespecs supported");
+struct arg_file *founderfiles = arg_filen("I", "founderfiles", "<file>", 0,cMaxFounderFileSpecs,"founder input BPA file(s), wildcards allowed, limit of 500 founder filespecs supported");
 struct arg_file *progenyfiles = arg_filen("i", "inprogenyfile", "<file>",0, cMaxProgenyFileSpecs, "progeny input BPA file(s), wildcards allowed, limit of 500 progeny filespecs supported");
 struct arg_file *maskbpafile = arg_file0("j", "inmaskbpa", "<file>", "optional masking input BPA file, or haplotype grouping specification file(s) or previously generated haplotype grouping file for post-processing");
 struct arg_file *outfile = arg_file1("o", "out", "<file>", "loci haplotype calls output prefix (outputs CSV and WIG format)");
@@ -413,7 +413,7 @@ if (!argerrors)
 			MaxClustGrps = 0;
 			}
 
-		if(PMode < eMCSHAllelicHapsGrps || PMode == eMCSHProgVsFndrs)
+		if(PMode < eMCSHAllelicHapsGrps || PMode == eMCSHProgVsFndrs || PMode == eMCSHFndrsVsFndrs)
 			{
 			FndrTrim5 = fndrtrim5->count ? fndrtrim5->ival[0] : cDfltFndrTrim5;
 			if(FndrTrim5 < 0)
@@ -618,6 +618,10 @@ if (!argerrors)
 		case eMCSHProgVsFndrs:
 			pszDescr = "progeny PBAs vs. founder PBAs allelic association scores";
 			break;
+
+		case eMCSHFndrsVsFndrs:
+			pszDescr = "founder PBAs vs. founder PBAs allelic association scores";
+			break;
 		}
 
 	gDiagnostics.DiagOutMsgOnly (eDLInfo, "Calling haplotypes : '%s'", pszDescr);
@@ -632,7 +636,7 @@ if (!argerrors)
 	if(LimitPrimaryPBAs > 0)
 		gDiagnostics.DiagOutMsgOnly(eDLInfo, "Limiting number of loaded primary or founder PBA files to first: %d",LimitPrimaryPBAs);
 
-	if(PMode < eMCSHAllelicHapsGrps || PMode == eMCSHProgVsFndrs)
+	if(PMode < eMCSHAllelicHapsGrps || PMode == eMCSHProgVsFndrs || PMode == eMCSHFndrsVsFndrs)
 		{
 		gDiagnostics.DiagOutMsgOnly(eDLInfo, "Trim this many aligned PBAs from 5' end of founder aligned segments: %d", FndrTrim5);
 		gDiagnostics.DiagOutMsgOnly(eDLInfo, "Trim this many aligned PBAs from 3' end of founder aligned segments: %d", FndrTrim3);
@@ -704,7 +708,7 @@ if (!argerrors)
 #endif
 	gStopWatch.Start ();
 	Rslt = 0;
-	Rslt = CallHaplotypes(PMode,			// processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons, 3: allelic haplotype grouping,4: coverage haplotype grouping, 5: post-process haplotype groupings for QGLs,  6: post-process to WIG, 7 progeny PBAs vs. founder PBAs allelic association scores
+	Rslt = CallHaplotypes(PMode,			// processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons, 3: allelic haplotype grouping,4: coverage haplotype grouping, 5: post-process haplotype groupings for QGLs,  6: post-process to WIG, 7 progeny PBAs vs. founder PBAs allelic association scores, 8:progeny PBAs vs. founder PBAs allelic association scores
 					ExprID,			         // assign this experiment identifier for this PBA analysis
 					SeedRowID,                  // generated CSVs will contain monotonically incremented row identifiers seeded with this identifier  
 					LimitPrimaryPBAs,        // limit number of loaded primary or founder PBA files to this many. 0: no limits, > 0 sets upper limit			
@@ -752,7 +756,7 @@ else
 	}
 }
 
-int CallHaplotypes(eModeCSH PMode,	// processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons, 3: allelic haplotype grouping,4: coverage haplotype grouping, 5: post-process haplotype groupings for QGLs,  6: post-process to WIG, 7 progeny PBAs vs. founder PBAs allelic association scores
+int CallHaplotypes(eModeCSH PMode,	// processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons, 3: allelic haplotype grouping,4: coverage haplotype grouping, 5: post-process haplotype groupings for QGLs,  6: post-process to WIG, 7 progeny PBAs vs. founder PBAs allelic association scores, 8:progeny PBAs vs. founder PBAs allelic association scores
 			int32_t ExprID,			         // assign this experiment identifier for this PBA analysis
 			int32_t SeedRowID,                  // generated CSVs will contain monotonically incremented row identifiers seeded with this identifier  
 			int32_t LimitPrimaryPBAs,                // limit number of loaded primary or founder PBA files to this many. 0: no limits, > 0 sets upper limit
@@ -1263,7 +1267,7 @@ return(NumChroms);
 }
 
 int
-CCallHaplotypes::Process(eModeCSH PMode,	// processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons, 3: allelic haplotype grouping,4: coverage haplotype grouping, 5: post-process haplotype groupings for QGLs,  6: post-process to WIG, 7: progeny PBAs vs. founder PBAs allelic association scores
+CCallHaplotypes::Process(eModeCSH PMode,	// processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons, 3: allelic haplotype grouping,4: coverage haplotype grouping, 5: post-process haplotype groupings for QGLs,  6: post-process to WIG, 7: progeny PBAs vs. founder PBAs allelic association scores, 8:progeny PBAs vs. founder PBAs allelic association scores
 			int32_t ExprID,			         // assign this experiment identifier for this PBA analysis
 			int32_t SeedRowID,               // generated CSVs will contain monotonically unique row identifiers seeded with this row identifier  
 		    int32_t LimitPrimaryPBAs,        // limit number of loaded primary or founder PBA files to this many. 0: no limits, > 0 sets upper limit
@@ -1562,6 +1566,19 @@ if(m_MaxClustGrps > m_NumFounders)
      m_MaxClustGrps = m_NumFounders;
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "Process: Completed loading founders (%d) pool", m_NumFounders);
 
+if (m_PMode == eMCSHFndrsVsFndrs)
+	{
+	if ((Rslt = GenFndrsVsFndrs(m_NumFounders, pszOutFile)) < eBSFSuccess)
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Failed processing progeny vs founder PBA files");
+		Reset();
+		return(Rslt);
+		}
+	Reset();
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Completed processing");
+	return(Rslt);
+	}
+
 if(m_PMode == eMCSHProgVsFndrs)
 	{
 	// individually process each progeny against the founder panel
@@ -1604,6 +1621,8 @@ if(m_PMode == eMCSHProgVsFndrs)
 			m_NumProgenies++;
 			}
 		}
+
+
 	if((Rslt = GenProgVsFndrs(m_NumProgenies,m_NumFounders, pszOutFile)) < eBSFSuccess)
 		{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Failed processing progeny vs founder PBA files");
@@ -3095,7 +3114,7 @@ for(ChromIdx = 0; ChromIdx < pFndrMetadata->NumChroms && CurChromMetadataIdx != 
 		LineOfs += sprintf(&pszLineBuff[LineOfs],"\n");
 		fwrite(pszLineBuff,1,LineOfs,pOutAlignLenFile);
 
-				// output exactly lengths
+				// output exactly matching alignment lengths
 		LineOfs = MarkLineOfs;
 		pChromScore = pChromScores;
 		for(FndrID = 1; FndrID <= m_NumFounders; FndrID++,pChromScore++)
@@ -3163,6 +3182,375 @@ delete []pAssembScores;
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenProgVsFndrs: Completed scoring all progeny PBAs against all founder PBAs");
 return(eBSFSuccess);
 }
+
+#ifdef _WIN32
+unsigned __stdcall WorkerAlignSelfPBAsInstance(void* pThreadPars)
+#else
+void* WorkerAlignSelfPBAsInstance(void* pThreadPars)
+#endif
+{
+	int Rslt;
+	tsCHWorkerSelfScoreInstance* pPars = (tsCHWorkerSelfScoreInstance*)pThreadPars;			// makes it easier not having to deal with casts!
+	CCallHaplotypes* pWorkerInstance = (CCallHaplotypes*)pPars->pThis;
+
+	Rslt = pWorkerInstance->AlignSelfPBAsThread(pPars);
+	pPars->Rslt = Rslt;
+#ifdef _WIN32
+	_endthreadex(0);
+	return(eBSFSuccess);
+#else
+	pthread_exit(&pPars->Rslt);
+#endif
+}
+
+int 
+CCallHaplotypes::AlignSelfPBAs(uint32_t NumFounders,uint32_t ChromLen, tsCHChromScores *pChromScores,uint8_t *pFndrPBAs[],int MaxThreads)
+{
+int Rslt = -1;
+tsCHWorkerSelfScoreInstance CHWorkerSelfScoreInstances[cMaxPBAWorkerThreads];
+int NumThreads;
+tsCHWorkerSelfScoreInstance *pThreadPar;
+int32_t ThreadIdx;
+
+NumThreads = min(NumFounders, (uint32_t)MaxThreads);
+m_CurSelfID = 0;
+pThreadPar = CHWorkerSelfScoreInstances;
+for (ThreadIdx = 1; ThreadIdx <= NumThreads; ThreadIdx++, pThreadPar++)
+	{
+	memset(pThreadPar, 0, sizeof(tsCHWorkerSelfScoreInstance));
+#ifdef _WIN32
+	pThreadPar->threadHandle = NULL;
+#else
+	pThreadPar->threadID = 0;
+#endif
+	pThreadPar->NumFounders = NumFounders;
+	pThreadPar->ChromLen = ChromLen;
+	pThreadPar->pChromScores = pChromScores;
+	pThreadPar->pFndrPBAs = pFndrPBAs;
+	pThreadPar->ThreadIdx = ThreadIdx;
+	pThreadPar->pThis = this;
+#ifdef _WIN32
+	pThreadPar->threadHandle = (HANDLE)_beginthreadex(NULL, 0x0fffff, WorkerAlignSelfPBAsInstance, pThreadPar, 0, &pThreadPar->threadID);
+#else
+	pThreadPar->threadRslt = pthread_create(&pThreadPar->threadID, NULL, WorkerAlignSelfPBAsInstance, pThreadPar);
+#endif
+	}
+
+// allow threads a few seconds to startup
+#ifdef _WIN32
+Sleep(2000);
+#else
+sleep(2);
+#endif
+
+// wait for all threads to have completed
+pThreadPar = CHWorkerSelfScoreInstances;
+for (ThreadIdx = 1; ThreadIdx <= NumThreads; ThreadIdx++, pThreadPar++)
+	{
+#ifdef _WIN32
+	while (WAIT_TIMEOUT == WaitForSingleObject(pThreadPar->threadHandle, 1000))
+		{
+		}
+	CloseHandle(pThreadPar->threadHandle);
+#else
+	struct timespec ts;
+	int JoinRlt;
+	clock_gettime(CLOCK_REALTIME, &ts);
+	ts.tv_sec += 1;
+	while ((JoinRlt = pthread_timedjoin_np(pThreadPar->threadID, NULL, &ts)) != 0)
+		{
+		ts.tv_sec += 1;
+		}
+
+#endif
+	if (pThreadPar->Rslt != eBSFSuccess)
+		Rslt = pThreadPar->Rslt;
+	}
+return(Rslt);
+}
+
+// thread for scoring an instance of a founder PBAs (termed as Self) against all founder PBAs
+int
+CCallHaplotypes::AlignSelfPBAsThread(tsCHWorkerSelfScoreInstance *pPar)
+{
+int32_t SelfID;
+uint32_t FndrID;
+uint32_t Loci;
+uint8_t SelfPBA;
+uint8_t FndrPBA;
+uint8_t* pSelfPBA;
+uint8_t* pSelfLoci;
+uint8_t* pFndrLoci;
+tsCHChromScores* pChromScore;
+int NumProcessed = 0;
+for (SelfID = 1; SelfID <= (int32_t)pPar->NumFounders; SelfID++)
+	{
+	AcquireFastSerialise();
+	if (SelfID <= m_CurSelfID)
+		{
+		ReleaseFastSerialise();
+		continue;
+		}
+	m_CurSelfID = SelfID;
+	ReleaseFastSerialise();
+	NumProcessed++;
+	pSelfPBA = pPar->pFndrPBAs[SelfID - 1];
+	pSelfLoci = pSelfPBA;
+	for (Loci = 0; Loci < pPar->ChromLen; Loci++, pSelfLoci++)
+		{
+		if ((SelfPBA = *pSelfLoci) == 0)
+			continue;
+		pChromScore = &pPar->pChromScores[(SelfID - 1) * pPar->NumFounders];
+		for (FndrID = 1; FndrID <= pPar->NumFounders; FndrID++, pChromScore++)
+			{
+			pFndrLoci = pPar->pFndrPBAs[FndrID - 1] + Loci;
+			if ((FndrPBA = *pFndrLoci) == 0)
+				continue;
+
+			if (FndrPBA == SelfPBA)	// exactly matching?
+				pChromScore->NumExactMatches++;
+			pChromScore->AlignLen++;
+			}
+		}
+	}
+return(0);
+}
+
+
+int
+CCallHaplotypes::GenFndrsVsFndrs(int32_t NumFndrPBAs,			// number of founder PBAs to be processed
+	char* pszRsltsFileBaseName)	// results are written to this file base name
+{
+	uint32_t Loci;
+	uint8_t* pFndrLoci;
+	uint8_t FndrPBA;
+	uint8_t* pFndrPBAs[cMaxFounderReadsets];
+	tsCHChromScores* pChromScores;
+	tsCHChromScores* pChromScore;
+	tsCHChromScores* pAssembScores;
+	tsCHChromScores* pAssembScore;
+
+	uint32_t FndrID;
+	uint32_t SelfID;
+
+	tsCHReadsetMetadata* pFndrMetadata;
+	tsCHChromMetadata* pChromMetadata;
+	uint32_t CurChromID;
+	uint32_t CurChromMetadataIdx;
+	uint32_t ChromIdx;
+	char* pszChrom;
+	char szOutScore[_MAX_PATH];
+	char szOutAlignLen[_MAX_PATH];
+	char szOutMatchLen[_MAX_PATH];
+
+	FILE* pOutScoreFile;
+	FILE* pOutAlignLenFile;
+	FILE* pOutMatchLenFile;
+
+	sprintf(szOutScore, "%s%s", pszRsltsFileBaseName, ".score.csv");
+	sprintf(szOutAlignLen, "%s%s", pszRsltsFileBaseName, ".alignlen.csv");
+	sprintf(szOutMatchLen, "%s%s", pszRsltsFileBaseName, ".matchlen.csv");
+
+	if ((pOutScoreFile = fopen(szOutScore, "w")) == NULL)
+	{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to create/truncate file %s for writing error: %s", szOutScore, strerror(errno));
+		Reset();
+		return(eBSFerrOpnFile);
+	}
+
+	if ((pOutAlignLenFile = fopen(szOutAlignLen, "w")) == NULL)
+	{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to create/truncate file %s for writing error: %s", szOutAlignLen, strerror(errno));
+		fclose(pOutScoreFile);
+		Reset();
+		return(eBSFerrOpnFile);
+	}
+
+	if ((pOutMatchLenFile = fopen(szOutMatchLen, "w")) == NULL)
+	{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to create/truncate file %s for writing error: %s", szOutMatchLen, strerror(errno));
+		fclose(pOutScoreFile);
+		fclose(pOutAlignLenFile);
+		Reset();
+		return(eBSFerrOpnFile);
+	}
+
+	pChromScores = new tsCHChromScores[NumFndrPBAs * NumFndrPBAs];
+	pAssembScores = new tsCHChromScores[NumFndrPBAs * NumFndrPBAs];
+	memset(pChromScores, 0, sizeof(tsCHChromScores) * NumFndrPBAs * NumFndrPBAs);
+	memset(pAssembScores, 0, sizeof(tsCHChromScores) * NumFndrPBAs * NumFndrPBAs);
+	char* pszLineBuff = new char[500000];
+	int32_t LineOfs;
+	int32_t MarkLineOfs;
+	LineOfs = sprintf(pszLineBuff, "\"Chrom\",\"Fndr\"");
+	for (FndrID = 1; FndrID <= m_NumFounders; FndrID++)
+		LineOfs += sprintf(&pszLineBuff[LineOfs], ",\"%s\"", LocateReadset(FndrID));
+	LineOfs += sprintf(&pszLineBuff[LineOfs], "\n");
+	fwrite(pszLineBuff, 1, LineOfs, pOutScoreFile);
+	fwrite(pszLineBuff, 1, LineOfs, pOutAlignLenFile);
+	fwrite(pszLineBuff, 1, LineOfs, pOutMatchLenFile);
+	LineOfs = 0;
+
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenFndrsVsFndrs: Starting to process self PBAs against %d founder PBAs", NumFndrPBAs);
+	pFndrMetadata = &m_Readsets[0];		// founders were loaded first so 1st founder will be here
+	CurChromMetadataIdx = pFndrMetadata->StartChromMetadataIdx;
+	for (ChromIdx = 0; ChromIdx < pFndrMetadata->NumChroms && CurChromMetadataIdx != 0; ChromIdx++)
+		{
+		memset(pChromScores, 0, sizeof(tsCHChromScores) * NumFndrPBAs * NumFndrPBAs);
+		pChromMetadata = &m_pChromMetadata[CurChromMetadataIdx - 1];
+		// ensure any previously loaded founder PBAs for current chromosome are deleted
+		if (ChromIdx > 0)
+			{
+			for (FndrID = 1; FndrID <= m_NumFounders; FndrID++)
+				DeleteSampleChromPBAs(FndrID, pChromMetadata->ChromID);
+			}
+
+		pChromMetadata = &m_pChromMetadata[CurChromMetadataIdx - 1];
+		CurChromMetadataIdx = pChromMetadata->NxtChromMetadataIdx;
+		CurChromID = pChromMetadata->ChromID;
+		pszChrom = LocateChrom(CurChromID);
+
+		// load all founder PBAs for current chrom
+		StartWorkerLoadChromPBAThreads(m_NumThreads, 1, m_NumFounders, CurChromID);
+		do {
+			gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenFndrsVsFndrs: Loading chromosome PBAs for '%s' from %d founder PBAs", pszChrom, m_NumFounders);
+			} 
+		while (!WaitAlignments(60));
+		
+		for (FndrID = 1; FndrID <= m_NumFounders; FndrID++)
+			{
+			tsCHChromMetadata* pChromMetadata;
+			// returned pointer to chromosome metadata
+			if ((pChromMetadata = LocateChromMetadataFor(FndrID, CurChromID)) == NULL)
+				{
+				gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenFndrsVsFndrs: No metadata for chromosome '%s' in at least one founder '%s', skipping this chromosome", pszChrom, LocateReadset(FndrID));
+				break;
+				}
+
+			if ((pFndrPBAs[FndrID - 1] = pChromMetadata->pPBAs) == NULL)
+				{
+				gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenFndrsVsFndrs: No PBA for chromosome '%s' in at least one founder '%s', skipping this chromosome", pszChrom, LocateReadset(FndrID));
+				break;
+				}
+
+			// normalise to remove coverage aspect: if allele is low coverage then would have been represented as 0x01 or 0x02 (in the case of 'T') so normalise to be 0x3 representing full coverage
+			pFndrLoci = pChromMetadata->pPBAs;
+			for (Loci = 0; Loci < pChromMetadata->ChromLen; Loci++, pFndrLoci++)
+				{
+				if ((FndrPBA = *pFndrLoci) == 0)
+					continue;
+
+				if (FndrPBA & 0xc0)
+					FndrPBA |= 0xc0;
+				if (FndrPBA & 0x30)
+					FndrPBA |= 0x30;
+				if (FndrPBA & 0x0c)
+					FndrPBA |= 0x0c;
+				if (FndrPBA & 0x03)
+					FndrPBA |= 0x03;
+				*pFndrLoci = FndrPBA;
+				}
+			}
+
+		// all founder PBAs for current chromosome loaded and normalised for coverage
+
+		gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenFndrsVsFndrs: Completed loading chromosome PBAs for '%s' from %d founder PBAs, starting to score", pszChrom, m_NumFounders);
+		AlignSelfPBAs(m_NumFounders, pChromMetadata->ChromLen, pChromScores, pFndrPBAs,m_NumThreads);
+
+		pAssembScore = pAssembScores;
+		for (SelfID = 1; SelfID <= m_NumFounders; SelfID++)
+			{
+			LineOfs = sprintf(pszLineBuff, "\"%s\",\"%s\"", pszChrom, LocateReadset(SelfID));
+			MarkLineOfs = LineOfs;
+
+			// calculate mean score for current self as being number of exactly matching loci normalised by number of loci with coverage for each founder
+			LineOfs = MarkLineOfs;
+			pChromScore = &pChromScores[(SelfID-1) * m_NumFounders];
+			for (FndrID = 1; FndrID <= m_NumFounders; FndrID++, pChromScore++, pAssembScore++)
+				{
+				pAssembScore->AlignLen += pChromScore->AlignLen;
+				pAssembScore->NumExactMatches += pChromScore->NumExactMatches;
+				pAssembScore->NumPartialMatches += pChromScore->NumPartialMatches;
+				pChromScore->Score = (double)pChromScore->NumExactMatches / pChromScore->AlignLen;
+				LineOfs += sprintf(&pszLineBuff[LineOfs], ",%.7f", pChromScore->Score);
+				}
+			LineOfs += sprintf(&pszLineBuff[LineOfs], "\n");
+			fwrite(pszLineBuff, 1, LineOfs, pOutScoreFile);
+
+			// output alignment lengths
+			LineOfs = MarkLineOfs;
+			pChromScore = &pChromScores[(SelfID - 1) * m_NumFounders];
+			for (FndrID = 1; FndrID <= m_NumFounders; FndrID++, pChromScore++)
+				LineOfs += sprintf(&pszLineBuff[LineOfs], ",%d", pChromScore->AlignLen);
+			LineOfs += sprintf(&pszLineBuff[LineOfs], "\n");
+			fwrite(pszLineBuff, 1, LineOfs, pOutAlignLenFile);
+
+			// output exactly matching alignment lengths
+			LineOfs = MarkLineOfs;
+			pChromScore = &pChromScores[(SelfID - 1) * m_NumFounders];
+			for (FndrID = 1; FndrID <= m_NumFounders; FndrID++, pChromScore++)
+				LineOfs += sprintf(&pszLineBuff[LineOfs], ",%d", pChromScore->NumExactMatches);
+			LineOfs += sprintf(&pszLineBuff[LineOfs], "\n");
+			fwrite(pszLineBuff, 1, LineOfs, pOutMatchLenFile);
+			}
+
+		// processing of alignments against current founders chromosome completed, no longer require their chromosome PBAs
+		for (FndrID = 1; FndrID <= m_NumFounders; FndrID++)
+			DeleteSampleChromPBAs(FndrID, CurChromID);
+		}
+
+	// now the summary full assembly scores
+	pAssembScore = pAssembScores;
+	for (SelfID = 1; SelfID <= m_NumFounders; SelfID++)
+	{
+		LineOfs = sprintf(pszLineBuff, "\"AllChroms\",\"%s\"", LocateReadset(SelfID));
+		for (FndrID = 1; FndrID <= m_NumFounders; FndrID++, pAssembScore++)
+		{
+			pAssembScore->Score = (double)pAssembScore->NumExactMatches / pAssembScore->AlignLen;
+			LineOfs += sprintf(&pszLineBuff[LineOfs], ",%.7f", pAssembScore->Score);
+		}
+		LineOfs += sprintf(&pszLineBuff[LineOfs], "\n");
+		fwrite(pszLineBuff, 1, LineOfs, pOutScoreFile);
+	}
+	fflush(pOutScoreFile);
+	fclose(pOutScoreFile);
+
+	// now the summary full assembly alignment lengths
+	pAssembScore = pAssembScores;
+	for (SelfID = 1; SelfID <= m_NumFounders; SelfID++)
+	{
+		LineOfs = sprintf(pszLineBuff, "\"AllChroms\",\"%s\"", LocateReadset(SelfID));
+		for (FndrID = 1; FndrID <= m_NumFounders; FndrID++, pAssembScore++)
+			LineOfs += sprintf(&pszLineBuff[LineOfs], ",%d", pAssembScore->AlignLen);
+		LineOfs += sprintf(&pszLineBuff[LineOfs], "\n");
+		fwrite(pszLineBuff, 1, LineOfs, pOutAlignLenFile);
+	}
+	fflush(pOutAlignLenFile);
+	fclose(pOutAlignLenFile);
+
+
+	// now the summary full assembly alignment exactly matching lengths
+	pAssembScore = pAssembScores;
+	for (SelfID = 1; SelfID <= m_NumFounders; SelfID++)
+	{
+		LineOfs = sprintf(pszLineBuff, "\"AllChroms\",\"%s\"", LocateReadset(SelfID));
+		for (FndrID = 1; FndrID <= m_NumFounders; FndrID++, pAssembScore++)
+			LineOfs += sprintf(&pszLineBuff[LineOfs], ",%d", pAssembScore->NumExactMatches);
+		LineOfs += sprintf(&pszLineBuff[LineOfs], "\n");
+		fwrite(pszLineBuff, 1, LineOfs, pOutMatchLenFile);
+	}
+	fflush(pOutMatchLenFile);
+	fclose(pOutMatchLenFile);
+
+	delete[]pszLineBuff;
+	delete[]pChromScores;
+	delete[]pAssembScores;
+
+	// finished with the score generation
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenFndrsVsFndrs: Completed scoring all self PBAs against all founder PBAs");
+	return(eBSFSuccess);
+}
+
 
 
 int
@@ -6576,7 +6964,7 @@ for(ChromIdx = 0; ChromIdx < pReadsetMetadata->NumChroms && CurChromMetadataIdx 
 		}
 
 		// startup threads
-	StartWorkerThreads(m_NumThreads, 1);		            // processing a single chromosome at a time otherwise memory resources could be exhausted when processing thousands of samples with large chromosome sizes
+	StartWorkerThreads(m_NumThreads, 1);		// processing a single chromosome at a time otherwise memory resources could be exhausted when processing thousands of samples with large chromosome sizes
 
 	do {
 		gDiagnostics.DiagOut(eDLInfo,gszProcName,"AlignAlleleStacks: Generating allele stacks for '%s' over %d founders",pszChrom,NumFndrs);

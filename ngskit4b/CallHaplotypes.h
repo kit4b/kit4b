@@ -2,7 +2,7 @@
 
 const int32_t cMaxPBAWorkerThreads = 64;			// limiting number of worker threads to be a max of this many
 
-const int32_t cMaxFounderFileSpecs = 200;			// can accept at most this max number of input wildcarded founder file specs
+const int32_t cMaxFounderFileSpecs = 500;			// can accept at most this max number of input wildcarded founder file specs
 const int32_t cMaxProgenyFileSpecs = 500;			// can specify a max of this number of input wildcarded progeny file specs
 
 const int32_t cMaxFounderReadsets = 4000;			// after input wildcard expansion then can accept at most this max number of founder readsets
@@ -69,6 +69,7 @@ typedef enum TAG_eModeCSH {
 	eMCSHQGLHapsGrps,       // post-processing haplotype groupings for differential QGL loci
 	eMCSHGrpDist2WIG,       // post-processing haplotype grouping centroid distances into WIG format
 	eMCSHProgVsFndrs,		// progeny PBAs vs. founder PBAs allelic association scores
+	eMCSHFndrsVsFndrs,		// founder PBAs vs. founder PBAs allelic association scores
 	eMCSHPlaceHolder		// used to mark end of processing modes
 	}eModeCSH;
 
@@ -240,6 +241,22 @@ typedef struct TAG_sCHWorkerLoadChromPBAsInstance {
 	int Rslt;						// processing result
 } tsCHWorkerLoadChromPBAsInstance;
 
+typedef struct TAG_sCHWorkerSelfScoreInstance {
+	int ThreadIdx;					// uniquely identifies this thread
+	void* pThis;					// will be initialised to pt to class instance
+#ifdef _WIN32
+	HANDLE threadHandle;			// handle as returned by _beginthreadex()
+	uint32_t threadID;				// identifier as set by _beginthreadex()
+#else
+	int threadRslt;					// result as returned by pthread_create ()
+	pthread_t threadID;				// identifier as set by pthread_create ()
+#endif
+	uint32_t NumFounders;			// number of Selfs will be same as number of founders (all vs. all)
+	uint32_t ChromLen;				// length of chromosome to be scored over 
+	tsCHChromScores* pChromScores;	// where to write scores (all vs. all)
+	uint8_t** pFndrPBAs;			// array of ptrs to each loaded PBAs for all founders for the current chromosome
+	int Rslt;						// processing result
+} tsCHWorkerSelfScoreInstance;
 
 #pragma pack()
 
@@ -325,6 +342,7 @@ class CCallHaplotypes
 	size_t m_AllocdHGBinSpecsMem;		// current mem allocation size for m_pHGBinSpecs
 	tsHGBinSpec* m_pHGBinSpecs;         // allocated to hold haplotype grouping bin specifications
 
+	int m_CurSelfID;					// currently the highest self PBAs being aligned by any thread 
 
 	uint32_t m_UsedQGLLoci;		        // number of actually used QGLLoci
 	uint32_t m_AllocdQGLLoci;		    // number of allocated QGLLoci
@@ -406,6 +424,8 @@ class CCallHaplotypes
 	void ReleaseSerialise(void);
 	void AcquireFastSerialise(void);
 	void ReleaseFastSerialise(void);
+
+	int	AlignSelfPBAs(uint32_t NumFounders, uint32_t ChromLen, tsCHChromScores* pChromScores, uint8_t* pFndrPBAs[], int MaxThreads);
 
 	// initialise and start pool of worker threads
 	int	StartWorkerThreads(uint32_t NumThreads,		// there are this many threads in pool
@@ -531,6 +551,9 @@ class CCallHaplotypes
 	int GenProgVsFndrs(int32_t NumProgPBAs,			// number of progeny PBAs to be processed
 								 int32_t NumFndrPBAs,			// number of founder PBAs to be processed
 								 char* pszRsltsFileBaseName);	// results are written to this file base name
+
+	int	GenFndrsVsFndrs(int32_t NumFndrPBAs,			// number of founder PBAs to be processed
+			char* pszRsltsFileBaseName);	// results are written to this file base name
 
 	int				// < 0 if errors, otherwise success
 		GenChromAlleleStacks(uint32_t ChromID,	// processing is for this chromosome
@@ -696,7 +719,7 @@ public:
 	CCallHaplotypes();
 	~CCallHaplotypes();
 	void Reset(void);	// resets class instance state back to that immediately following instantiation
-	int Process(eModeCSH PMode,	// processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons, 3: allelic haplotype grouping,4: coverage haplotype grouping, 5: post-process haplotype groupings for QGLs,  6: post-process to WIG, 7: progeny PBAs vs. founder PBAs allelic association scores
+	int Process(eModeCSH PMode,	// processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons, 3: allelic haplotype grouping,4: coverage haplotype grouping, 5: post-process haplotype groupings for QGLs,  6: post-process to WIG, 7: progeny PBAs vs. founder PBAs allelic association scores, 8: progeny PBAs vs. founder PBAs allelic association scores
 			int32_t ExprID,			         // assign this experiment identifier for this PBA analysis
 			int32_t SeedRowID,                  // generated CSVs will contain monotonically unique row identifiers seeded with this row identifier  
 			int32_t LimitPrimaryPBAs,        // limit number of loaded primary or founder PBA files to this many. 0: no limits, > 0 sets upper limit
@@ -733,6 +756,7 @@ public:
 
 	int ProcWorkerThread(tsCHWorkerInstance* pThreadPar);	// worker thread parameters
 	int ProcWorkerLoadChromPBAThread(tsCHWorkerLoadChromPBAsInstance* pThreadPar);	// worker thread parameters
+	int AlignSelfPBAsThread(tsCHWorkerSelfScoreInstance* pPar);	// worker thread parameters
 
 };
 
