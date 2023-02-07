@@ -719,7 +719,7 @@ public:
 	CCallHaplotypes();
 	~CCallHaplotypes();
 	void Reset(void);	// resets class instance state back to that immediately following instantiation
-	int Process(eModeCSH PMode,	// processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons, 3: allelic haplotype grouping,4: coverage haplotype grouping, 5: post-process haplotype groupings for QGLs,  6: post-process to WIG, 7: progeny PBAs vs. founder PBAs allelic association scores, 8: progeny PBAs vs. founder PBAs allelic association scores
+	int Process(eModeCSH PMode,	// processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons, 3: allelic haplotype grouping,4: coverage haplotype grouping, 5: post-process haplotype groupings for QGLs,  6: post-process to WIG, 7: progeny PBAs vs. founder PBAs allelic association scores, 8: founder PBAs vs. founder PBAs allelic association scores
 			int32_t ExprID,			         // assign this experiment identifier for this PBA analysis
 			int32_t SeedRowID,                  // generated CSVs will contain monotonically unique row identifiers seeded with this row identifier  
 			int32_t LimitPrimaryPBAs,        // limit number of loaded primary or founder PBA files to this many. 0: no limits, > 0 sets upper limit

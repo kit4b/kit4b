@@ -28,6 +28,7 @@ int procrnaexpr(eModeRNAE PMode,			// processing mode
 				char* pszInCntsFile,		// load coverage counts from this file
 				char* pszInWGSvWGSFile,		// load WGS vs. WGS homozygosity scores from this file
 				char* pszInRNAvWGSFile,		// load RNA vs. WGS homozygosity scores from this file
+				char* pszInRNAvRNAFile,		// load RNA vs. RNA homozygosity scores from this file
 				char* pszOutRslts);			// write results to this file, will be suffixed appropriately
 
 #ifdef _WIN32
@@ -54,6 +55,7 @@ char szMaterialRNAGBSWGSFile[_MAX_PATH]; // load RNA/GBS/WIG sample names and RN
 char szInCntsFile[_MAX_PATH];	// load expression  level counts from this file
 char szInWGSvWGSFile[_MAX_PATH];	// load WGS vs. WGS homozygosity scores from this file
 char szInRNAvWGSFile[_MAX_PATH];	// load RNA vs. WGS homozygosity scores from this file
+char szInRNAvRNAFile[_MAX_PATH];	// load RNA vs. RNA homozygosity scores from this file
 
 char szOutRsltsFile[_MAX_PATH];		// write results to this file
 
@@ -65,14 +67,15 @@ struct arg_file *LogFile = arg_file0 ("F", "log", "<file>", "diagnostics log fil
 struct arg_int *pmode = arg_int0 ("m", "mode", "<int>", "processing mode 0: RNA replicates inconsistencies 1: RNA replicate vs. WGS homozygosity score matching (default 0)");
 struct arg_file* cntsfile = arg_file0("i", "cntsfile", "<file>", "input RNA expression level counts file");
 struct arg_file* samplesfile = arg_file1("c", "samplesfile", "<file>", "input RNA/GBS/WIG sample names and RNA associated metadata file");
-struct arg_file* wgsscorefile = arg_file0("w", "wgsscorefile", "<file>", "input WGS vs. WGS homozygosity scores file");
-struct arg_file* rnascorefile = arg_file0("r", "rnascorefile", "<file>", "input RNA vs. WGS homozygosity scores file");
+struct arg_file* wgswgsscorefile = arg_file0("w", "wgswgsscorefile", "<file>", "input WGS vs. WGS homozygosity scores file");
+struct arg_file* rnawgsscorefile = arg_file0("r", "rnawgsscorefile", "<file>", "input RNA vs. WGS homozygosity scores file");
+struct arg_file* rnarnascorefile = arg_file0("R", "rnarnascorefile", "<file>", "input RNA vs. RNA homozygosity scores file");
 struct arg_file* rsltsfile = arg_file1("o", "rsltfile", "<file>", "output results base file name, will be suffixed with processing mode specific extension");
 struct arg_int *threads = arg_int0("T","threads","<int>","number of processing threads 0..64 (defaults to 0 which limits threads to maximum of 64 CPU cores)");
 struct arg_end *end = arg_end (200);
 
 void *argtable[] = { help,version,FileLogLevel,LogFile,
-					pmode,cntsfile,wgsscorefile,rnascorefile,samplesfile,rsltsfile,
+					pmode,cntsfile,wgswgsscorefile,rnawgsscorefile,rnarnascorefile,samplesfile,rsltsfile,
 					threads,end };
 
 char **pAllArgs;
@@ -149,6 +152,8 @@ if (!argerrors)
 	szInCntsFile[0] = '\0';
 	szInWGSvWGSFile[0] = '\0';
 	szInRNAvWGSFile[0] = '\0';
+	szInRNAvRNAFile[0] = '\0';
+
 	if (cntsfile->count)
 		{
 		strncpy(szInCntsFile, cntsfile->filename[0], _MAX_PATH);
@@ -160,27 +165,40 @@ if (!argerrors)
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "No input RNA expression level counts file specified");
 		exit(1);
 		}
+
 	if(PMode == eMRNAEHomozScores)
 		{
-		if (wgsscorefile->count)
+		if (wgswgsscorefile->count)
 			{
-			strncpy(szInWGSvWGSFile, wgsscorefile->filename[0], _MAX_PATH);
+			strncpy(szInWGSvWGSFile, wgswgsscorefile->filename[0], _MAX_PATH);
 			szInWGSvWGSFile[_MAX_PATH-1] = '\0';
 			CUtility::TrimQuotedWhitespcExtd(szInWGSvWGSFile);
 			}
-		else
+		if(szInWGSvWGSFile[0] == '\0')
 			{
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, "No input WGS vs. WGS homozygosity scores file specified");
 			exit(1);
-			}		
-
-		if (rnascorefile->count)
+			}
+			
+		if (rnarnascorefile->count)
 			{
-			strncpy(szInRNAvWGSFile, rnascorefile->filename[0], _MAX_PATH);
+			strncpy(szInRNAvRNAFile, rnarnascorefile->filename[0], _MAX_PATH);
+			szInRNAvRNAFile[_MAX_PATH - 1] = '\0';
+			CUtility::TrimQuotedWhitespcExtd(szInRNAvRNAFile);
+			}
+		if (szInRNAvRNAFile[0] == '\0')
+			{
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "No input RNA vs. RNA homozygosity scores file specified");
+			exit(1);
+			}
+
+		if (rnawgsscorefile->count)
+			{
+			strncpy(szInRNAvWGSFile, rnawgsscorefile->filename[0], _MAX_PATH);
 			szInRNAvWGSFile[_MAX_PATH-1] = '\0';
 			CUtility::TrimQuotedWhitespcExtd(szInRNAvWGSFile);
 			}
-		else
+		if (szInRNAvWGSFile[0] == '\0')
 			{
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, "No input RNA vs. WGS homozygosity scores file specified");
 			exit(1);
@@ -254,6 +272,7 @@ if (!argerrors)
 		{
 		gDiagnostics.DiagOutMsgOnly(eDLInfo, "input WGS vs. WGS homozygosity scores file : '%s'", szInWGSvWGSFile);
 		gDiagnostics.DiagOutMsgOnly(eDLInfo, "input RNA vs. WGS homozygosity scores file : '%s'", szInRNAvWGSFile);
+		gDiagnostics.DiagOutMsgOnly(eDLInfo, "input RNA vs. RNA homozygosity scores file : '%s'", szInRNAvRNAFile);
 		}
 
 	gDiagnostics.DiagOutMsgOnly(eDLInfo, "Output base file name : '%s'", szOutRsltsFile);
@@ -269,6 +288,7 @@ if (!argerrors)
 						szInCntsFile,			// load coverage counts from this file
 						szInWGSvWGSFile,		// load WGS vs. WGS homozygosity scores from this file
 						szInRNAvWGSFile,		// load RNA vs. WGS homozygosity scores from this file
+						szInRNAvRNAFile,		// load RNA vs. RNA homozygosity scores from this file
 						szOutRsltsFile);		// write results to this file
 	Rslt = Rslt >= 0 ? 0 : 1;
 	gStopWatch.Stop ();
@@ -291,6 +311,7 @@ procrnaexpr(eModeRNAE PMode,			// processing mode
 				char* pszInCntsFile,		// load coverage counts from this file
 				char* pszInWGSvWGSFile,		// load WGS vs. WGS homozygosity scores from this file
 				char* pszInRNAvWGSFile,		// load RNA vs. WGS homozygosity scores from this file
+				char* pszInRNAvRNAFile,		// load RNA vs. RNA homozygosity scores from this file
 				char* pszOutRsltsFile)			// write results to this file, will be suffixed appropriately
 {
 int Rslt;
@@ -305,6 +326,7 @@ Rslt = pCRNAExpr->Process(PMode,			// processing mode
 					pszInCntsFile,	// load coverage counts from this file
 					pszInWGSvWGSFile,		// load WGS vs. WGS homozygosity scores from this file
 					pszInRNAvWGSFile,		// load RNA vs. WGS homozygosity scores from this file
+					pszInRNAvRNAFile,		// load RNA vs. RNA homozygosity scores from this file
 					pszOutRsltsFile);		// write results to this file);
 delete pCRNAExpr;
 
@@ -318,9 +340,11 @@ m_pRNAGBSWGSFile = nullptr;
 m_pInCntsFile = nullptr;
 m_pInWGSvWGSFile = nullptr;
 m_pInRNAvWGSFile = nullptr;
+m_pInRNAvRNAFile = nullptr;
 m_pRNACntsMem = nullptr;
 m_pRNAhomozScoresMem = nullptr;
 m_pWGShomozScoresMem = nullptr;
+m_pRNAvRNAhomozScoresMem = nullptr;
 Reset();
 }
 
@@ -334,6 +358,8 @@ if(m_pInWGSvWGSFile != nullptr)
 	delete m_pInWGSvWGSFile;
 if(m_pInRNAvWGSFile != nullptr)
 	delete m_pInRNAvWGSFile;
+if (m_pInRNAvRNAFile != nullptr)
+	delete m_pInRNAvRNAFile;
 
 if(m_pRNACntsMem != nullptr)
 	{
@@ -365,6 +391,16 @@ if(m_pWGShomozScoresMem != nullptr)
 #endif
 	}
 
+if (m_pRNAvRNAhomozScoresMem != nullptr)
+{
+#ifdef _WIN32
+	free(m_pRNAvRNAhomozScoresMem);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
+#else
+	if (m_pRNAvRNAhomozScoresMem != MAP_FAILED)
+		munmap(m_pRNAvRNAhomozScoresMem, m_AllocdRNAvRNAhomozScoresMem);
+#endif
+}
+
 }
 
 void 
@@ -386,6 +422,12 @@ if (m_pInRNAvWGSFile != nullptr)
 	{
 	delete m_pInRNAvWGSFile;
 	m_pInRNAvWGSFile = nullptr;
+	}
+
+if (m_pInRNAvRNAFile != nullptr)
+	{
+	delete m_pInRNAvRNAFile;
+	m_pInRNAvRNAFile = nullptr;
 	}
 
 if (m_pRNAGBSWGSFile != nullptr)
@@ -433,11 +475,27 @@ if(m_pWGShomozScoresMem != nullptr)
 m_UsedWGShomozScoresMem = 0;
 m_AllocdWGShomozScoresMem = 0;
 
-m_NumbHdrRNAMappings = 0;
-memset(m_HdrRNAMappings,0,sizeof(m_HdrRNAMappings));
+if (m_pRNAvRNAhomozScoresMem != nullptr)
+	{
+#ifdef _WIN32
+	free(m_pRNAvRNAhomozScoresMem);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
+#else
+	if (m_pRNAvRNAhomozScoresMem != MAP_FAILED)
+		munmap(m_pRNAvRNAhomozScoresMem, m_AllocdRNAvRNAhomozScoresMem);
+#endif
+	m_pRNAvRNAhomozScoresMem = nullptr;
+	}
+m_UsedRNAvRNAhomozScoresMem = 0;
+m_AllocdRNAvRNAhomozScoresMem = 0;
 
-m_NumbHdrWGSMappings = 0;
-memset(m_HdrWGSMappings,0,sizeof(m_HdrWGSMappings));
+m_NumbHdrRNAvWGSMappings = 0;
+memset(m_HdrRNAvWGSMappings,0,sizeof(m_HdrRNAvWGSMappings));
+
+m_NumbHdrWGSvWGSMappings = 0;
+memset(m_HdrWGSvWGSMappings,0,sizeof(m_HdrWGSvWGSMappings));
+
+m_NumbHdrRNAvRNAMappings = 0;
+memset(m_HdrRNAvRNAMappings, 0, sizeof(m_HdrRNAvRNAMappings));
 
 m_LARNASampleNameID = 0;
 m_NumRNASampleNames =0;
@@ -460,7 +518,6 @@ m_szMaterialNames[0] = 0;
 memset(m_szMaterialNames,0,sizeof(m_szMaterialNames));
 memset(m_szMaterialNamesIdx,0,sizeof(m_szMaterialNamesIdx));
 
-
 m_LAFeatureNameID = 0;
 m_NumFeatureNames = 0;
 m_NxtszFeatureNameIdx = 0;
@@ -478,6 +535,14 @@ m_NumRNAMetaNames = 0;
 m_NxtszRNAMetaNameIdx = 0;
 memset(m_szRNAMetaNames,0,sizeof(m_szRNAMetaNames));
 memset(m_szRNAMetaNamesIdx,0,sizeof(m_szRNAMetaNamesIdx));
+
+m_NumbHdrRNAvCntsMappings = 0;
+m_NumbHdrRNAvWGSMappings = 0;
+m_NumbHdrWGSvWGSMappings = 0;
+m_NumbHdrRNAvRNAMappings = 0;
+m_NumbRowRNAvRNAMappings = 0;
+m_NumbRowRNAvWGSMappings = 0;
+m_NumbRowWGSvWGSMappings = 0;
 }
 
 
@@ -548,7 +613,7 @@ if((Rslt = m_pInCntsFile->Open(pszInCntsFile)) != eBSFSuccess)
 CurLineNumber = 0;
 ExpNumFields = 0;
 FeatureNameID = 0;
-m_NumbHdrRNAMappings = 0;
+m_NumbHdrRNAvCntsMappings = 0;
 while((Rslt = m_pInCntsFile->NextLine()) > 0)		// onto next line containing fields
 	{
 	CurLineNumber++;
@@ -580,7 +645,7 @@ while((Rslt = m_pInCntsFile->NextLine()) > 0)		// onto next line containing fiel
 				return(eBSFerrParse);
 				}
 			SampleNameID = LocateRNASampleNameID(pszSampleRef);
-			m_HdrRNAMappings[m_NumbHdrRNAMappings++] = SampleNameID;
+			m_HdrRNAvCntsMappings[m_NumbHdrRNAvCntsMappings++] = SampleNameID;
 			}
 		continue;
 		}
@@ -592,7 +657,7 @@ while((Rslt = m_pInCntsFile->NextLine()) > 0)		// onto next line containing fiel
 		}
 
 
-	if((Rslt = ReallocRNAcnts(m_NumbHdrRNAMappings))!=eBSFSuccess)	// ensure sufficient memory preallocd to hold at least one additional row of feature values
+	if((Rslt = ReallocRNAcnts(m_NumbHdrRNAvCntsMappings))!=eBSFSuccess)	// ensure sufficient memory preallocd to hold at least one additional row of feature values
 		{
 		Reset();
 		return(Rslt);
@@ -622,14 +687,14 @@ while((Rslt = m_pInCntsFile->NextLine()) > 0)		// onto next line containing fiel
 	m_pInCntsFile->GetInt(7,&FeatLength);
 	m_pInCntsFile->GetInt(8,&TransLength);
 
-	pSampleValue = (int32_t *)&m_pRNACntsMem[((size_t)(FeatureNameID-1) * m_NumbHdrRNAMappings) * sizeof(int32_t)];
+	pSampleValue = (int32_t *)&m_pRNACntsMem[((size_t)(FeatureNameID-1) * m_NumbHdrRNAvCntsMappings) * sizeof(int32_t)];
 	for (FieldIdx = 9; FieldIdx <= ExpNumFields; FieldIdx++,pSampleValue++)
 		{
 		m_pInCntsFile->GetInt(FieldIdx, &FeatValue);
 		*pSampleValue = FeatValue;
 		}
 	}
-if (bNormaliseCnts && m_NumbHdrRNAMappings > 0 && m_NumFeatureNames > 0)
+if (bNormaliseCnts && m_NumbHdrRNAvCntsMappings > 0 && m_NumFeatureNames > 0)
 	{
 	int32_t RNAIdx;
 	int32_t FeatIdx;
@@ -639,21 +704,21 @@ if (bNormaliseCnts && m_NumbHdrRNAMappings > 0 && m_NumFeatureNames > 0)
 	// firstly total up counts for each replicate over all it's features into RepTotals
 	// also noting which replicate has the maximal number of total counts
 	MaxRepTotalsRNAIdx = 0;
-	for(RNAIdx = 0; RNAIdx < m_NumbHdrRNAMappings;RNAIdx++)
+	for(RNAIdx = 0; RNAIdx < m_NumbHdrRNAvCntsMappings;RNAIdx++)
 		{
 		RepTotals[RNAIdx] = 0;
 		pSampleValue = (int32_t *)&m_pRNACntsMem[((size_t)RNAIdx * sizeof(int32_t))];
-		for(FeatIdx = 0; FeatIdx < m_NumFeatureNames; FeatIdx++,pSampleValue += m_NumbHdrRNAMappings)
+		for(FeatIdx = 0; FeatIdx < m_NumFeatureNames; FeatIdx++,pSampleValue += m_NumbHdrRNAvCntsMappings)
 			RepTotals[RNAIdx] += *pSampleValue;
 		if(RepTotals[RNAIdx] > RepTotals[MaxRepTotalsRNAIdx])
 			MaxRepTotalsRNAIdx = RNAIdx;
 		}
 	// totals for each replicate are now known, normalise by scaling each replicate feature counts such that replicate counts will now sum to approximately RepTotals[MaxRepTotalsRNAIdx]
-	for(RNAIdx = 0; RNAIdx < m_NumbHdrRNAMappings;RNAIdx++)
+	for(RNAIdx = 0; RNAIdx < m_NumbHdrRNAvCntsMappings;RNAIdx++)
 		{
 		double ScaleFact = (double)RepTotals[MaxRepTotalsRNAIdx] / RepTotals[RNAIdx];
 		pSampleValue = (int32_t *)&m_pRNACntsMem[((size_t)RNAIdx * sizeof(int32_t))];
-		for(FeatIdx = 0; FeatIdx < m_NumFeatureNames; FeatIdx++,pSampleValue += m_NumbHdrRNAMappings)
+		for(FeatIdx = 0; FeatIdx < m_NumFeatureNames; FeatIdx++,pSampleValue += m_NumbHdrRNAvCntsMappings)
 			*pSampleValue = (int32_t)(*pSampleValue * ScaleFact);
 		}
 	}
@@ -661,7 +726,7 @@ if (bNormaliseCnts && m_NumbHdrRNAMappings > 0 && m_NumFeatureNames > 0)
 delete m_pInCntsFile;
 m_pInCntsFile = nullptr;
 
-return((m_NumbHdrRNAMappings > 0 && m_NumFeatureNames > 0) ? eBSFSuccess : eBSFerrParse);
+return((m_NumbHdrRNAvCntsMappings > 0 && m_NumFeatureNames > 0) ? eBSFSuccess : eBSFerrParse);
 }
 
 
@@ -846,10 +911,10 @@ return(NumbRNASamples);
 }
 
 double	// returned correlation coefficient
-CRNAExpr::PearsonCorrelation(int32_t StartFeatureID,	// starting from this feature (row)
-			int32_t EndFeatureID,	// ending with this inclusive feature (row)
-		  int32_t xSampleID,		// x sample (column)
-		  int32_t ySampleID)		// y sample (column)
+CRNAExpr::PearsonCorrelationRNAvCnts(int32_t StartRow,			// starting from this row (1..N)
+			int32_t EndRow,								// ending with this inclusive row (N)
+		  int32_t xSampleID,							// x sample (column)
+		  int32_t ySampleID)							// y sample (column)
 {
 double xMean;
 double yMean;
@@ -863,24 +928,24 @@ int32_t *pyValue;
 
 int32_t RowIdx;
 
-pxValue = (int32_t *)& m_pRNACntsMem[(((size_t)(StartFeatureID-1) * m_NumbHdrRNAMappings) + xSampleID-1) * sizeof(int32_t)];
-pyValue = (int32_t *)& m_pRNACntsMem[(((size_t)(StartFeatureID-1) * m_NumbHdrRNAMappings) + ySampleID-1) * sizeof(int32_t)];
+pxValue = (int32_t *)& m_pRNACntsMem[(((size_t)(StartRow -1) * m_NumbHdrRNAvCntsMappings) + xSampleID-1) * sizeof(int32_t)];
+pyValue = (int32_t *)& m_pRNACntsMem[(((size_t)(StartRow -1) * m_NumbHdrRNAvCntsMappings) + ySampleID-1) * sizeof(int32_t)];
 xMean = 0.0;
 yMean = 0.0;
-for(RowIdx = StartFeatureID-1; RowIdx < EndFeatureID; RowIdx++,pxValue+=m_NumbHdrRNAMappings,pyValue+=m_NumbHdrRNAMappings)
+for(RowIdx = StartRow -1; RowIdx < EndRow; RowIdx++,pxValue+=m_NumbHdrRNAvCntsMappings,pyValue+=m_NumbHdrRNAvCntsMappings)
 	{
 	xMean += *pxValue;
 	yMean += *pyValue;
 	}
-xMean /= 1 + EndFeatureID - StartFeatureID;
-yMean /= 1 + EndFeatureID - StartFeatureID;
+xMean /= 1 + EndRow - StartRow;
+yMean /= 1 + EndRow - StartRow;
 
-pxValue = (int32_t *)& m_pRNACntsMem[(((size_t)(StartFeatureID-1) * m_NumbHdrRNAMappings) + xSampleID-1) * sizeof(int32_t)];
-pyValue = (int32_t *)& m_pRNACntsMem[(((size_t)(StartFeatureID-1) * m_NumbHdrRNAMappings) + ySampleID-1) * sizeof(int32_t)];
+pxValue = (int32_t *)& m_pRNACntsMem[(((size_t)(StartRow -1) * m_NumbHdrRNAvCntsMappings) + xSampleID-1) * sizeof(int32_t)];
+pyValue = (int32_t *)& m_pRNACntsMem[(((size_t)(StartRow -1) * m_NumbHdrRNAvCntsMappings) + ySampleID-1) * sizeof(int32_t)];
 SumDiffs = 0.0;
 xSumDiffs2 = 0.0;
 ySumDiffs2 = 0.0;
-for(RowIdx = StartFeatureID-1; RowIdx < EndFeatureID; RowIdx++,pxValue+=m_NumbHdrRNAMappings,pyValue+=m_NumbHdrRNAMappings)
+for(RowIdx = StartRow -1; RowIdx < EndRow; RowIdx++,pxValue+=m_NumbHdrRNAvCntsMappings,pyValue+=m_NumbHdrRNAvCntsMappings)
 	{
 	SumDiffs += (*pxValue - xMean) * (*pyValue - yMean);
 	xSumDiffs2 +=  (*pxValue - xMean) * (*pxValue - xMean);
@@ -892,8 +957,10 @@ return(r);
 }
 
 double	// returned correlation coefficient
-CRNAExpr::PearsonCorrelation(int32_t RNArowIdx,	// correlate this RNA row
-							 int32_t WGSrowIdx)	// with this WGS row
+CRNAExpr::PearsonCorrelationRNAvRNA(int32_t StartRow,			// starting from this row (1..N)
+					int32_t EndRow,								// ending with this inclusive row (N)
+					int32_t xSampleID,							// x sample (column)
+					int32_t ySampleID)							// y sample (column)
 {
 double xMean;
 double yMean;
@@ -902,38 +969,131 @@ double xSumDiffs2;
 double ySumDiffs2;
 double xySumDiffs2;
 double r;
-double *pRNA;
-double *pWGS;
+double* pxValue;
+double* pyValue;
 
-int32_t ScoreIdx;
+int32_t RowIdx;
 
-pRNA = (double *)& m_pRNAhomozScoresMem[((size_t)RNArowIdx * m_NumbHdrWGSMappings * sizeof(double))];
-pWGS = (double *)& m_pWGShomozScoresMem[((size_t)WGSrowIdx * m_NumbHdrWGSMappings * sizeof(double))];
+pxValue = (double*)&m_pRNAvRNAhomozScoresMem[(((size_t)(StartRow - 1) * m_NumbHdrRNAvRNAMappings) + xSampleID - 1) * sizeof(double)];
+pyValue = (double*)&m_pRNAvRNAhomozScoresMem[(((size_t)(StartRow - 1) * m_NumbHdrRNAvRNAMappings) + ySampleID - 1) * sizeof(double)];
 xMean = 0.0;
 yMean = 0.0;
-for(ScoreIdx = 0; ScoreIdx < m_NumbHdrWGSMappings; ScoreIdx++,pRNA++,pWGS++)
+for (RowIdx = StartRow - 1; RowIdx < EndRow; RowIdx++, pxValue += m_NumbHdrRNAvRNAMappings, pyValue += m_NumbHdrRNAvRNAMappings)
 	{
-	xMean += *pRNA;
-	yMean += *pWGS;
+	xMean += *pxValue;
+	yMean += *pyValue;
 	}
-xMean /= m_NumbHdrWGSMappings;
-yMean /= m_NumbHdrWGSMappings;
+xMean /= 1 + EndRow - StartRow;
+yMean /= 1 + EndRow - StartRow;
 
-pRNA = (double *)& m_pRNAhomozScoresMem[((size_t)RNArowIdx * m_NumbHdrWGSMappings * sizeof(double))];
-pWGS = (double *)& m_pWGShomozScoresMem[((size_t)WGSrowIdx * m_NumbHdrWGSMappings * sizeof(double))];
+pxValue = (double*)&m_pRNAvRNAhomozScoresMem[(((size_t)(StartRow - 1) * m_NumbHdrRNAvRNAMappings) + xSampleID - 1) * sizeof(double)];
+pyValue = (double*)&m_pRNAvRNAhomozScoresMem[(((size_t)(StartRow - 1) * m_NumbHdrRNAvRNAMappings) + ySampleID - 1) * sizeof(double)];
 SumDiffs = 0.0;
 xSumDiffs2 = 0.0;
 ySumDiffs2 = 0.0;
-for(ScoreIdx = 0; ScoreIdx < m_NumbHdrWGSMappings; ScoreIdx++,pRNA++,pWGS++)
-	{
-	SumDiffs += (*pRNA - xMean) * (*pWGS - yMean);
-	xSumDiffs2 +=  (*pRNA - xMean) * (*pRNA - xMean);
-	ySumDiffs2 +=  (*pWGS - yMean) * (*pWGS - yMean);
-	}
+for (RowIdx = StartRow - 1; RowIdx < EndRow; RowIdx++, pxValue += m_NumbHdrRNAvRNAMappings, pyValue += m_NumbHdrRNAvRNAMappings)
+{
+	SumDiffs += (*pxValue - xMean) * (*pyValue - yMean);
+	xSumDiffs2 += (*pxValue - xMean) * (*pxValue - xMean);
+	ySumDiffs2 += (*pyValue - yMean) * (*pyValue - yMean);
+}
 xySumDiffs2 = sqrt(xSumDiffs2 * ySumDiffs2);
-r = SumDiffs/xySumDiffs2;
+r = SumDiffs / xySumDiffs2;
 return(r);
 }
+
+double	// returned correlation coefficient
+CRNAExpr::PearsonCorrelationRNAvWGS(int32_t StartRow,			// starting from this row (1..N)
+int32_t EndRow,								// ending with this inclusive row (N)
+int32_t xSampleID,							// x sample (column)
+int32_t ySampleID)							// y sample (column)
+{
+double xMean;
+double yMean;
+double SumDiffs;
+double xSumDiffs2;
+double ySumDiffs2;
+double xySumDiffs2;
+double r;
+double* pxValue;
+double* pyValue;
+
+int32_t RowIdx;
+
+pxValue = (double*)&m_pRNAhomozScoresMem[(((size_t)(StartRow - 1) * m_NumbHdrRNAvWGSMappings) + xSampleID - 1) * sizeof(double)];
+pyValue = (double*)&m_pRNAhomozScoresMem[(((size_t)(StartRow - 1) * m_NumbHdrRNAvWGSMappings) + ySampleID - 1) * sizeof(double)];
+xMean = 0.0;
+yMean = 0.0;
+for (RowIdx = StartRow - 1; RowIdx < EndRow; RowIdx++, pxValue += m_NumbHdrRNAvWGSMappings, pyValue += m_NumbHdrRNAvWGSMappings)
+{
+	xMean += *pxValue;
+	yMean += *pyValue;
+}
+xMean /= 1 + EndRow - StartRow;
+yMean /= 1 + EndRow - StartRow;
+
+pxValue = (double*)&m_pRNAhomozScoresMem[(((size_t)(StartRow - 1) * m_NumbHdrRNAvWGSMappings) + xSampleID - 1) * sizeof(double)];
+pyValue = (double*)&m_pRNAhomozScoresMem[(((size_t)(StartRow - 1) * m_NumbHdrRNAvWGSMappings) + ySampleID - 1) * sizeof(double)];
+SumDiffs = 0.0;
+xSumDiffs2 = 0.0;
+ySumDiffs2 = 0.0;
+for (RowIdx = StartRow - 1; RowIdx < EndRow; RowIdx++, pxValue += m_NumbHdrRNAvWGSMappings, pyValue += m_NumbHdrRNAvWGSMappings)
+{
+	SumDiffs += (*pxValue - xMean) * (*pyValue - yMean);
+	xSumDiffs2 += (*pxValue - xMean) * (*pxValue - xMean);
+	ySumDiffs2 += (*pyValue - yMean) * (*pyValue - yMean);
+}
+xySumDiffs2 = sqrt(xSumDiffs2 * ySumDiffs2);
+r = SumDiffs / xySumDiffs2;
+return(r);
+}
+
+double	// returned correlation coefficient
+CRNAExpr::PearsonCorrelationWGSvWGS(int32_t StartRow,			// starting from this row (1..N)
+	int32_t EndRow,								// ending with this inclusive row (N)
+	int32_t xSampleID,							// x sample (column)
+	int32_t ySampleID)							// y sample (column)
+{
+	double xMean;
+	double yMean;
+	double SumDiffs;
+	double xSumDiffs2;
+	double ySumDiffs2;
+	double xySumDiffs2;
+	double r;
+	double* pxValue;
+	double* pyValue;
+
+	int32_t RowIdx;
+
+	pxValue = (double*)&m_pWGShomozScoresMem[(((size_t)(StartRow - 1) * m_NumbHdrWGSvWGSMappings) + xSampleID - 1) * sizeof(double)];
+	pyValue = (double*)&m_pWGShomozScoresMem[(((size_t)(StartRow - 1) * m_NumbHdrWGSvWGSMappings) + ySampleID - 1) * sizeof(double)];
+	xMean = 0.0;
+	yMean = 0.0;
+	for (RowIdx = StartRow - 1; RowIdx < EndRow; RowIdx++, pxValue += m_NumbHdrWGSvWGSMappings, pyValue += m_NumbHdrWGSvWGSMappings)
+	{
+		xMean += *pxValue;
+		yMean += *pyValue;
+	}
+	xMean /= 1 + EndRow - StartRow;
+	yMean /= 1 + EndRow - StartRow;
+
+	pxValue = (double*)&m_pWGShomozScoresMem[(((size_t)(StartRow - 1) * m_NumbHdrWGSvWGSMappings) + xSampleID - 1) * sizeof(double)];
+	pyValue = (double*)&m_pWGShomozScoresMem[(((size_t)(StartRow - 1) * m_NumbHdrWGSvWGSMappings) + ySampleID - 1) * sizeof(double)];
+	SumDiffs = 0.0;
+	xSumDiffs2 = 0.0;
+	ySumDiffs2 = 0.0;
+	for (RowIdx = StartRow - 1; RowIdx < EndRow; RowIdx++, pxValue += m_NumbHdrWGSvWGSMappings, pyValue += m_NumbHdrWGSvWGSMappings)
+	{
+		SumDiffs += (*pxValue - xMean) * (*pyValue - yMean);
+		xSumDiffs2 += (*pxValue - xMean) * (*pxValue - xMean);
+		ySumDiffs2 += (*pyValue - yMean) * (*pyValue - yMean);
+	}
+	xySumDiffs2 = sqrt(xSumDiffs2 * ySumDiffs2);
+	r = SumDiffs / xySumDiffs2;
+	return(r);
+}
+
 
 int	// checking for expression level counts inconsistencies - if replicate 1 and replicate 2 from same biological sample then expecting expression level counts to track over the features
 CRNAExpr::GenExprCntsPearsons(eModeRNAE PMode,			// processing mode
@@ -959,7 +1119,7 @@ double r;
 double ExpPearson;
 CStats Stats;
 
-sprintf(szOutFile,"%s%s",pszOutRsltsFile,".RNAvRNA.csv");
+sprintf(szOutFile,"%s%s",pszOutRsltsFile,".RNAvRNAtranscripts.csv");
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Generating Pearson correlation coefficient 'r' for labeled biological replicates over all features into file '%s'",szOutFile);
 
 if((pOutStream = fopen(szOutFile,"w"))==NULL)
@@ -975,7 +1135,7 @@ BuffIdx += sprintf(&szOutBuff[BuffIdx], ",\"Match RNA Rep Location\",\"Match RNA
 fwrite(szOutBuff,1,BuffIdx,pOutStream);
 BuffIdx = 0;
 
-for(SampleID = 1; SampleID <= (int32_t)m_NumbHdrRNAMappings; SampleID++)
+for(SampleID = 1; SampleID <= m_NumbHdrRNAvCntsMappings; SampleID++)
 	{
 	Maximalr = 0.0;
 	ExpPearson = 0.0;
@@ -984,11 +1144,11 @@ for(SampleID = 1; SampleID <= (int32_t)m_NumbHdrRNAMappings; SampleID++)
 		PartnerSampleID = SampleID+1;
 	else
 		PartnerSampleID = SampleID-1;
-	for(ChkSampleID = 1; ChkSampleID <= (int32_t)m_NumbHdrRNAMappings; ChkSampleID++)
+	for(ChkSampleID = 1; ChkSampleID <= m_NumbHdrRNAvCntsMappings; ChkSampleID++)
 		{
 		if(ChkSampleID == SampleID)
 			continue;
-		r = PearsonCorrelation(1,m_NumFeatureNames,SampleID,ChkSampleID);
+		r = PearsonCorrelationRNAvCnts(1,m_NumFeatureNames,SampleID,ChkSampleID);
 		if(r > Maximalr)
 			{
 			Maximalr = r;
@@ -1000,16 +1160,16 @@ for(SampleID = 1; SampleID <= (int32_t)m_NumbHdrRNAMappings; SampleID++)
 
 	tsRNAGBSWGSMaterial *pRNARep;
 	tsRNAGBSWGSMaterial *pMatchRNARep;
-	pRNARep = &m_RNAGBSWGSMaterials[m_HdrRNAMappings[SampleID-1]-1];
-	pMatchRNARep = &m_RNAGBSWGSMaterials[m_HdrRNAMappings[MaxSampleID-1]-1];
-	pszSample1 = LocateRNASampleName(m_HdrRNAMappings[SampleID-1]);
-	pszSample2 = LocateRNASampleName(m_HdrRNAMappings[MaxSampleID-1]);
+	pRNARep = &m_RNAGBSWGSMaterials[m_HdrRNAvCntsMappings[SampleID-1]-1];
+	pMatchRNARep = &m_RNAGBSWGSMaterials[m_HdrRNAvCntsMappings[MaxSampleID-1]-1];
+	pszSample1 = LocateRNASampleName(m_HdrRNAvCntsMappings[SampleID-1]);
+	pszSample2 = LocateRNASampleName(m_HdrRNAvCntsMappings[MaxSampleID-1]);
 	pszMaterial1 = LocateMaterialName(pRNARep->MaterialID);
 	pszMaterial2 = LocateMaterialName(pMatchRNARep->MaterialID);
 
 	double zMax = atanh(Maximalr);	// using Fisher transformation: artanh(r)
 	double zExp = atanh(ExpPearson);
-	double ZObs = (zMax-zExp) / sqrt(2.0 / (m_NumbHdrRNAMappings-3));
+	double ZObs = (zMax-zExp) / sqrt(2.0 / (m_NumbHdrRNAvCntsMappings-3));
 	double PValue = 2*(1.0-Stats.phi(ZObs));
 
 	BuffIdx += sprintf(&szOutBuff[BuffIdx],"\n\"%s\",\"%s\",%.6f,\"%s\",\"%s\",%.6f,%.6f,%.6f,\"%s\",\"%s\",%d,%d,%d,%d,\"%s\",\"%s\",%d,%d,%d,%d",
@@ -1029,8 +1189,104 @@ fclose(pOutStream);
 return(eBSFSuccess);
 }
 
+
+int	// checking for RNA replicate homozoygosity inconsistencies - if replicate 1 and replicate 2 from same biological sample then expecting homozygosity to track
+CRNAExpr::GenRNAvRNAPearsons(eModeRNAE PMode,			// processing mode
+	char* pszMaterialRNAGBSWGSFile,		// load RNA/GBS/WIG sample names and RNA associated metadata
+	char* pszInHomozygosityFile,		// load homozygosity from this file
+	char* pszOutRsltsFile)				// write results to this file, will be suffixed appropriately
+{
+	int32_t SampleID;
+	int32_t ChkSampleID;
+	double Maximalr;
+	int32_t MaxSampleID;
+	int32_t PartnerSampleID;
+	int32_t BuffIdx;
+	char* pszSample1;
+	char* pszSample2;
+	char* pszMaterial1;
+	char* pszMaterial2;
+	char szOutBuff[4000];
+	char szOutFile[_MAX_PATH];
+	FILE* pOutStream;
+
+	double r;
+	double ExpPearson;
+	CStats Stats;
+
+	sprintf(szOutFile, "%s%s", pszOutRsltsFile, ".RNAvRNAhomozygosity.csv");
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Generating Pearson correlation coefficient 'r' for labeled biological replicates over all features into file '%s'", szOutFile);
+
+	if ((pOutStream = fopen(szOutFile, "w")) == NULL)
+	{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to create/truncate file %s for writing error: %s", szOutFile, strerror(errno));
+		Reset();
+		return(eBSFerrOpnFile);
+	}
+
+	BuffIdx = sprintf(szOutBuff, "\"RNA Rep\",\"RNA Rep Material\",\"RNA Rep Pearson\",\"Match RNA Rep\",\"Match RNA Rep Material\",\"Match RNA Pearson\",\"Zobs\",\"PValue(Rep==MatchRep\"");
+	BuffIdx += sprintf(&szOutBuff[BuffIdx], ",\"RNA Rep Location\",\"RNA Rep EntryBook\",\"RNA Rep SampleNum\",\"RNA Rep PlotNum\",\"RNA Rep RangeNum\",\"RNA Rep RowNum\"");
+	BuffIdx += sprintf(&szOutBuff[BuffIdx], ",\"Match RNA Rep Location\",\"Match RNA Rep EntryBook\",\"Match RNA Rep SampleNum\",\"Match RNA Rep PlotNum\",\"Match RNA Rep RangeNum\",\"Match RNA Rep RowNum\"");
+	fwrite(szOutBuff, 1, BuffIdx, pOutStream);
+	BuffIdx = 0;
+
+	for (SampleID = 1; SampleID <= m_NumbHdrRNAvRNAMappings; SampleID++)
+	{
+		Maximalr = 0.0;
+		ExpPearson = 0.0;
+		MaxSampleID = 0;
+		if (((SampleID - 1) % 2) == 0)
+			PartnerSampleID = SampleID + 1;
+		else
+			PartnerSampleID = SampleID - 1;
+		for (ChkSampleID = 1; ChkSampleID <= m_NumbHdrRNAvRNAMappings; ChkSampleID++)
+		{
+			if (ChkSampleID == SampleID)
+				continue;
+			r = PearsonCorrelationRNAvRNA(1, m_NumbRowRNAvRNAMappings, SampleID, ChkSampleID);
+			if (r > Maximalr)
+			{
+				Maximalr = r;
+				MaxSampleID = ChkSampleID;
+			}
+			if (PartnerSampleID == ChkSampleID)
+				ExpPearson = r;
+		}
+
+		tsRNAGBSWGSMaterial* pRNARep;
+		tsRNAGBSWGSMaterial* pMatchRNARep;
+		pRNARep = &m_RNAGBSWGSMaterials[m_HdrRNAvRNAMappings[SampleID - 1] - 1];
+		pMatchRNARep = &m_RNAGBSWGSMaterials[m_HdrRNAvRNAMappings[MaxSampleID - 1] - 1];
+		pszSample1 = LocateRNASampleName(m_HdrRNAvRNAMappings[SampleID - 1]);
+		pszSample2 = LocateRNASampleName(m_HdrRNAvRNAMappings[MaxSampleID - 1]);
+		pszMaterial1 = LocateMaterialName(pRNARep->MaterialID);
+		pszMaterial2 = LocateMaterialName(pMatchRNARep->MaterialID);
+
+		double zMax = atanh(Maximalr);	// using Fisher transformation: artanh(r)
+		double zExp = atanh(ExpPearson);
+		double ZObs = (zMax - zExp) / sqrt(2.0 / (m_NumbHdrRNAvCntsMappings - 3));
+		double PValue = 2 * (1.0 - Stats.phi(ZObs));
+
+		BuffIdx += sprintf(&szOutBuff[BuffIdx], "\n\"%s\",\"%s\",%.6f,\"%s\",\"%s\",%.6f,%.6f,%.6f,\"%s\",\"%s\",%d,%d,%d,%d,\"%s\",\"%s\",%d,%d,%d,%d",
+			pszSample1, pszMaterial1, ExpPearson, pszSample2, pszMaterial2, Maximalr, ZObs, PValue,
+			LocateRNAMetaName(pRNARep->LocationID), LocateRNAMetaName(pRNARep->EntryBookID), pRNARep->SampleNum, pRNARep->PlotNum, pRNARep->RangeNum, pRNARep->RowNum,
+			LocateRNAMetaName(pMatchRNARep->LocationID), LocateRNAMetaName(pMatchRNARep->EntryBookID), pMatchRNARep->SampleNum, pMatchRNARep->PlotNum, pMatchRNARep->RangeNum, pMatchRNARep->RowNum);
+		if (BuffIdx + 200 > sizeof(szOutBuff))
+		{
+			fwrite(szOutBuff, 1, BuffIdx, pOutStream);
+			BuffIdx = 0;
+		}
+	}
+	if (BuffIdx)
+		fwrite(szOutBuff, 1, BuffIdx, pOutStream);
+	fflush(pOutStream);
+	fclose(pOutStream);
+	return(eBSFSuccess);
+}
+
+
 int
-CRNAExpr::LoadWGSScoresFile(char* pszInWGSvWGSFile) // parse and load WGS vs. WGS homozygosity scores
+CRNAExpr::LoadWGSvsWGSScoresFile(char* pszInWGSvWGSFile) // parse and load WGS vs. WGS homozygosity scores
 {
 int32_t Rslt;
 uint32_t EstNumRows;
@@ -1042,6 +1298,7 @@ int32_t CurLineNumber;
 int32_t NumFields;
 int32_t ExpNumFields;
 int32_t SampleNameID;
+int32_t ChromID;
 char *pszWGSChrom;
 char *pszWGSSample;
 double ScoreValue;
@@ -1078,12 +1335,12 @@ if((Rslt = m_pInWGSvWGSFile->Open(pszInWGSvWGSFile)) != eBSFSuccess)
 	}
 
 // header line contains sample identifiers
-// rows contain features associated with samples
+// rows contain features (chroms) associated with samples
 CurLineNumber = 0;
 ExpNumFields = 0;
 FeatureNameID = 0;
-m_NumbRowWGSMappings = 0;
-m_NumbRowWGSMappings = 0;
+m_NumbRowWGSvWGSMappings = 0;
+m_NumbHdrWGSvWGSMappings = 0;
 while((Rslt = m_pInWGSvWGSFile->NextLine()) > 0)		// onto next line containing fields
 	{
 	CurLineNumber++;
@@ -1111,10 +1368,10 @@ while((Rslt = m_pInWGSvWGSFile->NextLine()) > 0)		// onto next line containing f
 			if ((SampleNameID = AddWGSSampleName(pszWGSSample)) != 0) // WGS sample name should already be known from the material mapping file, but this is not assured!
 				gDiagnostics.DiagOut(eDLWarn, gszProcName, "Input WGS vs. WGS scores file '%s' contains a WGS sample name '%s' not in materials file at field %d at line %d", pszInWGSvWGSFile, pszWGSSample, FieldIdx, CurLineNumber);
 			SampleNameID = LocateWGSSampleNameID(pszWGSSample);
-			m_HdrWGSMappings[m_NumbHdrWGSMappings++] = SampleNameID;
+			m_HdrWGSvWGSMappings[m_NumbHdrWGSvWGSMappings++] = SampleNameID;
 			}
 		
-		if ((Rslt = AllocateWGShomozScores(m_NumbHdrWGSMappings * m_NumbHdrWGSMappings)) != eBSFSuccess) // score matrix is expected to be orthogonal
+		if ((Rslt = AllocateWGShomozScores(m_NumbHdrWGSvWGSMappings * EstNumRows)) != eBSFSuccess) // will be reallocd if estimated rows is insufficient
 			{
 			Reset();
 			return(Rslt);
@@ -1129,11 +1386,10 @@ while((Rslt = m_pInWGSvWGSFile->NextLine()) > 0)		// onto next line containing f
 		}
 
 	// each row contains the WGS which was scored against all other WGSs
-	m_pInWGSvWGSFile->GetText(1, &pszWGSChrom);	// currently individual chromosome scores are skipped, interest is only in the complete assembly scores
-
-	if(stricmp(pszWGSChrom,"AllChroms"))
-		if(stricmp(pszWGSChrom,"AllChroms\"")) 	// early releases of callhaplotypes had a double quote bug when generating the AllChroms summary counts/scores
+	m_pInWGSvWGSFile->GetText(1, &pszWGSChrom);	// individual chromosome scores are retained, summary of scores over all chromosomes is discarded
+	if (!strnicmp(pszWGSChrom, "AllChroms", 9)) 	// early releases of callhaplotypes had a double quote bug when generating the AllChroms summary counts/scores
 		continue;
+	ChromID = AddChromName(pszWGSChrom);
 
 	m_pInWGSvWGSFile->GetText(2, &pszWGSSample);		// currently individual chromosome scores are skipped, interest is only in the complete assembly scores
 	if ((SampleNameID = LocateWGSSampleNameID(pszWGSSample)) == 0) // WGS sample name must already be known from the headings!
@@ -1142,20 +1398,20 @@ while((Rslt = m_pInWGSvWGSFile->NextLine()) > 0)		// onto next line containing f
 		Reset();
 		return(eBSFerrParse);
 		}
-	if(m_HdrWGSMappings[m_NumbRowWGSMappings] != SampleNameID)
+	if(m_HdrWGSvWGSMappings[m_NumbRowWGSvWGSMappings % m_NumbHdrWGSvWGSMappings] != SampleNameID)
 		{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Input WGS vs. WGS scores file '%s' contains a row WGS sample name '%s' not orthogonal to header WGS sample name at field 2 at line %d", pszInWGSvWGSFile, pszWGSSample, CurLineNumber);
 		Reset();
 		return(eBSFerrParse);
 		}
-	m_RowWGSMappings[m_NumbRowWGSMappings++] = SampleNameID;
-	if((Rslt=ReallocWGShomozScores(m_NumbHdrWGSMappings))!=eBSFSuccess)	// ensure sufficient memory preallocd to hold at least one additional row of WGS scores
+	m_RowWGSvWGSMappings[m_NumbRowWGSvWGSMappings++] = SampleNameID;
+	if((Rslt=ReallocWGShomozScores(m_NumbHdrWGSvWGSMappings))!=eBSFSuccess)	// ensure sufficient memory preallocd to hold at least one additional row of WGS scores
 		{
 		Reset();
 		return(Rslt);
 		}
 	double *pScore;
-	pScore = (double *)&m_pWGShomozScoresMem[((size_t)(m_NumbRowWGSMappings-1) * m_NumbHdrWGSMappings) * sizeof(double)];
+	pScore = (double *)&m_pWGShomozScoresMem[((size_t)(m_NumbRowWGSvWGSMappings-1) * m_NumbHdrWGSvWGSMappings) * sizeof(double)];
 	for (FieldIdx = 3; FieldIdx <= ExpNumFields; FieldIdx++,pScore++)
 		{
 		m_pInWGSvWGSFile->GetDouble(FieldIdx, &ScoreValue);
@@ -1165,18 +1421,151 @@ while((Rslt = m_pInWGSvWGSFile->NextLine()) > 0)		// onto next line containing f
 delete m_pInWGSvWGSFile;
 m_pInWGSvWGSFile = nullptr;
 
-if (m_NumbRowWGSMappings != m_NumbHdrWGSMappings)
-	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Input WGS vs. WGS scores file '%s' must contain orthogonal matrix scores", pszInWGSvWGSFile);
-	Reset();
-	return(eBSFerrParse);
-	}
-
-return((m_NumbHdrWGSMappings > 0 && m_NumbRowWGSMappings == m_NumbHdrWGSMappings) ? eBSFSuccess : eBSFerrParse);
+return((m_NumbHdrWGSvWGSMappings > 0 && m_NumbRowWGSvWGSMappings > 0 && (m_NumbRowWGSvWGSMappings % m_NumbHdrWGSvWGSMappings) == 0) ? eBSFSuccess : eBSFerrParse);
 }
 
 int
-CRNAExpr::LoadRNAScoresFile(char* pszInRNAvWGSFile)		// parse and load RNA vs. WGS homozygosity scores
+CRNAExpr::LoadRNAvsRNAScoresFile(char* pszInRNAvRNAFile) // parse and load RNA vs. RNA homozygosity scores
+{
+	int32_t Rslt;
+	uint32_t EstNumRows;
+	int64_t FileSize;
+	int32_t MaxFields;
+	int32_t MeanNumFields;
+	int FieldIdx;
+	int32_t CurLineNumber;
+	int32_t NumFields;
+	int32_t ExpNumFields;
+	int32_t SampleNameID;
+	int32_t ChromID;
+	char* pszRNAChrom;
+	char* pszRNASample;
+	double ScoreValue;
+
+	int32_t FeatureNameID;
+
+	if (m_pInRNAvRNAFile != nullptr) // shouldn't have been instantiated, but better to be sure!
+	{
+		delete m_pInRNAvRNAFile;
+		m_pInRNAvRNAFile = nullptr;
+	}
+	if ((m_pInRNAvRNAFile = new CCSVFile) == nullptr)
+	{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to instantiate CCSVfile");
+		Reset();
+		return(eBSFerrObj);
+	}
+
+	// get an estimate of number of rows and fields
+	if ((EstNumRows = m_pInRNAvRNAFile->CSVEstSizes(pszInRNAvRNAFile, &FileSize, &MaxFields, &MeanNumFields)) < 2)
+	{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to estimate number of rows in file: '%s'", pszInRNAvRNAFile);
+		Reset();
+		return(eBSFerrFieldCnt);
+	}
+
+	m_pInRNAvRNAFile->SetMaxFields(MaxFields);
+
+	if ((Rslt = m_pInRNAvRNAFile->Open(pszInRNAvRNAFile)) != eBSFSuccess)
+	{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to open RNA vs. RNA scores file: '%s'", pszInRNAvRNAFile);
+		Reset();
+		return(Rslt);
+	}
+
+	// header line contains sample identifiers
+	// rows contain features associated with samples
+CurLineNumber = 0;
+ExpNumFields = 0;
+FeatureNameID = 0;
+m_NumbHdrRNAvRNAMappings = 0;
+m_NumbRowRNAvRNAMappings = 0;
+
+while ((Rslt = m_pInRNAvRNAFile->NextLine()) > 0)		// onto next line containing fields
+	{
+	CurLineNumber++;
+	if ((NumFields = m_pInRNAvRNAFile->GetCurFields()) < 3)	// must contain at least 3 fields (assumes scores for at least 1 sample!)
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Input RNA vs. RNA scores file '%s' expected to contain a minimum of 3 fields, it contains %d at line %d", pszInRNAvRNAFile, NumFields, CurLineNumber);
+		Reset();
+		return(eBSFerrParse);
+		}
+
+	if (CurLineNumber == 1) // 1 if header containing sample identifiers
+		{
+		if (!m_pInRNAvRNAFile->IsLikelyHeaderLine())
+			{
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Input RNA vs. RNA scores file '%s' line 1 does not parse as a header line, all fields are expected to be double quoted as containing string values", pszInRNAvRNAFile);
+			Reset();
+			return(eBSFerrParse);
+			}
+
+		ExpNumFields = NumFields;
+		// parse out RNA sample identifiers until last column
+		for (FieldIdx = 3; FieldIdx <= NumFields; FieldIdx++)
+			{
+			m_pInRNAvRNAFile->GetText(FieldIdx, &pszRNASample);
+			if ((SampleNameID = AddRNASampleName(pszRNASample)) != 0) // RNA sample name should already be known from the material mapping file, but this is not assured!
+					gDiagnostics.DiagOut(eDLWarn, gszProcName, "Input RNA vs. RNA scores file '%s' contains a RNA sample name '%s' not in materials file at field %d at line %d", pszInRNAvRNAFile, pszRNASample, FieldIdx, CurLineNumber);
+			SampleNameID = LocateRNASampleNameID(pszRNASample);
+			m_HdrRNAvRNAMappings[m_NumbHdrRNAvRNAMappings++] = SampleNameID;
+			}
+
+		if ((Rslt = AllocateRNAvRNAhomozScores(m_NumbHdrRNAvRNAMappings * EstNumRows)) != eBSFSuccess) // will be reallocd if estimated rows is insufficient
+			{
+			Reset();
+			return(Rslt);
+			}
+		continue;
+		}
+	if ((NumFields = m_pInRNAvRNAFile->GetCurFields()) != ExpNumFields)
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Input RNA vs. RNA scores file '%s' expected to contain same number of fields as header line (%d), it contains %d at line %d", pszInRNAvRNAFile, ExpNumFields, NumFields, CurLineNumber);
+		Reset();
+		return(eBSFerrParse);
+		}
+
+		// each row contains the RNA sample which was scored against all other RNA samples
+	m_pInRNAvRNAFile->GetText(1, &pszRNAChrom);	// individual chromosome scores are retained, summary of scores over all chromosomes is discarded
+	if (!strnicmp(pszRNAChrom, "AllChroms",9)) 	// early releases of callhaplotypes had a double quote bug when generating the AllChroms summary counts/scores
+		continue;
+	ChromID = AddChromName(pszRNAChrom);
+
+	m_pInRNAvRNAFile->GetText(2, &pszRNASample);		
+	if ((SampleNameID = LocateRNASampleNameID(pszRNASample)) == 0) // RNA sample name must already be known from the headings!
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Input RNA vs. RNA scores file '%s' contains a RNA sample name '%s' not already known from header at field 2 at line %d", pszInRNAvRNAFile, pszRNASample, CurLineNumber);
+		Reset();
+		return(eBSFerrParse);
+		}
+	if (m_HdrRNAvRNAMappings[m_NumbRowRNAvRNAMappings % m_NumbHdrRNAvRNAMappings] != SampleNameID)
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Input RNA vs. RNA scores file '%s' contains a row RNA sample name '%s' not orthogonal to header RNA sample name at field 2 at line %d", pszInRNAvRNAFile, pszRNASample, CurLineNumber);
+		Reset();
+		return(eBSFerrParse);
+		}
+	m_RowRNAvRNAMappings[m_NumbRowRNAvRNAMappings++] = SampleNameID;
+	if ((Rslt = ReallocRNAvRNAhomozScores(m_NumbHdrRNAvRNAMappings)) != eBSFSuccess)	// ensure sufficient memory preallocd to hold at least one additional row of RNA scores
+		{
+		Reset();
+		return(Rslt);
+		}
+	double* pScore;
+	pScore = (double*)&m_pRNAvRNAhomozScoresMem[((size_t)(m_NumbRowRNAvRNAMappings - 1) * m_NumbHdrRNAvRNAMappings) * sizeof(double)];
+	for (FieldIdx = 3; FieldIdx <= ExpNumFields; FieldIdx++, pScore++)
+		{
+			m_pInRNAvRNAFile->GetDouble(FieldIdx, &ScoreValue);
+			*pScore = ScoreValue;
+		}
+	}
+delete m_pInRNAvRNAFile;
+m_pInRNAvRNAFile = nullptr;
+
+return((m_NumbHdrRNAvRNAMappings > 0 && m_NumbRowRNAvRNAMappings > 0 && (m_NumbRowRNAvRNAMappings % m_NumbHdrRNAvRNAMappings) == 0) ? eBSFSuccess : eBSFerrParse);
+}
+
+int
+CRNAExpr::LoadRNAvsWGSScoresFile(char* pszInRNAvWGSFile)		// parse and load RNA vs. WGS homozygosity scores
 {
 int32_t Rslt;
 uint32_t EstNumRows;
@@ -1188,6 +1577,7 @@ int32_t CurLineNumber;
 int32_t NumFields;
 int32_t ExpNumFields;
 int32_t SampleNameID;
+int32_t ChromID;
 char *pszWGSSample;
 char *pszRNAChrom;
 char *pszRNASample;
@@ -1227,10 +1617,15 @@ if((Rslt = m_pInRNAvWGSFile->Open(pszInRNAvWGSFile)) != eBSFSuccess)
 // rows contain RNA samples and scores for each WGS
 CurLineNumber = 0;
 ExpNumFields = 0;
-m_NumbRowRNAMappings = 0;
+m_NumbRowRNAvWGSMappings = 0;
+m_NumbHdrRNAvWGSMappings = 0;
 while((Rslt = m_pInRNAvWGSFile->NextLine()) > 0)		// onto next line containing fields
 	{
 	CurLineNumber++;
+	if (m_NumbHdrWGSvWGSMappings != 190 ||
+		m_NumbHdrRNAvRNAMappings != 1752 ||
+		m_NumbHdrRNAvWGSMappings != 190)
+		ScoreValue = 0.0;
 	if((NumFields = m_pInRNAvWGSFile->GetCurFields()) < 3)	// must contain at least 3 fields (assumes scores for at least 1 sample!)
 		{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Input RNA vs. WGS scores file '%s' expected to contain a minimum of 3 fields, it contains %d at line %d", pszInRNAvWGSFile, NumFields, CurLineNumber);
@@ -1240,6 +1635,10 @@ while((Rslt = m_pInRNAvWGSFile->NextLine()) > 0)		// onto next line containing f
 
 	if (CurLineNumber == 1) // 1 if header containing sample identifiers
 		{
+		if (m_NumbHdrWGSvWGSMappings != 190 ||
+			m_NumbHdrRNAvRNAMappings != 1752 ||
+			m_NumbHdrRNAvWGSMappings != 190)
+			ScoreValue = 0.0;
 		if (!m_pInRNAvWGSFile->IsLikelyHeaderLine())
 			{
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Input RNA vs. WGS scores file '%s' line 1 does not parse as a header line, all fields are expected to be double quoted as containing string values", pszInRNAvWGSFile);
@@ -1247,7 +1646,7 @@ while((Rslt = m_pInRNAvWGSFile->NextLine()) > 0)		// onto next line containing f
 			return(eBSFerrParse);
 			}
 
-		if (NumFields - 2 != m_NumbHdrWGSMappings)
+		if (NumFields - 2 != m_NumbHdrWGSvWGSMappings)
 			{
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Input RNA vs. WGS scores file '%s' header line must contain same number of WGS vs. WGS sample names and in same order", pszInRNAvWGSFile);
 			Reset();
@@ -1266,20 +1665,26 @@ while((Rslt = m_pInRNAvWGSFile->NextLine()) > 0)		// onto next line containing f
 				return(eBSFerrParse);
 				}
 			SampleNameID = LocateWGSSampleNameID(pszWGSSample);
-			if (m_HdrWGSMappings[FieldIdx-3] != SampleNameID)
+			if (m_HdrWGSvWGSMappings[FieldIdx-3] != SampleNameID)
 				{
 				gDiagnostics.DiagOut(eDLFatal, gszProcName, "Input RNA vs. WGS scores file '%s' header line must contain same ordering as WGS vs. WGS sample name '%s'", pszInRNAvWGSFile,pszWGSSample);
 				Reset();
 				return(eBSFerrParse);
 				}
+			m_HdrRNAvWGSMappings[m_NumbHdrRNAvWGSMappings++] = SampleNameID;
 			}
-		if ((Rslt = AllocateRNAhomozScores(m_NumbHdrWGSMappings * m_NumbHdrRNAMappings)) != eBSFSuccess)
+		if ((Rslt = AllocateRNAhomozScores(m_NumbHdrRNAvWGSMappings * EstNumRows)) != eBSFSuccess)
 			{
 			Reset();
 			return(Rslt);
 			}
 		continue;
 		}
+	if (m_NumbHdrWGSvWGSMappings != 190 ||
+		m_NumbHdrRNAvRNAMappings != 1752 ||
+		m_NumbHdrRNAvWGSMappings != 190)
+		ScoreValue = 0.0;
+
 	if((NumFields = m_pInRNAvWGSFile->GetCurFields()) != ExpNumFields)
 		{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Input RNA vs. WGS scores file '%s' expected to contain same number of fields as header line (%d), it contains %d at line %d", pszInRNAvWGSFile,ExpNumFields, NumFields, CurLineNumber);
@@ -1288,12 +1693,14 @@ while((Rslt = m_pInRNAvWGSFile->NextLine()) > 0)		// onto next line containing f
 		}
 
 	// each row contains the RNA sample which was scored against all WGSs
-	m_pInRNAvWGSFile->GetText(1, &pszRNAChrom);	// currently individual chromosome scores are skipped, interest is only in the complete assembly scores
-
-	if(stricmp(pszRNAChrom,"AllChroms"))
-		if(stricmp(pszRNAChrom,"AllChroms\"")) 	// early releases of callhaplotypes had a double quote bug when generating the AllChroms summary counts/scores
+	m_pInRNAvWGSFile->GetText(1, &pszRNAChrom);	// individual chromosome scores are retained, summary of scores over all chromosomes is discarded
+	if (!strnicmp(pszRNAChrom, "AllChroms", 9)) 	// early releases of callhaplotypes had a double quote bug when generating the AllChroms summary counts/scores
 		continue;
-
+	ChromID = AddChromName(pszRNAChrom);
+	if (m_NumbHdrWGSvWGSMappings != 190 ||
+		m_NumbHdrRNAvRNAMappings != 1752 ||
+		m_NumbHdrRNAvWGSMappings != 190)
+		ScoreValue = 0.0;
 	m_pInRNAvWGSFile->GetText(2, &pszRNASample);		// currently individual chromosome scores are skipped, interest is only in the complete assembly scores
 	if ((SampleNameID = LocateRNASampleNameID(pszRNASample)) == 0) // RNA sample name must already be known from the material mappings
 		{
@@ -1301,24 +1708,38 @@ while((Rslt = m_pInRNAvWGSFile->NextLine()) > 0)		// onto next line containing f
 		Reset();
 		return(eBSFerrParse);
 		}
-	m_RowRNAMappings[m_NumbRowRNAMappings++] = SampleNameID;
-	if((Rslt=ReallocRNAhomozScores(m_NumbHdrWGSMappings))!=eBSFSuccess)	// ensure sufficient memory preallocd to hold at least one additional row of RNA vs.WGS scores
+	if (m_NumbHdrWGSvWGSMappings != 190 ||
+		m_NumbHdrRNAvRNAMappings != 1752 ||
+		m_NumbHdrRNAvWGSMappings != 190)
+		ScoreValue = 0.0;
+	m_RowRNAvWGSMappings[m_NumbRowRNAvWGSMappings++] = SampleNameID;
+	if((Rslt=ReallocRNAhomozScores(m_NumbHdrRNAvWGSMappings))!=eBSFSuccess)	// ensure sufficient memory preallocd to hold at least one additional row of RNA vs.WGS scores
 		{
 		Reset();
 		return(Rslt);
 		}
-		double *pScore;
-	pScore = (double *)&m_pRNAhomozScoresMem[((size_t)(m_NumbRowRNAMappings-1) * m_NumbHdrWGSMappings) * sizeof(double)];
+	if (m_NumbHdrWGSvWGSMappings != 190 ||
+		m_NumbHdrRNAvRNAMappings != 1752 ||
+		m_NumbHdrRNAvWGSMappings != 190)
+		ScoreValue = 0.0;
+	double *pScore;
+	pScore = (double *)&m_pRNAhomozScoresMem[((size_t)(m_NumbRowRNAvWGSMappings -1) * m_NumbHdrRNAvWGSMappings) * sizeof(double)];
 	for (FieldIdx = 3; FieldIdx <= ExpNumFields; FieldIdx++,pScore++)
 		{
 		m_pInRNAvWGSFile->GetDouble(FieldIdx, &ScoreValue);
 		*pScore = ScoreValue;
 		}
+	
+	if(m_NumbHdrWGSvWGSMappings != 190 ||
+		m_NumbHdrRNAvRNAMappings != 1752 ||
+		m_NumbHdrRNAvWGSMappings != 190)
+		ScoreValue = 0.0;
+
 	}
 delete m_pInRNAvWGSFile;
 m_pInRNAvWGSFile = nullptr;
 
-return((m_NumbHdrWGSMappings > 0 && m_NumbRowRNAMappings > 0) ? eBSFSuccess : eBSFerrParse);
+return((m_NumbHdrRNAvWGSMappings > 0 && m_NumbRowRNAvWGSMappings > 0) ? eBSFSuccess : eBSFerrParse);
 }
 
 int
@@ -1327,7 +1748,8 @@ CRNAExpr::Process(eModeRNAE PMode,			// processing mode
 				char* pszInCntsFile,		// load coverage counts from this file
 				char* pszInWGSvWGSFile,		// load WGS vs. WGS homozygosity scores from this file
 				char* pszInRNAvWGSFile,		// load RNA vs. WGS homozygosity scores from this file
-				char* pszOutRsltsFile)			// write results to this file, will be suffixed appropriately
+				char* pszInRNAvRNAFile,		// load RNA vs. RNA homozygosity scores from this file
+				char* pszOutRsltsFile)		// write results to this file, will be suffixed appropriately
 {
 int Rslt;
 int32_t BuffIdx;
@@ -1362,8 +1784,21 @@ Rslt = GenExprCntsPearsons(PMode,pszMaterialRNAGBSWGSFile,pszInCntsFile,pszOutRs
 if(Rslt != eBSFSuccess || PMode == eMRNAEDefault)
 	return(Rslt);
 
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "Loading RNA vs. RNA homozygosity scores from '%s'", pszInRNAvRNAFile);
+Rslt = LoadRNAvsRNAScoresFile(pszInRNAvRNAFile);
+if (Rslt < eBSFSuccess)
+{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to load RNA vs. RNA homozygosity scores from %s", pszInRNAvRNAFile);
+	Reset();
+	return(Rslt);
+}
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "RNA vs. RNA homozygosity scores loaded from %s", pszInRNAvRNAFile);
+
+Rslt = GenRNAvRNAPearsons(PMode, pszMaterialRNAGBSWGSFile, pszInRNAvRNAFile, pszOutRsltsFile);
+if (Rslt != eBSFSuccess)
+	return(Rslt);
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Loading WGS vs. WGS homozygosity scores from '%s'",pszInWGSvWGSFile);
-Rslt = LoadWGSScoresFile(pszInWGSvWGSFile);
+Rslt = LoadWGSvsWGSScoresFile(pszInWGSvWGSFile);
 if(Rslt < eBSFSuccess)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to load WGS homozygosity scores from %s",pszInWGSvWGSFile);
@@ -1373,7 +1808,7 @@ if(Rslt < eBSFSuccess)
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"WGS vs. WGS homozygosity scores loaded from %s",pszInWGSvWGSFile);
 
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Loading RNA vs. WGS homozygosity scores from '%s'",pszInRNAvWGSFile);
-Rslt = LoadRNAScoresFile(pszInRNAvWGSFile);
+Rslt = LoadRNAvsWGSScoresFile(pszInRNAvWGSFile);
 if(Rslt < eBSFSuccess)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to load RNA vs. WGS homozygosity scores from %s",pszInRNAvWGSFile);
@@ -1384,7 +1819,7 @@ gDiagnostics.DiagOut(eDLInfo,gszProcName,"RNA vs. WGS homozygosity scores loaded
 
 double r;
 sprintf(szOutFile,"%s%s",pszOutRsltsFile,".RNAvWGShomozygosity.csv");
-gDiagnostics.DiagOut(eDLInfo,gszProcName,"Generating Pearson correlation coefficient 'r' for WGS vs. WGS homozygosity into file '%s'",szOutFile);
+gDiagnostics.DiagOut(eDLInfo,gszProcName,"Generating Pearson correlation coefficient 'r' for RNA vs. WGS homozygosity into file '%s'",szOutFile);
 
 if((pOutStream = fopen(szOutFile,"w"))==NULL)
 	{
@@ -1396,44 +1831,45 @@ if((pOutStream = fopen(szOutFile,"w"))==NULL)
 
 BuffIdx = sprintf(szOutBuff,"\"RNA Rep\",\"RNA Rep Material\",\"RNA Rep Pearson\",\"Match WGS\",\"Match WGS Material\",\"Match WGS Pearson\",\"Zobs\",\"PValue(Rep=WGS)\"");
 uint32_t ExpWGSSampleID;
+int32_t HdrWGSIdx;
 int32_t RNArowIdx;
-int32_t WGSrowIdx;
-int32_t MaxWGSrowIdx = 0;
+int32_t MaxRNArowIdx = 0;
 double MaxPearson = 0.0;
 double ExpPearson = 0.0;
-for (RNArowIdx = 0; RNArowIdx < (int32_t)m_NumbRowRNAMappings; RNArowIdx++)
+
+for (HdrWGSIdx = 1; HdrWGSIdx <= (int32_t)m_NumbHdrRNAvWGSMappings; HdrWGSIdx++)
 	{
-	MaxWGSrowIdx = 0;
+	MaxRNArowIdx = 0;
 	MaxPearson = 0.0;
 	ExpPearson = 0.0;
-	ExpWGSSampleID = m_RNAGBSWGSMaterials[m_HdrRNAMappings[RNArowIdx]-1].WGSSampleID;
-	for(WGSrowIdx = 0; WGSrowIdx < (int32_t)m_NumbRowWGSMappings; WGSrowIdx++)
+	ExpWGSSampleID = m_RNAGBSWGSMaterials[m_HdrRNAvWGSMappings[HdrWGSIdx-1]-1].WGSSampleID;
+	for(RNArowIdx = 0; RNArowIdx < (int32_t)m_NumbHdrRNAvWGSMappings; RNArowIdx++)
 		{
-		r = PearsonCorrelation(RNArowIdx,WGSrowIdx);
+		r = PearsonCorrelationRNAvWGS(1, m_NumbHdrRNAvWGSMappings,RNArowIdx, HdrWGSIdx);
 		if(r > MaxPearson)
 			{
 			MaxPearson = r;
-			MaxWGSrowIdx = WGSrowIdx;
+			MaxRNArowIdx = RNArowIdx;
 			}
-		if(m_RowWGSMappings[WGSrowIdx] == ExpWGSSampleID)
+		if(m_RowWGSvWGSMappings[HdrWGSIdx] == ExpWGSSampleID)
 			ExpPearson = r;
 		}
-	char *pWGSname = LocateWGSSampleName(m_RowWGSMappings[MaxWGSrowIdx]);
-	char *pRNAname = LocateRNASampleName(m_RowRNAMappings[RNArowIdx]);
+	char *pWGSname = LocateWGSSampleName(m_RowWGSvWGSMappings[HdrWGSIdx-1]);
+	char *pRNAname = LocateRNASampleName(m_RowRNAvWGSMappings[RNArowIdx]);
 	char *pszWGSmaterial;
 	char *pszRNAmaterial;
 	int RepRNAWGSMaterialSame = 0;
 	int PairRNAWGSMaterialSame = 0;
 	int PairWGSMaterialMatch = 0;
 
-	pszRNAmaterial = LocateMaterialName(m_RNAGBSWGSMaterials[m_HdrRNAMappings[RNArowIdx]-1].MaterialID);
-	pszWGSmaterial = LocateWGSMaterialName(m_RowWGSMappings[MaxWGSrowIdx]);
+	pszRNAmaterial = LocateMaterialName(m_RNAGBSWGSMaterials[m_HdrRNAvWGSMappings[RNArowIdx]-1].MaterialID);
+	pszWGSmaterial = LocateWGSMaterialName(m_RowWGSvWGSMappings[MaxRNArowIdx]);
 	if(pszWGSmaterial == nullptr)
 		pszWGSmaterial = (char *)"#N/A";
 
 	double zMax = atanh(MaxPearson);	// using Fisher transformation: artanh(r)
 	double zExp = atanh(ExpPearson);
-	double ZObs = (zMax-zExp) / sqrt(2.0 / (m_NumbRowRNAMappings-3));
+	double ZObs = (zMax-zExp) / sqrt(2.0 / (m_NumbRowRNAvWGSMappings-3));
 	double PValue = 2*(1.0-Stats.phi(ZObs));
 	BuffIdx += sprintf(&szOutBuff[BuffIdx],"\n\"%s\",\"%s\",%.6f,\"%s\",\"%s\",%.6f,%.6f,%.6f",
 						pRNAname,pszRNAmaterial,ExpPearson,pWGSname,pszWGSmaterial,MaxPearson,ZObs,PValue);
@@ -2029,6 +2465,7 @@ if ((m_UsedRNAhomozScoresMem + (sizeof(double) * NumScoresPerRow)) >= m_AllocdRN
 	m_pRNAhomozScoresMem = (uint8_t *)pReallocd;
 	m_AllocdRNAhomozScoresMem = memreq;
 	}
+m_UsedRNAhomozScoresMem += (sizeof(double) * NumScoresPerRow);
 return(eBSFSuccess);
 }
 
@@ -2099,7 +2536,79 @@ if ((m_UsedWGShomozScoresMem + (sizeof(double) * NumScoresPerRow)) >= m_AllocdWG
 	m_pWGShomozScoresMem = (uint8_t *)pReallocd;
 	m_AllocdWGShomozScoresMem = memreq;
 	}
+m_UsedWGShomozScoresMem += (sizeof(double) * NumScoresPerRow);
 return(eBSFSuccess);
 }
+
+
+int
+CRNAExpr::AllocateRNAvRNAhomozScores(int EstRNAvRNAhomozScores)	// initially allocate for this estimated total number of RNA vs. RNA homozygosity scores, memory will be reallocd to hold more if subsequently required
+{
+	size_t memreq;
+	if (m_pRNAvRNAhomozScoresMem != nullptr)
+	{
+#ifdef _WIN32
+		free(m_pRNAvRNAhomozScoresMem);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
+#else
+		if (m_pRNAvRNAhomozScoresMem != MAP_FAILED)
+			munmap(m_pRNAvRNAhomozScoresMem, m_AllocdRNAvRNAhomozScoresMem);
+#endif
+		m_pRNAvRNAhomozScoresMem = nullptr;
+	}
+	m_UsedRNAvRNAhomozScoresMem = 0;
+	m_AllocdRNAvRNAhomozScoresMem = 0;
+
+	// initial allocations, will be realloc'd to larger sizes if later required
+	memreq = (size_t)EstRNAvRNAhomozScores * sizeof(double);
+#ifdef _WIN32
+	m_pRNAvRNAhomozScoresMem = (uint8_t*)malloc(memreq);	// initial and perhaps the only allocation
+	if (m_pRNAvRNAhomozScoresMem == nullptr)
+	{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "AllocateRNAvRNAhomozScores: Memory allocation of %zd bytes for scores failed - %s", (int64_t)memreq, strerror(errno));
+		Reset();
+		return(eBSFerrMem);
+	}
+#else
+	m_pRNAvRNAhomozScoresMem = (uint8_t*)mmap(NULL, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	if (m_pRNAvRNAhomozScoresMem == MAP_FAILED)
+	{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "AllocateRNAvRNAhomozScores: Memory allocation of %zd bytes through mmap() for sample features failed - %s", (int64_t)memreq, strerror(errno));
+		m_pRNAvRNAhomozScoresMem = nullptr;
+		Reset();
+		return(eBSFerrMem);
+	}
+#endif
+	m_AllocdRNAvRNAhomozScoresMem = memreq;
+	m_UsedRNAvRNAhomozScoresMem = 0;
+	return(eBSFSuccess);
+}
+
+int
+CRNAExpr::ReallocRNAvRNAhomozScores(int32_t NumScoresPerRow)	// realloc as may be required to have room (columns) for at least one more row of RNA homozygosity scores
+{
+	double* pReallocd;
+	if (m_pRNAvRNAhomozScoresMem == nullptr)
+		return(AllocateRNAvRNAhomozScores(NumScoresPerRow * 1000));
+	if ((m_UsedRNAvRNAhomozScoresMem + (sizeof(double) * NumScoresPerRow)) >= m_AllocdRNAvRNAhomozScoresMem)
+	{
+		size_t memreq = m_AllocdRNAvRNAhomozScoresMem + ((size_t)NumScoresPerRow * sizeof(double) * 100);	// alloc extra to reduce number of realloc's subsequently required
+#ifdef _WIN32
+		pReallocd = (double*)realloc(m_pRNAvRNAhomozScoresMem, memreq);
+		if (pReallocd == NULL)
+		{
+#else
+		pReallocd = (double*)mremap(m_pRNAvRNAhomozScoresMem, m_AllocdRNAvRNAhomozScoresMem, memreq, MREMAP_MAYMOVE);
+		if (pReallocd == MAP_FAILED)
+		{
+#endif
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "ReallocRNAvRNAhomozScores: Memory reallocation to %zd bytes failed - %s", (int64_t)memreq, strerror(errno));
+			return(eBSFerrMem);
+		}
+		m_pRNAvRNAhomozScoresMem = (uint8_t*)pReallocd;
+		m_AllocdRNAvRNAhomozScoresMem = memreq;
+		}
+	m_UsedRNAvRNAhomozScoresMem = (sizeof(double) * NumScoresPerRow);
+	return(eBSFSuccess);
+	}
 
 
