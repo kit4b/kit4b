@@ -1,7 +1,7 @@
 #pragma once
 
 const int32_t cMaxWildCardFileSpecs = 200;			// can accept at most this max number of input wildcarded file specs
-const int32_t cMaxWIGReadsets = 4000;				// currently allowing for at most this number of WIG readsets
+const int32_t cMaxWIGReadsets = 8000;				// currently allowing for at most this number of WIG readsets
 const int32_t cMaxIncludeChroms = 20;				// max number of include chromosomes regular expressions
 const int32_t cMaxExcludeChroms = 20;				// max number of exclude chromosomes regular expressions
 

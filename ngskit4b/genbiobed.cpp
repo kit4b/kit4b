@@ -41,13 +41,13 @@ int CreateBioBed(int NumInputFiles,char *pszInfileSpecs[],char *pszBioBedFile,ch
 int genbiobed(int argc, char* argv[])
 {
 	// determine my process name
-	_splitpath(argv[0], NULL, NULL, gszProcName, NULL);
+	_splitpath(argv[0], nullptr, nullptr, gszProcName, nullptr);
 #else
 int
 genbiobed(int argc, char** argv)
 {
 	// determine my process name
-	CUtility::splitpath((char*)argv[0], NULL, gszProcName);
+	CUtility::splitpath((char*)argv[0], nullptr, gszProcName);
 #endif
 int iScreenLogLevel;		// level of screen diagnostics
 int iFileLogLevel;			// level of file diagnostics
@@ -77,7 +77,7 @@ struct arg_file *LogFile = arg_file0("F","log","<file>",	"diagnostics log file")
 
 struct arg_int  *BEDType = arg_int1("b","bedtype","<int>",		"type of BED file, 1 == contains exon detail, 2 == all other BED, 3 == 'genultras.exe' ultra csv file, 4 == 'genultracores.exe' ultracores");
 struct arg_file *infiles =  arg_filen("i","in","<file>",0,cRRMaxInFileSpecs,	"input from bed file(s)");
-struct arg_file *OutFile = arg_file1("o",NULL,"<file>",			"output to biobed file");
+struct arg_file *OutFile = arg_file1("o",nullptr,"<file>",			"output to biobed file");
 struct arg_str *Descr = arg_str1("d","descr","<string>",		"full description");
 struct arg_str *Title = arg_str1("t","title","<string>",		"short title");
 struct arg_int *MinLen = arg_int0("m","minlen","<int>",			"minimum length accepted (b=4 only)");
@@ -163,8 +163,8 @@ if (!argerrors)
 
 	for(NumInputFiles=Idx=0;NumInputFiles < cRRMaxInFileSpecs && Idx < infiles->count; Idx++)
 		{
-		pszInfileSpecs[Idx] = NULL;
-		if(pszInfileSpecs[NumInputFiles] == NULL)
+		pszInfileSpecs[Idx] = nullptr;
+		if(pszInfileSpecs[NumInputFiles] == nullptr)
 			pszInfileSpecs[NumInputFiles] = new char [_MAX_PATH];
 		strncpy(pszInfileSpecs[NumInputFiles],infiles->filename[Idx],_MAX_PATH);
 		pszInfileSpecs[NumInputFiles][_MAX_PATH-1] = '\0';

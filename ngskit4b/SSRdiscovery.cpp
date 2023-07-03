@@ -66,12 +66,12 @@ Process(int PMode,					// processing mode
 int SSRdiscovery(int argc, char* argv[])
 {
 // determine my process name
-_splitpath(argv[0],NULL,NULL,gszProcName,NULL);
+_splitpath(argv[0],nullptr,nullptr,gszProcName,nullptr);
 #else
 int SSRdiscovery(int argc, char** argv)
 {
 // determine my process name
-CUtility::splitpath((char *)argv[0],NULL,gszProcName);
+CUtility::splitpath((char *)argv[0],nullptr,gszProcName);
 #endif
 
 int iScreenLogLevel;		// level of screen diagnostics
@@ -304,8 +304,8 @@ if (!argerrors)
 	int Idx;
 	for(NumInputFiles=Idx=0;NumInputFiles < cMaxInFileSpecs && Idx < inputfiles->count; Idx++)
 		{
-		pszInputFiles[Idx] = NULL;
-		if(pszInputFiles[NumInputFiles] == NULL)
+		pszInputFiles[Idx] = nullptr;
+		if(pszInputFiles[NumInputFiles] == nullptr)
 			pszInputFiles[NumInputFiles] = new char [_MAX_PATH];
 		strncpy(pszInputFiles[NumInputFiles],inputfiles->filename[Idx],_MAX_PATH);
 		pszInputFiles[NumInputFiles][_MAX_PATH-1] = '\0';
@@ -444,15 +444,15 @@ return(Rslt);
 
 CSSRDiscovery::CSSRDiscovery(void)
 {
-m_pSeqBuff = NULL;
-m_pKMerDist = NULL;
-m_pszRptSSRsBuff = NULL;
+m_pSeqBuff = nullptr;
+m_pKMerDist = nullptr;
+m_pszRptSSRsBuff = nullptr;
 Init();
 }
 
 CSSRDiscovery::~CSSRDiscovery(void)
 {
-if(m_pSeqBuff != NULL)
+if(m_pSeqBuff != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pSeqBuff);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -460,9 +460,9 @@ if(m_pSeqBuff != NULL)
 	if(m_pSeqBuff != MAP_FAILED)
 		munmap(m_pSeqBuff,m_AllocdSeqBuffMem);
 #endif
-	m_pSeqBuff = NULL;
+	m_pSeqBuff = nullptr;
 	}
-if(m_pKMerDist != NULL)
+if(m_pKMerDist != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pKMerDist);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -470,9 +470,9 @@ if(m_pKMerDist != NULL)
 	if(m_pKMerDist != MAP_FAILED)
 		munmap(m_pKMerDist,m_AllocdKMerFreqMem);
 #endif
-	m_pKMerDist = NULL;
+	m_pKMerDist = nullptr;
 	}
-if(m_pszRptSSRsBuff != NULL)
+if(m_pszRptSSRsBuff != nullptr)
 	delete m_pszRptSSRsBuff;
 }
 
@@ -480,9 +480,9 @@ if(m_pszRptSSRsBuff != NULL)
 void
 CSSRDiscovery::Init(void)
 {
-m_pSeqBuff = NULL;
-m_pKMerDist = NULL;
-m_pszRptSSRsBuff = NULL;
+m_pSeqBuff = nullptr;
+m_pKMerDist = nullptr;
+m_pszRptSSRsBuff = nullptr;
 m_hOutFile = -1;
 m_hOutKMerFreqFile = -1;
 Reset();
@@ -514,13 +514,13 @@ if(m_hOutKMerFreqFile != -1)
 	m_hOutKMerFreqFile = -1;
 	}
 
-if(m_pszRptSSRsBuff != NULL)
+if(m_pszRptSSRsBuff != nullptr)
 	{
 	delete m_pszRptSSRsBuff;
-	m_pszRptSSRsBuff = NULL;
+	m_pszRptSSRsBuff = nullptr;
 	}
 
-if(m_pSeqBuff != NULL)
+if(m_pSeqBuff != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pSeqBuff);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -528,9 +528,9 @@ if(m_pSeqBuff != NULL)
 	if(m_pSeqBuff != MAP_FAILED)
 		munmap(m_pSeqBuff,m_AllocdSeqBuffMem);
 #endif
-	m_pSeqBuff = NULL;
+	m_pSeqBuff = nullptr;
 	}
-if(m_pKMerDist != NULL)
+if(m_pKMerDist != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pKMerDist);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -538,7 +538,7 @@ if(m_pKMerDist != NULL)
 	if(m_pKMerDist != MAP_FAILED)
 		munmap(m_pKMerDist,m_AllocdKMerFreqMem);
 #endif
-	m_pKMerDist = NULL;
+	m_pKMerDist = nullptr;
 	}
 
 m_AllocdSeqBuffMem = 0;
@@ -556,27 +556,27 @@ CSSRDiscovery::AllocSeqBuff(size_t SeqLen)				// allocate for at least this sequ
 size_t memreq;
 etSeqBase *pTmp;
 
-if(m_pSeqBuff != NULL && m_AllocdSeqBuffMem >= SeqLen)
+if(m_pSeqBuff != nullptr && m_AllocdSeqBuffMem >= SeqLen)
 	return(m_pSeqBuff);
 
-if(m_pSeqBuff == NULL)
+if(m_pSeqBuff == nullptr)
 	{
 	memreq = max(SeqLen,(size_t)cMaxAllocBuffChunk);
 #ifdef _WIN32
 	m_pSeqBuff = (etSeqBase *) malloc(SeqLen);	// initial and perhaps the only allocation
-	if(m_pSeqBuff == NULL)
+	if(m_pSeqBuff == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocSeqBuff: Memory allocation of %zd bytes - %s",(int64_t)SeqLen,strerror(errno));
-		return(NULL);
+		return(nullptr);
 		}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-	m_pSeqBuff = (etSeqBase *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+	m_pSeqBuff = (etSeqBase *)mmap(nullptr,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pSeqBuff == MAP_FAILED)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocSeqBuff: Memory allocation of %zd bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
-		m_pSeqBuff = NULL;
-		return(NULL);
+		m_pSeqBuff = nullptr;
+		return(nullptr);
 		}
 #endif
 	}
@@ -588,12 +588,12 @@ else
 #else
 	pTmp = (etSeqBase *)mremap(m_pSeqBuff,m_AllocdSeqBuffMem,memreq,MREMAP_MAYMOVE);
 	if(pTmp == MAP_FAILED)
-		pTmp = NULL;
+		pTmp = nullptr;
 #endif
-	if(pTmp == NULL)
+	if(pTmp == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocSeqBuff: Memory re-allocation to %zd bytes - %s",(int64_t)memreq,strerror(errno));
-		return(NULL);
+		return(nullptr);
 		}
 	m_pSeqBuff = pTmp;
 	}
@@ -630,7 +630,7 @@ while((Rslt = CurEntryID = BioSeqFile.Next(CurEntryID)) > eBSFSuccess)
 	if(!SeqLen)
 		continue;
 
-	if(AllocSeqBuff(SeqLen) == NULL)
+	if(AllocSeqBuff(SeqLen) == nullptr)
 		{
 		Rslt = eBSFerrMem;
 		break;
@@ -681,10 +681,10 @@ if((Rslt=Fasta.Open(pszFile,true))!=eBSFSuccess)
 	return(Rslt);
 	}
 
-if(m_pSeqBuff == NULL)				// if not already allocated then allocate to hold cMaxAllocBuffChunk bases 
+if(m_pSeqBuff == nullptr)				// if not already allocated then allocate to hold cMaxAllocBuffChunk bases 
 	{
 	SeqLen = cMaxAllocBuffChunk;
-	if(AllocSeqBuff(SeqLen) == NULL)
+	if(AllocSeqBuff(SeqLen) == nullptr)
 		{
 		Rslt = eBSFerrMem;
 		Fasta.Close();
@@ -738,7 +738,7 @@ while((Rslt = SeqLen = Fasta.ReadSequence(&m_pSeqBuff[m_SeqBuffLen],(int)min(Ava
 	AvailBuffSize -= SeqLen;
 	if(AvailBuffSize < (size_t)(cMaxAllocBuffChunk / 8))
 		{
-		if(AllocSeqBuff(m_AllocdSeqBuffMem + SeqLen) == NULL)
+		if(AllocSeqBuff(m_AllocdSeqBuffMem + SeqLen) == nullptr)
 			{
 			Rslt = eBSFerrMem;
 			Fasta.Close();
@@ -912,7 +912,7 @@ int Idx;
 uint32_t FreqIdx;
 tsKMerDist *pKMerDist;
 
-if(m_pKMerDist == NULL || KMerLen != m_KMerFreqLen)
+if(m_pKMerDist == nullptr || KMerLen != m_KMerFreqLen)
 	return(0);
 
 FreqIdx = 0;
@@ -1177,7 +1177,7 @@ TotNumExcessiveTandemSSRs = 0;
 memset(m_TotNumAcceptedKmerSSRs,0,sizeof(m_TotNumAcceptedKmerSSRs));
 
 // if single KMer element length being processed and that KMer is <= 10 then allocate to hold instance counts
-if(pszKMerFreqFile != NULL && pszKMerFreqFile[0] != '\0' &&
+if(pszKMerFreqFile != nullptr && pszKMerFreqFile[0] != '\0' &&
    MinRepElLen == MaxRepElLen && MinRepElLen <= 10)
 	{
 	size_t memreq;
@@ -1189,7 +1189,7 @@ if(pszKMerFreqFile != NULL && pszKMerFreqFile[0] != '\0' &&
 	memreq = (size_t)m_NumKMers * (size_t)m_SizeOfKMerDist;
 #ifdef _WIN32
 	m_pKMerDist = (tsKMerDist *) malloc(memreq);	// initial and only allocation
-	if(m_pKMerDist == NULL)
+	if(m_pKMerDist == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %zd bytes - %s",(int64_t)memreq,strerror(errno));
 		Reset();
@@ -1197,11 +1197,11 @@ if(pszKMerFreqFile != NULL && pszKMerFreqFile[0] != '\0' &&
 		}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-	m_pKMerDist = (tsKMerDist *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+	m_pKMerDist = (tsKMerDist *)mmap(nullptr,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pKMerDist == MAP_FAILED)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %zd bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
-		m_pKMerDist = NULL;
+		m_pKMerDist = nullptr;
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -1235,7 +1235,7 @@ else
 	m_NumKMers = 0;
 	}
 
-if((m_pszRptSSRsBuff = new char [cMaxAllocRptSSRs]) == NULL)
+if((m_pszRptSSRsBuff = new char [cMaxAllocRptSSRs]) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate %d bytes buffering for SSRs output",cMaxAllocRptSSRs);
 	Reset();

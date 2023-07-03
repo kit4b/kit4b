@@ -108,13 +108,13 @@ ProcessDECSV2SQLite(int PMode,	// currently just the one mode...default is to pa
 int Markers2SQLite(int argc, char* argv[])
 {
 // determine my process name
-_splitpath(argv[0],NULL,NULL,gszProcName,NULL);
+_splitpath(argv[0],nullptr,nullptr,gszProcName,nullptr);
 #else
 int
 Markers2SQLite(int argc, char** argv)
 {
 // determine my process name
-CUtility::splitpath((char *)argv[0],NULL,gszProcName);
+CUtility::splitpath((char *)argv[0],nullptr,gszProcName);
 #endif
 
 int iScreenLogLevel;		// level of screen diagnostics
@@ -256,8 +256,8 @@ if (!argerrors)
 	}
 	for (NumSNPSpecies = Idx = 0; NumSNPSpecies < 1000 && Idx < snpspecies->count; Idx++)
 		{
-		pszSNPSpecies[Idx] = NULL;
-		if (pszSNPSpecies[NumSNPSpecies] == NULL)
+		pszSNPSpecies[Idx] = nullptr;
+		if (pszSNPSpecies[NumSNPSpecies] == nullptr)
 			pszSNPSpecies[NumSNPSpecies] = new char[_MAX_PATH];
 		strncpy(pszSNPSpecies[NumSNPSpecies], snpspecies->sval[Idx], _MAX_PATH);
 		pszSNPSpecies[NumSNPSpecies][_MAX_PATH - 1] = '\0';
@@ -324,13 +324,13 @@ return 0;
 int SNPs2SQLite(int argc, char* argv[])
 {
 // determine my process name
-_splitpath(argv[0],NULL,NULL,gszProcName,NULL);
+_splitpath(argv[0],nullptr,nullptr,gszProcName,nullptr);
 #else
 int
 SNPs2SQLite(int argc, char** argv)
 {
 // determine my process name
-CUtility::splitpath((char *)argv[0],NULL,gszProcName);
+CUtility::splitpath((char *)argv[0],nullptr,gszProcName);
 #endif
 int iScreenLogLevel;		// level of screen diagnostics
 int iFileLogLevel;			// level of file diagnostics
@@ -548,13 +548,13 @@ return 0;
 int DE2SQLite(int argc, char* argv[])
 {
 // determine my process name
-_splitpath(argv[0],NULL,NULL,gszProcName,NULL);
+_splitpath(argv[0],nullptr,nullptr,gszProcName,nullptr);
 #else
 int
 DE2SQLite(int argc, char** argv)
 {
 // determine my process name
-CUtility::splitpath((char *)argv[0],NULL,gszProcName);
+CUtility::splitpath((char *)argv[0],nullptr,gszProcName);
 #endif
 
 int iScreenLogLevel;		// level of screen diagnostics
@@ -755,9 +755,9 @@ ProcessCSV2SQLite(int PMode,					// currently just the one mode...default is to 
 				  char *pszDatabase)			// SQLite database file
 {
 int Rslt;
-CSQLiteMarkers *pSQL = NULL;
+CSQLiteMarkers *pSQL = nullptr;
 
-if((pSQL = new CSQLiteMarkers()) == NULL)
+if((pSQL = new CSQLiteMarkers()) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Unable to instantiate instance of CSQLiteMarkers");
 	return(eBSFerrObj);
@@ -765,7 +765,7 @@ if((pSQL = new CSQLiteMarkers()) == NULL)
 
 Rslt = pSQL->ProcessCSV2SQLite(PMode,bSafe,CSVtype,pszExprName,pszExprDescr,pTargAssemb,NumSpecies,pszSpeciesNames,pszInFile,pszDatabase);
 
-if(pSQL != NULL)
+if(pSQL != nullptr)
 	delete pSQL;
 return(Rslt);
 }
@@ -782,9 +782,9 @@ ProcessDECSV2SQLite(int PMode,	// currently just the one mode...default is to pa
 				  char *pszDatabase)			// SQLite database file
 {
 int Rslt;
-CSQLiteDE *pSQL = NULL;
+CSQLiteDE *pSQL = nullptr;
 
-if((pSQL = new CSQLiteDE()) == NULL)
+if((pSQL = new CSQLiteDE()) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Unable to instantiate instance of CSQLiteDE");
 	return(eBSFerrObj);
@@ -792,7 +792,7 @@ if((pSQL = new CSQLiteDE()) == NULL)
 
 Rslt = pSQL->ProcessCSV2SQLite(PMode,bSafe,pszExprName,pszExprDescr,pszCtrlConditions,pszExprConditions,pszInFile,pszDatabase);
 
-if(pSQL != NULL)
+if(pSQL != nullptr)
 	delete pSQL;
 return(Rslt);
 }

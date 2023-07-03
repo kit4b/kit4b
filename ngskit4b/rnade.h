@@ -341,7 +341,7 @@ class CRNA_DE {
 	int m_MinStartLociThres;			// minimum feature unique start loci threshold, control or experiment, required (1 to 200, defaults to 10)
 
 
-	tsRefIDChrom *m_pChroms = NULL;
+	tsRefIDChrom *m_pChroms = nullptr;
 	int m_NumChromsAllocd = 0;
 	int m_CurNumChroms = 0;
 	int m_MRAChromID = 0;

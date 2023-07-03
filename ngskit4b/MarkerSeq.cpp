@@ -41,10 +41,10 @@ Original 'BioKanga' copyright notice has been retained and immediately follows t
 
 CMarkerSeq::CMarkerSeq(void)
 {
-m_pHypers = NULL;
-m_pFasta = NULL;
-m_pSeq = NULL;
-m_pMarkerBuff = NULL;
+m_pHypers = nullptr;
+m_pFasta = nullptr;
+m_pSeq = nullptr;
+m_pMarkerBuff = nullptr;
 m_hOutMarkerFile = -1;
 Reset();
 }
@@ -63,17 +63,17 @@ if(m_hOutMarkerFile != -1)
 	close(m_hOutMarkerFile);
 	m_hOutMarkerFile = -1;
 	}
-if(m_pHypers != NULL)
+if(m_pHypers != nullptr)
 	{
 	delete m_pHypers;
-	m_pHypers = NULL;
+	m_pHypers = nullptr;
 	}
-if(m_pFasta != NULL)
+if(m_pFasta != nullptr)
 	{
 	delete m_pFasta;
-	m_pFasta = NULL;
+	m_pFasta = nullptr;
 	}
-if(m_pSeq != NULL)
+if(m_pSeq != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pSeq);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -81,12 +81,12 @@ if(m_pSeq != NULL)
 	if(m_pSeq != MAP_FAILED)
 		munmap(m_pSeq,m_AllocdSeqMem);
 #endif
-	m_pSeq = NULL;
+	m_pSeq = nullptr;
 	}
-if(m_pMarkerBuff != NULL)
+if(m_pMarkerBuff != nullptr)
 	{
 	delete m_pMarkerBuff;
-	m_pMarkerBuff = NULL;
+	m_pMarkerBuff = nullptr;
 	}
 m_PMode = 0;	
 m_Ftype = 0;
@@ -146,7 +146,7 @@ strncpy(m_szOutFile,pszOutFile,sizeof(m_szOutFile));
 m_szOutFile[sizeof(m_szOutFile)-1] = '\0';
 
 // allocate to buffer generated marker sequences
-if((m_pMarkerBuff = new uint8_t [cMarkerBuffAlloc])==NULL)
+if((m_pMarkerBuff = new uint8_t [cMarkerBuffAlloc])==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessMarkerSeqs: Unable to allocate %d bytes memory for marker buffer",cMarkerBuffAlloc);
 	Reset();
@@ -170,7 +170,7 @@ memreq = (size_t)min((size_t)FastaSize,(size_t)0x05fffffff);			// limited to pro
 #ifdef _WIN32
 m_pSeq = (uint8_t *) malloc(memreq);	// initial and perhaps the only allocation
 
-if(m_pSeq == NULL)
+if(m_pSeq == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessMarkerSeqs: Memory allocation of %zd bytes - %s",(int64_t)memreq,strerror(errno));
 	Reset();
@@ -178,11 +178,11 @@ if(m_pSeq == NULL)
 	}
 #else
 // gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-m_pSeq = (uint8_t *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+m_pSeq = (uint8_t *)mmap(nullptr,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pSeq == MAP_FAILED)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessMarkerSeqs: Memory allocation of %zd bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
-	m_pSeq = NULL;
+	m_pSeq = nullptr;
 	Reset();
 	return(eBSFerrMem);
 	}
@@ -190,7 +190,7 @@ if(m_pSeq == MAP_FAILED)
 m_AllocdSeqMem = memreq;
 
 // firstly load loci and sort ascending
-if((m_pHypers = new CHyperEls) == NULL)
+if((m_pHypers = new CHyperEls) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to instantiate CHyperEls");
 	return(eBSFerrObj);
@@ -259,7 +259,7 @@ m_NumEls = m_pHypers->DedupeSort(0,true);
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"After duplicates removed there are %d elements",m_NumEls);
 
 // iterate the assembly sequences
-if((m_pFasta = new CFasta())==NULL)
+if((m_pFasta = new CFasta())==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create CFasta object");
 	return(eBSFerrObj);
@@ -375,7 +375,7 @@ while((Rslt = CurSeqLen = m_pFasta->ReadSequence(m_pSeq,(int)(m_AllocdSeqMem-1))
 	int VariantID;
 	NumMarkersThisChrom = 0;
 	PrevMarkerEnd = 0;
-	while((pHypEl = m_pHypers->LocateChromNthElement(ChromID,Nth)) != NULL)
+	while((pHypEl = m_pHypers->LocateChromNthElement(ChromID,Nth)) != nullptr)
 		{
 		Nth += 1;
 		ElStart = pHypEl->StartLoci;

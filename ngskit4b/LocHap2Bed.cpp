@@ -58,13 +58,13 @@ int Process (eModeLocHap Mode,				// processing mode
 int LocHap2Bed (int argc, char *argv[])
 {
 	// determine my process name
-	_splitpath (argv[0], NULL, NULL, gszProcName, NULL);
+	_splitpath (argv[0], nullptr, nullptr, gszProcName, nullptr);
 #else
 int
 LocHap2Bed (int argc, char **argv)
 {
 	// determine my process name
-	CUtility::splitpath ((char *)argv[0], NULL, gszProcName);
+	CUtility::splitpath ((char *)argv[0], nullptr, gszProcName);
 #endif
 	int Len;
 	int iFileLogLevel;			// level of file diagnostics
@@ -281,7 +281,7 @@ LocHap2Bed (int argc, char **argv)
 						gDiagnostics.DiagOut(eDLFatal, gszProcName, "Error: Too many input SNP files specified with '-i<filespec>' option");
 						exit(1);
 						}
-					if(ppszSNPFiles[NumSNPFiles] == NULL)
+					if(ppszSNPFiles[NumSNPFiles] == nullptr)
 						ppszSNPFiles[NumSNPFiles] = new char[_MAX_PATH];
 					strncpy(ppszSNPFiles[NumSNPFiles], glob.File(n), _MAX_PATH);
 					ppszSNPFiles[NumSNPFiles++][_MAX_PATH - 1] = '\0';
@@ -312,8 +312,8 @@ LocHap2Bed (int argc, char **argv)
 		{
 			for (int Idx = 0; NumInWhitelist < cLHMaxSetMembers && Idx < whitelisted->count; Idx++)
 			{
-				ppszWhitelisted[Idx] = NULL;
-				if (ppszWhitelisted[NumInWhitelist] == NULL)
+				ppszWhitelisted[Idx] = nullptr;
+				if (ppszWhitelisted[NumInWhitelist] == nullptr)
 					ppszWhitelisted[NumInWhitelist] = new char[_MAX_PATH];
 				strncpy (ppszWhitelisted[NumInWhitelist], whitelisted->sval[Idx], _MAX_PATH);
 				ppszWhitelisted[NumInWhitelist][_MAX_PATH - 1] = '\0';
@@ -327,8 +327,8 @@ LocHap2Bed (int argc, char **argv)
 		{
 			for (int Idx = 0; NumInBlackList < cLHMaxSetMembers && Idx < blacklisted->count; Idx++)
 			{
-				ppsBlacklisted[Idx] = NULL;
-				if (ppsBlacklisted[NumInBlackList] == NULL)
+				ppsBlacklisted[Idx] = nullptr;
+				if (ppsBlacklisted[NumInBlackList] == nullptr)
 					ppsBlacklisted[NumInBlackList] = new char[_MAX_PATH];
 				strncpy (ppsBlacklisted[NumInBlackList], blacklisted->sval[Idx], _MAX_PATH);
 				ppsBlacklisted[NumInBlackList][_MAX_PATH - 1] = '\0';
@@ -433,7 +433,7 @@ int Process (eModeLocHap Mode,				// processing mode
 {
 int Rslt;
 CLocHap2Bed *pCLocHap2Bed;
-if ((pCLocHap2Bed = new CLocHap2Bed) == NULL)
+if ((pCLocHap2Bed = new CLocHap2Bed) == nullptr)
 	{
 	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Unable to instantiate instance of CLocHap2Bed");
 	return(eBSFerrInternal);
@@ -441,42 +441,42 @@ if ((pCLocHap2Bed = new CLocHap2Bed) == NULL)
 
 Rslt = pCLocHap2Bed->Process (Mode, MinCoverage, MinAlleleProp, PValueThres, pszTrackName, pszAssemblyName, pszExperimentDescr, 
 								  NumInWhitelist, ppszWhitelisted, NumInBlackList, ppsBlacklisted, NumSNPFiles, ppszSNPFiles, pszOutFile);
-if (pCLocHap2Bed != NULL)
+if (pCLocHap2Bed != nullptr)
 	delete pCLocHap2Bed;
 return(Rslt);
 }
 
 CLocHap2Bed::CLocHap2Bed (void)
 {
-	m_pCSV = NULL;
-	m_pszLineBuff = NULL;
+	m_pCSV = nullptr;
+	m_pszLineBuff = nullptr;
 	m_hOutFile = -1;
-	m_ppszSNPFiles = NULL;
+	m_ppszSNPFiles = nullptr;
 	Reset ();
 }
 
 
 CLocHap2Bed::~CLocHap2Bed (void)
 {
-if (m_pCSV != NULL)
+if (m_pCSV != nullptr)
 	delete m_pCSV;
 if (m_hOutFile != -1)
 	close (m_hOutFile);
-if (m_pszLineBuff != NULL)
+if (m_pszLineBuff != nullptr)
 	delete[]m_pszLineBuff;
 }
 
 void
 CLocHap2Bed::Reset (void)
 {
-if (m_pCSV != NULL)
+if (m_pCSV != nullptr)
 	{
 	delete m_pCSV;
-	m_pCSV = NULL;
+	m_pCSV = nullptr;
 	}
 if (m_hOutFile != -1)
 	{
-	if (m_LineBuffOffs && m_pszLineBuff != NULL)
+	if (m_LineBuffOffs && m_pszLineBuff != nullptr)
 		CUtility::RetryWrites (m_hOutFile, m_pszLineBuff, m_LineBuffOffs);
 #ifdef _WIN32
 	_commit (m_hOutFile);
@@ -487,10 +487,10 @@ if (m_hOutFile != -1)
 	m_hOutFile = -1;
 	}
 
-if (m_pszLineBuff != NULL)
+if (m_pszLineBuff != nullptr)
 	{
 	delete[]m_pszLineBuff;
-	m_pszLineBuff = NULL;
+	m_pszLineBuff = nullptr;
 	}
 m_AllocdLineBuff = 0;
 m_LineBuffOffs = 0;
@@ -816,7 +816,7 @@ if((Rslt = m_RegExprs.CompileREs(NumInWhitelist, ppszWhitelisted,NumInBlackList,
 	return(Rslt);
 	}
 
-if ((m_pszLineBuff = new char[cLHAllocLineBuffSize]) == NULL)
+if ((m_pszLineBuff = new char[cLHAllocLineBuffSize]) == nullptr)
 	{
 	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Process: Unable to allocate memory for output line buffering -- %s", strerror (errno));
 	return(eBSFerrMem);
@@ -840,7 +840,7 @@ if ((m_hOutFile = open (pszOutFile, O_RDWR | O_CREAT | O_TRUNC, S_IREAD | S_IWRI
 	return(eBSFerrOpnFile);
 	}
 
-if ((m_pCSV = new CCSVFile) == NULL)
+if ((m_pCSV = new CCSVFile) == nullptr)
 	{
 	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Unable to instantiate CCSVfile");
 	Reset ();

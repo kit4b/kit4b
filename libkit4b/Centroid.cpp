@@ -663,7 +663,7 @@ for(NumMutated = SeqIdx = 0; SeqIdx < SeqLen; SeqIdx++)
 		NumMutated++;
 	pSeq[MutateLoci] = (etSeqBase)Idx;
 	}
-delete pRandIdxs;
+delete []pRandIdxs;
 return(NumMutated);
 }
 
@@ -739,7 +739,7 @@ for(Idx = 0; Idx < (SeqLen-(m_TransMatricesNMer-1)); Idx++)
 	*pToRetT++ = pProbT[Period-1];
 	}
 
-delete pProbs;
+delete []pProbs;
 // can't calculate the (initial and) last FlankLen bases in the sequence
 // so the fudge is to give these bases equal probabilities of 0.25
 for(Idx = 0; Idx < FlankLen; Idx++)
@@ -773,7 +773,7 @@ if(pszSeq == NULL || Region < eFRIntergenic || Region >= eFRDnstream ||
 pSeq = new uint8_t[SeqLen];
 CSeqTrans::MapAscii2Sense(pszSeq,SeqLen,pSeq);
 Rslt = StationarySeqProbs(Region,pSeq,SeqLen,Period,pToRetA,pToRetC,pToRetG,pToRetT);
-delete pSeq;
+delete []pSeq;
 return(Rslt);
 }
 

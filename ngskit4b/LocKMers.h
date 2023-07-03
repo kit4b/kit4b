@@ -136,7 +136,7 @@ class CLocKMers
 	bool	// returns true if suffix array entry identifier is for a pseudo-chromosome which is part of the target cultivar  
 		IsTargetCultivar(int EntryID);		// suffix array entry identifier 
 
-	tsPartialCultivar *				// NULL if EntryID not a targeted cultivar
+	tsPartialCultivar *				// nullptr if EntryID not a targeted cultivar
 		LocTargetCultivar(int EntryID);	// suffix array entry identifier
 
 	

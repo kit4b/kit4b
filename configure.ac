@@ -1,4 +1,5 @@
-AC_INIT(libkit4b/BEDfile.cpp)
+AC_INIT
+AC_CONFIG_SRCDIR([libkit4b/BEDfile.cpp])
 AC_CHECK_LIB(gslcblas,main)
 AC_CHECK_LIB(gsl,main)
 AC_CHECK_LIB(pthread,main)
@@ -12,7 +13,7 @@ AC_CONFIG_HEADERS(config.h)
 AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_INSTALL
-AC_OUTPUT(Makefile 
+AC_CONFIG_FILES([Makefile 
     libkit4b/Makefile 
     libBKPLPlot/Makefile
     libzlib/Makefile
@@ -38,7 +39,6 @@ AC_OUTPUT(Makefile
     genalignloci2core/Makefile
     genalignref2relloci/Makefile
     genalignstats/Makefile
-    genbiomultialign/Makefile
     gencentroidmetrics/Makefile
     gencomposition/Makefile
     genElementProfiles/Makefile
@@ -52,7 +52,6 @@ AC_OUTPUT(Makefile
     genseqcandidates/Makefile
     genstructprofile/Makefile
     genstructstats/Makefile
-    genultras/Makefile
     genWiggle/Makefile
     genzygosity/Makefile
     GFFfilter/Makefile
@@ -74,5 +73,6 @@ AC_OUTPUT(Makefile
     SimulateMNase/Makefile
     splitmultifasta/Makefile
     ufilter/Makefile
-    usimdiffexpr/Makefile)
+    usimdiffexpr/Makefile])
+AC_OUTPUT
 

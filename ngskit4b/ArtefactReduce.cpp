@@ -73,13 +73,13 @@ ProcessArtefactReduce(etARPMode PMode,	// processing mode; currently eAR2Fasta, 
 int ArtefactReduce(int argc, char* argv[])
 {
 // determine my process name
-_splitpath(argv[0],NULL,NULL,gszProcName,NULL);
+_splitpath(argv[0],nullptr,nullptr,gszProcName,nullptr);
 #else
 int
 ArtefactReduce(int argc, char** argv)
 {
 // determine my process name
-CUtility::splitpath((char *)argv[0],NULL,gszProcName);
+CUtility::splitpath((char *)argv[0],nullptr,gszProcName);
 #endif
 int iScreenLogLevel;		// level of screen diagnostics
 int iFileLogLevel;			// level of file diagnostics
@@ -323,8 +323,8 @@ if (!argerrors)
 	strcpy(szDupDistFile,"DupInstDist");
 	NumPE2InputFiles = 0;
 	NumPE1InputFiles = 0;
-	pszInPE1files[0] = NULL;
-	pszInPE2files[0] = NULL;
+	pszInPE1files[0] = nullptr;
+	pszInPE2files[0] = nullptr;
 	szContaminantFile[0] = '\0';
 	Trim5 = 0;
 	Trim3 = 0;
@@ -377,8 +377,8 @@ if (!argerrors)
 			{
 			for(NumPE1InputFiles=Idx=0;NumPE1InputFiles < cKDNAMaxInFileSpecs && Idx < inpe1files->count; Idx++)
 				{
-				pszInPE1files[Idx] = NULL;
-				if(pszInPE1files[NumPE1InputFiles] == NULL)
+				pszInPE1files[Idx] = nullptr;
+				if(pszInPE1files[NumPE1InputFiles] == nullptr)
 					pszInPE1files[NumPE1InputFiles] = new char [_MAX_PATH];
 				strncpy(pszInPE1files[NumPE1InputFiles],inpe1files->filename[Idx],_MAX_PATH);
 				pszInPE1files[NumPE1InputFiles][_MAX_PATH-1] = '\0';
@@ -398,8 +398,8 @@ if (!argerrors)
 			{
 			for(NumPE2InputFiles=Idx=0;NumPE2InputFiles < cKDNAMaxInFileSpecs && Idx < inpe2files->count; Idx++)
 				{
-				pszInPE2files[Idx] = NULL;
-				if(pszInPE2files[NumPE2InputFiles] == NULL)
+				pszInPE2files[Idx] = nullptr;
+				if(pszInPE2files[NumPE2InputFiles] == nullptr)
 					pszInPE2files[NumPE2InputFiles] = new char [_MAX_PATH];
 				strncpy(pszInPE2files[NumPE2InputFiles],inpe2files->filename[Idx],_MAX_PATH);
 				pszInPE2files[NumPE2InputFiles][_MAX_PATH-1] = '\0';
@@ -786,7 +786,7 @@ ProcessArtefactReduce(etARPMode PMode,	// processing mode, currently eAR2Fasta, 
 int Rslt;
 CArtefactReduce *pArtefactReduce;
 
-if((pArtefactReduce = new CArtefactReduce) == NULL)
+if((pArtefactReduce = new CArtefactReduce) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to instantiate instance of CArtefactReduce");
 	return(-1);
@@ -853,20 +853,20 @@ ARReset();
 void
 CArtefactReduce::ARInit(void)
 {
-m_pKMerSeqHashes = NULL; 
-m_pKMerSeqs = NULL;
+m_pKMerSeqHashes = nullptr; 
+m_pKMerSeqs = nullptr;
 ARReset();
 }
 
 void
 CArtefactReduce::ARReset(void) 
 {
-if(m_pKMerSeqHashes != NULL)
+if(m_pKMerSeqHashes != nullptr)
 	{
 	delete m_pKMerSeqHashes;
-	m_pKMerSeqHashes = NULL;
+	m_pKMerSeqHashes = nullptr;
 	}
-if(m_pKMerSeqs != NULL)
+if(m_pKMerSeqs != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pKMerSeqs);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -874,7 +874,7 @@ if(m_pKMerSeqs != NULL)
 	if(m_pKMerSeqs != MAP_FAILED)
 		munmap(m_pKMerSeqs,m_AllocdKMerSeqInstsMem);
 #endif
-	m_pKMerSeqs = NULL;
+	m_pKMerSeqs = nullptr;
 	}
 
 m_KMerSeqLen = 0;
@@ -934,7 +934,7 @@ char *pszInFile;
 
 char szPEDupDistFile[_MAX_PATH];
 
-if(pszDupDistFile == NULL || pszDupDistFile[0] == '\0')
+if(pszDupDistFile == nullptr || pszDupDistFile[0] == '\0')
 	szPEDupDistFile[0]  = '\0';
 else
 	{
@@ -966,7 +966,7 @@ CumulativeMemory = 0;
 SeqWrdBytes = GetSeqWrdBytes();
 
 Rslt = eBSFerrOpnFile;		// assumes no check point resumption
-if(pszCheckpointFile != NULL && pszCheckpointFile[0] != '\0')
+if(pszCheckpointFile != nullptr && pszCheckpointFile[0] != '\0')
 	{
 	int hFile = open(pszCheckpointFile,O_READSEQ);		// if file exists and can be opened for reading then worth trying to load...
 	if(hFile != -1)
@@ -993,9 +993,9 @@ if(pszCheckpointFile != NULL && pszCheckpointFile[0] != '\0')
 if(Rslt < eBSFSuccess)
 	{
 	// if requested then load and prepare for contaminant sequence processing
-	if(pszContaminantFile != NULL && pszContaminantFile[0] != '\0')
+	if(pszContaminantFile != nullptr && pszContaminantFile[0] != '\0')
 		{
-		if((m_pContaminants = new CContaminants)==NULL)
+		if((m_pContaminants = new CContaminants)==nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Unable to instantiate CContaminants");
 			Reset();
@@ -1120,7 +1120,7 @@ if(Rslt < eBSFSuccess)
 				pszInFile = glob.File(FileID);
 				NumInputFilesProcessed += 1;
 				gDiagnostics.DiagOut(eDLInfo,gszProcName,"Process: Parsing and filtering single ended reads from input read file '%s'",pszInFile);
-				if((Rslt = LoadReads(MaxNs,MinPhredScore,Trim5,Trim3,MinSeqLen,TrimSeqLen,SampleNthRawRead,Zreads,pszInFile,NULL)) < eBSFSuccess)
+				if((Rslt = LoadReads(MaxNs,MinPhredScore,Trim5,Trim3,MinSeqLen,TrimSeqLen,SampleNthRawRead,Zreads,pszInFile,nullptr)) < eBSFSuccess)
 					{
 					gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Load failed for input sequences file '%s'",pszInFile);
 					Reset(false);
@@ -1173,7 +1173,7 @@ if(Rslt < eBSFSuccess)
 
 
 	// if user has requested it then save checkpoint to file
-	if(pszCheckpointFile != NULL && pszCheckpointFile[0] != '\0')
+	if(pszCheckpointFile != nullptr && pszCheckpointFile[0] != '\0')
 		{
 		Rslt = SavePackedSeqsToFile(pszCheckpointFile);
 		if(Rslt < eBSFSuccess)
@@ -1194,7 +1194,7 @@ uint32_t LoadedMeanSeqLen;
 uint32_t LoadedMinSeqLen;
 uint32_t LoadedMaxSeqLen;
 
-GetNumReads(&NumPE1Reads,&NumPE2Reads,NULL,NULL,&TotSeqsParsed,&TotSeqsUnderlength,&TotSeqsExcessNs,&LoadedMeanSeqLen,&LoadedMinSeqLen,&LoadedMaxSeqLen);
+GetNumReads(&NumPE1Reads,&NumPE2Reads,nullptr,nullptr,&TotSeqsParsed,&TotSeqsUnderlength,&TotSeqsExcessNs,&LoadedMeanSeqLen,&LoadedMinSeqLen,&LoadedMaxSeqLen);
 
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Process: Accepted read lengths: min %d, max %d, mean %d",LoadedMinSeqLen,LoadedMaxSeqLen,LoadedMeanSeqLen);
 
@@ -1252,7 +1252,7 @@ if(!bNoDedupe)
 	RemoveDuplicates(NumPE2Reads > 0 ? true : false,bStrand,szPEDupDistFile);
 	FreeSfx();
 	FreeSeqStarts();
-	GetNumReads(NULL,NULL,&NumPE1Reads,&NumPE2Reads);
+	GetNumReads(nullptr,nullptr,&NumPE1Reads,&NumPE2Reads);
 
 	if(gProcessingID > 0)
 		{
@@ -1289,7 +1289,7 @@ if(KMerLenFilter)
 	m_AllocdKMerSeqInstsMem = m_AllocdKMerSeqInsts * m_KMerSeqInstSize;
 #ifdef _WIN32
 	m_pKMerSeqs = (tsKMerSeqInst *)malloc(m_AllocdKMerSeqInstsMem);	// initial and with any luck perhaps the only allocation
-	if (m_pKMerSeqs == NULL)
+	if (m_pKMerSeqs == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessReadsetDist: Memory allocation of %zd bytes for K-mer distributions - %s", (int64_t)m_AllocdKMerSeqInstsMem, strerror(errno));
 		m_AllocdKMerSeqInstsMem = 0;
@@ -1299,11 +1299,11 @@ if(KMerLenFilter)
 		}
 #else
 		// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-	m_pKMerSeqs = (tsKMerSeqInst *)mmap(NULL, m_AllocdKMerSeqInstsMem, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	m_pKMerSeqs = (tsKMerSeqInst *)mmap(nullptr, m_AllocdKMerSeqInstsMem, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	if (m_pKMerSeqs == MAP_FAILED)
 		{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessReadsetDist: Memory allocation of %zd bytes  for K-mer distributions through mmap()  failed - %s", (int64_t)m_AllocdKMerSeqInstsMem, strerror(errno));
-		m_pKMerSeqs = NULL;
+		m_pKMerSeqs = nullptr;
 		m_AllocdKMerSeqInstsMem = 0;
 		ARReset();
 		Reset();
@@ -1312,7 +1312,7 @@ if(KMerLenFilter)
 #endif
 	memset(m_pKMerSeqs,0,m_AllocdKMerSeqInstsMem);
 	m_NumKMerSeqHashes = 0;
-	if((m_pKMerSeqHashes = new uint32_t [cMaxKMerSeqHashArrayEntries]) == NULL)
+	if((m_pKMerSeqHashes = new uint32_t [cMaxKMerSeqHashArrayEntries]) == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessReadsetDist: Memory allocation of %d entries for K-mer hashes failed", cMaxKMerSeqHashArrayEntries);
 		m_AllocdKMerSeqInstsMem = 0;
@@ -1323,7 +1323,7 @@ if(KMerLenFilter)
 	}
 
 #else
-m_pKMerSeqs = NULL;
+m_pKMerSeqs = nullptr;
 m_KMerSeqLen = 0;
 m_KMerSeqInstSize = 0;
 m_AllocdKMerSeqInsts = 0;
@@ -1459,7 +1459,7 @@ for(Iteration = 1; Iteration <= NumIterations; Iteration++)
 
 			if((PE1Flags & (cFlg5Prime | cFlg3Prime)) != (cFlg5Prime | cFlg3Prime))
 				{
-				pPE1Targ = GetSeqHeader(SeqID,NULL,NULL,&PE1SeqLen,false);
+				pPE1Targ = GetSeqHeader(SeqID,nullptr,nullptr,&PE1SeqLen,false);
 				PE1OvrlapLen = ((PE1SeqLen * (PE1Flags & cFlgOvlLenMsk) >> 9)) / 100;
 				if(PE1OvrlapLen < (uint32_t)m_MinAcceptSeqLen)
 					{
@@ -1472,7 +1472,7 @@ for(Iteration = 1; Iteration <= NumIterations; Iteration++)
 
 			if((PE2Flags & (cFlg5Prime | cFlg3Prime)) != (cFlg5Prime | cFlg3Prime))
 				{
-				pPE2Targ = GetSeqHeader(SeqID+1,NULL,NULL,&PE2SeqLen,false);
+				pPE2Targ = GetSeqHeader(SeqID+1,nullptr,nullptr,&PE2SeqLen,false);
 				PE2OvrlapLen = ((PE2SeqLen * (PE2Flags & cFlgOvlLenMsk) >> 9)) / 100;
 				if(PE2OvrlapLen < (uint32_t)m_MinAcceptSeqLen)
 					{
@@ -1519,7 +1519,7 @@ for(Iteration = 1; Iteration <= NumIterations; Iteration++)
 
 			if((PE1Flags & (cFlg5Prime | cFlg3Prime)) != (cFlg5Prime | cFlg3Prime))
 				{
-				pPE1Targ = GetSeqHeader(SeqID,NULL,NULL,&PE1SeqLen,false);
+				pPE1Targ = GetSeqHeader(SeqID,nullptr,nullptr,&PE1SeqLen,false);
 				PE1OvrlapLen = ((PE1SeqLen * (PE1Flags & cFlgOvlLenMsk) >> 9)) / 100;
 				if(PE1OvrlapLen < (uint32_t)m_MinAcceptSeqLen)
 					{
@@ -1578,7 +1578,7 @@ else
 		NumThreads = m_NumThreads;
 	}
 
-if((pThreadParams = new tsThreadIdentDuplicatePars[NumThreads])==NULL)
+if((pThreadParams = new tsThreadIdentDuplicatePars[NumThreads])==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Unable to allocate memory for threads...");
 	Reset(false);
@@ -1586,7 +1586,7 @@ if((pThreadParams = new tsThreadIdentDuplicatePars[NumThreads])==NULL)
 	}
 memset(pThreadParams,0,sizeof(tsThreadIdentDuplicatePars) * NumThreads);
 
-if((pNumDupInstances = new uint32_t[cMaxDupInstances+1])==NULL)
+if((pNumDupInstances = new uint32_t[cMaxDupInstances+1])==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Unable to allocate memory for threads...");
 	Reset(false);
@@ -1615,7 +1615,7 @@ pCurThread = pThreadParams;
 	pthread_attr_t threadattr; 
 	pthread_attr_init(&threadattr);
 	pthread_attr_getstacksize(&threadattr, &defaultStackSize);
-	if(defaultStackSize != cWorkThreadStackSize)
+	if (defaultStackSize < cWorkThreadStackSize)
 		pthread_attr_setstacksize(&threadattr, cWorkThreadStackSize);
 #endif
 for(ThreadIdx = 1; ThreadIdx <= NumThreads; ThreadIdx++,pCurThread++)
@@ -1625,9 +1625,9 @@ for(ThreadIdx = 1; ThreadIdx <= NumThreads; ThreadIdx++,pCurThread++)
 	pCurThread->bDedupeIndependent = m_bDedupeIndependent;
 	pCurThread->bStrand = bStrand;
 	pCurThread->pThis = this;
-	pCurThread->pProbeSubSeq = NULL;
-	pCurThread->pPE1SeqWrds = NULL;
-	pCurThread->pPE2SeqWrds = NULL;
+	pCurThread->pProbeSubSeq = nullptr;
+	pCurThread->pPE1SeqWrds = nullptr;
+	pCurThread->pPE2SeqWrds = nullptr;
 	if(!bStrand)
 		{
 		pCurThread->AllocMemPE1SeqWrds = cMaxOvrlapSeqWrds * sizeof(tSeqWrd4);
@@ -1640,7 +1640,7 @@ for(ThreadIdx = 1; ThreadIdx <= NumThreads; ThreadIdx++,pCurThread++)
 		}
 
 #ifdef _WIN32
-	pCurThread->threadHandle = (HANDLE)_beginthreadex(NULL,cWorkThreadStackSize,ThreadedIdentDups,pCurThread,0,&pCurThread->threadID);
+	pCurThread->threadHandle = (HANDLE)_beginthreadex(nullptr,cWorkThreadStackSize,ThreadedIdentDups,pCurThread,0,&pCurThread->threadID);
 #else
 	pCurThread->threadRslt = pthread_create (&pCurThread->threadID , &threadattr , ThreadedIdentDups , pCurThread);
 #endif
@@ -1682,7 +1682,7 @@ for(ThreadIdx = 0; ThreadIdx < NumThreads; ThreadIdx++,pCurThread++)
 	int JoinRlt;
 	clock_gettime(CLOCK_REALTIME, &ts);
 	ts.tv_sec += 60 * 10;
-	while((JoinRlt = pthread_timedjoin_np(pCurThread->threadID, NULL, &ts)) != 0)
+	while((JoinRlt = pthread_timedjoin_np(pCurThread->threadID, nullptr, &ts)) != 0)
 		{
 		AcquireLock(false);
 		CurNumProcessed = m_Sequences.NumProcessed;
@@ -1695,11 +1695,11 @@ for(ThreadIdx = 0; ThreadIdx < NumThreads; ThreadIdx++,pCurThread++)
 		ts.tv_sec += 60;
 		}
 #endif
-	if(pCurThread->pProbeSubSeq != NULL)
+	if(pCurThread->pProbeSubSeq != nullptr)
 		delete (uint8_t *)pCurThread->pProbeSubSeq;
-	if(pCurThread->pPE1SeqWrds != NULL)
+	if(pCurThread->pPE1SeqWrds != nullptr)
 		delete (uint8_t *)pCurThread->pPE1SeqWrds;
-	if(pCurThread->pPE2SeqWrds != NULL)
+	if(pCurThread->pPE2SeqWrds != nullptr)
 		delete (uint8_t *)pCurThread->pPE2SeqWrds;
 	if(pCurThread->MaxDuplicates > MaxDuplicateInsts)
 		MaxDuplicateInsts = pCurThread->MaxDuplicates;
@@ -1721,7 +1721,7 @@ if(gProcessingID > 0)
 	gSQLiteSummaries.AddResult(gExperimentID, gProcessingID,(char *)"ReadsMaxDuplicate",ePTUint32,sizeof(MaxDuplicateInsts),"Cnt",&MaxDuplicateInsts);
 	}
 
-if(pszDupDist != NULL && pszDupDist[0] != '\0')
+if(pszDupDist != nullptr && pszDupDist[0] != '\0')
 	{
 #ifdef _WIN32
 	if((hDupDistFile = open(pszDupDist, _O_RDWR | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC, _S_IREAD | _S_IWRITE ))==-1)
@@ -1783,9 +1783,9 @@ if(gProcessingID > 0)
 	}
 
 if(pThreadParams)
-	delete pThreadParams;
+	delete []pThreadParams;
 if(pNumDupInstances)
-	delete pNumDupInstances;
+	delete []pNumDupInstances;
 
 if(!m_bDedupeIndependent && bPEdups)
 	{
@@ -1861,7 +1861,7 @@ else
 		NumThreads = m_NumThreads;
 	}
 
-if((pThreadParams = new tsThreadIdentOverlapPars[NumThreads])==NULL)
+if((pThreadParams = new tsThreadIdentOverlapPars[NumThreads])==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Unable to allocate memory for threads...");
 	Reset(false);
@@ -1904,7 +1904,7 @@ for(ThreadIdx = 1; ThreadIdx <= NumThreads; ThreadIdx++,pCurThread++)
 	pCurThread->pOverlapSeq = new uint8_t [pCurThread->AllocMemOverlapSeq];
 	pCurThread->pOverlapFlankSeq = new uint8_t [pCurThread->AllocMemOverlapSeq];
 #ifdef _WIN32
-	pCurThread->threadHandle = (HANDLE)_beginthreadex(NULL,cWorkThreadStackSize,ThreadedIdentOverlaps,pCurThread,0,&pCurThread->threadID);
+	pCurThread->threadHandle = (HANDLE)_beginthreadex(nullptr,cWorkThreadStackSize,ThreadedIdentOverlaps,pCurThread,0,&pCurThread->threadID);
 #else
 	pCurThread->threadRslt = pthread_create (&pCurThread->threadID , &threadattr , ThreadedIdentOverlaps , pCurThread);
 #endif
@@ -1941,7 +1941,7 @@ for(ThreadIdx = 0; ThreadIdx < NumThreads; ThreadIdx++,pCurThread++)
 	int JoinRlt;
 	clock_gettime(CLOCK_REALTIME, &ts);
 	ts.tv_sec += 60 * 10;
-	while((JoinRlt = pthread_timedjoin_np(pCurThread->threadID, NULL, &ts)) != 0)
+	while((JoinRlt = pthread_timedjoin_np(pCurThread->threadID, nullptr, &ts)) != 0)
 		{
 		AcquireLock(false);
 		CurNumProcessed = m_Sequences.NumProcessed;
@@ -2069,8 +2069,8 @@ while(GetSeqProcRange(&StartingSeqID,&EndingSeqID,cMaxMultiSeqFlags) > 0)
 				}
 			}
 
-		pStartSeqWrd = GetSeqHeader(SeqID,NULL,NULL,&ProbeLen,false);
-		if(pStartSeqWrd == NULL)				// serious problem if can't get header, currently just writes to log and continues unless there are simply too many...
+		pStartSeqWrd = GetSeqHeader(SeqID,nullptr,nullptr,&ProbeLen,false);
+		if(pStartSeqWrd == nullptr)				// serious problem if can't get header, currently just writes to log and continues unless there are simply too many...
 			{
 			if((TooMAnyWarnings+=1) < 10)
 				gDiagnostics.DiagOut(eDLWarn,gszProcName,"Thread %d Couldn't find sequence header for known sequence %d...",pPars->ThreadIdx,SeqID);
@@ -2079,7 +2079,7 @@ while(GetSeqProcRange(&StartingSeqID,&EndingSeqID,cMaxMultiSeqFlags) > 0)
 		
 		if(!pPars->bDedupeIndependent && pPars->bPEdups)					// if paired end processing then also need header for 3' end
 			{
-			if((pPE2StartSeqWrd = GetSeqHeader(SeqID+1,NULL,NULL,&PE2ProbeLen,false))==NULL)
+			if((pPE2StartSeqWrd = GetSeqHeader(SeqID+1,nullptr,nullptr,&PE2ProbeLen,false))==nullptr)
 				{
 				if((TooMAnyWarnings+=1) < 10)
 					gDiagnostics.DiagOut(eDLWarn,gszProcName,"Thread %d Couldn't find PE2 sequence header for SeqID %u...",pPars->ThreadIdx,SeqID+1);
@@ -2129,9 +2129,9 @@ while(GetSeqProcRange(&StartingSeqID,&EndingSeqID,cMaxMultiSeqFlags) > 0)
 			SfxWrdIdx -= 1;				// LocateFirstExact returned located index + 1
 			do  {
 				SfxWrdIdx += 1;
-				if((pTarg = SfxIdxToFirstSeqWrd(SfxWrdIdx))==NULL)
+				if((pTarg = SfxIdxToFirstSeqWrd(SfxWrdIdx))==nullptr)
 					break;
-				pTarg = GetSeqHeader(pTarg,&MatchTargID,NULL,NULL,&TargLen,false);
+				pTarg = GetSeqHeader(pTarg,&MatchTargID,nullptr,nullptr,&TargLen,false);
 				if(MatchTargID <= SeqID)
 					{
 					if(!bRevCpl && MatchTargID == SeqID)		// expect to have seen self!
@@ -2156,7 +2156,7 @@ while(GetSeqProcRange(&StartingSeqID,&EndingSeqID,cMaxMultiSeqFlags) > 0)
 					// only mark paired ends as duplicates if both are identical to the probe PE1
 					if(!pPars->bDedupeIndependent && pPars->bPEdups)
 						{
-						pPE2Targ = GetSeqHeader(MatchTargID+1,NULL,NULL,&PE2TargLen,false);  // 3' end is immediately after the 5' end so simply add 1 on to the 5' seqid
+						pPE2Targ = GetSeqHeader(MatchTargID+1,nullptr,nullptr,&PE2TargLen,false);  // 3' end is immediately after the 5' end so simply add 1 on to the 5' seqid
 						if(PE2TargLen != PE2ProbeLen)
 							continue;
 						if((CmpRslt = CmpPackedSeqs(pPE2StartSeqWrd,pPE2Targ,PE2ProbeLen))!=0)
@@ -2380,8 +2380,8 @@ while(GetSeqProcRange(&StartingSeqID,&EndingSeqID,cMaxMultiSeqFlags) > 0)
 		if((ProbeFlags = MultiSeqFlags[SeqID - StartingSeqID].CurFlags) & cFlgNoProc)		
 			continue;
 		
-		pStartSeqWrd = GetSeqHeader(SeqID,NULL,NULL,&ProbeLen,false);
-		if(pStartSeqWrd == NULL)				// serious problem if can't get header...
+		pStartSeqWrd = GetSeqHeader(SeqID,nullptr,nullptr,&ProbeLen,false);
+		if(pStartSeqWrd == nullptr)				// serious problem if can't get header...
 			{
 			if((TooMAnyWarnings+=1) < 10)
 				gDiagnostics.DiagOut(eDLWarn,gszProcName,"Thread %d Couldn't find sequence header for known sequence %d...",pPars->ThreadIdx,SeqID);
@@ -2452,9 +2452,9 @@ while(GetSeqProcRange(&StartingSeqID,&EndingSeqID,cMaxMultiSeqFlags) > 0)
 				pTarg =  &((tSeqWrd4 *)m_Sequences.pSeqs2Assemb)[TargIdx];
 				SfxWrdIdx += 1;
 				MatchTargID = 0;
-				pTarg = GetSeqHeader(pTarg,&MatchTargID,NULL,NULL,&TargLen,false);
+				pTarg = GetSeqHeader(pTarg,&MatchTargID,nullptr,nullptr,&TargLen,false);
 
-				if(pTarg == NULL || MatchTargID == 0 || MatchTargID > m_Sequences.NumSeqs2Assemb)
+				if(pTarg == nullptr || MatchTargID == 0 || MatchTargID > m_Sequences.NumSeqs2Assemb)
 					{
 					gDiagnostics.DiagOut(eDLWarn,gszProcName,"Thread %d Couldn't find header word for %u ...",pPars->ThreadIdx,MatchTargID);
 					break;
@@ -2571,8 +2571,8 @@ while(GetSeqProcRange(&StartingSeqID,&EndingSeqID,cMaxMultiSeqFlags) > 0)
 				SfxWrdIdx += 1;
 
 				MatchTargID = 0;
-				pTarg = GetSeqHeader(pTarg,&MatchTargID,NULL,NULL,&TargLen,false);
-				if(pTarg == NULL || MatchTargID == 0 || MatchTargID > m_Sequences.NumSeqs2Assemb)
+				pTarg = GetSeqHeader(pTarg,&MatchTargID,nullptr,nullptr,&TargLen,false);
+				if(pTarg == nullptr || MatchTargID == 0 || MatchTargID > m_Sequences.NumSeqs2Assemb)
 					{
 					gDiagnostics.DiagOut(eDLWarn,gszProcName,"Thread %d Couldn't find header word for %u ...",pPars->ThreadIdx,MatchTargID);
 					break;
@@ -2689,7 +2689,7 @@ for(Idx = 0; Idx < m_KMerSeqLen; Idx++,pKMerBase++)
 KMerHash &= cKMerSeqHashMask;
 
 // check if this packed Kmer sequence has been previously processed
-pKMerWrd = NULL;
+pKMerWrd = nullptr;
 AcquireSerialise();
 if (m_NumKMerSeqHashes && (NxtSeqInst = m_pKMerSeqHashes[KMerHash]) != 0)		// seen at least one sequence previously with same hash?
 	{
@@ -2731,9 +2731,9 @@ if(m_AllocdKMerSeqInsts >= m_UsedKMerSeqInsts)
 #else
 	pAllocd = (tsKMerSeqInst *)mremap(m_pKMerSeqs,m_AllocdKMerSeqInstsMem,memreq,MREMAP_MAYMOVE);
 	if(pAllocd == MAP_FAILED)
-		pAllocd = NULL;
+		pAllocd = nullptr;
 #endif
-	if(pAllocd == NULL)
+	if(pAllocd == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Memory re-allocation to %d bytes - %s",memreq,strerror(errno));
 		ReleaseSerialise();
@@ -2749,7 +2749,7 @@ pNewKMerSeq->NumInstances = 1;
 pNewKMerSeq->Flags = 0;
 pNewKMerSeq->NxtSeq = 0;
 memcpy(pNewKMerSeq->PackedSeqs,PackedSeqs,(m_KMerSeqLen + 3) / 4);
-if (pKMerSeqInst == NULL)
+if (pKMerSeqInst == nullptr)
 	{
 	 m_pKMerSeqHashes[KMerHash] = m_UsedKMerSeqInsts + 1;
 	 m_NumKMerSeqHashes += 1;

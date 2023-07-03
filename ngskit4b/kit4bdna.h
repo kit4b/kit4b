@@ -506,17 +506,17 @@ friend class CPacBio;					// CPacBio requires access to all members of this clas
 			GetSeqLen(tSeqID SeqID); // sequence identifier
 
 	teBSFrsltCodes	// returns min/mean/max lengths for PE1/PE2 and SE sequences
-		GetSeqLenDist(uint32_t *pNumPEs = NULL,	// total number of paired ends (number of pairs!)
-					  int *pPE1min = NULL,	// returned PE1 min length
-					  int *pPE1mean = NULL,// returned PE1 mean length
-					  int *pPE1max = NULL, // returned PE1 max length
-					  int *pPE2min = NULL,	// returned PE2 min length
-					  int *pPE2mean = NULL,// returned PE2 mean length
-					  int *pPE2max = NULL, // returned PE2 max length
-					  uint32_t *pNumSEs = NULL,	// total number of single ends
-					  int *pSEmin = NULL,	// returned SE min length
-					  int *pSEmean = NULL,	// returned SE mean length
-					  int *pSEmax = NULL);	// returned SE max length
+		GetSeqLenDist(uint32_t *pNumPEs = nullptr,	// total number of paired ends (number of pairs!)
+					  int *pPE1min = nullptr,	// returned PE1 min length
+					  int *pPE1mean = nullptr,// returned PE1 mean length
+					  int *pPE1max = nullptr, // returned PE1 max length
+					  int *pPE2min = nullptr,	// returned PE2 min length
+					  int *pPE2mean = nullptr,// returned PE2 mean length
+					  int *pPE2max = nullptr, // returned PE2 max length
+					  uint32_t *pNumSEs = nullptr,	// total number of single ends
+					  int *pSEmin = nullptr,	// returned SE min length
+					  int *pSEmean = nullptr,	// returned SE mean length
+					  int *pSEmax = nullptr);	// returned SE max length
 
 
 	teBSFrsltCodes ChunkedWrite(uint64_t WrtOfs,uint8_t *pData,uint64_t WrtLen);
@@ -671,7 +671,7 @@ friend class CPacBio;					// CPacBio requires access to all members of this clas
 			bool bNoSeqBOvrlapA = false,	// if true and no seq 1 onto seq B overlap then do not look for seq B overlap onto seq A
 			int MaxSubsPerK = 0,			// allow upto this many substitutions per 1000 bp of overlap (expected to be in the range 0..20)
 			int MaxEnd12Subs = 0,			// allow at the initial 12bp of the 5' or 3' of overlap to have this many base mismatches in addition to the overall allowed MaxSubs (expected to be in range 0..6) 
-			int *pNumSubs = NULL);			// total number of substitutions actually required
+			int *pNumSubs = nullptr);			// total number of substitutions actually required
 
 	static int								// 0 Seq1 == Seq2, -1 if Seq1 < Seq2, +1 if Seq1 > Seq2
 		CmpPackedSeqs(tSeqWrd4 *pSeq1,			// Seq1 (probe) packed sequence
@@ -722,7 +722,7 @@ friend class CPacBio;					// CPacBio requires access to all members of this clas
 
 	tSeqWrd4 *									// returned ptr to 1st packed sequence word
 			SfxIdxToFirstSeqWrd(uint64_t SfxWrdIdx, // index + 1
-							   int *pWrdOfs = NULL);	  // returned sequence word is at this relative word offset to SfxWrdIdx; e.g if 1 then SfxWrdIdx referenced the second word in the sequence 
+							   int *pWrdOfs = nullptr);	  // returned sequence word is at this relative word offset to SfxWrdIdx; e.g if 1 then SfxWrdIdx referenced the second word in the sequence 
 							
 	tSeqID									// returned sequence identifer
 		SfxIdx2SeqID(uint64_t SfxWrdIdx);		// (offset + 1) into pTypeSeqs  
@@ -747,26 +747,26 @@ friend class CPacBio;					// CPacBio requires access to all members of this clas
 				  uint32_t Limit);				// if non-zero then need only iterate towards last exactly matching this for this Limit iterations
 
 	tSeqWrd4 *								// returned ptr to 1st word of actual packed sequence (use this as pCurSeq on next invocation)
-		IterSeqHeaders(tSeqWrd4 *pCurSeq,	// iterate to next sequence following (NULL to return 1st sequence)
-			tSeqID *pSeqID = NULL,			// returned 32bit sequence identifier
-			uint32_t *pSrcFileID = NULL,		// returned 8 bit source file identifier
-			uint32_t *pFlgs = NULL,			// returned 16 bit sequence flags
-			uint32_t *pSeqLen = NULL,		    // returned 30 bit sequence length
+		IterSeqHeaders(tSeqWrd4 *pCurSeq,	// iterate to next sequence following (nullptr to return 1st sequence)
+			tSeqID *pSeqID = nullptr,			// returned 32bit sequence identifier
+			uint32_t *pSrcFileID = nullptr,		// returned 8 bit source file identifier
+			uint32_t *pFlgs = nullptr,			// returned 16 bit sequence flags
+			uint32_t *pSeqLen = nullptr,		    // returned 30 bit sequence length
 			bool bSerialise = false);		// true if access to headers are to be serialised, false if access is not serialised
 
 	tSeqWrd4 *							// returned ptr to 1st word of actual packed sequence
 		GetSeqHeader(tSeqWrd4 *pSeqWrd,	// pts to a SeqWrd within the sequence
-			tSeqID *pSeqID = NULL,		// returned 32 bit sequence identifier
-			uint32_t *pSrcFileID = NULL,	// returned 8 bit source file identifier
-			uint32_t *pFlgs = NULL,		// returned 16 bit sequence flags
-			uint32_t *pSeqLen = NULL, 	// returned 30 bit sequence length
+			tSeqID *pSeqID = nullptr,		// returned 32 bit sequence identifier
+			uint32_t *pSrcFileID = nullptr,	// returned 8 bit source file identifier
+			uint32_t *pFlgs = nullptr,		// returned 16 bit sequence flags
+			uint32_t *pSeqLen = nullptr, 	// returned 30 bit sequence length
 			bool bSerialise = false);	// set true if access to headers are required to be serialised
 
 	tSeqWrd4 *								// returned ptr to 1st word of actual packed sequence
 		GetSeqHeader(tSeqID SeqID,		// 32 bit sequence identifier
-			uint32_t *pSrcFileID = NULL,	// returned 8 bit source file identifier
-			uint32_t *pFlgs = NULL,		// returned 16 bit sequence flags
-			uint32_t *pSeqLen = NULL,		// returned 30 bit sequence length
+			uint32_t *pSrcFileID = nullptr,	// returned 8 bit source file identifier
+			uint32_t *pFlgs = nullptr,		// returned 16 bit sequence flags
+			uint32_t *pSeqLen = nullptr,		// returned 30 bit sequence length
 			bool bSerialise = false);	// set true if access to headers are required to be serialised
 
 	tSeqWrd4 *									// returned ptr to next word to write packed sequence 
@@ -775,7 +775,7 @@ friend class CPacBio;					// CPacBio requires access to all members of this clas
 			uint32_t SrcFileID,			// identifies source file from which this sequence was processed (8 bits)
 			uint32_t Flgs,				// sequence flags (16 bits)
 			uint32_t SeqLen,				// sequence length (30 bits)
-			int *pNumSeqWrds = NULL,	// used to return the number of SeqWrds used
+			int *pNumSeqWrds = nullptr,	// used to return the number of SeqWrds used
 			bool bAddingHdr = true,     // set true if adding header, false if updating an existing header
 			bool bSerialise = false);	// set true if access to headers are required to be serialised
 
@@ -912,7 +912,7 @@ friend class CPacBio;					// CPacBio requires access to all members of this clas
 					int DstSeqLen,				// number of bases currently in pDstSeqWrd sequence
 				   tSeqWrd4 *pDstSeqWrd,		// merge this sequence with pSrcSeqWrd; merged sequence replaces this sequence
 				   tSeqWrd4 *pTmpSeqWrd,		// temp sequence space for use as may be needed whilst merging
-					char *pszDiagText = NULL);			// optional diagnostics text
+					char *pszDiagText = nullptr);			// optional diagnostics text
 
 
 				// merge of a source PE1 and PE2 with a SE dest sequence
@@ -1053,16 +1053,16 @@ static const int cLevenshteinPacBioMismatch = 2;  // PacBio has very low rates o
 	int GetSeqWrdBytes(void);			// returns size of tSeqWd 
 
 		uint32_t									// total number of reads accepted for processing into next phase
-			GetNumReads(uint32_t *pNumPE1Reads=NULL,	// returned total number of single ended or 5' paired end read sequences accepted parsed
-			uint32_t *pNumPE2Reads=NULL,				// returned total number of 3' paired end read sequences accepted parsed
-			uint32_t *pTotPE1Seqs=NULL,				// number of PE1 sequences remaining at end of each phase completion
-			uint32_t *pTotPE2Seqs=NULL,				// number of PE2 sequences remaining at end of each phase completion
-			uint32_t *pTotSeqsParsed=NULL,			// returned total number of sequences parsed for 3' and 5' combined
-			uint32_t *pTotSeqsUnderLen=NULL,			// returned total number of under length sequences parsed for 3' and 5' combined
-			uint32_t *pTotSeqsExcessNs=NULL,			// returned total number of under length sequences parsed for 3' and 5' combined
-			uint32_t *pMeanSeqLen = NULL,				// returned mean (rounded down) length of all sequences
-			uint32_t *pMinSeqLen = NULL,				// returned minimum sequence length
-			uint32_t *pMaxSeqLen = NULL);				// returned maximum sequence length			
+			GetNumReads(uint32_t *pNumPE1Reads=nullptr,	// returned total number of single ended or 5' paired end read sequences accepted parsed
+			uint32_t *pNumPE2Reads=nullptr,				// returned total number of 3' paired end read sequences accepted parsed
+			uint32_t *pTotPE1Seqs=nullptr,				// number of PE1 sequences remaining at end of each phase completion
+			uint32_t *pTotPE2Seqs=nullptr,				// number of PE2 sequences remaining at end of each phase completion
+			uint32_t *pTotSeqsParsed=nullptr,			// returned total number of sequences parsed for 3' and 5' combined
+			uint32_t *pTotSeqsUnderLen=nullptr,			// returned total number of under length sequences parsed for 3' and 5' combined
+			uint32_t *pTotSeqsExcessNs=nullptr,			// returned total number of under length sequences parsed for 3' and 5' combined
+			uint32_t *pMeanSeqLen = nullptr,				// returned mean (rounded down) length of all sequences
+			uint32_t *pMinSeqLen = nullptr,				// returned minimum sequence length
+			uint32_t *pMaxSeqLen = nullptr);				// returned maximum sequence length			
 
 	teBSFrsltCodes			// load previously saved concatenated and packed sequences from file 
 		LoadPackedSeqsFromFile(char *pszTypeSeqFile);	// loading is from this file
@@ -1071,10 +1071,10 @@ static const int cLevenshteinPacBioMismatch = 2;  // PacBio has very low rates o
 		SavePackedSeqsToFile(char *pszTypeSeqFile);	// save to this file
 
 	uint32_t				// returned number of sequences in m_Sequences.pSeqs2Assemb
-			ValidateSeqs2AssembStarts(uint32_t *pNumPEs = NULL,
-							  uint32_t *pNumSEs = NULL);
-	int ValidatePartialSeqsStarts(int *pPartialNumPEs = NULL,
-							  int *pPartialNumSEs = NULL);
+			ValidateSeqs2AssembStarts(uint32_t *pNumPEs = nullptr,
+							  uint32_t *pNumSEs = nullptr);
+	int ValidatePartialSeqsStarts(int *pPartialNumPEs = nullptr,
+							  int *pPartialNumSEs = nullptr);
 
 
 	int PackedRevCplPE(tSeqID PE1SeqID);	 // Will firstly exchange all PE1 and PE2 sequences with their headers followed by RevCpl all sequences
@@ -1181,7 +1181,7 @@ static const int cLevenshteinPacBioMismatch = 2;  // PacBio has very low rates o
 		RemoveMarkedSeqs(uint32_t RemovalFlags,		// if any of these flags set then remove this sequence
 								uint32_t AllRequiredFlags = 0,        // if containing any flags then remove this sequence unless all of these flags are set
 								uint32_t AllOptionalFlags = 0,        // if containing any flags then remove this sequence unless at least one of these flags is set
-								bool bUpdateHdrFlags = false);		// if true, and if pSeqFlags != NULL, then replace sequence header flags with those from pSeqFlags
+								bool bUpdateHdrFlags = false);		// if true, and if pSeqFlags != nullptr, then replace sequence header flags with those from pSeqFlags
 
 
 						 

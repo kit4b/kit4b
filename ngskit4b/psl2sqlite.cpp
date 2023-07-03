@@ -47,13 +47,13 @@ Process(int PMode,					// processing mode, 0 to delete any existing then create 
 int PSL2SQLite(int argc, char* argv[])
 {
 // determine my process name
-_splitpath(argv[0],NULL,NULL,gszProcName,NULL);
+_splitpath(argv[0],nullptr,nullptr,gszProcName,nullptr);
 #else
 int
 PSL2SQLite(int argc, char** argv)
 {
 // determine my process name
-CUtility::splitpath((char *)argv[0],NULL,gszProcName);
+CUtility::splitpath((char *)argv[0],nullptr,gszProcName);
 #endif
 int iScreenLogLevel;		// level of screen diagnostics
 int iFileLogLevel;			// level of file diagnostics
@@ -274,7 +274,7 @@ Process(int PMode,					// processing mode, 0 to delete any existing then create 
 int Rslt;
 CSQLitePSL *pSQLitePSL;
 
-if((pSQLitePSL = new CSQLitePSL)==NULL)
+if((pSQLitePSL = new CSQLitePSL)==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to instantiate instance of CSQLitePSL");
 	return(eBSFerrObj);

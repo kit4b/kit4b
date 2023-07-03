@@ -316,17 +316,17 @@ class CReadStats
 				uint8_t *pPE1QScores,		// PE1 read quality scores
 				tsInReadsFile *pPE1File,// file containing PE1 or SE reads
 				int PE2ReadLen = 0,		// number of bases in PE2 read
-				uint8_t *pPE2RawRead = NULL,	// PE2 read sequence
+				uint8_t *pPE2RawRead = nullptr,	// PE2 read sequence
 				int PE2QScoreLen = 0,		// number of quality scores in PE2 read (0 if no associated quality scores)
-				uint8_t *pPE2QScores = NULL,	// PE2 read quality scores
-				tsInReadsFile *pPE2File = NULL);	// file containing PE2
+				uint8_t *pPE2QScores = nullptr,	// PE2 read quality scores
+				tsInReadsFile *pPE2File = nullptr);	// file containing PE2
 
 	int				// minimum score at any offset within the sequence
 		AccumQScores(tsThreadNGSQCPars *pThread, // thread specific processing state and context
 				int QSSchema,					// quality scoring schema - guestimated scoring schema - 0: no scoring, 1: Solexa, 2: Illumina 1.3+, 3: Illumina 1.5+, 4: Illumina 1.8+ or Sanger 
 				int ReadLen,					// number of bases in read
 				uint8_t *pRawRead,				// read sequence
-				uint8_t *pQScores = NULL);			// read quality scores (NULL if no associated quality scores)
+				uint8_t *pQScores = nullptr);			// read quality scores (nullptr if no associated quality scores)
 
 	// accumulate K-mer counts at each base offset along the read length
 	int				

@@ -42,13 +42,13 @@ Process(etGOAssocParseType Type,		// expected association file type
 int gengoassoc(int argc, char* argv[])
 {
 	// determine my process name
-	_splitpath(argv[0], NULL, NULL, gszProcName, NULL);
+	_splitpath(argv[0], nullptr, nullptr, gszProcName, nullptr);
 #else
 int
 gengoassoc(int argc, char** argv)
 {
 	// determine my process name
-	CUtility::splitpath((char*)argv[0], NULL, gszProcName);
+	CUtility::splitpath((char*)argv[0], nullptr, gszProcName);
 #endif
 int iScreenLogLevel;		// level of screen diagnostics
 int iFileLogLevel;			// level of file diagnostics
@@ -70,10 +70,10 @@ struct arg_int *ScreenLogLevel=arg_int0("S", "ScreenLogLevel",	"<int>","Level of
 struct arg_file *LogFile = arg_file0("F","log","<file>",		"diagnostics log file");
 
 struct arg_int *Type=arg_int0("t", "type",	"<int>",			"association file type 0:UCSC (default), 1:GO standard, 2:GO TAIR, 3:GO Flybase, 4:PGSB GFF3");
-struct arg_file *GOAssocFile = arg_file1("i",NULL,"<file>",	    "association file, gene to GO terms ");
-struct arg_file *BIOGOAssocFile = arg_file1("o",NULL,"<file>",  "output to biogoassoc file");
-struct arg_file *NameMapFile = arg_file0("I",NULL,"<file>",     "optional, gene mapping file");
-struct arg_file *FiltFile = arg_file0("r",NULL,"<file>",		"optional, gene filtering file");
+struct arg_file *GOAssocFile = arg_file1("i",nullptr,"<file>",	    "association file, gene to GO terms ");
+struct arg_file *BIOGOAssocFile = arg_file1("o",nullptr,"<file>",  "output to biogoassoc file");
+struct arg_file *NameMapFile = arg_file0("I",nullptr,"<file>",     "optional, gene mapping file");
+struct arg_file *FiltFile = arg_file0("r",nullptr,"<file>",		"optional, gene filtering file");
 
 struct arg_end *end = arg_end(20);
 
@@ -221,10 +221,10 @@ Process(etGOAssocParseType Type,	// expected GO association type
 {
 int Rslt;
 
-CGOAssocs *pGOAssoc = NULL;
+CGOAssocs *pGOAssoc = nullptr;
 
-if(pszGOAssocFile == NULL || *pszGOAssocFile == '\0' ||
-	pszBIOGOAssocFile == NULL || *pszBIOGOAssocFile == '\0')
+if(pszGOAssocFile == nullptr || *pszGOAssocFile == '\0' ||
+	pszBIOGOAssocFile == nullptr || *pszBIOGOAssocFile == '\0')
 	return(eBSFerrParams);
 
 pGOAssoc = new CGOAssocs();

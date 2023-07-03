@@ -48,13 +48,13 @@ int TrimREQuotes(char *pszTxt);
 int FilterSAMAlignments(int argc, char* argv[])
 {
 // determine my process name
-_splitpath(argv[0],NULL,NULL,gszProcName,NULL);
+_splitpath(argv[0],nullptr,nullptr,gszProcName,nullptr);
 #else
 int
 FilterSAMAlignments(int argc, char** argv)
 {
 // determine my process name
-CUtility::splitpath((char *)argv[0],NULL,gszProcName);
+CUtility::splitpath((char *)argv[0],nullptr,gszProcName);
 #endif
 int iScreenLogLevel;		// level of screen diagnostics
 int iFileLogLevel;			// level of file diagnostics
@@ -343,8 +343,8 @@ return(FilterSAMAlignments.FilterSAMbyChrom(NumIncludeChroms,ppszIncludeChroms,N
 
 CFilterSAMAlignments::CFilterSAMAlignments()
 {
-m_pInBAMfile = NULL;
-m_pOutBAMfile = NULL;
+m_pInBAMfile = nullptr;
+m_pOutBAMfile = nullptr;
 }
 
 
@@ -356,17 +356,17 @@ CFilterSAMAlignments::~CFilterSAMAlignments()
 void
 CFilterSAMAlignments::Reset(void)
 {
-if(m_pInBAMfile != NULL)
+if(m_pInBAMfile != nullptr)
 	{
 	m_pInBAMfile->Close();
 	delete m_pInBAMfile;
-	m_pInBAMfile = NULL;
+	m_pInBAMfile = nullptr;
 	}
-if(m_pOutBAMfile != NULL)
+if(m_pOutBAMfile != nullptr)
 	{
 	m_pOutBAMfile->Close();
 	delete m_pOutBAMfile;
-	m_pOutBAMfile = NULL;
+	m_pOutBAMfile = nullptr;
 	}
 
 m_szFiltChrom[0] = 0;
@@ -408,7 +408,7 @@ bool								// true if file to be generated compressed with gzopen/gzwrite/gzclo
 CFilterSAMAlignments::FileReqWriteCompr(char *pszFile) // If last 3 chars of file name is ".gz" then this file is assumed to require compression
 {
 int Len;
-if(pszFile == NULL || pszFile[0] == '\0')
+if(pszFile == nullptr || pszFile[0] == '\0')
 	return(false);
 if((Len = (int)strlen(pszFile)) < 4)
 	return(false);
@@ -486,13 +486,13 @@ if(Len > 5)
 	}
 
 // open SAM for reading
-if(pszInFile == NULL || *pszInFile == '\0')
+if(pszInFile == nullptr || *pszInFile == '\0')
 	{
 	Reset();
 	return(eBSFerrParams);
 	}
 
-if((m_pInBAMfile = new CSAMfile) == NULL)
+if((m_pInBAMfile = new CSAMfile) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"RemapSAMLocii: Unable to instantiate class CSAMfile");
 	Reset();
@@ -503,16 +503,16 @@ if((Rslt = (teBSFrsltCodes)m_pInBAMfile->Open(pszInFile)) != eBSFSuccess)
 	{
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"RemapSAMLocii: Unable to open SAM/BAM format file %s",pszInFile);
 	delete m_pInBAMfile;
-	m_pInBAMfile = NULL;
+	m_pInBAMfile = nullptr;
 	Reset();
 	return((teBSFrsltCodes)Rslt);
 	}
 
-if((m_pOutBAMfile = new CSAMfile) == NULL)
+if((m_pOutBAMfile = new CSAMfile) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"RemapSAMLocii: Unable to instantiate class CSAMfile");
 	delete m_pInBAMfile;
-	m_pInBAMfile = NULL;
+	m_pInBAMfile = nullptr;
 	Reset();
 	return(eBSFerrInternal);
 	}
@@ -535,9 +535,9 @@ switch(SAMFormat) {
 if((Rslt = (teBSFrsltCodes)m_pOutBAMfile->Create(FileType,pszOutFile,6,(char *)kit4bversion)) < eBSFSuccess) // defaulting to compression level 6 if compressed BAM 
 	{
 	delete m_pInBAMfile;
-	m_pInBAMfile = NULL;
+	m_pInBAMfile = nullptr;
 	delete m_pOutBAMfile;
-	m_pInBAMfile = NULL;
+	m_pInBAMfile = nullptr;
 	Reset();
 	return(Rslt);
 	}
@@ -549,14 +549,14 @@ bFirstAlignment = true;
 Rslt = eBSFSuccess;
 
 NumMappedChroms = 0;
-time_t Then = time(NULL);
+time_t Then = time(nullptr);
 time_t Now;
 while(Rslt >= eBSFSuccess && (LineLen = m_pInBAMfile->GetNxtSAMline(m_szLine)) > 0)
 	{
 	NumParsedElLines += 1;
 	if(!(NumParsedElLines % 100000) || NumParsedElLines == 1)
 		{
-		Now = time(NULL);
+		Now = time(nullptr);
 		if((Now - Then) >= 60)
 			{
 			if(bFirstAlignment)
@@ -596,7 +596,7 @@ while(Rslt >= eBSFSuccess && (LineLen = m_pInBAMfile->GetNxtSAMline(m_szLine)) >
 		break;
 
 	// primary interest is in the reference chromname, startloci, length
-	if((Rslt = (teBSFrsltCodes)m_pOutBAMfile->ParseSAM2BAMalign(pTxt,&ProvBAMalignment,NULL)) < eBSFSuccess)
+	if((Rslt = (teBSFrsltCodes)m_pOutBAMfile->ParseSAM2BAMalign(pTxt,&ProvBAMalignment,nullptr)) < eBSFSuccess)
 		{
 		if(Rslt == eBSFerrFeature)
 			{
@@ -637,17 +637,17 @@ if(Rslt >= eBSFSuccess && NumAcceptedEls > 0)
 	}
 if(Rslt >= eBSFSuccess)
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Completed parsing %d element lines, unmapped %d, accepted %d",NumParsedElLines,NumUnmappedEls,NumAcceptedEls);
-if(m_pInBAMfile != NULL)
+if(m_pInBAMfile != nullptr)
 	{
 	m_pInBAMfile->Close();
 	delete m_pInBAMfile;
-	m_pInBAMfile = NULL;
+	m_pInBAMfile = nullptr;
 	}
-if(m_pOutBAMfile != NULL)
+if(m_pOutBAMfile != nullptr)
 	{
 	m_pOutBAMfile->Close();
 	delete m_pOutBAMfile;
-	m_pOutBAMfile = NULL;
+	m_pOutBAMfile = nullptr;
 	}
 
 Reset();

@@ -120,8 +120,8 @@ typedef enum eOntologies {
 // typedefs to make it easy to change common identifier types
 typedef int32_t tGeneID;			// gene identifier
 typedef int32_t tChromID;			// chromosome identifier
-typedef int32_t tAlignBlockID;	// alignment block identifier
-typedef uint8_t tSpeciesID;		// species identifier
+typedef int32_t tAlignBlockID;		// alignment block identifier
+typedef int32_t tSpeciesID;			// species identifier
 
 #ifdef _SHORTMAXREADLEN_
 const int cMaxReadLen = 2048;				// can process reads (if more than this length then must be sequences!) of up to this length

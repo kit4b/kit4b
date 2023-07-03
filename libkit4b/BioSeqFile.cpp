@@ -1696,7 +1696,7 @@ if(write(hDumpXMLFile,szBuff,Len)!=Len)
 	AddErrMsg("CBioSeqFile::Dump2XML","Write to file %s failed with error: %s",pszXMLfile,strerror(errno));
 close(hDumpXMLFile);
 if(pSeqBuff != NULL)
-	delete pSeqBuff;
+	delete []pSeqBuff;
 return(true);
 }
 

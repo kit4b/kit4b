@@ -34,13 +34,13 @@ int SegHaplotypes(eModeSH PMode,	// processing mode
 int seghaplotypes(int argc, char *argv[])
 {
 	// determine my process name
-	_splitpath (argv[0], NULL, NULL, gszProcName, NULL);
+	_splitpath (argv[0], nullptr, nullptr, gszProcName, nullptr);
 #else
 int
 seghaplotypes(int argc, char **argv)
 {
 	// determine my process name
-	CUtility::splitpath ((char *)argv[0], NULL, gszProcName);
+	CUtility::splitpath ((char *)argv[0], nullptr, gszProcName);
 #endif
 	int iFileLogLevel;			// level of file diagnostics
 	int iScreenLogLevel;		// level of file diagnostics
@@ -319,14 +319,14 @@ seghaplotypes(int argc, char **argv)
 
 CSegHaplotypes::CSegHaplotypes()
 {
-m_pInBuffer = NULL;
-m_pOutBuffer = NULL;
-m_pSAMfile=NULL;
-m_pBAMalignment =NULL;
-m_pSAMloci = NULL;
-m_pBins = NULL;
-m_pAllocSNPSites = NULL;
-m_pSNPMarkerCSV = NULL;
+m_pInBuffer = nullptr;
+m_pOutBuffer = nullptr;
+m_pSAMfile=nullptr;
+m_pBAMalignment =nullptr;
+m_pSAMloci = nullptr;
+m_pBins = nullptr;
+m_pAllocSNPSites = nullptr;
+m_pSNPMarkerCSV = nullptr;
 m_hOutFile = -1;			// output file handle
 Reset();
 }
@@ -335,23 +335,23 @@ CSegHaplotypes::~CSegHaplotypes()
 {
 if(m_hOutFile != -1)
 	close(m_hOutFile);
-if(m_pInBuffer != NULL)
+if(m_pInBuffer != nullptr)
 	delete []m_pInBuffer;
-if(m_pOutBuffer != NULL)
+if(m_pOutBuffer != nullptr)
 	delete []m_pOutBuffer;
-if(m_pSAMfile!=NULL)
+if(m_pSAMfile!=nullptr)
 	delete m_pSAMfile;
-if(m_pSNPMarkerCSV != NULL)
+if(m_pSNPMarkerCSV != nullptr)
 	delete m_pSNPMarkerCSV;
 
-if(m_pBAMalignment !=NULL)
+if(m_pBAMalignment !=nullptr)
 	delete m_pBAMalignment;
 
 
-if(m_pBins != NULL)
+if(m_pBins != nullptr)
 	delete []m_pBins;
 
-if (m_pSAMloci != NULL)
+if (m_pSAMloci != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pSAMloci);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -361,7 +361,7 @@ if (m_pSAMloci != NULL)
 #endif
 	}
 
-if(m_pAllocSNPSites != NULL)
+if(m_pAllocSNPSites != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pAllocSNPSites);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -381,19 +381,19 @@ if(m_hOutFile != -1)
 	m_hOutFile = -1;
 	}
 
-if(m_pInBuffer != NULL)
+if(m_pInBuffer != nullptr)
 	{
 	delete []m_pInBuffer;
-	m_pInBuffer = NULL;
+	m_pInBuffer = nullptr;
 	}
 
-if(m_pOutBuffer != NULL)
+if(m_pOutBuffer != nullptr)
 	{
 	delete []m_pOutBuffer;
-	m_pOutBuffer = NULL;
+	m_pOutBuffer = nullptr;
 	}
 
-if (m_pSAMloci != NULL)
+if (m_pSAMloci != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pSAMloci);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -401,10 +401,10 @@ if (m_pSAMloci != NULL)
 	if (m_pSAMloci != MAP_FAILED)
 		munmap(m_pSAMloci, m_AllocdSAMlociMem);
 #endif
-	m_pSAMloci = NULL;
+	m_pSAMloci = nullptr;
 	}
 
-if(m_pAllocSNPSites != NULL)
+if(m_pAllocSNPSites != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pAllocSNPSites);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -412,18 +412,18 @@ if(m_pAllocSNPSites != NULL)
 	if (m_pAllocSNPSites != MAP_FAILED)
 		munmap(m_pAllocSNPSites, m_AllocMemSNPSites);
 #endif
-	m_pAllocSNPSites = NULL;
+	m_pAllocSNPSites = nullptr;
 	}
 
-if(m_pSNPMarkerCSV != NULL)
+if(m_pSNPMarkerCSV != nullptr)
 	{
 	delete m_pSNPMarkerCSV;
-	m_pSNPMarkerCSV = NULL;
+	m_pSNPMarkerCSV = nullptr;
 	}
-if(m_pBins != NULL)
+if(m_pBins != nullptr)
 	{
 	delete []m_pBins;
-	m_pBins = NULL;
+	m_pBins = nullptr;
 	}
 
 m_BinSizeKbp = 0;
@@ -489,7 +489,7 @@ int SegHaplotypes(eModeSH PMode,	// processing mode
 int Rslt;
 CSegHaplotypes* pSegHaplotypes;
 
-if((pSegHaplotypes = new CSegHaplotypes) == NULL)
+if((pSegHaplotypes = new CSegHaplotypes) == nullptr)
 	{
 	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Unable to instantiate instance of CSegHaplotypes");
 	return(eBSFerrObj);
@@ -581,15 +581,15 @@ NumSNPsOverlaid = 0;
 AlignmentsWithSNPSites = 0;
 
 // open SAM for reading
-if(pszSAMFile == NULL || *pszSAMFile == '\0')
+if(pszSAMFile == nullptr || *pszSAMFile == '\0')
 	return(eBSFerrParams);
-if(m_pSAMfile != NULL)
+if(m_pSAMfile != nullptr)
 	{
 	delete m_pSAMfile;
-	m_pSAMfile = NULL;
+	m_pSAMfile = nullptr;
 	}
 
-if((m_pSAMfile = new CSAMfile) == NULL)
+if((m_pSAMfile = new CSAMfile) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenBinnedSegments: Unable to instantiate class CSAMfile");
 	return(eBSFerrInternal);
@@ -606,7 +606,7 @@ NumAcceptedAlignments = 0;
 NumAlignmentsProc = 0;
 int NumFounder1IDs = 0;
 int NumFounder2IDs = 0;
-time_t Then = time(NULL);
+time_t Then = time(nullptr);
 time_t Now;
 while(Rslt >= eBSFSuccess && (LineLen = m_pSAMfile->GetNxtSAMline((char *)m_pInBuffer)) > 0)
 	{
@@ -659,7 +659,7 @@ while(Rslt >= eBSFSuccess && (LineLen = m_pSAMfile->GetNxtSAMline((char *)m_pInB
 	NumAlignmentsProc += 1;
 	if (!(NumAlignmentsProc % 100000) || NumAlignmentsProc == 1)
 		{
-		Now = time(NULL);
+		Now = time(nullptr);
 		if ((Now - Then) >= 60)
 			{
 			gDiagnostics.DiagOut(eDLInfo, gszProcName, "Accepted %zd SAM/BAM alignments", NumAcceptedAlignments);
@@ -668,7 +668,7 @@ while(Rslt >= eBSFSuccess && (LineLen = m_pSAMfile->GetNxtSAMline((char *)m_pInB
 		}
 
 	// only interest is in the reference chrom name, startloci, length
-	if ((Rslt = (teBSFrsltCodes)m_pSAMfile->ParseSAM2BAMalign(pszTxt, m_pBAMalignment, NULL,true)) < eBSFSuccess)
+	if ((Rslt = (teBSFrsltCodes)m_pSAMfile->ParseSAM2BAMalign(pszTxt, m_pBAMalignment, nullptr,true)) < eBSFSuccess)
 		{
 		if (Rslt == eBSFerrFeature)	// simply ignoring SAM alignments which are incomplete - I have observed some aligners with inconsistent/incomplete alignment detail
 			{
@@ -707,7 +707,7 @@ while(Rslt >= eBSFSuccess && (LineLen = m_pSAMfile->GetNxtSAMline((char *)m_pInB
 			return(eBSFerrChrom);
 			}
 
-	if((pTargSeq = LocateTargSeq(pszRefSeqName)) == NULL) // target unknown then simply slough
+	if((pTargSeq = LocateTargSeq(pszRefSeqName)) == nullptr) // target unknown then simply slough
 		{
 		NumMissingFeatures++;
 		Rslt = eBSFSuccess;
@@ -733,9 +733,9 @@ while(Rslt >= eBSFSuccess && (LineLen = m_pSAMfile->GetNxtSAMline((char *)m_pInB
 #else
 		pTmp = (uint8_t*)mremap(m_pSAMloci, m_AllocdSAMlociMem, memreq, MREMAP_MAYMOVE);
 		if (pTmp == MAP_FAILED)
-			pTmp = NULL;
+			pTmp = nullptr;
 #endif
-		if (pTmp == NULL)
+		if (pTmp == nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenBinnedSegments: Memory re-allocation to %zd bytes - %s", (int64_t)(memreq), strerror(errno));
 			Reset();
@@ -763,7 +763,7 @@ while(Rslt >= eBSFSuccess && (LineLen = m_pSAMfile->GetNxtSAMline((char *)m_pInB
 		tsSHSNPSSite *pSNPSite;
 		int SitesInAlignment = 0;
 		for(uint32_t ScanIdx = pSAMloci->TargLoci; ScanIdx < pSAMloci->TargLoci+pSAMloci->AlignLen; ScanIdx++)
-			if((pSNPSite=LocateSNPSite(pSAMloci->TargID,ScanIdx))!=NULL)
+			if((pSNPSite=LocateSNPSite(pSAMloci->TargID,ScanIdx))!=nullptr)
 				{
 				if(pSAMloci->NumMarkerSNPs < 127)
 					pSAMloci->NumMarkerSNPs += 1;
@@ -776,10 +776,10 @@ while(Rslt >= eBSFSuccess && (LineLen = m_pSAMfile->GetNxtSAMline((char *)m_pInB
 	NumAcceptedAlignments++;
 	}
 
-if(m_pSAMfile != NULL)
+if(m_pSAMfile != nullptr)
 	{
 	delete m_pSAMfile;
-	m_pSAMfile = NULL;
+	m_pSAMfile = nullptr;
 	}
 
 if(NumAcceptedAlignments == 0)		// ugh, no alignments!
@@ -837,7 +837,7 @@ for(FounderID = 1; FounderID <= m_NumFounders; FounderID++)
 		Reset();
 		return(eBSFerrCreateFile);
 		}
-	CUtility::splitpath(pszSAMfile,NULL,szFileName);
+	CUtility::splitpath(pszSAMfile,nullptr,szFileName);
 	szFileName[strlen(szFileName)-4] = '\0';
 	m_OutBuffIdx = sprintf((char *)m_pOutBuffer,"track name=\"FAL %s.%s\" description=\"Founder Alignment Loci %s.%s\"\n",szFileName,pszFounder,szFileName,pszFounder);
 	
@@ -915,14 +915,14 @@ m_MinBinScore = MinBinScore;
 m_MinBinProp = MinBinProp;
 m_SnpMarkerMult = SnpMarkerMult;
 
-if((m_pBAMalignment = new tsBAMalign) == NULL)
+if((m_pBAMalignment = new tsBAMalign) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenBinnedSegments: Unable to instantiate tsBAMalign");
 	Reset();
 	return(eBSFerrInternal);
 	}
 
-if((m_pInBuffer = new uint8_t[cMaxReadLen * 3]) == NULL)
+if((m_pInBuffer = new uint8_t[cMaxReadLen * 3]) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenBinnedSegments: Unable to allocate buffers");
 	Reset();
@@ -930,7 +930,7 @@ if((m_pInBuffer = new uint8_t[cMaxReadLen * 3]) == NULL)
 	}
 m_AllocInBuff = cMaxReadLen * 3;
 
-if((m_pOutBuffer = new uint8_t[cAllocSHBuffOutSize]) == NULL)
+if((m_pOutBuffer = new uint8_t[cAllocSHBuffOutSize]) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenBinnedSegments: Unable to allocate buffers");
 	Reset();
@@ -943,7 +943,7 @@ m_AllocOutBuff = cAllocSHBuffOutSize;
 m_AllocdSAMlociMem = (size_t)cAllocSHNumSAMloci * sizeof(tsSHSAMloci);
 #ifdef _WIN32
 m_pSAMloci = (tsSHSAMloci*)malloc(m_AllocdSAMlociMem);
-if (m_pSAMloci == NULL)
+if (m_pSAMloci == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenBinnedSegments: Memory allocation of %zd bytes failed", (int64_t)m_AllocdSAMlociMem);
 	m_AllocdSAMlociMem = 0;
@@ -952,11 +952,11 @@ if (m_pSAMloci == NULL)
 	}
 #else
 // gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-m_pSAMloci = (tsSHSAMloci*)mmap(NULL, m_AllocdSAMlociMem, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+m_pSAMloci = (tsSHSAMloci*)mmap(nullptr, m_AllocdSAMlociMem, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 if (m_pSAMloci == MAP_FAILED)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenBinnedSegments: Memory allocation of %zd bytes through mmap()  failed", (int64_t)m_AllocdSAMlociMem, strerror(errno));
-	m_pSAMloci = NULL;
+	m_pSAMloci = nullptr;
 	m_AllocdSAMlociMem = 0;
 	Reset();
 	return(eBSFerrMem);
@@ -968,10 +968,10 @@ NumAcceptedAlignments = 0;
 m_AllocdBins = 0;
 
 // load SNP markers if file has been specified
-if(!(pszSNPMarkers == NULL || pszSNPMarkers[0] == '\0'))
+if(!(pszSNPMarkers == nullptr || pszSNPMarkers[0] == '\0'))
 	{
 	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Processing SNPs from snpmarkers file '%s", pszSNPMarkers);
-	if((m_pSNPMarkerCSV = new CCSVFile)==NULL)
+	if((m_pSNPMarkerCSV = new CCSVFile)==nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenBinnedSegments: Unable to instantiate class CCSVFile for '%s'",pszSNPMarkers);
 		Reset();
@@ -1033,7 +1033,7 @@ if(m_CurNumSAMloci == 0)		// ugh, no alignments!
 else
 	gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenBinnedSegments: Accepted %zd total alignments onto %d targets for binning",m_CurNumSAMloci, m_NumAlignedTargSeqs);
 
-if((m_pBins = new tsSHBin[m_AllocdBins]) == NULL)
+if((m_pBins = new tsSHBin[m_AllocdBins]) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenBinnedSegments: Unable to allocate memory for %u alignment bins",m_AllocdBins);
 	Reset();
@@ -1281,32 +1281,32 @@ for(TargSeqIdx = 0; TargSeqIdx < m_NumSeqNames; TargSeqIdx++,pTargSeq++)
 				if(BinIdx > 0)
 					pPrevBin = pBin - 1;
 				else
-					pPrevBin = NULL;
+					pPrevBin = nullptr;
 				if((BinIdx + 1) < pTargSeq->NumBins)
 					pNextBin = pBin + 1;
 				else
-					pNextBin = NULL;
-				pCpyBin = NULL;
+					pNextBin = nullptr;
+				pCpyBin = nullptr;
 
 				// choose which bin to copy, nearly pseudo-random!
 				if(BinIdx & 0x01)
 					{
-					if(pPrevBin != NULL && pPrevBin->fCalled)
+					if(pPrevBin != nullptr && pPrevBin->fCalled)
 						pCpyBin = pPrevBin;
 					else
-						if(pNextBin != NULL && pNextBin->fCalled)
+						if(pNextBin != nullptr && pNextBin->fCalled)
 							pCpyBin = pNextBin;
 					}
 				else
 					{
-					if(pNextBin != NULL && pNextBin->fCalled)
+					if(pNextBin != nullptr && pNextBin->fCalled)
 						pCpyBin = pNextBin;
 					else
-						if(pPrevBin != NULL && pPrevBin->fCalled)
+						if(pPrevBin != nullptr && pPrevBin->fCalled)
 							pCpyBin = pPrevBin;
 					}
 
-				if(pCpyBin != NULL && pCpyBin->fCalled)
+				if(pCpyBin != nullptr && pCpyBin->fCalled)
 					{
 					for(FounderIdx = 0; FounderIdx < m_NumFounders; FounderIdx++)
 						{
@@ -1469,14 +1469,14 @@ int SeqNameLen;
 tsTargSeq *pTargSeq;
 char *pszLAname;
 
-if(pszSeqName == NULL || pszSeqName[0] == '\0')
+if(pszSeqName == nullptr || pszSeqName[0] == '\0')
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddTargSeqName: Invalid parameters");
 	return(0);
 	}
 
 // with any luck the sequence name will be same as the last accessed
-if((pTargSeq = LocateTargSeq(m_LASeqNameID)) != NULL)
+if((pTargSeq = LocateTargSeq(m_LASeqNameID)) != nullptr)
 	{
 	pszLAname = &m_szSeqNames[pTargSeq->TargSeqNameOfs];
 	if(!stricmp(pszSeqName,pszLAname))
@@ -1530,14 +1530,14 @@ uint32_t SeqNameIdx;
 tsTargSeq *pTargSeq;
 char *pszLAname;
 
-if(pszSeqName == NULL || pszSeqName[0] == '\0')
+if(pszSeqName == nullptr || pszSeqName[0] == '\0')
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "LocateTargSeq: Invalid parameters");
-	return(NULL);
+	return(nullptr);
 	}
 
 // with any luck the sequence name will be same as the last accessed
-if((pTargSeq = LocateTargSeq(m_LASeqNameID)) != NULL)
+if((pTargSeq = LocateTargSeq(m_LASeqNameID)) != nullptr)
 	{
 	pszLAname = &m_szSeqNames[pTargSeq->TargSeqNameOfs];
 	if(!stricmp(pszSeqName,pszLAname))
@@ -1554,7 +1554,7 @@ for(SeqNameIdx = 0; SeqNameIdx < m_NumSeqNames; SeqNameIdx++)
 		return(&m_TargSeqs[SeqNameIdx]);
 		}
 	}
-return(NULL);
+return(nullptr);
 }
 
 
@@ -1562,7 +1562,7 @@ char *												// returned sequence name
 CSegHaplotypes::LocateTargSeqName(uint32_t SeqNameID)	// identifier returned by call to AddTargSeqName
 {
 if(SeqNameID < 1 || SeqNameID > m_NumSeqNames)
-	return(NULL);
+	return(nullptr);
 return(&m_szSeqNames[m_TargSeqs[SeqNameID-1].TargSeqNameOfs]);
 }
 
@@ -1570,7 +1570,7 @@ tsTargSeq *										// returned sequence
 CSegHaplotypes::LocateTargSeq(uint32_t SeqNameID)	// identifier returned by call to AddTargSeqName
 {
 if(SeqNameID < 1 || SeqNameID > m_NumSeqNames)
-	return(NULL);
+	return(nullptr);
 return(&m_TargSeqs[SeqNameID-1]);
 }
 
@@ -1583,7 +1583,7 @@ int FounderNameLen;
 char *pszLAFounder;
 
 // with any luck the founder name will be same as the last accessed
-if((pszLAFounder = LocateFounder(m_LAFounderID)) != NULL)
+if((pszLAFounder = LocateFounder(m_LAFounderID)) != nullptr)
 	if(!stricmp(pszFounder,pszLAFounder))
 		return(m_LAFounderID);
 
@@ -1805,7 +1805,7 @@ CSegHaplotypes::ProcessSnpmarkersSNPs(char *pszSNPMarkersFile)	// file containin
 
 m_pSNPMarkerCSV->Close();
 delete m_pSNPMarkerCSV;
-m_pSNPMarkerCSV = NULL;
+m_pSNPMarkerCSV = nullptr;
 
 if(m_UsedSNPSites > 1)
 	qsort(m_pAllocSNPSites, m_UsedSNPSites, sizeof(tsSHSNPSSite), SortSNPSites);
@@ -1823,24 +1823,24 @@ CSegHaplotypes::AddSNPSite( uint32_t SiteSeqID,		// alignments were to this sequ
 {
 tsSHSNPSSite *pSNPSite;
 
-if(m_pAllocSNPSites == NULL)		// initial allocation?
+if(m_pAllocSNPSites == nullptr)		// initial allocation?
 	{
 	size_t memreq = (size_t)cAllocSNPSites * sizeof(tsSHSNPSSite);
 
 #ifdef _WIN32
 	m_pAllocSNPSites = (tsSHSNPSSite *) malloc(memreq);	// initial and perhaps the only allocation
-	if(m_pAllocSNPSites == NULL)
+	if(m_pAllocSNPSites == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddLoci: Memory allocation of %zd bytes - %s",(int64_t)memreq,strerror(errno));
 		return(eBSFerrMem);
 		}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-	m_pAllocSNPSites = (tsSHSNPSSite *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+	m_pAllocSNPSites = (tsSHSNPSSite *)mmap(nullptr,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pAllocSNPSites == MAP_FAILED)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddLoci: Memory allocation of %zd bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
-		m_pAllocSNPSites = NULL;
+		m_pAllocSNPSites = nullptr;
 		return(eBSFerrMem);
 		}
 #endif
@@ -1863,9 +1863,9 @@ else
 #else
 		pSNPSite = (tsSHSNPSSite *)mremap(m_pAllocSNPSites,m_AllocMemSNPSites,memreq,MREMAP_MAYMOVE);
 		if(pSNPSite == MAP_FAILED)
-			pSNPSite = NULL;
+			pSNPSite = nullptr;
 #endif
-		if(pSNPSite == NULL)
+		if(pSNPSite == nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddLoci: Memory re-allocation to %zd bytes - %s",(int64_t)memreq,strerror(errno));
 			return(eBSFerrMem);
@@ -1895,7 +1895,7 @@ uint32_t FounderNameIdx;
 char *pszLAFounder;
 
 // with any luck the founder name will be same as the last accessed
-if((pszLAFounder = LocateFounder(m_LAFounderID)) != NULL)
+if((pszLAFounder = LocateFounder(m_LAFounderID)) != nullptr)
 	if(!stricmp(pszFounder,pszLAFounder))
 		return(m_LAFounderID);
 
@@ -1914,7 +1914,7 @@ char*							// returned founder name
 CSegHaplotypes::LocateFounder(uint32_t FounderID)	// identifier returned by call to AddFounderName
 {
 if(FounderID < 1 || FounderID > m_NumFounders)
-	return(NULL);
+	return(nullptr);
 return(&m_szFounders[m_szFounderIdx[FounderID-1]]);
 }
 
@@ -1927,7 +1927,7 @@ int32_t MidIdx;
 int32_t IdxHi;
 
 if(m_UsedSNPSites == 0)
-	return(NULL);
+	return(nullptr);
 
 if(m_UsedSNPSites < 10)				// if just a few then do a simple linear search
 	{
@@ -1935,7 +1935,7 @@ if(m_UsedSNPSites < 10)				// if just a few then do a simple linear search
 	for(IdxLo = 0; IdxLo < (int32_t)m_UsedSNPSites; IdxLo++,pEl1++)
 		if(pEl1->SiteSeqID == ChromID && pEl1->SiteLoci == Loci)
 			return(pEl1);
-	return(NULL);
+	return(nullptr);
 	}
 
 IdxLo = 0;
@@ -1961,7 +1961,7 @@ do {
 		}
 	}
 while(IdxHi >= IdxLo);
-return(NULL);
+return(nullptr);
 }
 
 // SortSAMFounderTargLoci

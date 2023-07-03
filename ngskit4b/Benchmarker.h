@@ -190,7 +190,7 @@ class CBenchmark {
 		ParseObsCIGAR(char* pszCIGAR, // CIGAR operations
 			int ReadLen, // length ('=','X','M','D') must be equal to ReadLen
 			int MaxCIGAROps,	// pPackedOps can hold at mos this many Ops
-			uint32_t* pPackedOps);	// pack CIGAR ops into this array, can be NULL if just validating the CIGAR
+			uint32_t* pPackedOps);	// pack CIGAR ops into this array, can be nullptr if just validating the CIGAR
 
 	int		// for given CIGARs returns total number of bases that these CIGARs consume on aligned to reference sequence
 		RefSeqConsumedLen(int NumPackedOps,	  // there are this many packed CIGAR ops in pPackedOps

@@ -46,13 +46,13 @@ RemapLociProcess(int PMode,			// processing mode
 int RemapLoci(int argc, char* argv[])
 {
 // determine my process name
-_splitpath(argv[0],NULL,NULL,gszProcName,NULL);
+_splitpath(argv[0],nullptr,nullptr,gszProcName,nullptr);
 #else
 int
 RemapLoci(int argc, char** argv)
 {
 // determine my process name
-CUtility::splitpath((char *)argv[0],NULL,gszProcName);
+CUtility::splitpath((char *)argv[0],nullptr,gszProcName);
 #endif
 int iScreenLogLevel;		// level of screen diagnostics
 int iFileLogLevel;			// level of file diagnostics
@@ -334,43 +334,43 @@ return(Remapper.RemapLocii(PMode,FType,pszInAlignFile,pszInBEDFile,pszRemappedFi
 
 CRemapLoci::CRemapLoci()
 {
-m_pMappingBED = NULL;
-m_pInBAMfile = NULL;
-m_pOutBAMfile = NULL;
-m_pszOutBuff = NULL;
+m_pMappingBED = nullptr;
+m_pInBAMfile = nullptr;
+m_pOutBAMfile = nullptr;
+m_pszOutBuff = nullptr;
 m_hOutFile = -1;
 }
 
 
 CRemapLoci::~CRemapLoci()
 {
-if(m_pMappingBED != NULL)
+if(m_pMappingBED != nullptr)
 	delete m_pMappingBED;
-if(m_pInBAMfile != NULL)
+if(m_pInBAMfile != nullptr)
 	delete m_pInBAMfile;
-if(m_pOutBAMfile != NULL)
+if(m_pOutBAMfile != nullptr)
 	delete m_pOutBAMfile;
-if(m_pszOutBuff != NULL)
+if(m_pszOutBuff != nullptr)
 	delete m_pszOutBuff;
 }
 
 void
 CRemapLoci::Reset(void)
 {
-if(m_pMappingBED != NULL)
+if(m_pMappingBED != nullptr)
 	{
 	delete m_pMappingBED;
-	m_pMappingBED = NULL;
+	m_pMappingBED = nullptr;
 	}
-if(m_pInBAMfile != NULL)
+if(m_pInBAMfile != nullptr)
 	{
 	delete m_pInBAMfile;
-	m_pInBAMfile = NULL;
+	m_pInBAMfile = nullptr;
 	}
-if(m_pOutBAMfile != NULL)
+if(m_pOutBAMfile != nullptr)
 	{
 	delete m_pOutBAMfile;
-	m_pOutBAMfile = NULL;
+	m_pOutBAMfile = nullptr;
 	}
 
 if(m_hOutFile != -1)
@@ -379,10 +379,10 @@ if(m_hOutFile != -1)
 	m_hOutFile = -1;
 	}
 
-if(m_pszOutBuff != NULL)
+if(m_pszOutBuff != nullptr)
 	{
 	delete m_pszOutBuff;
-	m_pszOutBuff = NULL;
+	m_pszOutBuff = nullptr;
 	}
 
 m_hOutFile = -1;
@@ -404,7 +404,7 @@ Reset();
 
 // load remapping locii BED file
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Loading BED file containing loci remapping '%s'",pszInBEDFile);
-if((m_pMappingBED = new CBEDfile) == NULL)
+if((m_pMappingBED = new CBEDfile) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to instantiate CBEDfile");
 	Reset();
@@ -445,7 +445,7 @@ switch(FileType) {
 		return(eBSFerrFileType);
 
 	case eCFTBED:			// file has been classified as being BED
-		if((m_pszOutBuff = new char [cAllocOutBuff]) == NULL)
+		if((m_pszOutBuff = new char [cAllocOutBuff]) == nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory for output buffering");
 			return(eBSFerrMem);
@@ -494,7 +494,7 @@ int NumEls;
 int NumFeatures;
 int ContigID;
 
-if((pBedFile = new CBEDfile)==NULL)
+if((pBedFile = new CBEDfile)==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to instantiate CBEDfile");
 	Reset();
@@ -546,7 +546,7 @@ while(Rslt >= eBSFSuccess && (CurFeatureID = pBedFile->GetNextFeatureID(CurFeatu
 
 	if((ContigID = m_pMappingBED->LocateFeatureIDbyName(szFeatName)) < 1)
 		continue;
-	m_pMappingBED->GetFeature(ContigID,NULL,szChrom,&RelStartLoci);
+	m_pMappingBED->GetFeature(ContigID,nullptr,szChrom,&RelStartLoci);
 	Rslt = (teBSFrsltCodes)pBedFile->GetRemappedBEDFormatedFeature(CurFeatureID,m_AllocOutBuff - m_OutBuffIdx,&m_pszOutBuff[m_OutBuffIdx],szChrom,szFeatName,RelStartLoci);
 	if(Rslt < 1)
 		{
@@ -607,7 +607,7 @@ bool								// true if file to be generated compressed with gzopen/gzwrite/gzclo
 CRemapLoci::FileReqWriteCompr(char *pszFile) // If last 3 chars of file name is ".gz" then this file is assumed to require compression
 {
 int Len;
-if(pszFile == NULL || pszFile[0] == '\0')
+if(pszFile == nullptr || pszFile[0] == '\0')
 	return(false);
 if((Len = (int)strlen(pszFile)) < 4)
 	return(false);
@@ -657,13 +657,13 @@ if(Len > 5)
 	}
 
 // open SAM for reading
-if(pszInAlignFile == NULL || *pszInAlignFile == '\0')
+if(pszInAlignFile == nullptr || *pszInAlignFile == '\0')
 	{
 	Reset();
 	return(eBSFerrParams);
 	}
 
-if((m_pInBAMfile = new CSAMfile) == NULL)
+if((m_pInBAMfile = new CSAMfile) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"RemapSAMLocii: Unable to instantiate class CSAMfile");
 	Reset();
@@ -674,16 +674,16 @@ if((Rslt = (teBSFrsltCodes)m_pInBAMfile->Open(pszInAlignFile)) != eBSFSuccess)
 	{
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"RemapSAMLocii: Unable to open SAM/BAM format file %s",pszInAlignFile);
 	delete m_pInBAMfile;
-	m_pInBAMfile = NULL;
+	m_pInBAMfile = nullptr;
 	Reset();
 	return((teBSFrsltCodes)Rslt);
 	}
 
-if((m_pOutBAMfile = new CSAMfile) == NULL)
+if((m_pOutBAMfile = new CSAMfile) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"RemapSAMLocii: Unable to instantiate class CSAMfile");
 	delete m_pInBAMfile;
-	m_pInBAMfile = NULL;
+	m_pInBAMfile = nullptr;
 	Reset();
 	return(eBSFerrInternal);
 	}
@@ -706,9 +706,9 @@ switch(SAMFormat) {
 if((Rslt = (teBSFrsltCodes)m_pOutBAMfile->Create(FileType,pszRemappedFile,6,(char *)kit4bversion)) < eBSFSuccess) // defaulting to compression level 6 if compressed BAM 
 	{
 	delete m_pInBAMfile;
-	m_pInBAMfile = NULL;
+	m_pInBAMfile = nullptr;
 	delete m_pOutBAMfile;
-	m_pInBAMfile = NULL;
+	m_pInBAMfile = nullptr;
 	Reset();
 	return(Rslt);
 	}
@@ -721,14 +721,14 @@ Rslt = eBSFSuccess;
 PrevContigID = 0;
 PrevChromID = 0;
 NumMappedChroms = 0;
-time_t Then = time(NULL);
+time_t Then = time(nullptr);
 time_t Now;
 while(Rslt >= eBSFSuccess && (LineLen = m_pInBAMfile->GetNxtSAMline(szLine)) > 0)
 	{
 	NumParsedElLines += 1;
 	if(!(NumParsedElLines % 100000) || NumParsedElLines == 1)
 		{
-		Now = time(NULL);
+		Now = time(nullptr);
 		if((Now - Then) >= 60)
 			{
 			gDiagnostics.DiagOut(eDLInfo,gszProcName,"Parsed %d element lines",NumParsedElLines);
@@ -756,8 +756,8 @@ while(Rslt >= eBSFSuccess && (LineLen = m_pInBAMfile->GetNxtSAMline(szLine)) > 0
 		if(ChromID == PrevChromID)
 			continue;
 		PrevChromID = ChromID;
-		m_pMappingBED->GetChromosome(ChromID,szChrom,NULL,NULL,&LastChromContigID);
-		m_pMappingBED->GetFeature(LastChromContigID,NULL,NULL,NULL,&ChromLen);
+		m_pMappingBED->GetChromosome(ChromID,szChrom,nullptr,nullptr,&LastChromContigID);
+		m_pMappingBED->GetFeature(LastChromContigID,nullptr,nullptr,nullptr,&ChromLen);
 		m_pOutBAMfile->AddRefSeq(szGenome,szChrom,ChromLen);
 		NumMappedChroms += 1;
 		continue;
@@ -797,17 +797,17 @@ if(Rslt >= eBSFSuccess && NumAcceptedEls > 0)
 	Rslt = (teBSFrsltCodes)m_pOutBAMfile->AddAlignment(&AcceptedBAMalignment,true);
 if(Rslt >= eBSFSuccess)
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Parsed %d element lines, unmapped %d, accepted %d, ",NumParsedElLines,NumUnmappedEls,NumAcceptedEls);
-if(m_pInBAMfile != NULL)
+if(m_pInBAMfile != nullptr)
 	{
 	m_pInBAMfile->Close();
 	delete m_pInBAMfile;
-	m_pInBAMfile = NULL;
+	m_pInBAMfile = nullptr;
 	}
-if(m_pOutBAMfile != NULL)
+if(m_pOutBAMfile != nullptr)
 	{
 	m_pOutBAMfile->Close();
 	delete m_pOutBAMfile;
-	m_pOutBAMfile = NULL;
+	m_pOutBAMfile = nullptr;
 	}
 return(Rslt >= 0 ? NumAcceptedEls : Rslt);
 }

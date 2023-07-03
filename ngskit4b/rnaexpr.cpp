@@ -35,13 +35,13 @@ int procrnaexpr(eModeRNAE PMode,			// processing mode
 int rnaexpr(int argc, char *argv[])
 {
 // determine my process name
-_splitpath (argv[0], NULL, NULL, gszProcName, NULL);
+_splitpath (argv[0], nullptr, nullptr, gszProcName, nullptr);
 #else
 int
 rnaexpr(int argc, char **argv)
 {
 // determine my process name
-CUtility::splitpath ((char *)argv[0], NULL, gszProcName);
+CUtility::splitpath ((char *)argv[0], nullptr, gszProcName);
 #endif
 int iFileLogLevel;			// level of file diagnostics
 int iScreenLogLevel;		// level of file diagnostics
@@ -316,7 +316,7 @@ procrnaexpr(eModeRNAE PMode,			// processing mode
 {
 int Rslt;
 CRNAExpr *pCRNAExpr;
-if((pCRNAExpr = new CRNAExpr) == NULL)
+if((pCRNAExpr = new CRNAExpr) == nullptr)
 	{
 	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Unable to instantiate instance of CRNAExpr");
 	return(eBSFerrObj);
@@ -1122,7 +1122,7 @@ CStats Stats;
 sprintf(szOutFile,"%s%s",pszOutRsltsFile,".RNAvRNAtranscripts.csv");
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Generating Pearson correlation coefficient 'r' for labeled biological replicates over all features into file '%s'",szOutFile);
 
-if((pOutStream = fopen(szOutFile,"w"))==NULL)
+if((pOutStream = fopen(szOutFile,"w"))==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate file %s for writing error: %s",szOutFile,strerror(errno));
 	Reset();
@@ -1217,7 +1217,7 @@ CRNAExpr::GenRNAvRNAPearsons(eModeRNAE PMode,			// processing mode
 	sprintf(szOutFile, "%s%s", pszOutRsltsFile, ".RNAvRNAhomozygosity.csv");
 	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Generating Pearson correlation coefficient 'r' for labeled biological replicates over all features into file '%s'", szOutFile);
 
-	if ((pOutStream = fopen(szOutFile, "w")) == NULL)
+	if ((pOutStream = fopen(szOutFile, "w")) == nullptr)
 	{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to create/truncate file %s for writing error: %s", szOutFile, strerror(errno));
 		Reset();
@@ -1821,7 +1821,7 @@ double r;
 sprintf(szOutFile,"%s%s",pszOutRsltsFile,".RNAvWGShomozygosity.csv");
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Generating Pearson correlation coefficient 'r' for RNA vs. WGS homozygosity into file '%s'",szOutFile);
 
-if((pOutStream = fopen(szOutFile,"w"))==NULL)
+if((pOutStream = fopen(szOutFile,"w"))==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate file %s for writing error: %s",szOutFile,strerror(errno));
 	Reset();
@@ -2346,18 +2346,18 @@ m_UsedRNACntsMem = 0;
 memreq = (size_t)EstNumRNACnts * sizeof(int32_t);
 #ifdef _WIN32
 m_pRNACntsMem = (uint8_t*)malloc(memreq);	// initial and perhaps the only allocation
-if (m_pRNACntsMem == NULL)
+if (m_pRNACntsMem == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "AllocateSamples: Memory allocation of %zd bytes for sample features failed - %s", (int64_t)memreq, strerror(errno));
 	Reset();
 	return(eBSFerrMem);
 	}
 #else
-m_pRNACntsMem = (uint8_t *)mmap(NULL, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+m_pRNACntsMem = (uint8_t *)mmap(nullptr, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 if (m_pRNACntsMem == MAP_FAILED)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "AllocateSamples: Memory allocation of %zd bytes through mmap() for sample features failed - %s", (int64_t)memreq, strerror(errno));
-	m_pRNACntsMem = NULL;
+	m_pRNACntsMem = nullptr;
 	Reset();
 	return(eBSFerrMem);
 	}
@@ -2382,7 +2382,7 @@ if ((m_UsedRNACntsMem + (sizeof(int32_t) * NumFeatCntsPerRow)) >= m_AllocdRNACnt
 	size_t memreq = m_AllocdRNACntsMem + ((size_t)NumFeatCntsPerRow * sizeof(int32_t) * 100);	// alloc extra to reduce number of realloc's subsequently required
 #ifdef _WIN32
 	pReallocd = (uint8_t *)realloc(m_pRNACntsMem, memreq);
-	if (pReallocd == NULL)
+	if (pReallocd == nullptr)
 		{
 #else
 	pReallocd = (uint8_t *)mremap(m_pRNACntsMem, m_AllocdRNACntsMem, memreq, MREMAP_MAYMOVE);
@@ -2426,7 +2426,7 @@ if (m_pRNAhomozScoresMem == nullptr)
 	return(eBSFerrMem);
 	}
 #else
-m_pRNAhomozScoresMem = (uint8_t *)mmap(NULL, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+m_pRNAhomozScoresMem = (uint8_t *)mmap(nullptr, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 if (m_pRNAhomozScoresMem == MAP_FAILED)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "AllocateRNAhomozScores: Memory allocation of %zd bytes through mmap() for sample features failed - %s", (int64_t)memreq, strerror(errno));
@@ -2452,7 +2452,7 @@ if ((m_UsedRNAhomozScoresMem + (sizeof(double) * NumScoresPerRow)) >= m_AllocdRN
 	size_t memreq = m_AllocdRNAhomozScoresMem + ((size_t)NumScoresPerRow * sizeof(double) * 100);	// alloc extra to reduce number of realloc's subsequently required
 #ifdef _WIN32
 	pReallocd = (double *)realloc(m_pRNAhomozScoresMem, memreq);
-	if (pReallocd == NULL)
+	if (pReallocd == nullptr)
 		{
 #else
 	pReallocd = (double *)mremap(m_pRNAhomozScoresMem, m_AllocdRNAhomozScoresMem, memreq, MREMAP_MAYMOVE);
@@ -2498,7 +2498,7 @@ if (m_pWGShomozScoresMem == nullptr)
 	return(eBSFerrMem);
 	}
 #else
-m_pWGShomozScoresMem = (uint8_t *)mmap(NULL, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+m_pWGShomozScoresMem = (uint8_t *)mmap(nullptr, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 if (m_pWGShomozScoresMem == MAP_FAILED)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "AllocateGWShomozScores: Memory allocation of %zd bytes through mmap() for sample features failed - %s", (int64_t)memreq, strerror(errno));
@@ -2523,7 +2523,7 @@ if ((m_UsedWGShomozScoresMem + (sizeof(double) * NumScoresPerRow)) >= m_AllocdWG
 	size_t memreq = m_AllocdWGShomozScoresMem + ((size_t)NumScoresPerRow * sizeof(double) * 100);	// alloc extra to reduce number of realloc's subsequently required
 #ifdef _WIN32
 	pReallocd = (double *)realloc(m_pWGShomozScoresMem, memreq);
-	if (pReallocd == NULL)
+	if (pReallocd == nullptr)
 		{
 #else
 	pReallocd = (double *)mremap(m_pWGShomozScoresMem, m_AllocdWGShomozScoresMem, memreq, MREMAP_MAYMOVE);
@@ -2569,7 +2569,7 @@ CRNAExpr::AllocateRNAvRNAhomozScores(int EstRNAvRNAhomozScores)	// initially all
 		return(eBSFerrMem);
 	}
 #else
-	m_pRNAvRNAhomozScoresMem = (uint8_t*)mmap(NULL, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	m_pRNAvRNAhomozScoresMem = (uint8_t*)mmap(nullptr, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	if (m_pRNAvRNAhomozScoresMem == MAP_FAILED)
 	{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "AllocateRNAvRNAhomozScores: Memory allocation of %zd bytes through mmap() for sample features failed - %s", (int64_t)memreq, strerror(errno));
@@ -2594,7 +2594,7 @@ CRNAExpr::ReallocRNAvRNAhomozScores(int32_t NumScoresPerRow)	// realloc as may b
 		size_t memreq = m_AllocdRNAvRNAhomozScoresMem + ((size_t)NumScoresPerRow * sizeof(double) * 100);	// alloc extra to reduce number of realloc's subsequently required
 #ifdef _WIN32
 		pReallocd = (double*)realloc(m_pRNAvRNAhomozScoresMem, memreq);
-		if (pReallocd == NULL)
+		if (pReallocd == nullptr)
 		{
 #else
 		pReallocd = (double*)mremap(m_pRNAvRNAhomozScoresMem, m_AllocdRNAvRNAhomozScoresMem, memreq, MREMAP_MAYMOVE);

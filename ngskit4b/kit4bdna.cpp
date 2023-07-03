@@ -48,12 +48,12 @@ static int SeqWrdBytes;			// sequence packing used in m_xpConcatSeqs
 
 CKit4bdna::CKit4bdna(void)
 {
-m_pContaminants = NULL;
-m_pPartialSeqs2Assemb = NULL;
-m_pAcceptLevDist = NULL; 
-m_pBlockNsLoci = NULL;
+m_pContaminants = nullptr;
+m_pPartialSeqs2Assemb = nullptr;
+m_pAcceptLevDist = nullptr; 
+m_pBlockNsLoci = nullptr;
 memset(&m_Sequences,0,sizeof(m_Sequences));
-m_pszLineBuff = NULL;
+m_pszLineBuff = nullptr;
 m_hInFile = -1;
 m_hOutFile = -1;
 m_hOrphansFile = -1;
@@ -180,15 +180,15 @@ if(m_hInSeqTypesFile != -1)
 	m_hInSeqTypesFile = -1;
 	}
 
-if(m_pContaminants != NULL)
+if(m_pContaminants != nullptr)
 	{
 	delete m_pContaminants;
-	m_pContaminants = NULL;
+	m_pContaminants = nullptr;
 	}
 
 ResetTypeSeqs();
 
-if(m_pBlockNsLoci != NULL)
+if(m_pBlockNsLoci != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pBlockNsLoci);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -196,10 +196,10 @@ if(m_pBlockNsLoci != NULL)
 	if(m_pBlockNsLoci != MAP_FAILED)
 		munmap(m_pBlockNsLoci,m_AllocdBlockNsLociSize);
 #endif	
-	m_pBlockNsLoci = NULL;
+	m_pBlockNsLoci = nullptr;
 	}
 
-if(m_pPartialSeqs2Assemb != NULL)
+if(m_pPartialSeqs2Assemb != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pPartialSeqs2Assemb);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -207,13 +207,13 @@ if(m_pPartialSeqs2Assemb != NULL)
 	if(m_pPartialSeqs2Assemb != MAP_FAILED)
 		munmap(m_pPartialSeqs2Assemb,m_AllocdPartialSeqs2Assemb);
 #endif	
-	m_pPartialSeqs2Assemb = NULL;
+	m_pPartialSeqs2Assemb = nullptr;
 	}
 
-if(m_pszLineBuff != NULL)
+if(m_pszLineBuff != nullptr)
 	{
 	delete m_pszLineBuff;
-	m_pszLineBuff = NULL;
+	m_pszLineBuff = nullptr;
 	}
 
 if(m_bMutexesCreated)
@@ -222,10 +222,10 @@ if(m_bMutexesCreated)
 	m_bMutexesCreated = false;
 	}
 
-if(m_pAcceptLevDist != NULL)
+if(m_pAcceptLevDist != nullptr)
 	{
 	delete m_pAcceptLevDist;
-	m_pAcceptLevDist = NULL;
+	m_pAcceptLevDist = nullptr;
 	}
 m_LevDistKMerLen = 0;
 m_MaxLev = 0;
@@ -237,7 +237,7 @@ m_AcceptLevWidth = 0;
 m_CurMaxMemWorkSetBytes = 0;
 m_StartProcSeqID = 1;
 m_PMode = 0;
-m_pszLineBuff = NULL;		
+m_pszLineBuff = nullptr;		
 m_AllocLineBuff = 0;
 memset(&m_SeqEsts,0,sizeof(m_SeqEsts));
 m_szInFile[0] = '\0';
@@ -286,7 +286,7 @@ return(0);
 void
 CKit4bdna::ResetTypeSeqs(void)
 {
-if(m_Sequences.pSuffixArray != NULL)
+if(m_Sequences.pSuffixArray != nullptr)
 	{
 #ifdef _WIN32
 	free(m_Sequences.pSuffixArray);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -294,10 +294,10 @@ if(m_Sequences.pSuffixArray != NULL)
 	if(m_Sequences.pSuffixArray != MAP_FAILED)
 		munmap(m_Sequences.pSuffixArray,m_Sequences.AllocMemSfx);
 #endif	
-	m_Sequences.pSuffixArray = NULL;
+	m_Sequences.pSuffixArray = nullptr;
 	}
 
-if(m_Sequences.pSeqs2Assemb != NULL)
+if(m_Sequences.pSeqs2Assemb != nullptr)
 	{
 #ifdef _WIN32
 	free(m_Sequences.pSeqs2Assemb);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -305,10 +305,10 @@ if(m_Sequences.pSeqs2Assemb != NULL)
 	if(m_Sequences.pSeqs2Assemb != MAP_FAILED)
 		munmap(m_Sequences.pSeqs2Assemb,m_Sequences.AllocMemSeqs2Assemb);
 #endif	
-	m_Sequences.pSeqs2Assemb = NULL;
+	m_Sequences.pSeqs2Assemb = nullptr;
 	}
 
-if(m_Sequences.pSeqStarts != NULL)
+if(m_Sequences.pSeqStarts != nullptr)
 	{
 #ifdef _WIN32
 	free(m_Sequences.pSeqStarts);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -316,11 +316,11 @@ if(m_Sequences.pSeqStarts != NULL)
 	if(m_Sequences.pSeqStarts != MAP_FAILED)
 		munmap(m_Sequences.pSeqStarts,m_Sequences.AllocMemSeqStarts);
 #endif	
-	m_Sequences.pSeqStarts = NULL;
+	m_Sequences.pSeqStarts = nullptr;
 	}
 
 
-if(m_Sequences.pSeqFlags != NULL)
+if(m_Sequences.pSeqFlags != nullptr)
 	{
 #ifdef _WIN32
 	free(m_Sequences.pSeqFlags);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -328,10 +328,10 @@ if(m_Sequences.pSeqFlags != NULL)
 	if(m_Sequences.pSeqFlags != MAP_FAILED)
 		munmap(m_Sequences.pSeqFlags,m_Sequences.AllocMemSeqFlags);
 #endif	
-	m_Sequences.pSeqFlags = NULL;
+	m_Sequences.pSeqFlags = nullptr;
 	}
 
-if(m_Sequences.pTmpRevCplSeqs != NULL)
+if(m_Sequences.pTmpRevCplSeqs != nullptr)
 	delete (uint8_t *)m_Sequences.pTmpRevCplSeqs;
 
 memset(&m_Sequences,0,sizeof(tsSequences));
@@ -365,7 +365,7 @@ m_Sequences.SeqWrdBytes = 4;
 int
 CKit4bdna::FreeSfx(void)
 {
-if(m_Sequences.pSuffixArray != NULL)
+if(m_Sequences.pSuffixArray != nullptr)
 	{
 #ifdef _WIN32
 	free(m_Sequences.pSuffixArray);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -373,7 +373,7 @@ if(m_Sequences.pSuffixArray != NULL)
 	if(m_Sequences.pSuffixArray != MAP_FAILED)
 		munmap(m_Sequences.pSuffixArray,m_Sequences.AllocMemSfx);
 #endif	
-	m_Sequences.pSuffixArray = NULL;
+	m_Sequences.pSuffixArray = nullptr;
 	}
 m_Sequences.NumSuffixEls = 0;			// number of elements in suffix array
 m_Sequences.AllocMemSfx = 0;				// allocated memory size for suffix array
@@ -383,7 +383,7 @@ return(eBSFSuccess);
 int
 CKit4bdna::FreeSeqStarts(bool bFreeFlags)	// optionally also free flags array
 {
-if(m_Sequences.pSeqStarts != NULL)
+if(m_Sequences.pSeqStarts != nullptr)
 	{
 #ifdef _WIN32
 	free(m_Sequences.pSeqStarts);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -391,13 +391,13 @@ if(m_Sequences.pSeqStarts != NULL)
 	if(m_Sequences.pSeqStarts != MAP_FAILED)
 		munmap(m_Sequences.pSeqStarts,m_Sequences.AllocMemSeqStarts);
 #endif	
-	m_Sequences.pSeqStarts = NULL;
+	m_Sequences.pSeqStarts = nullptr;
 	}
 m_Sequences.NumSeqStarts = 0;			// number of sequence descriptors used in m_pSeqStarts;
 m_Sequences.AllocMemSeqStarts = 0;		// memory (bytes) currently allocated for m_pSeqStarts 
 if(bFreeFlags)
 	{
-	if(m_Sequences.pSeqFlags != NULL)
+	if(m_Sequences.pSeqFlags != nullptr)
 		{
 #ifdef _WIN32
 		free(m_Sequences.pSeqFlags);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -405,7 +405,7 @@ if(bFreeFlags)
 		if(m_Sequences.pSeqFlags != MAP_FAILED)
 			munmap(m_Sequences.pSeqFlags,m_Sequences.AllocMemSeqStarts);
 #endif	
-		m_Sequences.pSeqFlags = NULL;
+		m_Sequences.pSeqFlags = nullptr;
 		}
 	m_Sequences.NumSeqFlags = 0;
 	m_Sequences.AllocMemSeqFlags = 0;
@@ -447,7 +447,7 @@ m_CASReadsCtrl = 0;
 #ifdef _WIN32
 InitializeSRWLock(&m_hRwLock);
 #else
-if(pthread_rwlock_init (&m_hRwLock,NULL)!=0)
+if(pthread_rwlock_init (&m_hRwLock,nullptr)!=0)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to create rwlock");
 	return(eBSFerrInternal);
@@ -455,10 +455,10 @@ if(pthread_rwlock_init (&m_hRwLock,NULL)!=0)
 #endif
 
 #ifdef _WIN32
-if((m_hMtxIterReads = CreateMutex(NULL,false,NULL))==NULL)
+if((m_hMtxIterReads = CreateMutex(nullptr,false,nullptr))==nullptr)
 	{
 #else
-if(pthread_mutex_init (&m_hMtxIterReads,NULL)!=0)
+if(pthread_mutex_init (&m_hMtxIterReads,nullptr)!=0)
 	{
 	pthread_rwlock_destroy(&m_hRwLock);
 #endif
@@ -467,10 +467,10 @@ if(pthread_mutex_init (&m_hMtxIterReads,NULL)!=0)
 	}
 
 #ifdef _WIN32
-if((m_hMtxIterNxtProcRead = CreateMutex(NULL,false,NULL))==NULL)
+if((m_hMtxIterNxtProcRead = CreateMutex(nullptr,false,nullptr))==nullptr)
 	{
 #else
-if(pthread_mutex_init (&m_hMtxIterNxtProcRead,NULL)!=0)
+if(pthread_mutex_init (&m_hMtxIterNxtProcRead,nullptr)!=0)
 	{
 	pthread_rwlock_destroy(&m_hRwLock);
 	pthread_mutex_destroy(&m_hMtxIterReads);
@@ -508,10 +508,10 @@ if(pthread_spin_init(&m_hSpinLockSeqFlags,PTHREAD_PROCESS_PRIVATE)!=0)
 	}
 
 #ifdef _WIN32
-if((m_hMtxMHReads = CreateMutex(NULL,false,NULL))==NULL)
+if((m_hMtxMHReads = CreateMutex(nullptr,false,nullptr))==nullptr)
 	{
 #else
-if(pthread_mutex_init (&m_hMtxMHReads,NULL)!=0)
+if(pthread_mutex_init (&m_hMtxMHReads,nullptr)!=0)
 	{
 #endif
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to create mutex");
@@ -820,13 +820,13 @@ CKit4bdna::GetNumReads(uint32_t *pNumPE1Reads,	// returned total number of singl
 			uint32_t *pMinSeqLen,					// returned minimum sequence length
 			uint32_t *pMaxSeqLen)					// returned maximum sequence length
 {
-if(pNumPE1Reads != NULL)
+if(pNumPE1Reads != nullptr)
 	*pNumPE1Reads = m_Sequences.NumPE1Seqs2Assemb;
 
-if(pNumPE2Reads != NULL)
+if(pNumPE2Reads != nullptr)
 	*pNumPE2Reads = m_Sequences.NumPE2Seqs2Assemb;
 
-if(pTotPE1Seqs != NULL)
+if(pTotPE1Seqs != nullptr)
 	{
 	if(m_Sequences.NumPE2Seqs2Assemb)
 		*pTotPE1Seqs = m_Sequences.NumSeqs2Assemb/2;
@@ -834,7 +834,7 @@ if(pTotPE1Seqs != NULL)
 		*pTotPE1Seqs = m_Sequences.NumSeqs2Assemb;
 	}
 
-if(pTotPE2Seqs != NULL)
+if(pTotPE2Seqs != nullptr)
 	{
 	if(m_Sequences.NumPE2Seqs2Assemb)
 		*pTotPE2Seqs = m_Sequences.NumSeqs2Assemb/2;
@@ -842,23 +842,23 @@ if(pTotPE2Seqs != NULL)
 		*pTotPE2Seqs = 0;
 	}
 
-if(pTotSeqsParsed != NULL)
+if(pTotSeqsParsed != nullptr)
 	*pTotSeqsParsed = m_Sequences.TotSeqsParsed;
 
-if(pTotSeqsUnderLen != NULL)
+if(pTotSeqsUnderLen != nullptr)
 	*pTotSeqsUnderLen = m_Sequences.TotSeqsUnderLen;
 
-if(pTotSeqsExcessNs != NULL)
+if(pTotSeqsExcessNs != nullptr)
 	*pTotSeqsExcessNs = m_Sequences.TotSeqsExcessNs;
 
 
-if(pMeanSeqLen != NULL)
+if(pMeanSeqLen != nullptr)
 	*pMeanSeqLen = (uint32_t)(ceil(m_Sequences.MeanSeqLen));
 
-if(pMinSeqLen != NULL)
+if(pMinSeqLen != nullptr)
 	*pMinSeqLen = m_Sequences.MinSeqLen;
 
-if(pMaxSeqLen != NULL)
+if(pMaxSeqLen != nullptr)
 	*pMaxSeqLen = m_Sequences.MaxSeqLen;
 
 return(m_Sequences.NumSeqs2Assemb);
@@ -1060,10 +1060,10 @@ if(CurWorkSetSize != m_CurMaxMemWorkSetBytes)
 m_Sequences.AllocMemSeqStarts = 0;
 m_Sequences.AllocMemSeqs2Assemb = 0;
 m_Sequences.AllocMemSfx = 0;
-m_Sequences.pSeqStarts = NULL;
-m_Sequences.pSeqs2Assemb = NULL;
-m_Sequences.pSuffixArray = NULL;
-m_Sequences.pSeqFlags = NULL;
+m_Sequences.pSeqStarts = nullptr;
+m_Sequences.pSeqs2Assemb = nullptr;
+m_Sequences.pSuffixArray = nullptr;
+m_Sequences.pSeqFlags = nullptr;
 m_Sequences.AllocMemSeqFlags = 0;
 Rslt = eBSFSuccess;
 if(PPCRdsHdr.Sequences.OfsSeqs2Assemb && PPCRdsHdr.Sequences.AllocMemSeqs2Assemb)
@@ -1088,26 +1088,26 @@ CKit4bdna::AllocLoadBlock(char *pszInFile, // loading from this file
 {
 teBSFrsltCodes Rslt;
 
-if(FileOfs == 0 || AllocBlockSize == 0 || ppLoadedBlock == NULL || pAllocBlockSize == NULL || m_hInSeqTypesFile == -1)
+if(FileOfs == 0 || AllocBlockSize == 0 || ppLoadedBlock == nullptr || pAllocBlockSize == nullptr || m_hInSeqTypesFile == -1)
 	return(eBSFerrParams);
 
-*ppLoadedBlock = NULL;
+*ppLoadedBlock = nullptr;
 *pAllocBlockSize = 0;
 
 	// now try and allocate memory
 #ifdef _WIN32
 *ppLoadedBlock = (void *) malloc((size_t)AllocBlockSize);	
-if(*ppLoadedBlock == NULL)
+if(*ppLoadedBlock == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocLoadBlock: array memory allocation of %zu bytes - %s",AllocBlockSize,strerror(errno));
 	Reset(false);
 	return(eBSFerrMem);
 	}
 #else
-if((*ppLoadedBlock = (void *)mmap(NULL,AllocBlockSize, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0)) == MAP_FAILED)
+if((*ppLoadedBlock = (void *)mmap(nullptr,AllocBlockSize, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0)) == MAP_FAILED)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocLoadBlock: array memory allocation of %zu bytes through mmap()  failed - %s",AllocBlockSize,strerror(errno));
-	*ppLoadedBlock = NULL;
+	*ppLoadedBlock = nullptr;
 	*pAllocBlockSize = 0;
 	Reset(false);
 	return(eBSFerrMem);
@@ -1163,7 +1163,7 @@ memmove(&PPCRdsHdr.SrcFiles,&m_SrcFiles,sizeof(m_SrcFiles));
 
 PPCRdsHdr.FileSize = sizeof(PPCRdsHdr);
 
-if(m_Sequences.pSeqs2Assemb != NULL && m_Sequences.Seqs2AssembOfs > 0 && m_Sequences.pSeqs2Assemb != NULL)
+if(m_Sequences.pSeqs2Assemb != nullptr && m_Sequences.Seqs2AssembOfs > 0 && m_Sequences.pSeqs2Assemb != nullptr)
 	{
 	UpdateAllSeqHeaderFlags(0,~(cFlgSeqPE | cFlgSeqPE2),false);
 	PPCRdsHdr.Sequences.AllocMemSeqs2Assemb = (m_Sequences.Seqs2AssembOfs + 16) * m_Sequences.SeqWrdBytes; // could have overallocated...
@@ -1179,7 +1179,7 @@ if((Rslt = ChunkedWrite(m_hOutSeqTypesFile,pszTypeSeqFile,0,(uint8_t *)&PPCRdsHd
 	return(Rslt);
 	}
 
-if(m_Sequences.pSeqs2Assemb != NULL && m_Sequences.Seqs2AssembOfs > 0 && m_Sequences.pSeqs2Assemb != NULL)
+if(m_Sequences.pSeqs2Assemb != nullptr && m_Sequences.Seqs2AssembOfs > 0 && m_Sequences.pSeqs2Assemb != nullptr)
 	if((Rslt = ChunkedWrite(m_hOutSeqTypesFile,pszTypeSeqFile,PPCRdsHdr.Sequences.OfsSeqs2Assemb,(uint8_t *)m_Sequences.pSeqs2Assemb,PPCRdsHdr.Sequences.AllocMemSeqs2Assemb))!=eBSFSuccess)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"SaveTypeSeqsToFile: Write to file %s failed",pszTypeSeqFile);
@@ -1215,7 +1215,7 @@ if((uint64_t)SizeT != ReqAllocSize)
 	}
 ReqAllocSize = (ReqAllocSize + 3) & (uint64_t)0x0ffffffffffffc;						// ensure allocation is for integral number of tSeqWrd4's
 
-if(m_Sequences.pSeqs2Assemb != NULL && (m_Sequences.AllocMemSeqs2Assemb < ReqAllocSize || ((m_Sequences.AllocMemSeqs2Assemb * 10) > (ReqAllocSize * 12))))
+if(m_Sequences.pSeqs2Assemb != nullptr && (m_Sequences.AllocMemSeqs2Assemb < ReqAllocSize || ((m_Sequences.AllocMemSeqs2Assemb * 10) > (ReqAllocSize * 12))))
 	{
 #ifdef _WIN32
 	free(m_Sequences.pSeqs2Assemb);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -1223,26 +1223,26 @@ if(m_Sequences.pSeqs2Assemb != NULL && (m_Sequences.AllocMemSeqs2Assemb < ReqAll
 	if(m_Sequences.pSeqs2Assemb != MAP_FAILED)
 		munmap(m_Sequences.pSeqs2Assemb,m_Sequences.AllocMemSeqs2Assemb);
 #endif	
-	m_Sequences.pSeqs2Assemb = NULL;
+	m_Sequences.pSeqs2Assemb = nullptr;
 	m_Sequences.AllocMemSeqs2Assemb = 0;
 	}
 
-if(m_Sequences.pSeqs2Assemb == NULL)
+if(m_Sequences.pSeqs2Assemb == nullptr)
 	{
 	m_Sequences.AllocMemSeqs2Assemb = (size_t)ReqAllocSize;
 #ifdef _WIN32
 	m_Sequences.pSeqs2Assemb = malloc((size_t)m_Sequences.AllocMemSeqs2Assemb);	
-	if(m_Sequences.pSeqs2Assemb == NULL)
+	if(m_Sequences.pSeqs2Assemb == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocSeqs2AssembMem: Concatenated packed sequences memory allocation of %zu bytes - %s",m_Sequences.AllocMemSeqs2Assemb,strerror(errno));
 		Reset(false);
 		return(eBSFerrMem);
 		}
 #else
-	if((m_Sequences.pSeqs2Assemb = (void *)mmap(NULL,m_Sequences.AllocMemSeqs2Assemb, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0)) == MAP_FAILED)
+	if((m_Sequences.pSeqs2Assemb = (void *)mmap(nullptr,m_Sequences.AllocMemSeqs2Assemb, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0)) == MAP_FAILED)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocSeqs2AssembMem: Concatenated packed sequences memory of %zu bytes through mmap()  failed - %s",m_Sequences.AllocMemSeqs2Assemb,strerror(errno));
-		m_Sequences.pSeqs2Assemb = NULL;
+		m_Sequences.pSeqs2Assemb = nullptr;
 		Reset(false);
 		return(eBSFerrMem);
 		}
@@ -1275,7 +1275,7 @@ if(ReqAllocBlocks < 1)
 	return(eBSFerrParams);
 	}
 
-if(m_pBlockNsLoci != NULL && (m_AllocdBlockNsLoci < ReqAllocBlocks || ((m_AllocdBlockNsLoci * 10) > (ReqAllocBlocks * 12))))
+if(m_pBlockNsLoci != nullptr && (m_AllocdBlockNsLoci < ReqAllocBlocks || ((m_AllocdBlockNsLoci * 10) > (ReqAllocBlocks * 12))))
 	{
 #ifdef _WIN32
 	free(m_pBlockNsLoci);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -1283,28 +1283,28 @@ if(m_pBlockNsLoci != NULL && (m_AllocdBlockNsLoci < ReqAllocBlocks || ((m_Allocd
 	if(m_pBlockNsLoci != MAP_FAILED)
 		munmap(m_pBlockNsLoci,m_AllocdBlockNsLociSize);
 #endif	
-	m_pBlockNsLoci = NULL;
+	m_pBlockNsLoci = nullptr;
 	m_AllocdBlockNsLociSize = 0;
 	m_AllocdBlockNsLoci = 0;
 	}
 
-if(m_pBlockNsLoci == NULL)
+if(m_pBlockNsLoci == nullptr)
 	{
 	m_AllocdBlockNsLociSize = SizeT;
 	m_AllocdBlockNsLoci = ReqAllocBlocks;
 #ifdef _WIN32
 	m_pBlockNsLoci = (tsBlockNsLoci *)malloc(m_AllocdBlockNsLociSize);	
-	if(m_pBlockNsLoci == NULL)
+	if(m_pBlockNsLoci == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocBlockNsLoci: memory allocation of %zu bytes - %s",m_AllocdBlockNsLociSize,strerror(errno));
 		Reset(false);
 		return(eBSFerrMem);
 		}
 #else
-	if((m_pBlockNsLoci = (tsBlockNsLoci *)mmap(NULL,m_AllocdBlockNsLociSize, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0)) == MAP_FAILED)
+	if((m_pBlockNsLoci = (tsBlockNsLoci *)mmap(nullptr,m_AllocdBlockNsLociSize, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0)) == MAP_FAILED)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocBlockNsLoci: memory of %zu bytes through mmap()  failed - %s",m_AllocdBlockNsLociSize,strerror(errno));
-		m_pBlockNsLoci = NULL;
+		m_pBlockNsLoci = nullptr;
 		Reset(false);
 		return(eBSFerrMem);
 		}
@@ -1334,7 +1334,7 @@ CKit4bdna::GetEstMemReq(int Trim5,				// will be trimming this number of 5' base
 uint64_t MemReq;
 
 MemReq = EstMemReq(Trim5,Trim3,TrimSeqLen,SampleNth,Zreads);
-return(MemReq == 0 ? NULL : &m_SeqEsts);
+return(MemReq == 0 ? nullptr : &m_SeqEsts);
 }
 
 teBSFrsltCodes 
@@ -1345,11 +1345,11 @@ uint32_t NumSeqs;
 int32_t DescrLen;
 int32_t SeqLen;
 
-if(pszInFile == NULL || pszInFile[0] == '\0')
+if(pszInFile == nullptr || pszInFile[0] == '\0')
 	return(eBSFerrParams);
 
 // get estimate of number of sequences, mean sequence length, and mean descriptor length
-if((NumSeqs = Fasta.FastaEstSizes(pszInFile,NULL,NULL,&DescrLen,NULL,&SeqLen)) == 0)
+if((NumSeqs = Fasta.FastaEstSizes(pszInFile,nullptr,nullptr,&DescrLen,nullptr,&SeqLen)) == 0)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to estimate memory requirements for file '%s'",pszInFile);
 	return(eBSFerrOpnFile);
@@ -1436,7 +1436,7 @@ char Phred;
 char Phred0;
 int Score;
 
-if(QSSchema == 0 || MinMeanPhredScore < 20 || pszPhredScores == NULL || pszPhredScores[0] == '\0')
+if(QSSchema == 0 || MinMeanPhredScore < 20 || pszPhredScores == nullptr || pszPhredScores[0] == '\0')
 	return(true);
 
 switch(QSSchema) {						// quality scoring schema - guestimated scoring schema - 0: no scoring, 1: Solexa, 2: Illumina 1.3+, 3: Illumina 1.5+, 4: Illumina 1.8+ or Sanger 
@@ -1506,11 +1506,11 @@ pPars->szPE2QScoresBuff[0] = '\0';
 pPars->PE2ReadLen = 0;
 pPars->PE2RawReadsBuff[0] = 0;
 
-if(pPars == NULL || (pCtrl =  pPars->pProcReadsCtrl) == NULL)
+if(pPars == nullptr || (pCtrl =  pPars->pProcReadsCtrl) == nullptr)
 	return(eBSFerrParams);
 
 AcquireSerialiseReadsCtrl();
-if((Rslt = pCtrl->Rslt) < eBSFSuccess || pCtrl->bPE1PE2AllReadsProc || pCtrl->pFastaPE1 == NULL)
+if((Rslt = pCtrl->Rslt) < eBSFSuccess || pCtrl->bPE1PE2AllReadsProc || pCtrl->pFastaPE1 == nullptr)
 	{
 	ReleaseSerialiseReadsCtrl();     
 	return(eBSFSuccess);		
@@ -1708,7 +1708,7 @@ while((Rslt = GetNxtProcRead(pPars)) > eBSFSuccess)				// < eBSFSuccess if error
 		bIsPE2Fastq = false;
 
 				// if trimming any contaminant sequences then check for contaminant overlaps onto this read(s)
-	if(m_pContaminants != NULL)
+	if(m_pContaminants != nullptr)
 		{
 		bool bContamVector = false;
 
@@ -2017,7 +2017,7 @@ if(MaxNumThreads == 0 || MaxNumThreads > min(m_NumThreads, 15))		// limiting to 
 if(MaxNumThreads == 1)
 	return(LoadReads(MaxNs,MinPhredScore,Trim5,Trim3,MinSeqLen,TrimSeqLen,SampleNth,Zreads,pszPE1File,pszPE2File));
 
-if((pFiltReadsPars = new tsThreadFiltReadsPars[MaxNumThreads])==NULL)
+if((pFiltReadsPars = new tsThreadFiltReadsPars[MaxNumThreads])==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory for %d worker threads...",MaxNumThreads);
 	Reset(false);
@@ -2026,10 +2026,10 @@ if((pFiltReadsPars = new tsThreadFiltReadsPars[MaxNumThreads])==NULL)
 
 memset(&ProcReadsCtrl,0,sizeof(ProcReadsCtrl));
 
-m_Sequences.bPESeqs = (pszPE2File == NULL || pszPE2File[0] == '\0') ? false : true;
+m_Sequences.bPESeqs = (pszPE2File == nullptr || pszPE2File[0] == '\0') ? false : true;
 
 // error if memory not preallocated to hold sequences
-if(m_Sequences.pSeqs2Assemb == NULL)
+if(m_Sequences.pSeqs2Assemb == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Expected memory to have been preallocated for holding compacted sequences");
 	delete pFiltReadsPars;
@@ -2070,7 +2070,7 @@ if(m_Sequences.bPESeqs)
 int PE1QCSchema;
 int PE2QCSchema;
 
-if((Rslt=(teBSFrsltCodes)FastaPE1.FastaEstSizes(pszPE1File,NULL,NULL,NULL,NULL,NULL,&PE1QCSchema))<=1)
+if((Rslt=(teBSFrsltCodes)FastaPE1.FastaEstSizes(pszPE1File,nullptr,nullptr,nullptr,nullptr,nullptr,&PE1QCSchema))<=1)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadRawReads: Unable to open '%s' [%s] %s",pszPE1File,FastaPE1.ErrText((teBSFrsltCodes)Rslt),FastaPE1.GetErrMsg());
 	delete pFiltReadsPars;
@@ -2098,7 +2098,7 @@ bIsPE1Fastq = FastaPE1.IsFastq();
 
 if(m_Sequences.bPESeqs)
 	{
-	if((Rslt=(teBSFrsltCodes)FastaPE2.FastaEstSizes(pszPE2File,NULL,NULL,NULL,NULL,NULL,&PE2QCSchema))<=1)
+	if((Rslt=(teBSFrsltCodes)FastaPE2.FastaEstSizes(pszPE2File,nullptr,nullptr,nullptr,nullptr,nullptr,&PE2QCSchema))<=1)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadRawReads: Unable to open '%s' [%s] %s",pszPE2File,FastaPE2.ErrText((teBSFrsltCodes)Rslt),FastaPE2.GetErrMsg());
 		delete pFiltReadsPars;
@@ -2188,7 +2188,7 @@ size_t defaultStackSize;
 pthread_attr_t threadattr; 
 pthread_attr_init(&threadattr);
 pthread_attr_getstacksize(&threadattr, &defaultStackSize);
-if(defaultStackSize != cReadsThreadStackSize)
+if (defaultStackSize < cReadsThreadStackSize)
 	pthread_attr_setstacksize(&threadattr, cReadsThreadStackSize);
 #endif
 
@@ -2235,7 +2235,7 @@ for(ThreadIdx = 0; ThreadIdx < MaxNumThreads; ThreadIdx++,pCurThread++)
 	pCurThread->pProcReadsCtrl = &ProcReadsCtrl;
 
 #ifdef _WIN32
-	pCurThread->threadHandle = (HANDLE)_beginthreadex(NULL,cReadsThreadStackSize,ThreadedFiltReads,pCurThread,0,&pCurThread->threadID);
+	pCurThread->threadHandle = (HANDLE)_beginthreadex(nullptr,cReadsThreadStackSize,ThreadedFiltReads,pCurThread,0,&pCurThread->threadID);
 #else
 	pCurThread->threadRslt = pthread_create (&pCurThread->threadID , &threadattr , ThreadedFiltReads , pCurThread);
 #endif
@@ -2271,7 +2271,7 @@ for(ThreadIdx = 0; ThreadIdx < MaxNumThreads; ThreadIdx++,pCurThread++)
 	int JoinRlt;
 	clock_gettime(CLOCK_REALTIME, &ts);
 	ts.tv_sec += 60;
-	while((JoinRlt = pthread_timedjoin_np(pCurThread->threadID, NULL, &ts)) != 0)
+	while((JoinRlt = pthread_timedjoin_np(pCurThread->threadID, nullptr, &ts)) != 0)
 		{
 		AcquireSerialiseReadsCtrl();
 		CurNumParsed =  ProcReadsCtrl.CurTotPE1ReadsParsed;
@@ -2308,7 +2308,7 @@ for(ThreadIdx = 0; ThreadIdx < MaxNumThreads; ThreadIdx++,pCurThread++)
 	}
 
 // threads have all terminated
-delete pFiltReadsPars;
+delete []pFiltReadsPars;
 
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"LoadReads: Parsed %d, Accepted %d %s",NumPE1ParsedReads,NumPE1AcceptedReads,m_Sequences.bPESeqs ? "paired sequences":"sequences");
 
@@ -2360,7 +2360,7 @@ else
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"LoadReads: Completed parsing %d, accepted %d %s, accepted sequences min length: %d max length: %d mean length: %1.1f",
 								NumPE1ParsedReads,NumPE1AcceptedReads,m_Sequences.bPESeqs ? "paired sequences":"sequences",CurAcceptedMinSeqLen,CurAcceptedMaxSeqLen,CurAcceptedMeanSeqLen);
 
-if(m_pContaminants != NULL)
+if(m_pContaminants != nullptr)
 	{
 	if(m_Sequences.bPESeqs)
 		gDiagnostics.DiagOut(eDLInfo,gszProcName,"LoadReads: Removed %u paired sequences because at least one end was totally contained in a vector contaminate sequence", NumContamVector);
@@ -2461,10 +2461,10 @@ int MaxAllowedFiles;
 if(m_NumThreads > 1)
 	return(LoadReadsThreaded(MaxNs,MinPhredScore,Trim5,Trim3,MinSeqLen,TrimSeqLen,SampleNth,Zreads,pszPE1File,pszPE2File,0));
 
-m_Sequences.bPESeqs = (pszPE2File == NULL || pszPE2File[0] == '\0') ? false : true;
+m_Sequences.bPESeqs = (pszPE2File == nullptr || pszPE2File[0] == '\0') ? false : true;
 
 // error if memory not preallocated to hold sequences
-if(m_Sequences.pSeqs2Assemb == NULL)
+if(m_Sequences.pSeqs2Assemb == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Expected memory to have been preallocated for holding compacted sequences");
 	return(eBSFerrInternal);
@@ -2500,13 +2500,13 @@ if(m_Sequences.bPESeqs)
 	strcpy((char *)pPE2ReadFile->szFile,pszPE2File);
 	}
 
-if((pPE1RawReadsBuff = new uint8_t [cMaxRawSeqLen+16]) == NULL)					// 16 as a small safety margin!
+if((pPE1RawReadsBuff = new uint8_t [cMaxRawSeqLen+16]) == nullptr)					// 16 as a small safety margin!
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory for PE1 raw reads buffering...");
 	Reset(false);
 	return(eBSFerrMem);
 	}
-if((pszPE1QScoresBuff = new uint8_t [cMaxQScoreLen+16]) == NULL)					// 16 as a small safety margin!
+if((pszPE1QScoresBuff = new uint8_t [cMaxQScoreLen+16]) == nullptr)					// 16 as a small safety margin!
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory for PE1 raw reads quality score buffering...");
 	delete pPE1RawReadsBuff;
@@ -2516,14 +2516,14 @@ if((pszPE1QScoresBuff = new uint8_t [cMaxQScoreLen+16]) == NULL)					// 16 as a 
 
 if(m_Sequences.bPESeqs)
 	{
-	if((pPE2RawReadsBuff = new uint8_t [cMaxRawSeqLen+16]) == NULL)				// 16 as a small safety margin!
+	if((pPE2RawReadsBuff = new uint8_t [cMaxRawSeqLen+16]) == nullptr)				// 16 as a small safety margin!
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory for PE2 raw reads buffering...");
 		delete pPE1RawReadsBuff;
 		Reset(false);
 		return(eBSFerrMem);
 		}
-	if((pszPE2QScoresBuff = new uint8_t [cMaxQScoreLen+16]) == NULL)				// 16 as a small safety margin!
+	if((pszPE2QScoresBuff = new uint8_t [cMaxQScoreLen+16]) == nullptr)				// 16 as a small safety margin!
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory for PE2 raw reads quality score buffering...");
 		delete pPE1RawReadsBuff;
@@ -2535,14 +2535,14 @@ if(m_Sequences.bPESeqs)
 	}
 else
 	{
-	pPE2RawReadsBuff = NULL;
-	pszPE2QScoresBuff = NULL;
+	pPE2RawReadsBuff = nullptr;
+	pszPE2QScoresBuff = nullptr;
 	}
 
 int PE1QCSchema;
 int PE2QCSchema;
 
-if((Rslt=(teBSFrsltCodes)FastaPE1.FastaEstSizes(pszPE1File,NULL,NULL,NULL,NULL,NULL,&PE1QCSchema))<=1)
+if((Rslt=(teBSFrsltCodes)FastaPE1.FastaEstSizes(pszPE1File,nullptr,nullptr,nullptr,nullptr,nullptr,&PE1QCSchema))<=1)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadRawReads: Unable to open '%s' [%s] %s",pszPE1File,FastaPE1.ErrText((teBSFrsltCodes)Rslt),FastaPE1.GetErrMsg());
 	delete pPE1RawReadsBuff;
@@ -2584,7 +2584,7 @@ bIsPE1Fastq = FastaPE1.IsFastq();
 
 if(m_Sequences.bPESeqs)
 	{
-	if((Rslt=(teBSFrsltCodes)FastaPE2.FastaEstSizes(pszPE2File,NULL,NULL,NULL,NULL,NULL,&PE2QCSchema))<=1)
+	if((Rslt=(teBSFrsltCodes)FastaPE2.FastaEstSizes(pszPE2File,nullptr,nullptr,nullptr,nullptr,nullptr,&PE2QCSchema))<=1)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadRawReads: Unable to open '%s' [%s] %s",pszPE2File,FastaPE2.ErrText((teBSFrsltCodes)Rslt),FastaPE2.GetErrMsg());
 		delete pPE1RawReadsBuff;
@@ -2685,7 +2685,7 @@ NumContamVector = 0;
 NumContamFlankTrim = 0;
 
 if(MaxNs)
-	srand((unsigned)time( NULL ));
+	srand((unsigned)time( nullptr ));
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"LoadReads: Parsed 0, Accepted 0 %s ...",m_Sequences.bPESeqs ? "paired sequences":"sequences");
 time_t Started = time(0);
 while((Rslt = (teBSFrsltCodes)(PE1ReadLen = FastaPE1.ReadSequence(pPE1RawReadsBuff,cMaxRawSeqLen,true,false))) > eBSFSuccess)
@@ -2839,7 +2839,7 @@ while((Rslt = (teBSFrsltCodes)(PE1ReadLen = FastaPE1.ReadSequence(pPE1RawReadsBu
 			}
 
 			// if trimming any contaminant sequences then check for contaminant overlaps onto this read(s)
-		if(m_pContaminants != NULL)
+		if(m_pContaminants != nullptr)
 			{
 			bool bContamVector = false;
 
@@ -3078,7 +3078,7 @@ while((Rslt = (teBSFrsltCodes)(PE1ReadLen = FastaPE1.ReadSequence(pPE1RawReadsBu
 		delete pPE1RawReadsBuff;
 		delete pszPE1QScoresBuff;
 		FastaPE1.Close();
-		if(pPE2RawReadsBuff != NULL)
+		if(pPE2RawReadsBuff != nullptr)
 			{
 			delete pPE2RawReadsBuff;
 			delete pszPE2QScoresBuff;
@@ -3088,14 +3088,14 @@ while((Rslt = (teBSFrsltCodes)(PE1ReadLen = FastaPE1.ReadSequence(pPE1RawReadsBu
 		return(eBSFerrParse);
 		}
 	}
-if(pPE1RawReadsBuff != NULL)
-	delete pPE1RawReadsBuff;
-if(pszPE1QScoresBuff != NULL)
-	delete pszPE1QScoresBuff;
-if(pPE2RawReadsBuff != NULL)
-	delete pPE2RawReadsBuff;
-if(pszPE2QScoresBuff != NULL)
-	delete pszPE2QScoresBuff;
+if(pPE1RawReadsBuff != nullptr)
+	delete []pPE1RawReadsBuff;
+if(pszPE1QScoresBuff != nullptr)
+	delete []pszPE1QScoresBuff;
+if(pPE2RawReadsBuff != nullptr)
+	delete []pPE2RawReadsBuff;
+if(pszPE2QScoresBuff != nullptr)
+	delete []pszPE2QScoresBuff;
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"LoadReads: Parsed %d, Accepted %d %s",NumPE1ParsedReads,NumPE1AcceptedReads,m_Sequences.bPESeqs ? "paired sequences":"sequences");
 
 if(Rslt != eBSFSuccess)
@@ -3146,7 +3146,7 @@ else
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"LoadReads: Completed parsing %d, accepted %d %s, accepted sequences min length: %d max length: %d mean length: %1.1f",
 								NumPE1ParsedReads,NumPE1AcceptedReads,m_Sequences.bPESeqs ? "paired sequences":"sequences",CurAcceptedMinSeqLen,CurAcceptedMaxSeqLen,CurAcceptedMeanSeqLen);
 
-if(m_pContaminants != NULL)
+if(m_pContaminants != nullptr)
 	{
 	if(m_Sequences.bPESeqs)
 		gDiagnostics.DiagOut(eDLInfo,gszProcName,"LoadReads: Removed %u paired sequences because at least one end was totally contained in a vector contaminate sequence", NumContamVector);
@@ -3230,7 +3230,7 @@ m_Sequences.bPESeqs = true;
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"LoadSeedPEs: Loading PE 5' from '%s' and PE 3' from '%s'",pszPE1File,pszPE2File);
 
 // error if memory not preallocated to hold sequences
-if(m_Sequences.pSeqs2Assemb == NULL)
+if(m_Sequences.pSeqs2Assemb == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadSeedPEs: Expected memory to have been preallocated for holding sequences");
 	return(eBSFerrInternal);
@@ -3260,14 +3260,14 @@ pPE2ReadFile->FileID = PE2FileID;
 pPE2ReadFile->PEFileID = PE1FileID;
 strcpy((char *)pPE2ReadFile->szFile,pszPE2File);
 
-if((pPE1RawReadsBuff = new uint8_t [cMaxRawSeqLen+16]) == NULL)					// 16 as a small safety margin!
+if((pPE1RawReadsBuff = new uint8_t [cMaxRawSeqLen+16]) == nullptr)					// 16 as a small safety margin!
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadSeedPEs: Unable to allocate memory for PE1 sequence buffering...");
 	Reset(false);
 	return(eBSFerrMem);
 	}
 
-if((pPE2RawReadsBuff = new uint8_t [cMaxRawSeqLen+16]) == NULL)				// 16 as a small safety margin!
+if((pPE2RawReadsBuff = new uint8_t [cMaxRawSeqLen+16]) == nullptr)				// 16 as a small safety margin!
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadSeedPEs: Unable to allocate memory for PE2 sequence buffering...");
 	delete pPE1RawReadsBuff;
@@ -3566,7 +3566,7 @@ while((Rslt = (teBSFrsltCodes)(PE1ReadLen = FastaPE1.ReadSequence(pPE1RawReadsBu
 				Rslt > 0 ? "over length read" : "not a multifasta short reads or fastq file");
 		delete pPE1RawReadsBuff;
 		FastaPE1.Close();
-		if(pPE2RawReadsBuff != NULL)
+		if(pPE2RawReadsBuff != nullptr)
 			{
 			delete pPE2RawReadsBuff;
 			FastaPE2.Close();
@@ -3575,10 +3575,10 @@ while((Rslt = (teBSFrsltCodes)(PE1ReadLen = FastaPE1.ReadSequence(pPE1RawReadsBu
 		return(eBSFerrParse);
 		}
 	}
-if(pPE1RawReadsBuff != NULL)
-	delete pPE1RawReadsBuff;
-if(pPE2RawReadsBuff != NULL)
-	delete pPE2RawReadsBuff;
+if(pPE1RawReadsBuff != nullptr)
+	delete []pPE1RawReadsBuff;
+if(pPE2RawReadsBuff != nullptr)
+	delete []pPE2RawReadsBuff;
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"LoadSeedPEs: Parsed %d, Accepted %d paired sequences",NumPE1ParsedReads,NumPE1AcceptedReads);
 
 if(Rslt != eBSFSuccess)
@@ -3672,7 +3672,7 @@ gDiagnostics.DiagOut(eDLInfo,gszProcName,"LoadSeedContigs: Loading seed contigs 
 
 
 // error if memory not preallocated to hold sequences
-if(m_Sequences.pSeqs2Assemb == NULL)
+if(m_Sequences.pSeqs2Assemb == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Expected memory to have been preallocated for holding compacted sequences");
 	return(eBSFerrInternal);
@@ -3694,7 +3694,7 @@ memset(pContigsFile,0,sizeof(tsReadFile));
 pContigsFile->FileID = FileID;
 strcpy((char *)pContigsFile->szFile,pszContigsFile);
 
-if((pRawContigsBuff = new uint8_t [cMaxRawSeqLen+16]) == NULL)					// 16 as a small safety margin!
+if((pRawContigsBuff = new uint8_t [cMaxRawSeqLen+16]) == nullptr)					// 16 as a small safety margin!
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory for contig buffering...");
 	Reset(false);
@@ -3801,14 +3801,14 @@ while((Rslt = (teBSFrsltCodes)(ContigLen = Fasta.ReadSequence(pRawContigsBuff,cM
 		// if scaffolding record positions of indeterminates and substitute with a random base, in the scaffold reporting then these will be replaced back with indeterminates   
 		uint32_t Idx;
 		
-		pBlockNsLoci = NULL;
+		pBlockNsLoci = nullptr;
 		etSeqBase *pBase = pRawContigsBuff;
 		for(Idx = 0; Idx < ContigLen; Idx++,pBase++)
 			if((*pBase & 0x07) > eBaseT)
 				{
-				if(m_pBlockNsLoci == NULL)
+				if(m_pBlockNsLoci == nullptr)
 					break;
-				if(pBlockNsLoci == NULL)	// new indeterminate block starting
+				if(pBlockNsLoci == nullptr)	// new indeterminate block starting
 					{
 					// ensure sufficent memory has been allocated to hold this indeterminates block...
 					if(m_NumBlockNsLoci >= m_AllocdBlockNsLoci)		
@@ -3824,9 +3824,9 @@ while((Rslt = (teBSFrsltCodes)(ContigLen = Fasta.ReadSequence(pRawContigsBuff,cM
 #else
 						pAllocd = mremap(m_pBlockNsLoci,m_AllocdBlockNsLociSize,memreq,MREMAP_MAYMOVE);
 						if(pAllocd == MAP_FAILED)
-							pAllocd = NULL;
+							pAllocd = nullptr;
 #endif
-						if(pAllocd == NULL)
+						if(pAllocd == nullptr)
 							{
 							gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadSeedContigs: Memory re-allocation to %d bytes - %s",memreq,strerror(errno));
 							return(eBSFerrMem);
@@ -3845,7 +3845,7 @@ while((Rslt = (teBSFrsltCodes)(ContigLen = Fasta.ReadSequence(pRawContigsBuff,cM
 				*pBase = rand() & 0x03;
 				}
 			else
-				pBlockNsLoci = NULL;
+				pBlockNsLoci = nullptr;
 
 		if(Idx < ContigLen)
 			{
@@ -3887,8 +3887,8 @@ while((Rslt = (teBSFrsltCodes)(ContigLen = Fasta.ReadSequence(pRawContigsBuff,cM
 		return(eBSFerrParse);
 		}
 	}
-if(pRawContigsBuff != NULL)
-	delete pRawContigsBuff;
+if(pRawContigsBuff != nullptr)
+	delete []pRawContigsBuff;
 
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"LoadSeedContigs: Parsed %d, Accepted %d with %d truncated as overlength (overlength limit: %d) and %d rejected due to containing indeterminate Ns",
 									NumParsedContigs,NumAcceptedContigs,NumTrunclen,cMaxSeedContigLen,NumExcessNs);
@@ -3948,7 +3948,7 @@ uint32_t BaseMsk;
 if(KMerLen < 1 || KMerLen > 16)
 	return(0);
 
-if(m_pAcceptLevDist != NULL && KMerLen == m_LevDistKMerLen && MaxLev == m_MaxLev &&
+if(m_pAcceptLevDist != nullptr && KMerLen == m_LevDistKMerLen && MaxLev == m_MaxLev &&
 			PenaltyMatch == m_PenaltyMatch && PenaltyMisMatch == m_PenaltyMisMatch && PenaltyInsert == m_PenaltyInsert && PenaltyDelete == m_PenaltyDelete)
 	{
 	BaseMsk = 0x0ffff >> 2 * (8 - KMerLen);
@@ -4195,10 +4195,10 @@ CKit4bdna::LoadPregenLevenshteinsFwd(char *pszLevenshteinsFile, // load pregener
 int hFile;
 tsPregenLevenshteinsHdr Hdr;
 
-if(m_pAcceptLevDist != NULL)
+if(m_pAcceptLevDist != nullptr)
 	{
 	delete m_pAcceptLevDist;
-	m_pAcceptLevDist = NULL;
+	m_pAcceptLevDist = nullptr;
 	}
 m_LevDistKMerLen = 0;
 m_MaxLev = 0;
@@ -4244,7 +4244,7 @@ if(!(Hdr.KMerLen == KMerLen && Hdr.MaxLev == MaxLev && Hdr.PenaltyMatch == Penal
 	}
 
 
-if((m_pAcceptLevDist = new uint8_t [Hdr.m_AllocAcceptLevDist]) == NULL)
+if((m_pAcceptLevDist = new uint8_t [Hdr.m_AllocAcceptLevDist]) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadPregenLevenshteins: Failed to allocate memory - %s",pszLevenshteinsFile);
 	close(hFile);
@@ -4349,10 +4349,10 @@ uint32_t LevKMers;
 if(KMerLen < 4 || KMerLen > 8)
 	return(0);
 
-if(m_pAcceptLevDist != NULL && (m_LevDistKMerLen != KMerLen || m_MaxLev != MaxLev))
+if(m_pAcceptLevDist != nullptr && (m_LevDistKMerLen != KMerLen || m_MaxLev != MaxLev))
 	{
 	delete m_pAcceptLevDist;
-	m_pAcceptLevDist = NULL;
+	m_pAcceptLevDist = nullptr;
 	m_LevDistKMerLen = 0;
 	m_MaxLev = 0;
 	m_PenaltyMatch = 0;
@@ -4370,10 +4370,10 @@ m_PenaltyMatch = PenaltyMatch;
 m_PenaltyMisMatch = PenaltyMisMatch;
 m_PenaltyInsert = PenaltyInsert;
 m_PenaltyDelete = PenaltyDelete;
-if(m_pAcceptLevDist == NULL)
+if(m_pAcceptLevDist == nullptr)
 	{
 	m_AllocAcceptLevDist = ((size_t)LevKMers * m_AcceptLevWidth);
-	if((m_pAcceptLevDist = new uint8_t [m_AllocAcceptLevDist])==NULL)
+	if((m_pAcceptLevDist = new uint8_t [m_AllocAcceptLevDist])==nullptr)
 		return(eBSFerrMem);
 	memset(m_pAcceptLevDist,0,m_AllocAcceptLevDist);
 	}
@@ -4408,9 +4408,9 @@ for(ThreadIdx = 0; ThreadIdx < m_NumThreads && StartKMer < LevKMers; ThreadIdx++
 	pThread->Rslt = 0;
 	NumThreads += 1;
 #ifdef _WIN32
-	pThread->threadHandle = (HANDLE)_beginthreadex(NULL, 0x0fffff, ProcGenLevsFwdThread, pThread, 0, &pThread->threadID);
+	pThread->threadHandle = (HANDLE)_beginthreadex(nullptr, 0x0fffff, ProcGenLevsFwdThread, pThread, 0, &pThread->threadID);
 #else
-	pThread->threadRslt = pthread_create(&pThread->threadID, NULL, ProcGenLevsThread, pThread);
+	pThread->threadRslt = pthread_create(&pThread->threadID, nullptr, ProcGenLevsThread, pThread);
 #endif
 	}
 
@@ -4432,7 +4432,7 @@ for (ThreadIdx = 0; ThreadIdx < NumThreads; ThreadIdx++, pThread++)
 	int JoinRlt;
 	clock_gettime(CLOCK_REALTIME, &ts);
 	ts.tv_sec += 60;
-	while ((JoinRlt = pthread_timedjoin_np(pThread->threadID, NULL, &ts)) != 0)
+	while ((JoinRlt = pthread_timedjoin_np(pThread->threadID, nullptr, &ts)) != 0)
 		{
 		ts.tv_sec += 60;
 		}
@@ -4547,9 +4547,9 @@ CKit4bdna::AddSeq(uint32_t SrcFileID,				// 8bits identifies source file from wh
 						uint8_t *pSeq)			// ptr to sequence
 {
 uint64_t MemMinReq;
-if(SeqLen < 1 || SeqLen > cMaxRawSeqLen || pSeq == NULL)
+if(SeqLen < 1 || SeqLen > cMaxRawSeqLen || pSeq == nullptr)
 	{
-	gDiagnostics.DiagOut(eDLWarn,gszProcName,"AddSeq: SeqLen: %d pSeq is %s",SeqLen,pSeq == NULL ? "NULL" : "none-null");
+	gDiagnostics.DiagOut(eDLWarn,gszProcName,"AddSeq: SeqLen: %d pSeq is %s",SeqLen,pSeq == nullptr ? "nullptr" : "none-null");
 	return(eBSFerrParams);
 	}
 
@@ -4569,9 +4569,9 @@ if(MemMinReq > m_Sequences.AllocMemSeqs2Assemb)
 #else
 	pAllocd = mremap(m_Sequences.pSeqs2Assemb,m_Sequences.AllocMemSeqs2Assemb,memreq,MREMAP_MAYMOVE);
 	if(pAllocd == MAP_FAILED)
-		pAllocd = NULL;
+		pAllocd = nullptr;
 #endif
-	if(pAllocd == NULL)
+	if(pAllocd == nullptr)
 		{
 		ReleaseSerialise();
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddSeq: Memory re-allocation to %d bytes - %s",memreq,strerror(errno));
@@ -4593,7 +4593,7 @@ if(m_Sequences.Seqs2AssembOfs == 0)			// first sequence, so preceed with a cSeqW
 	m_Sequences.Seqs2AssembOfs += 1;
 	}
 m_Sequences.NumSeqs2Assemb += 1;
-pPackSeq = (tSeqWrd4 *)SetSeqHeader(pPackSeq,m_Sequences.NumSeqs2Assemb,SrcFileID,SeqFlags,SeqLen,NULL);
+pPackSeq = (tSeqWrd4 *)SetSeqHeader(pPackSeq,m_Sequences.NumSeqs2Assemb,SrcFileID,SeqFlags,SeqLen,nullptr);
 m_Sequences.Seqs2AssembOfs += GenPackedSeqWrds(SeqLen,pSeq,0,pPackSeq);
 pSeqWrds[m_Sequences.Seqs2AssembOfs] = cSeqWrd4EOS;			// currently last sequence, so finish with a cSeqWrd4EOS
 
@@ -4616,14 +4616,14 @@ CKit4bdna::AddPESeqs(uint32_t SrcFileID,			// 8bits identifies source file from 
 						uint8_t *pPE2Seq)			// PE2 ptr to sequence
 {
 uint64_t MemMinReq;
-if(PE1SeqLen < 1 || PE1SeqLen > cMaxRawSeqLen || pPE1Seq == NULL)
+if(PE1SeqLen < 1 || PE1SeqLen > cMaxRawSeqLen || pPE1Seq == nullptr)
 	{
-	gDiagnostics.DiagOut(eDLWarn,gszProcName,"AddPESeqs: PE1SeqLen: %d pPE1Seq is %s",PE1SeqLen,pPE1Seq == NULL ? "NULL" : "not-null");
+	gDiagnostics.DiagOut(eDLWarn,gszProcName,"AddPESeqs: PE1SeqLen: %d pPE1Seq is %s",PE1SeqLen,pPE1Seq == nullptr ? "nullptr" : "not-null");
 	return(eBSFerrParams);
 	}
-if(PE2SeqLen < 1 || PE2SeqLen > cMaxRawSeqLen || pPE2Seq == NULL)
+if(PE2SeqLen < 1 || PE2SeqLen > cMaxRawSeqLen || pPE2Seq == nullptr)
 	{
-	gDiagnostics.DiagOut(eDLWarn,gszProcName,"AddPESeqs: PE2SeqLen: %d pPE2Seq is %s",PE2SeqLen,pPE2Seq == NULL ? "NULL" : "not-null");
+	gDiagnostics.DiagOut(eDLWarn,gszProcName,"AddPESeqs: PE2SeqLen: %d pPE2Seq is %s",PE2SeqLen,pPE2Seq == nullptr ? "nullptr" : "not-null");
 	return(eBSFerrParams);
 	}
 
@@ -4644,9 +4644,9 @@ if(MemMinReq > m_Sequences.AllocMemSeqs2Assemb)
 #else
 	pAllocd = mremap(m_Sequences.pSeqs2Assemb,m_Sequences.AllocMemSeqs2Assemb,memreq,MREMAP_MAYMOVE);
 	if(pAllocd == MAP_FAILED)
-		pAllocd = NULL;
+		pAllocd = nullptr;
 #endif
-	if(pAllocd == NULL)
+	if(pAllocd == nullptr)
 		{
 		ReleaseSerialise();
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddSeq: Memory re-allocation to %d bytes - %s",memreq,strerror(errno));
@@ -4669,13 +4669,13 @@ if(m_Sequences.Seqs2AssembOfs == 0)			// first sequence, so preceed with a cSeqW
 	m_Sequences.Seqs2AssembOfs += 1;
 	}
 m_Sequences.NumSeqs2Assemb += 1;
-pPackSeq = (tSeqWrd4 *)SetSeqHeader(pPackSeq,m_Sequences.NumSeqs2Assemb,SrcFileID,PE1SeqFlags,PE1SeqLen,NULL);
+pPackSeq = (tSeqWrd4 *)SetSeqHeader(pPackSeq,m_Sequences.NumSeqs2Assemb,SrcFileID,PE1SeqFlags,PE1SeqLen,nullptr);
 m_Sequences.Seqs2AssembOfs += GenPackedSeqWrds(PE1SeqLen,pPE1Seq,0,pPackSeq);
 
 pSeqWrds = (tSeqWrd4 *)m_Sequences.pSeqs2Assemb; // reload in case was realloc'd by some other thread
 pPackSeq = &pSeqWrds[m_Sequences.Seqs2AssembOfs];
 m_Sequences.NumSeqs2Assemb += 1;
-pPackSeq = (tSeqWrd4 *)SetSeqHeader(pPackSeq,m_Sequences.NumSeqs2Assemb,SrcFileID,PE2SeqFlags,PE1SeqLen,NULL);
+pPackSeq = (tSeqWrd4 *)SetSeqHeader(pPackSeq,m_Sequences.NumSeqs2Assemb,SrcFileID,PE2SeqFlags,PE1SeqLen,nullptr);
 m_Sequences.Seqs2AssembOfs += GenPackedSeqWrds(PE1SeqLen,pPE1Seq,0,pPackSeq);
 
 pSeqWrds[m_Sequences.Seqs2AssembOfs] = cSeqWrd4EOS;			// currently last sequence, so finish with a cSeqWrd4EOS
@@ -4765,37 +4765,37 @@ CKit4bdna::GetSeqHeader(tSeqWrd4 *pSeqWrd,	// pts to a SeqWrd within the sequenc
 {
 uint32_t SeqID;
 
-if(pSeqID != NULL)
+if(pSeqID != nullptr)
 	*pSeqID = 0;
-if(pSrcFileID != NULL)
+if(pSrcFileID != nullptr)
 	*pSrcFileID = 0;
-if(pFlgs != NULL)
+if(pFlgs != nullptr)
 	*pFlgs = 0;
-if(pSeqLen != NULL)
+if(pSeqLen != nullptr)
 	*pSeqLen = 0;
 
-if(pSeqWrd == NULL)
-	return(NULL);
+if(pSeqWrd == nullptr)
+	return(nullptr);
 
 tSeqWrd4 *pSeqHdrWrd;
 tSeqWrd4 SeqWrd;
 pSeqHdrWrd = (tSeqWrd4 *)pSeqWrd;
 if(*pSeqHdrWrd == cSeqWrd4BOS || *pSeqHdrWrd == cSeqWrd4EOS) // ensure not trying to get header for BOS or EOS
-	return(NULL);
+	return(nullptr);
 
 while((*pSeqHdrWrd & cSeqWrd4LSWHdr) != cSeqWrd4MSWHdr)	// backup until the most significant header word
 	pSeqHdrWrd -= 1;
 if(bSerialise)
 	AcquireSerialiseSeqHdr();
 
-if(pFlgs != NULL || pSrcFileID != NULL || pSeqID != NULL)	// if caller requires flags or file identifier or sequence identifier
+if(pFlgs != nullptr || pSrcFileID != nullptr || pSeqID != nullptr)	// if caller requires flags or file identifier or sequence identifier
 	{
 	SeqWrd = *pSeqHdrWrd++;
-	if(pFlgs != NULL)
+	if(pFlgs != nullptr)
 		*pFlgs = (uint32_t)SeqWrd & 0x000ffff;			// 16 flag bits
-	if(pSrcFileID != NULL)							
+	if(pSrcFileID != nullptr)							
 		*pSrcFileID = ((uint32_t)SeqWrd >> 16) & 0x00ff;	// 8bit file identifier
-	if(pSeqID != NULL)						
+	if(pSeqID != nullptr)						
 		{
 		SeqID = ((uint32_t)SeqWrd << 6) & 0x0c0000000;	// bits 24,25 into bits 30,31 of identifier 
 		*pSeqID = SeqID | *pSeqHdrWrd & 0x3fffffff;		// bits 0..29 into bits 0..29 of identifier
@@ -4805,7 +4805,7 @@ if(pFlgs != NULL || pSrcFileID != NULL || pSeqID != NULL)	// if caller requires 
 else
 	pSeqHdrWrd += 2;
 
-if(pSeqLen != NULL)								
+if(pSeqLen != nullptr)								
 	*pSeqLen = *pSeqHdrWrd &  0x3fffffff;		// 30bit sequence length
 pSeqHdrWrd += 1;
 
@@ -4830,10 +4830,10 @@ CKit4bdna::SetSeqHeader(tSeqWrd4 *pSeqHdrWrd, // pts to where to write the seque
 uint64_t NumSeqWrds;
 uint64_t AvailSeqWrds;
 
-if(pNumSeqWrds != NULL)
+if(pNumSeqWrds != nullptr)
 	*pNumSeqWrds = 0;
-if(pSeqHdrWrd == NULL || SeqID == 0 || SeqLen == 0 || SeqLen > cMaxContigLen || SrcFileID == 0 || SrcFileID > 0xff || Flgs & 0xffff0000)
-	return(NULL);
+if(pSeqHdrWrd == nullptr || SeqID == 0 || SeqLen == 0 || SeqLen > cMaxContigLen || SrcFileID == 0 || SrcFileID > 0xff || Flgs & 0xffff0000)
+	return(nullptr);
 
 if(bSerialise)
 	AcquireSerialiseSeqHdr();
@@ -4846,7 +4846,7 @@ if(bAddingHdr && NumSeqWrds > AvailSeqWrds)
 	{
 	if(bSerialise)
 		ReleaseSerialiseSeqHdr();
-	return(NULL);
+	return(nullptr);
 	}	
 		
 *pSeqHdrWrd++ = Flgs | (SrcFileID << 16) | ((SeqID >> 6) & 0x03000000) | cSeqWrd4MSWHdr;	    // this is the most significant word
@@ -4854,7 +4854,7 @@ if(bAddingHdr && NumSeqWrds > AvailSeqWrds)
 *pSeqHdrWrd++ = (SeqLen & 0x3fffffff)| cSeqWrd4LSWHdr;		// last least significant word, note that bits 5..0 currently unassigned
 NumSeqWrds = 3;
 
-if(pNumSeqWrds != NULL)
+if(pNumSeqWrds != nullptr)
 	*pNumSeqWrds = (int)NumSeqWrds;
 if(bAddingHdr)
 	m_Sequences.Seqs2AssembOfs += NumSeqWrds;
@@ -4867,7 +4867,7 @@ int
 CKit4bdna::PackedRevCpl(tSeqID SeqID) // Will inplace reverse complement the specified sequence
 {
 tSeqWrd4 *pSeq;
-if((pSeq = (tSeqWrd4 *)GetSeqHeader(SeqID,NULL,NULL,NULL,false))==NULL)
+if((pSeq = (tSeqWrd4 *)GetSeqHeader(SeqID,nullptr,nullptr,nullptr,false))==nullptr)
 	return(eBSFerrNoEntries);	
 return(PackedRevCpl(pSeq,false,0));
 }
@@ -4889,19 +4889,19 @@ size_t NumPE2SeqWrds;
 tSeqWrd4 *pSeqPE1;
 tSeqWrd4 *pSeqPE2;
 
-if(m_Sequences.pTmpRevCplSeqs == NULL)
+if(m_Sequences.pTmpRevCplSeqs == nullptr)
 	{
-	if((m_Sequences.pTmpRevCplSeqs = new tSeqWrd4[cMaxOvrlapSeqWrds])==NULL)
+	if((m_Sequences.pTmpRevCplSeqs = new tSeqWrd4[cMaxOvrlapSeqWrds])==nullptr)
 		return(eBSFerrMem);
 	}
 
-if((pSeqPE1 = (tSeqWrd4 *)GetSeqHeader(PE1SeqID,NULL,&PE1Flags,&PE1SeqLen,false))==NULL)
+if((pSeqPE1 = (tSeqWrd4 *)GetSeqHeader(PE1SeqID,nullptr,&PE1Flags,&PE1SeqLen,false))==nullptr)
 	return(eBSFerrNoEntries);	
 	// ensure it is a PE1
 if(!(PE1Flags & cFlgSeqPE) || (PE1Flags & cFlgSeqPE2))	
 	return(eBSFerrNoEntries);
 
-if((pSeqPE2 = (tSeqWrd4 *)GetSeqHeader(PE1SeqID+1,NULL,&PE2Flags,&PE2SeqLen,false))==NULL)
+if((pSeqPE2 = (tSeqWrd4 *)GetSeqHeader(PE1SeqID+1,nullptr,&PE2Flags,&PE2SeqLen,false))==nullptr)
 	return(eBSFerrNoEntries);	
 	// ensure it is a PE2
 if(!(PE2Flags & cFlgSeqPE2))	
@@ -4957,15 +4957,15 @@ tSeqWrd4 *pSeqPE2;
 if(m_Sequences.NumSeqs2Assemb == 0)
 	return(eBSFerrNoEntries);
 
-if(m_Sequences.pTmpRevCplSeqs == NULL)
+if(m_Sequences.pTmpRevCplSeqs == nullptr)
 	{
-	if((m_Sequences.pTmpRevCplSeqs = new tSeqWrd4[cMaxOvrlapSeqWrds])==NULL)
+	if((m_Sequences.pTmpRevCplSeqs = new tSeqWrd4[cMaxOvrlapSeqWrds])==nullptr)
 		return(eBSFerrMem);
 	}
 
 // firstly locate and exchange PE1 and PE2 sequences
-pSeqToRev = NULL;
-while((pSeqToRev = (tSeqWrd4 *)IterSeqHeaders(pSeqToRev,&SeqID,NULL,&PE1Flags,&PE1SeqLen,false)) != NULL)
+pSeqToRev = nullptr;
+while((pSeqToRev = (tSeqWrd4 *)IterSeqHeaders(pSeqToRev,&SeqID,nullptr,&PE1Flags,&PE1SeqLen,false)) != nullptr)
 	{
 	if(!(PE1Flags & cFlgSeqPE))			// skip onto next sequence until a PE
 		continue;
@@ -4973,7 +4973,7 @@ while((pSeqToRev = (tSeqWrd4 *)IterSeqHeaders(pSeqToRev,&SeqID,NULL,&PE1Flags,&P
 	pSeqPE1 = pSeqToRev - 3;			// pt to initial header word
 
 	// have a PE1, advance onto PE2 which is expected to immediately follow the PE1
-	pSeqToRev = (tSeqWrd4 *)IterSeqHeaders(pSeqToRev,&SeqID,NULL,&PE2Flags,&PE2SeqLen,false);
+	pSeqToRev = (tSeqWrd4 *)IterSeqHeaders(pSeqToRev,&SeqID,nullptr,&PE2Flags,&PE2SeqLen,false);
 
 	pSeqPE2 = pSeqToRev - 3;			// pt to initial header word
 
@@ -5013,8 +5013,8 @@ uint32_t Flags;
 tSeqWrd4 *pSeqToRev;
 uint32_t HdrSeqLen;
 
-pSeqToRev = NULL;
-while((pSeqToRev = IterSeqHeaders(pSeqToRev,NULL,NULL,&Flags,&HdrSeqLen,false)) != NULL)
+pSeqToRev = nullptr;
+while((pSeqToRev = IterSeqHeaders(pSeqToRev,nullptr,nullptr,&Flags,&HdrSeqLen,false)) != nullptr)
 	{
 	if(bPE2Only && !(Flags & cFlgSeqPE2))
 		continue;
@@ -5050,7 +5050,7 @@ uint32_t RSeqWrdMsk;
 int LShf;
 int RShf;
 
-if(pSeqToRev == NULL)
+if(pSeqToRev == nullptr)
 	return(-1);
 			
 if(*pSeqToRev & cSeqWrd4MSWHdr)
@@ -5154,7 +5154,7 @@ uint32_t Msk;
 uint32_t Filler;
 uint32_t FillerMsk;
 
-if(pSeqToCpl == NULL)
+if(pSeqToCpl == nullptr)
 	return(-1);
 if(*pSeqToCpl & cSeqWrd4MSWHdr)
 	return(0);
@@ -5215,12 +5215,12 @@ tSeqID SeqID;
 uint32_t SrcFileID;
 uint32_t SeqLen;
 
-if(pNumPEs != NULL)
+if(pNumPEs != nullptr)
 	*pNumPEs = 0;
-if(pNumSEs != NULL)
+if(pNumSEs != nullptr)
 	*pNumSEs = 0;
 
-if(m_Sequences.pSeqs2Assemb == NULL || m_Sequences.Seqs2AssembOfs <= 1)
+if(m_Sequences.pSeqs2Assemb == nullptr || m_Sequences.Seqs2AssembOfs <= 1)
 	return(0);
 
 pSeqWord = (tSeqWrd4 *)m_Sequences.pSeqs2Assemb;
@@ -5383,12 +5383,12 @@ tSeqID SeqID2;
 tSeqID PrevSeqID2;
 tSeqWrd4 *pPrevSeqWrd;
 tSeqWrd4 *pSeqWrd2;
-pPrevSeqWrd = NULL;
+pPrevSeqWrd = nullptr;
 for(SeqID = 1; SeqID <= m_Sequences.NumSeqs2Assemb; SeqID++)
 	{
-	if((pSeqWord = (tSeqWrd4 *)GetSeqHeader(SeqID,&SrcFileID,&Flags,&SeqLen,false))==NULL)
+	if((pSeqWord = (tSeqWrd4 *)GetSeqHeader(SeqID,&SrcFileID,&Flags,&SeqLen,false))==nullptr)
 		{
-		gDiagnostics.DiagOut(eDLInfo,gszProcName,"ValidateSeqs2AssembStarts: GetSeqHeader returned NULL for SeqID %u ...",SeqID);
+		gDiagnostics.DiagOut(eDLInfo,gszProcName,"ValidateSeqs2AssembStarts: GetSeqHeader returned nullptr for SeqID %u ...",SeqID);
 		return(0);
 		}
 	if(pPrevSeqWrd == pSeqWord)
@@ -5402,9 +5402,9 @@ for(SeqID = 1; SeqID <= m_Sequences.NumSeqs2Assemb; SeqID++)
 						&SrcFileID2,				// returned 8 bit source file identifier
 						&Flags2,					// returned 16 bit sequence flags 
 						&SeqLen2,				// returned 30 bit sequence length
-						false))==NULL)			// set true if access to headers are required to be serialised
+						false))==nullptr)			// set true if access to headers are required to be serialised
 		{
-		gDiagnostics.DiagOut(eDLInfo,gszProcName,"ValidateSeqs2AssembStarts: A GetSeqHeader returned NULL for pSeqWord SeqID ...",SeqID);
+		gDiagnostics.DiagOut(eDLInfo,gszProcName,"ValidateSeqs2AssembStarts: A GetSeqHeader returned nullptr for pSeqWord SeqID ...",SeqID);
 		return(0);
 		}
 	if(SeqID != SeqID2)
@@ -5418,9 +5418,9 @@ for(SeqID = 1; SeqID <= m_Sequences.NumSeqs2Assemb; SeqID++)
 	
 	}
 
-if(pNumPEs != NULL)
+if(pNumPEs != nullptr)
 	*pNumPEs = NumPEs;
-if(pNumSEs != NULL)
+if(pNumSEs != nullptr)
 	*pNumSEs = NumSEs;
 return(NumSeqStarts);
 }
@@ -5444,13 +5444,13 @@ uint32_t NumSeqs2Assemb;
 
 int NumSeqWrds;
 
-if(pPartialNumPEs != NULL)
+if(pPartialNumPEs != nullptr)
 	*pPartialNumPEs = 0;
-if(pPartialNumSEs != NULL)
+if(pPartialNumSEs != nullptr)
 	*pPartialNumSEs = 0;
 
 
-if(m_NumPartialSeqs2Assemb == 0 || m_pPartialSeqs2Assemb == NULL)
+if(m_NumPartialSeqs2Assemb == 0 || m_pPartialSeqs2Assemb == nullptr)
 	return(0);
 
 
@@ -5506,9 +5506,9 @@ for(WrdIdx = 1; WrdIdx <= m_PartialSeqs2AssembOfs; WrdIdx++, pSeqWrd++,NumSeqWrd
 	}
 if(SeqID != m_NumPartialSeqs2Assemb || WrdIdx != m_PartialSeqs2AssembOfs || Seqs2AssembLen != m_LenPartialSeqs2Assemb)
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"CalcPartialSeqsStarts: Problem at %d ...",SeqID);
-if(pPartialNumPEs != NULL)
+if(pPartialNumPEs != nullptr)
 	*pPartialNumPEs = NumPEs;
-if(pPartialNumSEs != NULL)
+if(pPartialNumSEs != nullptr)
 	*pPartialNumSEs = NumSEs;
 
 return(SeqID);
@@ -5551,27 +5551,27 @@ int MaxSELen;
 int MaxPE1Len;
 int MaxPE2Len;
 
-if(pNumPEs != NULL)
+if(pNumPEs != nullptr)
 	*pNumPEs = 0;
-if(pPE1min != NULL)
+if(pPE1min != nullptr)
 	*pPE1min = 0;
-if(pPE1mean != NULL)
+if(pPE1mean != nullptr)
 	*pPE1mean = 0;
-if(pPE1max != NULL)
+if(pPE1max != nullptr)
 	*pPE1max = 0;
-if(pPE2min != NULL)
+if(pPE2min != nullptr)
 	*pPE2min = 0;
-if(pPE2mean != NULL)
+if(pPE2mean != nullptr)
 	*pPE2mean = 0;
-if(pPE2max != NULL)
+if(pPE2max != nullptr)
 	*pPE2max = 0;
-if(pNumSEs != NULL)
+if(pNumSEs != nullptr)
 	*pNumSEs = 0;
-if(pSEmin != NULL)
+if(pSEmin != nullptr)
 	*pSEmin = 0;
-if(pSEmean != NULL)
+if(pSEmean != nullptr)
 	*pSEmean = 0;
-if(pSEmax != NULL)
+if(pSEmax != nullptr)
 	*pSEmax = 0;
 
 if(m_Sequences.NumSeqs2Assemb == 0)		// can't generate length stats if nothing to assemble!
@@ -5591,14 +5591,14 @@ MaxPE2Len = 0;
 
 for(SeqID = 1; SeqID <= m_Sequences.NumSeqs2Assemb; SeqID++)
 	{
-	if((pPE1SeqWrd = (tSeqWrd4 *)GetSeqHeader(SeqID,NULL,&PE1Flags,&PE1SeqLen,false))==NULL)
+	if((pPE1SeqWrd = (tSeqWrd4 *)GetSeqHeader(SeqID,nullptr,&PE1Flags,&PE1SeqLen,false))==nullptr)
 		return(eBSFerrObj);
 	if(PE1Flags & cFlgSeqPE)
 		{
 		if(PE1Flags & cFlgSeqPE2)	// shouldn't be the PE2!
 			return(eBSFerrObj);
 		SeqID += 1;
-		if((pPE2SeqWrd = (tSeqWrd4 *)GetSeqHeader(SeqID,NULL,&PE2Flags,&PE2SeqLen,false))==NULL)
+		if((pPE2SeqWrd = (tSeqWrd4 *)GetSeqHeader(SeqID,nullptr,&PE2Flags,&PE2SeqLen,false))==nullptr)
 			return(eBSFerrObj);
 		if(!(PE2Flags & cFlgSeqPE2))	// should be the PE2!
 			return(eBSFerrObj);
@@ -5629,27 +5629,27 @@ for(SeqID = 1; SeqID <= m_Sequences.NumSeqs2Assemb; SeqID++)
 m_Sequences.NumPE2Seqs2Assemb = TotNumPESeqs;
 m_Sequences.NumPE1Seqs2Assemb = m_Sequences.NumSeqs2Assemb - m_Sequences.NumPE2Seqs2Assemb;
 
-if(pNumPEs != NULL)
+if(pNumPEs != nullptr)
 	*pNumPEs = TotNumPESeqs;
-if(pPE1min != NULL)
+if(pPE1min != nullptr)
 	*pPE1min = MinPE1Len;
-if(pPE1mean != NULL && TotNumPESeqs)
+if(pPE1mean != nullptr && TotNumPESeqs)
 	*pPE1mean = (int)(SumPE1SeqLen/TotNumPESeqs);
-if(pPE1max != NULL)
+if(pPE1max != nullptr)
 	*pPE1max = MaxPE1Len;
-if(pPE2min != NULL)
+if(pPE2min != nullptr)
 	*pPE2min = MinPE2Len;
-if(pPE2mean != NULL && TotNumPESeqs)
+if(pPE2mean != nullptr && TotNumPESeqs)
 	*pPE2mean = (int)(SumPE2SeqLen/TotNumPESeqs);
-if(pPE2max != NULL)
+if(pPE2max != nullptr)
 	*pPE2max = MaxPE2Len;
-if(pNumSEs != NULL)
+if(pNumSEs != nullptr)
 	*pNumSEs = TotNumSESeqs;
-if(pSEmin != NULL)
+if(pSEmin != nullptr)
 	*pSEmin = MinSELen;
-if(pSEmean != NULL && TotNumSESeqs)
+if(pSEmean != nullptr && TotNumSESeqs)
 	*pSEmean = (int)(SumSESeqLen/TotNumSESeqs);
-if(pSEmax != NULL)
+if(pSEmax != nullptr)
 	*pSEmax = MaxSELen;
 return(eBSFSuccess);
 }
@@ -5710,7 +5710,7 @@ if((m_hOutFastaSE = open(szFastaFileSE, O_RDWR | O_CREAT |O_TRUNC, S_IREAD | S_I
 	}
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Output SE assembly multifasta file created/truncated: '%s'",szFastaFileSE);
 
-if((pszFastaSE = new char [10*cMaxCmpOverlapBases])==NULL)
+if((pszFastaSE = new char [10*cMaxCmpOverlapBases])==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory");
 	Reset();
@@ -5752,7 +5752,7 @@ if(m_Sequences.bPESeqs && (m_Sequences.NumPE1Seqs2Assemb > 0 && m_Sequences.NumP
 		}
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Output PE2 assembly multifasta file created/truncated: '%s'",szFastaFilePE2);
 
-	if((pszFastaPE1 = new char [10*cMaxCmpOverlapBases])==NULL)
+	if((pszFastaPE1 = new char [10*cMaxCmpOverlapBases])==nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory");
 		delete pszFastaSE;
@@ -5760,7 +5760,7 @@ if(m_Sequences.bPESeqs && (m_Sequences.NumPE1Seqs2Assemb > 0 && m_Sequences.NumP
 		return(eBSFerrMem);
 		}
 
-	if((pszFastaPE2 = new char [10*cMaxCmpOverlapBases])==NULL)
+	if((pszFastaPE2 = new char [10*cMaxCmpOverlapBases])==nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory");
 		delete pszFastaPE1;
@@ -5773,7 +5773,7 @@ if(m_Sequences.bPESeqs && (m_Sequences.NumPE1Seqs2Assemb > 0 && m_Sequences.NumP
 	pszFastaPE2[0] = '\0';
 	}
 
-pCurSeq = NULL;
+pCurSeq = nullptr;
 
 
 
@@ -5807,11 +5807,11 @@ else
 			LineBreakSeqs = 32000;
 	}
 
-while((pCurSeq = IterSeqHeaders(pCurSeq, // iterate to next sequence following (NULL to return 1st sequence)
+while((pCurSeq = IterSeqHeaders(pCurSeq, // iterate to next sequence following (nullptr to return 1st sequence)
 							&SeqID,		// returned sequence identifier
 							&SrcFileID,	// returned 8 bit source file identifier
 							&SeqFlags,		// returned 16 bit sequence flags
-							&SeqLen,false))!=NULL)		// returned 30 bit sequence length
+							&SeqLen,false))!=nullptr)		// returned 30 bit sequence length
 	{
 	if(!(SeqFlags & cFlgSeqPE))	// if not a PE2 sequence then must be a SE
 		{
@@ -5975,7 +5975,7 @@ if(m_Sequences.bPESeqs && (m_Sequences.NumPE1Seqs2Assemb > 0 && m_Sequences.NumP
 		close(m_hOutFastaR1);
 		m_hOutFastaR1 = -1;
 		}
-	delete pszFastaPE1;
+	delete []pszFastaPE1;
 
 	if(m_hOutFastaR2 != -1)
 		{
@@ -5990,7 +5990,7 @@ if(m_Sequences.bPESeqs && (m_Sequences.NumPE1Seqs2Assemb > 0 && m_Sequences.NumP
 		close(m_hOutFastaR2);
 		m_hOutFastaR2 = -1;
 		}
-	delete pszFastaPE2;
+	delete []pszFastaPE2;
 	}
 
 #ifdef _DEBUG
@@ -6034,7 +6034,7 @@ if((m_hOutFastaSE = open(szFastaFileSE, O_RDWR | O_CREAT |O_TRUNC, S_IREAD | S_I
 	}
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Output assembly multifasta file created/truncated: '%s'",szFastaFileSE);
 
-if((pszFastaSE = new char [10*cMaxCmpOverlapBases])==NULL)
+if((pszFastaSE = new char [10*cMaxCmpOverlapBases])==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory");
 	Reset();
@@ -6042,7 +6042,7 @@ if((pszFastaSE = new char [10*cMaxCmpOverlapBases])==NULL)
 	}
 pszFastaSE1 = pszFastaSE;
 
-pCurSeq = NULL;
+pCurSeq = nullptr;
 
 FastaLenSE = 0;
 
@@ -6072,11 +6072,11 @@ else
 			LineBreakSeqs = 32000;
 	}
 LineLenSE = 0;
-while((pCurSeq = IterSeqHeaders(pCurSeq, // iterate to next sequence following (NULL to return 1st sequence)
+while((pCurSeq = IterSeqHeaders(pCurSeq, // iterate to next sequence following (nullptr to return 1st sequence)
 							&SeqID,		// returned sequence identifier
 							&SrcFileID,	// returned 5 bit source file identifier in bits 4..0
 							&SeqFlags,		// returned 16 bit sequence flags in bits 15..0
-							&SeqLen, false))!=NULL)		// returned 30 bit sequence length
+							&SeqLen, false))!=nullptr)		// returned 30 bit sequence length
 	{
 	if((FastaLenSE + 1000) >= 10*cMaxCmpOverlapBases)
 		{
@@ -6227,7 +6227,7 @@ if(m_hOutFastaSE != -1)
 	close(m_hOutFastaSE);
 	m_hOutFastaSE = -1;
 	}
-delete pszFastaSE;
+delete []pszFastaSE;
 
 #ifdef _DEBUG
 #ifdef _WIN32
@@ -6256,7 +6256,7 @@ if(bSerialise)
 
 ReqAllocMem = (10 + m_Sequences.NumSeqs2Assemb) * sizeof(uint64_t);		// 10 as a small safety factor
 
-if(m_Sequences.pSeqStarts != NULL)
+if(m_Sequences.pSeqStarts != nullptr)
 	{
 	if(m_Sequences.AllocMemSeqStarts < (uint64_t)ReqAllocMem || ((m_Sequences.AllocMemSeqStarts * 10)  > ((uint64_t)ReqAllocMem * 12)))	// allow 20% float before reallocating
 		{
@@ -6266,18 +6266,18 @@ if(m_Sequences.pSeqStarts != NULL)
 		if(m_Sequences.pSeqStarts != MAP_FAILED)
 			munmap(m_Sequences.pSeqStarts,m_Sequences.AllocMemSeqStarts);
 #endif	
-		m_Sequences.pSeqStarts = NULL;
+		m_Sequences.pSeqStarts = nullptr;
 		m_Sequences.AllocMemSeqStarts = 0;
 		}
 	}
 
 
-if(m_Sequences.pSeqStarts == NULL || m_Sequences.AllocMemSeqStarts == 0)
+if(m_Sequences.pSeqStarts == nullptr || m_Sequences.AllocMemSeqStarts == 0)
 	{
 	m_Sequences.AllocMemSeqStarts = ReqAllocMem; 
 #ifdef _WIN32
 	m_Sequences.pSeqStarts = (uint64_t *) malloc((size_t)m_Sequences.AllocMemSeqStarts);	
-	if(m_Sequences.pSeqStarts == NULL)
+	if(m_Sequences.pSeqStarts == nullptr)
 		{
 		if(bSerialise)
 			ReleaseSerialise();
@@ -6287,12 +6287,12 @@ if(m_Sequences.pSeqStarts == NULL || m_Sequences.AllocMemSeqStarts == 0)
 		return(eBSFerrMem);
 		}
 #else
-	if((m_Sequences.pSeqStarts = (uint64_t *)mmap(NULL,m_Sequences.AllocMemSeqStarts, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0)) == MAP_FAILED)
+	if((m_Sequences.pSeqStarts = (uint64_t *)mmap(nullptr,m_Sequences.AllocMemSeqStarts, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0)) == MAP_FAILED)
 		{
 		if(bSerialise)
 			ReleaseSerialise();
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenSeqStarts: Sequence start offsets array memory allocation of %zu bytes through mmap()  failed - %s",m_Sequences.AllocMemSeqStarts,strerror(errno));
-		m_Sequences.pSeqStarts = NULL;
+		m_Sequences.pSeqStarts = nullptr;
 		m_Sequences.AllocMemSeqStarts = 0;
 		Reset(false);
 		return(eBSFerrMem);
@@ -6313,7 +6313,7 @@ if(bGenFlags)
 	{
 	ReqAllocMem = (10 + m_Sequences.NumSeqs2Assemb) * sizeof(uint16_t);		// 10 as a small safety factor
 
-	if(m_Sequences.pSeqFlags != NULL)
+	if(m_Sequences.pSeqFlags != nullptr)
 		{
 		if(m_Sequences.AllocMemSeqFlags < (uint64_t)ReqAllocMem || ((m_Sequences.AllocMemSeqFlags * 10)  > ((uint64_t)ReqAllocMem * 12)))	// allow 20% float before reallocating
 			{
@@ -6323,17 +6323,17 @@ if(bGenFlags)
 			if(m_Sequences.pSeqFlags != MAP_FAILED)
 				munmap(m_Sequences.pSeqFlags,m_Sequences.AllocMemSeqFlags);
 #endif	
-			m_Sequences.pSeqFlags = NULL;
+			m_Sequences.pSeqFlags = nullptr;
 			m_Sequences.AllocMemSeqFlags = 0;
 			}
 		}
 
-	if(m_Sequences.pSeqFlags == NULL || m_Sequences.AllocMemSeqFlags == 0)
+	if(m_Sequences.pSeqFlags == nullptr || m_Sequences.AllocMemSeqFlags == 0)
 		{
 		m_Sequences.AllocMemSeqFlags = ReqAllocMem; 
 #ifdef _WIN32
 		m_Sequences.pSeqFlags = (uint16_t *) malloc((size_t)m_Sequences.AllocMemSeqFlags);	
-		if(m_Sequences.pSeqFlags == NULL)
+		if(m_Sequences.pSeqFlags == nullptr)
 			{
 			if(bSerialise)
 				ReleaseSerialise();
@@ -6343,12 +6343,12 @@ if(bGenFlags)
 			return(eBSFerrMem);
 			}
 #else
-	if((m_Sequences.pSeqFlags = (uint16_t *)mmap(NULL,m_Sequences.AllocMemSeqFlags, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0)) == MAP_FAILED)
+	if((m_Sequences.pSeqFlags = (uint16_t *)mmap(nullptr,m_Sequences.AllocMemSeqFlags, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0)) == MAP_FAILED)
 			{
 			if(bSerialise)
 				ReleaseSerialise();
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenSeqStarts: Sequence flags memory allocation of %zu bytes through mmap()  failed - %s",m_Sequences.AllocMemSeqFlags,strerror(errno));
-			m_Sequences.pSeqFlags = NULL;
+			m_Sequences.pSeqFlags = nullptr;
 			m_Sequences.AllocMemSeqFlags = 0;
 			Reset(false);
 			return(eBSFerrMem);
@@ -6379,8 +6379,8 @@ SeqWrdIdx = 1;
 for(SeqID = 1; SeqID <= m_Sequences.NumSeqs2Assemb; SeqID++,pSeqStarts++)
 	{
 	GetSeqHeader(pSeqWrd,			// pts to a SeqWrd within the sequence
-			NULL,				// returned 32 bit sequence identifier
-			NULL,				// returned source file identifier
+			nullptr,				// returned 32 bit sequence identifier
+			nullptr,				// returned source file identifier
 			&SeqFlags,				// returned 16 bit sequence flags
 			&CurSeqLen,			// returned 30 bit sequence length
 			bSerialise);				// need to serialise ?
@@ -6497,7 +6497,7 @@ if(MaxSuffixEls > cMaxSfxBlkEls ||			// but if number of sfx elements > ~4G
 uint64_t ReqAllocMem;
 ReqAllocMem = (MaxSuffixEls * (uint64_t)ElSize);
 
-if(m_Sequences.pSuffixArray != NULL && (m_Sequences.AllocMemSfx < ReqAllocMem || ((m_Sequences.AllocMemSfx * 10 ) > (ReqAllocMem * 12))))
+if(m_Sequences.pSuffixArray != nullptr && (m_Sequences.AllocMemSfx < ReqAllocMem || ((m_Sequences.AllocMemSfx * 10 ) > (ReqAllocMem * 12))))
 	{
 #ifdef _WIN32
 	free(m_Sequences.pSuffixArray);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -6505,16 +6505,16 @@ if(m_Sequences.pSuffixArray != NULL && (m_Sequences.AllocMemSfx < ReqAllocMem ||
 	if(m_Sequences.pSuffixArray != MAP_FAILED)
 		munmap(m_Sequences.pSuffixArray,m_Sequences.AllocMemSfx);
 #endif	
-	m_Sequences.pSuffixArray = NULL;
+	m_Sequences.pSuffixArray = nullptr;
 	m_Sequences.AllocMemSfx = 0;
 	}
 
-if(m_Sequences.pSuffixArray == NULL || m_Sequences.AllocMemSfx == 0)
+if(m_Sequences.pSuffixArray == nullptr || m_Sequences.AllocMemSfx == 0)
 	{
 	m_Sequences.AllocMemSfx = ReqAllocMem; 
 #ifdef _WIN32
 	m_Sequences.pSuffixArray = (void *) malloc((size_t)m_Sequences.AllocMemSfx);	
-	if(m_Sequences.pSuffixArray == NULL)
+	if(m_Sequences.pSuffixArray == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenRdsSfx: Suffix array memory allocation of %zu bytes - %s",m_Sequences.AllocMemSfx,strerror(errno));
 		m_Sequences.AllocMemSfx = 0;
@@ -6522,10 +6522,10 @@ if(m_Sequences.pSuffixArray == NULL || m_Sequences.AllocMemSfx == 0)
 		return(eBSFerrMem);
 		}
 #else
-	if((m_Sequences.pSuffixArray = (void *)mmap(NULL,m_Sequences.AllocMemSfx, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0)) == MAP_FAILED)
+	if((m_Sequences.pSuffixArray = (void *)mmap(nullptr,m_Sequences.AllocMemSfx, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0)) == MAP_FAILED)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenRdsSfx: Suffix array memory allocation of %zu bytes through mmap()  failed - %s",m_Sequences.AllocMemSfx,strerror(errno));
-		m_Sequences.pSuffixArray = NULL;
+		m_Sequences.pSuffixArray = nullptr;
 		m_Sequences.AllocMemSfx = 0;
 		Reset(false);
 		return(eBSFerrMem);
@@ -6792,7 +6792,7 @@ int Idx;
 if(SeqID < 1 || SeqID > m_Sequences.NumSeqs2Assemb)
 	return(-1);
 
-if((pStartSeqWrd = GetSeqHeader(SeqID,NULL,NULL,&SeqLen))==NULL)
+if((pStartSeqWrd = GetSeqHeader(SeqID,nullptr,nullptr,&SeqLen))==nullptr)
 	return(-1);
 
 if(MaxSeqLen == 0)
@@ -6821,7 +6821,7 @@ return(RetLen);
 
 // IterSeqHeaders
 // Iterates to next sequence immediately following the current sequence
-// If current sequence (pCurSeq) is NULL then returns the first sequence
+// If current sequence (pCurSeq) is nullptr then returns the first sequence
 tSeqWrd4 *								// returned ptr to 1st word of actual packed sequence (use this as pCurSeq on next invocation)
 CKit4bdna::IterSeqHeaders(tSeqWrd4 *pCurSeq, // iterate to next sequence following this
 			tSeqID *pSeqID,			// returned sequence identifier
@@ -6832,27 +6832,27 @@ CKit4bdna::IterSeqHeaders(tSeqWrd4 *pCurSeq, // iterate to next sequence followi
 {
 bool bNoHdr;
 if(m_Sequences.NumSeqs2Assemb == 0)
-	return(NULL);
+	return(nullptr);
 
-if(pSeqID == NULL && pSrcFileID == NULL && pFlgs == NULL && pSeqLen == NULL)
+if(pSeqID == nullptr && pSrcFileID == nullptr && pFlgs == nullptr && pSeqLen == nullptr)
 	bNoHdr = true;
 else
 	bNoHdr = false;
 
 tSeqWrd4 *pSeqHdrWrd;
 tSeqWrd4 SeqWrd;
-if(pCurSeq == NULL)
+if(pCurSeq == nullptr)
 	pSeqHdrWrd = (tSeqWrd4 *)m_Sequences.pSeqs2Assemb;
 else
 	pSeqHdrWrd = (tSeqWrd4 *)pCurSeq;
 if(*pSeqHdrWrd == cSeqWrd4EOS || pSeqHdrWrd[1] == cSeqWrd4EOS)		// ensure not trying to get header for EOS
-	return(NULL);
+	return(nullptr);
 pSeqHdrWrd += 1;
 while(((SeqWrd = *pSeqHdrWrd) & cSeqWrd4LSWHdr) != cSeqWrd4MSWHdr)	// advance until the most significant header word or EOS
 	{
 	pSeqHdrWrd += 1;
 	if(*pSeqHdrWrd == cSeqWrd4EOS)			// ensure not trying to get header for EOS
-		return(NULL);
+		return(nullptr);
 	}
 if(bNoHdr)
 	{
@@ -6876,8 +6876,8 @@ CKit4bdna::GetSeqHeader(tSeqID SeqID,	// 32 bit sequence identifier
 tSeqWrd4 *pSeqStart;
 uint64_t *pSeqStarts;
 
-if(SeqID < 1 || SeqID > (tSeqID)m_Sequences.NumSeqs2Assemb || m_Sequences.pSeqStarts == NULL || m_Sequences.NumSeqStarts < SeqID)
-	return(NULL);
+if(SeqID < 1 || SeqID > (tSeqID)m_Sequences.NumSeqs2Assemb || m_Sequences.pSeqStarts == nullptr || m_Sequences.NumSeqStarts < SeqID)
+	return(nullptr);
 pSeqStarts = &m_Sequences.pSeqStarts[SeqID-1];
 
 tSeqWrd4 *pSeqWrd;
@@ -6885,7 +6885,7 @@ pSeqWrd = (tSeqWrd4 *)m_Sequences.pSeqs2Assemb;
 pSeqStart = &pSeqWrd[*pSeqStarts];
 
 pSeqStart =	GetSeqHeader(pSeqStart,		// pts to a SeqWrd within the sequence
-				NULL,					
+				nullptr,					
 				pSrcFileID,				// returned 8bit source file identifier
 				pFlgs,					// returned 16bit sequence flags 
 				pSeqLen,				// returned 30bit sequence length
@@ -6899,9 +6899,9 @@ CKit4bdna::GetSeqLen(tSeqID SeqID) // sequence identifier
 {
 uint32_t SeqLen;
 if(GetSeqHeader(SeqID,			        // 32 bit sequence identifier
-			NULL,					// not interested in source file identifier
-			NULL,					// not interested in sequence flags
-			&SeqLen)==NULL)			// returned 30 bit sequence length
+			nullptr,					// not interested in source file identifier
+			nullptr,					// not interested in sequence flags
+			&SeqLen)==nullptr)			// returned 30 bit sequence length
 	return(-1);
 return(SeqLen);
 }
@@ -7096,7 +7096,7 @@ CKit4bdna::GetPackedSeqID(tSeqWrd4 *pSeqWrd)			// ptr into sequence for which se
 {
 tSeqID SeqID;
 
-if(GetSeqHeader(pSeqWrd,&SeqID)==NULL)
+if(GetSeqHeader(pSeqWrd,&SeqID)==nullptr)
 	SeqID = 0;
 return(SeqID);
 }
@@ -7118,7 +7118,7 @@ CKit4bdna::GetPackedSeq3BaseLen(tSeqWrd4 *pSeqWrd) // returns number of bases 3'
 {
 int Len;
 tSeqWrd4 SeqWrd;
-if(pSeqWrd == NULL)
+if(pSeqWrd == nullptr)
 	return(-1);
 if(*pSeqWrd & cSeqWrd4MSWHdr)
 	return(0);
@@ -7206,9 +7206,9 @@ tSeqWrd4 SrcSeqWrd;
 tSeqWrd4 Msk;
 tSeqWrd4 Flg;
 
-if(!bNoEOSTerm && pDstPackedSeq != NULL)		
+if(!bNoEOSTerm && pDstPackedSeq != nullptr)		
 	*pDstPackedSeq = cSeqWrd4EOS; 
-if(SubOfs < 0 || SubLen < 0 || pSrcPackedSeq == NULL || pDstPackedSeq == NULL)
+if(SubOfs < 0 || SubLen < 0 || pSrcPackedSeq == nullptr || pDstPackedSeq == nullptr)
 	return(-1);
 
 // determine source packed sequence length
@@ -7273,7 +7273,7 @@ tSeqWrd4 Msk;
 tSeqWrd4 Flg;
 
 
-if(SubOfs < 0 || SubLen < 1 || pSrcPackedSeq == NULL || pDstPackedSeq == NULL)
+if(SubOfs < 0 || SubLen < 1 || pSrcPackedSeq == nullptr || pDstPackedSeq == nullptr)
 	return(-1);
 if(!bNoEOSTerm && pDstPackedSeq != pSrcPackedSeq)		
 	*pDstPackedSeq = cSeqWrd4EOS; 
@@ -7335,7 +7335,7 @@ tSeqWrd4 Flg;
 
 tSeqWrd4 *pSrcPackedSeq;
 
-if(Trim5 + Trim3 >= SeqLen || pSeq == NULL)
+if(Trim5 + Trim3 >= SeqLen || pSeq == nullptr)
 	return(-1);
 SubLen = SeqLen - (Trim5 + Trim3);
 Rslt = SubLen;
@@ -7384,7 +7384,7 @@ CKit4bdna::CmpPackedSeqs(tSeqWrd4 *pProbeSeq,	// Seq1 (probe) packed sequence
 {
 int NumSeq1Bases;
 int NumSeq2Bases;
-if(!MaxCmpLen || pProbeSeq == NULL || pTargSeq == NULL)
+if(!MaxCmpLen || pProbeSeq == nullptr || pTargSeq == nullptr)
 	return(0);
 
 tSeqWrd4 BaseMsk;
@@ -7487,7 +7487,7 @@ CKit4bdna::ShfLeftPackedSeq(int CurLen,		// Seq1 currently contains this many ba
 							tSeqWrd4 *pSeq)		// Seq1 (probe) packed sequence to shift left
 {
 int Shfs;
-if(pSeq == NULL || CurLen <= 1)			// need at least 2 bases to shift left and still return 1 base!
+if(pSeq == nullptr || CurLen <= 1)			// need at least 2 bases to shift left and still return 1 base!
 	return(0);
 
 Shfs = CurLen;
@@ -7594,7 +7594,7 @@ int NumSeq1Bases;
 int NumSeq2Bases;
 int MaxPartialCmpBases;
 int OverlapLen;
-if(pSeqA == NULL || pSeqB == NULL)
+if(pSeqA == nullptr || pSeqB == nullptr)
 	return(0);
 
 OverlapLen = 0;
@@ -7704,10 +7704,10 @@ int NumBasesChkd;
 if(ReqMatchLen < 16 || (Seq1Ofs + ReqMatchLen) > Seq1Len || (Seq2Ofs + ReqMatchLen) > Seq2Len || 
    MaxSubsPerK < 0 || MaxSubsPerK > 50 ||
    MaxEnd12Subs < 0 || MaxEnd12Subs > 6 || 
-   pSeq1 == NULL || pSeq2 == NULL)	
+   pSeq1 == nullptr || pSeq2 == nullptr)	
 	return(0);
 
-if(pNumSubs != NULL)
+if(pNumSubs != nullptr)
 	*pNumSubs = 0;
 
 Max3End12Subs = MaxEnd12Subs;
@@ -7780,7 +7780,7 @@ for(NumBasesChkd = 0; NumBasesChkd < ReqMatchLen; NumBasesChkd+=1, Seq1Ofs+=1, S
 	else
 		CurSeq2Wrd <<= 2;
 	}
-if(pNumSubs != NULL && NumBasesChkd == ReqMatchLen)
+if(pNumSubs != nullptr && NumBasesChkd == ReqMatchLen)
 	*pNumSubs = NumMMs + Num5MMs + Num3MMs;
 return(NumBasesChkd == ReqMatchLen);
 }
@@ -7833,11 +7833,11 @@ int CurMaxKbpNumSubs;
 if(MinOverlap < 16 || MinOverlap > SeqALen || MinOverlap > SeqBLen || 
    MaxSubsPerK < 0 || MaxSubsPerK > 50 ||
    MaxEnd12Subs < 0 || MaxEnd12Subs > 6 || 
-   pSeqALeft == NULL || pSeqA == NULL || pSeqB == NULL)	
+   pSeqALeft == nullptr || pSeqA == nullptr || pSeqB == nullptr)	
 	return(0);
 
 *pSeqALeft = 0;
-if(pNumSubs != NULL)
+if(pNumSubs != nullptr)
 	*pNumSubs = 0;
 
 Max3End12Subs = MaxEnd12Subs;
@@ -7953,7 +7953,7 @@ for(FirstSeqAOfs = 0; FirstSeqAOfs <= (SeqALen - MinOverlap); FirstSeqAOfs++)
 if(bNoSeqBOvrlapA || ((ABMaxOverlapLen == min(SeqALen,SeqBLen)) && ABNumSubs <= 2)) // if just a few subs then accept even if may not be optimal
 	{
 	*pSeqALeft = SeqALeft;
-	if(pNumSubs != NULL)
+	if(pNumSubs != nullptr)
 		*pNumSubs = ABNumSubs;
 
 // double check!!!!!
@@ -8064,7 +8064,7 @@ for(FirstSeqAOfs = 0; FirstSeqAOfs <= (SeqALen - MinOverlap); FirstSeqAOfs++)
 if(!(ABMaxOverlapLen +  BAMaxOverlapLen))
 	{
 	*pSeqALeft = 0;
-	if(pNumSubs != NULL)
+	if(pNumSubs != nullptr)
 		*pNumSubs = 0;
 	return(0);
 	}
@@ -8072,13 +8072,13 @@ if(ABMaxOverlapLen > BAMaxOverlapLen ||
 	(ABMaxOverlapLen == BAMaxOverlapLen && 	ABNumSubs <= BANumSubs))
 	{
 	*pSeqALeft = SeqALeft;
-	if(pNumSubs != NULL)
+	if(pNumSubs != nullptr)
 		*pNumSubs = ABNumSubs;
 	return(ABMaxOverlapLen);
 	}
 
 *pSeqALeft = -1 * SeqBLeft;
-if(pNumSubs != NULL)
+if(pNumSubs != nullptr)
 	*pNumSubs = BANumSubs;
 return(BAMaxOverlapLen);
 }
@@ -8088,7 +8088,7 @@ tSeqID					// returned sequence identifer
 CKit4bdna::SfxIdx2SeqID(uint64_t SfxWrdIdx) // index + 1
 {
 tSeqWrd4 *pTarg;
-if((pTarg = SfxIdxToFirstSeqWrd(SfxWrdIdx))==NULL)
+if((pTarg = SfxIdxToFirstSeqWrd(SfxWrdIdx))==nullptr)
 	return(0);
 return(GetPackedSeqID(pTarg));
 }
@@ -8103,7 +8103,7 @@ uint64_t TargIdx;
 uint64_t TargEl;
 uint8_t *pSfxEls;
 if(SfxWrdIdx == 0 || SfxWrdIdx > (uint64_t)m_Sequences.NumSuffixEls)
-	return(NULL);
+	return(nullptr);
 
 TargEl = (SfxWrdIdx - 1) * m_Sequences.SfxElSize;
 pSfxEls = (uint8_t *)m_Sequences.pSuffixArray;
@@ -8122,7 +8122,7 @@ while(!(pTarg4[-1] & cSeqWrd4MSWHdr))
 	pTarg4 -= 1;
 	RelWrdOfs += 1;
 	}
-if(pWrdOfs != NULL)
+if(pWrdOfs != nullptr)
 	*pWrdOfs = RelWrdOfs;
 return(pTarg4);
 }
@@ -8135,7 +8135,7 @@ CKit4bdna::GetSeqFlags(tSeqID StartSeqID,				// starting from this sequence iden
 			bool bSerialise)							// set true if access to flags are required to be serialised
 {
 tSeqID CurSeqID;
-if(StartSeqID > EndSeqID || pMultiSeqFlags == NULL)
+if(StartSeqID > EndSeqID || pMultiSeqFlags == nullptr)
 	return(0);
 if(bSerialise)
 	AcquireSerialiseSeqFlags();
@@ -8305,12 +8305,12 @@ uint32_t Flags;
 tSeqWrd4 *pSeqHdr;
 
 Rslt = 0;
-pSeqHdr = NULL;
+pSeqHdr = nullptr;
 
 SetFlags   &= 0x0000ffff;
 ResetFlags &= 0x0000ffff;
 
-while((pSeqHdr = IterSeqHeaders(pSeqHdr,&SeqID,NULL,&Flags,NULL,bSerialise))!=NULL)
+while((pSeqHdr = IterSeqHeaders(pSeqHdr,&SeqID,nullptr,&Flags,nullptr,bSerialise))!=nullptr)
 	{
 	if((Flags & ResetFlags) || ((Flags & SetFlags) != SetFlags))
 		if((Rslt = UpdateSeqHeaderFlags(pSeqHdr,SetFlags,ResetFlags,bSerialise)) < 0)
@@ -8368,7 +8368,7 @@ int
 CKit4bdna::RemoveMarkedSeqs(uint32_t RemovalFlags,		// if any of these flags set then remove this sequence
 								uint32_t AllRequiredFlags,    // if containing any flags then remove this sequence unless all of these flags are set
 								uint32_t AllOptionalFlags,    // if containing any flags then remove this sequence unless at least one of these flags is set
-								bool bUpdateHdrFlags)		// if true, and if pSeqFlags != NULL, then replace sequence header flags with those from pSeqFlags
+								bool bUpdateHdrFlags)		// if true, and if pSeqFlags != nullptr, then replace sequence header flags with those from pSeqFlags
 {
 bool bRemove;
 uint32_t NumRemoved;
@@ -8385,10 +8385,10 @@ uint64_t Seqs2AssembOfs;
 uint32_t MinSeqLen;					// minimum sequence length
 uint32_t MaxSeqLen;					// maximum sequence length
 
-if(m_Sequences.pSeqs2Assemb == NULL || m_Sequences.AllocMemSeqs2Assemb == 0 || m_Sequences.NumSeqs2Assemb == 0)
+if(m_Sequences.pSeqs2Assemb == nullptr || m_Sequences.AllocMemSeqs2Assemb == 0 || m_Sequences.NumSeqs2Assemb == 0)
 	{
-	if(m_Sequences.pSeqs2Assemb == NULL)
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"RemoveMarkedSeqs, pSeqs2Assemb is NULL");
+	if(m_Sequences.pSeqs2Assemb == nullptr)
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"RemoveMarkedSeqs, pSeqs2Assemb is nullptr");
 	if(m_Sequences.AllocMemSeqs2Assemb == 0)
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"RemoveMarkedSeqs, AllocMemSeqs2Assemb is 0");
 	if(m_Sequences.NumSeqs2Assemb == 0)
@@ -8415,7 +8415,7 @@ NewSeqID = 0;
 
 tSeqWrd4 SeqWrd;
 tSeqWrd4 *pSeqWrd = (tSeqWrd4 *)m_Sequences.pSeqs2Assemb;
-tSeqWrd4 *pCopyTo = NULL;
+tSeqWrd4 *pCopyTo = nullptr;
 pSeqWrd += 1;			// skip the BOS marker word
 while((SeqWrd = *pSeqWrd++) != cSeqWrd4EOS)
 	{
@@ -8445,7 +8445,7 @@ while((SeqWrd = *pSeqWrd++) != cSeqWrd4EOS)
 				int NumSeqWrds;
 
 				pSeqWrd -= 1;
-				if(pCopyTo == NULL)
+				if(pCopyTo == nullptr)
 					pCopyTo = pSeqWrd;
 				TrimTo = ((SeqLen * (CurFlags & cFlgOvlLenMsk) >> 9)) / 100;
 				TrimBy = SeqLen - TrimTo;
@@ -8459,7 +8459,7 @@ while((SeqWrd = *pSeqWrd++) != cSeqWrd4EOS)
 				NumSeqs2Assemb += 1;
 				NewSeqID += 1;				
 
-				SetSeqHeader(pSeqWrd,NewSeqID,SrcFileID,CurFlags | cFlg5Prime | cFlg3Prime,TrimTo,NULL,false,false);
+				SetSeqHeader(pSeqWrd,NewSeqID,SrcFileID,CurFlags | cFlg5Prime | cFlg3Prime,TrimTo,nullptr,false,false);
 				if(CurFlags & cFlg5Prime)		// overlap was on the 5' end of sequence so will trim back the 3' end
 					NHSeqTrim(0,TrimBy,SeqLen,&pSeqWrd[3],true);
 				else                            // overlap was on the 3' end of sequence so will trim back the 5' end
@@ -8479,7 +8479,7 @@ while((SeqWrd = *pSeqWrd++) != cSeqWrd4EOS)
 
 		if(bRemove)
 			{
-			if(pCopyTo == NULL)
+			if(pCopyTo == nullptr)
 				pCopyTo = pSeqWrd - 1;
 			}
 		else
@@ -8492,9 +8492,9 @@ while((SeqWrd = *pSeqWrd++) != cSeqWrd4EOS)
 					MaxSeqLen = SeqLen;
 
 			NewSeqID += 1;				// if copying over top of deleted sequences then give it a new sequence identifier
-			if(pCopyTo != NULL)
+			if(pCopyTo != nullptr)
 				{
-				SetSeqHeader(pSeqWrd-1,NewSeqID,SrcFileID,CurFlags,SeqLen,NULL,false,false);
+				SetSeqHeader(pSeqWrd-1,NewSeqID,SrcFileID,CurFlags,SeqLen,nullptr,false,false);
 				SeqWrd = pSeqWrd[-1];
 				}	
 			}
@@ -8503,11 +8503,11 @@ while((SeqWrd = *pSeqWrd++) != cSeqWrd4EOS)
 	if(!bRemove)
 		{
 		Seqs2AssembOfs += 1;
-		if(pCopyTo != NULL)
+		if(pCopyTo != nullptr)
 			*pCopyTo++ = SeqWrd;
 		}
 	}
-if(pCopyTo != NULL)
+if(pCopyTo != nullptr)
 	*pCopyTo = cSeqWrd4EOS;
 
 
@@ -8695,15 +8695,15 @@ ReleaseSerialiseSeqFlags();
 
 int PE1MergeLen;
 int PE2MergeLen;
-if(pTmpSeqWrd != NULL)
+if(pTmpSeqWrd != nullptr)
 	*pTmpSeqWrd = 0;
 PE1MergeLen = SeqMerge(PE1RelOverlap,PE1SrcSeqLen,pPE1SrcSeqWrd,DstSeqLen,pDstSeqWrd,pTmpSeqWrd,(char *)"Called from AtomicSeqMerge F");
-if(pTmpSeqWrd != NULL)
+if(pTmpSeqWrd != nullptr)
 	*pTmpSeqWrd = 1;
 if(PE1RelOverlap < 0)
 	PE2RelOverlap += abs(PE1RelOverlap);
 PE2MergeLen = SeqMerge(PE2RelOverlap,PE2SrcSeqLen,pPE2SrcSeqWrd,PE1MergeLen,pDstSeqWrd,pTmpSeqWrd,(char *)"Called from AtomicSeqMerge G");
-if(pTmpSeqWrd != NULL)
+if(pTmpSeqWrd != nullptr)
 	*pTmpSeqWrd = 2;
 
 
@@ -8749,15 +8749,15 @@ CKit4bdna::SeqMergePE12ToSE(int PE1RelOverlap,			// if >= 0 then PE1 sequence st
 int PE1MergeLen;
 int PE2MergeLen;
 
-if(pTmpSeqWrd != NULL)
+if(pTmpSeqWrd != nullptr)
 	*pTmpSeqWrd = 0;
 PE1MergeLen = SeqMerge(PE1RelOverlap,PE1SrcSeqLen,pPE1SrcSeqWrd,DstSeqLen,pDstSeqWrd,pTmpSeqWrd,(char *)"SeqMergePE12ToSE A");
-if(pTmpSeqWrd != NULL)
+if(pTmpSeqWrd != nullptr)
 	*pTmpSeqWrd = 1;
 if(PE1RelOverlap < 0)
 	PE2RelOverlap += abs(PE1RelOverlap);
 PE2MergeLen = SeqMerge(PE2RelOverlap,PE2SrcSeqLen,pPE2SrcSeqWrd,PE1MergeLen,pDstSeqWrd,pTmpSeqWrd,(char *)"SeqMergePE12ToSE B");
-if(pTmpSeqWrd != NULL)
+if(pTmpSeqWrd != nullptr)
 	*pTmpSeqWrd = 2;
 return(PE2MergeLen);
 }
@@ -8817,7 +8817,7 @@ if(RelOverlap < 0)	// if source is overlaying dest and dest will be extending th
 	ExtdDstBy = abs(RelOverlap) + DstSeqLen - SrcSeqLen; // will be extending by this number of bases (1..N)
 	if(ExtdDstBy < 1 || ExtdDstBy > DstSeqLen)
 		{
-		gDiagnostics.DiagOut(eDLWarn,gszProcName,"SeqMerge (called from %s) Op1: ExtdDstBy %d, RelOverlap %d, DstSeqLen %d SrcSeqLen %d",pszDiagText == NULL ? "Not Specified" : pszDiagText,ExtdDstBy,RelOverlap,DstSeqLen,SrcSeqLen);
+		gDiagnostics.DiagOut(eDLWarn,gszProcName,"SeqMerge (called from %s) Op1: ExtdDstBy %d, RelOverlap %d, DstSeqLen %d SrcSeqLen %d",pszDiagText == nullptr ? "Not Specified" : pszDiagText,ExtdDstBy,RelOverlap,DstSeqLen,SrcSeqLen);
 		}
 	SrcOfs = DstSeqLen - ExtdDstBy;					// first base to copy comes from this base offset in SrcWrdBases
 	SrcLen = DstSeqLen;
@@ -8829,7 +8829,7 @@ else    // else dest is overlaying source and source will be extending the origi
 	ExtdDstBy = RelOverlap + SrcSeqLen - DstSeqLen;		// will be extending by this number of bases (1..N)
 	if(ExtdDstBy < 1 || ExtdDstBy > SrcSeqLen)
 		{
-		gDiagnostics.DiagOut(eDLWarn,gszProcName,"SeqMerge (called from %s) Op2: ExtdDstBy %d, RelOverlap %d, DstSeqLen %d SrcSeqLen %d",pszDiagText == NULL ? "Not Specified" : pszDiagText,ExtdDstBy,RelOverlap,DstSeqLen,SrcSeqLen);
+		gDiagnostics.DiagOut(eDLWarn,gszProcName,"SeqMerge (called from %s) Op2: ExtdDstBy %d, RelOverlap %d, DstSeqLen %d SrcSeqLen %d",pszDiagText == nullptr ? "Not Specified" : pszDiagText,ExtdDstBy,RelOverlap,DstSeqLen,SrcSeqLen);
 		}
 
 	SrcOfs = SrcSeqLen - ExtdDstBy;						// first base to copy comes from this base offset in SrcWrdBases
@@ -8918,16 +8918,16 @@ else
 AcquireSerialiseSeqHdr();
 
 // initial or realloc as may be required to hold these partial sequences
-if(m_pPartialSeqs2Assemb == NULL || (sizeof(tSeqWrd4) * (m_PartialSeqs2AssembOfs + PE1NumSeqWrds + PE2NumSeqWrds + 10)) > m_AllocdPartialSeqs2Assemb)
+if(m_pPartialSeqs2Assemb == nullptr || (sizeof(tSeqWrd4) * (m_PartialSeqs2AssembOfs + PE1NumSeqWrds + PE2NumSeqWrds + 10)) > m_AllocdPartialSeqs2Assemb)
 	{
-	if(m_AllocdPartialSeqs2Assemb == 0 || m_pPartialSeqs2Assemb == NULL)		// initial allocation required?
+	if(m_AllocdPartialSeqs2Assemb == 0 || m_pPartialSeqs2Assemb == nullptr)		// initial allocation required?
 		{
 		// assume will require 1/3 of unmerged reads - will realloc later if more memory is required
 		m_AllocdPartialSeqs2Assemb = max(m_Sequences.AllocMemSeqs2Assemb/3,sizeof(tSeqWrd4) * 1000000);	
 
 #ifdef _WIN32
 		m_pPartialSeqs2Assemb = malloc((size_t)m_AllocdPartialSeqs2Assemb);	
-		if(m_pPartialSeqs2Assemb == NULL)
+		if(m_pPartialSeqs2Assemb == nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"SavePartialSeqs: Concatenated packed sequences memory allocation of %zu bytes - %s",m_AllocdPartialSeqs2Assemb,strerror(errno));
 			m_AllocdPartialSeqs2Assemb = 0;
@@ -8936,10 +8936,10 @@ if(m_pPartialSeqs2Assemb == NULL || (sizeof(tSeqWrd4) * (m_PartialSeqs2AssembOfs
 			return((int64_t)eBSFerrMem);
 			}
 #else
-		if((m_pPartialSeqs2Assemb = (void *)mmap(NULL,m_AllocdPartialSeqs2Assemb, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0)) == MAP_FAILED)
+		if((m_pPartialSeqs2Assemb = (void *)mmap(nullptr,m_AllocdPartialSeqs2Assemb, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0)) == MAP_FAILED)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"SavePartialSeqs: Concatenated packed sequences memory of %zu bytes through mmap()  failed - %s",m_AllocdPartialSeqs2Assemb,strerror(errno));
-			m_pPartialSeqs2Assemb = NULL;
+			m_pPartialSeqs2Assemb = nullptr;
 			m_AllocdPartialSeqs2Assemb = 0;
 			ReleaseSerialiseSeqHdr();
 			Reset(false);
@@ -8963,9 +8963,9 @@ if(m_pPartialSeqs2Assemb == NULL || (sizeof(tSeqWrd4) * (m_PartialSeqs2AssembOfs
 #else
 		pAllocd = mremap(m_pPartialSeqs2Assemb,m_AllocdPartialSeqs2Assemb,memreq,MREMAP_MAYMOVE);
 		if(pAllocd == MAP_FAILED)
-			pAllocd = NULL;
+			pAllocd = nullptr;
 #endif
-		if(pAllocd == NULL)
+		if(pAllocd == nullptr)
 			{
 			ReleaseSerialiseSeqHdr();
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"SavePartialSeqs: Memory re-allocation to %d bytes - %s",memreq,strerror(errno));
@@ -9062,7 +9062,7 @@ if(m_Sequences.bPESeqs)
 		}
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Output PE2 preprocessed multifasta file created/truncated: '%s'",szFastaFilePE2);
 	}
-pCurSeq = NULL;
+pCurSeq = nullptr;
 pszFastaR1 = szFastaR1;
 pszFastaR2 = szFastaR2;
 szFastaR1[0] = '\0';
@@ -9094,11 +9094,11 @@ FastaPE2MinLen = 0;
 FastaPE2MaxLen = 0;
 TotFastaPE1SeqLen = 0;
 TotFastaPE2SeqLen = 0;
-while((pCurSeq = IterSeqHeaders(pCurSeq, // iterate to next sequence following (NULL to return 1st sequence)
+while((pCurSeq = IterSeqHeaders(pCurSeq, // iterate to next sequence following (nullptr to return 1st sequence)
 							&SeqID,		// returned sequence identifier
 							&SrcFileID,	// returned 8 bit source file identifier
 							&SeqFlags,		// returned 16 bit sequence flags
-							&SeqLen,false))!=NULL)		// returned 30 bit sequence length
+							&SeqLen,false))!=nullptr)		// returned 30 bit sequence length
 	{
 	if(!(SeqFlags & cFlgSeqPE2))	// if not a PE2 sequence
 		{		
@@ -9281,16 +9281,16 @@ tSeqID SeqID;
 uint32_t SrcFileID;
 uint32_t Flgs;
 uint32_t SeqLen;
-pCurSeq = NULL;
+pCurSeq = nullptr;
 if(Max2Dump == 0)
 	Max2Dump = 0xffffffff;
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Sequence Dump: %s",pszHeading);
 
-while(Max2Dump-- && (pCurSeq = IterSeqHeaders(pCurSeq, // iterate to next sequence following (NULL to return 1st sequence)
+while(Max2Dump-- && (pCurSeq = IterSeqHeaders(pCurSeq, // iterate to next sequence following (nullptr to return 1st sequence)
 							&SeqID,		// returned sequence identifier
 							&SrcFileID,		// returned 8 bit source file identifier
 							&Flgs,			// returned 16 bit sequence flags
-							&SeqLen,false))!=NULL)		// returned 30 bit sequence length
+							&SeqLen,false))!=nullptr)		// returned 30 bit sequence length
 	gDiagnostics.DiagOutMsgOnly(eDLInfo,"SeqID: %u FileID: %u Flags: 0x%x SeqLen: %u\n%s\n",SeqID,SrcFileID,Flgs,SeqLen,AsciifySequence(pCurSeq,200));
 
 }
@@ -9364,7 +9364,7 @@ SeqLen = GetSeq(SeqID,				// sequence identifier
 					(uint8_t *)szDump,	// where to copy unpacked sequence bases
 					min(MaxSeqLen,(uint32_t)sizeof(szDump)-1));	// return at most MaxSeqLen bases
 
-if(m_pBlockNsLoci != NULL && m_NumBlockNsLoci > 0)
+if(m_pBlockNsLoci != nullptr && m_NumBlockNsLoci > 0)
 	{
 	// replace any bases which were indeterminates when originally loaded with N's
 	int MinBlockNsLociIdx;
@@ -9506,9 +9506,9 @@ for(Idx = 0; Idx < (int)MaxSeqLen; Idx++,pBase1++,pBase2++)
 *pBase1 = '\0';
 *pBase2 = '\0';
 
-if(ppszSeq1 != NULL)
+if(ppszSeq1 != nullptr)
 	*ppszSeq1 = (char *)szDump1;
-if(ppszSeq2 != NULL)
+if(ppszSeq2 != nullptr)
 	*ppszSeq2 = (char *)szDump2;
 
 return((char *)szDump1);
@@ -9599,7 +9599,7 @@ etSeqBase *pExch;
 etSeqBase Tmp1;
 etSeqBase Tmp2;
 
-if(SeqLen < 1 || pSeq == NULL)
+if(SeqLen < 1 || pSeq == nullptr)
 	return;
 if(SeqLen == 1)
 	{

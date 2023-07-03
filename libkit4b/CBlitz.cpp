@@ -1837,8 +1837,8 @@ do {
 	}
 while(pCurNode != NULL);
 
-delete pTSeq;
-delete pQSeq;
+delete []pTSeq;
+delete []pQSeq;
 if(pMatches != NULL)
 	*pMatches = TotMatches;
 if(pmisMatches != NULL)
@@ -2482,7 +2482,7 @@ while(pCurNode != NULL);
 m_ReportedPaths += 1;
 ReleaseSerialise();
 if(pCurSeq != NULL)
-	delete pCurSeq;
+	delete []pCurSeq;
 
 return(NumPathNodes);
 }

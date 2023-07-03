@@ -70,12 +70,12 @@ int GSMProcess(etRPMode PMode,				// report processing mode
 int gensnpmarkers(int argc, char* argv[])
 {
 // determine my process name
-_splitpath(argv[0],NULL,NULL,gszProcName,NULL);
+_splitpath(argv[0],nullptr,nullptr,gszProcName,nullptr);
 #else
 int gensnpmarkers(int argc, char** argv)
 {
 // determine my process name
-CUtility::splitpath((char *)argv[0],NULL,gszProcName);
+CUtility::splitpath((char *)argv[0],nullptr,gszProcName);
 #endif
 
 int iFileLogLevel;			// level of file diagnostics
@@ -339,8 +339,8 @@ if (!argerrors)
 		}
 	for(NumRelGenomes=Idx=0;NumRelGenomes < cMaxMarkerSpecies && Idx < relgenomes->count; Idx++)
 		{
-		pszRelGenomes[Idx] = NULL;
-		if(pszRelGenomes[NumRelGenomes] == NULL)
+		pszRelGenomes[Idx] = nullptr;
+		if(pszRelGenomes[NumRelGenomes] == nullptr)
 			pszRelGenomes[NumRelGenomes] = new char [_MAX_PATH];
 		strncpy(pszRelGenomes[NumRelGenomes],relgenomes->sval[Idx],_MAX_PATH);
 		pszRelGenomes[NumRelGenomes][_MAX_PATH-1] = '\0';
@@ -361,8 +361,8 @@ if (!argerrors)
 
 	for(NumSNPFiles=Idx=0;NumSNPFiles < cMaxMarkerSpecies && Idx < snpfiles->count; Idx++)
 		{
-		pszSNPFiles[Idx] = NULL;
-		if(pszSNPFiles[NumSNPFiles] == NULL)
+		pszSNPFiles[Idx] = nullptr;
+		if(pszSNPFiles[NumSNPFiles] == nullptr)
 			pszSNPFiles[NumSNPFiles] = new char [_MAX_PATH];
 		strncpy(pszSNPFiles[NumSNPFiles],snpfiles->filename[Idx],_MAX_PATH);
 		pszSNPFiles[NumSNPFiles][_MAX_PATH-1] = '\0';
@@ -378,15 +378,15 @@ if (!argerrors)
 		}
 
 	NumAlignFiles = 0;
-	pszAlignFiles[0] = NULL;
+	pszAlignFiles[0] = nullptr;
 	if(!alignfiles->count)
 		gDiagnostics.DiagOut(eDLWarn,gszProcName,"Warning: Can't impute as no input alignment file(s) specified with with '-I<filespec>' option)");
 	else
 		{
 		for(NumAlignFiles=Idx=0;NumAlignFiles < cMaxMarkerSpecies && Idx < alignfiles->count; Idx++)
 			{
-			pszAlignFiles[Idx] = NULL;
-			if(pszAlignFiles[NumAlignFiles] == NULL)
+			pszAlignFiles[Idx] = nullptr;
+			if(pszAlignFiles[NumAlignFiles] == nullptr)
 				pszAlignFiles[NumAlignFiles] = new char [_MAX_PATH];
 			strncpy(pszAlignFiles[NumAlignFiles],alignfiles->filename[Idx],_MAX_PATH);
 			pszAlignFiles[NumAlignFiles][_MAX_PATH-1] = '\0';
@@ -574,18 +574,18 @@ int64_t TotSNPRows;
 int64_t TotAlignments;
 int64_t SumMeanSeqLens;
 int32_t MeanSeqLen;
-CMarkers *pMarkers = NULL;
-CCSVFile *pCSV = NULL;
-CSAMfile *pSAM = NULL;
+CMarkers *pMarkers = nullptr;
+CCSVFile *pCSV = nullptr;
+CSAMfile *pSAM = nullptr;
 size_t TotMemToAlloc;
 
-if((pMarkers = new CMarkers)==NULL)
+if((pMarkers = new CMarkers)==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to instantiate CMarkers");
 	return(eBSFerrObj);
 	}
 
-if((pCSV = new CCSVFile)==NULL)
+if((pCSV = new CCSVFile)==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to instantiate CCSVFile");
 	return(eBSFerrObj);
@@ -617,7 +617,7 @@ for(FileIdx = 0; FileIdx < NumSNPFiles; FileIdx++)
 	}
 delete pCSV;
 
-if((pSAM = new CSAMfile)==NULL)
+if((pSAM = new CSAMfile)==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to instantiate CSAMfile");
 	return(eBSFerrObj);
@@ -639,7 +639,7 @@ if(NumAlignFiles)
 		EstSAMFileEls[FileIdx].SeqLen = 0;
 		pszAlignFile = pszAlignFiles[FileIdx];
 	
-		if((NumAlignments = pSAM->EstSizes(pszAlignFile,NULL,NULL,NULL,NULL,&MeanSeqLen,NULL))==0)
+		if((NumAlignments = pSAM->EstSizes(pszAlignFile,nullptr,nullptr,nullptr,nullptr,&MeanSeqLen,nullptr))==0)
 			{
 			delete pSAM;
 			delete pMarkers;
@@ -687,7 +687,7 @@ if(NumAlignFiles)
 	{
 	// then try an allocation of memory for the maximal sized SAM file sequences to check if allocations whilst imputing SNPs are likely to be successful
 	CHyperEls *pHyperEls;
-	if((pHyperEls = new CHyperEls) == NULL)
+	if((pHyperEls = new CHyperEls) == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to instantiate CHyperEls");
 		delete pMarkers;

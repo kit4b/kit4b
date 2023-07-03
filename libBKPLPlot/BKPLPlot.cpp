@@ -303,7 +303,7 @@ if(bLabels)
 	if((pszLables = new char [(cMaxPointLabelLen + 1) * m_MaxPerSeriesPoints])==NULL)
 		{
 		delete pSeries;
-		delete pValues;
+		delete []pValues;
 		return(eBSFerrMem);
 		}
 	}

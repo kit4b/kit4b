@@ -787,7 +787,7 @@ if(m_bV3File)
 		pEntry->StartOfs = (int64_t)(uint64_t)pEntryV3->StartOfs;						// offset into concatenated sequences of where this sequence starts
 		pEntry->EndOfs = (int64_t)(uint64_t)pEntryV3->EndOfs;						// offset into concatenated sequences of where this sequence ends
 		}
-	delete pSfxEntriesBlockV3;
+	delete []pSfxEntriesBlockV3;
 	}
 else
 	{ 
@@ -2038,7 +2038,7 @@ for(Idx = 1; Idx < m_pEntriesBlock->NumEntries && NumDups < MaxIdents; Idx++)
 			break;
 			}
 	}
-delete ppEntries;
+delete []ppEntries;
 return(NumDups);
 }
 

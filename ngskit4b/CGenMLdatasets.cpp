@@ -37,13 +37,13 @@ Process(teModeGMLD PMode,                  // processing mode
 int genmldatasets(int argc, char *argv[])
 {
 // determine my process name
-_splitpath (argv[0], NULL, NULL, gszProcName, NULL);
+_splitpath (argv[0], nullptr, nullptr, gszProcName, nullptr);
 #else
 int
 genmldatasets(int argc, char **argv)
 {
 // determine my process name
-CUtility::splitpath ((char *)argv[0], NULL, gszProcName);
+CUtility::splitpath ((char *)argv[0], nullptr, gszProcName);
 #endif
 int32_t iFileLogLevel;			// level of file diagnostics
 int32_t iScreenLogLevel;		// level of file diagnostics
@@ -305,7 +305,7 @@ Process(teModeGMLD PMode,                  // processing mode
 {
 int Rslt;
 CGenMLdatasets *pML;
-if((pML = new CGenMLdatasets)==NULL)
+if((pML = new CGenMLdatasets)==nullptr)
 	{
 	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Unable to instantiate instance of CGenMLdatasets");
 	return(eBSFerrObj);
@@ -447,18 +447,18 @@ CGenMLdatasets::AllocateMemSamples(int NumSamples,  // initially allocate for th
 size_t memreq = (size_t)(NumSamples * (cMaxSampleRefNameLen+1));
 #ifdef _WIN32
 m_pszSampleRefsMem = (uint8_t*)malloc(memreq);	// initial and perhaps the only allocation
-if (m_pszSampleRefsMem == NULL)
+if (m_pszSampleRefsMem == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "AllocateSamples: memory allocation of %zd bytes for sample reference names failed - %s", (int64_t)memreq, strerror(errno));
 	Reset();
 	return(eBSFerrMem);
 	}
 #else
-m_pszSampleRefsMem = (uint8_t *)mmap(NULL, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+m_pszSampleRefsMem = (uint8_t *)mmap(nullptr, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 if (m_pszSampleRefsMem == MAP_FAILED)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "AllocateSamples: Memory allocation of %zd bytes through mmap() for sample reference names failed - %s", (int64_t)memreq, strerror(errno));
-	m_pszSampleRefsMem = NULL;
+	m_pszSampleRefsMem = nullptr;
 	Reset();
 	return(eBSFerrMem);
 	}
@@ -470,18 +470,18 @@ m_UsedSampleRefsMem = 0;
 memreq = (size_t)(NumFeatures * (cMaxFeatRefNameLen+1));
 #ifdef _WIN32
 m_pszFeatRefsMem = (uint8_t*)malloc(memreq);	// initial and perhaps the only allocation
-if (m_pszFeatRefsMem == NULL)
+if (m_pszFeatRefsMem == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "AllocateSamples: Memory allocation of %zd bytes for feature reference names failed - %s", (int64_t)memreq, strerror(errno));
 	Reset();
 	return(eBSFerrMem);
 	}
 #else
-m_pszFeatRefsMem = (uint8_t *)mmap(NULL, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+m_pszFeatRefsMem = (uint8_t *)mmap(nullptr, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 if (m_pszFeatRefsMem == MAP_FAILED)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "AllocateSamples: Memory allocation of %zd bytes through mmap() for feature reference names failed - %s", (int64_t)memreq, strerror(errno));
-	m_pszFeatRefsMem = NULL;
+	m_pszFeatRefsMem = nullptr;
 	Reset();
 	return(eBSFerrMem);
 	}
@@ -494,18 +494,18 @@ m_SampleFeatsSize = sizeof(tsSampleFeats);
 memreq = (size_t)NumSamples * ((size_t)NumFeatures + m_SampleFeatsSize);
 #ifdef _WIN32
 m_pSampleFeatsMem = (uint8_t*)malloc(memreq);	// initial and perhaps the only allocation
-if (m_pSampleFeatsMem == NULL)
+if (m_pSampleFeatsMem == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "AllocateSamples: Memory allocation of %zd bytes for sample features failed - %s", (int64_t)memreq, strerror(errno));
 	Reset();
 	return(eBSFerrMem);
 	}
 #else
-m_pSampleFeatsMem = (uint8_t *)mmap(NULL, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+m_pSampleFeatsMem = (uint8_t *)mmap(nullptr, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 if (m_pSampleFeatsMem == MAP_FAILED)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "AllocateSamples: Memory allocation of %zd bytes through mmap() for sample features failed - %s", (int64_t)memreq, strerror(errno));
-	m_pSampleFeatsMem = NULL;
+	m_pSampleFeatsMem = nullptr;
 	Reset();
 	return(eBSFerrMem);
 	}
@@ -528,7 +528,7 @@ if ((m_UsedSampleRefsMem + (size_t)cMaxSampleRefNameLen + 1) >= m_AllocdSampleRe
 	size_t memreq = m_AllocdSampleRefsMem + (size_t)(1000 * cMaxSampleRefNameLen);
 #ifdef _WIN32
 	pReallocd = (uint8_t *)realloc(m_pszSampleRefsMem, memreq);
-	if (pReallocd == NULL)
+	if (pReallocd == nullptr)
 		{
 #else
 	pReallocd = (uint8_t *)mremap(m_pszSampleRefsMem, m_AllocdSampleRefsMem, memreq, MREMAP_MAYMOVE);
@@ -547,7 +547,7 @@ if ((m_UsedSampleFeatsMem + (size_t)m_SampleFeatsSize) >= m_AllocdSampleFeatsMem
 	size_t memreq = m_AllocdSampleFeatsMem + (size_t)(1000 * m_SampleFeatsSize);
 #ifdef _WIN32
 	pReallocd = (uint8_t *)realloc(m_pSampleFeatsMem, memreq);
-	if (pReallocd == NULL)
+	if (pReallocd == nullptr)
 		{
 #else
 	pReallocd = (uint8_t *)mremap(m_pSampleFeatsMem, m_AllocdSampleFeatsMem, memreq, MREMAP_MAYMOVE);

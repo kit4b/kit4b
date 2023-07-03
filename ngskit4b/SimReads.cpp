@@ -84,12 +84,12 @@ Process(etSRPMode PMode,		// processing mode
 int SimReads(int argc, char* argv[])
 {
 // determine my process name
-_splitpath(argv[0],NULL,NULL,gszProcName,NULL);
+_splitpath(argv[0],nullptr,nullptr,gszProcName,nullptr);
 #else
 int SimReads(int argc, char** argv)
 {
 // determine my process name
-CUtility::splitpath((char *)argv[0],NULL,gszProcName);
+CUtility::splitpath((char *)argv[0],nullptr,gszProcName);
 #endif
 int iScreenLogLevel;		// level of screen diagnostics
 int iFileLogLevel;			// level of file diagnostics
@@ -633,7 +633,7 @@ if (!argerrors)
 	else
 		{
 		NumArtef5Seqs = 0;
-		pszArtef5Seqs[0] = NULL;
+		pszArtef5Seqs[0] = nullptr;
 		}
 
 	if(FMode == eSRFMNWFasta || FMode == eSRFMFasta)
@@ -687,7 +687,7 @@ if (!argerrors)
 	else
 		{
 		NumArtef3Seqs = 0;
-		pszArtef3Seqs[0] = NULL;
+		pszArtef3Seqs[0] = nullptr;
 		}
 
 // show user current resource limits
@@ -965,7 +965,7 @@ Process(etSRPMode PMode,		// processing mode
 int Rslt;
 CSimReads *pSimReads;
 
-if((pSimReads = new CSimReads) == NULL)
+if((pSimReads = new CSimReads) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to instantiate instance of CSimReads");
 	return(-1);

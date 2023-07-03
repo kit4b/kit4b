@@ -120,7 +120,7 @@ class CMarkerKMers
 	bool											// true if overlapping by m_PrefixLen-1 onto at least one other prefix marker
 		IsMarkerOverlapping(tsPutMarker *pMarker);	// marker to check if overlapping onto any other sequence
 
-	tsPutMarker *										// NULL if no others antisense, else the other antisense marker
+	tsPutMarker *										// nullptr if no others antisense, else the other antisense marker
 		GetMarkerAntisense(tsPutMarker *pMarker);		// marker to check if antisense to any other marker sequence
 							
 

@@ -43,13 +43,13 @@ Process(int PMode,				// 0: complete fasta sequence for each ROI, 1: overlapping
 int xroiseqs(int argc, char* argv[])
 {
 // determine my process name
-_splitpath(argv[0],NULL,NULL,gszProcName,NULL);
+_splitpath(argv[0],nullptr,nullptr,gszProcName,nullptr);
 #else
 int 
 xroiseqs(int argc, char **argv)
 {
 // determine my process name
-CUtility::splitpath((char *)argv[0],NULL,gszProcName);
+CUtility::splitpath((char *)argv[0],nullptr,gszProcName);
 #endif
 int iScreenLogLevel;		// level of screen diagnostics
 int iFileLogLevel;			// level of file diagnostics
@@ -238,7 +238,7 @@ ParseRegions(char *pszRegionList)
 // parse out region list
 char Chr;
 int Region = 0;
-if(pszRegionList == NULL || *pszRegionList == '\0')
+if(pszRegionList == nullptr || *pszRegionList == '\0')
 	return(cFeatBitIG | cFeatBitUpstream | cFeatBit5UTR | cFeatBitCDS | cFeatBitIntrons | cFeatBit3UTR | cFeatBitDnstream);
 
 while(Chr = *pszRegionList++) {
@@ -362,11 +362,11 @@ int AllocSeqLen;
 etSeqBase *pSeqBuffer;
 int hRsltsFile;
 
-pSeqBuffer = NULL;
+pSeqBuffer = nullptr;
 AllocSeqLen = 0;
 
 
-if((pBED = new CBEDfile())==NULL)
+if((pBED = new CBEDfile())==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"\nUnable to instantiate CBEDfile");
 	return(eBSFerrObj);
@@ -382,7 +382,7 @@ if((Rslt = pBED->Open(pszROIFile,eBTAnyBed))!=eBSFSuccess)
 	return(Rslt);
 	}
 
-if((pSfxArray = new CSfxArray())==NULL)
+if((pSfxArray = new CSfxArray())==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"\nUnable to instantiate CSfxArray");
 	return(eBSFerrObj);
@@ -413,7 +413,7 @@ if((hRsltsFile = open(pszSamplesFile, O_RDWR | O_CREAT | O_TRUNC, S_IREAD | S_IW
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Output ROI fasta file created: '%s'",pszSamplesFile);
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Iterating over ROIs sequences ...");
 // all input files now opened
-if((pSeqBuffer = new uint8_t[cAllocSeqLen]) == NULL)
+if((pSeqBuffer = new uint8_t[cAllocSeqLen]) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory for buffering input fasta sequences");
 	delete pBED;
@@ -440,7 +440,7 @@ int AllocszSeqLen;
 int SeqBuffOfs;
 int NumWarnings;
 
-if((pszSeqBuffer = new char[cAllocSeqLen]) == NULL)
+if((pszSeqBuffer = new char[cAllocSeqLen]) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory for buffering output ROI sequences");
 	delete pBED;
@@ -466,12 +466,12 @@ while ((NxtFeatureID = pBED->GetNextFeatureID(CurFeatureID)) > 0)
 		break;
 		}
 	FeatLen = FeatEnd - FeatStart + 1;
-	if(pSeqBuffer == NULL || FeatLen > AllocSeqLen)
+	if(pSeqBuffer == nullptr || FeatLen > AllocSeqLen)
 		{
-		if(pSeqBuffer != NULL)
+		if(pSeqBuffer != nullptr)
 			delete []pSeqBuffer;
 		AllocSeqLen = 0;
-		if((pSeqBuffer = new uint8_t [FeatLen + cAllocSeqLen])==NULL)
+		if((pSeqBuffer = new uint8_t [FeatLen + cAllocSeqLen])==nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory for buffering");
 			Rslt = eBSFerrMem;
@@ -566,13 +566,13 @@ if(hRsltsFile != -1)
 #endif
 	close(hRsltsFile);
 	}
-if(pSeqBuffer != NULL)
+if(pSeqBuffer != nullptr)
 	delete []pSeqBuffer;
-if(pszSeqBuffer != NULL)
+if(pszSeqBuffer != nullptr)
 	delete []pszSeqBuffer;
-if(pBED != NULL)
+if(pBED != nullptr)
 	delete pBED;
-if(pSfxArray != NULL)
+if(pSfxArray != nullptr)
 	delete pSfxArray;
 return(Rslt);
 }

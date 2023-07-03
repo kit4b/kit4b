@@ -71,13 +71,13 @@ GPGProcess(etGPGPMode PMode,					// processing mode
 int genpseudogenome(int argc, char* argv[])
 {
 // determine my process name
-_splitpath(argv[0],NULL,NULL,gszProcName,NULL);
+_splitpath(argv[0],nullptr,nullptr,gszProcName,nullptr);
 #else
 int
 genpseudogenome(int argc, char** argv)
 {
 // determine my process name
-CUtility::splitpath((char *)argv[0],NULL,gszProcName);
+CUtility::splitpath((char *)argv[0],nullptr,gszProcName);
 #endif
 
 int iFileLogLevel;			// level of file diagnostics
@@ -304,8 +304,8 @@ if (!argerrors)
 
 	for(NumInputFiles=Idx=0;NumInputFiles < cMaxInFileSpecs && Idx < infiles->count; Idx++)
 		{
-		pszInfileSpecs[Idx] = NULL;
-		if(pszInfileSpecs[NumInputFiles] == NULL)
+		pszInfileSpecs[Idx] = nullptr;
+		if(pszInfileSpecs[NumInputFiles] == nullptr)
 			pszInfileSpecs[NumInputFiles] = new char [_MAX_PATH];
 		strncpy(pszInfileSpecs[NumInputFiles],infiles->filename[Idx],_MAX_PATH);
 		pszInfileSpecs[NumInputFiles][_MAX_PATH-1] = '\0';
@@ -438,20 +438,20 @@ if(m_hOutGeneFile != -1)
 	close(m_hOutGeneFile);
 	m_hOutGeneFile = -1;
 	}
-if(m_pInFastaBuff != NULL)
+if(m_pInFastaBuff != nullptr)
 	{
 	delete m_pInFastaBuff;
-	m_pInFastaBuff = NULL;
+	m_pInFastaBuff = nullptr;
 	}
-if(m_pOutFastaBuff != NULL)
+if(m_pOutFastaBuff != nullptr)
 	{
 	delete m_pOutFastaBuff;
-	m_pOutFastaBuff = NULL;
+	m_pOutFastaBuff = nullptr;
 	}
-if(m_pOutBEDBuff != NULL)
+if(m_pOutBEDBuff != nullptr)
 	{
 	delete m_pOutBEDBuff;
-	m_pOutBEDBuff = NULL;
+	m_pOutBEDBuff = nullptr;
 	}
 
 m_OutFastaOfs = 0;
@@ -468,9 +468,9 @@ GPGInit(void)
 m_hInSrcFile = -1;
 m_hOutGenomeFile = -1;
 m_hOutGeneFile = -1;
-m_pInFastaBuff = NULL;
-m_pOutFastaBuff = NULL;
-m_pOutBEDBuff = NULL;
+m_pInFastaBuff = nullptr;
+m_pOutFastaBuff = nullptr;
+m_pOutBEDBuff = nullptr;
 GPGReset();
 }
 
@@ -634,21 +634,21 @@ if((m_hOutGeneFile = open(pszOutGeneFile,O_RDWR | O_CREAT |O_TRUNC, S_IREAD | S_
 	return(false);
 	}
 
-if((m_pInFastaBuff = new uint8_t [cAllocInFasta]) == NULL)
+if((m_pInFastaBuff = new uint8_t [cAllocInFasta]) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessFastaFile:- Unable to allocate memory (%d bytes) for sequence buffer",cAllocInFasta);
 	GPGReset();
 	return(eBSFerrMem);
 	}
 
-if((m_pOutFastaBuff = new char [cAllocOutFasta]) == NULL)
+if((m_pOutFastaBuff = new char [cAllocOutFasta]) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessFastaFile:- Unable to allocate memory (%d bytes) for sequence buffer",cAllocOutFasta);
 	GPGReset();
 	return(eBSFerrMem);
 	}
 
-if((m_pOutBEDBuff = new char [cAllocInBED]) == NULL)
+if((m_pOutBEDBuff = new char [cAllocInBED]) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessFastaFile:- Unable to allocate memory (%d bytes) for sequence buffer",cAllocInBED);
 	GPGReset();

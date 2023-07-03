@@ -106,19 +106,19 @@ tsDEStmSQL CSQLiteDE::m_StmSQL[4] = {
 	{(char *)"TblExprs",
 		(char *)"CREATE TABLE TblExprs (ExprID INTEGER PRIMARY KEY ASC,ExprType Integer, ExprInFile VARCHAR(200), ExprName VARCHAR(50) UNIQUE,ExprDescr VARCHAR(200) DEFAULT '', CtrlConditions VARCHAR(1000),ExprConditions VARCHAR(1000),NumBins INTEGER)",
 		(char *)"INSERT INTO TblExprs (ExprType,ExprInFile,ExprName,ExprDescr,CtrlConditions,ExprConditions,NumBins) VALUES(?,?,?,?,?,?,?)",
-		NULL,
+		nullptr,
 		(char *)"CREATE INDEX IF NOT EXISTS 'TblExprs_ExprName' ON 'TblExprs' ('ExprName' ASC)",
 		(char *)"CREATE INDEX IF NOT EXISTS 'TblExprs_ExprName' ON 'TblExprs' ('ExprName' ASC)",
-		NULL,
-		NULL },
+		nullptr,
+		nullptr },
 	{ (char *)"TblTrans",
 		(char *)"CREATE TABLE TblTrans ( TransID INTEGER PRIMARY KEY ASC,ExprID INTEGER,TransName VARCHAR(80) UNIQUE,Exons Integer,TransLen INTEGER,TransAnnotation VARCHAR(1000))",
 		(char *)"INSERT INTO TblTrans (ExprID,TransName,Exons,TransLen,TransAnnotation) VALUES(?,?,?,?,?)",
-		NULL,
+		nullptr,
 		(char *)"CREATE INDEX IF NOT EXISTS 'TblTrans_TransName' ON 'TblTrans' ('TransName' ASC)",
 		(char *)"CREATE INDEX IF NOT EXISTS 'TblTrans_TransName' ON 'TblTrans' ('TransName' ASC)",
 		(char *)"CREATE INDEX IF NOT EXISTS 'TblTrans_TransName' ON 'TblTrans' ('TransName' ASC);CREATE INDEX IF NOT EXISTS 'TblTrans_TransLen' ON 'TblTrans' ('TransLen' ASC)",
-		NULL },
+		nullptr },
 	{ (char *)"TblExpres",
 		(char *)"CREATE TABLE TblExpres (ExpresID INTEGER PRIMARY KEY ASC,ExprID INTEGER,TransID INTEGER," \
 				"Class INTEGER,Score INTEGER,DECntsScore INTEGER, PearsonScore INTEGER,CtrlUniqueLoci INTEGER,ExprUniqueLoci INTEGER,CtrlExprLociRatio REAL," \
@@ -129,17 +129,17 @@ tsDEStmSQL CSQLiteDE::m_StmSQL[4] = {
 				"PValueMedian,PValueLow95,PValueHi95,TotCtrlCnts,TotExprCnts,TotCtrlExprCnts,ObsFoldChange," \
 				"FoldMedian,FoldLow95,FoldHi95,ObsPearson,PearsonMedian,PearsonLow95, PearsonHi95," \
 				"CtrlAndExprBins,CtrlOnlyBins,ExprOnlyBins) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-		NULL,
+		nullptr,
 		(char *)"CREATE INDEX IF NOT EXISTS 'TblExpres_ExprIDTransID' ON 'TblExpres' ('ExprID' ASC,'TransID' ASC)",
-		NULL,
+		nullptr,
 		(char *)"DROP INDEX IF EXISTS 'TblExpres_ExprIDTransID';CREATE INDEX IF NOT EXISTS 'TblExpres_ExprID' ON 'TblExpres' ('ExprID' ASC);CREATE INDEX IF NOT EXISTS 'TblExpres_TransID' ON 'TblExpres' ('TransID' ASC)",
 		(char *)"DROP INDEX IF EXISTS 'TblExpres_ExprIDTransID';DROP INDEX IF EXISTS 'TblExpres_ExprID';DROP INDEX IF EXISTS 'TblExpres_TransID'"},
 	{ (char *)"TblBins",
 		(char *)"CREATE TABLE TblBins (BinID INTEGER PRIMARY KEY ASC,ExprID INTEGER,TransID INTEGER, ExpresID INTEGER, NthBin INTEGER,CtrlCounts INTEGER, ExprCounts INTEGER)",
 		(char *)"INSERT INTO TblBins (ExprID,TransID,ExpresID,NthBin,CtrlCounts,ExprCounts) VALUES(?,?,?,?,?,?)",
-		NULL,
+		nullptr,
 		(char *)"CREATE INDEX IF NOT EXISTS 'TblBins_ExprIDTransIDExpresIDNthBin' ON 'TblBins' ('ExprID' ASC,'TransID' ASC,'ExpresID' ASC, 'NthBin' ASC)",
-		NULL,
+		nullptr,
 		(char *)"CREATE INDEX IF NOT EXISTS 'TblBins_ExprIDTransIDExpresIDNthBin' ON 'TblBins' ('ExprID' ASC,'TransID' ASC,'ExpresID' ASC,'NthBin' ASC);CREATE INDEX IF NOT EXISTS 'TblBins_TransID' ON 'TblBins' ('TransID' ASC);CREATE INDEX IF NOT EXISTS 'TblBins_ExpresID' ON 'TblBins' ('ExpresID' ASC);CREATE INDEX IF NOT EXISTS 'TblBins_NthBin' ON 'TblBins' ('NthBin' ASC)",
 		(char *)"DROP INDEX IF EXISTS 'TblBins_ExprIDTransIDExpresIDNthBin';DROP INDEX IF EXISTS 'TblBins_TransID';DROP INDEX IF EXISTS 'TblBins_ExpresID',DROP INDEX IF EXISTS 'TblBins_NthBin'"},
 	};
@@ -176,7 +176,7 @@ return(pszRawText);
 
 CSQLiteDE::CSQLiteDE(void)
 {
-m_pDB = NULL;
+m_pDB = nullptr;
 m_NumTransMRA = 0;
 m_NumTrans = 0;
 m_NumExpres = 0;
@@ -186,11 +186,11 @@ m_bSafe = true;
 
 CSQLiteDE::~CSQLiteDE(void)
 {
-if(m_pDB != NULL)
+if(m_pDB != nullptr)
 	{
 	sqlite3_close_v2(m_pDB);
 	sqlite3_shutdown();
-	m_pDB = NULL;
+	m_pDB = nullptr;
 	}
 }
 
@@ -211,20 +211,20 @@ if(StatRslt >= 0)
 m_bSafe = bSafe;
 
 // try creating the database
-if((sqlite_error = sqlite3_open_v2(pszDatabase, &m_pDB,SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE,NULL))!=SQLITE_OK)
+if((sqlite_error = sqlite3_open_v2(pszDatabase, &m_pDB,SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE,nullptr))!=SQLITE_OK)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"sqlite - can't open database: %s", sqlite3_errmsg(m_pDB));
 	sqlite3_shutdown();
-	m_pDB = NULL;
-	return(NULL);
+	m_pDB = nullptr;
+	return(nullptr);
 	}
 
 // create all tables
 pStms = m_StmSQL;
 for(TblIdx = 0; TblIdx < 4; TblIdx++,pStms++)
 	{
-	pStms->pPrepInsert = NULL;
-	if(pStms->pszCreateTbl == NULL)
+	pStms->pPrepInsert = nullptr;
+	if(pStms->pszCreateTbl == nullptr)
 		continue;
 	if((sqlite_error = sqlite3_exec(m_pDB,pStms->pszCreateTbl,0,0,0))!=SQLITE_OK)
 		{
@@ -232,8 +232,8 @@ for(TblIdx = 0; TblIdx < 4; TblIdx++,pStms++)
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"sqlite - statement: %s",pStms->pszCreateTbl);   
 		sqlite3_close_v2(m_pDB);
 		sqlite3_shutdown();
-		m_pDB = NULL;
-		return(NULL);
+		m_pDB = nullptr;
+		return(nullptr);
 		}
 	}
 
@@ -243,7 +243,7 @@ if(bSafe)
 	{
 	for(TblIdx = 0; TblIdx < 4; TblIdx++,pStms++)
 		{
-		if(pStms->pszOpenCreateSafeIndexes == NULL)
+		if(pStms->pszOpenCreateSafeIndexes == nullptr)
 			continue;
 		if((sqlite_error = sqlite3_exec(m_pDB,pStms->pszOpenCreateSafeIndexes,0,0,0))!=SQLITE_OK)
 			{
@@ -251,8 +251,8 @@ if(bSafe)
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"sqlite - statement: %s",pStms->pszOpenCreateIndexes);   
 			sqlite3_close_v2(m_pDB);
 			sqlite3_shutdown();
-			m_pDB = NULL;
-			return(NULL);
+			m_pDB = nullptr;
+			return(nullptr);
 			}
 		}
 	}
@@ -260,7 +260,7 @@ else
 	{
 	for(TblIdx = 0; TblIdx < 4; TblIdx++,pStms++)
 		{
-		if(pStms->pszOpenCreateIndexes == NULL)
+		if(pStms->pszOpenCreateIndexes == nullptr)
 			continue;
 		if((sqlite_error = sqlite3_exec(m_pDB,pStms->pszOpenCreateIndexes,0,0,0))!=SQLITE_OK)
 			{
@@ -268,8 +268,8 @@ else
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"sqlite - statement: %s",pStms->pszOpenCreateIndexes);   
 			sqlite3_close_v2(m_pDB);
 			sqlite3_shutdown();
-			m_pDB = NULL;
-			return(NULL);
+			m_pDB = nullptr;
+			return(nullptr);
 			}
 		}
 	}
@@ -278,27 +278,27 @@ else
 pStms = m_StmSQL;
 for(TblIdx = 0; TblIdx <4; TblIdx++,pStms++)
 	{
-	if(pStms->pszInsert == NULL)
+	if(pStms->pszInsert == nullptr)
 		{
-		pStms->pPrepInsert = NULL;
+		pStms->pPrepInsert = nullptr;
 		continue;
 		}
-	if((sqlite_error = sqlite3_prepare_v2(m_pDB,pStms->pszInsert,-1,&pStms->pPrepInsert,NULL))!=SQLITE_OK)
+	if((sqlite_error = sqlite3_prepare_v2(m_pDB,pStms->pszInsert,-1,&pStms->pPrepInsert,nullptr))!=SQLITE_OK)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"sqlite - can't prepare insert statement on table %s: %s", pStms->pTblName, sqlite3_errmsg(m_pDB));
 		while(TblIdx > 0)
 			{
 			pStms -= 1;
-			if(pStms->pPrepInsert != NULL)
+			if(pStms->pPrepInsert != nullptr)
 				{
 				sqlite3_finalize(pStms->pPrepInsert);
-				pStms->pPrepInsert = NULL;
+				pStms->pPrepInsert = nullptr;
 				}
 			}
 		sqlite3_close_v2(m_pDB);
 		sqlite3_shutdown();
-		m_pDB = NULL;
-		return(NULL);
+		m_pDB = nullptr;
+		return(nullptr);
 		}
 	}
 return(m_pDB);
@@ -311,21 +311,21 @@ int TblIdx;
 int Rslt = 0;
 tsDEStmSQL *pStms;
 pStms = m_StmSQL;
-if(m_pDB != NULL)
+if(m_pDB != nullptr)
 	{
 	if(!bNoIndexes)
 		{
 		for(TblIdx = 0; TblIdx < 4; TblIdx++,pStms++)
 			{
-			if(pStms->pPrepInsert == NULL)
+			if(pStms->pPrepInsert == nullptr)
 				continue;
 			sqlite3_finalize(pStms->pPrepInsert);
-			pStms->pPrepInsert = NULL;
+			pStms->pPrepInsert = nullptr;
 			}
 		}
 	Rslt = sqlite3_close_v2(m_pDB);
 	sqlite3_shutdown();
-	m_pDB = NULL;
+	m_pDB = nullptr;
 	}
 return(Rslt);
 }
@@ -341,7 +341,7 @@ int *pID;
 char *ppEnd;
 
 // some basic validation of call back parameter values
-if(pCallP1 == NULL || NumCols != 1 || ppColValues == NULL || ppColValues[0] == NULL || *ppColValues[0] == '\0')
+if(pCallP1 == nullptr || NumCols != 1 || ppColValues == nullptr || ppColValues[0] == nullptr || *ppColValues[0] == '\0')
 	return(1);
 
 pID = (int *)pCallP1;
@@ -364,7 +364,7 @@ int ExprID;
 char szExprName[128];
 tsDEStmSQL *pStm;
 
-if(m_pDB == NULL)
+if(m_pDB == nullptr)
 	return(eBSFerrInternal);
 
 m_NumTransMRA = 0;
@@ -428,7 +428,7 @@ if(m_bSafe)
 	{
 	ExprID = -1;
 	sprintf(szExprName,"select ExprID from TblExprs where ExprName LIKE '%s'",pszExprName);
-	if((sqlite_error = sqlite3_exec(m_pDB,szExprName,ExecCallbackID,&ExprID,NULL))!=SQLITE_OK)
+	if((sqlite_error = sqlite3_exec(m_pDB,szExprName,ExecCallbackID,&ExprID,nullptr))!=SQLITE_OK)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"sqlite3_exec - getting ExprID: %s", sqlite3_errmsg(m_pDB));   
 		CloseDatabase(true);
@@ -456,7 +456,7 @@ tsMRATrans *pMRATrans;
 tsMRATrans *pLRATrans;
 char szQueryTransName[200];
 
-if(m_pDB == NULL)
+if(m_pDB == nullptr)
 	return(eBSFerrInternal);
 
 if(!m_NumTransMRA)
@@ -481,7 +481,7 @@ if(m_bSafe)
 	{
 	// not a recently accessed sequence so need to check if already known to SQLite
 	sprintf(szQueryTransName,"select TransID from TblTrans where ExprID = %d AND TransName LIKE '%s'",ExprID,pszTransName);
-	sqlite3_exec(m_pDB,szQueryTransName,ExecCallbackID,&TransID,NULL);
+	sqlite3_exec(m_pDB,szQueryTransName,ExecCallbackID,&TransID,nullptr);
 	}
 
 if(TransID == -1)	// will be -1 if not already in database so need to add
@@ -533,7 +533,7 @@ if(TransID == -1)	// will be -1 if not already in database so need to add
 	if(m_bSafe)
 		{
 		sprintf(szQueryTransName,"select TransID from TblTrans where ExprID = %d AND TransName LIKE '%s'",ExprID,pszTransName);
-		sqlite3_exec(m_pDB,szQueryTransName,ExecCallbackID,&TransID,NULL);
+		sqlite3_exec(m_pDB,szQueryTransName,ExecCallbackID,&TransID,nullptr);
 		}
 	else
 		TransID = (int)sqlite3_last_insert_rowid(m_pDB);
@@ -767,7 +767,7 @@ sqlite3_reset(pStm->pPrepInsert);
 if(m_bSafe)
 	{
 	sprintf(szQueryExpresID,"select ExpresID from TblExpres where ExprID = %d AND TransID = %d",ExprID,TransID);
-	sqlite3_exec(m_pDB,szQueryExpresID,ExecCallbackID,&ExpresID,NULL);
+	sqlite3_exec(m_pDB,szQueryExpresID,ExecCallbackID,&ExpresID,nullptr);
 	}
 else
 	ExpresID = (int)sqlite3_last_insert_rowid(m_pDB);
@@ -788,7 +788,7 @@ tsDEStmSQL *pStm;
 int BinID;
 char szQueryBinID[200];
 pStm = &m_StmSQL[3];								// access sequence statements
-if(m_pDB == NULL)
+if(m_pDB == nullptr)
 	return(eBSFerrInternal);
 if((sqlite_error = sqlite3_bind_int(pStm->pPrepInsert, 1, ExprID))!=SQLITE_OK)
 	{
@@ -841,7 +841,7 @@ if(m_bSafe)
 	{
 	BinID = -1;
 	sprintf(szQueryBinID,"select BinID from TblBins where ExprID = %d AND TransID = %d AND ExpresID = %d AND NthBin = %d",ExprID,TransID,ExpresID,NthBin);
-	sqlite3_exec(m_pDB,szQueryBinID,ExecCallbackID,&BinID,NULL);
+	sqlite3_exec(m_pDB,szQueryBinID,ExecCallbackID,&BinID,nullptr);
 	}
 else
 	BinID = (int)sqlite3_last_insert_rowid(m_pDB);	
@@ -861,7 +861,7 @@ CSQLiteDE::ProcessCSV2SQLite(int PMode,			// currently just the one mode...defau
 int Rslt;
 bool bExtdBins;			// false if CSV file does not contain bins, true if determined that CSV contains bin counts
 int sqlite_error;
-sqlite3_stmt *prepstatement = NULL;
+sqlite3_stmt *prepstatement = nullptr;
 int ExprID;		// experiment identifier
 int TransID;
 int ExpresID;
@@ -907,7 +907,7 @@ int ExpNumFields;
 
 // load CSV file and determine number of fields, from these it can be determined if the file also contains the bin counts
 CCSVFile *pCSV = new CCSVFile;
-if(pCSV == NULL)
+if(pCSV == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to instantiate CCSVfile");
 	CloseDatabase(true);
@@ -961,7 +961,7 @@ pCSV->Close();
 
 sqlite3_initialize();
 
-if((CreateDatabase(bSafe,pszDatabase))==NULL)
+if((CreateDatabase(bSafe,pszDatabase))==nullptr)
 	{
 	sqlite3_shutdown();
 	return(eBSFerrInternal);
@@ -986,7 +986,7 @@ gDiagnostics.DiagOut(eDLInfo,gszProcName,"sqlite - populating tables");
 
 
 // synchronous writes off
-if((sqlite_error = sqlite3_exec(m_pDB,pszPragmaSyncOff,NULL,NULL,NULL))!=SQLITE_OK)
+if((sqlite_error = sqlite3_exec(m_pDB,pszPragmaSyncOff,nullptr,nullptr,nullptr))!=SQLITE_OK)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"sqlite - can't turn synchronous writes off: %s", sqlite3_errmsg(m_pDB)); 
 	CloseDatabase(true);
@@ -994,7 +994,7 @@ if((sqlite_error = sqlite3_exec(m_pDB,pszPragmaSyncOff,NULL,NULL,NULL))!=SQLITE_
 	}
 
 // bracket inserts as a single transaction
-if((sqlite_error = sqlite3_exec(m_pDB,pszBeginTransaction,NULL,NULL,NULL))!=SQLITE_OK)
+if((sqlite_error = sqlite3_exec(m_pDB,pszBeginTransaction,nullptr,nullptr,nullptr))!=SQLITE_OK)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"sqlite - can't begin transactions: %s",sqlite3_errmsg(m_pDB)); 
 	CloseDatabase(true);
@@ -1096,7 +1096,7 @@ while((Rslt=pCSV->NextLine()) > 0)			// onto next line containing fields
 	// file formats diverge dependent on if containing bin counts
 	if(!bExtdBins)
 		{
-		pszContOrExpr = NULL;
+		pszContOrExpr = nullptr;
 		pCSV->GetDouble(21,&ObsPearson);
 		pCSV->GetDouble(22,&PearsonMedian);
 		pCSV->GetDouble(23,&PearsonLow95);
@@ -1141,7 +1141,7 @@ while((Rslt=pCSV->NextLine()) > 0)			// onto next line containing fields
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Parsed %d CSV lines - transcripts: %d",NumElsRead, m_NumTrans);
 
 	// end transaction
-if((sqlite_error = sqlite3_exec(m_pDB,pszEndTransaction,NULL,NULL,NULL))!=SQLITE_OK)
+if((sqlite_error = sqlite3_exec(m_pDB,pszEndTransaction,nullptr,nullptr,nullptr))!=SQLITE_OK)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"sqlite - can't end transactions on '%s': %s", "Markers",sqlite3_errmsg(m_pDB)); 
 	CloseDatabase(true);
@@ -1156,7 +1156,7 @@ pStms = m_StmSQL;
 int TblIdx;
 for(TblIdx = 0; TblIdx < 4; TblIdx++,pStms++)
 	{
-	if(pStms->pszCreateIndexes == NULL)
+	if(pStms->pszCreateIndexes == nullptr)
 		continue;
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Creating indexes on table %s ...", pStms->pTblName);
 	if((sqlite_error = sqlite3_exec(m_pDB,pStms->pszCreateIndexes,0,0,0))!=SQLITE_OK)
@@ -1169,7 +1169,7 @@ for(TblIdx = 0; TblIdx < 4; TblIdx++,pStms++)
 	}
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Indexes generated");
 // synchronous writes off
-if((sqlite_error = sqlite3_exec(m_pDB,pszPragmaSyncOn,NULL,NULL,NULL))!=SQLITE_OK)
+if((sqlite_error = sqlite3_exec(m_pDB,pszPragmaSyncOn,nullptr,nullptr,nullptr))!=SQLITE_OK)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"sqlite - can't turn synchronous writes on: %s", sqlite3_errmsg(m_pDB)); 
 	CloseDatabase(true);

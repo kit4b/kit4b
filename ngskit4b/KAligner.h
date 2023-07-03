@@ -843,7 +843,7 @@ class CKAligner
 		   uint32_t ChromID,			// read expected to have aligned to this chromosome
 			uint32_t Loci);            // base to be returned is at this alignment loci, base will be complemented if antisense alignment
 
-	int ReportChimerics(char *pszChimericSeqFile = NULL);			// report chimerically trimmed read sequences to file pszChimericSeqFile
+	int ReportChimerics(char *pszChimericSeqFile = nullptr);			// report chimerically trimmed read sequences to file pszChimericSeqFile
 
 	int AutoTrimFlanks(int MinFlankExacts); // Autotrim back aligned read flanks until there are at least MinFlankExacts exactly matching bases in the flanks
 
@@ -1023,19 +1023,19 @@ class CKAligner
 	uint32_t		// Returns the number of reads thus far loaded and processed for alignment
 		ApproxNumReadsProcessed(uint32_t *pNumProcessed,uint32_t *pNumLoaded);
 
-	tsReadHit *IterReads(tsReadHit *pCurReadHit);			// to start from first read then pass in NULL as pCurReadHit
-	tsReadHit *IterSortedReads(tsReadHit *pCurReadHit);		// iterate over sorted reads, to start from first read then pass in NULL as pCurReadHit
-	tsReadHit *		// returned read which overlaps StartLoci and EndLoci, NULL if no read located
+	tsReadHit *IterReads(tsReadHit *pCurReadHit);			// to start from first read then pass in nullptr as pCurReadHit
+	tsReadHit *IterSortedReads(tsReadHit *pCurReadHit);		// iterate over sorted reads, to start from first read then pass in nullptr as pCurReadHit
+	tsReadHit *		// returned read which overlaps StartLoci and EndLoci, nullptr if no read located
 			IterateReadsOverlapping(bool bTriSNPs, // false if iterating DiSNPs, true if iterating TriSNPs
 						tsChromSNPs *pChromSNPs, // processing SNPs on this chromosome
 						int StartLoci,				// returned reads are required to overlap both this starting and
 						int EndLoci);				// this ending loci
 
-	tsReadHit*				// returned lowest sorted read which overlaps ChromID.Loci, NULL if non overlaps
+	tsReadHit*				// returned lowest sorted read which overlaps ChromID.Loci, nullptr if non overlaps
 		Locate1stReadOverlapLoci(uint32_t ChromID,				// loci is on this chromosome
 											int Loci);					// returned read is lowest sorted read which overlaps this loci
 
-	tsReadHit*													// located read, or NULL if unable to locate any more reads overlapping loci
+	tsReadHit*													// located read, or nullptr if unable to locate any more reads overlapping loci
 		IterReadsOverlapLoci(uint32_t ChromID,				// loci is on this chromosome
 									 int Loci,			        // returned reads are required to overlap this loci
 									 tsReadHit* pPrevRead);		// any previously returned read which overlapped loci 

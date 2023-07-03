@@ -185,13 +185,13 @@ int Process(eModepgSSNP Mode,				// processing mode
 int SNPs2pgSNPs(int argc, char* argv[])
 {
 	// determine my process name
-_splitpath(argv[0], NULL, NULL, gszProcName, NULL);
+_splitpath(argv[0], nullptr, nullptr, gszProcName, nullptr);
 #else
 int
 SNPs2pgSNPs(int argc, char** argv)
 {
 	// determine my process name
-	CUtility::splitpath((char*)argv[0], NULL, gszProcName);
+	CUtility::splitpath((char*)argv[0], nullptr, gszProcName);
 #endif
 	int Len;
 	int iFileLogLevel;			// level of file diagnostics
@@ -446,8 +446,8 @@ SNPs2pgSNPs(int argc, char** argv)
 			{ 
 			for (int Idx = 0; NumInSetA < cMaxSSetMembers && Idx < seta->count; Idx++)
 				{
-				pszSetA[Idx] = NULL;
-				if (pszSetA[NumInSetA] == NULL)
+				pszSetA[Idx] = nullptr;
+				if (pszSetA[NumInSetA] == nullptr)
 					pszSetA[NumInSetA] = new char[_MAX_PATH];
 				strncpy(pszSetA[NumInSetA], seta->sval[Idx], _MAX_PATH);
 				pszSetA[NumInSetA][_MAX_PATH - 1] = '\0';
@@ -486,8 +486,8 @@ SNPs2pgSNPs(int argc, char** argv)
 			{
 			for (int Idx = 0; NumInSetB < cMaxSSetMembers && Idx < setb->count; Idx++)
 				{
-				pszSetB[Idx] = NULL;
-				if (pszSetB[NumInSetB] == NULL)
+				pszSetB[Idx] = nullptr;
+				if (pszSetB[NumInSetB] == nullptr)
 					pszSetB[NumInSetB] = new char[_MAX_PATH];
 				strncpy(pszSetB[NumInSetB], setb->sval[Idx], _MAX_PATH);
 				pszSetB[NumInSetB][_MAX_PATH - 1] = '\0';
@@ -699,14 +699,14 @@ int Process(eModepgSSNP Mode,				// processing mode
 {
 int Rslt;
 CSNPs2pgSNPs *pSNPs2pgSNPs;
-if ((pSNPs2pgSNPs = new CSNPs2pgSNPs) == NULL)
+if ((pSNPs2pgSNPs = new CSNPs2pgSNPs) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to instantiate instance of CSNPs2pgSNPs");
 	return(eBSFerrInternal);
 	}
 
 Rslt = pSNPs2pgSNPs->Process(Mode, bAllowInferenced, LocalSeqErrRate,MinCoverage, MinAlleleProp,PValueThres, pszTrackName, pszAssemblyName,pszExperimentDescr, SetOp, NumInSetA, ppszSetA,NumInSetB, ppszSetB, pszGFFFile, pszSNPFile, pszOutFile);
-if(pSNPs2pgSNPs != NULL)
+if(pSNPs2pgSNPs != nullptr)
 	delete pSNPs2pgSNPs;
 return(Rslt);
 }
@@ -714,18 +714,18 @@ return(Rslt);
 
 CSNPs2pgSNPs::CSNPs2pgSNPs(void)
 {
-m_pSNPSites = NULL;
-m_pCSV = NULL;
-m_pszOutBuff = NULL;
-m_pszSiteDistBuff = NULL;
-m_pGapCntDist = NULL;
-m_pSharedSNPsDist = NULL;
-m_pIndividualSNPsDist = NULL;
-m_pGFFFile = NULL;
-m_pFeatures = NULL;
-m_pIsolateFeatSNPs = NULL;
-m_pMatrix = NULL;
-m_pSimilaritiesMatrix = NULL;
+m_pSNPSites = nullptr;
+m_pCSV = nullptr;
+m_pszOutBuff = nullptr;
+m_pszSiteDistBuff = nullptr;
+m_pGapCntDist = nullptr;
+m_pSharedSNPsDist = nullptr;
+m_pIndividualSNPsDist = nullptr;
+m_pGFFFile = nullptr;
+m_pFeatures = nullptr;
+m_pIsolateFeatSNPs = nullptr;
+m_pMatrix = nullptr;
+m_pSimilaritiesMatrix = nullptr;
 m_hOutFile = -1;
 m_hOutSiteDist = -1; 
 Reset();
@@ -734,23 +734,23 @@ Reset();
 
 CSNPs2pgSNPs::~CSNPs2pgSNPs(void)
 {
-if(m_pGFFFile != NULL)
+if(m_pGFFFile != nullptr)
 	delete m_pGFFFile;
-if(m_pCSV != NULL)
+if(m_pCSV != nullptr)
 	delete m_pCSV;
 if(m_hOutFile !=-1)
 	close(m_hOutFile);
-if (m_pszOutBuff != NULL)
+if (m_pszOutBuff != nullptr)
 	delete []m_pszOutBuff;
-if(m_pszSiteDistBuff != NULL)
+if(m_pszSiteDistBuff != nullptr)
 	delete []m_pszSiteDistBuff;
-if(m_pMatrix != NULL)
+if(m_pMatrix != nullptr)
 	delete []m_pMatrix;
-if(m_pSimilaritiesMatrix == NULL)
+if(m_pSimilaritiesMatrix == nullptr)
 	delete []m_pSimilaritiesMatrix;
-if(m_pSNPSites != NULL)
+if(m_pSNPSites != nullptr)
 	delete m_pSNPSites;
-if(m_pIsolateFeatSNPs != NULL)
+if(m_pIsolateFeatSNPs != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pIsolateFeatSNPs);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -759,41 +759,41 @@ if(m_pIsolateFeatSNPs != NULL)
 		munmap(m_pIsolateFeatSNPs, m_AllocdIsolateFeatSNPsMem);
 #endif
 	}
-if(m_pGapCntDist != NULL)
+if(m_pGapCntDist != nullptr)
 	delete []m_pGapCntDist;
-if(m_pSharedSNPsDist != NULL)
+if(m_pSharedSNPsDist != nullptr)
 	delete []m_pSharedSNPsDist;
-if(m_pIndividualSNPsDist != NULL)
+if(m_pIndividualSNPsDist != nullptr)
 	delete []m_pIndividualSNPsDist;
-if(m_pFeatures != NULL)
+if(m_pFeatures != nullptr)
 	delete []m_pFeatures;
 }
 
 void
 CSNPs2pgSNPs::Reset(void)
 {
-if(m_pGFFFile != NULL)
+if(m_pGFFFile != nullptr)
 	{
 	delete m_pGFFFile;
-	m_pGFFFile = NULL;
+	m_pGFFFile = nullptr;
 	}
 
-if(m_pFeatures != NULL)
+if(m_pFeatures != nullptr)
 	{
 	delete []m_pFeatures;
-	m_pFeatures = NULL;
+	m_pFeatures = nullptr;
 	}
 
 
 
-if(m_pCSV != NULL)
+if(m_pCSV != nullptr)
 	{
 	delete m_pCSV;
-	m_pCSV = NULL;
+	m_pCSV = nullptr;
 	}
 if (m_hOutFile != -1)
 	{
-	if (m_OutBuffOffs && m_pszOutBuff != NULL)
+	if (m_OutBuffOffs && m_pszOutBuff != nullptr)
 		CUtility::RetryWrites(m_hOutFile, m_pszOutBuff, m_OutBuffOffs);
 #ifdef _WIN32
 	_commit(m_hOutFile);
@@ -806,7 +806,7 @@ if (m_hOutFile != -1)
 
 if(m_hOutSiteDist != -1)
 	{
-	if(m_SiteDistOffs && m_pszSiteDistBuff != NULL)
+	if(m_SiteDistOffs && m_pszSiteDistBuff != nullptr)
 		CUtility::RetryWrites(m_hOutSiteDist, m_pszSiteDistBuff, m_SiteDistOffs);
 #ifdef _WIN32
 	_commit(m_hOutSiteDist);
@@ -819,41 +819,41 @@ if(m_hOutSiteDist != -1)
 
 
 
-if(m_pszOutBuff != NULL)
+if(m_pszOutBuff != nullptr)
 	{
 	delete []m_pszOutBuff;
-	m_pszOutBuff = NULL;
+	m_pszOutBuff = nullptr;
 	}
 
-if(m_pszSiteDistBuff != NULL)
+if(m_pszSiteDistBuff != nullptr)
 	{
 	delete[]m_pszSiteDistBuff;
-	m_pszSiteDistBuff = NULL;
+	m_pszSiteDistBuff = nullptr;
 	}
 
-if(m_pSNPSites != NULL)
+if(m_pSNPSites != nullptr)
 	{
 	delete m_pSNPSites;
-	m_pSNPSites = NULL;
+	m_pSNPSites = nullptr;
 	}
 
-if(m_pGapCntDist != NULL)
+if(m_pGapCntDist != nullptr)
 	{
 	delete[]m_pGapCntDist;
-	m_pGapCntDist = NULL;
+	m_pGapCntDist = nullptr;
 	}
-if(m_pSharedSNPsDist != NULL)
+if(m_pSharedSNPsDist != nullptr)
 	{
 	delete[]m_pSharedSNPsDist;
-	m_pSharedSNPsDist = NULL;
+	m_pSharedSNPsDist = nullptr;
 	}
-if(m_pIndividualSNPsDist != NULL)
+if(m_pIndividualSNPsDist != nullptr)
 	{
 	delete[]m_pIndividualSNPsDist;
-	m_pIndividualSNPsDist = NULL;
+	m_pIndividualSNPsDist = nullptr;
 	}
 
-if(m_pIsolateFeatSNPs != NULL)
+if(m_pIsolateFeatSNPs != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pIsolateFeatSNPs);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -861,19 +861,19 @@ if(m_pIsolateFeatSNPs != NULL)
 	if(m_pIsolateFeatSNPs != MAP_FAILED)
 		munmap(m_pIsolateFeatSNPs, m_AllocdIsolateFeatSNPsMem);
 #endif
-	m_pIsolateFeatSNPs = NULL;
+	m_pIsolateFeatSNPs = nullptr;
 	}
 
-if(m_pMatrix != NULL)
+if(m_pMatrix != nullptr)
 	{
 	delete[]m_pMatrix;
-	m_pMatrix = NULL;
+	m_pMatrix = nullptr;
 	}
 
-if(m_pSimilaritiesMatrix != NULL)
+if(m_pSimilaritiesMatrix != nullptr)
 	{
 	delete []m_pSimilaritiesMatrix;
-	m_pSimilaritiesMatrix = NULL;
+	m_pSimilaritiesMatrix = nullptr;
 	}
 
 m_SortOrder = 0;
@@ -1804,13 +1804,13 @@ while((Rslt = m_pCSV->NextLine()) > 0)				// onto next line containing fields
 	Report(false, pSNPSite);
 
 	tsIsolateFeatSNPs* pIsolateFeatSNPs;
-	if(m_pIsolateFeatSNPs == NULL)
+	if(m_pIsolateFeatSNPs == nullptr)
 		{
 		size_t memreq = (size_t)(sizeof(tsIsolateFeatSNPs) * cAllocNumIsolateFeatSNPs);
 
 #ifdef _WIN32
 		m_pIsolateFeatSNPs = (tsIsolateFeatSNPs*)malloc(memreq);	// initial and perhaps the only allocation
-		if(m_pIsolateFeatSNPs == NULL)
+		if(m_pIsolateFeatSNPs == nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, "IsolateFeatSNPs: Initial memory allocation of %zd bytes - %s", (int64_t)memreq, strerror(errno));
 			Reset();
@@ -1818,11 +1818,11 @@ while((Rslt = m_pCSV->NextLine()) > 0)				// onto next line containing fields
 			}
 #else
 		// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-		m_pIsolateFeatSNPs = (tsIsolateFeatSNPs *)mmap(NULL, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+		m_pIsolateFeatSNPs = (tsIsolateFeatSNPs *)mmap(nullptr, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 		if(m_pIsolateFeatSNPs == MAP_FAILED)
 			{
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, "IsolateFeatSNPs: Memory allocation of %zd bytes through mmap()  failed - %s", (int64_t)memreq, strerror(errno));
-			m_pIsolateFeatSNPs = NULL;
+			m_pIsolateFeatSNPs = nullptr;
 			Reset();
 			return(eBSFerrMem);
 			}
@@ -1842,9 +1842,9 @@ while((Rslt = m_pCSV->NextLine()) > 0)				// onto next line containing fields
 #else
 			pIsolateFeatSNPs = (tsIsolateFeatSNPs*)mremap(m_pIsolateFeatSNPs, m_AllocdIsolateFeatSNPsMem, memreq, MREMAP_MAYMOVE);
 			if(pIsolateFeatSNPs == MAP_FAILED)
-				pIsolateFeatSNPs = NULL;
+				pIsolateFeatSNPs = nullptr;
 #endif
-			if(pIsolateFeatSNPs == NULL)
+			if(pIsolateFeatSNPs == nullptr)
 				{
 				gDiagnostics.DiagOut(eDLFatal, gszProcName, "IsolateFeatSNPs: Memory re-allocation to %zd bytes - %s", memreq, strerror(errno));
 				return(eBSFerrMem);
@@ -1856,7 +1856,7 @@ while((Rslt = m_pCSV->NextLine()) > 0)				// onto next line containing fields
 		}
 	pIsolateFeatSNPs = &m_pIsolateFeatSNPs[m_IsolateFeatSNPs++];
 	memset(pIsolateFeatSNPs,0,sizeof(tsIsolateFeatSNPs));
-	if(m_NumFeatures > 0 && pFeature != NULL)
+	if(m_NumFeatures > 0 && pFeature != nullptr)
 		memcpy(&pIsolateFeatSNPs->SiteFeatCnts,pFeature,sizeof(tsSummaryFeatCnts));
 	memcpy(&pIsolateFeatSNPs->SNPSSite, pSNPSite,sizeof(tsSNPSSite));
 	}
@@ -1891,7 +1891,7 @@ char*
 CSNPs2pgSNPs::LocateChrom(int ChromID)
 {
 if(ChromID < 1 || ChromID > m_NumChromNames)
-	return(NULL);
+	return(nullptr);
 return(&m_szChromNames[m_szChromIdx[ChromID-1]]);
 }
 
@@ -1923,7 +1923,7 @@ char* // returned ptr to readset name
 CSNPs2pgSNPs::LocateReadset(int ReadsetID) // readset name identifier
 {
 	if(ReadsetID < 1 || ReadsetID > m_NumReadsetNames)
-		return(NULL);
+		return(nullptr);
 	return(&m_szReadsetNames[m_szReadsetIdx[ReadsetID - 1]]);
 }
 
@@ -1985,7 +1985,7 @@ if(bHeader)
 	}
 else
 	{
-	if(m_hOutSiteDist != -1 && m_pszSiteDistBuff != NULL)
+	if(m_hOutSiteDist != -1 && m_pszSiteDistBuff != nullptr)
 		{
 		if((m_SiteDistOffs + 500) >= m_AllocdSiteDistBuff)
 			{
@@ -2151,7 +2151,7 @@ else
 					}
 				}
 			m_OutBuffOffs += sprintf(&m_pszOutBuff[m_OutBuffOffs], ",%d", Depth);
-			if(m_pFeatures != NULL && m_NumFeatures)
+			if(m_pFeatures != nullptr && m_NumFeatures)
 				{
 				tsSummaryFeatCnts *pFeature;
 				if(pSNPSite->bInFeature)
@@ -2194,7 +2194,7 @@ int FeatIdx;
 int FromPeptideIdx;
 int ToPeptideIdx;
 
-if(NumFeatures == 0 || pFeatures == NULL)	// may be no features to be reported on!
+if(NumFeatures == 0 || pFeatures == nullptr)	// may be no features to be reported on!
 	return(eBSFSuccess);
 
 m_OutBuffOffs = 0;
@@ -2297,7 +2297,7 @@ CSNPs2pgSNPs::CloseOutFile(void)			// closes output file if currently opened
 {
 if(m_hOutFile != -1)
 	{
-	if(m_OutBuffOffs && m_pszOutBuff != NULL)
+	if(m_OutBuffOffs && m_pszOutBuff != nullptr)
 		CUtility::RetryWrites(m_hOutFile, m_pszOutBuff, m_OutBuffOffs);
 
 #ifdef _WIN32
@@ -2337,7 +2337,7 @@ strcpy(m_szInSNPsFile, pszSNPFile);
 strcpy(m_SpecAssemblyName, pszAssemblyName);
 strcpy(m_szDescription,pszExperimentDescr);
 strcpy(m_szTrackName, pszTrackName);
-if(pszGFFFile != NULL && pszGFFFile[0] != '\0')
+if(pszGFFFile != nullptr && pszGFFFile[0] != '\0')
 	strcpy(m_szGFFFile, pszGFFFile);
 else
 	m_szGFFFile[0] = '\0';
@@ -2355,7 +2355,7 @@ m_DiracThres = cDfltDiracThres;
 
 if(m_szGFFFile[0] != '\0')
 	{
-	if((m_pGFFFile = new CGFFFile) == NULL)
+	if((m_pGFFFile = new CGFFFile) == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to instantiate CGFFFile");
 		Reset();
@@ -2370,7 +2370,7 @@ if(m_szGFFFile[0] != '\0')
 		return(Rslt);
 		}
 
-	if((m_pFeatures = new tsSummaryFeatCnts[cAllocGeneFeatures])==NULL)
+	if((m_pFeatures = new tsSummaryFeatCnts[cAllocGeneFeatures])==nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to allocate memory for gene feature counts");
 		Reset();
@@ -2396,13 +2396,13 @@ if(m_szGFFFile[0] != '\0')
 			}
 
 		memset(pGeneCnts,0,sizeof(tsSummaryFeatCnts));
-		if((pszTmp = m_pGFFFile->GetNoteValue((char *)"gene_id"))==NULL) // seems that some GFF generators reference the CDS gene identifier "gene_id" as being simply 'gene'
+		if((pszTmp = m_pGFFFile->GetNoteValue((char *)"gene_id"))==nullptr) // seems that some GFF generators reference the CDS gene identifier "gene_id" as being simply 'gene'
 			pszTmp = m_pGFFFile->GetNoteValue((char*)"gene");
-		if (pszTmp == NULL)		// if still NULL after trying for both "gene_id" and "gene" then no point in continuing
+		if (pszTmp == nullptr)		// if still nullptr after trying for both "gene_id" and "gene" then no point in continuing
 			{
 			m_pGFFFile->Close();
 			delete m_pGFFFile;
-			m_pGFFFile = NULL;
+			m_pGFFFile = nullptr;
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to locate CDS gene identifier ('gene_id' or 'gene') in pszGFFFile '%s'", pszGFFFile);
 			Reset();
 			return(eBSFerrFeature);
@@ -2420,7 +2420,7 @@ if(m_szGFFFile[0] != '\0')
 		}
 	m_pGFFFile->Close();
 	delete m_pGFFFile;
-	m_pGFFFile = NULL;
+	m_pGFFFile = nullptr;
 	if(m_NumFeatures > m_AllocFeatures)
 		{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Too many CDS gene features in pszGFFFile '%s', hard limit of %d", pszGFFFile,cAllocGeneFeatures);
@@ -2430,14 +2430,14 @@ if(m_szGFFFile[0] != '\0')
 	}
 
 
-if ((m_pszOutBuff = new char[cAllocLineBuffSize]) == NULL)
+if ((m_pszOutBuff = new char[cAllocLineBuffSize]) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Unable to allocate memory for output line buffering -- %s", strerror(errno));
 	return(eBSFerrMem);
 	}
 m_AllocdOutBuff = cAllocLineBuffSize;
 
-if((m_pGapCntDist = new uint32_t[cMaxGapBetweenSNPS+1]) == NULL)
+if((m_pGapCntDist = new uint32_t[cMaxGapBetweenSNPS+1]) == nullptr)
 {
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Unable to allocate memory for inter SNP gap distributions -- %s", strerror(errno));
 	Reset();
@@ -2446,7 +2446,7 @@ if((m_pGapCntDist = new uint32_t[cMaxGapBetweenSNPS+1]) == NULL)
 memset(m_pGapCntDist, 0, sizeof(uint32_t) * (cMaxGapBetweenSNPS + 1));
 
 
-if((m_pSharedSNPsDist = new uint32_t[cMaxSharedSNPS+1]) == NULL)
+if((m_pSharedSNPsDist = new uint32_t[cMaxSharedSNPS+1]) == nullptr)
 {
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Unable to allocate memory for shared SNP distributions -- %s", strerror(errno));
 	Reset();
@@ -2455,7 +2455,7 @@ if((m_pSharedSNPsDist = new uint32_t[cMaxSharedSNPS+1]) == NULL)
 memset(m_pSharedSNPsDist, 0, sizeof(uint32_t) * (cMaxSharedSNPS + 1));
 
 
-if((m_pIndividualSNPsDist = new uint32_t[cMaxIndividualSNPS+1]) == NULL)
+if((m_pIndividualSNPsDist = new uint32_t[cMaxIndividualSNPS+1]) == nullptr)
 {
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Unable to allocate memory for individual SNP distributions -- %s", strerror(errno));
 	Reset();
@@ -2506,7 +2506,7 @@ if(Rslt < eBSFSuccess)
 	return(Rslt);
 	}
 
-if ((m_pCSV = new CCSVFile) == NULL)
+if ((m_pCSV = new CCSVFile) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to instantiate CCSVfile");
 	Reset();
@@ -2555,7 +2555,7 @@ switch(Mode) {
 				}
 
 			// readset name is simply the input SNP file sans path and file name extension if '.snp.csv' or just '.csv' - very simplistic but SNP CSVs do not contain sequencing readset names!
-			CUtility::splitpath(pszCurSNPFile,NULL, m_ReadsetIdentifier);
+			CUtility::splitpath(pszCurSNPFile,nullptr, m_ReadsetIdentifier);
 			if((Len = (int)strlen(m_ReadsetIdentifier)) >= 10 && !stricmp(&m_ReadsetIdentifier[Len - 9], ".snps.csv"))
 				m_ReadsetIdentifier[Len - 9] = '\0';
 			else
@@ -2568,7 +2568,7 @@ switch(Mode) {
 				return(Rslt);
 				}
 			Rslt = ProcessKalignSNPs();
-			if(m_pCSV != NULL)
+			if(m_pCSV != nullptr)
 				m_pCSV->Close();
 			if(Rslt < eBSFSuccess)
 				{
@@ -2655,11 +2655,11 @@ switch(Mode) {
 			return(Rslt);
 			}
 			// readset name is simply the input SNP file sans path and file name extension if it is '.csv' - very simplistic but snpmarkers CSVs do not contain sequencing readset names!
-		CUtility::splitpath(pszSNPFile, NULL, m_ReadsetIdentifier);
+		CUtility::splitpath(pszSNPFile, nullptr, m_ReadsetIdentifier);
 		if((Len = (int)strlen(m_ReadsetIdentifier)) >= 5 && !stricmp(&m_ReadsetIdentifier[Len - 4], ".csv"))
 			m_ReadsetIdentifier[Len-5] = '\0';
 		
-		if((m_pszSiteDistBuff = new char[cAllocLineBuffSize]) == NULL)
+		if((m_pszSiteDistBuff = new char[cAllocLineBuffSize]) == nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process: Unable to allocate memory for site distribution line buffering -- %s", strerror(errno));
 			Reset();
@@ -2779,10 +2779,10 @@ uint32_t CurReadsetID;
 uint32_t CurSNPLoci;
 uint32_t LociIdx;
 
-if(m_pMatrix != NULL)
+if(m_pMatrix != nullptr)
 	{
 	delete []m_pMatrix;
-	m_pMatrix = NULL;
+	m_pMatrix = nullptr;
 	}
 if(m_NumUniqueSiteLoci == 0)
 	m_NumUniqueSiteLoci = GenNumUniqueSiteLoci();
@@ -2848,7 +2848,7 @@ int Rslt;
 uint32_t LociIdx;
 uint32_t ReadsetIdx;
 
-if(m_pMatrix == NULL || m_NumUniqueSiteLoci == 0)
+if(m_pMatrix == nullptr || m_NumUniqueSiteLoci == 0)
 	if((Rslt=LoadLociIsolateMatrix())<eBSFSuccess)
 		{
 		Reset();
@@ -2987,16 +2987,16 @@ uint32_t ColReadsetIdx;
 
 uint32_t LociIdx;
 
-if(m_pMatrix == NULL || m_NumUniqueSiteLoci == 0)
+if(m_pMatrix == nullptr || m_NumUniqueSiteLoci == 0)
 	if((Rslt = LoadLociIsolateMatrix()) < eBSFSuccess){
 		Reset();
 		return(Rslt);
 		}
 
-if(m_pSimilaritiesMatrix != NULL)
+if(m_pSimilaritiesMatrix != nullptr)
 	{
 	delete[]m_pSimilaritiesMatrix;
-	m_pSimilaritiesMatrix = NULL;
+	m_pSimilaritiesMatrix = nullptr;
 	}
 
 m_SimilaritiesMatrixCols = m_NumCultivars;
@@ -3083,7 +3083,7 @@ uint32_t ColReadsetIdx;
 uint32_t RowReadsetIdx;
 double* pCurMatrixCell;
 
-if(m_pSimilaritiesMatrix == NULL)
+if(m_pSimilaritiesMatrix == nullptr)
 	if((Rslt = LoadSimilaritiesMatrix()) < eBSFSuccess)
 		{
 		Reset();

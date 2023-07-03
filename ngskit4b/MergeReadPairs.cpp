@@ -126,7 +126,7 @@ tsMIDsBarcode *pMIDsBarcode;
 
 
 CCSVFile *pCSV = new CCSVFile;
-if (pCSV == NULL)
+if (pCSV == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to instantiate CCSVfile");
 	return(eBSFerrObj);
@@ -300,9 +300,9 @@ etSeqBase *pBase1;
 etSeqBase *pBase;
 etSeqBase *pBarcodeBase;
 
-if(pReqSubs != NULL)
+if(pReqSubs != nullptr)
 	*pReqSubs = 0;
-if(pSeq == NULL || SeqLen < (Ofs + cMinBCReadSeqLen) || MaxAllowSubs < 0 || MaxAllowSubs > 5 || m_NumMIDsBarcodes < 1)
+if(pSeq == nullptr || SeqLen < (Ofs + cMinBCReadSeqLen) || MaxAllowSubs < 0 || MaxAllowSubs > 5 || m_NumMIDsBarcodes < 1)
 	return(0);
 	
 BestMIDsID = 0;
@@ -338,7 +338,7 @@ for(CurMIDsID = 1; CurMIDsID <= m_NumMIDsBarcodes; CurMIDsID +=1, pMIDs += 1)
 
 if(bUniqueLowestSubs)
 	{
-	if(pReqSubs != NULL)
+	if(pReqSubs != nullptr)
 		*pReqSubs = LowestNumSubs;
 	return(BestMIDsID);
 	}
@@ -366,9 +366,9 @@ CMergeReadPairs::MapPEMIDsBarcode(int SeqLen,			// minimum length of either pPE1
 	etSeqBase *pBase;
 	etSeqBase *pBarcodeBase;
 
-	if (pReqSubs != NULL)
+	if (pReqSubs != nullptr)
 		*pReqSubs = 0;
-	if (pPE1Seq == NULL || pPE2Seq == NULL || SeqLen < (Ofs + cMinBCReadSeqLen) || MaxAllowSubs < 0 || MaxAllowSubs > 5 || m_NumMIDsBarcodes < 1)
+	if (pPE1Seq == nullptr || pPE2Seq == nullptr || SeqLen < (Ofs + cMinBCReadSeqLen) || MaxAllowSubs < 0 || MaxAllowSubs > 5 || m_NumMIDsBarcodes < 1)
 		return(0);
 
 	BestMIDsID = 0;
@@ -424,7 +424,7 @@ CMergeReadPairs::MapPEMIDsBarcode(int SeqLen,			// minimum length of either pPE1
 
 	if (bUniqueLowestSubs)
 	{
-		if (pReqSubs != NULL)
+		if (pReqSubs != nullptr)
 			*pReqSubs = LowestNumSubs;
 		return(BestMIDsID);
 	}
@@ -445,7 +445,7 @@ tsBarcode *pBarcode;
 tsBarcode *pBarcode5;
 tsBarcode *pBarcode3;
 
-if(m_pBarcodes == NULL || (m_MaxBarcode5Len + m_MaxBarcode3Len) == 0 || SeqLen < (m_MaxBarcode5Len + m_MaxBarcode3Len))
+if(m_pBarcodes == nullptr || (m_MaxBarcode5Len + m_MaxBarcode3Len) == 0 || SeqLen < (m_MaxBarcode5Len + m_MaxBarcode3Len))
 	return(0);
 
 Pack5 = 0;
@@ -471,8 +471,8 @@ for(Idx = 0; Idx < m_MaxBarcode3Len; Idx++, pBase++)
 	}
 
 // try matching the barcodes
-pBarcode5 = NULL;
-pBarcode3 = NULL;
+pBarcode5 = nullptr;
+pBarcode3 = nullptr;
 pBarcode = m_pBarcodes;
 for(Idx = 0; Idx < m_NumBarcodes; Idx++,pBarcode++)
 	{
@@ -482,12 +482,12 @@ for(Idx = 0; Idx < m_NumBarcodes; Idx++,pBarcode++)
 	if(pBarcode->RevCplBarCode == Pack3 && pBarcode->ColRow)
 		pBarcode3 = pBarcode;
 
-	if(pBarcode5 != NULL && pBarcode3 != NULL)
+	if(pBarcode5 != nullptr && pBarcode3 != nullptr)
 		return(pBarcode5->Psn + ((pBarcode3->Psn-1) * 12));
 	}
 
-pBarcode5 = NULL;
-pBarcode3 = NULL;
+pBarcode5 = nullptr;
+pBarcode3 = nullptr;
 pBarcode = m_pBarcodes;
 for(Idx = 0; Idx < m_NumBarcodes; Idx++,pBarcode++)
 	{
@@ -497,7 +497,7 @@ for(Idx = 0; Idx < m_NumBarcodes; Idx++,pBarcode++)
 	if(pBarcode->RevCplBarCode == Pack3 && !pBarcode->ColRow)
 		pBarcode3 = pBarcode;
 
-	if(pBarcode5 != NULL && pBarcode3 != NULL)
+	if(pBarcode5 != nullptr && pBarcode3 != nullptr)
 		return(pBarcode3->Psn + ((pBarcode5->Psn-1) * 12));
 	}
 
@@ -518,7 +518,7 @@ CMergeReadPairs::MapPEBarcodesToWell(int SeqLen,		//minimum length of either p5S
 	tsBarcode *pBarcode5;
 	tsBarcode *pBarcode3;
 
-	if (m_pBarcodes == NULL || (m_MaxBarcode5Len + m_MaxBarcode3Len) == 0 || SeqLen < m_MaxBarcode5Len || SeqLen < m_MaxBarcode3Len)
+	if (m_pBarcodes == nullptr || (m_MaxBarcode5Len + m_MaxBarcode3Len) == 0 || SeqLen < m_MaxBarcode5Len || SeqLen < m_MaxBarcode3Len)
 		return(0);
 
 	Pack5 = 0;
@@ -545,8 +545,8 @@ CMergeReadPairs::MapPEBarcodesToWell(int SeqLen,		//minimum length of either p5S
 
 	// try matching the barcodes
 	// firstly with amplicon 5' sense and amplicon 3' antisense; if no match then try 5' antisense and 3' sense
-pBarcode5 = NULL;
-pBarcode3 = NULL;
+pBarcode5 = nullptr;
+pBarcode3 = nullptr;
 pBarcode = m_pBarcodes;
 
 for (Idx = 0; Idx < m_NumBarcodes; Idx++, pBarcode++)
@@ -557,12 +557,12 @@ for (Idx = 0; Idx < m_NumBarcodes; Idx++, pBarcode++)
 	if (pBarcode->BarCode == Pack3 && pBarcode->ColRow)
 		pBarcode3 = pBarcode;
 
-	if (pBarcode5 != NULL && pBarcode3 != NULL)
+	if (pBarcode5 != nullptr && pBarcode3 != nullptr)
 		return(pBarcode5->Psn + ((pBarcode3->Psn - 1) * 12));
 	}
 
-pBarcode5 = NULL;
-pBarcode3 = NULL;
+pBarcode5 = nullptr;
+pBarcode3 = nullptr;
 pBarcode = m_pBarcodes;
 for (Idx = 0; Idx < m_NumBarcodes; Idx++, pBarcode++)
 	{
@@ -572,7 +572,7 @@ for (Idx = 0; Idx < m_NumBarcodes; Idx++, pBarcode++)
 	if (pBarcode->BarCode == Pack3 && !pBarcode->ColRow)
 		pBarcode3 = pBarcode;
 	
-	if (pBarcode5 != NULL && pBarcode3 != NULL)
+	if (pBarcode5 != nullptr && pBarcode3 != nullptr)
 		return(pBarcode3->Psn + ((pBarcode5->Psn - 1) * 12));
 	}
 
@@ -596,7 +596,7 @@ for(WellIdx = 0; WellIdx < NumPlateWells; WellIdx++,pWell++)
 	if(bNoMerge)
 		{
 		sprintf(pWell->WellFile[1].szOutFile, "%.200s.Well%d.PE2.%s", m_szMergeOutFile, WellIdx + 1, m_OFormat == eOFfasta ? "fasta" : "fastq");
-		if ((pWell->WellFile[1].pOutBuffer = new char[cAllocOutBuffLen]) == NULL)
+		if ((pWell->WellFile[1].pOutBuffer = new char[cAllocOutBuffLen]) == nullptr)
 			return(eBSFerrMem);
 		pWell->WellFile[1].AllocdOutBuff = cAllocOutBuffLen;
 		}
@@ -604,7 +604,7 @@ for(WellIdx = 0; WellIdx < NumPlateWells; WellIdx++,pWell++)
 	sprintf(pWell->WellFile[0].szOutFile,"%.220s.Well%d.%s.%s",m_szMergeOutFile,WellIdx+1, bNoMerge == true ? "PE1" : "SE",m_OFormat == eOFfasta ? "fasta" : "fastq");
 	pWell->WellFile[0].hOutFile = -1;
 	pWell->WellFile[1].hOutFile = -1;
-	if((pWell->WellFile[0].pOutBuffer = new char [cAllocOutBuffLen]) == NULL)
+	if((pWell->WellFile[0].pOutBuffer = new char [cAllocOutBuffLen]) == nullptr)
 		return(eBSFerrMem);
 	pWell->WellFile[0].AllocdOutBuff = cAllocOutBuffLen;
 
@@ -617,9 +617,9 @@ return(m_NumWells);
 
 CMergeReadPairs::CMergeReadPairs(void)
 {
-m_pszMSeqs = NULL;
-m_pszUnmergedP1Seqs = NULL;
-m_pszUnmergedP2Seqs = NULL;
+m_pszMSeqs = nullptr;
+m_pszUnmergedP1Seqs = nullptr;
+m_pszUnmergedP2Seqs = nullptr;
 m_hOutMerged = -1;
 m_hOut5Unmerged = -1;
 m_hOut3Unmerged = -1;
@@ -658,12 +658,12 @@ if(m_ProcPhase != ePPUninit)
 			pWellFile = &pWell->WellFile[0];
 			for(WellFileIdx = 0; WellFileIdx < 2; WellFileIdx += 1, pWellFile++)
 				{
-				if(pWellFile->pOutBuffer != NULL)
+				if(pWellFile->pOutBuffer != nullptr)
 					{
 					if(bSync && pWellFile->CurBuffLen && pWellFile->hOutFile != -1)
 						CUtility::RetryWrites(pWellFile->hOutFile, pWellFile->pOutBuffer, pWellFile->CurBuffLen);
 					delete pWellFile->pOutBuffer;
-					pWellFile->pOutBuffer = NULL;
+					pWellFile->pOutBuffer = nullptr;
 					}
 				pWellFile->AllocdOutBuff = 0;
 				if(pWellFile->hOutFile != -1)
@@ -681,30 +681,30 @@ if(m_ProcPhase != ePPUninit)
 			}
 		}
 
-	if(m_pszMSeqs != NULL)
+	if(m_pszMSeqs != nullptr)
 		{
 		if(bSync && m_CurMSeqLen && m_hOutMerged != -1)
 			CUtility::RetryWrites(m_hOutMerged,m_pszMSeqs,m_CurMSeqLen);
 		delete m_pszMSeqs;
-		m_pszMSeqs = NULL;
+		m_pszMSeqs = nullptr;
 		}
 	m_AllocdMSeqs = 0;
 
-	if(m_pszUnmergedP1Seqs != NULL)
+	if(m_pszUnmergedP1Seqs != nullptr)
 		{
 		if(bSync && m_CurUnmergedP1Seqs && m_hOut5Unmerged != -1)
 			CUtility::RetryWrites(m_hOut5Unmerged,m_pszUnmergedP1Seqs,m_CurUnmergedP1Seqs);
 		delete m_pszUnmergedP1Seqs;
-		m_pszUnmergedP1Seqs = NULL;
+		m_pszUnmergedP1Seqs = nullptr;
 		}
 	m_AllocdUnmergedP1Seqs = 0;
 
-	if(bSync && m_pszUnmergedP2Seqs != NULL)
+	if(bSync && m_pszUnmergedP2Seqs != nullptr)
 		{
 		if(m_CurUnmergedP2Seqs && m_hOut3Unmerged != -1)
 			CUtility::RetryWrites(m_hOut3Unmerged,m_pszUnmergedP2Seqs,m_CurUnmergedP2Seqs);
 		delete m_pszUnmergedP2Seqs;
-		m_pszUnmergedP2Seqs = NULL;
+		m_pszUnmergedP2Seqs = nullptr;
 		}
 	m_AllocdUnmergedP2Seqs = 0;
 
@@ -756,9 +756,9 @@ m_bAmpliconNoMerge = false;
 m_hOutMerged = -1;			// file handle for output merged read microcontigs
 m_hOut5Unmerged = -1;		// file handle for output 5' unmerged reads
 m_hOut3Unmerged = -1;		// file handle for output 3' unmerged reads
-m_pszMSeqs = NULL;			// will be allocated for holding merged sequences ready for writing to file
-m_pszUnmergedP1Seqs = NULL;  // will be allocated for holding unmerged P1 sequences ready for writing to file
-m_pszUnmergedP2Seqs = NULL;  // will be allocated for holding unmerged P2 sequences ready for writing to file
+m_pszMSeqs = nullptr;			// will be allocated for holding merged sequences ready for writing to file
+m_pszUnmergedP1Seqs = nullptr;  // will be allocated for holding unmerged P1 sequences ready for writing to file
+m_pszUnmergedP2Seqs = nullptr;  // will be allocated for holding unmerged P2 sequences ready for writing to file
 m_AllocdMSeqs = 0;
 m_AllocdUnmergedP1Seqs = 0;
 m_AllocdUnmergedP2Seqs = 0;
@@ -1230,9 +1230,9 @@ int PE5QualLen;
 int PE3QualLen;
 
 
-if(m_hOutMerged != -1 && m_pszMSeqs == NULL)
+if(m_hOutMerged != -1 && m_pszMSeqs == nullptr)
 	{
-	if((m_pszMSeqs = new char [cAllocOutBuffLen])==NULL)
+	if((m_pszMSeqs = new char [cAllocOutBuffLen])==nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: unable to allocate memory (%d) for buffering file writes",cAllocOutBuffLen);
 		Reset(false);
@@ -1244,9 +1244,9 @@ if(m_hOutMerged != -1 && m_pszMSeqs == NULL)
 
 if(m_PMode == ePMseparate)
 	{
-	if(m_hOut5Unmerged != -1 && m_pszUnmergedP1Seqs == NULL)
+	if(m_hOut5Unmerged != -1 && m_pszUnmergedP1Seqs == nullptr)
 		{
-		if((m_pszUnmergedP1Seqs = new char [cAllocOutBuffLen])==NULL)
+		if((m_pszUnmergedP1Seqs = new char [cAllocOutBuffLen])==nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: unable to allocate memory (%d) for buffering file writes",cAllocOutBuffLen);
 			Reset(false);
@@ -1256,9 +1256,9 @@ if(m_PMode == ePMseparate)
 		m_CurUnmergedP1Seqs = 0;
 		}
 
-	if(m_hOut3Unmerged != -1 && m_pszUnmergedP2Seqs == NULL)
+	if(m_hOut3Unmerged != -1 && m_pszUnmergedP2Seqs == nullptr)
 		{
-		if((m_pszUnmergedP2Seqs = new char [cAllocOutBuffLen])==NULL)
+		if((m_pszUnmergedP2Seqs = new char [cAllocOutBuffLen])==nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: unable to allocate memory (%d) for buffering file writes",cAllocOutBuffLen);
 			Reset(false);

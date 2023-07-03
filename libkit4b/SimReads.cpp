@@ -390,7 +390,7 @@ if(Psn < MinPsn || Psn > MaxPsn)
 	RandSubs += 1;
 	}
 m_InducedErrDist[NumSubs2Induce] += 1;
-delete pSubd;
+delete []pSubd;
 return(NumSubs2Induce);
 }
 
@@ -848,7 +848,7 @@ if(bEntryCreated)
 	m_pGenomeSeq[pChromSeq->SeqOfs+SeqOfs] = eBaseEOS;
 	m_GenomeLen += SeqOfs + 1;
 	}
-delete pSeqBuff;
+delete []pSeqBuff;
 *pTotLen = TotLen;
 return(eBSFSuccess);
 }
@@ -1776,7 +1776,7 @@ if(bPEgen == true)
 	#endif
 	}
 if(pPEreads != NULL)
-	delete pPEreads;
+	delete []pPEreads;
 return(NumReported);
 }
 

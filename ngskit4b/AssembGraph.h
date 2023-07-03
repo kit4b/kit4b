@@ -185,11 +185,11 @@ class CAssembGraph
 	static int SortVerticesDiscGraphID(const void *arg1, const void *arg2);
 	static int SortComponentNumVertices(const void *arg1, const void *arg2);
 
-	tsGraphOutEdge *						// ptr to matching graph node, or NULL if unable to locate				
+	tsGraphOutEdge *						// ptr to matching graph node, or nullptr if unable to locate				
 		LocateSeqIDDnSeqID(tSeqID SeqID,	// match this SeqID
 				  tSeqID DnSeqID);			// with this DnSeqID
 
-	tsGraphOutEdge *						// ptr to matching graph node, or NULL if unable to locate				
+	tsGraphOutEdge *						// ptr to matching graph node, or nullptr if unable to locate				
 		LocateDnSeqIDSeq(tSeqID DnSeqID,	// match this DnSeqID
 				  tSeqID SeqID);			// with this SeqID
 
@@ -200,10 +200,10 @@ class CAssembGraph
 		LocateFirstDnSeqID(tSeqID DnSeqID);		// find first matching 
 
 
-	tsGraphVertex *			// ptr to vertex corresponding to SeqID , or NULL if unable to locate				
+	tsGraphVertex *			// ptr to vertex corresponding to SeqID , or nullptr if unable to locate				
 			LocateVertexSeqID(tSeqID SeqID);		// match this SeqID
 
-	tsGraphVertex *			// ptr to vertex corresponding to VertixID , or NULL if unable to locate				
+	tsGraphVertex *			// ptr to vertex corresponding to VertixID , or nullptr if unable to locate				
 			LocateVertex(tVertID VertixID);		// match this VertixID
 
 	uint32_t					// number of replacements

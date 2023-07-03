@@ -2,7 +2,7 @@
 
 const int32_t cMaxRefAssembName = 60;				// user specified reference assembly names can be at most this length excluding trailing '\0'
 const int32_t cMaxWildCardFileSpecs = 200;			// can accept at most this max number of input wildcarded file specs
-const int32_t cMaxPBAReadsets = 4000;				// currently allowing for at most this number of readsets
+const int32_t cMaxPBAReadsets = 8000;				// currently allowing for at most this number of readsets
 const int32_t cMaxIncludeChroms = 20;				// max number of include chromosomes regular expressions
 const int32_t cMaxExcludeChroms = 20;				// max number of exclude chromosomes regular expressions
 const int32_t cMaxChromNames = 100000;				// max number of unique chromsome names allowed
@@ -29,6 +29,7 @@ typedef enum TAG_ePBAuMode {
 	ePBAu2WIGConcordance,	// report on degree of coverage depth concordance - proportions of coverage depth (WIG) where all samples had alignments and all samples with near same coverage
 	ePBAu2AVCF,				// generate a allelic variant VCF
 	ePBAu2GVCF,				// generate a genotype VCF
+	ePBAu2DiVCF,			// generate a diplotype only VCF
 	ePBAu2DVCF,				// generate a deletion VCF
 	ePBAu2BED,				// generate BED containing all transcribed regions
 	ePBAuPlaceholder		// used as a placeholder to mark number of processing modes
@@ -193,6 +194,8 @@ class CPBAutils
 
 	uint8_t ConsensusDiploid(uint8_t PBA); // returns consensus diploid alleles as PBA from a possibly polyallelic PBA
 
+	bool IsMonoAllelic(uint8_t PBA);		// returns true if no alleles or single allele
+
 	char
 		PBAFastaBase(uint8_t PBA); 	// returns Fasta base char - 'a','c','g','t' or 'n' - as being the consensus allele in PBA
 
@@ -207,7 +210,7 @@ class CPBAutils
 		uint32_t ChromID,		// on this chromosome
 		uint32_t Loci);			// at this loci
 
-	uint8_t*   // loaded PBAs or NULL if errors loading PBAs for SampleID.ChromID
+	uint8_t*   // loaded PBAs or nullptr if errors loading PBAs for SampleID.ChromID
 		LoadSampleChromPBAs(uint32_t SampleID,   // Sample identifier
 			uint32_t ChromID);    // chrom identifier specifying which PBAs is to be loaded from SampleID file
 
@@ -289,7 +292,7 @@ class CPBAutils
 	int32_t GenAllelicVCF(int32_t RefPBAID,	// reference PBAs identifier
 						int32_t AllelicPBAID);	// PBAs with allelic differences
 
-	int32_t GenGenotypeVCF(ePBAuMode PMode, // will be either ePBAu2GVCF allelic genotype VCF or ePBAu2DVCF deletion genotype VCF
+	int32_t GenGenotypeVCF(ePBAuMode PMode, // will be either ePBAu2GVCF allelic genotype VCF or ePBAu2DiVCF diplotype geneotype only VCF or ePBAu2DVCF deletion genotype VCF
 						int32_t RefPBAID,	// reference identifier
 						int32_t NumSamples, 	// number of PBA samples to report on allelic variations relative to reference
 						double GTPropNAThres,		// when genotyping VCF then proportion of non-aligned calls over all samples must be < this threshold
@@ -309,7 +312,7 @@ public:
 	CPBAutils();	// constructor
 	~CPBAutils();	// destructor
 
-	int Process(ePBAuMode PMode,	// processing mode: ePBAu2Fasta PBA to Fasta, ePBAu2PBA Fasta to PBA, ePBAu2PBAConcordance concordance over PBA samples, ePBAu2WIGConcordance concordance over WIG samples, ePBAu2AVCF allelic variant VCF, ePBAu2GVCF allelic genotype VCF, ePBAu2DVCF deletion genotype VCF
+	int Process(ePBAuMode PMode,	// processing mode: ePBAu2Fasta PBA to Fasta, ePBAu2PBA Fasta to PBA, ePBAu2PBAConcordance concordance over PBA samples, ePBAu2WIGConcordance concordance over WIG samples, ePBAu2AVCF allelic variant VCF, ePBAu2GVCF allelic genotype VCF, ePBAu2DiVCF diplotype geneotype only VCF, ePBAu2DVCF deletion genotype VCF,FePBAu2BED generate BED containing all transcribed regions
 		int32_t LimitPBAs,			// limit number of loaded PBA files to this many. 1...cMaxPBAReadsets
 		int32_t PBAsTrim5,			// trim this many aligned PBAs from 5' end of aligned segments - reduces false alleles due to sequencing errors
 		int32_t PBAsTrim3,			// trim this many aligned PBAs from 3' end of aligned segments - reduces false alleles due to sequencing errors

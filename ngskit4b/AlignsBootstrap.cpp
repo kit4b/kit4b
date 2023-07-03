@@ -61,13 +61,13 @@ Process(ePMBSAlign PMode,					// bootstrap processing mode
 int AlignsBootstrap(int argc, char* argv[])
 {
 // determine my process name
-_splitpath(argv[0],NULL,NULL,gszProcName,NULL);
+_splitpath(argv[0],nullptr,nullptr,gszProcName,nullptr);
 #else
 int
 AlignsBootstrap(int argc, char** argv)
 {
 // determine my process name
-CUtility::splitpath((char *)argv[0],NULL,gszProcName);
+CUtility::splitpath((char *)argv[0],nullptr,gszProcName);
 #endif
 
 int iFileLogLevel;			// level of file diagnostics
@@ -298,7 +298,7 @@ if (!argerrors)
 		RandSeed = (int)(Now & 0x07fffffff);
 #else
 		struct timeval TimeNow;
-		gettimeofday(&TimeNow,NULL);
+		gettimeofday(&TimeNow,nullptr);
 		RandSeed = (int)(TimeNow.tv_usec & 0x07fffffff);
 #endif
 		}
@@ -464,7 +464,7 @@ Process(ePMBSAlign PMode,					// bootstrap processing mode
 {
 int Rslt;
 CAlignsBootstrap *pBootstrapper;
-if((pBootstrapper = new CAlignsBootstrap) == NULL)
+if((pBootstrapper = new CAlignsBootstrap) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Unable to instantiate instance of CAlignsBootstrap");
 	return(eBSFerrObj);
@@ -482,10 +482,10 @@ memset(m_Seqs,0,sizeof(m_Seqs));
 memset(m_WorkerInstances,0,sizeof(m_WorkerInstances));
 m_hCSVQRslts = -1;
 m_hCSVTRslts = -1;
-m_pQueryHits = NULL;
-m_pszQRsltsBuff = NULL;
-m_pszTRsltsBuff = NULL;
-m_pRandomMersenne = NULL;
+m_pQueryHits = nullptr;
+m_pszQRsltsBuff = nullptr;
+m_pszTRsltsBuff = nullptr;
+m_pRandomMersenne = nullptr;
 }
 
 
@@ -520,21 +520,21 @@ if(m_hCSVTRslts != -1)
 	close(m_hCSVTRslts);
 	m_hCSVTRslts = -1;
 	}
-if(m_pszQRsltsBuff != NULL)
+if(m_pszQRsltsBuff != nullptr)
 	{
 	free(m_pszQRsltsBuff);
-	m_pszQRsltsBuff = NULL;
+	m_pszQRsltsBuff = nullptr;
 	}
-if(m_pszTRsltsBuff != NULL)
+if(m_pszTRsltsBuff != nullptr)
 	{
 	free(m_pszTRsltsBuff);
-	m_pszTRsltsBuff = NULL;
+	m_pszTRsltsBuff = nullptr;
 	}
 
 pSeq = m_Seqs;
 for(SrcIdx = 0; SrcIdx < ePMBSSrcPlaceholder; SrcIdx++, pSeq++)
 	{
-	if(pSeq->pSeqs != NULL)
+	if(pSeq->pSeqs != nullptr)
 		{
 #ifdef _WIN32
 		free(pSeq->pSeqs);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -542,10 +542,10 @@ for(SrcIdx = 0; SrcIdx < ePMBSSrcPlaceholder; SrcIdx++, pSeq++)
 		if(pSeq->pSeqs != MAP_FAILED)
 			munmap(pSeq->pSeqs,pSeq->AllocdSeqsSize);
 #endif
-		pSeq->pSeqs = NULL;
+		pSeq->pSeqs = nullptr;
 		}
 
-	if(pSeq->pSeqBlocks != NULL)
+	if(pSeq->pSeqBlocks != nullptr)
 		{
 #ifdef _WIN32
 		free(pSeq->pSeqBlocks);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -553,10 +553,10 @@ for(SrcIdx = 0; SrcIdx < ePMBSSrcPlaceholder; SrcIdx++, pSeq++)
 		if(pSeq->pSeqBlocks != MAP_FAILED)
 			munmap(pSeq->pSeqBlocks,pSeq->SeqBlocksAllocSize);
 #endif
-		pSeq->pSeqBlocks = NULL;
+		pSeq->pSeqBlocks = nullptr;
 		}
 
-	if(pSeq->pSeqDescrs != NULL)
+	if(pSeq->pSeqDescrs != nullptr)
 		{
 #ifdef _WIN32
 		free(pSeq->pSeqDescrs);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -564,21 +564,21 @@ for(SrcIdx = 0; SrcIdx < ePMBSSrcPlaceholder; SrcIdx++, pSeq++)
 		if(pSeq->pSeqDescrs != MAP_FAILED)
 			munmap(pSeq->pSeqDescrs,pSeq->AllocdSeqDescrsSize);
 #endif
-		pSeq->pSeqDescrs = NULL;
+		pSeq->pSeqDescrs = nullptr;
 		}
 	}
 memset(m_Seqs,0,sizeof(m_Seqs));
 
-if(m_pQueryHits != NULL)
+if(m_pQueryHits != nullptr)
 	{
 	free(m_pQueryHits);
-	m_pQueryHits = NULL;
+	m_pQueryHits = nullptr;
 	}
 
-if(m_pRandomMersenne != NULL)
+if(m_pRandomMersenne != nullptr)
 	{
 	delete m_pRandomMersenne;
-	m_pRandomMersenne = NULL;
+	m_pRandomMersenne = nullptr;
 	}
 m_PMode = ePMBSAdefault;
 m_RandSeed = 0;
@@ -612,18 +612,18 @@ for(SrcIdx = 0; SrcIdx < ePMBSSrcPlaceholder; SrcIdx++,pSeq++)
 	memreq = ((size_t)cNumSeqDescrs * (sizeof(tsSeqDescr) + cAvgSeqDescrLen));
 #ifdef _WIN32
 	pSeq->pSeqDescrs = (tsSeqDescr *) malloc(memreq);	// initial and perhaps the only allocation
-	if(pSeq->pSeqDescrs == NULL)
+	if(pSeq->pSeqDescrs == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Init: Memory allocation of %zd bytes for sequence descriptors failed - %s",(int64_t)memreq,strerror(errno));
 		return(eBSFerrMem);
 		}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-	pSeq->pSeqDescrs = (tsSeqDescr *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+	pSeq->pSeqDescrs = (tsSeqDescr *)mmap(nullptr,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(pSeq->pSeqDescrs == MAP_FAILED)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Init: Memory allocation of %zd bytes for sequence descriptors failed - %s",(int64_t)memreq,strerror(errno));
-		pSeq->pSeqDescrs = NULL;
+		pSeq->pSeqDescrs = nullptr;
 		return(eBSFerrMem);
 		}
 #endif
@@ -634,7 +634,7 @@ for(SrcIdx = 0; SrcIdx < ePMBSSrcPlaceholder; SrcIdx++,pSeq++)
 	memreq = ((size_t)cDfltSeqBlocks * sizeof(tsSeqBlock));
 #ifdef _WIN32
 	pSeq->pSeqBlocks = (tsSeqBlock *) malloc(memreq);	// initial and perhaps the only allocation
-	if(pSeq->pSeqBlocks == NULL)
+	if(pSeq->pSeqBlocks == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Init: Memory allocation of %zd bytes for sequence blocks failed - %s",(int64_t)memreq,strerror(errno));
 		Reset();
@@ -642,11 +642,11 @@ for(SrcIdx = 0; SrcIdx < ePMBSSrcPlaceholder; SrcIdx++,pSeq++)
 		}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-	pSeq->pSeqBlocks = (tsSeqBlock *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+	pSeq->pSeqBlocks = (tsSeqBlock *)mmap(nullptr,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(pSeq->pSeqBlocks == MAP_FAILED)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Init: Memory allocation of %zd bytes for sequence blocks failed - %s",(int64_t)memreq,strerror(errno));
-		pSeq->pSeqBlocks = NULL;
+		pSeq->pSeqBlocks = nullptr;
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -659,7 +659,7 @@ for(SrcIdx = 0; SrcIdx < ePMBSSrcPlaceholder; SrcIdx++,pSeq++)
 	memreq = ((size_t)cDfltSeqAlloc * sizeof(etSeqBase));
 #ifdef _WIN32
 	pSeq->pSeqs = (etSeqBase *) malloc(memreq);	// initial and perhaps the only allocation
-	if(pSeq->pSeqs == NULL)
+	if(pSeq->pSeqs == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Init: Memory allocation of %zd bytes for sequence bases failed - %s",(int64_t)memreq,strerror(errno));
 		Reset();
@@ -667,11 +667,11 @@ for(SrcIdx = 0; SrcIdx < ePMBSSrcPlaceholder; SrcIdx++,pSeq++)
 		}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-	pSeq->pSeqs = (etSeqBase *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+	pSeq->pSeqs = (etSeqBase *)mmap(nullptr,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(pSeq->pSeqs == MAP_FAILED)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Init: Memory allocation of %zd bytes for sequence bases failed - %s",(int64_t)memreq,strerror(errno));
-		pSeq->pSeqs = NULL;
+		pSeq->pSeqs = nullptr;
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -689,7 +689,7 @@ if(RandSeed <= 0)
 	RandSeed = (int)(Now & 0x07fffffff);
 #else
 	struct timeval TimeNow;
-	gettimeofday(&TimeNow,NULL);
+	gettimeofday(&TimeNow,nullptr);
 	RandSeed = (int)(TimeNow.tv_usec & 0x07fffffff);
 #endif
 	}
@@ -724,9 +724,9 @@ if(pSeqAllocs->AllocdSeqDescrsSize <= (pSeqAllocs->UsedSeqDescrsSize + sizeof(ts
 #else
 	pSeqDescrs = (tsSeqDescr *)mremap(pSeqAllocs->pSeqDescrs,pSeqAllocs->AllocdSeqDescrsSize,memreq,MREMAP_MAYMOVE);
 	if(pSeqDescrs == MAP_FAILED)
-		pSeqDescrs = NULL;
+		pSeqDescrs = nullptr;
 #endif
-	if(pSeqDescrs == NULL)
+	if(pSeqDescrs == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddSeq: Memory reallocation to %zd bytes for sequence descriptors failed - %s",(int64_t)memreq,strerror(errno));
 		return(eBSFerrMem);
@@ -744,9 +744,9 @@ if(pSeqAllocs->SeqBlocksAllocSize <= pSeqAllocs->UsedSeqBlocksSize + sizeof(tsSe
 #else
 	pSeqBlocks = (tsSeqBlock *)mremap(pSeqAllocs->pSeqBlocks,pSeqAllocs->SeqBlocksAllocSize,memreq,MREMAP_MAYMOVE);
 	if(pSeqBlocks == MAP_FAILED)
-		pSeqBlocks = NULL;
+		pSeqBlocks = nullptr;
 #endif
-	if(pSeqBlocks == NULL)
+	if(pSeqBlocks == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddSeq: Memory reallocation to %zd bytes for sequence blocks failed - %s",(int64_t)memreq,strerror(errno));
 		return(eBSFerrMem);
@@ -764,9 +764,9 @@ if(pSeqAllocs->AllocdSeqsSize <= pSeqAllocs->UsedSeqsSize + (sizeof(etSeqBase) *
 #else
 	pSeqs = (etSeqBase *)mremap(pSeqAllocs->pSeqs,pSeqAllocs->AllocdSeqsSize,memreq,MREMAP_MAYMOVE);
 	if(pSeqs == MAP_FAILED)
-		pSeqs = NULL;
+		pSeqs = nullptr;
 #endif
-	if(pSeqs == NULL)
+	if(pSeqs == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddSeq: Memory reallocation to %zd bytes for sequence bases failed - %s",(int64_t)memreq,strerror(errno));
 		return(eBSFerrMem);
@@ -852,7 +852,7 @@ if((Rslt=Fasta.Open(pszFastaFile,true,(uint32_t)cMaxAssembSeqLen * 2))!=eBSFSucc
 
 AllocdBuffSize = (size_t)cMaxAssembSeqLen;
 // note malloc is used as can then simply realloc to expand as may later be required
-if((pSeqBuff = (uint8_t *)malloc(AllocdBuffSize)) == NULL)
+if((pSeqBuff = (uint8_t *)malloc(AllocdBuffSize)) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadFastaSeqs:- Unable to allocate memory (%u bytes) for sequence buffer",(uint32_t)AllocdBuffSize);
 	Fasta.Close();
@@ -938,7 +938,7 @@ if(Rslt >= eBSFSuccess && bEntryCreated && BuffOfs > 0)			// close entry
 				Rslt = eBSFSuccess;
 			}
 	}
-if(pSeqBuff != NULL)
+if(pSeqBuff != nullptr)
 	free(pSeqBuff);
 if(NumSeqsUnderlength > 0 || NumSeqsOverlength > 0)
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"LoadFastaSeqs - removed %u with length under %dbp, %u with length over %dbp  ",NumSeqsUnderlength,MinSeqLen,NumSeqsOverlength,MaxSeqLen);
@@ -1315,8 +1315,8 @@ if(hFile != -1)
 	close(hFile);
 	hFile = -1;
 	}
-if(pSeqBuff != NULL)
-	delete pSeqBuff;
+if(pSeqBuff != nullptr)
+	delete []pSeqBuff;
 return(0);
 }
 
@@ -1384,7 +1384,7 @@ if((Rslt = LoadFastaSeqs(ePMBSSTargAssemb,10,pszTargAssembFile)) < eBSFSuccess)
 	}
 
 memreq = sizeof(tsQueryHit) * m_Seqs[ePMBSSQuerySeqs].NumSeqs;
-if((m_pQueryHits = (tsQueryHit *)malloc(memreq)) == NULL)
+if((m_pQueryHits = (tsQueryHit *)malloc(memreq)) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Unable to allocate memory for %u query hits",m_Seqs[ePMBSSQuerySeqs].NumSeqs);
 	Reset();
@@ -1396,14 +1396,14 @@ m_CurQRsltsOfs = 0;
 m_CurTRsltsOfs = 0;
 
 memreq = (size_t)m_AllocRsltsBuff;		
-if((m_pszQRsltsBuff = (char *)malloc(memreq)) == NULL)
+if((m_pszQRsltsBuff = (char *)malloc(memreq)) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Unable to allocate memory for %u query hit summary results",m_AllocRsltsBuff);
 	Reset();
 	return(eBSFerrMem);
 	}
 
-if((m_pszTRsltsBuff = (char *)malloc(memreq)) == NULL)
+if((m_pszTRsltsBuff = (char *)malloc(memreq)) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Unable to allocate memory for %u target hit summary results",m_AllocRsltsBuff);
 	Reset();
@@ -1645,7 +1645,7 @@ for(ThreadIdx = 0; ThreadIdx < NumThreads; ThreadIdx++,pThreadPar++)
 	{
 	memset(pThreadPar,0,sizeof(tsWorkerInstance));
 #ifdef _WIN32
-	pThreadPar->threadHandle = NULL;
+	pThreadPar->threadHandle = nullptr;
 #else
 	pThreadPar->threadID = 0;
 #endif
@@ -1664,9 +1664,9 @@ for (ThreadIdx = 1; ThreadIdx <= NumThreads; ThreadIdx++, pThreadPar++)
 	pThreadPar->ThreadIdx = ThreadIdx;
 	pThreadPar->pThis = this;
 #ifdef _WIN32
-	pThreadPar->threadHandle = (HANDLE)_beginthreadex(NULL, 0x0fffff, WorkerInstance, pThreadPar, 0, &pThreadPar->threadID);
+	pThreadPar->threadHandle = (HANDLE)_beginthreadex(nullptr, 0x0fffff, WorkerInstance, pThreadPar, 0, &pThreadPar->threadID);
 #else
-	pThreadPar->threadRslt = pthread_create(&pThreadPar->threadID, NULL, WorkerInstance, pThreadPar);
+	pThreadPar->threadRslt = pthread_create(&pThreadPar->threadID, nullptr, WorkerInstance, pThreadPar);
 #endif
 	}
 
@@ -1767,26 +1767,26 @@ InterlockedCompareExchange(&m_TermAllThreads,1,0);
 __sync_val_compare_and_swap (&m_TermAllThreads,0,1);
 #endif
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "TerminateWorkerThreads: Requesting %u worker threads to terminate",StartedInstances);
-Then = time(NULL) + WaitSecs;
+Then = time(nullptr) + WaitSecs;
 NumForceTerminated = 0;
 pThreadPar = m_WorkerInstances;
 for(Idx = 0; Idx < StartedInstances; Idx++, pThreadPar += 1)
 	{
-	Now = time(NULL);
+	Now = time(nullptr);
 	if(Now >= Then)
 		Now = 1;
 	else
 		Now = Then - Now;
 
 #ifdef WIN32
-	if(pThreadPar->threadHandle != NULL)
+	if(pThreadPar->threadHandle != nullptr)
 		{
 		if(WAIT_TIMEOUT == WaitForSingleObject(pThreadPar->threadHandle, (uint32_t)Now * 1000))
 			{
 			NumForceTerminated += 1;
 			TerminateThread(pThreadPar->threadHandle,0);
 			}
-		pThreadPar->threadHandle = NULL;
+		pThreadPar->threadHandle = nullptr;
 		}
 #else
 	if(pThreadPar->threadID != 0)
@@ -1801,7 +1801,7 @@ for(Idx = 0; Idx < StartedInstances; Idx++, pThreadPar += 1)
 			gDiagnostics.DiagOut(eDLInfo, gszProcName, "TerminateWorkerThreads: Force terminating thread %u, pthread_timedjoin_np() returned %d",pThreadPar->ThreadIdx,JoinRlt);
 			NumForceTerminated += 1;
 			pthread_cancel(pThreadPar->threadID);	
-			pthread_join(pThreadPar->threadID, NULL);
+			pthread_join(pThreadPar->threadID, nullptr);
 			}
 		pThreadPar->threadID = 0;
 		}

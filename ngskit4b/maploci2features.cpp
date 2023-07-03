@@ -58,13 +58,13 @@ char *CSVFormat2Text(teCSVFormat Format);
 int maploci2features(int argc, char* argv[])
 {
 // determine my process name
-_splitpath(argv[0],NULL,NULL,gszProcName,NULL);
+_splitpath(argv[0],nullptr,nullptr,gszProcName,nullptr);
 #else
 int
 maploci2features(int argc, char** argv)
 {
 // determine my process name
-CUtility::splitpath((char *)argv[0],NULL,gszProcName);
+CUtility::splitpath((char *)argv[0],nullptr,gszProcName);
 #endif
 int iScreenLogLevel;		// level of screen diagnostics
 int iFileLogLevel;			// level of file diagnostics
@@ -528,7 +528,7 @@ int MLFProcess(etMLFPMode PMode,				// processing mode
 {
 int Rslt;
 CMapLoci2Feat *pMapLoci2Feat;
-if((pMapLoci2Feat = new CMapLoci2Feat) == NULL)
+if((pMapLoci2Feat = new CMapLoci2Feat) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "MLFProcess - error Unable to create instance of CMapLoci2Feat");
 	return(eBSFerrObj);

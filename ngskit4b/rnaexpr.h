@@ -2,7 +2,7 @@
 
 
 const int32_t cMaxSampleRows = 100000;		// expecting at most this number of RNA sample rows
-const int32_t cMaxRNAESamples = 4000;		// limit number of RNA samples (RNASampleNames) to be at most this many
+const int32_t cMaxRNAESamples = 8000;		// limit number of RNA samples (RNASampleNames) to be at most this many
 const int32_t cMaxWGSSamples =  2000;		// limit number of WGS samples (WGSSampleNames) to be at most this many
 const int32_t cMaxMaterials =  2000;		// limit number of materials (MaterialNames) to be at most this many
 const int32_t cMaxRNAEFeatures = 1000000;	// limit number of features (FeatureNames) to be at most this many

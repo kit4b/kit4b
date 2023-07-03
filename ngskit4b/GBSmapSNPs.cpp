@@ -27,13 +27,13 @@ Process(eModeGBSMapSNPs PMode,							// processing mode
 int gbsmapsnps(int argc, char *argv[])
 {
 	// determine my process name
-	_splitpath (argv[0], NULL, NULL, gszProcName, NULL);
+	_splitpath (argv[0], nullptr, nullptr, gszProcName, nullptr);
 #else
 int
 gbsmapsnps(int argc, char **argv)
 {
 	// determine my process name
-	CUtility::splitpath ((char *)argv[0], NULL, gszProcName);
+	CUtility::splitpath ((char *)argv[0], nullptr, gszProcName);
 #endif
 	int iFileLogLevel;			// level of file diagnostics
 	int iScreenLogLevel;		// level of file diagnostics
@@ -255,7 +255,7 @@ Process(eModeGBSMapSNPs PMode,			// processing mode
 int Rslt;
 CGBSmapSNPs* pGBSmapSNPs;
 
-if((pGBSmapSNPs = new CGBSmapSNPs) == NULL)
+if((pGBSmapSNPs = new CGBSmapSNPs) == nullptr)
 	{
 	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Unable to instantiate instance of CGBSmapSNPs");
 	return(eBSFerrObj);
@@ -269,11 +269,11 @@ return(Rslt);
 CGBSmapSNPs::CGBSmapSNPs()
 {
 m_hOutFile = -1;
-m_pInNMFile = NULL;
-m_pInGBSFile = NULL;
-m_pChromMappings = NULL;
-m_pProgenyFndrAligns = NULL;
-m_pszOutBuffer = NULL;
+m_pInNMFile = nullptr;
+m_pInGBSFile = nullptr;
+m_pChromMappings = nullptr;
+m_pProgenyFndrAligns = nullptr;
+m_pszOutBuffer = nullptr;
 Reset();
 }
 
@@ -281,15 +281,15 @@ CGBSmapSNPs::~CGBSmapSNPs()
 {
 if(m_hOutFile != -1)
 	close(m_hOutFile);
-if(m_pInNMFile != NULL)
+if(m_pInNMFile != nullptr)
 	delete m_pInNMFile;
-if(m_pInGBSFile != NULL)
+if(m_pInGBSFile != nullptr)
 	delete m_pInGBSFile;
-if(m_pChromMappings != NULL)
+if(m_pChromMappings != nullptr)
 	delete m_pChromMappings;
-if(m_pszOutBuffer != NULL)
+if(m_pszOutBuffer != nullptr)
 	delete []m_pszOutBuffer;
-if(m_pProgenyFndrAligns != NULL)
+if(m_pProgenyFndrAligns != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pProgenyFndrAligns);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -308,30 +308,30 @@ if(m_hOutFile != -1)
 	close(m_hOutFile);
 	m_hOutFile = -1;
 	}
-if(m_pInNMFile != NULL)
+if(m_pInNMFile != nullptr)
 	{
 	delete m_pInNMFile;
-	m_pInNMFile = NULL;
+	m_pInNMFile = nullptr;
 	}
-if(m_pInGBSFile != NULL)
+if(m_pInGBSFile != nullptr)
 	{
 	delete m_pInGBSFile;
-	m_pInGBSFile = NULL;
+	m_pInGBSFile = nullptr;
 	}
-if(m_pChromMappings != NULL)
+if(m_pChromMappings != nullptr)
 	{
 	delete m_pChromMappings;
-	m_pChromMappings = NULL;
+	m_pChromMappings = nullptr;
 	}
 m_NumChromMappings = 0;
 
-if(m_pszOutBuffer != NULL)
+if(m_pszOutBuffer != nullptr)
 	{
 	delete []m_pszOutBuffer;
-	m_pszOutBuffer = NULL;
+	m_pszOutBuffer = nullptr;
 	}
 
-if(m_pProgenyFndrAligns != NULL)
+if(m_pProgenyFndrAligns != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pProgenyFndrAligns);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -339,7 +339,7 @@ if(m_pProgenyFndrAligns != NULL)
 	if(m_pProgenyFndrAligns != MAP_FAILED)
 		munmap(m_pProgenyFndrAligns, m_AllocdProgenyFndrAlignsMem);
 #endif
-	m_pProgenyFndrAligns = NULL;
+	m_pProgenyFndrAligns = nullptr;
 	}
 
 m_UsedProgenyFndrAligns = 0;
@@ -349,9 +349,9 @@ m_AllocdProgenyFndrAlignsMem = 0;
 m_OutBuffIdx = 0;
 m_AllocOutBuff = 0;
 m_PMode = eMGBSMDefault;
-m_pszInNMFile = NULL;
-m_pszInGBSFile = NULL;
-m_pszOutFile = NULL;
+m_pszInNMFile = nullptr;
+m_pszInGBSFile = nullptr;
+m_pszOutFile = nullptr;
 
 m_NumFounders = 0;
 memset(m_FndrIDs,0,sizeof(m_FndrIDs));
@@ -379,7 +379,7 @@ int ChromNameLen;
 char *pszLAname;
 
 // with any luck the sequence name will be same as the last accessed
-if((pszLAname = LocateChrom(m_LAChromNameID)) != NULL)
+if((pszLAname = LocateChrom(m_LAChromNameID)) != nullptr)
 	if(!stricmp(pszChrom,pszLAname))
 		return(m_LAChromNameID);
 
@@ -413,7 +413,7 @@ uint32_t ChromNameIdx;
 char *pszLAname;
 
 // with any luck the sequence name will be same as the last accessed
-if((pszLAname = LocateChrom(m_LAChromNameID)) != NULL)
+if((pszLAname = LocateChrom(m_LAChromNameID)) != nullptr)
 	if(!stricmp(pszChrom,pszLAname))
 		return(m_LAChromNameID);
 
@@ -431,7 +431,7 @@ char*
 CGBSmapSNPs::LocateChrom(uint32_t ChromID)
 {
 if(ChromID < 1 || ChromID > m_NumChromNames)
-	return(NULL);
+	return(nullptr);
 return(&m_szChromNames[m_szChromIdx[ChromID-1]]);
 }
 
@@ -449,7 +449,7 @@ char *pszToChrom;
 
 tsChromMapping *pChromMapping;
 
-if((m_pInNMFile = new CCSVFile) == NULL)
+if((m_pInNMFile = new CCSVFile) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to instantiate CCSVfile");
 	Reset();
@@ -463,9 +463,9 @@ if((Rslt = m_pInNMFile->Open(pszInNMFile)) != eBSFSuccess)
 	return(Rslt);
 	}
 
-if(m_pChromMappings == NULL)
+if(m_pChromMappings == nullptr)
 	{
-	if((m_pChromMappings = new tsChromMapping [cMaxChromMappings]) == NULL)
+	if((m_pChromMappings = new tsChromMapping [cMaxChromMappings]) == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to allocate memory for holding chromosome sizes and names");
 		Reset();
@@ -506,7 +506,7 @@ while ((Rslt = m_pInNMFile->NextLine()) > 0)				// onto next line containing fie
 	pChromMapping->Size = ChromSize;
 	}
 delete m_pInNMFile;
-m_pInNMFile = NULL;
+m_pInNMFile = nullptr;
 
 pChromMapping = m_pChromMappings;
 
@@ -526,7 +526,7 @@ char *pszLAname;
 Type = '0' + (char)ReadsetType;
 
 // with any luck the sequence name will be same as the last accessed
-if((pszLAname = LocateReadset(m_LAReadsetNameID)) != NULL)
+if((pszLAname = LocateReadset(m_LAReadsetNameID)) != nullptr)
 	{
 	if(pszLAname[-1] == Type &&	// prefixed with ReadsetType
 		!stricmp(pszReadset,pszLAname))
@@ -568,7 +568,7 @@ CGBSmapSNPs::LocateReadset(int32_t ReadsetID)
 int Idx;
 Idx = ReadsetID & 0x0fffffff;			// mask out any potential ReadsetType
 if(Idx < 1 || Idx > m_NumReadsetNames)
-	return(NULL);
+	return(nullptr);
 return(&(m_szReadsetNames[m_szReadsetIdx[Idx -1]+1])); // skipping lead char which is the ReadsetType
 }
 
@@ -583,7 +583,7 @@ char *pszLAReadset;
 
 Type = '0'+ (char)ReadsetType;
 // with any luck the Readset name will be same as the last accessed
-if((pszLAReadset = LocateReadset(m_LAReadsetNameID)) != NULL)
+if((pszLAReadset = LocateReadset(m_LAReadsetNameID)) != nullptr)
 	{
 	if(pszLAReadset[-1] == Type &&	// prefixed with ReadsetType
 		!stricmp(pszReadset,pszLAReadset))
@@ -622,7 +622,7 @@ for(MapIdx = 0; MapIdx < m_NumChromMappings; MapIdx++,pChromMapping++)
 	if(!strnicmp(pszAlias,pszChrom,strlen(pszAlias)))
 		return(pChromMapping);
 	}
-return(NULL);
+return(nullptr);
 }
 
 // inplace modification of sample identifier ensuring that sample identifiers have a prefix of 'S0' where original identifier starts with 'S[1-9]'
@@ -666,7 +666,7 @@ uint32_t SNPLoci;
 tsProgenyFndrAligns ProgenyFndrAligns;
 char *pszGBSReadset;
 
-if((m_pInGBSFile = new CCSVFile) == NULL)
+if((m_pInGBSFile = new CCSVFile) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to instantiate CCSVfile");
 	Reset();
@@ -790,7 +790,7 @@ while ((Rslt = m_pInGBSFile->NextLine()) > 0)				// onto next line containing fi
 	}
 
 delete m_pInGBSFile;
-m_pInGBSFile = NULL;
+m_pInGBSFile = nullptr;
 return(Rslt);
 }
 
@@ -816,7 +816,7 @@ tsProgenyFndrAligns ProgenyFndrAligns;
 tsChromMapping *pChromMapping;
 char *pszGBSReadset;
 
-if((m_pInGBSFile = new CCSVFile) == NULL)
+if((m_pInGBSFile = new CCSVFile) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to instantiate CCSVfile");
 	Reset();
@@ -831,7 +831,7 @@ if((Rslt = m_pInGBSFile->Open(pszInGBSFile)) != eBSFSuccess)
 	}
 m_pInGBSFile->SetMaxFields(cMaxProgenyReadsets + 5);		// could be quite a few F4s!
 
-pszAliasChrom = NULL;
+pszAliasChrom = nullptr;
 SNPLoci = 0;
 ExptdNumFields = 0;
 CurNumFields = 0;
@@ -894,7 +894,7 @@ while ((Rslt = m_pInGBSFile->NextLine()) > 0)				// onto next line containing fi
 	m_pInGBSFile->GetText(2, &pszAliasChrom);			
 	m_pInGBSFile->GetInt(3, (int*)&SNPLoci);
 
-	if((pChromMapping = LocateAliasChromMapping(pszAliasChrom))==NULL)	// currently a linear search
+	if((pChromMapping = LocateAliasChromMapping(pszAliasChrom))==nullptr)	// currently a linear search
 		continue;
 
 	if(SNPLoci > pChromMapping->Size)		// clamp
@@ -954,7 +954,7 @@ while ((Rslt = m_pInGBSFile->NextLine()) > 0)				// onto next line containing fi
 	}
 
 delete m_pInGBSFile;
-m_pInGBSFile = NULL;
+m_pInGBSFile = nullptr;
 return(Rslt);
 }
 
@@ -966,7 +966,7 @@ CGBSmapSNPs::SNPs2Alleles(char* pszSNPs,	// translate char representation of maj
 uint8_t Alleles;
 char szlcSNPs[80];
 char *pDst;
-if(pszSNPs == NULL || pszSNPs[0] == '\0')
+if(pszSNPs == nullptr || pszSNPs[0] == '\0')
 	return(0);
 pDst = szlcSNPs;
 while((*pDst++ = tolower(*pszSNPs++))!= '\0');
@@ -1060,7 +1060,7 @@ m_ExprID = ExprID;
 if(PMode == eMGBSMDefault)
 	{
 	// parse and load chromosome sizes and name mappings
-	if(pszInNMFile != NULL && pszInNMFile[0] != '\0' && (Rslt = LoadNM(pszInNMFile)) < eBSFSuccess)
+	if(pszInNMFile != nullptr && pszInNMFile[0] != '\0' && (Rslt = LoadNM(pszInNMFile)) < eBSFSuccess)
 		{
 		Reset();
 		return(Rslt);
@@ -1119,9 +1119,9 @@ int32_t PrevChromID;
 char *pszProgenyReadset;
 char *pszChrom;
 
-if(m_pszOutBuffer == NULL)
+if(m_pszOutBuffer == nullptr)
 	{
-	if((m_pszOutBuffer = new uint8_t[cOutBuffSize]) == NULL)
+	if((m_pszOutBuffer = new uint8_t[cOutBuffSize]) == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "ReportHaplotypesByProgeny: Memory allocation of %u bytes for output buffering failed - %s", cOutBuffSize, strerror(errno));
 		Reset();
@@ -1241,9 +1241,9 @@ bool bProgFndrs;
 
 char* pszChrom;
 
-if(m_pszOutBuffer == NULL)
+if(m_pszOutBuffer == nullptr)
 {
-	if((m_pszOutBuffer = new uint8_t[cOutBuffSize]) == NULL)
+	if((m_pszOutBuffer = new uint8_t[cOutBuffSize]) == nullptr)
 	{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "ReportMatrix: Memory allocation of %u bytes for output buffering failed - %s", cOutBuffSize, strerror(errno));
 		Reset();
@@ -1383,21 +1383,21 @@ uint32_t ToAllocdProgenyFndrAligns;
 tsProgenyFndrAligns *pProgenyFndrAligns;
 size_t memreq;
 
-if (m_pProgenyFndrAligns == NULL)					// may be NULL first time in
+if (m_pProgenyFndrAligns == nullptr)					// may be nullptr first time in
 	{
 	memreq = cAllocProgenyFndrAligns * sizeof(tsProgenyFndrAligns);
 #ifdef _WIN32
 	m_pProgenyFndrAligns = (tsProgenyFndrAligns*)malloc((size_t)memreq);
-	if (m_pProgenyFndrAligns == NULL)
+	if (m_pProgenyFndrAligns == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddWinBinCnts: Memory allocation of %zd bytes failed", (int64_t)memreq);
 		return(0);
 		}
 #else
-	m_pProgenyFndrAligns = (tsProgenyFndrAligns*)mmap(NULL, (size_t)memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	m_pProgenyFndrAligns = (tsProgenyFndrAligns*)mmap(nullptr, (size_t)memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	if (m_pProgenyFndrAligns == MAP_FAILED)
 		{
-		m_pProgenyFndrAligns = NULL;
+		m_pProgenyFndrAligns = nullptr;
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "AddWinBinCnts: Memory allocation of %zd bytes through mmap()  failed", (int64_t)memreq, strerror(errno));
 		return(0);
 		}
@@ -1414,7 +1414,7 @@ else
 		size_t memreq = ToAllocdProgenyFndrAligns * sizeof(tsProgenyFndrAligns);
 #ifdef _WIN32
 		pProgenyFndrAligns = (tsProgenyFndrAligns*)realloc(m_pProgenyFndrAligns, memreq);
-		if (pProgenyFndrAligns == NULL)
+		if (pProgenyFndrAligns == nullptr)
 			{
 #else
 		pProgenyFndrAligns = (tsProgenyFndrAligns*)mremap(m_pProgenyFndrAligns, m_AllocdProgenyFndrAlignsMem, memreq, MREMAP_MAYMOVE);
@@ -1429,7 +1429,7 @@ else
 		m_AllocdProgenyFndrAligns =ToAllocdProgenyFndrAligns;
 		}
 pProgenyFndrAligns = &m_pProgenyFndrAligns[m_UsedProgenyFndrAligns++];
-if(pInitProgenyFndrAligns != NULL)
+if(pInitProgenyFndrAligns != nullptr)
 	*pProgenyFndrAligns = *pInitProgenyFndrAligns;
 else
 	memset(pProgenyFndrAligns,0,sizeof(tsProgenyFndrAligns));
@@ -1437,121 +1437,120 @@ return(m_UsedProgenyFndrAligns);
 }
 
 inline void
-CGBSmapSNPs::BitsVectSet(uint16_t Bit,		// bit to set, range 0..4095
-			ts4096Bits & BitsVect)
+CGBSmapSNPs::BitsVectSet(uint16_t Bit,		// bit to set, range 0..cMaxBitVectBits-1
+	tsBitsVect& BitsVect)
 {
-BitsVect.Bits[Bit / 64] |= ((uint64_t)0x01 << (Bit % 64));
+	BitsVect.Bits[Bit / 64] |= ((uint64_t)0x01 << (Bit % 64)); // 64bit words!
 }
 
 inline void
-CGBSmapSNPs::BitsVectReset(uint16_t Bit,		// bit to reset, range 0..4095
-		   ts4096Bits & BitsVect)
+CGBSmapSNPs::BitsVectReset(uint16_t Bit,		// bit to reset, range 0..cMaxBitVectBits-1
+	tsBitsVect& BitsVect)
 {
-BitsVect.Bits[Bit / 64] &= ~((uint64_t)0x01 << (Bit % 64));
+	BitsVect.Bits[Bit / 64] &= ~((uint64_t)0x01 << (Bit % 64)); // 64bit words!
 }
 
 
 inline bool
-CGBSmapSNPs::BitsVectTest(uint16_t Bit,		// bit to test, range 0..4095
-			ts4096Bits & BitsVect)
+CGBSmapSNPs::BitsVectTest(uint16_t Bit,		// bit to test, range 0..cMaxBitVectBits-1
+	tsBitsVect& BitsVect)
 {
-return(BitsVect.Bits[Bit / 64] & ((uint64_t)0x01 << (Bit % 64)) ? true : false);
+	return(BitsVect.Bits[Bit / 64] & ((uint64_t)0x01 << (Bit % 64)) ? true : false);
 }
 
 inline bool
-CGBSmapSNPs::BitsVectEqual(ts4096Bits & BitsVectA,	// compare for equality
-								ts4096Bits & BitsVectB)
+CGBSmapSNPs::BitsVectEqual(tsBitsVect& BitsVectA,	// compare for equality
+	tsBitsVect& BitsVectB)
 {
-if(!memcmp(&BitsVectA,&BitsVectB,sizeof(ts4096Bits)))
-	return(true);
-return(false);
+	if (!memcmp(&BitsVectA, &BitsVectB, sizeof(tsBitsVect)))
+		return(true);
+	return(false);
 }
 
 inline void
-CGBSmapSNPs::BitsVectInitialise(bool Set,			// if true then initialse all bits as set, otherwise initialise all bits as reset
-				ts4096Bits & BitsVect)
+CGBSmapSNPs::BitsVectInitialise(bool Set,			// if true then initialise all bits as set, otherwise initialise all bits as reset
+	tsBitsVect& BitsVect)
 {
-uint8_t InitWith;
-if(Set)
-	InitWith = 0xff;
-else
-	InitWith = 0;
-memset(&BitsVect,InitWith,sizeof(ts4096Bits));
+	uint8_t InitWith;
+	if (Set)
+		InitWith = 0xff;
+	else
+		InitWith = 0;
+	memset(&BitsVect, InitWith, sizeof(tsBitsVect));
 }
 
 inline uint32_t
-CGBSmapSNPs::BitsVectCount(ts4096Bits& BitsVect)		// count number of set bits
+CGBSmapSNPs::BitsVectCount(tsBitsVect& BitsVect)		// count number of set bits
 {
-uint32_t Count = 0;
-uint64_t *pWord = BitsVect.Bits;
-uint64_t Bit;
-for(uint32_t WordIdx = 0; WordIdx < 64; WordIdx++, pWord++)
+	uint32_t Count = 0;
+	uint64_t* pWord = BitsVect.Bits;
+	uint64_t Bit;
+	for (uint32_t WordIdx = 0; WordIdx < cBitVectWords; WordIdx++, pWord++)
 	{
-	if(*pWord == 0)
-		continue;
-	for(Bit = 0x01; Bit != 0; Bit <<= 1)
-		if(*pWord & Bit)
-			Count++;
+		if (*pWord == 0)
+			continue;
+		for (Bit = 0x01; Bit != 0; Bit <<= 1)
+			if (*pWord & Bit)
+				Count++;
 	}
-return(Count);
+	return(Count);
 }
 
 inline uint32_t
-CGBSmapSNPs::BitsVectUnion(ts4096Bits &BitsVectA, ts4096Bits& BitsVectB)		// union (effective BitsVectA |= BitsVectB) bits in BitsVectA with BitsVectB with BitsVectA updated, returns number of bits set in BitsVectA 
+CGBSmapSNPs::BitsVectUnion(tsBitsVect& BitsVectA, tsBitsVect& BitsVectB)		// union (effective BitsVectA |= BitsVectB) bits in BitsVectA with BitsVectB with BitsVectA updated, returns number of bits set in BitsVectA 
 {
-uint32_t Count = 0;
-uint64_t* pWordA = BitsVectA.Bits;
-uint64_t* pWordB = BitsVectB.Bits;
-uint64_t Bit;
-for(uint32_t WordIdx = 0; WordIdx < 64; WordIdx++, pWordA++, pWordB++)
+	uint32_t Count = 0;
+	uint64_t* pWordA = BitsVectA.Bits;
+	uint64_t* pWordB = BitsVectB.Bits;
+	uint64_t Bit;
+	for (uint32_t WordIdx = 0; WordIdx < cBitVectWords; WordIdx++, pWordA++, pWordB++)
 	{
-	*pWordA |= *pWordB;
-	if(*pWordA == 0)
-		continue;
-	for(Bit = 0x01; Bit != 0; Bit <<= 1)
-		if(*pWordA & Bit)
-			Count++;
+		*pWordA |= *pWordB;
+		if (*pWordA == 0)
+			continue;
+		for (Bit = 0x01; Bit != 0; Bit <<= 1)
+			if (*pWordA & Bit)
+				Count++;
 	}
-return(Count);
+	return(Count);
 }
 
-
-inline uint32_t 
-CGBSmapSNPs::BitsVectIntersect(ts4096Bits& BitsVectA, ts4096Bits& BitsVectB)	// intersect (effective BitsVectA &= BitsVectB) of bits in BitsVectA with BitsVectB with BitsVectA updated, returns number of set bits in BitsVectA
+inline uint32_t
+CGBSmapSNPs::BitsVectIntersect(tsBitsVect& BitsVectA, tsBitsVect& BitsVectB)	// intersect (effective BitsVectA &= BitsVectB) of bits in BitsVectA with BitsVectB with BitsVectA updated, returns number of set bits in BitsVectA
 {
-uint32_t Count = 0;
-uint64_t* pWordA = BitsVectA.Bits;
-uint64_t* pWordB = BitsVectB.Bits;
-uint64_t Bit;
-for(uint32_t WordIdx = 0; WordIdx < 64; WordIdx++, pWordA++, pWordB++)
+	uint32_t Count = 0;
+	uint64_t* pWordA = BitsVectA.Bits;
+	uint64_t* pWordB = BitsVectB.Bits;
+	uint64_t Bit;
+	for (uint32_t WordIdx = 0; WordIdx < cBitVectWords; WordIdx++, pWordA++, pWordB++)
 	{
-	*pWordA &= *pWordB;
-	if(*pWordA == 0)
-		continue;
-	for(Bit = 0x01; Bit != 0; Bit <<= 1)
-		if(*pWordA & Bit)
-			Count++;
+		*pWordA &= *pWordB;
+		if (*pWordA == 0)
+			continue;
+		for (Bit = 0x01; Bit != 0; Bit <<= 1)
+			if (*pWordA & Bit)
+				Count++;
 	}
-return(Count);
+	return(Count);
 }
 
-uint32_t 
-CGBSmapSNPs::BitsVectClear(ts4096Bits& BitsVectA, ts4096Bits& BitsVectB)	    // clear bits in BitsVectA which are set in BitsVectB with BitsVectA updated, returns number of set bits in BitsVectA  
+uint32_t
+CGBSmapSNPs::BitsVectClear(tsBitsVect& BitsVectA, tsBitsVect& BitsVectB)	    // clear bits in BitsVectA which are set in BitsVectB with BitsVectA updated, returns number of set bits in BitsVectA  
 {
-uint32_t Count = 0;
-uint64_t* pWordA = BitsVectA.Bits;
-uint64_t* pWordB = BitsVectB.Bits;
-uint64_t Bit;
-for(uint32_t WordIdx = 0; WordIdx < 64; WordIdx++, pWordA++, pWordB++)
+	uint32_t Count = 0;
+	uint64_t* pWordA = BitsVectA.Bits;
+	uint64_t* pWordB = BitsVectB.Bits;
+	uint64_t Bit;
+	for (uint32_t WordIdx = 0; WordIdx < cBitVectWords; WordIdx++, pWordA++, pWordB++)
 	{
-	*pWordA &= ~(* pWordB);
-	if(*pWordA == 0)
-		continue;
-	for(Bit = 0x01; Bit != 0; Bit <<= 1)
-		if(*pWordA & Bit)
-			Count++;
+		*pWordA &= ~(*pWordB);
+		if (*pWordA == 0)
+			continue;
+		for (Bit = 0x01; Bit != 0; Bit <<= 1)
+			if (*pWordA & Bit)
+				Count++;
 	}
-return(Count);
+	return(Count);
 }
 
 // sorting by ReadsetID.ChromID.StartLoci.ExprID.Source ascending

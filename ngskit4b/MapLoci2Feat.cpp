@@ -45,10 +45,10 @@ CMapLoci2Feat::CMapLoci2Feat()
 {
 m_hRsltFile = -1;
 m_hFeatRsltFile = -1;
-m_pChromRegionCnts = NULL;
-m_pBiobed = NULL;
-m_pHypers = NULL;
-m_pFeatCntDists = NULL;
+m_pChromRegionCnts = nullptr;
+m_pBiobed = nullptr;
+m_pHypers = nullptr;
+m_pFeatCntDists = nullptr;
 MLFReset();
 }
 
@@ -71,26 +71,26 @@ CMapLoci2Feat::MLFReset(void)
 		close(m_hFeatRsltFile);
 		m_hFeatRsltFile = -1;
 	}
-	if (m_pBiobed != NULL)
+	if (m_pBiobed != nullptr)
 	{
 		delete m_pBiobed;
-		m_pBiobed = NULL;
+		m_pBiobed = nullptr;
 	}
-	if (m_pHypers != NULL)
+	if (m_pHypers != nullptr)
 	{
 		delete m_pHypers;
-		m_pHypers = NULL;
+		m_pHypers = nullptr;
 	}
-	if (m_pFeatCntDists != NULL)
+	if (m_pFeatCntDists != nullptr)
 	{
 		delete m_pFeatCntDists;
-		m_pFeatCntDists = NULL;
+		m_pFeatCntDists = nullptr;
 	}
 
-	if (m_pChromRegionCnts != NULL)
+	if (m_pChromRegionCnts != nullptr)
 	{
 		delete m_pChromRegionCnts;
-		m_pChromRegionCnts = NULL;
+		m_pChromRegionCnts = nullptr;
 	}
 
 	m_MLFPMode = ePMdefault;
@@ -161,7 +161,7 @@ CMapLoci2Feat::MapLoci2Features(char *pszRsltsFile)
 		close(m_hRsltFile);
 		m_hRsltFile = -1;
 	}
-	if (pszRsltsFile != NULL && pszRsltsFile[0] != '\0')
+	if (pszRsltsFile != nullptr && pszRsltsFile[0] != '\0')
 	{
 #ifdef _WIN32
 		if ((m_hRsltFile = open(pszRsltsFile, _O_RDWR | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC, _S_IREAD | _S_IWRITE)) == -1)
@@ -176,13 +176,13 @@ CMapLoci2Feat::MapLoci2Features(char *pszRsltsFile)
 		gDiagnostics.DiagOut(eDLInfo, gszProcName, "Output file created/truncated: '%s'", pszRsltsFile);
 	}
 
-	pszChrom = NULL;
+	pszChrom = nullptr;
 	PrevChromID = -1;
-	pszElType = NULL;
+	pszElType = nullptr;
 	PrevElTypeID = -1;
-	pszRefSpecies = NULL;
+	pszRefSpecies = nullptr;
 	PrevRefSpeciesID = -1;
-	pszRelSpecies = NULL;
+	pszRelSpecies = nullptr;
 	PrevRelSpeciesID = -1;
 	BuffIdx = 0;
 
@@ -191,13 +191,13 @@ CMapLoci2Feat::MapLoci2Features(char *pszRsltsFile)
 
 
 	m_AllocdChromRegionCnts = m_pBiobed->GetNumChromosomes();
-	if(m_pChromRegionCnts != NULL)
+	if(m_pChromRegionCnts != nullptr)
 		{
 		delete m_pChromRegionCnts;
-		m_pChromRegionCnts = NULL;
+		m_pChromRegionCnts = nullptr;
 		}
 	m_AllocdChromRegionCnts += 1;      // for safety!
-	if((m_pChromRegionCnts = new tsChromRegionCnts[m_AllocdChromRegionCnts]) == NULL)
+	if((m_pChromRegionCnts = new tsChromRegionCnts[m_AllocdChromRegionCnts]) == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to allocate for %d tsChromRegionCnts instances", m_AllocdChromRegionCnts);
 		MLFReset();
@@ -209,9 +209,9 @@ CMapLoci2Feat::MapLoci2Features(char *pszRsltsFile)
 	// determine how many features
 	TotNumFeatures = m_pBiobed->GetNumFeatures();
 	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Feature file contains %1.9d features", TotNumFeatures);
-	if (m_pFeatCntDists == NULL)
+	if (m_pFeatCntDists == nullptr)
 	{
-		if ((m_pFeatCntDists = new tsFeatCntDist[TotNumFeatures]) == NULL)
+		if ((m_pFeatCntDists = new tsFeatCntDist[TotNumFeatures]) == nullptr)
 		{
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to allocate for %d tsFeatCntDist instances", TotNumFeatures);
 			MLFReset();
@@ -245,7 +245,7 @@ CMapLoci2Feat::MapLoci2Features(char *pszRsltsFile)
 		if (!(ElID % 100000))
 			printf("\b\b\b\b\b\b\b\b\b%9.9d", ElID);
 		pEl = m_pHypers->GetElement(ElID);
-		if (pEl == NULL)
+		if (pEl == nullptr)
 		{
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to get details for element: %d", ElID);
 			MLFReset();
@@ -261,10 +261,10 @@ CMapLoci2Feat::MapLoci2Features(char *pszRsltsFile)
 				continue;
 		}
 
-		if (pszChrom == NULL || PrevChromID != pEl->ChromID)
+		if (pszChrom == nullptr || PrevChromID != pEl->ChromID)
 		{
 			pszChrom = m_pHypers->GetChrom(pEl->ChromID);
-			if (pszChrom == NULL || pszChrom[0] == '\0')
+			if (pszChrom == nullptr || pszChrom[0] == '\0')
 			{
 				gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to get chrom text for element: %d ChromID: %d", ElID, pEl->ChromID);
 				MLFReset();
@@ -285,19 +285,19 @@ CMapLoci2Feat::MapLoci2Features(char *pszRsltsFile)
 			bStartUniqLoci = true;
 		}
 
-		if (pszElType == NULL || PrevElTypeID != pEl->ElTypeID)
+		if (pszElType == nullptr || PrevElTypeID != pEl->ElTypeID)
 		{
 			pszElType = m_pHypers->GetType(pEl->ElTypeID);
 			PrevElTypeID = pEl->ElTypeID;
 		}
 
-		if (pszRefSpecies == NULL || PrevRefSpeciesID != pEl->RefSpeciesID)
+		if (pszRefSpecies == nullptr || PrevRefSpeciesID != pEl->RefSpeciesID)
 		{
 			pszRefSpecies = m_pHypers->GetRefSpecies(pEl->RefSpeciesID);
 			PrevRefSpeciesID = pEl->RefSpeciesID;
 		}
 
-		if (pszRelSpecies == NULL || PrevRelSpeciesID != pEl->RelSpeciesID)
+		if (pszRelSpecies == nullptr || PrevRelSpeciesID != pEl->RelSpeciesID)
 		{
 			pszRelSpecies = m_pHypers->GetRelSpecies(pEl->RelSpeciesID);
 			PrevRelSpeciesID = pEl->RelSpeciesID;
@@ -336,7 +336,7 @@ CMapLoci2Feat::MapLoci2Features(char *pszRsltsFile)
 		}
 		FeatID = 0;
 
-		if (m_pBiobed != NULL)
+		if (m_pBiobed != nullptr)
 		{
 			Rslt = ChromID = m_pBiobed->LocateChromIDbyName(pszChrom);
 			if (Rslt == eBSFerrChrom)
@@ -406,7 +406,7 @@ CMapLoci2Feat::MapLoci2Features(char *pszRsltsFile)
 																	  CoreEndLoci,						// and start on or before End 
 																	  NumFeatsOverlap + 1);				// Ith instance to return (1..n)
 
-					if (FeatID > 0 && m_pFeatCntDists != NULL)
+					if (FeatID > 0 && m_pFeatCntDists != nullptr)
 					{
 						if (m_bFeatinsts)
 						{
@@ -459,8 +459,8 @@ CMapLoci2Feat::MapLoci2Features(char *pszRsltsFile)
 															  CoreEndLoci);					         // feature starts on or immediately after this offset
 					if (NxtFeatID > 0)
 						m_pBiobed->GetFeature(NxtFeatID,		// feature instance identifier
-											  NULL,							// where to return feature name
-											  NULL,							// where to return chromosome name
+											  nullptr,							// where to return feature name
+											  nullptr,							// where to return chromosome name
 											  &NxtFeatStart,					// where to return feature start on chromosome (0..n) 
 											  &NxtFeatEnd);					// where to return feature end on chromosome
 
@@ -469,8 +469,8 @@ CMapLoci2Feat::MapLoci2Features(char *pszRsltsFile)
 															   CoreStartLoci);			// feature ends on or immediately before this offset
 					if (PrvFeatID > 0)
 						m_pBiobed->GetFeature(PrvFeatID,		// feature instance identifier
-											  NULL,	// where to return feature name
-											  NULL,	// where to return chromosome name
+											  nullptr,	// where to return feature name
+											  nullptr,	// where to return chromosome name
 											  &PrvFeatStart,		// where to return feature start on chromosome (0..n) 
 											  &PrvFeatEnd);		// where to return feature end on chromosome
 
@@ -508,7 +508,7 @@ CMapLoci2Feat::MapLoci2Features(char *pszRsltsFile)
 								break;
 							}
 					}
-					if (AccumFeatures && FeatID > 0 && m_pFeatCntDists != NULL)
+					if (AccumFeatures && FeatID > 0 && m_pFeatCntDists != nullptr)
 					{
 						pCurFeatCntDist = &m_pFeatCntDists[FeatID - 1];
 
@@ -596,10 +596,10 @@ CMapLoci2Feat::IsSameFeature(char *pszFeatA, char *pszFeatB)
 	char *pSfxB;
 	int NameLen;
 	bool bIsIsoform;
-	if (pszFeatA == NULL || *pszFeatA == '\0')
+	if (pszFeatA == nullptr || *pszFeatA == '\0')
 		return(false);
 
-	if (pszFeatB == NULL || *pszFeatB == '\0')
+	if (pszFeatB == nullptr || *pszFeatB == '\0')
 		return(false);
 
 	NameLen = (int)strlen(pszFeatA);
@@ -668,7 +668,7 @@ CMapLoci2Feat::TrimNameIso(char *pszName)
 {
 	char *pSfx;
 	int NameLen;
-	if (pszName == NULL || pszName[0] == '\0')
+	if (pszName == nullptr || pszName[0] == '\0')
 		return(false);
 	NameLen = (int)strlen(pszName);
 	if (NameLen < cMinIsonameLen)
@@ -736,13 +736,13 @@ CMapLoci2Feat::MapFeatures2Loci(char *pszFeatRsltsFile)
 		close(m_hFeatRsltFile);
 		m_hFeatRsltFile = -1;
 	}
-	if (m_pBiobed != NULL && pszFeatRsltsFile != NULL && pszFeatRsltsFile[0] != '\0')
+	if (m_pBiobed != nullptr && pszFeatRsltsFile != nullptr && pszFeatRsltsFile[0] != '\0')
 	{
 		// determine how many features
 		TotNumFeatures = m_pBiobed->GetNumFeatures();
-		if (m_pFeatCntDists == NULL)
+		if (m_pFeatCntDists == nullptr)
 		{
-			if ((m_pFeatCntDists = new tsFeatCntDist[TotNumFeatures]) == NULL)
+			if ((m_pFeatCntDists = new tsFeatCntDist[TotNumFeatures]) == nullptr)
 			{
 				gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to allocate for %d tsFeatCntDist instances", TotNumFeatures);
 				MLFReset();
@@ -776,7 +776,7 @@ CMapLoci2Feat::MapFeatures2Loci(char *pszFeatRsltsFile)
 
 
 
-	if (m_hFeatRsltFile != -1 && m_pFeatCntDists != NULL)
+	if (m_hFeatRsltFile != -1 && m_pFeatCntDists != nullptr)
 	{
 		// sort by feature name 
 		qsort(m_pFeatCntDists, TotNumFeatures, sizeof(tsFeatCntDist), CompareFeatName);
@@ -785,8 +785,8 @@ CMapLoci2Feat::MapFeatures2Loci(char *pszFeatRsltsFile)
 		SumTransLenRelAbundance = 0.0;
 		SumTransUniqueHitsRelAbundance = 0.0;
 		pCurFeatCntDist = m_pFeatCntDists;
-		pMaxRPKM = NULL;
-		pMaxExonReads = NULL;
+		pMaxRPKM = nullptr;
+		pMaxExonReads = nullptr;
 		for (FeatID = 1; FeatID <= TotNumFeatures; FeatID++, pCurFeatCntDist++)
 		{
 			pCurFeatCntDist = &m_pFeatCntDists[FeatID - 1];
@@ -819,19 +819,19 @@ CMapLoci2Feat::MapFeatures2Loci(char *pszFeatRsltsFile)
 			}
 
 
-			bSameMaxRPKMFeature = pMaxRPKM == NULL ? false : IsSameFeature(pCurFeatCntDist->szName, pMaxRPKM->szName);
-			bSameMaxExonReadsFeature = pMaxExonReads == NULL ? false : IsSameFeature(pCurFeatCntDist->szName, pMaxExonReads->szName);
+			bSameMaxRPKMFeature = pMaxRPKM == nullptr ? false : IsSameFeature(pCurFeatCntDist->szName, pMaxRPKM->szName);
+			bSameMaxExonReadsFeature = pMaxExonReads == nullptr ? false : IsSameFeature(pCurFeatCntDist->szName, pMaxExonReads->szName);
 
 			// will report on 'maximal' isoforms
-			// if first iteration (pMaxRPKM will be NULL) or not an isoform of current maximal RPKM ...
-			if (pMaxRPKM == NULL || !bSameMaxRPKMFeature)
+			// if first iteration (pMaxRPKM will be nullptr) or not an isoform of current maximal RPKM ...
+			if (pMaxRPKM == nullptr || !bSameMaxRPKMFeature)
 			{
 				pCurFeatCntDist->bMaxRPKM = true;
 				pMaxRPKM = pCurFeatCntDist;
 			}
 
-			// if first iteration (pMaxExonReads will be NULL) or not an isoform of current maximal MaxExonReads ...
-			if (pMaxExonReads == NULL || !bSameMaxExonReadsFeature)
+			// if first iteration (pMaxExonReads will be nullptr) or not an isoform of current maximal MaxExonReads ...
+			if (pMaxExonReads == nullptr || !bSameMaxExonReadsFeature)
 			{
 				pCurFeatCntDist->bMaxExonReads = true;
 				pMaxExonReads = pCurFeatCntDist;
@@ -921,10 +921,10 @@ CMapLoci2Feat::MapFeatures2Loci(char *pszFeatRsltsFile)
 		close(m_hFeatRsltFile);
 		m_hFeatRsltFile = -1;
 	}
-	if (m_pFeatCntDists != NULL)
+	if (m_pFeatCntDists != nullptr)
 	{
 		delete m_pFeatCntDists;
-		m_pFeatCntDists = NULL;
+		m_pFeatCntDists = nullptr;
 	}
 	return(eBSFSuccess);
 }
@@ -963,7 +963,7 @@ CMapLoci2Feat::MLFProcess(etMLFPMode PMode,				// processing mode
 	m_bFeatinsts = bFeatinsts;
 	m_bOneCntRead = bOneCntRead;
 
-	if ((m_pHypers = new CHyperEls) == NULL)
+	if ((m_pHypers = new CHyperEls) == nullptr)
 	{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to instantiate CHyperEls");
 		return(eBSFerrObj);
@@ -971,10 +971,10 @@ CMapLoci2Feat::MLFProcess(etMLFPMode PMode,				// processing mode
 
 	etClassifyFileType FileType;
 
-	if (pszInBEDFile != NULL && pszInBEDFile[0] != '\0')
+	if (pszInBEDFile != nullptr && pszInBEDFile[0] != '\0')
 	{
 		gDiagnostics.DiagOut(eDLInfo, gszProcName, "Loading features file '%s'", pszInBEDFile);
-		if ((m_pBiobed = new CBEDfile) == NULL)
+		if ((m_pBiobed = new CBEDfile) == nullptr)
 		{
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to instantiate CBEDfile gene/exon file '%s'", pszInBEDFile);
 			MLFReset();
@@ -993,7 +993,7 @@ CMapLoci2Feat::MLFProcess(etMLFPMode PMode,				// processing mode
 	}
 	else
 	{
-		m_pBiobed = NULL;
+		m_pBiobed = nullptr;
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "No gene/exon BED file specified");
 		MLFReset();
 		return(eBSFerrObj);
@@ -1080,7 +1080,7 @@ CMapLoci2Feat::MLFProcess(etMLFPMode PMode,				// processing mode
 	}
 	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Mapping elements to features completed");
 
-	if (pszFeatRsltsFile != NULL && pszFeatRsltsFile[0] != '\0')
+	if (pszFeatRsltsFile != nullptr && pszFeatRsltsFile[0] != '\0')
 	{
 		gDiagnostics.DiagOut(eDLInfo, gszProcName, "Mapping features to elements...");
 		if ((Rslt = MapFeatures2Loci(pszFeatRsltsFile)) < eBSFSuccess)
@@ -1091,7 +1091,7 @@ CMapLoci2Feat::MLFProcess(etMLFPMode PMode,				// processing mode
 		gDiagnostics.DiagOut(eDLInfo, gszProcName, "Mapping features to elements completed");
 	}
 
-	if (pszSummRsltsFile != NULL && pszSummRsltsFile[0] != '\0')
+	if (pszSummRsltsFile != nullptr && pszSummRsltsFile[0] != '\0')
 	{
 		char szOutBuff[8000];
 		int BufIdx;

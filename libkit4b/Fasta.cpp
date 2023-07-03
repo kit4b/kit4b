@@ -815,7 +815,7 @@ for(BuffIdx = 0; BuffIdx < BuffCnt; BuffIdx++,pChr++)
 						continue;
 						}
 					AddErrMsg("CFasta::CheckIsFasta","Errors whilst reading file near line %d#%d - '%s' - unexpected SOLiD base representation", CurLineNum,ChrPsn,m_szFile);
-					delete pszBuff;	
+					delete []pszBuff;	
 					return(eBSFerrNotFasta);
 						
 				default:

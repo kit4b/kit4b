@@ -3,7 +3,7 @@
 
 const int cMALGNVersion = 12;			// file header + structure version
 const int cMALGNVersionBack = 10;		// backwards compatiable to this version
-const int cMaxAlignedSpecies = 100;		// can handle upto this many species in an alignment
+const int cMaxAlignedSpecies = 200;		// can handle upto this many species in an alignment
 const int cMaxAlignedChroms = 0x0ffffff;  	// can handle a total of this many chromosomes or contigs
 const int cMaxSrcFiles = 100;		    	// can handle upto this many alignment source files
 const int cMaxAlignBlocks =  0x07ffffff;   	// max number of alignment blocks
@@ -18,7 +18,7 @@ const int cChromIDHashSize = 0x08000;		// chromosome hash table size - must be p
 // typedefs to make it easy to change common identifier types
 typedef int32_t tChromID;			// chromosome identifier
 typedef int32_t tAlignBlockID;	// alignment block identifier
-typedef uint8_t  tSpeciesID;		// species identifier
+typedef int32_t  tSpeciesID;		// species identifier
 
 typedef enum TAG_eMAOpen {
 	eMAPOReadOnly = 0,			// open for read only access, updates not allowed
@@ -44,32 +44,33 @@ typedef struct TAG_sAlignBlock {
 	int32_t BlockLenWithSpecies;		// actual total size of this alignment block including all concatenated tsAlignSpecies
 	int32_t AlignIncInDelLen;			// alignment sequence length (1..n) , includes '-' insertion markers					
 	int32_t AlgnScore;				// alignment block score
+	int32_t RefSpeciesID;			// reference species identifier if present in this block, otherwise 0
 	int32_t  NumSpecies;				// number of species/chromosomes in represented in this block
 	// note that an array of tsAlignSpecies is concatenated on to each tsAlignBlock instance
 } tsAlignBlock;
 
 typedef struct TAG_sSpeciesName {
 		uint16_t Hash;				// hash used to quickly eliminate species names that can't match in searches
-		int8_t SpeciesID;				// globally unique (1..n) species identifier
+		int32_t SpeciesID;			// globally unique (1..n) species identifier
 		int8_t NameLen;				// strlen(szSpeciesName)
 	    int8_t szSpeciesName[cMaxDatasetSpeciesChrom]; // species name
 } tsSpeciesName;
 
 typedef struct TAG_sChromName {
 		int32_t ChromID;				// globally unique (1..n) chromosome identifier
-		int32_t NxtHashChromID;		// next chromosome which shares same hash (0 if this is last)
+		int32_t NxtHashChromID;			// next chromosome which shares same hash (0 if this is last)
 		int32_t ChromLen;				// chromosome length if known - 0 if unknown
-		uint16_t Hash;				// hash used to quickly eliminate chromosome names that can't match in searches
-		int8_t SpeciesID;				// for this species
-		int8_t NameLen;				// strlen(szChromName)
+		uint16_t Hash;					// hash used to quickly eliminate chromosome names that can't match in searches
+		int32_t SpeciesID;				// for this species
+		int8_t NameLen;					// strlen(szChromName)
 	    int8_t szChromName[cMaxDatasetSpeciesChrom]; // chromosome name
 } tsChromName;
 
 typedef struct TAG_sSrcFile {
 	int16_t SrcFileID;					// globally unique (1..n), identifies file from which alignments are sourced
-	int16_t MetaDataLen;					// header ("##") metadata length
+	int16_t MetaDataLen;				// header ("##") metadata length
 	int16_t AlignParamsLen;				// alignment ("#") parameter length
-	int8_t szSrcFile[_MAX_PATH];			// source file path
+	int8_t szSrcFile[_MAX_PATH];		// source file path
 	int8_t szHeaderMetaData[cMaxMetaDataLen];	// any header ("##") metadata
 	int8_t szAlignParams[cMaxParamLen];			// any alignment ("#") parameters
 } tsSrcFile;
@@ -78,10 +79,10 @@ typedef struct TAG_sSrcFile {
 
 typedef struct TAG_sBlockDirEl {
 	int64_t	FileOfs;				// where on disk the associated alignment block starts
-	int32_t BlockID;					// block identifer
-	int32_t ChromID;					// (sort order 1)reference chromosome
+	int32_t BlockID;				// block identifer
+	int32_t ChromID;				// (sort order 1)reference chromosome
 	int32_t   ChromOfs;				// (sort order 2) starting offset (0..ChromLen-1)
-	int32_t  AlignXInDelLen;			// (sort order 3 - longest) reference chromosome block alignment length excluding any InDel '-' (1..n)
+	int32_t  AlignXInDelLen;		// (sort order 3 - longest) reference chromosome block alignment length excluding any InDel '-' (1..n)
 } tsBlockDirEl;
 
 
@@ -116,30 +117,30 @@ typedef struct TAG_sMAFCtx {
 
 #pragma pack(8)
 typedef struct TAG_sAlignHdr {
-	uint8_t Magic[4];					// magic chars to identify this file as a biosequence file
-	uint64_t FileLen;					// current file length
-	int64_t DirElOfs;					// file offset to block directory
+	uint8_t Magic[4];				// magic chars to identify this file as a biosequence file
+	int64_t FileLen;				// current file length
+	int64_t DirElOfs;				// file offset to block directory
 	int64_t ChromNamesOfs;			// file offset to ChromNames directory
 	uint32_t Type;					// biosequence file type 
-	uint32_t Version;					// header version, incremented if structure changes with later releases
+	uint32_t Version;				// header version, incremented if structure changes with later releases
 	uint32_t SizeOfHdr;				// total size of this header - alignment blocks (sAlignBlocks) immediately follow
 	int32_t MaxChroms;				// max number of species.chromosomes supported
 	int32_t MaxAlignBlocks;			// max number of alignment blocks supported
 	int32_t MaxAlignSeqLen;			// max length of any aligned sequence (including InDels) supported
-	int32_t NumChroms;				// actual number of aligned chromosomes
+	int32_t NumChroms;				// actual number of aligned chromosomes (summed over all blocks over all species)
 	int32_t NumAlignBlocks;			// actual number of alignment blocks
-	int32_t AlignIncInDelLen;			// actual longest aligned sequence (incuding InDels) in any alignment
+	int32_t AlignIncInDelLen;		// actual longest aligned sequence (incuding InDels) in any alignment
 	int32_t AlignBlockLen;			// actual longest alignment block
 	tsSpeciesName SpeciesNames[cMaxAlignedSpecies];	// directory of all aligned species
-	int16_t NumSrcFiles;				// actual number of files from which alignments were sourced
-	int16_t MaxSrcFiles;				// maximum number of source alignment files supported
-	int8_t DataType;					// datatype of sequences
-	int8_t NumSpecies;				// actual number of aligned species
-	int8_t RefSpeciesID;				// identifer for reference species - all other are relative
-	int8_t MaxSpecies;				// max number of species supported
-	tsSrcFile SrcFiles[cMaxSrcFiles];			// directory of source files containing sequence alignments
-	int8_t szDescription[cMBSFFileDescrLen];		// describes contents of file
-	int8_t szTitle[cMBSFShortFileDescrLen];		// short title by which this file can be distingished from other files in dropdown lists etc
+	int16_t NumSrcFiles;			// actual number of files from which alignments were sourced
+	int16_t MaxSrcFiles;			// maximum number of source alignment files supported
+	int8_t DataType;				// datatype of sequences
+	int32_t NumSpecies;				// actual number of aligned species
+	int32_t RefSpeciesID;			// identifer for reference species - all other are relative
+	int32_t MaxSpecies;				// max number of species supported
+	tsSrcFile SrcFiles[cMaxSrcFiles];		// directory of source files containing sequence alignments
+	int8_t szDescription[cMBSFFileDescrLen];// describes contents of file
+	int8_t szTitle[cMBSFShortFileDescrLen];	// short title by which this file can be distingished from other files in dropdown lists etc
 }tsAlignHdr;
 #pragma pack()
 // best initial guestimate of an upper limit on a maximal sized block
@@ -154,7 +155,8 @@ class CMAlignFile : protected CEndian,public CErrorCodes
 	teMAOpen m_AccessMode;			// eMAPOReadOnly, eMAPOUpdate or eMAPOCreate 
 	bool m_BlockStarted;			// true whiltst an alignment block is started until it is closed 
 	int m_AlignBlockSeqs;			// cnt of number of sequences associated with alignment block
-
+	int m_AlignedRefSpeciesBlocks;	// cnt of blocks which had RefSpecies referenced sequences
+	int m_AligneNondRefSpeciesBlocks; // cnt of blocks which do not have RefSpecies referenced sequences
 	tsAlignHdr m_FileHdr;			// alignment header
 	int64_t m_AllocdDirElsMem;		// size of memory allocation for m_pDirEls
 	int m_NumAllocdDirEls;			// actual many dir elements allocated 
@@ -179,11 +181,6 @@ class CMAlignFile : protected CEndian,public CErrorCodes
 
 	tChromID m_ChromHshTbl[cChromIDHashSize]; // hash table
 	
-	// ChunkedWrite
-	// Seeks to specified 64bit file offset and writes to disk as chunks of no more than INT_MAX/16
-	teBSFrsltCodes
-		ChunkedWrite(int64_t WrtOfs,uint8_t *pData,int64_t WrtLen);
-
 	// ChunkedRead
 	// Seeks to specified 64bit file offset and reads from disk as chunks of no more than INT_MAX/32
 	// This allows checks for thread termination requests at reasonable time intervals
@@ -239,7 +236,8 @@ public:
 						 bool RptMskUpperCase=false, // true if uppercase represents softmasked repeats
 						 int8_t ConfScore=0);		// confidence score or flags associated with this alignment sequence
 
-	 int AddAlignSeqBases(char *pszSpeciesName,	// species being added to alignment
+	 int // returns  < 0 if errors 
+		AddAlignSeqBases(char *pszSpeciesName,	// species being added to alignment
 						 char *pszChromName,	// alignment is on species chromosome
  						 int ChromLen,			// chromosome length or 0 if unknown
 						 int ChromOfs,			// aligns from this relative offset ('+' == 0..ChromLen-1, '-' == ChromLen-1..0)

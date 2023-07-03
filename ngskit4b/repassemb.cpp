@@ -32,13 +32,13 @@ Process(etRPPMode PMode,	// processing mode
 int repassemb(int argc, char *argv[])
 {
 	// determine my process name
-	_splitpath (argv[0], NULL, NULL, gszProcName, NULL);
+	_splitpath (argv[0], nullptr, nullptr, gszProcName, nullptr);
 #else
 int
 repassemb(int argc, char **argv)
 {
 	// determine my process name
-	CUtility::splitpath ((char *)argv[0], NULL, gszProcName);
+	CUtility::splitpath ((char *)argv[0], nullptr, gszProcName);
 #endif
 	int iFileLogLevel;			// level of file diagnostics
 	int iScreenLogLevel;		// level of file diagnostics
@@ -283,7 +283,7 @@ Process(etRPPMode PMode,				// processing mode
 {
 int Rslt;
 CRepAssemb *pRepAssemb;
-if((pRepAssemb = new CRepAssemb) == NULL)
+if((pRepAssemb = new CRepAssemb) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to instantiate instance of CRepAssemb");
 	return(eBSFerrInternal);
@@ -297,17 +297,17 @@ Rslt = pRepAssemb->ProccessAssembly(PMode,	// processing mode
 						pszAssembFile,			// input fasta assembly file
 						pszRepAssembFile);		// output to this fasta assembly file
 
-if(pRepAssemb != NULL)
+if(pRepAssemb != nullptr)
 	delete pRepAssemb;
 return(Rslt);
 }
 
 CRepAssemb::CRepAssemb(void)			// constructor
 {
-m_pSNPSites = NULL;
-m_pCSV = NULL;
-m_pSeqBuffer = NULL;
-m_pASegments = NULL;
+m_pSNPSites = nullptr;
+m_pCSV = nullptr;
+m_pSeqBuffer = nullptr;
+m_pASegments = nullptr;
 m_hInFile = -1;
 m_hOutFile = -1;
 m_hOutRepSNPsFile = -1;
@@ -316,9 +316,9 @@ Reset();
 
 CRepAssemb::~CRepAssemb(void)			// destructor
 {
-if(m_pCSV != NULL)
+if(m_pCSV != nullptr)
 	delete m_pCSV;
-if(m_pSNPSites != NULL)
+if(m_pSNPSites != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pSNPSites);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -327,7 +327,7 @@ if(m_pSNPSites != NULL)
 		munmap(m_pSNPSites, m_AllocdSNPSitesMem);
 #endif
 	}
-if(m_pASegments != NULL)
+if(m_pASegments != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pASegments);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -336,7 +336,7 @@ if(m_pASegments != NULL)
 		munmap(m_pASegments, m_AllocdASegmentsMem);
 #endif
 	}
-if(m_pSeqBuffer != NULL)
+if(m_pSeqBuffer != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pSeqBuffer);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -357,12 +357,12 @@ if(m_hOutRepSNPsFile != -1)
 void
 CRepAssemb::Reset(void)					// resets instance state back to that immediately following instantiation
 {
-if(m_pCSV != NULL)
+if(m_pCSV != nullptr)
 	{
 	delete m_pCSV;
-	m_pCSV = NULL;
+	m_pCSV = nullptr;
 	}
-if(m_pSNPSites != NULL)
+if(m_pSNPSites != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pSNPSites);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -370,10 +370,10 @@ if(m_pSNPSites != NULL)
 	if(m_pSNPSites != MAP_FAILED)
 		munmap(m_pSNPSites, m_AllocdSNPSitesMem);
 #endif
-	m_pSNPSites = NULL;
+	m_pSNPSites = nullptr;
 	}
 
-if(m_pASegments != NULL)
+if(m_pASegments != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pASegments);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -381,10 +381,10 @@ if(m_pASegments != NULL)
 	if(m_pASegments != MAP_FAILED)
 		munmap(m_pASegments, m_AllocdASegmentsMem);
 #endif
-	m_pASegments = NULL;
+	m_pASegments = nullptr;
 	}
 
-if(m_pSeqBuffer != NULL)
+if(m_pSeqBuffer != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pSeqBuffer);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -392,7 +392,7 @@ if(m_pSeqBuffer != NULL)
 	if(m_pSeqBuffer != MAP_FAILED)
 		munmap(m_pSeqBuffer, m_AllocSeqBuffMem);
 #endif
-	m_pSeqBuffer = NULL;
+	m_pSeqBuffer = nullptr;
 	}
 
 if(m_hInFile != -1)
@@ -476,7 +476,7 @@ m_NumSNPFiles = glob.FileCount();
 for(int FileIdx = 0;FileIdx < m_NumSNPFiles; FileIdx++)
 	{
 	pszSNPFile = glob.File(FileIdx);;
-	if ((m_pCSV = new CCSVFile) == NULL)
+	if ((m_pCSV = new CCSVFile) == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to instantiate CCSVfile");
 		Reset();
@@ -638,7 +638,7 @@ for(int FileIdx = 0;FileIdx < m_NumSNPFiles; FileIdx++)
 
 		NumSNPsAccepted++;
 
-		if((pSNPSite = LocateSite(ChromID, Loci)) != NULL)
+		if((pSNPSite = LocateSite(ChromID, Loci)) != nullptr)
 			{
 			if(pSNPSite->ChromID != ChromID || pSNPSite->Loci != Loci)
 				gDiagnostics.DiagOut(eDLFatal, gszProcName, "SNPs: Inconsistency in LocateSite()");
@@ -656,13 +656,13 @@ for(int FileIdx = 0;FileIdx < m_NumSNPFiles; FileIdx++)
 			continue;
 			}
 
-		if(m_pSNPSites == NULL)
+		if(m_pSNPSites == nullptr)
 			{
 			size_t memreq = (size_t)(sizeof(tsSNPSite) * cAllocNumSNPs);
 
 	#ifdef _WIN32
 			m_pSNPSites = (tsSNPSite*)malloc(memreq);	// initial and perhaps the only allocation
-			if(m_pSNPSites == NULL)
+			if(m_pSNPSites == nullptr)
 				{
 				gDiagnostics.DiagOut(eDLFatal, gszProcName, "SNPs: Initial memory allocation of %zd bytes - %s", (int64_t)memreq, strerror(errno));
 				Reset();
@@ -670,11 +670,11 @@ for(int FileIdx = 0;FileIdx < m_NumSNPFiles; FileIdx++)
 				}
 	#else
 			// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-			m_pSNPSites = (tsSNPSite *)mmap(NULL, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+			m_pSNPSites = (tsSNPSite *)mmap(nullptr, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 			if(m_pSNPSites == MAP_FAILED)
 				{
 				gDiagnostics.DiagOut(eDLFatal, gszProcName, "SNPs: Memory allocation of %zd bytes through mmap()  failed - %s", (int64_t)memreq, strerror(errno));
-				m_pSNPSites = NULL;
+				m_pSNPSites = nullptr;
 				Reset();
 				return(eBSFerrMem);
 				}
@@ -695,9 +695,9 @@ for(int FileIdx = 0;FileIdx < m_NumSNPFiles; FileIdx++)
 	#else
 				pSNPSite = (tsSNPSite*)mremap(m_pSNPSites, m_AllocdSNPSitesMem, memreq, MREMAP_MAYMOVE);
 				if(pSNPSite == MAP_FAILED)
-					pSNPSite = NULL;
+					pSNPSite = nullptr;
 	#endif
-				if(pSNPSite == NULL)
+				if(pSNPSite == nullptr)
 					{
 					gDiagnostics.DiagOut(eDLFatal, gszProcName, "SNPs: Memory re-allocation to %zd bytes - %s", memreq, strerror(errno));
 					return(eBSFerrMem);
@@ -716,7 +716,7 @@ for(int FileIdx = 0;FileIdx < m_NumSNPFiles; FileIdx++)
 		pSNPSite->RefBase = RefBase;
 		}
 	delete m_pCSV;
-	m_pCSV = NULL;
+	m_pCSV = nullptr;
 	if(m_NumSNPSites > 1 && m_NumSNPSites != m_NumSortedSites)
 		qsort(m_pSNPSites, m_NumSNPSites, sizeof(tsSNPSite), SortSNPChromLoci);
 	m_NumSortedSites = m_NumSNPSites;
@@ -786,15 +786,15 @@ int Rslt;
 int ChromID;
 
 tsASegment *pASeg;
-static tsASegment *pMRAASeg = NULL;
+static tsASegment *pMRAASeg = nullptr;
 
-if(m_pASegments == NULL)
+if(m_pASegments == nullptr)
 	{
 	size_t memreq = (size_t)(sizeof(tsASegment) * cAllocNumASegments);
 
 #ifdef _WIN32
 	m_pASegments = (tsASegment*)malloc(memreq);	// initial and perhaps the only allocation
-	if(m_pASegments == NULL)
+	if(m_pASegments == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "MergeASegs: Initial memory allocation of %zd bytes - %s", (int64_t)memreq, strerror(errno));
 		Reset();
@@ -802,11 +802,11 @@ if(m_pASegments == NULL)
 		}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-	m_pASegments = (tsASegment *)mmap(NULL, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	m_pASegments = (tsASegment *)mmap(nullptr, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	if(m_pASegments == MAP_FAILED)
 		{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "MergeASegs: Memory allocation of %zd bytes through mmap()  failed - %s", (int64_t)memreq, strerror(errno));
-		m_pASegments = NULL;
+		m_pASegments = nullptr;
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -814,7 +814,7 @@ if(m_pASegments == NULL)
 	m_AllocdASegmentsMem = memreq;
 	m_NumASegments = 0;
 	m_NumAllocdASegments = cAllocNumASegments;
-	pMRAASeg = NULL;
+	pMRAASeg = nullptr;
 	}
 else
 	{
@@ -827,9 +827,9 @@ else
 #else
 		pASeg = (tsASegment*)mremap(m_pASegments, m_AllocdASegmentsMem, memreq, MREMAP_MAYMOVE);
 		if(pASeg == MAP_FAILED)
-			pASeg = NULL;
+			pASeg = nullptr;
 #endif
-		if(pASeg == NULL)
+		if(pASeg == nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, "MergeASegs: Memory re-allocation to %zd bytes - %s", memreq, strerror(errno));
 			return(eBSFerrMem);
@@ -837,7 +837,7 @@ else
 		m_pASegments = pASeg;
 		m_NumAllocdASegments += cAllocNumASegments;
 		m_AllocdASegmentsMem = memreq;
-		pMRAASeg = NULL;
+		pMRAASeg = nullptr;
 		}
 	}
 
@@ -854,7 +854,7 @@ if(Score == 0)			// only accepting segments which were aligned
 // It is highly probable that the previously processed alignment segment is adjacent to this new segment because
 // the BED file processing will have resulted in ordering of BED features by chrom.loci
 // So optimisation is to check against last accessed segment
-if(pMRAASeg != NULL && pMRAASeg->ChromID == ChromID)
+if(pMRAASeg != nullptr && pMRAASeg->ChromID == ChromID)
 	{
 	if(((Loci + Len) >= pMRAASeg->Loci) && (Loci <= (pMRAASeg->Loci + pMRAASeg->Len)))
 		{
@@ -919,7 +919,7 @@ int Score;
 char szChrom[cMaxDatasetSpeciesChrom+1];
 char szFeatName[cMaxDatasetSpeciesChrom+1];
 
-if((pBedFile = new CBEDfile) == NULL)
+if((pBedFile = new CBEDfile) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to instantiate instance of CBEDfile");
 	Reset();
@@ -1005,7 +1005,7 @@ memreq = (size_t)cAllocAssembFastaMem;
 
 #ifdef _WIN32
 m_pSeqBuffer = (uint8_t *)malloc(memreq);	// initial and perhaps the only allocation
-if(m_pSeqBuffer == NULL)
+if(m_pSeqBuffer == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Initial memory allocation of %zd bytes - %s", (int64_t)memreq, strerror(errno));
 	Reset();
@@ -1013,11 +1013,11 @@ if(m_pSeqBuffer == NULL)
 	}
 #else
 // gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-m_pSeqBuffer = (uint8_t *)mmap(NULL, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+m_pSeqBuffer = (uint8_t *)mmap(nullptr, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 if(m_pSeqBuffer == MAP_FAILED)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Assembly: Memory allocation of %zd bytes through mmap()  failed - %s", (int64_t)memreq, strerror(errno));
-	m_pSeqBuffer = NULL;
+	m_pSeqBuffer = nullptr;
 	Reset();
 	return(eBSFerrMem);
 	}
@@ -1037,9 +1037,9 @@ while((NumRead = (int)read(m_hInFile, &m_pSeqBuffer[m_SeqBuffIdx], (int)(m_Alloc
 #else
 		pInChr = (uint8_t*)mremap(m_pSeqBuffer, m_AllocSeqBuffMem, memreq, MREMAP_MAYMOVE);
 		if(pInChr == MAP_FAILED)
-			pInChr = NULL;
+			pInChr = nullptr;
 #endif
-		if(pInChr == NULL)
+		if(pInChr == nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Memory re-allocation to %zd bytes - %s", memreq, strerror(errno));
 			return(eBSFerrMem);
@@ -1270,7 +1270,7 @@ int ChromNameLen;
 char *pszLAname;
 
 // with any luck the sequence name will be same as the last accessed
-if((pszLAname = LocateChrom(m_LAChromNameID)) != NULL)
+if((pszLAname = LocateChrom(m_LAChromNameID)) != nullptr)
 	if(!stricmp(pszChrom,pszLAname))
 		return(m_LAChromNameID);
 
@@ -1304,7 +1304,7 @@ int ChromNameIdx;
 char *pszLAname;
 
 // with any luck the sequence name will be same as the last accessed
-if((pszLAname = LocateChrom(m_LAChromNameID)) != NULL)
+if((pszLAname = LocateChrom(m_LAChromNameID)) != nullptr)
 	if(!stricmp(pszChrom,pszLAname))
 		return(m_LAChromNameID);
 
@@ -1322,7 +1322,7 @@ char*
 CRepAssemb::LocateChrom(int ChromID)
 {
 if(ChromID < 1 || ChromID > m_NumChromNames)
-	return(NULL);
+	return(nullptr);
 return(&m_szChromNames[m_szChromIdx[ChromID-1]]);
 }
 
@@ -1335,12 +1335,12 @@ int ChromIdx;
 pChromSite = m_ChromSites;
 for(ChromIdx = 0; ChromIdx < m_NumChromSites; ChromIdx++,pChromSite++)
 	{
-	if((pszChromSite = LocateChrom(pChromSite->ChromID))==NULL)
+	if((pszChromSite = LocateChrom(pChromSite->ChromID))==nullptr)
 		break;
 	if(!strcmp(pszChrom,pszChromSite))
 		return(pChromSite);
 	}
-return(NULL);
+return(nullptr);
 }
 
 int									// number of bases replaced
@@ -1353,11 +1353,11 @@ tsChromSites *pChromSites;
 tsSNPSite *pSNPSite;
 uint32_t NumSNPBases;
 
-if(SeqLen == 0 || pszChrom == NULL || pszChrom[0] == '\0' || pszSeq == NULL || pszSeq[0] == '\0')
+if(SeqLen == 0 || pszChrom == nullptr || pszChrom[0] == '\0' || pszSeq == nullptr || pszSeq[0] == '\0')
 	return(0);
 
 // locate ChromSites for name
-if((pChromSites = LocateChromSites(pszChrom))==NULL)
+if((pChromSites = LocateChromSites(pszChrom))==nullptr)
 	return(0);
 
 NumSNPBases = 0;
@@ -1420,7 +1420,7 @@ int ChromID;
 tsASegment *pASegment;
 uint32_t NumRepBases;
 
-if(SeqLen == 0 || pszChrom == NULL || pszChrom[0] == '\0' || pszSeq == NULL || pszSeq[0] == '\0')
+if(SeqLen == 0 || pszChrom == nullptr || pszChrom[0] == '\0' || pszSeq == nullptr || pszSeq[0] == '\0')
 	return(0);
 
 // locate ChromSites for name
@@ -1450,7 +1450,7 @@ while(SeqLen--)
 			continue;
 		}
 
-	if((pASegment = LocateASegment(ChromID, RefLoci)) == NULL)
+	if((pASegment = LocateASegment(ChromID, RefLoci)) == nullptr)
 		{
 		*pszSeq = 'N';
 		NumRepBases++;
@@ -1472,7 +1472,7 @@ int32_t MidIdx;
 int32_t IdxHi;
 
 if(m_NumSortedSites == 0)
-	return(NULL);
+	return(nullptr);
 
 if(m_NumSortedSites < 10)				// if just a few then do a simple linear search
 	{
@@ -1480,7 +1480,7 @@ if(m_NumSortedSites < 10)				// if just a few then do a simple linear search
 	for(IdxLo = 0; IdxLo < (int32_t)m_NumSortedSites; IdxLo++,pEl1++)
 		if(pEl1->ChromID == ChromID && pEl1->Loci == Loci)
 			return(pEl1);
-	return(NULL);
+	return(nullptr);
 	}
 
 IdxLo = 0;
@@ -1506,24 +1506,24 @@ do {
 		}
 	}
 while(IdxHi >= IdxLo);
-return(NULL);
+return(nullptr);
 }
 
 tsASegment *
 CRepAssemb::LocateASegment(uint32_t ChromID, uint32_t Loci)	// locate a tsASegment containing the requested ChromID.Loci
 {
-static tsASegment *pLastLocatedASegment = NULL;
+static tsASegment *pLastLocatedASegment = nullptr;
 tsASegment* pEl1;
 int32_t MidIdx;
 int32_t HiIdx = m_NumASegments - 1;
 int32_t LoIdx = 0;
 if(m_NumASegments == 0)
-	return(NULL);
+	return(nullptr);
 
-if(pLastLocatedASegment != NULL && 
+if(pLastLocatedASegment != nullptr && 
 		ChromID == pLastLocatedASegment->ChromID && pLastLocatedASegment->Loci <= Loci && (pLastLocatedASegment->Loci+pLastLocatedASegment->Len >  Loci))
 	return(pLastLocatedASegment);
-pLastLocatedASegment = NULL;
+pLastLocatedASegment = nullptr;
 
 if(m_NumASegments < 10)				// if just a few then do a simple linear search
 	{
@@ -1534,7 +1534,7 @@ if(m_NumASegments < 10)				// if just a few then do a simple linear search
 			pLastLocatedASegment = pEl1;
 			return(pEl1);
 			}
-	return(NULL);
+	return(nullptr);
 	}
 
 tsASegment *pCurASegment;
@@ -1575,7 +1575,7 @@ while(HiIdx >= LoIdx) {
 		HiIdx = MidIdx - 1;
 	};
 
-return(NULL);
+return(nullptr);
 }
 
 

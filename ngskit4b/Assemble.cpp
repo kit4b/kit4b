@@ -74,13 +74,13 @@ deNovoAssemble(etdeNovoPMode PMode,		// processing mode, currently either eAMEAs
 int Assemble(int argc, char* argv[])
 {
 // determine my process name
-_splitpath(argv[0],NULL,NULL,gszProcName,NULL);
+_splitpath(argv[0],nullptr,nullptr,gszProcName,nullptr);
 #else
 int
 Assemble(int argc, char** argv)
 {
 // determine my process name
-CUtility::splitpath((char *)argv[0],NULL,gszProcName);
+CUtility::splitpath((char *)argv[0],nullptr,gszProcName);
 #endif
 int iScreenLogLevel;		// level of screen diagnostics
 int iFileLogLevel;			// level of file diagnostics
@@ -436,13 +436,13 @@ if (!argerrors)
 		SEEstMeanSeqLen = 0;
 		if(szPE1File[0] != '\0')
 			{
-			if((PE1EstNumSeqs = Fasta.FastaEstSizes(szPE1File,NULL,NULL,NULL,&PE1EstMaxSeqLen,&PE1EstMeanSeqLen)) == 0)
+			if((PE1EstNumSeqs = Fasta.FastaEstSizes(szPE1File,nullptr,nullptr,nullptr,&PE1EstMaxSeqLen,&PE1EstMeanSeqLen)) == 0)
 				{
 				gDiagnostics.DiagOut(eDLFatal, gszProcName, "Error: Unable to estimate sequence sizes for PE1 file: '%s'", szPE1File);
 				return(1);
 				}
 
-			if((PE2EstNumSeqs = Fasta.FastaEstSizes(szPE1File, NULL, NULL, NULL, &PE2EstMaxSeqLen, &PE2EstMeanSeqLen)) == 0)
+			if((PE2EstNumSeqs = Fasta.FastaEstSizes(szPE1File, nullptr, nullptr, nullptr, &PE2EstMaxSeqLen, &PE2EstMeanSeqLen)) == 0)
 				{
 				gDiagnostics.DiagOut(eDLFatal, gszProcName, "Error: Unable to estimate sequence sizes for PE2 file: '%s'", szPE2File);
 				return(1);
@@ -477,7 +477,7 @@ if (!argerrors)
 			{
 			if (szSeedContigsFile[0] != '\0')
 				{
-				if((SEEstNumSeqs = Fasta.FastaEstSizes(szSeedContigsFile, NULL, NULL, NULL, &SEEstMaxSeqLen, &SEEstMeanSeqLen)) == 0)
+				if((SEEstNumSeqs = Fasta.FastaEstSizes(szSeedContigsFile, nullptr, nullptr, nullptr, &SEEstMaxSeqLen, &SEEstMeanSeqLen)) == 0)
 					{
 					gDiagnostics.DiagOut(eDLFatal, gszProcName, "Error: Unable to estimate sequence sizes for seed contigs file: '%s'", szSeedContigsFile);
 					return(1);
@@ -918,12 +918,12 @@ pAssemble->SetSfxSparsity(eSSparsity15);
 SeqWrdBytes = pAssemble->GetSeqWrdBytes();
 
 // if not loading artefact reduced reads then need to preallocate memory 
-if(pszInArtReducfile == NULL || pszInArtReducfile[0] == '\0')
+if(pszInArtReducfile == nullptr || pszInArtReducfile[0] == '\0')
 	{
 	CumulativeMemory = 0;
 	CumulativeSequences = 0;
 
-	if(pszPE1File != NULL && pszPE1File[0] != '\0')
+	if(pszPE1File != nullptr && pszPE1File[0] != '\0')
 		{
 		if((Rslt = pAssemble->EstMemReq(pszPE1File)) != eBSFSuccess)
 			{
@@ -937,7 +937,7 @@ if(pszInArtReducfile == NULL || pszInArtReducfile[0] == '\0')
 			}
 		}
 
-	if(pszSeedContigsFile != NULL && pszSeedContigsFile[0] != '\0')
+	if(pszSeedContigsFile != nullptr && pszSeedContigsFile[0] != '\0')
 		{
 		if((Rslt = pAssemble->EstMemReq(pszSeedContigsFile)) != eBSFSuccess)
 			{

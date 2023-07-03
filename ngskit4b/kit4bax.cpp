@@ -73,13 +73,13 @@ CSfxArray *m_pSfxFile;				// suffix array file being created
 int kingsax(int argc, char* argv[])
 {
 // determine my process name
-_splitpath(argv[0],NULL,NULL,gszProcName,NULL);
+_splitpath(argv[0],nullptr,nullptr,gszProcName,nullptr);
 #else
 int
 kingsax(int argc, char** argv)
 {
 // determine my process name
-CUtility::splitpath((char *)argv[0],NULL,gszProcName);
+CUtility::splitpath((char *)argv[0],nullptr,gszProcName);
 #endif
 int iScreenLogLevel;		// level of screen diagnostics
 int iFileLogLevel;			// level of file diagnostics
@@ -118,8 +118,8 @@ struct arg_int *simgenomesize=arg_int0("s", "simgenomesize",	"<int>","Simulated 
 struct arg_int *minseqlen=arg_int0("l", "minseqlen",			"<int>","Do not accept for indexing sequences less than this length (default 50, range 1..1000000)");
 struct arg_int *maxkmers = arg_int0("k", "maxkmers", "<int>",	"when sorting compare up to this length KMer for equality (default 100000, range 10..1000000)");
 
-struct arg_file *infiles = arg_filen("i",NULL,"<file>",0,cMaxInFileSpecs,	"input from wildcarded kingss or fasta files");
-struct arg_file *OutFile = arg_file0("o",NULL,"<file>",			"output suffix array file");
+struct arg_file *infiles = arg_filen("i",nullptr,"<file>",0,cMaxInFileSpecs,	"input from wildcarded kingss or fasta files");
+struct arg_file *OutFile = arg_file0("o",nullptr,"<file>",			"output suffix array file");
 struct arg_str *Descr = arg_str0("d","descr","<string>",		"full description");
 struct arg_str *Title = arg_str0("t","title","<string>",		"short title");
 struct arg_str *RefSpecies = arg_str1("r","ref","<string>",		"reference species");
@@ -308,8 +308,8 @@ if (!argerrors)
 
 		for(NumInputFileSpecs=Idx=0;NumInputFileSpecs < cMaxInFileSpecs && Idx < infiles->count; Idx++)
 			{
-			pszInputFileSpecs[Idx] = NULL;
-			if(pszInputFileSpecs[NumInputFileSpecs] == NULL)
+			pszInputFileSpecs[Idx] = nullptr;
+			if(pszInputFileSpecs[NumInputFileSpecs] == nullptr)
 				pszInputFileSpecs[NumInputFileSpecs] = new char [_MAX_PATH];
 			strncpy(pszInputFileSpecs[NumInputFileSpecs],infiles->filename[Idx],_MAX_PATH);
 			pszInputFileSpecs[NumInputFileSpecs][_MAX_PATH-1] = '\0';
@@ -327,7 +327,7 @@ if (!argerrors)
 	else
 		{
 		NumInputFileSpecs = 0;
-		pszInputFileSpecs[0] = NULL;
+		pszInputFileSpecs[0] = nullptr;
 		}
 
 	if(OutFile->count)
@@ -455,15 +455,15 @@ else
 
 void InitpSfx(void)
 {
-m_pSfxFile = NULL;
+m_pSfxFile = nullptr;
 }
 
 void Reset(void)
 {
-if(m_pSfxFile != NULL)
+if(m_pSfxFile != nullptr)
 	{
 	delete m_pSfxFile;
-	m_pSfxFile = NULL;
+	m_pSfxFile = nullptr;
 	}
 }
 
@@ -501,7 +501,7 @@ if((Rslt=Fasta.Open(pszFile,true))!=eBSFSuccess)
 
 AllocdBuffSize = (size_t)cMaxAXAllocBuffChunk * 16;
 // note malloc is used as can then simply realloc to expand as may later be required
-if((pSeqBuff = (uint8_t *)malloc(AllocdBuffSize)) == NULL)
+if((pSeqBuff = (uint8_t *)malloc(AllocdBuffSize)) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessFastaFile:- Unable to allocate memory (%u bytes) for sequence buffer",(uint32_t)AllocdBuffSize);
 	Fasta.Close();
@@ -586,7 +586,7 @@ while((Rslt = SeqLen = Fasta.ReadSequence(&pSeqBuff[BuffOfs],(int)min(AvailBuffS
 		{
 		size_t NewSize = (size_t)cMaxAXAllocBuffChunk + AllocdBuffSize;
 		uint8_t *pTmp;
-		if((pTmp = (uint8_t *)realloc(pSeqBuff,NewSize))==NULL)
+		if((pTmp = (uint8_t *)realloc(pSeqBuff,NewSize))==nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessFastaFile:- Unable to reallocate memory (%u bytes) for sequence buffer",(uint32_t)NewSize);
 			return(eBSFerrMem);
@@ -612,7 +612,7 @@ if(Rslt >= eBSFSuccess && bEntryCreated && BuffOfs > 0)			// close entry
 			Rslt = eBSFSuccess;
 		}
 	}
-if(pSeqBuff != NULL)
+if(pSeqBuff != nullptr)
 	free(pSeqBuff);
 if(NumSeqsUnderlength > 0)
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"ProcessFastaFile - %u sequences not accepted for indexing as length under %dbp ",NumSeqsUnderlength,MinSeqLen);
@@ -646,7 +646,7 @@ NumSimChroms = cNumSimChroms;
 
 AllocdBuffSize = SimGenomeSizebp / (size_t)(NumSimChroms - 1); // a little larger than actually required
 // note malloc is used as can then simply realloc to expand as may later be required
-if((pSeqBuff = (uint8_t *)malloc(AllocdBuffSize)) == NULL)
+if((pSeqBuff = (uint8_t *)malloc(AllocdBuffSize)) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessSimGenome:- Unable to allocate memory (%u bytes) for simulated sequence buffer",(uint32_t)AllocdBuffSize);
 	return(eBSFerrMem);
@@ -695,7 +695,7 @@ for(CurChromID = 1; CurChromID <= NumSimChroms; CurChromID++)
 if(Rslt >= eBSFSuccess)
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Completed adding %d simulated chromosome sequences totaling %dGbp",NumSimChroms,SimGenomeSize);
 
-if(pSeqBuff != NULL)
+if(pSeqBuff != nullptr)
 	free(pSeqBuff);
 return(Rslt);
 }
@@ -710,10 +710,10 @@ FileSeqLen(char* pszFastaFile)			// input file containing fasta sequences
 	int NumAccepted;
 	int NumProcessed;
 
-	CFasta* pFasta = NULL;
+	CFasta* pFasta = nullptr;
 	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Starting to process source fasta file '%s'", pszFastaFile);
 
-	if ((pFasta = new CFasta()) == NULL)
+	if ((pFasta = new CFasta()) == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to create CFasta object");
 		return((size_t)eBSFerrObj);
@@ -735,7 +735,7 @@ FileSeqLen(char* pszFastaFile)			// input file containing fasta sequences
 	char szBEDFeature[256];
 	int DescrLen;
 	bInSeq = false;
-	while ((Rslt = SeqLen = pFasta->ReadSequence(NULL, 0)) > eBSFSuccess)
+	while ((Rslt = SeqLen = pFasta->ReadSequence(nullptr, 0)) > eBSFSuccess)
 		{
 		if (SeqLen == eBSFFastaDescr)		// just read a descriptor line, parse out the feature identifier
 			{
@@ -813,7 +813,7 @@ else
 	}
 
 m_pSfxFile = new CSfxArray;
-if(m_pSfxFile == NULL)
+if(m_pSfxFile == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"CreateBioseqSuffixFile - error Unable to create instance of CSfxArray");
 	Reset();
@@ -822,7 +822,7 @@ if(m_pSfxFile == NULL)
 
 m_pSfxFile->SetMaxQSortThreads(MaxThreads);
 
-if(Mode == 2 && (pszDestSfxFile == NULL || pszDestSfxFile[0]=='\0'))
+if(Mode == 2 && (pszDestSfxFile == nullptr || pszDestSfxFile[0]=='\0'))
 	Rslt=m_pSfxFile->Open(false,bSOLiD);
 else
 	Rslt=m_pSfxFile->Open(pszDestSfxFile,true,Mode==1 ? true : false,bSOLiD);

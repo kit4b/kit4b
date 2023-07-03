@@ -51,13 +51,13 @@ int Process (eModeSC2 Mode,					// processing mode
 int sarscov2ml(int argc, char *argv[])
 {
 	// determine my process name
-	_splitpath (argv[0], NULL, NULL, gszProcName, NULL);
+	_splitpath (argv[0], nullptr, nullptr, gszProcName, nullptr);
 #else
 int
 sarscov2ml(int argc, char **argv)
 {
 	// determine my process name
-	CUtility::splitpath ((char *)argv[0], NULL, gszProcName);
+	CUtility::splitpath ((char *)argv[0], nullptr, gszProcName);
 #endif
 	int iFileLogLevel;			// level of file diagnostics
 	int iScreenLogLevel;		// level of file diagnostics
@@ -293,14 +293,14 @@ int Process(eModeSC2 Mode,						// processing mode
 {
 int Rslt;
 CSarsCov2ML *pCSarsCov2ML;
-if ((pCSarsCov2ML = new CSarsCov2ML) == NULL)
+if ((pCSarsCov2ML = new CSarsCov2ML) == nullptr)
 	{
 	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Unable to instantiate instance of CSarsCov2ML");
 	return(eBSFerrInternal);
 	}
 Rslt = pCSarsCov2ML->Process(Mode,NumLinkedFeatures,MinPropRows,FeatClassValue,pszMatrixFile,pszIsolateClassFile,pszOutFile);
 
-if (pCSarsCov2ML != NULL)
+if (pCSarsCov2ML != nullptr)
 	delete pCSarsCov2ML;
 return(Rslt);
 }
@@ -309,17 +309,17 @@ return(Rslt);
 
 CSarsCov2ML::CSarsCov2ML(void)
 {
-m_pMatrix = NULL;
+m_pMatrix = nullptr;
 m_hOutFile = -1;
-m_pOutBuffer = NULL;
+m_pOutBuffer = nullptr;
 Reset();
 }
 
 CSarsCov2ML::~CSarsCov2ML(void)
 {
-if(m_pMatrix != NULL)
+if(m_pMatrix != nullptr)
 	delete []m_pMatrix;
-if(m_pOutBuffer != NULL)
+if(m_pOutBuffer != nullptr)
 	delete []m_pOutBuffer;
 if(m_hOutFile != -1)
 	close(m_hOutFile);
@@ -330,7 +330,7 @@ CSarsCov2ML::Reset(void) // reset state back to that immediately following class
 {
 if(m_hOutFile != -1)
 	{
-	if(m_pOutBuffer != NULL && m_OutBuffIdx)
+	if(m_pOutBuffer != nullptr && m_OutBuffIdx)
 		{
 		CUtility::RetryWrites(m_hOutFile,m_pOutBuffer,m_OutBuffIdx);
 		m_OutBuffIdx = 0;
@@ -344,18 +344,18 @@ if(m_hOutFile != -1)
 	close(m_hOutFile);
 	m_hOutFile = -1;
 	}
-if(m_pOutBuffer != NULL)
+if(m_pOutBuffer != nullptr)
 	{
 	delete []m_pOutBuffer;
-	m_pOutBuffer = NULL;
+	m_pOutBuffer = nullptr;
 	}
 m_OutBuffIdx = 0;
 m_AllocOutBuff = 0;
 
-if(m_pMatrix != NULL)
+if(m_pMatrix != nullptr)
 	{
 	delete []m_pMatrix;
-	m_pMatrix = NULL;
+	m_pMatrix = nullptr;
 	}
 m_NumCols = 0;								// matrix has this number of columns
 m_NumRows = 0;								// matrix has this number of rows
@@ -391,11 +391,11 @@ int NumFields;
 int ExpFields;
 int LineNum;
 CCSVFile *pCSV;
-if(pCols != NULL)
+if(pCols != nullptr)
 	*pCols = 0;
-if(pRows != NULL)
+if(pRows != nullptr)
 	*pRows = 0;
-if((pCSV = new CCSVFile) == NULL)
+if((pCSV = new CCSVFile) == nullptr)
 	{
 	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Unable to instantiate instance of CCSVFile");
 	Reset();
@@ -437,9 +437,9 @@ while((Rslt = pCSV->NextLine()) > 0)	// onto next line
 		}
 	continue;
 	}
-if(pCols != NULL)
+if(pCols != nullptr)
 	*pCols = NumFields;
-if(pRows != NULL)
+if(pRows != nullptr)
 	*pRows = LineNum;
 delete pCSV;
 return(eBSFSuccess);
@@ -459,10 +459,10 @@ int Value;
 uint32_t *pValue;
 CCSVFile *pCSV;
 
-if(m_pMatrix != NULL)
+if(m_pMatrix != nullptr)
 	{
 	delete []m_pMatrix;
-	m_pMatrix = NULL;
+	m_pMatrix = nullptr;
 	}
 m_NumCols = 0;
 m_NumRows = 0;
@@ -470,14 +470,14 @@ m_NumRows = 0;
 if((Rslt=LoadMatrixDimensions(pszMatrixFile,&m_NumCols,&m_NumRows))!=eBSFSuccess)
 	return(Rslt);
 
-if((m_pMatrix = new uint32_t[(size_t)m_NumCols * m_NumRows]) == NULL)
+if((m_pMatrix = new uint32_t[(size_t)m_NumCols * m_NumRows]) == nullptr)
 	{
 	Reset();
 	return(eBSFerrMem);
 	}
 memset(m_pMatrix,0,(size_t)m_NumCols * m_NumRows * sizeof(*m_pMatrix));
 
-if((pCSV = new CCSVFile) == NULL)
+if((pCSV = new CCSVFile) == nullptr)
 	{
 	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Unable to instantiate instance of CCSVFile");
 	return(eBSFerrInternal);
@@ -563,7 +563,7 @@ uint32_t NumMissing;
 uint32_t ClassificationID;
 char *pTxt;
 CCSVFile *pCSV;
-if((pCSV = new CCSVFile) == NULL)
+if((pCSV = new CCSVFile) == nullptr)
 	{
 	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Unable to instantiate instance of CCSVFile");
 	return(eBSFerrInternal);
@@ -591,7 +591,7 @@ while((Rslt = pCSV->NextLine()) > 0)	// onto next line
 		}
 
 	pCSV->GetText(2, &pTxt);			// expected to contain the associated training classification
-	if(pTxt == NULL || pTxt[0] == '\0' || !stricmp("missing",pTxt))	// unclassified?
+	if(pTxt == nullptr || pTxt[0] == '\0' || !stricmp("missing",pTxt))	// unclassified?
 		continue;
 
 	if((ClassificationID = AddClassification(pTxt)) < 1)
@@ -642,7 +642,7 @@ char*
 CSarsCov2ML::LocateFeature(uint32_t FeatureID)
 {
 if(FeatureID < 1 || FeatureID > m_NumFeatureNames)
-	return(NULL);
+	return(nullptr);
 return(&m_szFeatureNames[m_szFeatureIdx[FeatureID-1]]);
 }
 
@@ -651,7 +651,7 @@ CSarsCov2ML::LocateFeature(char *pszFeaturePrefix)		// match on this prefix, may
 {
 int Len;
 uint32_t FeatureNameIdx;
-if(pszFeaturePrefix == NULL || pszFeaturePrefix[0] == '\0')
+if(pszFeaturePrefix == nullptr || pszFeaturePrefix[0] == '\0')
 	return(0);
 Len = (int)strlen(pszFeaturePrefix);
 
@@ -689,7 +689,7 @@ char* // returned ptr to readset name
 CSarsCov2ML::LocateReadset(uint32_t ReadsetID) // readset name identifier
 {
 if(ReadsetID < 1 || ReadsetID > m_NumReadsetNames)
-	return(NULL);
+	return(nullptr);
 return(&m_szReadsetNames[m_szReadsetIdx[ReadsetID - 1]]);
 }
 
@@ -698,7 +698,7 @@ CSarsCov2ML::LocateReadset(char *pszReadsetPrefix)		// match on this prefix, may
 {
 int Len;
 uint32_t ReadsetIdx;
-if(pszReadsetPrefix == NULL || pszReadsetPrefix[0] == '\0')
+if(pszReadsetPrefix == nullptr || pszReadsetPrefix[0] == '\0')
 	return(0);
 Len = (int)strlen(pszReadsetPrefix);
 
@@ -736,7 +736,7 @@ char* // returned ptr to Classification name
 CSarsCov2ML::LocateClassification(uint32_t ClassificationID) // Classification name identifier
 {
 if(ClassificationID < 1 || ClassificationID > m_NumClassificationNames)
-	return(NULL);
+	return(nullptr);
 return(&m_szClassificationNames[m_Classifications[ClassificationID - 1].szClassificationIdx]);
 }
 
@@ -989,7 +989,7 @@ if(CreateMutexes()!=eBSFSuccess)
 	return(cBSFSyncObjErr);
 	}
 
-if ((pThreads = new tsThreadML[NumThreads]) == NULL)
+if ((pThreads = new tsThreadML[NumThreads]) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "InitSarsCov2MLThreads: Memory allocation for thread context failed");
 	return(eBSFerrMem);
@@ -1007,9 +1007,9 @@ for (ThreadIdx = 1; ThreadIdx <= NumThreads; ThreadIdx++, pThread++)
 	pThread->FeatClassValue=FeatClassValue;
 
 #ifdef _WIN32
-	pThread->threadHandle = (HANDLE)_beginthreadex(NULL, 0x0fffff, ProcessMLThread, pThread, 0, &pThread->threadID);
+	pThread->threadHandle = (HANDLE)_beginthreadex(nullptr, 0x0fffff, ProcessMLThread, pThread, 0, &pThread->threadID);
 #else
-	pThread->threadRslt = pthread_create(&pThread->threadID, NULL, ProcessMLThread, pThread);
+	pThread->threadRslt = pthread_create(&pThread->threadID, nullptr, ProcessMLThread, pThread);
 #endif
 	}
 
@@ -1036,7 +1036,7 @@ for (ThreadIdx = 0; ThreadIdx < NumThreads; ThreadIdx++, pThread++)
 	int JoinRlt;
 	clock_gettime(CLOCK_REALTIME, &ts);
 	ts.tv_sec += 60;
-	while ((JoinRlt = pthread_timedjoin_np(pThread->threadID, NULL, &ts)) != 0)
+	while ((JoinRlt = pthread_timedjoin_np(pThread->threadID, nullptr, &ts)) != 0)
 		{
 		AcquireSerialise();
 
@@ -1046,8 +1046,8 @@ for (ThreadIdx = 0; ThreadIdx < NumThreads; ThreadIdx++, pThread++)
 #endif
 	}
 
-if(pThreads != NULL)
-	delete pThreads;
+if(pThreads != nullptr)
+	delete []pThreads;
 DeleteMutexes();
 return(0);
 }
@@ -1076,7 +1076,7 @@ if((Rslt=LoadMatrix(pszMatrixFile))!=eBSFSuccess)
 	return(Rslt);
 
 // if present then parse in the classification file
-if(pszIsolateClassFile != NULL && pszIsolateClassFile[0] != '\0')
+if(pszIsolateClassFile != nullptr && pszIsolateClassFile[0] != '\0')
 	{
 	if((Rslt=LoadClassifications(pszIsolateClassFile))!=eBSFSuccess)
 		return(Rslt);
@@ -1151,10 +1151,10 @@ if(m_bMutexesCreated)
 	return(eBSFSuccess);
 
 #ifdef _WIN32
-if((m_hMtxIterReads = CreateMutex(NULL,false,NULL))==NULL)
+if((m_hMtxIterReads = CreateMutex(nullptr,false,nullptr))==nullptr)
 	{
 #else
-if(pthread_mutex_init (&m_hMtxIterReads,NULL)!=0)
+if(pthread_mutex_init (&m_hMtxIterReads,nullptr)!=0)
 	{
 #endif
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to create mutex");

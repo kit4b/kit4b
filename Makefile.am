@@ -23,7 +23,6 @@ SUBDIRS = libkit4b \
     genalignloci2core \
     genalignref2relloci \
     genalignstats \
-    genbiomultialign \
     gencentroidmetrics \
     gencomposition \
     genElementProfiles \
@@ -37,7 +36,6 @@ SUBDIRS = libkit4b \
     genseqcandidates \
     genstructprofile \
     genstructstats \
-    genultras \
     genWiggle \
     genzygosity \
     GFFfilter \

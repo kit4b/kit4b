@@ -49,13 +49,13 @@ Process(etF2BPMode PMMode,				// processing mode - 0 default BED , single exon
 int fasta2bed(int argc, char* argv[])
 {
 // determine my process name
-_splitpath(argv[0],NULL,NULL,gszProcName,NULL);
+_splitpath(argv[0],nullptr,nullptr,gszProcName,nullptr);
 #else
 int 
 fasta2bed(int argc, char** argv)
 {
 // determine my process name
-CUtility::splitpath((char *)argv[0],NULL,gszProcName);
+CUtility::splitpath((char *)argv[0],nullptr,gszProcName);
 #endif
 int iScreenLogLevel;		// level of screen diagnostics
 int iFileLogLevel;			// level of file diagnostics
@@ -159,8 +159,8 @@ if (!argerrors)
 
 	for(NumInputFiles=Idx=0;NumInputFiles < cMaxInFileSpecs && Idx < pinputfiles->count; Idx++)
 		{
-		pszInFastaFile[Idx] = NULL;
-		if(pszInFastaFile[NumInputFiles] == NULL)
+		pszInFastaFile[Idx] = nullptr;
+		if(pszInFastaFile[NumInputFiles] == nullptr)
 			pszInFastaFile[NumInputFiles] = new char [_MAX_PATH];
 		strncpy(pszInFastaFile[NumInputFiles],pinputfiles->filename[Idx],_MAX_PATH);
 		pszInFastaFile[NumInputFiles][_MAX_PATH-1] = '\0';
@@ -226,10 +226,10 @@ bool bInSeq;
 int NumAccepted;
 int NumProcessed;
 
-CFasta *pFasta = NULL;
+CFasta *pFasta = nullptr;
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Starting to process source fasta file '%s'",pszFastaFile);
 
-if((pFasta = new CFasta())==NULL)
+if((pFasta = new CFasta())==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create CFasta object");
 	return(eBSFerrObj);
@@ -252,7 +252,7 @@ char szBEDFeature[256];
 int LineLen;
 int DescrLen;
 bInSeq = false;
-while((Rslt = SeqLen = pFasta->ReadSequence(NULL,0)) > eBSFSuccess)
+while((Rslt = SeqLen = pFasta->ReadSequence(nullptr,0)) > eBSFSuccess)
 	{
 	if(SeqLen == eBSFFastaDescr)		// just read a descriptor line, parse out the feature identifier
 		{
@@ -286,7 +286,7 @@ Process(etF2BPMode PMode,				// processing mode - 0  BED file output
 int Rslt;
 int hRslts;
 
-if(pszRsltsFile != NULL && pszRsltsFile[0] != '\0')
+if(pszRsltsFile != nullptr && pszRsltsFile[0] != '\0')
 	{
 #ifdef _WIN32
 	if((hRslts = open(pszRsltsFile, _O_RDWR | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC, _S_IREAD | _S_IWRITE ))==-1)

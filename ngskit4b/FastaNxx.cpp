@@ -47,13 +47,13 @@ Process(etNxxPMode Mode,			// processing mode - 0  N50 distributions, 1 n-mer co
 int fasta2nxx(int argc, char* argv[])
 {
 // determine my process name
-_splitpath(argv[0],NULL,NULL,gszProcName,NULL);
+_splitpath(argv[0],nullptr,nullptr,gszProcName,nullptr);
 #else
 int
 fasta2nxx(int argc, char** argv)
 {
 // determine my process name
-CUtility::splitpath((char *)argv[0],NULL,gszProcName);
+CUtility::splitpath((char *)argv[0],nullptr,gszProcName);
 #endif
 
 int iFileLogLevel;			// level of file diagnostics
@@ -289,8 +289,8 @@ if (!argerrors)
 
 	for(NumInputFiles=Idx=0;NumInputFiles < cMaxInFileSpecs && Idx < pinputfiles->count; Idx++)
 		{
-		pszInFastaFile[Idx] = NULL;
-		if(pszInFastaFile[NumInputFiles] == NULL)
+		pszInFastaFile[Idx] = nullptr;
+		if(pszInFastaFile[NumInputFiles] == nullptr)
 			pszInFastaFile[NumInputFiles] = new char [_MAX_PATH];
 		strncpy(pszInFastaFile[NumInputFiles],pinputfiles->filename[Idx],_MAX_PATH);
 		pszInFastaFile[NumInputFiles][_MAX_PATH-1] = '\0';
@@ -433,7 +433,7 @@ Process(etNxxPMode Mode,			// processing mode - 0  N50 distributions, 1 n-mer co
 {
 int Rslt;
 CFastaNxx *pFastaNxx;
-if((pFastaNxx = new CFastaNxx) == NULL)
+if((pFastaNxx = new CFastaNxx) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create CFastaNxx object");
 	return(eBSFerrObj);
@@ -446,12 +446,12 @@ return(Rslt);
 
 CFastaNxx::CFastaNxx()
 {
-m_pSeq = NULL;
-m_pDimerCnts = NULL;
-m_pTrimerCnts = NULL;
-m_pTetramerCnts = NULL;
-m_pBins = NULL;
-m_pContigLengths = NULL;
+m_pSeq = nullptr;
+m_pDimerCnts = nullptr;
+m_pTrimerCnts = nullptr;
+m_pTetramerCnts = nullptr;
+m_pBins = nullptr;
+m_pContigLengths = nullptr;
 Reset();
 }
 
@@ -464,32 +464,32 @@ Reset();
 void
 CFastaNxx::Reset(void)
 {
-if(m_pDimerCnts != NULL)
+if(m_pDimerCnts != nullptr)
 	{
 	delete(m_pDimerCnts);
-	m_pDimerCnts = NULL;
+	m_pDimerCnts = nullptr;
 	}
-if(m_pTrimerCnts != NULL)
+if(m_pTrimerCnts != nullptr)
 	{
 	delete(m_pTrimerCnts);
-	m_pTrimerCnts = NULL;
+	m_pTrimerCnts = nullptr;
 	}
-if(m_pTetramerCnts != NULL)
+if(m_pTetramerCnts != nullptr)
 	{
 	delete(m_pTetramerCnts);
-	m_pTetramerCnts = NULL;
+	m_pTetramerCnts = nullptr;
 	}
-if(m_pSeq != NULL)
+if(m_pSeq != nullptr)
 	{
 	delete(m_pSeq);
-	m_pSeq = NULL;
+	m_pSeq = nullptr;
 	}
-if(m_pBins != NULL)
+if(m_pBins != nullptr)
 	{
 	delete(m_pBins);
-	m_pBins = NULL;
+	m_pBins = nullptr;
 	}
-if(m_pContigLengths != NULL)
+if(m_pContigLengths != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pContigLengths);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -497,7 +497,7 @@ if(m_pContigLengths != NULL)
 	if(m_pContigLengths != MAP_FAILED)
 		munmap(m_pContigLengths,m_AllocdCtgLens);
 #endif	
-	m_pContigLengths = NULL;
+	m_pContigLengths = nullptr;
 	}
 
 m_NumContigLens = 0;
@@ -533,11 +533,11 @@ int SeqNsIdx;
 
 etSeqBase *pSeqFwd;
 
-CFasta *pFasta = NULL;
+CFasta *pFasta = nullptr;
 
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Starting to process source fasta file '%s'",pszFastaFile);
 
-if((pFasta = new CFasta())==NULL)
+if((pFasta = new CFasta())==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create CFasta object");
 	return(eBSFerrObj);
@@ -622,9 +622,9 @@ while((Rslt = SeqLen = pFasta->ReadSequence(m_pSeq,MaxLength + 10)) > eBSFSucces
 #else
 			pTmp = (int *)mremap(m_pContigLengths,m_AllocdCtgLens,AllocNeeded,MREMAP_MAYMOVE);
 			if(pTmp == MAP_FAILED)
-				pTmp = NULL;
+				pTmp = nullptr;
 #endif
-			if(pTmp == NULL)
+			if(pTmp == nullptr)
 				{
 				gDiagnostics.DiagOut(eDLInfo,gszProcName,"GenContig memory reallocation for contig lengths distribution of %d bytes failed..",AllocNeeded);
 				return(eBSFerrMem);
@@ -735,20 +735,20 @@ Reset();
 if(Mode == ePMKMerDist)
 	{
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Allocating memory for N-Mer count distributions...");
-	if((m_pDimerCnts = new uint32_t [5*5*cMaxFastQSeqLen])==NULL)
+	if((m_pDimerCnts = new uint32_t [5*5*cMaxFastQSeqLen])==nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory for dimer counts",strerror(errno));
 		return(eBSFerrMem);
 		}
 	
-	if((m_pTrimerCnts = new uint32_t [5*5*5*cMaxFastQSeqLen])==NULL)
+	if((m_pTrimerCnts = new uint32_t [5*5*5*cMaxFastQSeqLen])==nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory for trimer counts",strerror(errno));
 		Reset();
 		return(eBSFerrMem);
 		}
 
-	if((m_pTetramerCnts = new uint32_t [5*5*5*5*cMaxFastQSeqLen])==NULL)
+	if((m_pTetramerCnts = new uint32_t [5*5*5*5*cMaxFastQSeqLen])==nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory for tetramer counts",strerror(errno));
 		Reset();
@@ -763,7 +763,7 @@ if(Mode == ePMKMerDist)
 	memset(m_DistBaseCnts,0,sizeof(m_DistBaseCnts));
 	}
 
-if((m_pSeq = new uint8_t [MaxLength+10])==NULL)	// allows to check if sequence has been loaded which is longer than MaxLength
+if((m_pSeq = new uint8_t [MaxLength+10])==nullptr)	// allows to check if sequence has been loaded which is longer than MaxLength
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory to hold sequence of length %d",MaxLength);
 	Reset();
@@ -775,7 +775,7 @@ if(Mode == ePMdefault)
 	size_t MemReq = cAllocCtgLenDist * sizeof(int);
 #ifdef _WIN32
 	m_pContigLengths = (int *) malloc(MemReq);	// initial and perhaps the only allocation
-	if(m_pContigLengths == NULL)
+	if(m_pContigLengths == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenContigs: Memory allocation of %d bytes for contig length distributions - %s",MemReq,strerror(errno));
 		Reset();
@@ -783,11 +783,11 @@ if(Mode == ePMdefault)
 		}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-	m_pContigLengths = (int *)mmap(NULL,MemReq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+	m_pContigLengths = (int *)mmap(nullptr,MemReq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pContigLengths == MAP_FAILED)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %d bytes through mmap()  failed - %s",MemReq,strerror(errno));
-		m_pContigLengths = NULL;
+		m_pContigLengths = nullptr;
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -821,7 +821,7 @@ for(Idx = 0; Idx < NumInputFiles; Idx++)
 		if((Rslt = ProcessFile(Mode,MinLength,MaxLength,pszInFile)) < 0)
 			{
 			delete m_pSeq;
-			m_pSeq = NULL;
+			m_pSeq = nullptr;
 			return(Rslt);
 			}
 		}
@@ -840,7 +840,7 @@ if(Mode == ePMdefault)
 	int NumCtgs;
 	int *pCnts;
 
-	if(pszRsltsFile != NULL && pszRsltsFile[0] != '\0')
+	if(pszRsltsFile != nullptr && pszRsltsFile[0] != '\0')
 		{
 		#ifdef _WIN32
 		if((hRslts = open(pszRsltsFile, _O_RDWR | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC, _S_IREAD | _S_IWRITE ))==-1)
@@ -889,7 +889,7 @@ if(Mode == ePMdefault)
 				}
 			}
 
-		if((m_pBins = new uint32_t [NumBins+1])==NULL)
+		if((m_pBins = new uint32_t [NumBins+1])==nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenContigs: Memory allocation for %d bins failed - %s",NumBins,strerror(errno));
 			Reset();
@@ -898,20 +898,20 @@ if(Mode == ePMdefault)
 		memset(m_pBins,0,sizeof(uint32_t) * (NumBins+1));
 		}
 	else
-		m_pBins = NULL;
+		m_pBins = nullptr;
 
 	SumCtgLens = 0;
 	pCnts = m_pContigLengths;
 	for(CtgLenIdx = 0; CtgLenIdx < m_NumContigLens; CtgLenIdx++,pCnts++)
 		{
 		SumCtgLens += *pCnts;
-		if(m_pBins != NULL && *pCnts != 0)
+		if(m_pBins != nullptr && *pCnts != 0)
 			m_pBins[min(*pCnts / BinDelta,NumBins)] += 1;
 		}	
 
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"  Total sequence length over accepted contigs: %zd",SumCtgLens);
 
-	if(m_pBins != NULL)
+	if(m_pBins != nullptr)
 		{
 		WrtOfs = 0;
 		pCnts = (int *)m_pBins;
@@ -937,7 +937,7 @@ if(Mode == ePMdefault)
 		close(hRslts);
 		hRslts = -1;
 		delete m_pBins;
-		m_pBins = NULL;
+		m_pBins = nullptr;
 		}
 
 	m_MTqsort.SetMaxThreads(4);
@@ -973,11 +973,11 @@ if(Mode == ePMdefault)
 	if(m_pContigLengths != MAP_FAILED)
 		munmap(m_pContigLengths,m_AllocdCtgLens);
 #endif	
-	m_pContigLengths = NULL;
+	m_pContigLengths = nullptr;
 
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Processing completed");
 	delete m_pSeq;
-	m_pSeq = NULL;
+	m_pSeq = nullptr;
 	return(eBSFSuccess);
 	}
 
@@ -1188,7 +1188,7 @@ fsync(hRslts);
 close(hRslts);
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Processing completed");
 delete m_pSeq;
-m_pSeq = NULL;
+m_pSeq = nullptr;
 return(eBSFSuccess);
 }
 

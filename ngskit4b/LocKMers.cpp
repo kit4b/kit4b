@@ -40,16 +40,16 @@ Original 'BioKanga' copyright notice has been retained and immediately follows t
 
 CLocKMers::CLocKMers(void)
 {
-m_pSfxArray = NULL;
-m_pBlockSeqBuff = NULL;
-m_pMarkerBuff = NULL;
-m_pMarkerLenDist = NULL;
+m_pSfxArray = nullptr;
+m_pBlockSeqBuff = nullptr;
+m_pMarkerBuff = nullptr;
+m_pMarkerLenDist = nullptr;
 m_hOutFile = -1;
 m_hOutReadsFile = -1;
 #ifdef _WIN32
 InitializeSRWLock(&m_hRwLock);
 #else
-pthread_rwlock_init( &m_hRwLock,NULL);
+pthread_rwlock_init( &m_hRwLock,nullptr);
 #endif
 Reset();
 }
@@ -61,13 +61,13 @@ if(m_hOutFile != -1)
 	close(m_hOutFile);
 if(m_hOutReadsFile != -1)
 	close(m_hOutReadsFile);
-if(m_pSfxArray != NULL)
+if(m_pSfxArray != nullptr)
 	delete m_pSfxArray;
-if(m_pBlockSeqBuff != NULL)
+if(m_pBlockSeqBuff != nullptr)
 	delete m_pBlockSeqBuff;
-if(m_pMarkerBuff != NULL)
+if(m_pMarkerBuff != nullptr)
 	delete m_pMarkerBuff;
-if(m_pMarkerLenDist != NULL)
+if(m_pMarkerLenDist != nullptr)
 	delete m_pMarkerLenDist;
 
 #ifndef _WIN32
@@ -78,15 +78,15 @@ pthread_rwlock_destroy(&m_hRwLock);
 void
 CLocKMers::Reset(bool bSync)
 {
-if(m_pSfxArray != NULL)
+if(m_pSfxArray != nullptr)
 	{
 	delete m_pSfxArray;
-	m_pSfxArray = NULL;
+	m_pSfxArray = nullptr;
 	}
-if(m_pBlockSeqBuff != NULL)
+if(m_pBlockSeqBuff != nullptr)
 	{
 	delete m_pBlockSeqBuff;
-	m_pBlockSeqBuff = NULL;
+	m_pBlockSeqBuff = nullptr;
 	}
 
 if(m_hOutFile != -1)
@@ -113,16 +113,16 @@ if(m_hOutReadsFile != -1)
 	m_hOutReadsFile = -1;
 	}
 
-if(m_pMarkerBuff != NULL)
+if(m_pMarkerBuff != nullptr)
 	{
 	delete m_pMarkerBuff;
-	m_pMarkerBuff = NULL;
+	m_pMarkerBuff = nullptr;
 	}
 
-if(m_pMarkerLenDist != NULL)
+if(m_pMarkerLenDist != nullptr)
 	{
 	delete m_pMarkerLenDist;
-	m_pMarkerLenDist = NULL;
+	m_pMarkerLenDist = nullptr;
 	}
 
 m_szDataset[0] = '\0';
@@ -195,7 +195,7 @@ CLocKMers::ReportMarker(int MarkerLen,			// number of bases in marker sequence
 int TruncMarkerLen;
 char szMarkerSeq[cMaxExtKMerLen+1];				// additional for '\0' terminator
 
-if(m_hOutFile == -1 || MarkerLen == 0 || pMarkerSeq == NULL || m_pMarkerBuff == NULL)	// better safe than sorry...
+if(m_hOutFile == -1 || MarkerLen == 0 || pMarkerSeq == nullptr || m_pMarkerBuff == nullptr)	// better safe than sorry...
 	return(0);
 
 TruncMarkerLen = MarkerLen > cMaxExtKMerLen ? cMaxExtKMerLen : MarkerLen;
@@ -229,7 +229,7 @@ CLocKMers::ReportMarkerRead(int ReadLen,		// number of bases in read sequence
 int TruncMarkerLen;
 char szMarkerSeq[cMaxExtKMerLen+1];				// additional for '\0' terminator
 
-if(m_hOutReadsFile == -1 || ReadLen == 0 || pReadSeq == NULL || m_pMarkerBuff == NULL)	// better safe than sorry...
+if(m_hOutReadsFile == -1 || ReadLen == 0 || pReadSeq == nullptr || m_pMarkerBuff == nullptr)	// better safe than sorry...
 	return(0);
 
 TruncMarkerLen = ReadLen > cMaxExtKMerLen ? cMaxExtKMerLen : ReadLen;
@@ -367,7 +367,7 @@ uint8_t CurBase;
 int CurRetLen;
 int EOSRetLen;	
 
-if(m_pBlockSeqBuff == NULL || m_NumPartialCultivars == 0 || m_NumSfxEntries == 0)
+if(m_pBlockSeqBuff == nullptr || m_NumPartialCultivars == 0 || m_NumSfxEntries == 0)
 	return(eBSFerrInternal);
 
 AcquireLock(true);
@@ -478,10 +478,10 @@ return(EOSRetLen);
 bool	// returns true if suffix array entry identifier is for a pseudo-chromosome which is part of the target cultivar  
 CLocKMers::IsTargetCultivar(int EntryID)		// suffix array entry identifier 
 {
-return(LocTargetCultivar(EntryID) == NULL ? false : true);
+return(LocTargetCultivar(EntryID) == nullptr ? false : true);
 }
 
-tsPartialCultivar *				// NULL if EntryID not a targeted cultivar
+tsPartialCultivar *				// nullptr if EntryID not a targeted cultivar
 CLocKMers::LocTargetCultivar(int EntryID)	// suffix array entry identifier
 {
 int Idx;
@@ -490,7 +490,7 @@ pPartialCultivar = m_PartialCultivars;
 for(Idx = 0; Idx < m_NumPartialCultivars; Idx++, pPartialCultivar++)
 	if(pPartialCultivar->EntryID == EntryID)
 		return(pPartialCultivar);
-return(NULL);
+return(nullptr);
 }
 
 uint32_t												// returns number of accepted cultivar specific extended K-mers
@@ -501,13 +501,13 @@ CLocKMers::GetKMerProcProgress(uint32_t *pNumBlocks,	// number of blocks process
 {
 uint32_t NumAcceptedExtdKMers;
 AcquireLock(true);
-if(pNumBlocks != NULL)
+if(pNumBlocks != nullptr)
 	*pNumBlocks = m_NumBlocks;
-if(pNumKMers != NULL)
+if(pNumKMers != nullptr)
 	*pNumKMers = m_NumKMers;
-if(pNumPutativeKMers != NULL)
+if(pNumPutativeKMers != nullptr)
 	*pNumPutativeKMers = m_NumPutativeKMers;
-if(pNumAcceptedKMers != NULL)
+if(pNumAcceptedKMers != nullptr)
 	*pNumAcceptedKMers = m_NumAcceptedKMers;
 NumAcceptedExtdKMers = m_NumAcceptedExtdKMers;
 ReleaseLock(true);
@@ -557,7 +557,7 @@ m_MinHamming = MinHamming;
 m_NumThreads = NumThreads;
 strncpy(m_szMarkerFile,pszMarkerFile,sizeof(m_szMarkerFile));
 m_szMarkerFile[sizeof(m_szMarkerFile)-1] = '\0';
-if(pszMarkerReadsFile != NULL && pszMarkerReadsFile[0] != '\0')
+if(pszMarkerReadsFile != nullptr && pszMarkerReadsFile[0] != '\0')
 	{
 	m_bKMerReads = true;
 	strncpy(m_szMarkerReadsFile,pszMarkerReadsFile,sizeof(m_szMarkerReadsFile));
@@ -595,7 +595,7 @@ if(NumPartialCultivars > 1)
 	}
 
 // allocate buffers
-if((m_pMarkerBuff = new uint8_t [cMarkerSeqBuffSize])==NULL)
+if((m_pMarkerBuff = new uint8_t [cMarkerSeqBuffSize])==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Unable to allocate (%d bytes) for marker buffering",cMarkerSeqBuffSize);
 	Reset();
@@ -603,7 +603,7 @@ if((m_pMarkerBuff = new uint8_t [cMarkerSeqBuffSize])==NULL)
 	}
 m_AllocMarkerBuffSize = cMarkerSeqBuffSize;
 
-if((m_pMarkerLenDist = new uint32_t [cMaxExtKMerLen])==NULL)
+if((m_pMarkerLenDist = new uint32_t [cMaxExtKMerLen])==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Unable to allocate (%d bytes) for marker length distributions",sizeof(uint32_t) * cMaxExtKMerLen);
 	Reset();
@@ -611,7 +611,7 @@ if((m_pMarkerLenDist = new uint32_t [cMaxExtKMerLen])==NULL)
 	}
 
 
-if((m_pBlockSeqBuff = new uint8_t [cConcatSeqBuffSize])==NULL)
+if((m_pBlockSeqBuff = new uint8_t [cConcatSeqBuffSize])==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Unable to allocate (%d bytes) for sequence buffering",cConcatSeqBuffSize);
 	Reset();
@@ -619,7 +619,7 @@ if((m_pBlockSeqBuff = new uint8_t [cConcatSeqBuffSize])==NULL)
 	}
 m_AllocBlockSeqBuffSize = cConcatSeqBuffSize;
 
-if((m_pSfxArray = new CSfxArray)==NULL)
+if((m_pSfxArray = new CSfxArray)==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Unable to instantiate instance of CSfxArray");
 	Reset();
@@ -707,7 +707,7 @@ for(EntryID = 1; EntryID <= m_NumSfxEntries; EntryID++, pCultivar++)
 	strncpy(pCultivar->Cultivar.szEntryName,szSfxEntryName,sizeof(pCultivar->Cultivar.szEntryName));
 	pCultivar->Cultivar.szEntryName[sizeof(pCultivar->Cultivar.szEntryName)-1] = '\0';
 	pCultivar->Cultivar.EntryLen = m_pSfxArray->GetSeqLen(EntryID);
-	if((pPartial = LocTargetCultivar(EntryID))!=NULL)
+	if((pPartial = LocTargetCultivar(EntryID))!=nullptr)
 		{
 		pCultivar->Cultivar.PartialCultivarID = pPartial->PartialCultivarID;
 		continue;
@@ -797,9 +797,9 @@ for(ThreadIdx = 0; ThreadIdx < m_NumThreads; ThreadIdx++)
 	WorkerThreads[ThreadIdx].pBlockSeqs = new uint8_t [cBlockReqSize];
 	WorkerThreads[ThreadIdx].AllocBlockSeqsSize = cBlockReqSize;
 #ifdef _WIN32
-	WorkerThreads[ThreadIdx].threadHandle = (HANDLE)_beginthreadex(NULL,0x0fffff,KMerThreadStart,&WorkerThreads[ThreadIdx],0,&WorkerThreads[ThreadIdx].threadID);
+	WorkerThreads[ThreadIdx].threadHandle = (HANDLE)_beginthreadex(nullptr,0x0fffff,KMerThreadStart,&WorkerThreads[ThreadIdx],0,&WorkerThreads[ThreadIdx].threadID);
 #else
-	WorkerThreads[ThreadIdx].threadRslt =	pthread_create (&WorkerThreads[ThreadIdx].threadID , NULL , KMerThreadStart , &WorkerThreads[ThreadIdx] );
+	WorkerThreads[ThreadIdx].threadRslt =	pthread_create (&WorkerThreads[ThreadIdx].threadID , nullptr , KMerThreadStart , &WorkerThreads[ThreadIdx] );
 #endif
 	}
 
@@ -829,17 +829,17 @@ for(ThreadIdx = 0; ThreadIdx < m_NumThreads; ThreadIdx++)
 	int JoinRlt;
 	clock_gettime(CLOCK_REALTIME, &ts);
 	ts.tv_sec += 60 * 10;
-	while((JoinRlt = pthread_timedjoin_np(WorkerThreads[ThreadIdx].threadID, NULL, &ts)) != 0)
+	while((JoinRlt = pthread_timedjoin_np(WorkerThreads[ThreadIdx].threadID, nullptr, &ts)) != 0)
 		{
 		NumAcceptedExtdKMers = GetKMerProcProgress(&NumBlocks,&NumKMers,&NumPutativeKMers, &NumAcceptedKMers);
 		gDiagnostics.DiagOut(eDLInfo,gszProcName,"Progress - K-Mers processed: %zd, Cultivar specific : %u, Hamming retained: %u, Accepted: %u",NumKMers,NumPutativeKMers, NumAcceptedKMers,NumAcceptedExtdKMers);
 		ts.tv_sec += 60;
 		}
 #endif
-	if(WorkerThreads[ThreadIdx].pBlockSeqs!=NULL)
+	if(WorkerThreads[ThreadIdx].pBlockSeqs!=nullptr)
 		{
 		delete WorkerThreads[ThreadIdx].pBlockSeqs;
-		WorkerThreads[ThreadIdx].pBlockSeqs = NULL;
+		WorkerThreads[ThreadIdx].pBlockSeqs = nullptr;
 		}
 	}
 
@@ -980,7 +980,7 @@ pArgs->pThis->LocateSpeciesUniqueKMers(pArgs);
 #ifdef WIN32
 ExitThread(1);
 #else
-return NULL;
+return nullptr;
 #endif
 }
 

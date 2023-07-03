@@ -58,13 +58,13 @@ fastaextractproc(int PMode,				// processing mode - 0 by matching descriptor, 1 
 int fastaextract(int argc, char* argv[])
 {
 // determine my process name
-_splitpath(argv[0],NULL,NULL,gszProcName,NULL);
+_splitpath(argv[0],nullptr,nullptr,gszProcName,nullptr);
 #else
 int 
 fastaextract(int argc, char** argv)
 {
 // determine my process name
-CUtility::splitpath((char *)argv[0],NULL,gszProcName);
+CUtility::splitpath((char *)argv[0],nullptr,gszProcName);
 #endif
 
 int iScreenLogLevel;		// level of screen diagnostics
@@ -270,9 +270,9 @@ if (!argerrors)
 		NumExtractDescrs = 0;
 		for(Idx=0;Idx < extractdescrs->count; Idx++)
 			{
-			pszExtractDescrs[Idx] = NULL;
+			pszExtractDescrs[Idx] = nullptr;
 			LenExtractDescr = (int)strlen(extractdescrs->sval[Idx]);
-			if(pszExtractDescrs[NumExtractDescrs] == NULL)
+			if(pszExtractDescrs[NumExtractDescrs] == nullptr)
 				pszExtractDescrs[Idx] = new char [LenExtractDescr+1];
 			strcpy(pszExtractDescrs[NumExtractDescrs],extractdescrs->sval[Idx]);
 			CUtility::TrimQuotes(pszExtractDescrs[NumExtractDescrs]);
@@ -289,7 +289,7 @@ if (!argerrors)
 	else
 		{
 		NumExtractDescrs = 0;
-		pszExtractDescrs[0] = NULL;
+		pszExtractDescrs[0] = nullptr;
 		}
 
 	XSense = xsense->count ? xsense->ival[0] : 0;
@@ -439,7 +439,7 @@ if(m_hFEOutFile != -1)
 	m_hFEOutFile = -1;
 	}
 
-if(m_pSeqBuff != NULL)
+if(m_pSeqBuff != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pSeqBuff);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -447,7 +447,7 @@ if(m_pSeqBuff != NULL)
 	if(m_pSeqBuff != MAP_FAILED)
 		munmap(m_pSeqBuff,m_AllocdSeqBuffMem);
 #endif
-	m_pSeqBuff = NULL;
+	m_pSeqBuff = nullptr;
 	}
 
 m_AllocdSeqBuffMem = 0;
@@ -462,8 +462,8 @@ FEInit(void)
 {
 m_hFEInFile = -1;
 m_hFEOutFile = -1;
-m_pSeqBuff = NULL;
-m_pRegexDescrs[0] = NULL;
+m_pSeqBuff = nullptr;
+m_pRegexDescrs[0] = nullptr;
 m_NumExtractDescrs = 0;
 FEReset();
 }
@@ -474,27 +474,27 @@ AllocSeqBuff(size_t SeqLen)				// allocate for at least this sequence length
 size_t memreq;
 etSeqBase *pTmp;
 
-if(m_pSeqBuff != NULL && m_AllocdSeqBuffMem >= SeqLen)
+if(m_pSeqBuff != nullptr && m_AllocdSeqBuffMem >= SeqLen)
 	return(m_pSeqBuff);
 
-if(m_pSeqBuff == NULL)
+if(m_pSeqBuff == nullptr)
 	{
 	memreq = max(SeqLen,(size_t)cMaxAllocBuffChunk);
 #ifdef _WIN32
 	m_pSeqBuff = (etSeqBase *) malloc(SeqLen);	// initial and perhaps the only allocation
-	if(m_pSeqBuff == NULL)
+	if(m_pSeqBuff == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocSeqBuff: Memory allocation of %zd bytes - %s",(int64_t)SeqLen,strerror(errno));
-		return(NULL);
+		return(nullptr);
 		}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-	m_pSeqBuff = (etSeqBase *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+	m_pSeqBuff = (etSeqBase *)mmap(nullptr,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pSeqBuff == MAP_FAILED)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocSeqBuff: Memory allocation of %zd bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
-		m_pSeqBuff = NULL;
-		return(NULL);
+		m_pSeqBuff = nullptr;
+		return(nullptr);
 		}
 #endif
 	}
@@ -506,12 +506,12 @@ else
 #else
 	pTmp = (etSeqBase *)mremap(m_pSeqBuff,m_AllocdSeqBuffMem,memreq,MREMAP_MAYMOVE);
 	if(pTmp == MAP_FAILED)
-		pTmp = NULL;
+		pTmp = nullptr;
 #endif
-	if(pTmp == NULL)
+	if(pTmp == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AllocSeqBuff: Memory re-allocation to %zd bytes - %s",(int64_t)memreq,strerror(errno));
-		return(NULL);
+		return(nullptr);
 		}
 	m_pSeqBuff = pTmp;
 	}
@@ -630,10 +630,10 @@ if((Rslt=Fasta.Open(pszInFasta,true))!=eBSFSuccess)
 	return(Rslt);
 	}
 
-if(m_pSeqBuff == NULL)				// if not already allocated then allocate to hold cMaxAllocBuffChunk bases 
+if(m_pSeqBuff == nullptr)				// if not already allocated then allocate to hold cMaxAllocBuffChunk bases 
 	{
 	SeqLen = cMaxAllocBuffChunk;
-	if(AllocSeqBuff(SeqLen) == NULL)
+	if(AllocSeqBuff(SeqLen) == nullptr)
 		{
 		Rslt = eBSFerrMem;
 		Fasta.Close();
@@ -688,7 +688,7 @@ while((Rslt = SeqLen = Fasta.ReadSequence(&m_pSeqBuff[m_SeqBuffLen],(int)min(Ava
 	AvailBuffSize -= SeqLen;
 	if(AvailBuffSize < (size_t)(cMaxAllocBuffChunk / 8))
 		{
-		if(AllocSeqBuff(m_AllocdSeqBuffMem + SeqLen) == NULL)
+		if(AllocSeqBuff(m_AllocdSeqBuffMem + SeqLen) == nullptr)
 			{
 			Rslt = eBSFerrMem;
 			Fasta.Close();

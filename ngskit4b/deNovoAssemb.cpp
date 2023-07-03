@@ -50,7 +50,7 @@ m_bSenseStrandOnly = false;
 m_bSingleEnded = false;
 m_EarlyOverlapTermThres = 0.0;
 m_NReduceThresSteps = 0;
-m_pAllocdThreadSeqs = NULL;
+m_pAllocdThreadSeqs = nullptr;
 m_AllocdThreadSeqsSize = 0;
 memset(m_ThreadSeqBlocks,0,sizeof(m_ThreadSeqBlocks));
 }
@@ -59,7 +59,7 @@ memset(m_ThreadSeqBlocks,0,sizeof(m_ThreadSeqBlocks));
 // relies on base classes destructors
 CdeNovoAssemb::~CdeNovoAssemb(void)
 {
-if(m_pAllocdThreadSeqs != NULL)
+if(m_pAllocdThreadSeqs != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pAllocdThreadSeqs);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -67,7 +67,7 @@ if(m_pAllocdThreadSeqs != NULL)
 	if(m_pAllocdThreadSeqs != MAP_FAILED)
 		munmap(m_pAllocdThreadSeqs,m_AllocdThreadSeqsSize);
 #endif	
-	m_pAllocdThreadSeqs = NULL;
+	m_pAllocdThreadSeqs = nullptr;
 	}
 }
 
@@ -87,17 +87,17 @@ m_bSingleEnded = bSingleEnded;				// treat all sequences as being single ended e
 
 // firstly, if specified then load any high confidence seed contigs or SE fragments
 // these are likely to be longer than any SE/PE reads and thus will take longer to process for overlaps
-if(pszSeedContigsFile != NULL && pszSeedContigsFile[0] != '\0')
+if(pszSeedContigsFile != nullptr && pszSeedContigsFile[0] != '\0')
 	if((Rslt = LoadSeedContigs(pszSeedContigsFile))  < eBSFSuccess)
 		return((teBSFrsltCodes)Rslt);
 
 // if specified then load packed artefact reduced reads
-if(pszInArtReducfile != NULL && pszInArtReducfile[0] != '\0')
+if(pszInArtReducfile != nullptr && pszInArtReducfile[0] != '\0')
 	if((Rslt = LoadPackedSeqsFromFile(pszInArtReducfile)) < eBSFSuccess)
 		return((teBSFrsltCodes)Rslt);
 
 // next, if specified then load filtered PE1 and PE2 reads
-if(pszPE1File != NULL && pszPE1File[0] != '\0')
+if(pszPE1File != nullptr && pszPE1File[0] != '\0')
 	if((Rslt = LoadSeedPEs(pszPE1File,pszPE2File,OrientatePE,0, MinPEReadLen))  < 1)
 		return(Rslt == 0 ? (teBSFrsltCodes)eBSFerrNoEntries : (teBSFrsltCodes)Rslt);
 
@@ -192,17 +192,17 @@ m_TrimPE2SE = TrimPE2SE;
 
 // firstly, if specified then load any high confidence seed contigs or SE fragments
 // these are likely to be longer than any SE/PE reads and thus will take longer to process for overlaps
-if(pszSeedContigsFile != NULL && pszSeedContigsFile[0] != '\0')
+if(pszSeedContigsFile != nullptr && pszSeedContigsFile[0] != '\0')
 	if((Rslt = LoadSeedContigs(pszSeedContigsFile,TrimInputEnds,MinInputSeqLen))  < eBSFSuccess)
 		return((teBSFrsltCodes)Rslt);
 
 // if specified then load packed artefact reduced reads
-if(pszInArtReducfile != NULL && pszInArtReducfile[0] != '\0')
+if(pszInArtReducfile != nullptr && pszInArtReducfile[0] != '\0')
 	if((Rslt = LoadPackedSeqsFromFile(pszInArtReducfile)) < eBSFSuccess)
 		return((teBSFrsltCodes)Rslt);
 
 // next, if specified then load filtered PE1 and PE2 reads
-if(pszPE1File != NULL && pszPE1File[0] != '\0')
+if(pszPE1File != nullptr && pszPE1File[0] != '\0')
 	if((Rslt = LoadSeedPEs(pszPE1File,pszPE2File,OrientatePE,TrimInputEnds,MinInputSeqLen))  < eBSFSuccess)
 		return((teBSFrsltCodes)Rslt);
 
@@ -591,10 +591,10 @@ if(m_NumPartialSeqs2Assemb)	// almost certainly there will be at least one but b
 			continue;
 			}
 		// sequence not already added to partials
-		pPE1SeqWrd = (tSeqWrd4 *)GetSeqHeader(SeqID,NULL,NULL,&PE1SeqLen,false);
+		pPE1SeqWrd = (tSeqWrd4 *)GetSeqHeader(SeqID,nullptr,nullptr,&PE1SeqLen,false);
 		if(SeqFlags & cFlgSeqPE)
 			{
-			pPE2SeqWrd = (tSeqWrd4 *)GetSeqHeader(SeqID+1,NULL,NULL,&PE2SeqLen,false);
+			pPE2SeqWrd = (tSeqWrd4 *)GetSeqHeader(SeqID+1,nullptr,nullptr,&PE2SeqLen,false);
 			SeqID += 1;
 			pSeqFlags += 1;
 			NumPEs += 1;
@@ -602,7 +602,7 @@ if(m_NumPartialSeqs2Assemb)	// almost certainly there will be at least one but b
 		else
 			{
 			NumSEs += 1;
-			pPE2SeqWrd = NULL;
+			pPE2SeqWrd = nullptr;
 			PE2SeqLen = 0;
 			}
 
@@ -711,7 +711,7 @@ if(m_NumPartialSeqs2Assemb)	// almost certainly there will be at least one but b
 			m_Sequences.Seqs2AssembLen += TrimSeqLen;
 			m_Sequences.NumSeqs2Assemb += 1;
 
-			if((pPackSeq = (tSeqWrd4 *)SetSeqHeader(pPackSeq,m_Sequences.NumSeqs2Assemb,1,SeqFlags,TrimSeqLen,NULL))==NULL)
+			if((pPackSeq = (tSeqWrd4 *)SetSeqHeader(pPackSeq,m_Sequences.NumSeqs2Assemb,1,SeqFlags,TrimSeqLen,nullptr))==nullptr)
 				{
 				gDiagnostics.DiagOut(eDLFatal,gszProcName,"CombinePartialsWithUnmerged: SetSeqHeader() failed");
 				return(eBSFerrInternal);
@@ -753,9 +753,9 @@ if((memreq * 2) < m_Sequences.AllocMemSeqs2Assemb)
 #else
 	pAllocd = mremap(m_Sequences.pSeqs2Assemb,m_Sequences.AllocMemSeqs2Assemb,memreq,MREMAP_MAYMOVE);
 	if(pAllocd == MAP_FAILED)
-		pAllocd = NULL;
+		pAllocd = nullptr;
 #endif
-	if(pAllocd == NULL)
+	if(pAllocd == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"CombinePartialsWithUnmerged: Memory re-allocation to %d bytes - %s",memreq,strerror(errno));
 		Reset(false);
@@ -774,9 +774,9 @@ if(memreq < m_AllocdPartialSeqs2Assemb)
 #else
 	pAllocd = mremap(m_pPartialSeqs2Assemb,m_AllocdPartialSeqs2Assemb,memreq,MREMAP_MAYMOVE);
 	if(pAllocd == MAP_FAILED)
-		pAllocd = NULL;
+		pAllocd = nullptr;
 #endif
-	if(pAllocd == NULL)
+	if(pAllocd == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"CombinePartialsWithUnmerged: Memory re-allocation to %d bytes - %s",memreq,strerror(errno));
 		Reset(false);
@@ -1001,7 +1001,7 @@ else
 // now that number of threads to use is known then initialise the sequence dispenser (GetSeqProc)
 InitGetSeqProc(NumThreads);
 
-if((pThreadParams = new tsThreadOverlapExtendPars[NumThreads])==NULL)
+if((pThreadParams = new tsThreadOverlapExtendPars[NumThreads])==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory for threads...");
 	Reset(false);
@@ -1010,7 +1010,7 @@ if((pThreadParams = new tsThreadOverlapExtendPars[NumThreads])==NULL)
 memset(pThreadParams,0,sizeof(tsThreadOverlapExtendPars) * NumThreads);
 
 m_AllocdThreadSeqsSize = (m_Sequences.bPESeqs ?  5 : 3) * NumThreads * (cMaxOvrlapSeqWrds + 128) * sizeof(tSeqWrd4); // allocating for 5 (3 if SE) blocks per thread plus a 128 word separators between individual thread buffers
-if((m_pAllocdThreadSeqs = (tSeqWrd4 *)malloc(m_AllocdThreadSeqsSize)) == NULL)
+if((m_pAllocdThreadSeqs = (tSeqWrd4 *)malloc(m_AllocdThreadSeqsSize)) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory for thread sequence buffering..."); 
 	Reset(false);
@@ -1044,7 +1044,7 @@ pCurThread = pThreadParams;
 	pthread_attr_t threadattr; 
 	pthread_attr_init(&threadattr);
 	pthread_attr_getstacksize(&threadattr, &defaultStackSize);
-	if(defaultStackSize != cWorkThreadStackSize)
+	if(defaultStackSize < cWorkThreadStackSize)
 		pthread_attr_setstacksize(&threadattr, cWorkThreadStackSize);
 #endif
 for(ThreadIdx = 1; ThreadIdx <= NumThreads; ThreadIdx++,pCurThread++)
@@ -1112,13 +1112,13 @@ for(ThreadIdx = 1; ThreadIdx <= NumThreads; ThreadIdx++,pCurThread++)
 	else
 		{
 		pCurThread->AllocPE2Seq = 0;
-		pCurThread->pPE2Seq = NULL;
+		pCurThread->pPE2Seq = nullptr;
 		pCurThread->AllocTmpPE2Seq = 0;
-		pCurThread->pTmpPE2Seq = NULL;
+		pCurThread->pTmpPE2Seq = nullptr;
 		}
 
 #ifdef _WIN32
-	pCurThread->threadHandle = (HANDLE)_beginthreadex(NULL,cWorkThreadStackSize,ThreadedOverlapExtend,pCurThread,0,&pCurThread->threadID);
+	pCurThread->threadHandle = (HANDLE)_beginthreadex(nullptr,cWorkThreadStackSize,ThreadedOverlapExtend,pCurThread,0,&pCurThread->threadID);
 #else
 	pCurThread->threadRslt = pthread_create (&pCurThread->threadID , &threadattr , ThreadedOverlapExtend , pCurThread);
 #endif
@@ -1152,7 +1152,7 @@ for(ThreadIdx = 0; ThreadIdx < NumThreads; ThreadIdx++,pCurThread++)
 	int JoinRlt;
 	clock_gettime(CLOCK_REALTIME, &ts);
 	ts.tv_sec += 60;
-	while((JoinRlt = pthread_timedjoin_np(pCurThread->threadID, NULL, &ts)) != 0)
+	while((JoinRlt = pthread_timedjoin_np(pCurThread->threadID, nullptr, &ts)) != 0)
 #endif
 		{
 		AcquireLock(false);
@@ -1198,7 +1198,7 @@ for(ThreadIdx = 0; ThreadIdx < NumThreads; ThreadIdx++,pCurThread++)
 		}
 	}
 
-if(m_pAllocdThreadSeqs != NULL)
+if(m_pAllocdThreadSeqs != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pAllocdThreadSeqs);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -1206,12 +1206,12 @@ if(m_pAllocdThreadSeqs != NULL)
 	if(m_pAllocdThreadSeqs != MAP_FAILED)
 		munmap(m_pAllocdThreadSeqs,m_AllocdThreadSeqsSize);
 #endif	
-	m_pAllocdThreadSeqs = NULL;
+	m_pAllocdThreadSeqs = nullptr;
 	m_AllocdThreadSeqsSize = 0;
 	}
 
 if(pThreadParams)
-	delete pThreadParams;
+	delete []pThreadParams;
 
 if(bErrTerm)
 	{
@@ -1418,7 +1418,7 @@ while((NumSeqsToProc = GetSeqProc(&PE1ProbeSeqID,&PE1ProbeSeqFlags,&PE2ProbeSeqI
 		continue;
 
 	// take local copy of PE1 and PE2 (if applicable) sequences as sequences may require to be inplace merged with any overlaid target sequences 
-	if((pPE1ProbeStartSeqWrd = GetSeqHeader(PE1ProbeSeqID,NULL,NULL,&PE1ProbeSeqLen,false)) == NULL) // serious problem if can't get header, currently just writes to log
+	if((pPE1ProbeStartSeqWrd = GetSeqHeader(PE1ProbeSeqID,nullptr,nullptr,&PE1ProbeSeqLen,false)) == nullptr) // serious problem if can't get header, currently just writes to log
 		{
 		if((TooMAnyWarnings+=1) < 10)
 			gDiagnostics.DiagOut(eDLWarn,gszProcName,"Thread %d Couldn't find sequence header for known sequence %d...",pPars->ThreadIdx,PE1ProbeSeqID);
@@ -1426,7 +1426,7 @@ while((NumSeqsToProc = GetSeqProc(&PE1ProbeSeqID,&PE1ProbeSeqFlags,&PE2ProbeSeqI
 		}
 	if(PE2ProbeSeqID)
 		{
-		if((pPE2ProbeStartSeqWrd = GetSeqHeader(PE2ProbeSeqID,NULL,NULL,&PE2ProbeSeqLen,false))==NULL) // serious problem if can't get header, currently just writes to log
+		if((pPE2ProbeStartSeqWrd = GetSeqHeader(PE2ProbeSeqID,nullptr,nullptr,&PE2ProbeSeqLen,false))==nullptr) // serious problem if can't get header, currently just writes to log
 			{
 			if((TooMAnyWarnings+=1) < 10)
 				gDiagnostics.DiagOut(eDLWarn,gszProcName,"Thread %d Couldn't find PE2 sequence header for SeqID %u...",pPars->ThreadIdx,PE2ProbeSeqID);
@@ -1435,7 +1435,7 @@ while((NumSeqsToProc = GetSeqProc(&PE1ProbeSeqID,&PE1ProbeSeqFlags,&PE2ProbeSeqI
 		}
 	else
 		{
-		pPE2ProbeStartSeqWrd = NULL;
+		pPE2ProbeStartSeqWrd = nullptr;
 		PE2ProbeSeqLen = 0;
 		}
 
@@ -1614,7 +1614,7 @@ while((NumSeqsToProc = GetSeqProc(&PE1ProbeSeqID,&PE1ProbeSeqFlags,&PE2ProbeSeqI
 	if(NumAcceptedOvl > 0)
 		{
 		int64_t PartialSeqsLen;
-		PartialSeqsLen = SavePartialSeqs(pPars->PE1ProbeSeqLen,(tSeqWrd4 *)pPars->pPE1Seq,pPars->PE2ProbeSeqLen,pPars->PE2ProbeSeqLen == 0 ? NULL : (tSeqWrd4 *)pPars->pPE2Seq);
+		PartialSeqsLen = SavePartialSeqs(pPars->PE1ProbeSeqLen,(tSeqWrd4 *)pPars->pPE1Seq,pPars->PE2ProbeSeqLen,pPars->PE2ProbeSeqLen == 0 ? nullptr : (tSeqWrd4 *)pPars->pPE2Seq);
 		if(PartialSeqsLen < (int64_t)0)
 			return((int)PartialSeqsLen);		// errors
 		}
@@ -1756,11 +1756,11 @@ for(SubOfs = 0; SubOfs <= (int)(CurProbeSeqLen - pPars->ProbeMinReqOverlap); Sub
 	do {
 		CmpRslt = 0;
 		ActSubs = 0;
-		if((pHit = (tSeqWrd4 *)SfxIdxToFirstSeqWrd(SfxWrdIdx++,&RelSfxWrdOfs))==NULL)  // get ptr to targets starting (immediately following header) seqword containing 5' bases 
-			break;									   // should only be a NULL if exhusted all potential overlaps
+		if((pHit = (tSeqWrd4 *)SfxIdxToFirstSeqWrd(SfxWrdIdx++,&RelSfxWrdOfs))==nullptr)  // get ptr to targets starting (immediately following header) seqword containing 5' bases 
+			break;									   // should only be a nullptr if exhusted all potential overlaps
 
 		// which target was hit and what length is it?
-		pCurTargStartSeqWrd = (tSeqWrd4 *)GetSeqHeader(pHit,&CurTargSeqID,NULL,NULL,(uint32_t *)&CurTargSeqLen,false);  
+		pCurTargStartSeqWrd = (tSeqWrd4 *)GetSeqHeader(pHit,&CurTargSeqID,nullptr,nullptr,(uint32_t *)&CurTargSeqLen,false);  
 		if(CurTargSeqID == pPars->PE1ProbeSeqID || CurTargSeqID == pPars->PE2ProbeSeqID)	// if self hit to probe sequence, or effectively a self hit from probes PE1 to PE2, then not interested, try for another target sequence
 			continue;
 
@@ -1905,7 +1905,7 @@ for(SubOfs = 0; SubOfs <= (int)(CurProbeSeqLen - pPars->ProbeMinReqOverlap); Sub
 			if(CurTargSeqFlags & cFlgSeqPE)      // if target PE1 was paired end (not single end) then also need to initialise target PE2 
 				{
 				PE2TargSeqID = PE1TargSeqID + 1;
-				pPE2TargStartSeqWrd = GetSeqHeader(PE2TargSeqID,NULL,NULL,(uint32_t *)&PE2TargSeqLen,false);
+				pPE2TargStartSeqWrd = GetSeqHeader(PE2TargSeqID,nullptr,nullptr,(uint32_t *)&PE2TargSeqLen,false);
 				PE2TargSeq5SubOfs = 0;			// actual is determined in subsequent overlay processing
 				}
 			else    // else was single ended or a contig so no putative overlap onto target PE2 to be processed 
@@ -1923,7 +1923,7 @@ for(SubOfs = 0; SubOfs <= (int)(CurProbeSeqLen - pPars->ProbeMinReqOverlap); Sub
 			pPE2TargStartSeqWrd = pCurTargStartSeqWrd;
 			PE2TargSeq5SubOfs = SubOfs;
 			PE1TargSeqID = PE2TargSeqID - 1;
-			pPE1TargStartSeqWrd = GetSeqHeader(PE1TargSeqID,NULL,NULL,(uint32_t *)&PE1TargSeqLen,false);
+			pPE1TargStartSeqWrd = GetSeqHeader(PE1TargSeqID,nullptr,nullptr,(uint32_t *)&PE1TargSeqLen,false);
 			PE1TargSeq5SubOfs = 0;			// actual is determined in subsequent processing
 			}
 

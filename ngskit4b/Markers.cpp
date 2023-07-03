@@ -40,13 +40,13 @@ Original 'BioKanga' copyright notice has been retained and immediately follows t
 CMarkers::CMarkers(void)
 {
 m_hOutFile = -1; 
-m_pszBuff = NULL;
+m_pszBuff = nullptr;
 m_hBEDOutFile = -1;
-m_pszBEDBuff = NULL;
-m_pAllocSeqNames = NULL;
-m_pAllocSeqNameIDsOfs = NULL;
-m_pSeqNameHashArray = NULL;
-m_pAllocAlignLoci = NULL;
+m_pszBEDBuff = nullptr;
+m_pAllocSeqNames = nullptr;
+m_pAllocSeqNameIDsOfs = nullptr;
+m_pSeqNameHashArray = nullptr;
+m_pAllocAlignLoci = nullptr;
 m_bMutexesCreated = false;
 Reset();
 }
@@ -74,7 +74,7 @@ return(eBSFSuccess);
 void 
 CMarkers::Reset(void)	// clears all allocated resources
 {
-if(m_pAllocSeqNames != NULL)
+if(m_pAllocSeqNames != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pAllocSeqNames);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -82,10 +82,10 @@ if(m_pAllocSeqNames != NULL)
 	if(m_pAllocSeqNames != MAP_FAILED)
 		munmap(m_pAllocSeqNames,m_AllocMemSeqNames);
 #endif
-	m_pAllocSeqNames = NULL;
+	m_pAllocSeqNames = nullptr;
 	}
 
-if(m_pAllocSeqNameIDsOfs != NULL)
+if(m_pAllocSeqNameIDsOfs != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pAllocSeqNameIDsOfs);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -93,10 +93,10 @@ if(m_pAllocSeqNameIDsOfs != NULL)
 	if(m_pAllocSeqNameIDsOfs != MAP_FAILED)
 		munmap(m_pAllocSeqNameIDsOfs,m_AllocMemSeqNameIDsOfs);
 #endif
-	m_pAllocSeqNameIDsOfs = NULL;
+	m_pAllocSeqNameIDsOfs = nullptr;
 	}
 
-if(m_pAllocAlignLoci != NULL)
+if(m_pAllocAlignLoci != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pAllocAlignLoci);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -104,13 +104,13 @@ if(m_pAllocAlignLoci != NULL)
 	if(m_pAllocAlignLoci != MAP_FAILED)
 		munmap(m_pAllocAlignLoci,m_AllocMemAlignLoci);
 #endif
-	m_pAllocAlignLoci = NULL;
+	m_pAllocAlignLoci = nullptr;
 	}
 
-if(m_pSeqNameHashArray != NULL)
+if(m_pSeqNameHashArray != nullptr)
 	{
 	delete m_pSeqNameHashArray;
-	m_pSeqNameHashArray = NULL;
+	m_pSeqNameHashArray = nullptr;
 	}
 
 if(m_hOutFile != -1)
@@ -119,10 +119,10 @@ if(m_hOutFile != -1)
 	m_hOutFile = -1;
 	}
 
-if(m_pszBuff != NULL)
+if(m_pszBuff != nullptr)
 	{
 	delete m_pszBuff;
-	m_pszBuff = NULL;
+	m_pszBuff = nullptr;
 	}
 
 if(m_hBEDOutFile != -1)
@@ -131,10 +131,10 @@ if(m_hBEDOutFile != -1)
 	m_hBEDOutFile = -1;
 	}
 
-if(m_pszBEDBuff != NULL)
+if(m_pszBEDBuff != nullptr)
 	{
 	delete m_pszBEDBuff;
-	m_pszBEDBuff = NULL;
+	m_pszBEDBuff = nullptr;
 	}
 
 m_BuffIdx = 0;
@@ -153,7 +153,7 @@ m_UsedAlignLoci = 0;
 m_AllocAlignLoci = 0;	
 m_AllocMemAlignLoci = 0;	
 memset(m_Species,0,sizeof(m_Species));
-m_pCurSpecies = NULL;
+m_pCurSpecies = nullptr;
 m_szCurSeqName[0] = '\0';
 m_CurSeqNameID = 0;
 m_bSorted = false; 
@@ -170,7 +170,7 @@ tsSNPSSpecies *pSpecies;
 // linear search should be ok as normally only expect a few species involved in marker processing
 if(m_NumSpecies > 0)
 	{
-	if(m_pCurSpecies != NULL && !stricmp((char *)m_pCurSpecies->szSpecies,pszSpecies))
+	if(m_pCurSpecies != nullptr && !stricmp((char *)m_pCurSpecies->szSpecies,pszSpecies))
 		{
 		if(IsRefSpecies && m_RefSpeciesID != m_pCurSpecies->SpeciesID)
 			{
@@ -215,7 +215,7 @@ char *
 CMarkers::SpeciesIDtoName(uint16_t SpeciesID)
 {
 if(SpeciesID < 1 || SpeciesID > m_NumSpecies)
-	return(NULL);
+	return(nullptr);
 return((char *)&m_Species[SpeciesID-1].szSpecies[0]);
 }
 
@@ -237,7 +237,7 @@ if(m_NumSpecies == 0)
 	return(0);
 
 // linear search should be ok as normally only expect a few species involved in marker processing
-if(m_pCurSpecies != NULL && !stricmp((char *)m_pCurSpecies->szSpecies,pszSpecies))
+if(m_pCurSpecies != nullptr && !stricmp((char *)m_pCurSpecies->szSpecies,pszSpecies))
 	return(m_pCurSpecies->SpeciesID);
 
 pSpecies = &m_Species[0];
@@ -259,7 +259,7 @@ tsSeqName *pSeqName;
 uint8_t *pSeqNames;
 uint64_t Ofs;
 if(SeqID < 1 || SeqID > m_NumSeqNames)
-	return(NULL);
+	return(nullptr);
 Ofs = m_pAllocSeqNameIDsOfs[SeqID-1];
 pSeqNames = (uint8_t *)m_pAllocSeqNames;
 pSeqName = (tsSeqName *)&pSeqNames[Ofs];
@@ -274,7 +274,7 @@ uint64_t SeqNameOfs;
 uint64_t NxtSeqOfs;
 tsSeqName *pSeqName;
 
-if(m_pSeqNameHashArray == NULL || m_pAllocSeqNames == NULL || m_NumSeqNames == 0)
+if(m_pSeqNameHashArray == nullptr || m_pAllocSeqNames == nullptr || m_NumSeqNames == 0)
 	return(0);
 // may have struck it lucky and sequence name same as previously added ...
 if(m_szCurSeqName[0] != '\0' && !stricmp(pszSeqName,(char *)m_szCurSeqName))
@@ -314,9 +314,9 @@ uint64_t NxtSeqOfs;
 tsSeqName *pSeqName;
 
 // allocate for 16bit name hashes
-if(m_pSeqNameHashArray == NULL)
+if(m_pSeqNameHashArray == nullptr)
 	{
-	if((m_pSeqNameHashArray = new uint64_t [0x010001])==NULL)	// allowing for case whereby hash was generated exceeding 16bits!!!!!
+	if((m_pSeqNameHashArray = new uint64_t [0x010001])==nullptr)	// allowing for case whereby hash was generated exceeding 16bits!!!!!
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddTargSeq: Memory allocation of %zd bytes - %s",(int64_t)0x010001 * sizeof(uint64_t),strerror(errno));
 		return(eBSFerrMem);
@@ -325,24 +325,24 @@ if(m_pSeqNameHashArray == NULL)
 	memset((size_t *)m_pSeqNameHashArray,0,(size_t)(sizeof(uint64_t) * 0x010001));
 	}
 
-if(m_pAllocSeqNames == NULL)		// initial allocation?
+if(m_pAllocSeqNames == nullptr)		// initial allocation?
 	{
 	size_t memreq = cAllocMemSeqNames;
 
 #ifdef _WIN32
 	m_pAllocSeqNames = (tsSeqName *) malloc(memreq);	// initial and perhaps the only allocation
-	if(m_pAllocSeqNames == NULL)
+	if(m_pAllocSeqNames == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddTargSeq: Memory allocation of %zd bytes - %s",(int64_t)memreq,strerror(errno));
 		return(eBSFerrMem);
 		}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-	m_pAllocSeqNames = (tsSeqName *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+	m_pAllocSeqNames = (tsSeqName *)mmap(nullptr,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pAllocSeqNames == MAP_FAILED)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddTargSeq: Memory allocation of %zd bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
-		m_pAllocSeqNames = NULL;
+		m_pAllocSeqNames = nullptr;
 		return(eBSFerrMem);
 		}
 #endif
@@ -361,9 +361,9 @@ else
 #else
 		pSeqName = (tsSeqName *)mremap(m_pAllocSeqNames,m_AllocMemSeqNames,memreq,MREMAP_MAYMOVE);
 		if(pSeqName == MAP_FAILED)
-			pSeqName = NULL;
+			pSeqName = nullptr;
 #endif
-		if(pSeqName == NULL)
+		if(pSeqName == nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddTargSeq: Sequence names memory re-allocation to %zd from %zd bytes - %s",(int64_t)memreq,m_AllocMemSeqNames,strerror(errno));
 			return(eBSFerrMem);
@@ -374,24 +374,24 @@ else
 	}
 
 
-if(m_pAllocSeqNameIDsOfs == NULL)		// initial allocation?
+if(m_pAllocSeqNameIDsOfs == nullptr)		// initial allocation?
 	{
 	size_t memreq = cAllocSeqNames * sizeof(uint64_t);
 
 #ifdef _WIN32
 	m_pAllocSeqNameIDsOfs = (uint64_t *) malloc(memreq);	// initial and perhaps the only allocation
-	if(m_pAllocSeqNameIDsOfs == NULL)
+	if(m_pAllocSeqNameIDsOfs == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddTargSeq: Memory allocation to %zd bytes - %s",(int64_t)memreq,strerror(errno));
 		return(eBSFerrMem);
 		}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-	m_pAllocSeqNameIDsOfs = (uint64_t *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+	m_pAllocSeqNameIDsOfs = (uint64_t *)mmap(nullptr,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pAllocSeqNameIDsOfs == MAP_FAILED)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddTargSeq: Memory allocation of %zd bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
-		m_pAllocSeqNameIDsOfs = NULL;
+		m_pAllocSeqNameIDsOfs = nullptr;
 		return(eBSFerrMem);
 		}
 #endif
@@ -411,9 +411,9 @@ else
 #else
 		pRealloc = (uint64_t *)mremap(m_pAllocSeqNameIDsOfs,m_AllocMemSeqNameIDsOfs,memreq,MREMAP_MAYMOVE);
 		if(pRealloc == MAP_FAILED)
-			pRealloc = NULL;
+			pRealloc = nullptr;
 #endif
-		if(pRealloc == NULL)
+		if(pRealloc == nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddTargSeq: Sequence name idex memory re-allocation to %zd from %zd bytes - %s",(int64_t)memreq,m_AllocMemSeqNameIDsOfs,strerror(errno));
 			return(eBSFerrMem);
@@ -478,18 +478,18 @@ AllocdAlignLoci = ((99 + EstNumSNPS) * (int64_t)125) / (int64_t)100;  // allowin
 memreq = (size_t)AllocdAlignLoci * sizeof(tsAlignLoci); 
 #ifdef _WIN32
 m_pAllocAlignLoci = (tsAlignLoci *) malloc(memreq);	// initial and perhaps the only allocation
-if(m_pAllocAlignLoci == NULL)
+if(m_pAllocAlignLoci == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"PreAllocSNPs: Memory allocation of %zd bytes - %s",(int64_t)memreq,strerror(errno));
 	return(eBSFerrMem);
 	}
 #else
 // gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-m_pAllocAlignLoci = (tsAlignLoci *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+m_pAllocAlignLoci = (tsAlignLoci *)mmap(nullptr,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pAllocAlignLoci == MAP_FAILED)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"PreAllocSNPs: Memory allocation of %zd bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
-	m_pAllocAlignLoci = NULL;
+	m_pAllocAlignLoci = nullptr;
 	return(eBSFerrMem);
 	}
 #endif
@@ -511,7 +511,7 @@ uint32_t TargSeqID;
 uint32_t TargSpeciesID;
 
 
-if(m_pAllocAlignLoci == NULL || m_UsedAlignLoci < 1) // must be at least 1 known SNP loci before any can be imputed!
+if(m_pAllocAlignLoci == nullptr || m_UsedAlignLoci < 1) // must be at least 1 known SNP loci before any can be imputed!
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "PreAllocImputedSNPs: need at least one known SNP loci before any can be imputed!");
 	return(eBSFerrParams);
@@ -546,9 +546,9 @@ if ((TotalRefImputed + 100) > m_AllocAlignLoci)	// play safe when increasing all
 #else
 	pCurLoci = (tsAlignLoci*)mremap(m_pAllocAlignLoci, m_AllocMemAlignLoci, memreq, MREMAP_MAYMOVE);
 	if (pCurLoci == MAP_FAILED)
-		pCurLoci = NULL;
+		pCurLoci = nullptr;
 #endif
-	if (pCurLoci == NULL)
+	if (pCurLoci == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "PreAllocImpunedSNPs: Memory re-allocation to %zd bytes - %s", (int64_t)memreq, strerror(errno));
 		return(eBSFerrMem);
@@ -582,24 +582,24 @@ CMarkers::AddLoci(uint16_t TargSpeciesID,	// reads were aligned to this cultivar
 {
 tsAlignLoci *pLoci;
 
-if(m_pAllocAlignLoci == NULL)		// initial allocation?
+if(m_pAllocAlignLoci == nullptr)		// initial allocation?
 	{
 	size_t memreq = cAllocAlignLoci * sizeof(tsAlignLoci);
 
 #ifdef _WIN32
 	m_pAllocAlignLoci = (tsAlignLoci *) malloc(memreq);	// initial and perhaps the only allocation
-	if(m_pAllocAlignLoci == NULL)
+	if(m_pAllocAlignLoci == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddLoci: Memory allocation of %zd bytes - %s",(int64_t)memreq,strerror(errno));
 		return(eBSFerrMem);
 		}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-	m_pAllocAlignLoci = (tsAlignLoci *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+	m_pAllocAlignLoci = (tsAlignLoci *)mmap(nullptr,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pAllocAlignLoci == MAP_FAILED)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddLoci: Memory allocation of %zd bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
-		m_pAllocAlignLoci = NULL;
+		m_pAllocAlignLoci = nullptr;
 		return(eBSFerrMem);
 		}
 #endif
@@ -622,9 +622,9 @@ else
 #else
 		pLoci = (tsAlignLoci *)mremap(m_pAllocAlignLoci,m_AllocMemAlignLoci,memreq,MREMAP_MAYMOVE);
 		if(pLoci == MAP_FAILED)
-			pLoci = NULL;
+			pLoci = nullptr;
 #endif
-		if(pLoci == NULL)
+		if(pLoci == nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddLoci: Memory re-allocation to %zd bytes - %s",(int64_t)memreq,strerror(errno));
 			return(eBSFerrMem);
@@ -717,7 +717,7 @@ int FilteredPValue;
 int FilteredMajor;
 
 CCSVFile *pCSV = new CCSVFile;
-if(pCSV == NULL)
+if(pCSV == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to instantiate CCSVfile");
 	return(eBSFerrObj);
@@ -862,12 +862,12 @@ while((Rslt=pCSV->NextLine()) > 0)	// onto next line containing fields
 
 	if(Rslt64 < 1)
 		{
-		if(pCSV != NULL)
+		if(pCSV != nullptr)
 			delete pCSV;
 		return(-1);
 		}
 	}
-if(pCSV != NULL)
+if(pCSV != nullptr)
 	delete pCSV;
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Parsed %d SNPs from file: %s",NumElsParsed,pszSNPFile);
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Accepted %d SNPs, filtered out - %d high P-Value, %d low coverage, %d major allele",
@@ -912,7 +912,7 @@ if((RefSpeciesID = NameToSpeciesID(pszRefSpecies)) < 1)
 	}
 
 
-if((pHypers = new CHyperEls)==NULL)
+if((pHypers = new CHyperEls)==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to instantiate CHyperEls");
 	return(eBSFerrObj);
@@ -1025,7 +1025,7 @@ AlignIdx = 0;
 bProbeAligned = false;
 PrevTargSeqID = 0;
 CurTargSeqID = 0;
-pszTargSeq = NULL;
+pszTargSeq = nullptr;
 UsedAlignLoci = m_NumSSNPLoci;
 for(AlignIdx = 0; AlignIdx < UsedAlignLoci; AlignIdx++)
 	{
@@ -1046,7 +1046,7 @@ for(AlignIdx = 0; AlignIdx < UsedAlignLoci; AlignIdx++)
 	if(bProbeAligned == false && (CurTargSeqID != pAlign->TargSeqID || CurTargLociLoci != pAlign->TargLoci))
 		{
 				// no snp called for probe species, check if there were reads aligned to reference
-		if(CurTargSeqID != PrevTargSeqID || pszTargSeq == NULL)
+		if(CurTargSeqID != PrevTargSeqID || pszTargSeq == nullptr)
 			{
 			pszTargSeq = SeqIDtoName(CurTargSeqID);
 			HyperChromID = pHypers->GetChromID(pszTargSeq);
@@ -1133,7 +1133,7 @@ for(AlignIdx = 0; AlignIdx < UsedAlignLoci; AlignIdx++)
 
 if(!bProbeAligned)
 	{
-	if(CurTargSeqID != PrevTargSeqID || pszTargSeq == NULL)
+	if(CurTargSeqID != PrevTargSeqID || pszTargSeq == nullptr)
 		{
 		pszTargSeq = SeqIDtoName(CurTargSeqID);
 		HyperChromID = pHypers->GetChromID(pszTargSeq);
@@ -1364,7 +1364,7 @@ int NumSpeciesWithCnts;
 
 SortTargSeqLociSpecies();
 
-time_t Then = time(NULL);
+time_t Then = time(nullptr);
 time_t Now;
 int64_t NumLociProc = 0;
 int64_t PutSNPLoci = m_UsedAlignLoci / (int64_t)(m_NumSpecies - 1);
@@ -1373,7 +1373,7 @@ for(AlignIdx = 0; AlignIdx < m_UsedAlignLoci; AlignIdx += NumSpecies, pAlign += 
 	{
 	if ((NumLociProc % 10000) == 0)
 		{
-		Now = time(NULL);
+		Now = time(nullptr);
 		if ((Now - Then) >= 60)
 			{
 			gDiagnostics.DiagOut(eDLInfo, gszProcName, "Filtering: Processed %zd from %zd putative SNP loci", NumLociProc, PutSNPLoci);
@@ -1486,7 +1486,7 @@ if(m_hOutFile < 0)
 	return(eBSFerrCreateFile);
 	}
 
-if((m_pszBuff = new char [cRptBuffSize]) == NULL)
+if((m_pszBuff = new char [cRptBuffSize]) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Report: unable to allocate memory for buffering reports");
 	Reset();
@@ -1521,7 +1521,7 @@ if(NumCultivars <= 4 && bSloughNonHetero)
 		return(eBSFerrCreateFile);
 		}
 
-	if((m_pszBEDBuff = new char [cRptBuffSize]) == NULL)
+	if((m_pszBEDBuff = new char [cRptBuffSize]) == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Report: unable to allocate memory for buffering BED");
 		Reset();
@@ -1551,10 +1551,10 @@ if(m_BuffIdx > 0)
 
 pAlign = &m_pAllocAlignLoci[0];
 PrevTargSeqID = 0;
-pszTargSeq = NULL;
+pszTargSeq = nullptr;
 NumSloughed = 0;
 NumReported = 0;
-time_t Then = time(NULL);
+time_t Then = time(nullptr);
 time_t Now;
 int64_t LociIdx;
 int64_t NumLociProc = 0;
@@ -1563,7 +1563,7 @@ for(LociIdx = 0; LociIdx < m_UsedAlignLoci; LociIdx += NumCultivars)
 	{
 	if((NumLociProc % 10000)==0)
 		{
-		Now = time(NULL);
+		Now = time(nullptr);
 		if ((Now - Then) >= 60)
 			{
 			gDiagnostics.DiagOut(eDLInfo, gszProcName, "Reporting: Processed %zd putative SNP loci accepting %zd", NumLociProc, NumReported);
@@ -1635,9 +1635,9 @@ for(LociIdx = 0; LociIdx < m_UsedAlignLoci; LociIdx += NumCultivars)
 			break;
 		}
 
-	if(pszTargSeq == NULL || pTmpAlign->TargSeqID != PrevTargSeqID)
+	if(pszTargSeq == nullptr || pTmpAlign->TargSeqID != PrevTargSeqID)
 		{
-		if((pszTargSeq = SeqIDtoName(pTmpAlign->TargSeqID))==NULL)
+		if((pszTargSeq = SeqIDtoName(pTmpAlign->TargSeqID))==nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Report: unable to locate target sequence name for identifier: %u", pTmpAlign->TargSeqID);
 			Reset();
@@ -1693,7 +1693,7 @@ for(LociIdx = 0; LociIdx < m_UsedAlignLoci; LociIdx += NumCultivars)
 
 if(m_hOutFile != -1)
 	{
-	if(m_BuffIdx && m_pszBuff != NULL)
+	if(m_BuffIdx && m_pszBuff != nullptr)
 		{
 		CUtility::RetryWrites(m_hOutFile,m_pszBuff,m_BuffIdx);
 		m_BuffIdx = 0;
@@ -1706,16 +1706,16 @@ if(m_hOutFile != -1)
 	close(m_hOutFile);
 	m_hOutFile = -1;
 
-	if(m_pszBuff != NULL)
+	if(m_pszBuff != nullptr)
 		{
 		delete m_pszBuff;
-		m_pszBuff = NULL;
+		m_pszBuff = nullptr;
 		}
 	}
 
 if(m_hBEDOutFile != -1)
 	{
-	if(m_BEDBuffIdx && m_pszBEDBuff != NULL)
+	if(m_BEDBuffIdx && m_pszBEDBuff != nullptr)
 		{
 		CUtility::RetryWrites(m_hBEDOutFile,m_pszBEDBuff,m_BEDBuffIdx);
 		m_BEDBuffIdx = 0;
@@ -1727,10 +1727,10 @@ if(m_hBEDOutFile != -1)
 #endif
 	close(m_hBEDOutFile);
 	m_hBEDOutFile = -1;
-	if(m_pszBEDBuff != NULL)
+	if(m_pszBEDBuff != nullptr)
 		{
 		delete m_pszBEDBuff;
-		m_pszBEDBuff = NULL;
+		m_pszBEDBuff = nullptr;
 		}
 	}
 
@@ -1747,7 +1747,7 @@ CMarkers::CreateMutexes(void)
 #ifdef _WIN32
 	InitializeSRWLock(&m_hRwLock);
 #else
-	if (pthread_rwlock_init(&m_hRwLock, NULL) != 0)
+	if (pthread_rwlock_init(&m_hRwLock, nullptr) != 0)
 	{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Fatal: unable to create rwlock");
 		return(eBSFerrInternal);
@@ -1755,10 +1755,10 @@ CMarkers::CreateMutexes(void)
 #endif
 
 #ifdef _WIN32
-	if ((m_hMtxIterReads = CreateMutex(NULL, false, NULL)) == NULL)
+	if ((m_hMtxIterReads = CreateMutex(nullptr, false, nullptr)) == nullptr)
 	{
 #else
-	if (pthread_mutex_init(&m_hMtxIterReads, NULL) != 0)
+	if (pthread_mutex_init(&m_hMtxIterReads, nullptr) != 0)
 	{
 		pthread_rwlock_destroy(&m_hRwLock);
 #endif
@@ -1767,10 +1767,10 @@ CMarkers::CreateMutexes(void)
 	}
 
 #ifdef _WIN32
-	if ((m_hMtxMHReads = CreateMutex(NULL, false, NULL)) == NULL)
+	if ((m_hMtxMHReads = CreateMutex(nullptr, false, nullptr)) == nullptr)
 	{
 #else
-	if (pthread_mutex_init(&m_hMtxMHReads, NULL) != 0)
+	if (pthread_mutex_init(&m_hMtxMHReads, nullptr) != 0)
 	{
 #endif
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Fatal: unable to create mutex");
@@ -1880,7 +1880,7 @@ int64_t
 CMarkers::SortTargSeqLociSpecies(void)	
 {
 // check if anything to sort ....
-if(m_pAllocAlignLoci == NULL || m_UsedAlignLoci == 0)
+if(m_pAllocAlignLoci == nullptr || m_UsedAlignLoci == 0)
 	{
 	m_bSorted = false;
 	return(0);

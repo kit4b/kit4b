@@ -73,13 +73,13 @@ ProcessReadsetDist(etRSDMode PMode,				// processing mode; default is for indepe
 int ReadsetDists(int argc, char* argv[])
 {
 	// determine my process name
-	_splitpath(argv[0], NULL, NULL, gszProcName, NULL);
+	_splitpath(argv[0], nullptr, nullptr, gszProcName, nullptr);
 #else
 int
 ReadsetDists(int argc, char** argv)
 {
 	// determine my process name
-CUtility::splitpath((char *)argv[0], NULL, gszProcName);
+CUtility::splitpath((char *)argv[0], nullptr, gszProcName);
 #endif
 int iScreenLogLevel;		// level of screen diagnostics
 int iFileLogLevel;			// level of file diagnostics
@@ -360,8 +360,8 @@ if (!argerrors)
 
 	for (NumPE1InputFiles = Idx = 0; NumPE1InputFiles < cRSDMaxInFileSpecs && Idx < inpe1files->count; Idx++)
 		{
-		pszInPE1files[Idx] = NULL;
-		if (pszInPE1files[NumPE1InputFiles] == NULL)
+		pszInPE1files[Idx] = nullptr;
+		if (pszInPE1files[NumPE1InputFiles] == nullptr)
 			pszInPE1files[NumPE1InputFiles] = new char[_MAX_PATH];
 		strncpy(pszInPE1files[NumPE1InputFiles], inpe1files->filename[Idx], _MAX_PATH);
 		pszInPE1files[NumPE1InputFiles][_MAX_PATH - 1] = '\0';
@@ -381,8 +381,8 @@ if (!argerrors)
 		{
 		for (NumPE2InputFiles = Idx = 0; NumPE2InputFiles < cRSDMaxInFileSpecs && Idx < inpe2files->count; Idx++)
 			{
-			pszInPE2files[Idx] = NULL;
-			if (pszInPE2files[NumPE2InputFiles] == NULL)
+			pszInPE2files[Idx] = nullptr;
+			if (pszInPE2files[NumPE2InputFiles] == nullptr)
 				pszInPE2files[NumPE2InputFiles] = new char[_MAX_PATH];
 			strncpy(pszInPE2files[NumPE2InputFiles], inpe2files->filename[Idx], _MAX_PATH);
 			pszInPE2files[NumPE2InputFiles][_MAX_PATH - 1] = '\0';
@@ -653,7 +653,7 @@ void *IndependentProcNGSQC(void * pThreadPars)
 CReadStats *pReadStats;
 int Rslt = 0;
 tsThreadIndependentNGSQCPars *pPars = (tsThreadIndependentNGSQCPars *)pThreadPars; // makes it easier not having to deal with casts!
-if((pReadStats = new CReadStats()) == NULL)
+if((pReadStats = new CReadStats()) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to instantiate instance of CReadStats");
 	pPars->Rslt = eBSFerrObj;
@@ -723,7 +723,7 @@ NumErrs = 0;
 
 // ensure low level PLPlot calls will be serialised - I'm not convinced calls into PLPlot are thread safe
 CBKPLPlot *pBKPLPlot;
-if((pBKPLPlot = new CBKPLPlot()) == NULL)
+if((pBKPLPlot = new CBKPLPlot()) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to instantiate instance of CBKPLPlot");
 	return(-1);
@@ -733,7 +733,7 @@ pBKPLPlot->CreateSerialise();
 if(PMode == eRSDpooled || NumPE1InputFiles == 1) 			// if pooling all input readsets or just 1 readset
 	{
 	CReadStats *pReadStats;
-	if((pReadStats = new CReadStats()) == NULL)
+	if((pReadStats = new CReadStats()) == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to instantiate instance of CReadStats");
 		delete pBKPLPlot;
@@ -797,7 +797,7 @@ else
 			pszOutStatsFile[PathLen] = '\0';
 			}
 
-		CUtility::splitpath(pszInPE1files[ProcessingID-1], NULL, szFName);
+		CUtility::splitpath(pszInPE1files[ProcessingID-1], nullptr, szFName);
 		sprintf(&pszOutStatsFile[PathLen],"%d_%s",ProcessingID,szFName);
 		pszOutStatsFile[_MAX_PATH-1] = '\0';
 		pCurNGSQCThread->bProcCompleted = false;
@@ -828,9 +828,9 @@ else
 		{
 		pCurNGSQCThread->ThreadIdx = ProcessingID;
 #ifdef _WIN32
-		pCurNGSQCThread->threadHandle = (HANDLE)_beginthreadex(NULL, 0x0fffff, IndependentProcNGSQC, pCurNGSQCThread, 0, &pCurNGSQCThread->threadID);
+		pCurNGSQCThread->threadHandle = (HANDLE)_beginthreadex(nullptr, 0x0fffff, IndependentProcNGSQC, pCurNGSQCThread, 0, &pCurNGSQCThread->threadID);
 #else
-		pCurNGSQCThread->threadRslt = pthread_create(&pCurNGSQCThread->threadID, NULL, IndependentProcNGSQC, pCurNGSQCThread);
+		pCurNGSQCThread->threadRslt = pthread_create(&pCurNGSQCThread->threadID, nullptr, IndependentProcNGSQC, pCurNGSQCThread);
 #endif
 		}
 	pNxtNGSQCThread = pCurNGSQCThread;
@@ -862,7 +862,7 @@ else
 				if(NextToProcessID <= NumPE1InputFiles)
 					{
 					pNxtNGSQCThread->ThreadIdx = NextToProcessID++;
-					pNxtNGSQCThread->threadHandle = (HANDLE)_beginthreadex(NULL, 0x0fffff, IndependentProcNGSQC, pNxtNGSQCThread, 0, &pNxtNGSQCThread->threadID);
+					pNxtNGSQCThread->threadHandle = (HANDLE)_beginthreadex(nullptr, 0x0fffff, IndependentProcNGSQC, pNxtNGSQCThread, 0, &pNxtNGSQCThread->threadID);
 					pNxtNGSQCThread += 1;
 					}
 				}
@@ -871,7 +871,7 @@ else
 			int JoinRlt;
 			clock_gettime(CLOCK_REALTIME, &ts);
 			ts.tv_sec += 2;
-			if ((JoinRlt = pthread_timedjoin_np(pCurNGSQCThread->threadID, NULL, &ts)) == 0)
+			if ((JoinRlt = pthread_timedjoin_np(pCurNGSQCThread->threadID, nullptr, &ts)) == 0)
 				{
 				if(pCurNGSQCThread->Rslt < 0)
 					{
@@ -883,7 +883,7 @@ else
 				if(NextToProcessID <= NumPE1InputFiles)
 					{
 					pNxtNGSQCThread->ThreadIdx = NextToProcessID++;
-					pNxtNGSQCThread->threadRslt = pthread_create(&pNxtNGSQCThread->threadID, NULL, IndependentProcNGSQC, pNxtNGSQCThread);
+					pNxtNGSQCThread->threadRslt = pthread_create(&pNxtNGSQCThread->threadID, nullptr, IndependentProcNGSQC, pNxtNGSQCThread);
 					pNxtNGSQCThread += 1;
 					}
 				}
@@ -891,8 +891,8 @@ else
 			}
 		}
 	while(NumCompletedProc < NumPE1InputFiles);
-	delete pNGSQCThreads;
-	delete pszAllocOutStatsFiles;
+	delete []pNGSQCThreads;
+	delete []pszAllocOutStatsFiles;
 	}
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"There were %d readsets with processing errors",NumErrs);
 delete pBKPLPlot;
@@ -901,12 +901,12 @@ return(Rslt);
 
 CReadStats::CReadStats()
 {
-m_pSeqHashes = NULL;
-m_pSampledSeqs = NULL;
-m_pContaminates = NULL;
-m_pBaseNs = NULL; 
-m_pScores = NULL; 
-m_pKMerCnts = NULL;
+m_pSeqHashes = nullptr;
+m_pSampledSeqs = nullptr;
+m_pContaminates = nullptr;
+m_pBaseNs = nullptr; 
+m_pScores = nullptr; 
+m_pKMerCnts = nullptr;
 m_bMutexesCreated = false;
 m_hContamRptFile = -1;
 m_hKMerDistRptFile = -1;
@@ -934,12 +934,12 @@ m_ActMaxDupSeeds = 0;
 m_NumThreads = 1;
 m_bAffinity = false;
 m_NumPE1InputFiles = 0;
-m_ppszInPE1files = NULL;	
+m_ppszInPE1files = nullptr;	
 m_NumPE2InputFiles =0;
-m_ppszInPE2files = NULL;
-m_pszContaminantFile = NULL;
-m_pszOutDistFile =NULL;	
-m_pszOutHTMLFile =NULL;
+m_ppszInPE2files = nullptr;
+m_pszContaminantFile = nullptr;
+m_pszOutDistFile =nullptr;	
+m_pszOutHTMLFile =nullptr;
 
 m_NumChkdPE1ContamHits = 0;
 m_NumPE1ContamHits = 0;
@@ -1068,12 +1068,12 @@ if(m_hDuplicatesDistRptFile != -1)
 	m_hDuplicatesDistRptFile = -1;
 	}
 
-if(m_pSeqHashes != NULL)
+if(m_pSeqHashes != nullptr)
 	{
 	delete m_pSeqHashes;
-	m_pSeqHashes = NULL;
+	m_pSeqHashes = nullptr;
 	}
-if(m_pSampledSeqs != NULL)
+if(m_pSampledSeqs != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pSampledSeqs);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -1081,10 +1081,10 @@ if(m_pSampledSeqs != NULL)
 	if(m_pSampledSeqs != MAP_FAILED)
 		munmap(m_pSampledSeqs,m_AllocdSampledSeqMem);
 #endif
-	m_pSampledSeqs = NULL;
+	m_pSampledSeqs = nullptr;
 	}
 
-if(m_pKMerCnts != NULL)
+if(m_pKMerCnts != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pKMerCnts);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -1092,24 +1092,24 @@ if(m_pKMerCnts != NULL)
 	if(m_pKMerCnts != MAP_FAILED)
 		munmap(m_pKMerCnts,m_AllocdKMerCntsMem);
 #endif
-	m_pKMerCnts = NULL;
+	m_pKMerCnts = nullptr;
 	}
 
-if(m_pContaminates != NULL)
+if(m_pContaminates != nullptr)
 	{
 	delete m_pContaminates;
-	m_pContaminates = NULL;
+	m_pContaminates = nullptr;
 	}
 
-if(m_pBaseNs != NULL)
+if(m_pBaseNs != nullptr)
 	{
 	delete m_pBaseNs;
-	m_pBaseNs = NULL;
+	m_pBaseNs = nullptr;
 	}
-if(m_pScores != NULL)
+if(m_pScores != nullptr)
 	{
 	delete m_pScores;
-	m_pScores = NULL;
+	m_pScores = nullptr;
 	}
 m_AllocdSampledSeqMem = 0;
 m_AllocdKMerCntsMem = 0;
@@ -1145,7 +1145,7 @@ CReadStats::LocateContaminentMatch(int SeqLen,			// targ sequence is of this len
 								bool bPE2)				// false if processing SE/PE1 read, true if PE2	
 {
 int Rslt;
-if(m_pContaminates == NULL)
+if(m_pContaminates == nullptr)
 	return(0);
 
 if(!bPE2)
@@ -1306,7 +1306,7 @@ if((m_hReadLenDistRptFile = open(m_szReadLenDistRptFile,O_RDWR | O_CREAT |O_TRUN
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"(Instance %d) Output read length distributions report file created/truncated: '%s'",ProcessingID,m_szReadLenDistRptFile);
 
 // if putative contaminant processing required then create report file and load contaminants
-if (pszContaminantFile != NULL && pszContaminantFile[0] != '\0')
+if (pszContaminantFile != nullptr && pszContaminantFile[0] != '\0')
 	{
 	strcpy(m_szContamRptFile,pszOutDistFile);
 	strcat(m_szContamRptFile,".contaminants.csv");
@@ -1322,9 +1322,9 @@ if (pszContaminantFile != NULL && pszContaminantFile[0] != '\0')
 		}
 
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"(Instance %d) Output contaminants report file created/truncated: '%s'",ProcessingID,m_szContamRptFile);
-	if(m_pContaminates == NULL)
+	if(m_pContaminates == nullptr)
 		{
-		if((m_pContaminates = new CContaminants)==NULL)
+		if((m_pContaminates = new CContaminants)==nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessReadsetDist: (Instance %d) Unable to instantiate CContaminants",ProcessingID);
 			Reset();
@@ -1362,7 +1362,7 @@ m_NumPE2InFiles = 0;
 m_EstMaxSeqLen = 0;
 for(Idx = 0; Idx < NumPE1InputFiles; Idx++)
 	{
-	pszInFile = NULL;
+	pszInFile = nullptr;
 	glob.Init();
 	if(glob.Add(pszInPE1files[Idx]) < SG_SUCCESS)
 		{
@@ -1396,14 +1396,14 @@ for(Idx = 0; Idx < NumPE1InputFiles; Idx++)
 
 		if(bIsSAM)
 			{
-			if ((EstNumReads = SAMFile.EstSizes(pszInFile, NULL, NULL, NULL, &EstMaxSeqLen, &EstSeqLen,&QSSchema)) == 0)
+			if ((EstNumReads = SAMFile.EstSizes(pszInFile, nullptr, nullptr, nullptr, &EstMaxSeqLen, &EstSeqLen,&QSSchema)) == 0)
 				{
 				gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessReadsetDist: (Instance %d) Unable to estimate number of reads in file '%s'",ProcessingID,pszInFile);
 				return(eBSFerrOpnFile);
 				}	 
 			}
 		else
-			if ((EstNumReads = FastaEsts.FastaEstSizes(pszInFile, NULL, NULL, NULL, &EstMaxSeqLen, &EstSeqLen,&QSSchema)) == 0)
+			if ((EstNumReads = FastaEsts.FastaEstSizes(pszInFile, nullptr, nullptr, nullptr, &EstMaxSeqLen, &EstSeqLen,&QSSchema)) == 0)
 				{
 				gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessReadsetDist: (Instance %d) Unable to estimate number of reads in file '%s'",ProcessingID,pszInFile);
 				return(eBSFerrOpnFile);
@@ -1423,7 +1423,7 @@ for(Idx = 0; Idx < NumPE1InputFiles; Idx++)
 	}
 if(EstTotNumPE1Reads < 1)
 	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessReadsetDist: (Instance %d) Unable to estimate number of reads in file '%s'",ProcessingID,pszInFile == NULL ? "Any" : pszInFile);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessReadsetDist: (Instance %d) Unable to estimate number of reads in file '%s'",ProcessingID,pszInFile == nullptr ? "Any" : pszInFile);
 	return(eBSFerrOpnFile);
 	}
 m_EstPE1MeanReadLen = (int)((EstTotPE1SeqLen + EstTotNumPE1Reads - 1) / EstTotNumPE1Reads);
@@ -1451,7 +1451,7 @@ if (m_bPEProc)
 			{
 			pszInFile = glob.File(FileID);
 			// get estimate of number of sequences and mean sequence length
-			if ((EstNumReads = FastaEsts.FastaEstSizes(pszInFile, NULL, NULL, NULL, &EstMaxSeqLen, &EstSeqLen, &QSSchema)) == 0)
+			if ((EstNumReads = FastaEsts.FastaEstSizes(pszInFile, nullptr, nullptr, nullptr, &EstMaxSeqLen, &EstSeqLen, &QSSchema)) == 0)
 				{
 				gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessReadsetDist: (Instance %d) Unable to estimate number of reads in file '%s'",ProcessingID,pszInFile);
 				return(eBSFerrOpnFile);
@@ -1484,7 +1484,7 @@ if (m_bPEProc && (m_NumPE1InFiles != m_NumPE2InFiles))
 
 // have work to do!
 // preallocate for distribution counts
-if((m_pBaseNs = new uint32_t [cMaxRSSeqLen])==NULL)
+if((m_pBaseNs = new uint32_t [cMaxRSSeqLen])==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName," (Instance %d) ProcessReadsetDist: Unable to allocate memory for indeterminate base counts",ProcessingID);
 	Reset();
@@ -1492,7 +1492,7 @@ if((m_pBaseNs = new uint32_t [cMaxRSSeqLen])==NULL)
 	}
 memset(m_pBaseNs,0,sizeof(uint32_t) * cMaxRSSeqLen);
 
-if((m_pScores = new uint32_t [cMaxRSSeqLen * 42])==NULL)			// Phred scores can range from 0 to 41 inclusive
+if((m_pScores = new uint32_t [cMaxRSSeqLen * 42])==nullptr)			// Phred scores can range from 0 to 41 inclusive
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"(Instance %d) ProcessReadsetDist: Unable to allocate memory for Phred quality score distributions",ProcessingID);
 	Reset();
@@ -1500,7 +1500,7 @@ if((m_pScores = new uint32_t [cMaxRSSeqLen * 42])==NULL)			// Phred scores can r
 	}
 memset(m_pScores,0,sizeof(uint32_t) * cMaxRSSeqLen * 42);
 
-if ((m_pSeqHashes = new uint32_t[cMaxHashArrayEntries]) == NULL)
+if ((m_pSeqHashes = new uint32_t[cMaxHashArrayEntries]) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessReadsetDist: (Instance %d) Memory allocation of %zd bytes for hashes - %s", ProcessingID,(int64_t)cMaxHashArrayEntries*sizeof(uint32_t), strerror(errno));
 	Reset();
@@ -1525,7 +1525,7 @@ memreq *= m_AllocdMaxReadLen * sizeof(uint32_t);
  
 #ifdef _WIN32
 m_pKMerCnts = (uint32_t *)malloc(memreq);	// initial and with any luck perhaps the only allocation
-if (m_pKMerCnts == NULL)
+if (m_pKMerCnts == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessReadsetDist: (Instance %d) Memory allocation of %zd bytes for K-mer distributions - %s", ProcessingID, (int64_t)memreq, strerror(errno));
 	Reset();
@@ -1533,11 +1533,11 @@ if (m_pKMerCnts == NULL)
 	}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-m_pKMerCnts = (uint32_t *)mmap(NULL, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+m_pKMerCnts = (uint32_t *)mmap(nullptr, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 if (m_pKMerCnts == MAP_FAILED)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessReadsetDist: (Instance %d) Memory allocation of %zd bytes  for K-mer distributions through mmap()  failed - %s", ProcessingID, (int64_t)memreq, strerror(errno));
-	m_pKMerCnts = NULL;
+	m_pKMerCnts = nullptr;
 	Reset();
 	return(eBSFerrMem);
 	}
@@ -1551,7 +1551,7 @@ memreq = m_AllocdSampledSeqWrds * 4;
 
 #ifdef _WIN32
 m_pSampledSeqs = (uint32_t *)malloc(memreq);	// initial and with any luck perhaps the only allocation
-if (m_pSampledSeqs == NULL)
+if (m_pSampledSeqs == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessReadsetDist: (Instance %d) Memory allocation of %zd bytes - %s", ProcessingID, (int64_t)memreq, strerror(errno));
 	Reset();
@@ -1559,11 +1559,11 @@ if (m_pSampledSeqs == NULL)
 	}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-m_pSampledSeqs = (uint32_t *)mmap(NULL, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+m_pSampledSeqs = (uint32_t *)mmap(nullptr, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 if (m_pSampledSeqs == MAP_FAILED)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessReadsetDist: (Instance %d) Memory allocation of %zd bytes through mmap()  failed - %s",ProcessingID, (int64_t)memreq, strerror(errno));
-	m_pSampledSeqs = NULL;
+	m_pSampledSeqs = nullptr;
 	Reset();
 	return(eBSFerrMem);
 	}
@@ -1579,7 +1579,7 @@ if (NumThreads > m_NumPE1InFiles)
 	NumThreads = m_NumPE1InFiles;
 tsThreadNGSQCPars *pThreads;
 tsThreadNGSQCPars *pThread;
-if ((pThreads = new tsThreadNGSQCPars[NumThreads]) == NULL)
+if ((pThreads = new tsThreadNGSQCPars[NumThreads]) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessReadsetDist: (Instance %d) Memory allocation for thread context failed",ProcessingID);
 	return(eBSFerrMem);
@@ -1594,9 +1594,9 @@ for (ThreadIdx = 1; ThreadIdx <= NumThreads; ThreadIdx++, pThread++)
 	pThread->ProcessingID = ProcessingID;
 
 #ifdef _WIN32
-	pThread->threadHandle = (HANDLE)_beginthreadex(NULL, 0x0fffff, ThreadedNGSQC, pThread, 0, &pThread->threadID);
+	pThread->threadHandle = (HANDLE)_beginthreadex(nullptr, 0x0fffff, ThreadedNGSQC, pThread, 0, &pThread->threadID);
 #else
-	pThread->threadRslt = pthread_create(&pThread->threadID, NULL, ThreadedNGSQC, pThread);
+	pThread->threadRslt = pthread_create(&pThread->threadID, nullptr, ThreadedNGSQC, pThread);
 #endif
 	}
 
@@ -1618,7 +1618,7 @@ for (ThreadIdx = 0; ThreadIdx < NumThreads; ThreadIdx++, pThread++)
 	int JoinRlt;
 	clock_gettime(CLOCK_REALTIME, &ts);
 	ts.tv_sec += 60;
-	while ((JoinRlt = pthread_timedjoin_np(pThread->threadID, NULL, &ts)) != 0)
+	while ((JoinRlt = pthread_timedjoin_np(pThread->threadID, nullptr, &ts)) != 0)
 		{
 		ts.tv_sec += 60;
 		}
@@ -1686,7 +1686,7 @@ uint32_t TotalDupReads;			// total number of reads in samples
 memset(DupDists,0,sizeof(DupDists));
 memset(DupDist10, 0, sizeof(DupDist10));
 TotalDupReads = 0;
-if (m_pSampledSeqs != NULL)
+if (m_pSampledSeqs != nullptr)
 	{
 	int HashIdx;
 	uint32_t HashSeqsOfs;
@@ -1722,13 +1722,13 @@ gDiagnostics.DiagOut(eDLInfo, gszProcName, "(Instance %d) Contaminants PE1 Check
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "(Instance %d) Contaminants PE2 Checked: %u Contaminated: %u Percentage: %1.4f", ProcessingID,m_NumChkdPE2ContamHits,m_NumPE2ContamHits,m_NumChkdPE2ContamHits ? (m_NumPE2ContamHits*100.0)/m_NumChkdPE2ContamHits : 0.0);
 
 CBKPLPlot *pPlots;
-if((pPlots = new CBKPLPlot)==NULL)
+if((pPlots = new CBKPLPlot)==nullptr)
 	gDiagnostics.DiagOut(eDLInfo, gszProcName, "(Instance %d) Unable to instantiate CBKPlot");
 
 
 // report actual duplicate counts for downstream analytics
 
-if(pPlots != NULL)
+if(pPlots != nullptr)
 	{
 	char szInsts[10];
 	pPlots->Init(1,1,10,(char *)"Duplicate Reads Distribution",(char *)"Instances",(char *)"Proportion");
@@ -1774,7 +1774,7 @@ m_hDuplicatesDistRptFile = -1;
 
 
 // report read length distributions for downstream analytics
-if(pPlots != NULL)
+if(pPlots != nullptr)
 	{
 	char szLen[20];
 	uint64_t SumCnts; 
@@ -1822,7 +1822,7 @@ close(m_hReadLenDistRptFile);
 m_hReadLenDistRptFile = -1;
 
 // report Phred quality scores for downstream analytics
-if(pPlots != NULL)
+if(pPlots != nullptr)
 	{
 	char szPhred[10];
 	uint64_t SumCnts; 
@@ -1894,7 +1894,7 @@ close(m_hQScoreDistRptFile);
 m_hQScoreDistRptFile = -1;
 
 
-if(pPlots != NULL)
+if(pPlots != nullptr)
 	{
 	uint64_t SumCnts; 
 	uint64_t CummulativeSum;
@@ -1951,7 +1951,7 @@ int BaseIdx;
 uint32_t *pCtrlKMerCnts;
 uint32_t *pExprKMerCnts;
 
-if(pPlots != NULL)
+if(pPlots != nullptr)
 	{
 	uint64_t SumCnts; 
 	uint32_t *pKMerCnts;
@@ -1978,7 +1978,7 @@ if(pPlots != NULL)
 		for(int Idy=0;Idy < 4; Idy++,pKMerCnts++)
 			pPlots->AddXYPoint(Idy+1,(double)Idx,*pKMerCnts/(double)SumCnts);
 		}
-	if(pPlots != NULL)
+	if(pPlots != nullptr)
 		pPlots->PlotLineGraph(m_szSVGFile);
 	}
 
@@ -2041,7 +2041,7 @@ m_hKMerDistRptFile = -1;
 
 
 // report on the Pearson concordance distributions
-if(pPlots != NULL)
+if(pPlots != nullptr)
 	{
 	char szSeries[20];
 	char szPearsonTitle[80];
@@ -2088,7 +2088,7 @@ for(int Idk = 1; Idk <= m_KMerCCC; Idk++)
 	for (Idx = 1; Idx <= m_MaxReadLen; Idx++,pExprKMerCnts+=m_KMerCntsEls)
 		{
 		Pearson = Pearsons(Idk,pCtrlKMerCnts,pExprKMerCnts);
-		if(pPlots != NULL)
+		if(pPlots != nullptr)
 			pPlots->AddXYPoint(Idk,(double)Idx,Pearson);	
 		BuffIdx += sprintf(&szRptBuff[BuffIdx],",%f",Pearson);
 		if(BuffIdx + 100 > sizeof(szRptBuff))
@@ -2107,7 +2107,7 @@ fsync(m_hPearsonDistRptFile);
 #endif
 close(m_hPearsonDistRptFile);
 m_hPearsonDistRptFile = -1;
-if(pPlots != NULL)
+if(pPlots != nullptr)
 	pPlots->PlotLineGraph(m_szSVGFile);
 
 if(m_hContamRptFile != -1)		// reporting on contaminants?
@@ -2205,7 +2205,7 @@ if(m_hContamRptFile != -1)		// reporting on contaminants?
 	m_hContamRptFile = -1;
 	}
 
-if(pPlots != NULL)
+if(pPlots != nullptr)
 	delete pPlots;
 return(eBSFSuccess);
 }
@@ -2219,7 +2219,7 @@ if (m_bMutexesCreated)
 #ifdef _WIN32
 InitializeSRWLock(&m_hRwLock);
 #else
-if(pthread_rwlock_init (&m_hRwLock,NULL)!=0)
+if(pthread_rwlock_init (&m_hRwLock,nullptr)!=0)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to create rwlock");
 	return(eBSFerrInternal);
@@ -2264,10 +2264,10 @@ if(pthread_spin_init(&m_hSpinLockKMers,PTHREAD_PROCESS_PRIVATE)!=0)
 	}
 
 #ifdef _WIN32
-if ((m_hMtxMHReads = CreateMutex(NULL, false, NULL)) == NULL)
+if ((m_hMtxMHReads = CreateMutex(nullptr, false, nullptr)) == nullptr)
 	{
 #else
-if(pthread_mutex_init (&m_hMtxMHReads,NULL)!=0)
+if(pthread_mutex_init (&m_hMtxMHReads,nullptr)!=0)
 	{
 #endif
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to create mutex");
@@ -2472,7 +2472,7 @@ if (!m_bPEProc)								// if SE then process each input reads file separately
 		pThread->NumInputFilesProcessed += 1;
 
 		gDiagnostics.DiagOut(eDLInfo, gszProcName, "(Instance %d) Thread %d: Processing single ended reads from input read file '%s'", pThread->ProcessingID, pThread->ThreadIdx, pszInFile);
-		if ((Rslt = ProcessReads(pThread,pInPE1File, NULL)) < eBSFSuccess)
+		if ((Rslt = ProcessReads(pThread,pInPE1File, nullptr)) < eBSFSuccess)
 			{
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, "(Instance %d) Thread %d: Load failed for input sequences file '%s'", pThread->ProcessingID, pThread->ThreadIdx,pszInFile);
 			AcquireLock(true);
@@ -2996,7 +2996,7 @@ if (!m_bStrand)
 	if(m_bPEProc)
 		pPE2RevCplRawRead = &pPE2RawRead[PE2ReadLen - 1];
 	else
-		pPE2RevCplRawRead = NULL;
+		pPE2RevCplRawRead = nullptr;
 	}
 
 
@@ -3140,7 +3140,7 @@ if (!m_bStrand)
 	}
 
 // check if this packed sequence has been previously accepted as a sample
-pSampledSeq = NULL;
+pSampledSeq = nullptr;
 TermNxtSeq = 0;
 TermRevCplNxtSeq = 0;
 AcquireSerialise();
@@ -3172,7 +3172,7 @@ if (m_ActMaxDupSeeds && (HashSeqsOfs = m_pSeqHashes[SeqHash]) != 0)		// seen at 
 if (!m_bStrand && m_ActMaxDupSeeds)
 	{
 	// check if this packed sequence has been previously accepted as a sample
-	pRevCplSampledSeq = NULL;
+	pRevCplSampledSeq = nullptr;
 	if ((RevCplHashSeqsOfs = m_pSeqHashes[RevCplSeqHash]) != 0)		// seen at least one sequence previously with same hash?
 		{
 		TermRevCplNxtSeq = RevCplHashSeqsOfs;
@@ -3216,9 +3216,9 @@ if((m_AllocdSampledSeqWrds - m_UsedSampledSeqWrds) < ((cMaxRSSeqLen+3)/4)*10)
 #else
 	pAllocd = (uint32_t *)mremap(m_pSampledSeqs,m_AllocdSampledSeqMem,memreq,MREMAP_MAYMOVE);
 	if(pAllocd == MAP_FAILED)
-		pAllocd = NULL;
+		pAllocd = nullptr;
 #endif
-	if(pAllocd == NULL)
+	if(pAllocd == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Thread %d: Memory re-allocation to %d bytes - %s",pThread->ThreadIdx, memreq,strerror(errno));
 		ReleaseSerialise();
@@ -3260,7 +3260,7 @@ int SeqOfs;
 int Score;
 double ProbErr;
 double ProbNoReadErr;
-if(QSSchema == 0 || ReadLen < 1 || pQScores == NULL || pQScores[0] == '\0')		// if can't score then have to assume the best - read is sequencing base call error free
+if(QSSchema == 0 || ReadLen < 1 || pQScores == nullptr || pQScores[0] == '\0')		// if can't score then have to assume the best - read is sequencing base call error free
 	return(1.0);
 
 ProbNoReadErr = 1.0;
@@ -3309,7 +3309,7 @@ CReadStats::AccumQScores(tsThreadNGSQCPars *pThread, // thread specific processi
 				int QSSchema,					// quality scoring schema - guestimated scoring schema - 0: no scoring, 1: Solexa, 2: Illumina 1.3+, 3: Illumina 1.5+, 4: Illumina 1.8+ or Sanger 
 				int ReadLen,					// number of bases in read
 				uint8_t *pSeq,					// read sequence
-				uint8_t *pQScores)				// read quality scores (NULL if no associated quality scores)
+				uint8_t *pQScores)				// read quality scores (nullptr if no associated quality scores)
 {
 int MinScore;
 int SeqOfs;
@@ -3326,7 +3326,7 @@ uint32_t *pScore;
 uint32_t *pBaseNs;
 bool bTrunc;
 
-if(pThread == NULL || QSSchema < 0 || QSSchema > 4 || ReadLen < cMinRSSeqLen || pSeq == NULL)
+if(pThread == nullptr || QSSchema < 0 || QSSchema > 4 || ReadLen < cMinRSSeqLen || pSeq == nullptr)
 	return(eBSFerrParams);
 if(ReadLen > cMaxRSSeqLen)					// silently truncate if overlength
 	{
@@ -3433,7 +3433,7 @@ uint32_t KMerOfs;
 uint32_t KMerLenOfs;
 int Pow;
 
-if(pThread == NULL || ReadLen < cMinRSSeqLen || pSeq == NULL)
+if(pThread == nullptr || ReadLen < cMinRSSeqLen || pSeq == nullptr)
 	return(eBSFerrParams);
 if(ReadLen > cMaxRSSeqLen)					// silently truncate if overlength
 	ReadLen = cMaxRSSeqLen;
@@ -3486,9 +3486,9 @@ if(ReadLen > m_AllocdMaxReadLen)
 #else
 	pAllocd = (uint32_t *)mremap(m_pKMerCnts,m_AllocdKMerCntsMem,memreq,MREMAP_MAYMOVE);
 	if(pAllocd == MAP_FAILED)
-		pAllocd = NULL;
+		pAllocd = nullptr;
 #endif
-	if(pAllocd == NULL)
+	if(pAllocd == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Thread %d: Memory re-allocation to %d bytes - %s",pThread->ThreadIdx, memreq,strerror(errno));
 		ReleaseSerialise();
@@ -3597,13 +3597,13 @@ bool bPE1Contaminated;
 bool bPE2Contaminated;
 
 // remove any flags which may be present in the sequences
-if(PE1ReadLen > 0 && pPE1RawRead != NULL)
+if(PE1ReadLen > 0 && pPE1RawRead != nullptr)
 	{
 	pBase = pPE1RawRead;
 	for(SeqOfs = 0; SeqOfs < PE1ReadLen; SeqOfs++, pBase++)
 		*pBase &= 0x07;
 	}
-if(PE2ReadLen > 0 && pPE2RawRead != NULL)
+if(PE2ReadLen > 0 && pPE2RawRead != nullptr)
 	{
 	pBase = pPE2RawRead;
 	for(SeqOfs = 0; SeqOfs < PE2ReadLen; SeqOfs++, pBase++)
@@ -3694,7 +3694,7 @@ for (SeqOfs = 0; SeqOfs < PE1ReadLen; SeqOfs++, pBase++, pScore++)
 		pPE1File->SeqCharacteristics.NotProcNs += 1;
 		break;
 		}
-	if (pPE1File->QSSchema == 0 || m_MinMeanPhredScore == 0 || PE1QScoreLen == 0 || pPE1QScores == NULL)
+	if (pPE1File->QSSchema == 0 || m_MinMeanPhredScore == 0 || PE1QScoreLen == 0 || pPE1QScores == nullptr)
 		continue;
 
 	BaseScore = (int)*pScore - (int)QScore0;
@@ -3732,7 +3732,7 @@ if (m_bPEProc)
 			pPE2File->SeqCharacteristics.NotProcNs += 1;
 			break;
 			}
-		if (pPE2File->QSSchema == 0 || m_MinMeanPhredScore == 0 || PE2QScoreLen == 0 || pPE2QScores == NULL)
+		if (pPE2File->QSSchema == 0 || m_MinMeanPhredScore == 0 || PE2QScoreLen == 0 || pPE2QScores == nullptr)
 			continue;
 		BaseScore = (int)*pScore - (int)QScore0;
 		if (BaseScore < cMinBasePhredScore)   // not interested if any base in the read has score below cMinBasePhredScore

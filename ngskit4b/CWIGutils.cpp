@@ -1425,20 +1425,20 @@ CUtility::AppendFileNameSuffix(szFileFeatExonRatio,m_szOutFile,(char *)".featexo
 pszLineBuff = new char [500000];
 pRSChromROI = new tsChromROI[m_NumReadsetIDs];
 
-if((pOutFeatExonTurnOver = fopen(szFileFeatExonTurnOver,"w"))==NULL)
+if((pOutFeatExonTurnOver = fopen(szFileFeatExonTurnOver,"w"))==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate file %s for writing error: %s",szFileFeatExonTurnOver,strerror(errno));
 	Reset();
 	return(eBSFerrOpnFile);
 	}
-if((pOutFeatTurnOver = fopen(szFileFeatTurnOver,"w"))==NULL)
+if((pOutFeatTurnOver = fopen(szFileFeatTurnOver,"w"))==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate file %s for writing error: %s",szFileFeatTurnOver,strerror(errno));
 	fclose(pOutFeatExonTurnOver);
 	Reset();
 	return(eBSFerrOpnFile);
 	}
-if((pOutFeatCnts = fopen(szFileFeatCnts,"w"))==NULL)
+if((pOutFeatCnts = fopen(szFileFeatCnts,"w"))==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate file %s for writing error: %s",szFileFeatCnts,strerror(errno));
 	fclose(pOutFeatExonTurnOver);
@@ -1446,7 +1446,7 @@ if((pOutFeatCnts = fopen(szFileFeatCnts,"w"))==NULL)
 	Reset();
 	return(eBSFerrOpnFile);
 	}
-if((pOutFeatExonCnts = fopen(szFileFeatExonCnts,"w"))==NULL)
+if((pOutFeatExonCnts = fopen(szFileFeatExonCnts,"w"))==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate file %s for writing error: %s",szFileFeatCnts,strerror(errno));
 	fclose(pOutFeatExonTurnOver);
@@ -1455,7 +1455,7 @@ if((pOutFeatExonCnts = fopen(szFileFeatExonCnts,"w"))==NULL)
 	Reset();
 	return(eBSFerrOpnFile);
 	}
-if((pOutFeatExonRatio = fopen(szFileFeatExonRatio,"w"))==NULL)
+if((pOutFeatExonRatio = fopen(szFileFeatExonRatio,"w"))==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create/truncate file %s for writing error: %s",szFileFeatExonRatio,strerror(errno));
 	fclose(pOutFeatExonTurnOver);

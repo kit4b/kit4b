@@ -42,7 +42,7 @@ typedef struct TAG_sSummStmsSQL {
 	char *pTblName;					// table name
 	char *pszCreateTbl;				// SQL statement used to create the table
 	char *pszInsert;				// SQL statement used to insert row into table
-	sqlite3_stmt *pPrepInsert;		// prepared insert row statement; NULL if not prepared
+	sqlite3_stmt *pPrepInsert;		// prepared insert row statement; nullptr if not prepared
 	char *pszOpenCreateIndexes;		// SQL statement used to create indexes on this table immediately after opening this database, essentially these are used whilst populating
 	char *pszCreateIndexes;			// SQL statement used to create indexes on this table before closing the database
 	char *pszDropIndexes;			// SQL statement used to drop indexes on this table

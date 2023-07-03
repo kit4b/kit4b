@@ -253,7 +253,7 @@ class CScaffolder : public CdeNovoAssemb
 	tVertID							// returned unique Vertex identifier
 			AddSeqVertex(tsSeqVertex *pSE);
 
-	tsSeqVertex *											// NULL if unable to locate any with matching SeqID				 
+	tsSeqVertex *											// nullptr if unable to locate any with matching SeqID				 
 		LocateVerticesSeqID(tSeqID SeqID);					// find vertex with this SeqID 
 
 
@@ -299,11 +299,11 @@ public:
 	tSeqID			// 0 if no sequence identifier after ToSeqID, otherwise the next ordered edge ToSeqID 
 		IterateNextToSeqID(tSeqID ToSeqID);
 
-	tsSeqEdge *			// NULL if unable to locate any with matching FromSeqID				 
+	tsSeqEdge *			// nullptr if unable to locate any with matching FromSeqID				 
 			IterateEdgeFromSeqID(tSeqID FromSeqID,	// iterate over sequence edges with matching FromSeqID
 									tEdgeID *pEdgeID);	// set *pEdgeID to 0 to return 1st sequence edge, returns edge identifier to use on next iteration of IterateEdgeFromSeqID()
 
-	tsSeqEdge *			// NULL if unable to locate any with matching ToSeqID				 
+	tsSeqEdge *			// nullptr if unable to locate any with matching ToSeqID				 
 			IterateEdgeToSeqID(tSeqID ToSeqID,	// iterate over sequence edges with matching ToSeqID
 									tEdgeID *pEdgeID);	// set *pEdgeID to 0 to return 1st sequence edge, returns edge identifier to use on next iteration of IterateEdgeToSeqID()
 

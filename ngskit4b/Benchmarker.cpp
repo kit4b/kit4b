@@ -58,13 +58,13 @@ BenchmarkProcess(eBMProcMode PMode,			// processing mode
 int BenchmarkAligners(int argc, char* argv[])
 {
 	// determine my process name
-_splitpath(argv[0], NULL, NULL, gszProcName, NULL);
+_splitpath(argv[0], nullptr, nullptr, gszProcName, nullptr);
 #else
 int
 BenchmarkAligners(int argc, char** argv)
 {
 	// determine my process name
-CUtility::splitpath((char*)argv[0], NULL, gszProcName);
+CUtility::splitpath((char*)argv[0], nullptr, gszProcName);
 #endif
 
 int iFileLogLevel;			// level of file diagnostics
@@ -566,7 +566,11 @@ BenchmarkProcess(eBMProcMode PMode,	// processing mode
 {
 int Rslt;
 CBenchmark *pBenchmark;
-pBenchmark = new CBenchmark;
+if((pBenchmark = new CBenchmark)==nullptr)
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to instantiate instance of CBenchmark");
+	return(eBSFerrObj);
+	}
 Rslt = 0;
 
 switch (PMode) {
@@ -589,7 +593,7 @@ switch (PMode) {
 	}
 
 
-if(pBenchmark != NULL)
+if(pBenchmark != nullptr)
 	delete pBenchmark;
 
 return(Rslt);
@@ -598,18 +602,18 @@ return(Rslt);
 
 CBenchmark::CBenchmark()						// instance constructor
 {
-m_pGenome = NULL;
-m_pAlignments = NULL;
-m_pObsErrProfiles = NULL;
-m_pGroundTruths = NULL;
-m_ppGroundTruthIdx = NULL;
-m_pObsCIGARProfFile = NULL;
-m_pObsCIGARBuff = NULL;
-m_pChromSeqs = NULL;
-m_pszSESimReadBuff = NULL;
-m_pszPE2SimReadBuff = NULL;
-m_pSESimReads = NULL;
-m_pPE2SimReads = NULL;
+m_pGenome = nullptr;
+m_pAlignments = nullptr;
+m_pObsErrProfiles = nullptr;
+m_pGroundTruths = nullptr;
+m_ppGroundTruthIdx = nullptr;
+m_pObsCIGARProfFile = nullptr;
+m_pObsCIGARBuff = nullptr;
+m_pChromSeqs = nullptr;
+m_pszSESimReadBuff = nullptr;
+m_pszPE2SimReadBuff = nullptr;
+m_pSESimReads = nullptr;
+m_pPE2SimReads = nullptr;
 m_hObsSIGARs = -1;
 m_hSEReads = -1;
 m_hPE2Reads = -1;
@@ -618,13 +622,13 @@ Reset();
 
 CBenchmark::~CBenchmark()						// instance destructor
 {
-if(m_pObsCIGARProfFile != NULL)
+if(m_pObsCIGARProfFile != nullptr)
 	delete m_pObsCIGARProfFile;
-if(m_pGenome != NULL)
+if(m_pGenome != nullptr)
 	delete m_pGenome;
-if (m_pAlignments != NULL)
+if (m_pAlignments != nullptr)
 	delete m_pAlignments;
-if (m_pObsErrProfiles != NULL)
+if (m_pObsErrProfiles != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pObsErrProfiles);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -634,7 +638,7 @@ if (m_pObsErrProfiles != NULL)
 #endif
 	}
 
-if(m_pGroundTruths != NULL)
+if(m_pGroundTruths != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pGroundTruths);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -644,25 +648,25 @@ if(m_pGroundTruths != NULL)
 #endif
 	}
 
-if(m_ppGroundTruthIdx != NULL)
+if(m_ppGroundTruthIdx != nullptr)
 	delete m_ppGroundTruthIdx;
 
-if(m_pObsCIGARBuff != NULL)
+if(m_pObsCIGARBuff != nullptr)
 	delete m_pObsCIGARBuff;
 
-if(m_pChromSeqs != NULL)
+if(m_pChromSeqs != nullptr)
 	delete m_pChromSeqs;
 
-if (m_pszSESimReadBuff != NULL)
+if (m_pszSESimReadBuff != nullptr)
 	delete m_pszSESimReadBuff;
 
-if (m_pszPE2SimReadBuff != NULL)
+if (m_pszPE2SimReadBuff != nullptr)
 	delete m_pszPE2SimReadBuff;
 
-if(m_pSESimReads != NULL)
+if(m_pSESimReads != nullptr)
 	delete m_pSESimReads;
 
-if(m_pPE2SimReads != NULL)
+if(m_pPE2SimReads != nullptr)
 	delete m_pPE2SimReads;
 
 if (m_hObsSIGARs != -1)
@@ -678,25 +682,25 @@ if (m_hPE2Reads != -1)
 void
 CBenchmark::Reset(void)
 {
-if (m_pObsCIGARProfFile != NULL)
+if (m_pObsCIGARProfFile != nullptr)
 	{
 	delete m_pObsCIGARProfFile;
-	m_pObsCIGARProfFile = NULL;
+	m_pObsCIGARProfFile = nullptr;
 	}
 
-if (m_pGenome != NULL)
+if (m_pGenome != nullptr)
 	{
 	delete m_pGenome;
-	m_pGenome = NULL;
+	m_pGenome = nullptr;
 	}
 
-if (m_pAlignments != NULL)
+if (m_pAlignments != nullptr)
 	{
 	delete m_pAlignments;
-	m_pAlignments = NULL;
+	m_pAlignments = nullptr;
 	}
 
-if (m_pObsErrProfiles != NULL)
+if (m_pObsErrProfiles != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pObsErrProfiles);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -704,10 +708,10 @@ if (m_pObsErrProfiles != NULL)
 	if (m_pObsErrProfiles != MAP_FAILED)
 		munmap(m_pObsErrProfiles, m_AllocdObsErrProfMem);
 #endif
-	m_pObsErrProfiles = NULL;
+	m_pObsErrProfiles = nullptr;
 	}
 
-if (m_pGroundTruths != NULL)
+if (m_pGroundTruths != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pGroundTruths);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -715,13 +719,13 @@ if (m_pGroundTruths != NULL)
 	if (m_pGroundTruths != MAP_FAILED)
 		munmap(m_pGroundTruths, m_AllocdGroundTruthsMem);
 #endif
-	m_pGroundTruths = NULL;
+	m_pGroundTruths = nullptr;
 	}
 
-if (m_ppGroundTruthIdx != NULL)
+if (m_ppGroundTruthIdx != nullptr)
 	{
 	delete m_ppGroundTruthIdx;
-	m_ppGroundTruthIdx = NULL;
+	m_ppGroundTruthIdx = nullptr;
 	}
 
 if (m_hObsSIGARs != -1)
@@ -757,40 +761,40 @@ if (m_hPE2Reads != -1)
 	m_hPE2Reads = -1;
 	}
 
-if (m_pObsCIGARBuff != NULL)
+if (m_pObsCIGARBuff != nullptr)
 	{
 	delete m_pObsCIGARBuff;
-	m_pObsCIGARBuff = NULL;
+	m_pObsCIGARBuff = nullptr;
 	}
 
-if(m_pChromSeqs != NULL)
+if(m_pChromSeqs != nullptr)
 	{
 	delete m_pChromSeqs;
-	m_pChromSeqs = NULL;
+	m_pChromSeqs = nullptr;
 	}
 
-if (m_pszSESimReadBuff != NULL)
+if (m_pszSESimReadBuff != nullptr)
 	{
 	delete m_pszSESimReadBuff;
-	m_pszSESimReadBuff = NULL;
+	m_pszSESimReadBuff = nullptr;
 	}
 
-if(m_pszPE2SimReadBuff != NULL)
+if(m_pszPE2SimReadBuff != nullptr)
 	{
 	delete m_pszPE2SimReadBuff;
-	m_pszPE2SimReadBuff = NULL;
+	m_pszPE2SimReadBuff = nullptr;
 	}
 
-if (m_pSESimReads != NULL)
+if (m_pSESimReads != nullptr)
 	{
 	delete m_pSESimReads;
-	m_pSESimReads = NULL;
+	m_pSESimReads = nullptr;
 	}
 
-if (m_pPE2SimReads != NULL)
+if (m_pPE2SimReads != nullptr)
 	{
 	delete m_pPE2SimReads;
-	m_pPE2SimReads = NULL;
+	m_pPE2SimReads = nullptr;
 	}
 
 m_bPrimaryOnly = false;
@@ -850,18 +854,18 @@ double LenSCF;			// length scaling factor
 int CurScaledStart;
 tsSfxHeaderV3 SfxHeader;
 
-if (pszRefGenomeFile == NULL || *pszRefGenomeFile == '\0')
+if (pszRefGenomeFile == nullptr || *pszRefGenomeFile == '\0')
 	{
 	Reset();
 	return(eBSFerrParams);
 	}
 
-if (m_pGenome != NULL)
+if (m_pGenome != nullptr)
 {
 	delete m_pGenome;
-	m_pGenome = NULL;
+	m_pGenome = nullptr;
 }
-if ((m_pGenome = new CSfxArray()) == NULL)
+if ((m_pGenome = new CSfxArray()) == nullptr)
 {
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to instantiate CSfxArray");
 	Reset();
@@ -919,19 +923,19 @@ CBenchmark::OpenAlignments(char* pszAlignmentsFile)	// input file containing ali
 	teBSFrsltCodes Rslt;
 
 	// open SAM/BAM for reading
-	if (pszAlignmentsFile == NULL || *pszAlignmentsFile == '\0')
+	if (pszAlignmentsFile == nullptr || *pszAlignmentsFile == '\0')
 	{
 		Reset();
 		return(eBSFerrParams);
 	}
 
-	if (m_pAlignments != NULL)
+	if (m_pAlignments != nullptr)
 	{
 		delete m_pAlignments;
-		m_pAlignments = NULL;
+		m_pAlignments = nullptr;
 	}
 
-	if ((m_pAlignments = new CSAMfile) == NULL)
+	if ((m_pAlignments = new CSAMfile) == nullptr)
 	{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to instantiate class CSAMfile");
 		Reset();
@@ -942,7 +946,7 @@ CBenchmark::OpenAlignments(char* pszAlignmentsFile)	// input file containing ali
 	{
 		gDiagnostics.DiagOut(eDLInfo, gszProcName, "Unable to open SAM/BAM format file %s", pszAlignmentsFile);
 		delete m_pAlignments;
-		m_pAlignments = NULL;
+		m_pAlignments = nullptr;
 		Reset();
 		return((teBSFrsltCodes)Rslt);
 	}
@@ -965,13 +969,13 @@ char * pszLineBuff;
 char szSeqBuff[0x02fff];
 char szDescription[1000];
 int hOutReads;
-CFasta* pReads = NULL;
-pszLineBuff = NULL;
+CFasta* pReads = nullptr;
+pszLineBuff = nullptr;
 
-if((pszLineBuff = new char [cBMCIGARAllocBuffSize])==NULL)
+if((pszLineBuff = new char [cBMCIGARAllocBuffSize])==nullptr)
 	return(eBSFerrMem);
 
-if ((pReads = new CFasta()) == NULL)
+if ((pReads = new CFasta()) == nullptr)
 	{
 	delete []pszLineBuff;
 	return(eBSFerrInternal);
@@ -1051,14 +1055,14 @@ int SENumReadsCopied;
 int PE2NumReadsCopied;
 
 Reset();
-if(pszInSEReads == NULL || pszInSEReads[0] == '\0')
+if(pszInSEReads == nullptr || pszInSEReads[0] == '\0')
 	return(eBSFerrParams);
-if(bPEReads == true && (pszInPE2Reads == NULL || pszInPE2Reads[0] == '\0'))
+if(bPEReads == true && (pszInPE2Reads == nullptr || pszInPE2Reads[0] == '\0'))
 	return(eBSFerrParams);
 
-if (pszOutSEReads == NULL || pszOutSEReads[0] == '\0')
+if (pszOutSEReads == nullptr || pszOutSEReads[0] == '\0')
 	return(eBSFerrParams);
-if (bPEReads == true && (pszOutPE2Reads == NULL || pszOutPE2Reads[0] == '\0'))
+if (bPEReads == true && (pszOutPE2Reads == nullptr || pszOutPE2Reads[0] == '\0'))
 	return(eBSFerrParams);
 
 CFasta *pFasta = new CFasta;
@@ -1186,7 +1190,7 @@ m_NumObsErrProfs = 0;
 m_AllocdObsErrProfMem = (size_t)cSRAllocdObsErrProfMemChunk;
 #ifdef _WIN32
 m_pObsErrProfiles = (uint8_t*)malloc(m_AllocdObsErrProfMem);
-if (m_pObsErrProfiles == NULL)
+if (m_pObsErrProfiles == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenObsCIGARs: Memory allocation of %zd bytes failed", (int64_t)m_AllocdObsErrProfMem);
 	m_AllocdObsErrProfMem = 0;
@@ -1195,11 +1199,11 @@ if (m_pObsErrProfiles == NULL)
 	}
 #else
 // gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-m_pObsErrProfiles = (uint8_t*)mmap(NULL, (size_t)m_AllocdObsErrProfMem, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+m_pObsErrProfiles = (uint8_t*)mmap(nullptr, (size_t)m_AllocdObsErrProfMem, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 if (m_pObsErrProfiles == MAP_FAILED)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenObsCIGARs: Memory allocation of %zd bytes through mmap()  failed", (int64_t)m_AllocdObsErrProfMem, strerror(errno));
-	m_pObsErrProfiles = NULL;
+	m_pObsErrProfiles = nullptr;
 	m_AllocdObsErrProfMem = 0;
 	Reset();
 	return(eBSFerrMem);
@@ -1245,14 +1249,14 @@ gDiagnostics.DiagOut(eDLInfo, gszProcName, "%s loaded, now processing alignments
 etSeqBase ReadSequence[1000];
 etSeqBase TargetSequence[1000];
 
-if ((pszLine = new char[cMaxReadLen]) == NULL)				// buffer input lines
+if ((pszLine = new char[cMaxReadLen]) == nullptr)				// buffer input lines
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to allocate line buffering");
 	Reset();
 	return(-1);
 	}
 
-if ((pSAMalign = new tsBAMalign) == NULL)
+if ((pSAMalign = new tsBAMalign) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to allocate memory for alignment tsBAMalign structure");
 	delete []pszLine;
@@ -1279,7 +1283,7 @@ int NumPEInconsistentStrands = 0;
 NumPutativeAlignments = 0;
 NumAcceptedAlignments = 0;
 MaxProfileSeqLen = cBMMinReadLen;
-time_t Then = time(NULL);
+time_t Then = time(nullptr);
 time_t Now;
 while (Rslt >= eBSFSuccess && (LineLen = m_pAlignments->GetNxtSAMline(pszLine)) > 0)
 {
@@ -1293,7 +1297,7 @@ while (Rslt >= eBSFSuccess && (LineLen = m_pAlignments->GetNxtSAMline(pszLine)) 
 	NumPutativeAlignments += 1;
 	if (!(NumPutativeAlignments % 100000) || NumPutativeAlignments == 1)
 		{
-		Now = time(NULL);
+		Now = time(nullptr);
 		if ((Now - Then) >= 60)
 			{
 			gDiagnostics.DiagOut(eDLInfo, gszProcName, "Processing %d SAM/BAM CIGAR alignments, putatively accepted %d for use as read simulation error profiles", NumPutativeAlignments, NumAcceptedAlignments);
@@ -1302,7 +1306,7 @@ while (Rslt >= eBSFSuccess && (LineLen = m_pAlignments->GetNxtSAMline(pszLine)) 
 		}
 
 	// primary interest is in the reference chromname, startloci, length
-	if ((Rslt = (teBSFrsltCodes)m_pAlignments->ParseSAM2BAMalign(pTxt, pSAMalign, NULL,true)) < eBSFSuccess)
+	if ((Rslt = (teBSFrsltCodes)m_pAlignments->ParseSAM2BAMalign(pTxt, pSAMalign, nullptr,true)) < eBSFSuccess)
 		{
 		if (Rslt == eBSFerrFeature)	// not too worried if aligned to feature is missing as some SAMs are missing header features
 			{
@@ -1598,9 +1602,9 @@ while (Rslt >= eBSFSuccess && (LineLen = m_pAlignments->GetNxtSAMline(pszLine)) 
 #else
 		pTmp = (uint8_t*)mremap(m_pObsErrProfiles, m_AllocdObsErrProfMem, memreq, MREMAP_MAYMOVE);
 		if (pTmp == MAP_FAILED)
-			pTmp = NULL;
+			pTmp = nullptr;
 #endif
-		if (pTmp == NULL)
+		if (pTmp == nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenObsCIGARs: Memory re-allocation to %zd bytes - %s", (int64_t)(memreq), strerror(errno));
 			delete []pszLine;
@@ -1808,7 +1812,7 @@ if (m_hSEReads < 0)
 	return(eBSFerrCreateFile);
 	}
 
-if((m_pszSESimReadBuff = new char [cBMCIGARAllocBuffSize]) == NULL)
+if((m_pszSESimReadBuff = new char [cBMCIGARAllocBuffSize]) == nullptr)
 	{
 	Reset();
 	return(eBSFerrMem);
@@ -1836,7 +1840,7 @@ if (bPEReads)
 		Reset();
 		return(eBSFerrCreateFile);
 		}
-	if ((m_pszPE2SimReadBuff = new char[cBMCIGARAllocBuffSize]) == NULL)
+	if ((m_pszPE2SimReadBuff = new char[cBMCIGARAllocBuffSize]) == nullptr)
 		{
 		Reset();
 		return(eBSFerrMem);
@@ -2068,7 +2072,7 @@ int NumOps;
 int NumChrs;
 int Cnt;
 
-if(NumPackedOps < 1 || pPackedOPs == NULL || MaxCIGARChrs <= 3 || pszCIGAR == NULL)
+if(NumPackedOps < 1 || pPackedOPs == nullptr || MaxCIGARChrs <= 3 || pszCIGAR == nullptr)
 	return(0);
 strCIGAROfs = 0;
 for(Idx = 0; Idx < NumPackedOps; Idx++, pPackedOPs++)
@@ -2156,8 +2160,8 @@ etSeqBase* pBase;
 char szChromName[cMaxDatasetSpeciesChrom+1];
 char szCIGAR[100];
 
-if (pCurCIGAR == NULL || (!bPEReads && bPE2) ||
-	(!bPE2 && (m_hSEReads == -1 || m_pszSESimReadBuff == NULL)) || (bPE2 && (m_hPE2Reads == -1 || m_pszSESimReadBuff == NULL)))
+if (pCurCIGAR == nullptr || (!bPEReads && bPE2) ||
+	(!bPE2 && (m_hSEReads == -1 || m_pszSESimReadBuff == nullptr)) || (bPE2 && (m_hPE2Reads == -1 || m_pszSESimReadBuff == nullptr)))
 	return(eBSFerrParams);
 
 if (pCurCIGAR->ReadLen < cBMMinReadLen)
@@ -2270,7 +2274,7 @@ char szCIGAR[251];
 uint32_t ReadID;
 tsBMGroundTruth *pGroundTruth;
 
-if(pszSESimReads == NULL || pszSESimReads[0] == '\0' || (m_bPEReads && (pszPE2SimReads == NULL || pszPE2SimReads[0] == '\0')))
+if(pszSESimReads == nullptr || pszSESimReads[0] == '\0' || (m_bPEReads && (pszPE2SimReads == nullptr || pszPE2SimReads[0] == '\0')))
 	return(eBSFerrParams);
 
 m_NumGroundTruthReads = 0;
@@ -2280,7 +2284,7 @@ m_UsedGroundTruthsMem = 0;
 m_AllocdGroundTruthsMem = (size_t)cSRAllocdObsErrProfMemChunk;
 #ifdef _WIN32
 m_pGroundTruths = (uint8_t*)malloc(m_AllocdGroundTruthsMem);
-if (m_pGroundTruths == NULL)
+if (m_pGroundTruths == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "LoadGroundTruths: Memory allocation of %zd bytes failed", (int64_t)m_AllocdGroundTruthsMem);
 	m_AllocdGroundTruthsMem = 0;
@@ -2289,11 +2293,11 @@ if (m_pGroundTruths == NULL)
 	}
 #else
 // gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-m_pGroundTruths = (uint8_t*)mmap(NULL, (size_t)m_AllocdGroundTruthsMem, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+m_pGroundTruths = (uint8_t*)mmap(nullptr, (size_t)m_AllocdGroundTruthsMem, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 if (m_pGroundTruths == MAP_FAILED)
 {
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "LoadGroundTruths: Memory allocation of %zd bytes through mmap()  failed", (int64_t)m_AllocdGroundTruthsMem, strerror(errno));
-	m_pGroundTruths = NULL;
+	m_pGroundTruths = nullptr;
 	m_AllocdGroundTruthsMem = 0;
 	Reset();
 	return(eBSFerrMem);
@@ -2301,7 +2305,7 @@ if (m_pGroundTruths == MAP_FAILED)
 #endif
 
 	// parse fasta file containing ground truths
-if ((m_pSESimReads = new CFasta()) == NULL)
+if ((m_pSESimReads = new CFasta()) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to instantiate CFasta");
 	Reset();
@@ -2346,9 +2350,9 @@ while ((Rslt = m_pSESimReads->ReadSequence()) > eBSFSuccess)
 #else
 			pTmp = (uint8_t*)mremap(m_pGroundTruths, m_AllocdGroundTruthsMem, memreq, MREMAP_MAYMOVE);
 			if (pTmp == MAP_FAILED)
-				pTmp = NULL;
+				pTmp = nullptr;
 #endif
-			if (pTmp == NULL)
+			if (pTmp == nullptr)
 			{
 				gDiagnostics.DiagOut(eDLFatal, gszProcName, "LoadGroundTruths: Memory re-allocation to %zd bytes - %s", (int64_t)(memreq), strerror(errno));
 				Reset();
@@ -2379,11 +2383,11 @@ while ((Rslt = m_pSESimReads->ReadSequence()) > eBSFSuccess)
 	}
 m_pSESimReads->Close();
 delete m_pSESimReads;
-m_pSESimReads = NULL;
+m_pSESimReads = nullptr;
 
-if (m_bPEReads && pszPE2SimReads != NULL)
+if (m_bPEReads && pszPE2SimReads != nullptr)
 	{
-	if ((m_pPE2SimReads = new CFasta()) == NULL)
+	if ((m_pPE2SimReads = new CFasta()) == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to instantiate CFasta");
 		Reset();
@@ -2425,9 +2429,9 @@ if (m_bPEReads && pszPE2SimReads != NULL)
 #else
 				pTmp = (uint8_t*)mremap(m_pGroundTruths, m_AllocdGroundTruthsMem, memreq, MREMAP_MAYMOVE);
 				if (pTmp == MAP_FAILED)
-					pTmp = NULL;
+					pTmp = nullptr;
 #endif
-				if (pTmp == NULL)
+				if (pTmp == nullptr)
 				{
 					gDiagnostics.DiagOut(eDLFatal, gszProcName, "LoadGroundTruths: Memory re-allocation to %zd bytes - %s", (int64_t)(memreq), strerror(errno));
 					Reset();
@@ -2458,7 +2462,7 @@ if (m_bPEReads && pszPE2SimReads != NULL)
 		}
 	m_pPE2SimReads->Close();
 	delete m_pPE2SimReads;
-	m_pPE2SimReads = NULL;
+	m_pPE2SimReads = nullptr;
 	}
 
 	// have loaded the ground truths, create an index so can do quick binary searches against read names
@@ -2510,11 +2514,11 @@ m_FbetaReads = FbetaReads;
 m_MaxNumReads = 0;
 strcpy(m_szAlignmentsFile, pszAlignmentsFile);
 strcpy(m_szSEReads, pszSEReads);
-if(pszResultsFile != NULL && pszResultsFile[0] != '\0')
+if(pszResultsFile != nullptr && pszResultsFile[0] != '\0')
 	strcpy(m_szResultsFile,pszResultsFile);
 else
 	m_szResultsFile[0] = '\0';
-if (pszExperimentDescr != NULL && pszExperimentDescr[0] != '\0')
+if (pszExperimentDescr != nullptr && pszExperimentDescr[0] != '\0')
 	strcpy(m_szExperimentDescr, pszExperimentDescr);
 else
 	m_szExperimentDescr[0] = '\0';
@@ -2563,14 +2567,14 @@ uint32_t NumScoredAlignments;
 uint32_t NumPutativeScoredAlignments;
 int64_t AlignedPotentialScore;
 
-if ((pszLine = new char[cMaxReadLen]) == NULL)				// buffer input lines
+if ((pszLine = new char[cMaxReadLen]) == nullptr)				// buffer input lines
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to allocate line buffering");
 	Reset();
 	return(-1);
 	}
 
-if ((pSAMalign = new tsBAMalign) == NULL)
+if ((pSAMalign = new tsBAMalign) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to allocate memory for alignment tsBAMalign structure");
 	delete []pszLine;
@@ -2597,7 +2601,7 @@ m_UnscoredReads = 0;
 NumErrs = 0;
 
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "Scoring alignments in: '%s'", pszAlignmentsFile);
-time_t Then = time(NULL);
+time_t Then = time(nullptr);
 time_t Now;
 while (Rslt >= eBSFSuccess && (LineLen = m_pAlignments->GetNxtSAMline(pszLine)) > 0)
 {
@@ -2611,7 +2615,7 @@ while (Rslt >= eBSFSuccess && (LineLen = m_pAlignments->GetNxtSAMline(pszLine)) 
 	NumPutativeScoredAlignments += 1;
 	if (!(NumPutativeScoredAlignments % 100000) || NumPutativeScoredAlignments == 1)
 		{
-		Now = time(NULL);
+		Now = time(nullptr);
 		if ((Now - Then) >= 60)
 			{
 			gDiagnostics.DiagOut(eDLInfo, gszProcName, "Processed %d SAM/BAM CIGAR alignments", NumPutativeScoredAlignments);
@@ -2620,7 +2624,7 @@ while (Rslt >= eBSFSuccess && (LineLen = m_pAlignments->GetNxtSAMline(pszLine)) 
 		}
 
 		// primary interest is in the read name, reference chrom name, start loci, length
-	if ((Rslt = (teBSFrsltCodes)m_pAlignments->ParseSAM2BAMalign(pTxt, pSAMalign, NULL, true)) < eBSFSuccess)
+	if ((Rslt = (teBSFrsltCodes)m_pAlignments->ParseSAM2BAMalign(pTxt, pSAMalign, nullptr, true)) < eBSFSuccess)
 		{
 		if (Rslt == eBSFerrFeature)	// not too worried if the aligned to feature is missing as some SAMs are missing header features
 			{						// our interest is as to if the ref chrom is as expected, this is checked later
@@ -2636,7 +2640,7 @@ while (Rslt >= eBSFSuccess && (LineLen = m_pAlignments->GetNxtSAMline(pszLine)) 
 
 		// it is important to note that there is a 1:1 relationship between each alignment and it's ground truth, so if there are multiple alignments having same ground truth
 		// then the aligner is reporting multialigns for same read
-	if ((pGroundTruth = LocateGroundTruth(pSAMalign,((pSAMalign->flag_nc >> 16) & 0x080)==0x080)) == NULL) //fails if read name not a simulated read name or not matching ground truth SE/PE
+	if ((pGroundTruth = LocateGroundTruth(pSAMalign,((pSAMalign->flag_nc >> 16) & 0x080)==0x080)) == nullptr) //fails if read name not a simulated read name or not matching ground truth SE/PE
 		{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Alignment read name ('%s') does not match any ground truth read names or mate end error - alignments must be from ground truth simulated reads", pSAMalign->read_name);
 		delete []pszLine;
@@ -2876,11 +2880,11 @@ CBenchmark::GetClaimOps(tsBAMalign* pAlignment,	// claim CIGARs for this alignme
 {
 	uint32_t Oper;
 	int MaxClaimOpIdx;
-	if (pNumOps != NULL)
+	if (pNumOps != nullptr)
 		*pNumOps = 0;
-	if (pTypeOp != NULL)
+	if (pTypeOp != nullptr)
 		*pTypeOp = eCOPUnrecognised;
-	if (pNumOps == NULL || pTypeOp == NULL || pAlignment == NULL)
+	if (pNumOps == nullptr || pTypeOp == nullptr || pAlignment == nullptr)
 		return(-1);
 	if(ClaimOpIdx < 1)
 		ClaimOpIdx = 1;
@@ -2903,12 +2907,12 @@ CBenchmark::ParseExpCIGAR(char* pszCIGAR,	// parse starting from this CIGAR char
 	int NumOps;
 	char Chr;
 
-	if (pNumOps != NULL)
+	if (pNumOps != nullptr)
 		*pNumOps = 0;
-	if (pTypeOp != NULL)
+	if (pTypeOp != nullptr)
 		*pTypeOp = eCOPUnrecognised;
 
-	if (pszCIGAR == NULL || pNumOps == NULL || pTypeOp == NULL)
+	if (pszCIGAR == nullptr || pNumOps == nullptr || pTypeOp == nullptr)
 		return(-1);
 
 	if (*pszCIGAR == '\0')
@@ -3068,7 +3072,7 @@ int GroundTruthNumOps;
 int ClaimNumOps;
 uint32_t GroundTruthOps[cMaxBAMCigarOps];
 
-if(pAlignment == NULL || pGroundTruth == NULL)
+if(pAlignment == nullptr || pGroundTruth == nullptr)
 	return(0);
 
 // parse ground truth CIGAR into packed GroundTruthOps
@@ -3342,7 +3346,7 @@ CBenchmark::RefSeqConsumedLen(int NumPackedOps,		// there are this many packed C
 etCIGAROpType CIGARop;
 int RefConsumLen;
 int Idx;
-if(NumPackedOps < 1 || pPackedOps == NULL || *pPackedOps == 0)
+if(NumPackedOps < 1 || pPackedOps == nullptr || *pPackedOps == 0)
 	return(-1);
 
 RefConsumLen = 0;
@@ -3378,7 +3382,7 @@ int								 // number of accepted CIGAR operations, 0 if unable to accept
 CBenchmark::ParseObsCIGAR(char* pszCIGAR, // CIGAR operations
 	int ReadLen,				// length ('=','X','M','D') must be equal to ReadLen
 	int MaxCIGAROps,			// pPackedOps can hold at most this many Ops
-	uint32_t* pPackedOps)		// pack CIGAR ops into this array, can be NULL if just validating the CIGAR
+	uint32_t* pPackedOps)		// pack CIGAR ops into this array, can be nullptr if just validating the CIGAR
 {
 	char Chr;
 	int NumChrs;
@@ -3387,14 +3391,14 @@ CBenchmark::ParseObsCIGAR(char* pszCIGAR, // CIGAR operations
 	int CIGARReadLen;
 	etCIGAROpType CIGARop;
 
-	if (pszCIGAR == NULL || *pszCIGAR == '\0' || ReadLen < cSRMinReadLen || ReadLen > cSRMaxReadLen)
+	if (pszCIGAR == nullptr || *pszCIGAR == '\0' || ReadLen < cSRMinReadLen || ReadLen > cSRMaxReadLen)
 		return(false);
 
 	CIGARReadLen = 0;
 	NumOps = 0;
 	NumChrs = 0;
 	CIGAROps = 0;
-	if (pPackedOps != NULL)
+	if (pPackedOps != nullptr)
 		*pPackedOps = 0;
 
 	while ((Chr = *pszCIGAR++) != '\0')
@@ -3470,7 +3474,7 @@ CBenchmark::ParseObsCIGAR(char* pszCIGAR, // CIGAR operations
 		}
 		NumOps <<= 4;
 		NumOps |= (uint32_t)CIGARop & 0x0f;
-		if(pPackedOps != NULL)
+		if(pPackedOps != nullptr)
 			*pPackedOps++ = NumOps;
 		CIGAROps += 1;
 		NumOps = 0;
@@ -3489,7 +3493,7 @@ uint32_t NumOps;
 etCIGAROpType NxtCIGARop;
 uint32_t *pPackedOps;
 uint32_t* pNxtPackedOps;
-if(pBAM == NULL)
+if(pBAM == nullptr)
 	return(-1);
 // a quick validation, number of bytes required for CIGARs should be 4 * number of CIGAR ops
 NumTypeOps = pBAM->flag_nc & 0x0ff;
@@ -3549,7 +3553,7 @@ CBenchmark::InitObsErrProfile(char* pszInProfFile)	// read from this observed al
 	uint32_t PE2ErrProfOps[cMaxBAMCigarOps * 3];
 	
 	tsBMPackedCIGARs* pCurCIGAR;
-	if (pszInProfFile == NULL || pszInProfFile[0] == '\0')
+	if (pszInProfFile == nullptr || pszInProfFile[0] == '\0')
 	{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "InitObsErrProfile: Observed alignment error profile file not specified");
 		Reset();
@@ -3564,7 +3568,7 @@ CBenchmark::InitObsErrProfile(char* pszInProfFile)	// read from this observed al
 	m_AllocdObsErrProfMem = (size_t)cSRAllocdObsErrProfMemChunk;
 #ifdef _WIN32
 	m_pObsErrProfiles = (uint8_t*)malloc(m_AllocdObsErrProfMem);
-	if (m_pObsErrProfiles == NULL)
+	if (m_pObsErrProfiles == nullptr)
 	{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "InitObsErrProfile: Memory allocation of %zd bytes failed", (int64_t)m_AllocdObsErrProfMem);
 		m_AllocdObsErrProfMem = 0;
@@ -3573,18 +3577,18 @@ CBenchmark::InitObsErrProfile(char* pszInProfFile)	// read from this observed al
 	}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-	m_pObsErrProfiles = (uint8_t*)mmap(NULL, (size_t)m_AllocdObsErrProfMem, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	m_pObsErrProfiles = (uint8_t*)mmap(nullptr, (size_t)m_AllocdObsErrProfMem, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	if (m_pObsErrProfiles == MAP_FAILED)
 	{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "InitObsErrProfile: Memory allocation of %zd bytes through mmap()  failed", (int64_t)m_AllocdObsErrProfMem, strerror(errno));
-		m_pObsErrProfiles = NULL;
+		m_pObsErrProfiles = nullptr;
 		m_AllocdObsErrProfMem = 0;
 		Reset();
 		return(eBSFerrMem);
 	}
 #endif
 
-	if ((m_pObsCIGARProfFile = new CCSVFile) == NULL)
+	if ((m_pObsCIGARProfFile = new CCSVFile) == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "InitObsErrProfile: Unable to instantiate CCSVfile");
 		Reset();
@@ -3662,9 +3666,9 @@ CBenchmark::InitObsErrProfile(char* pszInProfFile)	// read from this observed al
 #else
 			pTmp = (uint8_t*)mremap(m_pObsErrProfiles, m_AllocdObsErrProfMem, memreq, MREMAP_MAYMOVE);
 			if (pTmp == MAP_FAILED)
-				pTmp = NULL;
+				pTmp = nullptr;
 #endif
-			if (pTmp == NULL)
+			if (pTmp == nullptr)
 				{
 				gDiagnostics.DiagOut(eDLFatal, gszProcName, "InitObsErrProfile: Memory re-allocation to %zd bytes - %s", (int64_t)(memreq), strerror(errno));
 				Reset();
@@ -3705,7 +3709,7 @@ CBenchmark::InitObsErrProfile(char* pszInProfFile)	// read from this observed al
 		return(eBSFerrRowCnt);
 		}
 	delete m_pObsCIGARProfFile;
-	m_pObsCIGARProfFile = NULL;
+	m_pObsCIGARProfFile = nullptr;
 	return(eBSFSuccess);
 }
 
@@ -3722,7 +3726,7 @@ int TargPsn;
 int IdxLo;
 int IdxHi;
 
-if(pSelChromID == NULL)
+if(pSelChromID == nullptr)
 	return(-1);
 if(FragSize <= 0)
 	FragSize = cBMMaxFragSize;
@@ -3791,7 +3795,7 @@ do {
 	else
 		IdxLo = TargPsn + 1;
 	} while (IdxHi >= IdxLo);
-return(NULL);
+return(nullptr);
 }
 
 // SortReadPairs

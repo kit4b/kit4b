@@ -46,13 +46,13 @@ Process(char *pszOBOFile,				// GO ontology file to parse
 int gengoterms(int argc, char* argv[])
 {
 	// determine my process name
-	_splitpath(argv[0], NULL, NULL, gszProcName, NULL);
+	_splitpath(argv[0], nullptr, nullptr, gszProcName, nullptr);
 #else
 int
 gengoterms(int argc, char** argv)
 {
 	// determine my process name
-	CUtility::splitpath((char*)argv[0], NULL, gszProcName);
+	CUtility::splitpath((char*)argv[0], nullptr, gszProcName);
 #endif
 int iScreenLogLevel;		// level of screen diagnostics
 int iFileLogLevel;			// level of file diagnostics
@@ -67,8 +67,8 @@ struct arg_lit  *version = arg_lit0("v","version,ver",			"print version informat
 struct arg_int *FileLogLevel=arg_int0("f", "FileLogLevel",		"<int>","Level of diagnostics written to screen and logfile 0=fatal,1=errors,2=info,3=diagnostics,4=debug");
 struct arg_file *LogFile = arg_file0("F","log","<file>",		"diagnostics log file");
 
-struct arg_file *OBOFile = arg_file1("i",NULL,"<file>",			"source OBO ontology file");
-struct arg_file *GOTermFile = arg_file1("o",NULL,"<file>",		"output to biogoterm file");
+struct arg_file *OBOFile = arg_file1("i",nullptr,"<file>",			"source OBO ontology file");
+struct arg_file *GOTermFile = arg_file1("o",nullptr,"<file>",		"output to biogoterm file");
 
 struct arg_end *end = arg_end(20);
 
@@ -171,14 +171,14 @@ Process(char *pszOBOFile,		// GO ontology file to parse
 {
 int Rslt;
 
-FILE *pOBOStream = NULL;
-CGOTerms *pGOTerms = NULL;
+FILE *pOBOStream = nullptr;
+CGOTerms *pGOTerms = nullptr;
 
-if(pszOBOFile == NULL || *pszOBOFile == '\0' ||
-	pszGOTermFile == NULL || *pszGOTermFile == '\0')
+if(pszOBOFile == nullptr || *pszOBOFile == '\0' ||
+	pszGOTermFile == nullptr || *pszGOTermFile == '\0')
 	return(eBSFerrParams);
 
-if((pOBOStream = fopen(pszOBOFile,"r"))==NULL)
+if((pOBOStream = fopen(pszOBOFile,"r"))==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to open GO ontology file %s error: %s",pszOBOFile,strerror(errno));
 	return(eBSFerrOpnFile);

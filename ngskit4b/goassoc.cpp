@@ -201,13 +201,13 @@ static int SortGenes(const void *arg1, const void *arg2);
 int goassoc(int argc, char* argv[])
 {
 	// determine my process name
-	_splitpath(argv[0], NULL, NULL, gszProcName, NULL);
+	_splitpath(argv[0], nullptr, nullptr, gszProcName, nullptr);
 #else
 int
 goassoc(int argc, char** argv)
 {
 	// determine my process name
-	CUtility::splitpath((char*)argv[0], NULL, gszProcName);
+	CUtility::splitpath((char*)argv[0], nullptr, gszProcName);
 #endif
 int iScreenLogLevel;		// level of screen diagnostics
 int iFileLogLevel;			// level of file diagnostics
@@ -785,27 +785,27 @@ Process(etPMode PMode,			// processing mode
 		etDotPValue DotPValue)	// which P-Value to use when generating GraphViz dot file
 {
 int Rslt;
-CGOAssocs *pAssocs = NULL;
-CGOTerms *pGOTerms = NULL;
-CBEDfile *pBED = NULL;
-tsElementGene *pPopulationGenes = NULL;
+CGOAssocs *pAssocs = nullptr;
+CGOTerms *pGOTerms = nullptr;
+CBEDfile *pBED = nullptr;
+tsElementGene *pPopulationGenes = nullptr;
 int AllocdPopulationGenes = 0;
 int PopulationGeneCnt = 0;
-tsElementGene *pSampleGenes = NULL;
+tsElementGene *pSampleGenes = nullptr;
 int AllocdSampleGenes = 0;
 int SampleGeneCnt = 0;
 
 int NumFields = 0;
 int GeneWeighting = 0;
 int GeneLength = 0;
-char *pszGene = NULL;
+char *pszGene = nullptr;
 
 
-if(pszGoAssoc == NULL || *pszGoAssoc == '\0' ||
-   pszGOTerms == NULL || *pszGOTerms == '\0' ||
-   pszBED == NULL || *pszBED == '\0' ||
-   pszHitsFile == NULL || *pszHitsFile == '\0' ||
-	pszResultsFile == NULL || *pszResultsFile == '\0')
+if(pszGoAssoc == nullptr || *pszGoAssoc == '\0' ||
+   pszGOTerms == nullptr || *pszGOTerms == '\0' ||
+   pszBED == nullptr || *pszBED == '\0' ||
+   pszHitsFile == nullptr || *pszHitsFile == '\0' ||
+	pszResultsFile == nullptr || *pszResultsFile == '\0')
 	return(eBSFerrParams);
 
 
@@ -842,14 +842,14 @@ if((Rslt = pGOTerms->Open(pszGOTerms))!=eBSFSuccess)
 	return(Rslt);
 	}
 
-pPopulationGenes = NULL;
-if(pszPopulationGenes != NULL && pszPopulationGenes[0] != '\0')
+pPopulationGenes = nullptr;
+if(pszPopulationGenes != nullptr && pszPopulationGenes[0] != '\0')
 	if((Rslt = ParseCSVHits(pszPopulationGenes, pBED, MinLen, MaxLen, MinWeight, MaxWeight,&PopulationGeneCnt, &pPopulationGenes)) < 0)
 		{
-		if(pPopulationGenes != NULL)
+		if(pPopulationGenes != nullptr)
 			{
 			delete pPopulationGenes;
-			pPopulationGenes = NULL;
+			pPopulationGenes = nullptr;
 			}
 		delete pAssocs;
 		delete pBED;
@@ -871,9 +871,9 @@ if(!SampleGeneCnt || Rslt < eBSFSuccess)
 	if(!SampleGeneCnt && Rslt >= eBSFSuccess)
 		gDiagnostics.DiagOut(eDLInfo,gszProcName,"Nothing to do - no samples meeting filtering criteria");
 
-	if(pSampleGenes != NULL)
+	if(pSampleGenes != nullptr)
 		delete pSampleGenes;
-	if (pPopulationGenes != NULL)
+	if (pPopulationGenes != nullptr)
 		delete pPopulationGenes;
 	delete pAssocs;
 	delete pBED;
@@ -884,11 +884,11 @@ if(!SampleGeneCnt || Rslt < eBSFSuccess)
 tsTermStats PopulationStats;
 tsTermStats SampleStats;
 int NumUniqueElGenes = 0;
-tsElementGene *pUniquePopGeneList = NULL;
+tsElementGene *pUniquePopGeneList = nullptr;
 int NumUniqueSampleGenes = 0;
-tsElementGene *pUniqueSampleGeneList = NULL;
+tsElementGene *pUniqueSampleGeneList = nullptr;
 
-if(PopulationGeneCnt && pPopulationGenes != NULL)
+if(PopulationGeneCnt && pPopulationGenes != nullptr)
 	Rslt = ReduceGeneList(false,PopulationGeneCnt,pPopulationGenes,&NumUniqueElGenes,&pUniquePopGeneList);
 if(Rslt == eBSFSuccess)
    Rslt = ReduceGeneList(bMultGeneHits,SampleGeneCnt,pSampleGenes,&NumUniqueSampleGenes,&pUniqueSampleGeneList);
@@ -941,9 +941,9 @@ if(Rslt >= eBSFSuccess)
 	
 pGOTerms->Close();
 delete pGOTerms;
-if(pUniquePopGeneList != NULL)
+if(pUniquePopGeneList != nullptr)
 	delete pUniquePopGeneList;
-if(pUniqueSampleGeneList!=NULL)
+if(pUniqueSampleGeneList!=nullptr)
 	delete pUniqueSampleGeneList;
 return(Rslt);
 }
@@ -976,8 +976,8 @@ int NAcnt;
 int InfCnt;
 
 *pNumEls = 0;
-*ppRetElements = NULL;
-pSampleGenes = NULL;
+*ppRetElements = nullptr;
+pSampleGenes = nullptr;
 AllocdSampleGenes = 0;
 SampleGeneCnt= 0;
 AboveThresCnt = 0;
@@ -1001,10 +1001,10 @@ while((Rslt=pCSVDESeq->NextLine()) > eBSFSuccess)
 	if(NumFields < 9)			// unlikely to be DESeq file if less than 10 fields
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Too few fields at line %d, not a DESeq generated file: %s",LineNum,NumFields,pszDESeqFile);
-		if(pSampleGenes != NULL)
+		if(pSampleGenes != nullptr)
 			{
 			delete pSampleGenes;
-			pSampleGenes = NULL;
+			pSampleGenes = nullptr;
 			}
 		SampleGeneCnt = 0;
 		Rslt = eBSFerrFileAccess;
@@ -1017,10 +1017,10 @@ while((Rslt=pCSVDESeq->NextLine()) > eBSFSuccess)
 	if(Rslt < eBSFSuccess)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to parse gene name at line %d from %s",LineNum,pszDESeqFile);
-		if(pSampleGenes != NULL)
+		if(pSampleGenes != nullptr)
 			{
 			delete pSampleGenes;
-			pSampleGenes = NULL;
+			pSampleGenes = nullptr;
 			}
 		SampleGeneCnt = 0;
 		break;
@@ -1035,10 +1035,10 @@ while((Rslt=pCSVDESeq->NextLine()) > eBSFSuccess)
 	if(Rslt < eBSFSuccess)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to parse %s value at line %d from %s",PMode == ePMDESeqPVal ? "PVal" : "PValAdj",LineNum,pszDESeqFile);
-		if(pSampleGenes != NULL)
+		if(pSampleGenes != nullptr)
 			{
 			delete pSampleGenes;
-			pSampleGenes = NULL;
+			pSampleGenes = nullptr;
 			}
 		SampleGeneCnt = 0;
 		break;
@@ -1056,10 +1056,10 @@ while((Rslt=pCSVDESeq->NextLine()) > eBSFSuccess)
 	if(*pszTerm != '\0')
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to parse %s value at line %d from %s as a double",PMode == ePMDESeqPVal ? "PVal" : "PValAdj",LineNum,pszDESeqFile);
-		if(pSampleGenes != NULL)
+		if(pSampleGenes != nullptr)
 			{
 			delete pSampleGenes;
-			pSampleGenes = NULL;
+			pSampleGenes = nullptr;
 			}
 		SampleGeneCnt = 0;
 		Rslt = eBSFerrParse;
@@ -1072,16 +1072,16 @@ while((Rslt=pCSVDESeq->NextLine()) > eBSFSuccess)
 		continue;
 		}
 
-	if(pSampleGenes == NULL || SampleGeneCnt >= AllocdSampleGenes)
+	if(pSampleGenes == nullptr || SampleGeneCnt >= AllocdSampleGenes)
 		{
 		AllocdSampleGenes += cElGenes2Alloc;
-		if((pTmp = new tsElementGene[AllocdSampleGenes])==NULL)
+		if((pTmp = new tsElementGene[AllocdSampleGenes])==nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Memory allocation for sample genes failed");
-			if(pSampleGenes != NULL)
+			if(pSampleGenes != nullptr)
 				{
 				delete pSampleGenes;
-				pSampleGenes = NULL;
+				pSampleGenes = nullptr;
 				}
 			SampleGeneCnt = 0;
 			Rslt = eBSFerrMem;
@@ -1135,8 +1135,8 @@ int GeneWeighting;
 int CurFeatureID;
 
 *pNumEls = 0;
-*ppRetElements = NULL;
-pSampleGenes = NULL;
+*ppRetElements = nullptr;
+pSampleGenes = nullptr;
 AllocdSampleGenes = 0;
 SampleGeneCnt= 0;
 
@@ -1162,10 +1162,10 @@ while((Rslt=pCSVSample->NextLine()) > eBSFSuccess)
 	if (Rslt < eBSFSuccess)
 		{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process", "Unable to read gene name line %d from %s", pCSVSample->GetLineNumber(), pszHitsFile);
-		if (pSampleGenes != NULL)
+		if (pSampleGenes != nullptr)
 			{
 			delete pSampleGenes;
-			pSampleGenes = NULL;
+			pSampleGenes = nullptr;
 			}
 		SampleGeneCnt = 0;
 		break;
@@ -1191,10 +1191,10 @@ while((Rslt=pCSVSample->NextLine()) > eBSFSuccess)
 		if (Rslt < eBSFSuccess)
 			{
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Process", "Unable to read gene weighting at line %d from %s", pCSVSample->GetLineNumber(), pszHitsFile);
-			if (pSampleGenes != NULL)
+			if (pSampleGenes != nullptr)
 				{
 				delete pSampleGenes;
-				pSampleGenes = NULL;
+				pSampleGenes = nullptr;
 				}
 			SampleGeneCnt = 0;
 			break;
@@ -1208,16 +1208,16 @@ while((Rslt=pCSVSample->NextLine()) > eBSFSuccess)
 	if (GeneWeighting < MinWeight || GeneWeighting > MaxWeight)
 		continue;
 
-	if(pSampleGenes == NULL || SampleGeneCnt >= AllocdSampleGenes)
+	if(pSampleGenes == nullptr || SampleGeneCnt >= AllocdSampleGenes)
 		{
 		AllocdSampleGenes += cElGenes2Alloc;
-		if((pTmp = new tsElementGene[AllocdSampleGenes])==NULL)
+		if((pTmp = new tsElementGene[AllocdSampleGenes])==nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Memory allocation for %d sample genes failed",AllocdSampleGenes);
-			if(pSampleGenes != NULL)
+			if(pSampleGenes != nullptr)
 				{
 				delete pSampleGenes;
-				pSampleGenes = NULL;
+				pSampleGenes = nullptr;
 				}
 			SampleGeneCnt = 0;
 			Rslt = eBSFerrMem;
@@ -1529,7 +1529,7 @@ NumRedundantNames = 0;
 NumGenes = 0;
 NumGenesInGO = 0;
 Rslt = eBSFSuccess;
-bPopIsAll = (PopulationCnt == 0 || pPopulationGenes == NULL) ? true : false;
+bPopIsAll = (PopulationCnt == 0 || pPopulationGenes == nullptr) ? true : false;
 if(bPopIsAll)
 	NumFeatures = pBED->GetNumFeatures();
 	
@@ -1566,7 +1566,7 @@ while(bMore)
 			}
 		}
 
-	Rslt = pBED->GetFeature(CurFeatureID,szGene,szChrom,&GeneStart,&GeneEnd,NULL,&GeneStrand);
+	Rslt = pBED->GetFeature(CurFeatureID,szGene,szChrom,&GeneStart,&GeneEnd,nullptr,&GeneStrand);
 
 	GeneLen = GeneEnd - GeneStart;
 	if(bBkgndLen)
@@ -1593,10 +1593,10 @@ while(bMore)
 		for(Cnt = 0; Cnt < NumGOIDs; Cnt++)
 			{
 			pszGOID = pAssocs->GetGOID(szGene,Cnt+1);
-			if(pszGOID != NULL)
+			if(pszGOID != nullptr)
 				{
 				pTerm = pGOTerms->LocateGOID(pszGOID);
-				if(pTerm == NULL || pTerm->RootOntology != Ontology)
+				if(pTerm == nullptr || pTerm->RootOntology != Ontology)
 					continue;
 				strcpy(pszConcatGOIDs,pszGOID);
 				pszGOIDs[CntGOIDs++] = pszConcatGOIDs;
@@ -1688,7 +1688,7 @@ while(bMore)
 		pStats->SumGenesNotInBEDWeightings += CurGeneWeighting;
 		continue;
 		}
-	Rslt = pBED->GetFeature(CurFeatureID,szGene,szChrom,&GeneStart,&GeneEnd,NULL,&GeneStrand);
+	Rslt = pBED->GetFeature(CurFeatureID,szGene,szChrom,&GeneStart,&GeneEnd,nullptr,&GeneStrand);
 	if(Strand != '*' && (Strand != GeneStrand))
 		{
 		pStats->NumGenesNotOnStrand++;
@@ -1711,10 +1711,10 @@ while(bMore)
 		for(Cnt = 0; Cnt < NumGOIDs; Cnt++)
 			{
 			pszGOID = pAssocs->GetGOID(szGene,Cnt+1);
-			if(pszGOID != NULL)
+			if(pszGOID != nullptr)
 				{
 				pTerm = pGOTerms->LocateGOID(pszGOID);
-				if(pTerm == NULL || pTerm->RootOntology != Ontology)
+				if(pTerm == nullptr || pTerm->RootOntology != Ontology)
 					continue;
 
 				strcpy(pszConcatGOIDs,pszGOID);
@@ -1763,10 +1763,10 @@ int AllocdUniqueGenes;
 int UniqueGenesCnt;
 tsElementGene *pUniqueGeneList;
 
-*ppUniqueGeneList = NULL;
+*ppUniqueGeneList = nullptr;
 *pNumUniqueGenes = 0;
 
-if(!NumGenes || pGeneList == NULL)
+if(!NumGenes || pGeneList == nullptr)
 	return(eBSFerrParams);
 
 // firstly sort genes by gene name ascending
@@ -1774,22 +1774,22 @@ if(NumGenes > 1)
 	qsort(pGeneList,NumGenes,sizeof(tsElementGene),SortGenes);
 
 pGene = pGeneList;
-pPrevGene = NULL;
-pUniqueGene = NULL;
+pPrevGene = nullptr;
+pUniqueGene = nullptr;
 UniqueGenesCnt = 0;
 AllocdUniqueGenes = 0;
-pUniqueGeneList = NULL;
+pUniqueGeneList = nullptr;
 for(Idx = 0; Idx < NumGenes; Idx++,pGene++)
 	{
-	if(pPrevGene == NULL || bKeepDups || stricmp(pGene->szGeneName,pPrevGene->szGeneName))
+	if(pPrevGene == nullptr || bKeepDups || stricmp(pGene->szGeneName,pPrevGene->szGeneName))
 		{
 		pPrevGene = pGene;
-		if(pUniqueGeneList == NULL || UniqueGenesCnt >= AllocdUniqueGenes)
+		if(pUniqueGeneList == nullptr || UniqueGenesCnt >= AllocdUniqueGenes)
 			{
 			AllocdUniqueGenes += cAllocUniqueGenes;
-			if((pTmp = new tsElementGene[AllocdUniqueGenes])==NULL)
+			if((pTmp = new tsElementGene[AllocdUniqueGenes])==nullptr)
 				{
-				if(pUniqueGeneList != NULL)
+				if(pUniqueGeneList != nullptr)
 					delete pUniqueGeneList;
 				gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory for unique genes list");
 				return(eBSFerrMem);
@@ -1890,7 +1890,7 @@ pszParentGOName = pGOTerms->GetGONameforTerm(pParent);
 pParentTermState = &pTermStates[ParentTermID];
 
 pCnts = pGOTerms->GetExistingTermCnts(pParent);
-if(pCnts != NULL && pCnts->NumSampleGenes)		
+if(pCnts != nullptr && pCnts->NumSampleGenes)		
 	{
 	if(*pParentTermState == 0)	// if first time for this term
 		{
@@ -1907,12 +1907,12 @@ else
 	*pParentTermState = 0x01;
 
 NthChild = 1;
-while((pChild = pGOTerms->LocateNthChild(pParent,NthChild++))!=NULL)
+while((pChild = pGOTerms->LocateNthChild(pParent,NthChild++))!=nullptr)
 	{
 	ChildTermID = pChild->GOTermID;
 	pChildTermState = &pTermStates[ChildTermID];
 	pCnts = pGOTerms->GetExistingTermCnts(pChild);
-	if(pCnts != NULL && pCnts->NumSampleGenes)
+	if(pCnts != nullptr && pCnts->NumSampleGenes)
 		{
 		ProbK = GetDotPValue(pCnts,DotPValue);
 		if(ProbK <= dblDotThres)
@@ -1964,7 +1964,7 @@ double Enrichment;
 double WExpected;
 double WEnrichment;
 
-if((pRslts = fopen(pszResultsFile,"w+"))==NULL)
+if((pRslts = fopen(pszResultsFile,"w+"))==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to open/create results file %s error: %s",pszResultsFile,strerror(errno));
 	return(eBSFerrOpnFile);
@@ -2003,16 +2003,16 @@ int RootID;
 int *pTermState;
 
 // now for the GraphViz .dot file
-if(pszGraphViz == NULL || pszGraphViz[0] == '\0')
+if(pszGraphViz == nullptr || pszGraphViz[0] == '\0')
 	return(eBSFSuccess);
 
-if((pDot = fopen(pszGraphViz,"w+"))==NULL)
+if((pDot = fopen(pszGraphViz,"w+"))==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to open/create results file %s error: %s",pszGraphViz,strerror(errno));
 	return(eBSFerrOpnFile);
 	}
 fprintf(pDot,"digraph GOgraph {");
-if((pTermState = new int [cMaxGOterms]) == NULL)
+if((pTermState = new int [cMaxGOterms]) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory for GraphViz term states");
 	fclose(pDot);
@@ -2020,9 +2020,9 @@ if((pTermState = new int [cMaxGOterms]) == NULL)
 	}
 memset(pTermState,0,sizeof(int) * cMaxGOterms);
 
-if(pszRootGOTerm != NULL && pszRootGOTerm[0] != '\0')
+if(pszRootGOTerm != nullptr && pszRootGOTerm[0] != '\0')
 	{
-	if((pTerm = pGOTerms->LocateGOID(pszRootGOTerm))!= NULL)
+	if((pTerm = pGOTerms->LocateGOID(pszRootGOTerm))!= nullptr)
 		{
 		if(pTerm->RootOntology == Ontology)
 			GenGOdot(pTerm->GOTermID,pDot,pGOTerms,pTermState,dblDotThres,DotPValue);

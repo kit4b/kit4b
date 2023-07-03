@@ -38,18 +38,18 @@ Original 'BioKanga' copyright notice has been retained and immediately follows t
 
 #include "AssembGraph.h"
 
-static tsGraphOutEdge *pStaticGraphOutEdges = NULL;		// static for sorting, will be initialised with m_pGraphOutEdges immediately prior to sorting
-static  tEdgeID *pStaticGraphInEdges = NULL;			// static for sorting, will be initialised with m_pGraphInEdges immediately prior to sorting
-static tsComponent *pStaticComponents = NULL;			// static for sorting, will be initialised with m_pComponents immediately prior to sorting
-static tsGraphVertex *pStaticGraphVertices = NULL;		// static for sorting, will be initialised with m_pGraphVertices immediately prior to sorting
+static tsGraphOutEdge *pStaticGraphOutEdges = nullptr;		// static for sorting, will be initialised with m_pGraphOutEdges immediately prior to sorting
+static  tEdgeID *pStaticGraphInEdges = nullptr;			// static for sorting, will be initialised with m_pGraphInEdges immediately prior to sorting
+static tsComponent *pStaticComponents = nullptr;			// static for sorting, will be initialised with m_pComponents immediately prior to sorting
+static tsGraphVertex *pStaticGraphVertices = nullptr;		// static for sorting, will be initialised with m_pGraphVertices immediately prior to sorting
 
 CAssembGraph::CAssembGraph(void)
 {
-m_pGraphVertices = NULL;
-m_pGraphOutEdges = NULL;
-m_pGraphInEdges = NULL;
-m_pTransitStack = NULL;
-m_pComponents = NULL;
+m_pGraphVertices = nullptr;
+m_pGraphOutEdges = nullptr;
+m_pGraphInEdges = nullptr;
+m_pTransitStack = nullptr;
+m_pComponents = nullptr;
 m_bMutexesCreated = false;
 Reset();
 }
@@ -68,7 +68,7 @@ if(m_bMutexesCreated)
 #ifdef _WIN32
 InitializeSRWLock(&m_hRwLock);
 #else
-if(pthread_rwlock_init (&m_hRwLock,NULL)!=0)
+if(pthread_rwlock_init (&m_hRwLock,nullptr)!=0)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to create rwlock");
 	return(eBSFerrInternal);
@@ -88,10 +88,10 @@ if(pthread_spin_init(&m_hSpinLock,PTHREAD_PROCESS_PRIVATE)!=0)
 	}
 
 #ifdef _WIN32
-if((m_hMtxMHReads = CreateMutex(NULL,false,NULL))==NULL)
+if((m_hMtxMHReads = CreateMutex(nullptr,false,nullptr))==nullptr)
 	{
 #else
-if(pthread_mutex_init (&m_hMtxMHReads,NULL)!=0)
+if(pthread_mutex_init (&m_hMtxMHReads,nullptr)!=0)
 	{
 #endif
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to create mutex");
@@ -192,7 +192,7 @@ CAssembGraph::Reset(void)
 _ASSERTE( _CrtCheckMemory());
 #endif
 #endif
-if(m_pGraphVertices != NULL)
+if(m_pGraphVertices != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pGraphVertices);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -200,10 +200,10 @@ if(m_pGraphVertices != NULL)
 	if(m_pGraphVertices != MAP_FAILED)
 		munmap(m_pGraphVertices,m_AllocGraphVertices * sizeof(tsGraphVertex));
 #endif	
-	m_pGraphVertices = NULL;
+	m_pGraphVertices = nullptr;
 	}
 
-if(m_pGraphOutEdges != NULL)
+if(m_pGraphOutEdges != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pGraphOutEdges);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -211,10 +211,10 @@ if(m_pGraphOutEdges != NULL)
 	if(m_pGraphOutEdges != MAP_FAILED)
 		munmap(m_pGraphOutEdges,m_AllocGraphOutEdges  * sizeof(tsGraphOutEdge));
 #endif	
-	m_pGraphOutEdges = NULL;
+	m_pGraphOutEdges = nullptr;
 	}
 
-if(m_pGraphInEdges != NULL)
+if(m_pGraphInEdges != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pGraphInEdges);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -222,10 +222,10 @@ if(m_pGraphInEdges != NULL)
 	if(m_pGraphInEdges != MAP_FAILED)
 		munmap(m_pGraphInEdges,m_AllocGraphInEdges  * sizeof(tEdgeID));
 #endif	
-	m_pGraphInEdges = NULL;
+	m_pGraphInEdges = nullptr;
 	}
 
-if(m_pTransitStack != NULL)
+if(m_pTransitStack != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pTransitStack);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -233,10 +233,10 @@ if(m_pTransitStack != NULL)
 	if(m_pTransitStack != MAP_FAILED)
 		munmap(m_pTransitStack,m_AllocTransitStack  * sizeof(tVertID));
 #endif	
-	m_pTransitStack = NULL;
+	m_pTransitStack = nullptr;
 	}
 
-if(m_pComponents != NULL)
+if(m_pComponents != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pComponents);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -244,7 +244,7 @@ if(m_pComponents != NULL)
 	if(m_pComponents != MAP_FAILED)
 		munmap(m_pComponents,m_AllocComponents  * sizeof(tsComponent));
 #endif	
-	m_pComponents = NULL;
+	m_pComponents = nullptr;
 	}
 
 
@@ -310,7 +310,7 @@ tsGraphVertex *pVertex;
 tVertID OverlappingVertexID;
 tVertID OverlappedVertexID;
 
-if(NumSeqs == 0 || pOverlappedSeqs == NULL)
+if(NumSeqs == 0 || pOverlappedSeqs == nullptr)
 	return(eBSFerrParams);
 AcquireSerialise();
 if(m_bTerminate)		// check if should early exit
@@ -337,12 +337,12 @@ if(m_VerticesSortOrder != eVSOSeqID)		// vertices need to have been sorted by Se
 	}
 
 // ensure m_pGraphOutEdges allocated to hold an additional NumSeqs
-if(m_pGraphOutEdges == NULL)				// initialisation may be required
+if(m_pGraphOutEdges == nullptr)				// initialisation may be required
 	{
 	AllocMem = cInitialAllocVertices * sizeof(tsGraphOutEdge);
 #ifdef _WIN32
 	m_pGraphOutEdges = (tsGraphOutEdge *) malloc(AllocMem);	
-	if(m_pGraphOutEdges == NULL)
+	if(m_pGraphOutEdges == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEdges: graph forward edge (%d bytes per edge) allocation of %d edges failed - %s",
 								(int)sizeof(tsGraphOutEdge),cInitialAllocVertices,strerror(errno));
@@ -351,7 +351,7 @@ if(m_pGraphOutEdges == NULL)				// initialisation may be required
 		return(eBSFerrMem);
 		}
 #else
-	m_pGraphOutEdges = (tsGraphOutEdge *)mmap(NULL,AllocMem, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+	m_pGraphOutEdges = (tsGraphOutEdge *)mmap(nullptr,AllocMem, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pGraphOutEdges == MAP_FAILED)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEdges: graph forward edge (%d bytes per edge) allocation of %d edges failed - %s",
@@ -382,9 +382,9 @@ else
 #else
 		pTmp = (tsGraphOutEdge *)mremap(m_pGraphOutEdges,m_AllocGraphOutEdges * sizeof(tsGraphOutEdge),AllocMem,MREMAP_MAYMOVE);
 		if(pTmp == MAP_FAILED)
-			pTmp = NULL;
+			pTmp = nullptr;
 #endif
-		if(pTmp == NULL)
+		if(pTmp == nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEdges: graph forward edge (%d bytes per edge) re-allocation to %zd edges from %zd failed - %s",
 														(int)sizeof(tsGraphOutEdge),AllocMem,m_AllocGraphOutEdges,AllocEdges,strerror(errno));
@@ -409,7 +409,7 @@ for(Idx = 0; Idx < NumSeqs; Idx++,pOverlap++,pOutEdge++)
 		{
 		CurOverlapSeqID = pOverlap->OverlappingSeqID;
 		pVertex = LocateVertexSeqID(CurOverlapSeqID);
-		if(pVertex == NULL)
+		if(pVertex == nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEdges: unable to locate vertex for SeqID %u", CurOverlapSeqID);
 			m_bTerminate = true;
@@ -422,7 +422,7 @@ for(Idx = 0; Idx < NumSeqs; Idx++,pOverlap++,pOutEdge++)
 		{
 		CurOverlappedSeqID = pOverlap->OverlappedSeqID;
 		pVertex = LocateVertexSeqID(CurOverlappedSeqID);
-		if(pVertex == NULL)
+		if(pVertex == nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEdges: unable to locate vertex for SeqID %u", CurOverlappedSeqID);
 			m_bTerminate = true;
@@ -489,7 +489,7 @@ if(m_VerticesSortOrder != eVSOSeqID)		// vertices need to have been sorted by Se
 
 // ensure up front that the sequence identifiers are known to have been associated with a vertex
 pVertex = LocateVertexSeqID(OverlappingSeqID);
-if(pVertex == NULL)
+if(pVertex == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEdge: unable to locate vertex for SeqID %u", OverlappingSeqID);
 	m_bTerminate = true;
@@ -499,7 +499,7 @@ if(pVertex == NULL)
 OverlappingVertexID = pVertex->VertexID;
 
 pVertex = LocateVertexSeqID(OverlappedSeqID);
-if(pVertex == NULL)
+if(pVertex == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEdge: unable to locate vertex for SeqID %u", OverlappedSeqID);
 	m_bTerminate = true;
@@ -508,12 +508,12 @@ if(pVertex == NULL)
 	}
 OverlappedVertexID = pVertex->VertexID;
 
-if(m_pGraphOutEdges == NULL)				// initialisation may be required
+if(m_pGraphOutEdges == nullptr)				// initialisation may be required
 	{
 	AllocMem = cInitialAllocVertices * sizeof(tsGraphOutEdge);
 #ifdef _WIN32
 	m_pGraphOutEdges = (tsGraphOutEdge *) malloc(AllocMem);	
-	if(m_pGraphOutEdges == NULL)
+	if(m_pGraphOutEdges == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEdge: graph forward edge (%d bytes per edge) allocation of %d edges failed - %s",
 								(int)sizeof(tsGraphOutEdge),cInitialAllocVertices,strerror(errno));
@@ -522,7 +522,7 @@ if(m_pGraphOutEdges == NULL)				// initialisation may be required
 		return(eBSFerrMem);
 		}
 #else
-	m_pGraphOutEdges = (tsGraphOutEdge *)mmap(NULL,AllocMem, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+	m_pGraphOutEdges = (tsGraphOutEdge *)mmap(nullptr,AllocMem, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pGraphOutEdges == MAP_FAILED)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEdge: graph forward edge (%d bytes per edge) allocation of %d edges failed - %s",
@@ -551,9 +551,9 @@ else
 #else
 		pTmp = (tsGraphOutEdge *)mremap(m_pGraphOutEdges,m_AllocGraphOutEdges * sizeof(tsGraphOutEdge),AllocMem,MREMAP_MAYMOVE);
 		if(pTmp == MAP_FAILED)
-			pTmp = NULL;
+			pTmp = nullptr;
 #endif
-		if(pTmp == NULL)
+		if(pTmp == nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEdge: graph forward edge (%d bytes per edge) re-allocation to %zd edges from %zd failed - %s",
 													(int)sizeof(tsGraphOutEdge),AllocMem,m_AllocGraphOutEdges,AllocEdges,strerror(errno));
@@ -600,12 +600,12 @@ if(m_UsedGraphVertices >= cMaxNumVertices)
 	return(eBSFerrMaxEntries);
 	}
 
-if(m_pGraphVertices == NULL)		// initial allocation may be required
+if(m_pGraphVertices == nullptr)		// initial allocation may be required
 	{
 	AllocMem = cInitialAllocVertices * sizeof(tsGraphVertex);
 #ifdef _WIN32
 	m_pGraphVertices = (tsGraphVertex *) malloc(AllocMem);	
-	if(m_pGraphVertices == NULL)
+	if(m_pGraphVertices == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddVertex: graph vertices (%d bytes per vertex) allocation of %u vertices failed - %s",
 													(int)sizeof(tsGraphVertex),cInitialAllocVertices,strerror(errno));
@@ -614,12 +614,12 @@ if(m_pGraphVertices == NULL)		// initial allocation may be required
 		return(eBSFerrMem);
 		}
 #else
-	m_pGraphVertices = (tsGraphVertex *)mmap(NULL,AllocMem, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+	m_pGraphVertices = (tsGraphVertex *)mmap(nullptr,AllocMem, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pGraphVertices == MAP_FAILED)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddVertex: graph vertices (%d bytes per vertex) allocation of %u vertices failed - %s",
 													(int)sizeof(tsGraphVertex),cInitialAllocVertices,strerror(errno));
-		m_pGraphVertices = NULL;
+		m_pGraphVertices = nullptr;
 		ReleaseSerialise();
 		Reset();
 		return(eBSFerrMem);
@@ -643,9 +643,9 @@ else
 #else
 		pTmp = (tsGraphVertex *)mremap(m_pGraphVertices,m_AllocGraphVertices * sizeof(tsGraphVertex),memreq,MREMAP_MAYMOVE);
 		if(pTmp == MAP_FAILED)
-			pTmp = NULL;
+			pTmp = nullptr;
 #endif
-		if(pTmp == NULL)
+		if(pTmp == nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddVertex: graph vertices (%d bytes per vertex) re-allocation from %u to %u failed - %s",
 														(int)sizeof(tsGraphVertex),m_UsedGraphVertices,m_UsedGraphVertices + ReallocVertices,strerror(errno));
@@ -670,7 +670,7 @@ ReleaseSerialise();
 return(VertexID);
 }
 
-tsGraphVertex *			// ptr to vertex corresponding to SeqID , or NULL if unable to locate				
+tsGraphVertex *			// ptr to vertex corresponding to SeqID , or nullptr if unable to locate				
 CAssembGraph::LocateVertexSeqID(tSeqID SeqID)		// match this SeqID
 {
 tsGraphVertex *pEl2;
@@ -679,10 +679,10 @@ uint32_t TargPsn;
 uint32_t NodeLo;				
 uint32_t NodeHi;				
 if( SeqID < 1,								// must be valid
-	m_pGraphVertices == NULL,				// must be allocated
+	m_pGraphVertices == nullptr,				// must be allocated
 	m_UsedGraphVertices < 1 ||				// must have at least 1 vertex
 	m_VerticesSortOrder != eVSOSeqID)		// and vertices must be sorted by SeqID ascending
-	return(NULL);
+	return(nullptr);
 
 NodeLo = 0;
 NodeHi = m_UsedGraphVertices - 1;
@@ -712,7 +712,7 @@ while(NodeHi >= NodeLo);
 return(0);	// unable to locate any instance of SeqID
 }
 
-tsGraphVertex *			// ptr to vertex corresponding to VertexID , or NULL if unable to locate				
+tsGraphVertex *			// ptr to vertex corresponding to VertexID , or nullptr if unable to locate				
 CAssembGraph::LocateVertex(tVertID VertexID)		// match this VertexID
 {
 tsGraphVertex *pEl2;
@@ -721,10 +721,10 @@ uint32_t TargPsn;
 uint32_t NodeLo;				
 uint32_t NodeHi;				
 if( VertexID < 1,								// must be valid
-	m_pGraphVertices == NULL,				// must be allocated
+	m_pGraphVertices == nullptr,				// must be allocated
 	m_UsedGraphVertices < 1 ||				// must have at least 1 vertex
 	m_VerticesSortOrder != eVSOVertexID)		// and vertices must be sorted by VertexID ascending
-	return(NULL);
+	return(nullptr);
 
 NodeLo = 0;
 NodeHi = m_UsedGraphVertices - 1;
@@ -763,7 +763,7 @@ CAssembGraph::FinaliseVertices(void)
 uint32_t Idx;
 tsGraphVertex *pVertex;
 tsGraphVertex *pPEVertex;
-if(m_pGraphVertices == NULL ||				// must be allocated
+if(m_pGraphVertices == nullptr ||				// must be allocated
 	m_UsedGraphVertices < 1)				// must have at least 1 vertex
 	return(0);
 if(m_VerticesSortOrder != eVSOSeqID)
@@ -781,7 +781,7 @@ for(Idx = 0; Idx < m_UsedGraphVertices; Idx++,pVertex++)
 	{
 	if(pVertex->PEVertexID != 0)
 		{
-		if((pPEVertex = LocateVertexSeqID((tSeqID)pVertex->PEVertexID))!=NULL)
+		if((pPEVertex = LocateVertexSeqID((tSeqID)pVertex->PEVertexID))!=nullptr)
 			pVertex->PEVertexID = pPEVertex->VertexID;
 		}
 	}
@@ -811,8 +811,8 @@ _ASSERTE( _CrtCheckMemory());
 #endif
 #endif
 
-if(m_pGraphVertices == NULL || m_UsedGraphVertices < 2 ||
-   m_pGraphOutEdges == NULL || m_UsedGraphOutEdges < 1)
+if(m_pGraphVertices == nullptr || m_UsedGraphVertices < 2 ||
+   m_pGraphOutEdges == nullptr || m_UsedGraphOutEdges < 1)
 	return(0);
 if(m_bReduceEdges)
 	ReduceEdges();
@@ -852,14 +852,14 @@ if(!m_bInEdgeSorted)
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Assigning %u incoming edges ...",m_UsedGraphOutEdges);
 	// firstly allocate to hold the incoming edges
 	size_t AllocMem;
-	if(m_pGraphInEdges == NULL)		// initial allocation may be required
+	if(m_pGraphInEdges == nullptr)		// initial allocation may be required
 		{
 		m_UsedGraphInEdges = 0; 
 		m_AllocGraphInEdges = m_UsedGraphOutEdges;	
 		AllocMem = m_AllocGraphInEdges * sizeof(tEdgeID);
 #ifdef _WIN32
 		m_pGraphInEdges = (tEdgeID *) malloc(AllocMem);	
-		if(m_pGraphInEdges == NULL)
+		if(m_pGraphInEdges == nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"FinaliseEdges: graph vertex input edges (%d bytes per edge) allocation of %u edges failed - %s",
 														(int)sizeof(tEdgeID),m_AllocGraphInEdges,strerror(errno));
@@ -867,12 +867,12 @@ if(!m_bInEdgeSorted)
 			return(eBSFerrMem);
 			}
 #else
-		m_pGraphInEdges = (tEdgeID *)mmap(NULL,AllocMem, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+		m_pGraphInEdges = (tEdgeID *)mmap(nullptr,AllocMem, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 		if(m_pGraphInEdges == MAP_FAILED)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"FinaliseEdges: graph vertex input edges (%d bytes per edge) allocation of %u edges failed - %s",
 														(int)sizeof(tEdgeID),m_AllocGraphInEdges,strerror(errno));
-			m_pGraphInEdges = NULL;
+			m_pGraphInEdges = nullptr;
 			Reset();
 			return(eBSFerrMem);
 			}
@@ -890,9 +890,9 @@ if(!m_bInEdgeSorted)
 #else
 			pTmp = (tEdgeID *)mremap(m_pGraphInEdges,m_AllocGraphInEdges * sizeof(tEdgeID),memreq,MREMAP_MAYMOVE);
 			if(pTmp == MAP_FAILED)
-				pTmp = NULL;
+				pTmp = nullptr;
 #endif
-			if(pTmp == NULL)
+			if(pTmp == nullptr)
 				{
 				gDiagnostics.DiagOut(eDLFatal,gszProcName,"FinaliseEdges: graph input edges (%d bytes per edge) re-allocation from %u to %u failed - %s",
 															(int)sizeof(tEdgeID),m_AllocGraphInEdges,m_UsedGraphOutEdges,strerror(errno));
@@ -1107,8 +1107,8 @@ tDiscGraphID CurDiscGraphID;
 tsGraphVertex *pVertex;
 
 // need to have at least 4 vertices and 2 edges ( min for 2 disconnected graph components)
-if(m_pGraphVertices == NULL || m_UsedGraphVertices < 4 ||
-   m_pGraphOutEdges == NULL || m_UsedGraphOutEdges < 2)
+if(m_pGraphVertices == nullptr || m_UsedGraphVertices < 4 ||
+   m_pGraphOutEdges == nullptr || m_UsedGraphOutEdges < 2)
 	return(0);
 
 if(!FinaliseEdges())
@@ -1118,12 +1118,12 @@ ClearEdgeTravFwdRevs();
 ClearDiscCompIDs();
 
 // initial alloc for the identified components as may be required
-if(m_pComponents == NULL)
+if(m_pComponents == nullptr)
 	{
 	size_t AllocMem = (size_t)cInitalComponentsAlloc * sizeof(tsComponent);
 #ifdef _WIN32
 	m_pComponents = (tsComponent *) malloc(AllocMem);	
-	if(m_pComponents == NULL)
+	if(m_pComponents == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"IdentifyDisconnectedSubGraphs: components (%d bytes per entry) allocation of %d entries failed - %s",
 								(int)sizeof(tsComponent),cInitalComponentsAlloc,strerror(errno));
@@ -1131,12 +1131,12 @@ if(m_pComponents == NULL)
 		return(eBSFerrMem);
 		}
 #else
-	m_pComponents = (tsComponent *)mmap(NULL,AllocMem, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+	m_pComponents = (tsComponent *)mmap(nullptr,AllocMem, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pComponents == MAP_FAILED)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"IdentifyDisconnectedSubGraphs: components (%d bytes per entry) allocation of %d entries failed - %s",
 								(int)sizeof(tsComponent),cInitalComponentsAlloc,strerror(errno));
-		m_pComponents = NULL;
+		m_pComponents = nullptr;
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -1188,9 +1188,9 @@ for(VertexIdx = 0; VertexIdx < m_UsedGraphVertices; VertexIdx++, pVertex++)
 		#else
 			pTmp = (tsComponent *)mremap(m_pComponents,m_AllocComponents * sizeof(tsComponent),AllocMem,MREMAP_MAYMOVE);
 			if(pTmp == MAP_FAILED)
-				pTmp = NULL;
+				pTmp = nullptr;
 		#endif
-			if(pTmp == NULL)
+			if(pTmp == nullptr)
 				{
 				gDiagnostics.DiagOut(eDLFatal,gszProcName,"PushTransitStack: graph Transit stack (%d bytes per entry) re-allocation to %zd from %zd failed - %s",
 																	(int)sizeof(tsComponent),m_AllocComponents  + (uint64_t)ReallocComponents,m_AllocComponents,strerror(errno));
@@ -1233,12 +1233,12 @@ int			// stack depth or < 1 if errors
 CAssembGraph::PushTransitStack(tVertID VertexID)
 {
 // initial alloc for the transitative stack as may be required
-if(m_pTransitStack == NULL)
+if(m_pTransitStack == nullptr)
 	{
 	size_t AllocMem = (size_t)cTransitStackAlloc * sizeof(tVertID);
 #ifdef _WIN32
 	m_pTransitStack = (tVertID *) malloc(AllocMem);	
-	if(m_pTransitStack == NULL)
+	if(m_pTransitStack == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"PushTransitStack: Transit stack (%d bytes per transition) allocation of %d entries failed - %s",
 								(int)sizeof(tVertID),cTransitStackAlloc,strerror(errno));
@@ -1246,12 +1246,12 @@ if(m_pTransitStack == NULL)
 		return(eBSFerrMem);
 		}
 #else
-	m_pTransitStack = (tVertID *)mmap(NULL,AllocMem, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+	m_pTransitStack = (tVertID *)mmap(nullptr,AllocMem, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pTransitStack == MAP_FAILED)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"IdentifyDisconnectedSubGraphs: Transit stack (%d bytes per transition) allocation of %d entries failed - %s",
 								(int)sizeof(tVertID),cTransitStackAlloc,strerror(errno));
-		m_pTransitStack = NULL;
+		m_pTransitStack = nullptr;
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -1273,9 +1273,9 @@ else
 	#else
 		pTmp = (tVertID *)mremap(m_pTransitStack,m_AllocTransitStack * sizeof(tVertID),AllocMem,MREMAP_MAYMOVE);
 		if(pTmp == MAP_FAILED)
-			pTmp = NULL;
+			pTmp = nullptr;
 	#endif
-		if(pTmp == NULL)
+		if(pTmp == nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"PushTransitStack: graph Transit stack (%d bytes per entry) re-allocation to %zd from %zd failed - %s",
 																(int)sizeof(tVertID),m_AllocTransitStack  + (uint64_t)ReallocTransitStack,m_AllocTransitStack,strerror(errno));
@@ -1666,7 +1666,7 @@ uint32_t Num2Remove;
 uint32_t NumRemoved;
 
 
-if(m_pGraphOutEdges == NULL || m_UsedGraphOutEdges < 2)	// any edges to be reduced?
+if(m_pGraphOutEdges == nullptr || m_UsedGraphOutEdges < 2)	// any edges to be reduced?
 	return(0);
 
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Reduce %u edges starting ...",m_UsedGraphOutEdges);
@@ -1730,7 +1730,7 @@ return(NumRemoved);
 
 #ifdef USETHISCODE
 
-tsGraphOutEdge *			// ptr to matching SeqID1.DnSeqID, or NULL if unable to locate				
+tsGraphOutEdge *			// ptr to matching SeqID1.DnSeqID, or nullptr if unable to locate				
 CAssembGraph::LocateSeqIDDnSeqID(tSeqID SeqID,			// match this SeqID1
 				  tSeqID DnSeqID)				// with this DnSeqID
 {
@@ -1740,7 +1740,7 @@ uint32_t TargPsn;
 uint32_t NodeLo;				
 uint32_t NodeHi;				
 if(m_NodeSortMode != eNSMSeqIDDnSeqID)		// nodes must be sorted by SeqID1.DnSeqID ascending
-	return(NULL);
+	return(nullptr);
 
 NodeLo = 0;
 NodeHi = m_UsedGraphNodes - 1;
@@ -1780,7 +1780,7 @@ while(NodeHi >= NodeLo);
 return(0);	// unable to locate any instance of SeqID1.DnSeqID
 }
 
-tsGraphOutEdge *			// ptr to matching DnSeqID.SeqID1, or NULL if unable to locate				
+tsGraphOutEdge *			// ptr to matching DnSeqID.SeqID1, or nullptr if unable to locate				
 CAssembGraph::LocateDnSeqIDSeq(tSeqID DnSeqID,	// match this DnSeqID
 				  tSeqID SeqID)				// with this SeqID
 {
@@ -1790,7 +1790,7 @@ uint32_t TargPsn;
 uint32_t NodeLo;				
 uint32_t NodeHi;				
 if(m_NodeSortMode != eNSMDnSeqIDSeqID)		// nodes must be sorted by DnSeqID.SeqID1 ascending
-	return(NULL);
+	return(nullptr);
 
 NodeLo = 0;
 NodeHi = m_UsedGraphNodes - 1;

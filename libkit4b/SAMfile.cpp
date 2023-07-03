@@ -740,8 +740,8 @@ while((LineLen = GetNxtSAMline(pszLine)) > 0)
 	delete pSeqBases;
 	return(eBSFFastaDescr);				// descriptor is ready to be returned
 	}
-delete pszLine;
-delete pSeqBases;
+delete []pszLine;
+delete []pSeqBases;
 return(LineLen);
 }
 

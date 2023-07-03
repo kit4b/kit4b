@@ -65,13 +65,13 @@ Process(etPMode PMode,				// processing mode
 int mergeoverlaps(int argc, char* argv[])
 {
 // determine my process name
-_splitpath(argv[0],NULL,NULL,gszProcName,NULL);
+_splitpath(argv[0],nullptr,nullptr,gszProcName,nullptr);
 #else
 int
 mergeoverlaps(int argc, char** argv)
 {
 // determine my process name
-CUtility::splitpath((char *)argv[0],NULL,gszProcName);
+CUtility::splitpath((char *)argv[0],nullptr,gszProcName);
 #endif
 int iScreenLogLevel;		// level of file diagnostics
 int iFileLogLevel;			// level of file diagnostics
@@ -216,8 +216,8 @@ if (!argerrors)
 
 	for(NumInPE5Files=Idx=0;NumInPE5Files < cMaxInFileSpecs && Idx < inpe5files->count; Idx++)
 		{
-		pszInPE5Files[Idx] = NULL;
-		if(pszInPE5Files[NumInPE5Files] == NULL)
+		pszInPE5Files[Idx] = nullptr;
+		if(pszInPE5Files[NumInPE5Files] == nullptr)
 			pszInPE5Files[NumInPE5Files] = new char [_MAX_PATH];
 		strncpy(pszInPE5Files[NumInPE5Files],inpe5files->filename[Idx],_MAX_PATH);
 		pszInPE5Files[NumInPE5Files][_MAX_PATH-1] = '\0';
@@ -235,8 +235,8 @@ if (!argerrors)
 	NumInPE3Files = 0;
 	for(Idx=0;NumInPE3Files < cMaxInFileSpecs && Idx < inpe3files->count; Idx++)
 		{
-		pszInPE3Files[Idx] = NULL;
-		if(pszInPE3Files[NumInPE3Files] == NULL)
+		pszInPE3Files[Idx] = nullptr;
+		if(pszInPE3Files[NumInPE3Files] == nullptr)
 			pszInPE3Files[NumInPE3Files] = new char [_MAX_PATH];
 		strncpy(pszInPE3Files[NumInPE3Files],inpe3files->filename[Idx],_MAX_PATH);
 		pszInPE3Files[NumInPE3Files][_MAX_PATH-1] = '\0';
@@ -376,8 +376,8 @@ Process(etPMode PMode,				// processing mode
 		char *pszMergeOutFile)		// output file
 {
 int Rslt;
-CMergeReadPairs *pMergeReads = NULL;
-if((pMergeReads = new CMergeReadPairs()) == NULL)
+CMergeReadPairs *pMergeReads = nullptr;
+if((pMergeReads = new CMergeReadPairs()) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Unable to instantiate CMergeReads");
 	return(-1);

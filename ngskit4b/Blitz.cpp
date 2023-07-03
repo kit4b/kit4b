@@ -72,13 +72,13 @@ Process(etBLZPMode PMode,				// processing mode
 int Blitz(int argc, char* argv[])
 {
 // determine my process name
-_splitpath(argv[0],NULL,NULL,gszProcName,NULL);
+_splitpath(argv[0],nullptr,nullptr,gszProcName,nullptr);
 #else
 int
 Blitz(int argc, char** argv)
 {
 // determine my process name
-CUtility::splitpath((char *)argv[0],NULL,gszProcName);
+CUtility::splitpath((char *)argv[0],nullptr,gszProcName);
 #endif
 
 int iFileLogLevel;			// level of file diagnostics
@@ -680,7 +680,7 @@ Process(etBLZPMode PMode,				// processing mode
 	int Rslt;
 	CBlitz* pBlitzer; 
 
-	if ((pBlitzer = new CBlitz) == NULL)
+	if ((pBlitzer = new CBlitz) == nullptr)
 	{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Fatal: Unable to instantiate CAligner");
 		return(eBSFerrObj);

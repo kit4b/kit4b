@@ -37,6 +37,7 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
+    <EnableASAN>false</EnableASAN>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -185,6 +186,8 @@
     <ClInclude Include="AssembGraph.h" />
     <ClInclude Include="Benchmarker.h" />
     <ClInclude Include="CallHaplotypes.h" />
+    <ClInclude Include="CDGTvQTLs.h" />
+    <ClInclude Include="CGenMAFAlgn.h" />
     <ClInclude Include="CGenMLdatasets.h" />
     <ClInclude Include="rnade.h" />
     <ClInclude Include="rnaexpr.h" />
@@ -198,7 +201,7 @@
     <ClInclude Include="LocHap2Bed.h" />
     <ClInclude Include="ngskit4b.h" />
     <ClInclude Include="kit4bdna.h" />
-    <ClInclude Include="genhyperconserved.h" />
+    <ClInclude Include="genhypers.h" />
     <ClInclude Include="KAligner.h" />
     <ClInclude Include="deNovoAssemb.h" />
     <ClInclude Include="FastaNxx.h" />
@@ -228,6 +231,8 @@
     <ClCompile Include="Assemble.cpp" />
     <ClCompile Include="Benchmarker.cpp" />
     <ClCompile Include="CallHaplotypes.cpp" />
+    <ClCompile Include="CDGTvQTLs.cpp" />
+    <ClCompile Include="CGenMAFAlgn.cpp" />
     <ClCompile Include="CGenMLdatasets.cpp" />
     <ClCompile Include="rnaexpr.cpp" />
     <ClCompile Include="CWIGutils.cpp" />
@@ -248,7 +253,7 @@
     <ClCompile Include="genbioseq.cpp" />
     <ClCompile Include="gengoassoc.cpp" />
     <ClCompile Include="gengoterms.cpp" />
-    <ClCompile Include="genhyperconserved.cpp" />
+    <ClCompile Include="genhypers.cpp" />
     <ClCompile Include="goassoc.cpp" />
     <ClCompile Include="KAligner.cpp" />
     <ClCompile Include="KAlignerCL.cpp" />

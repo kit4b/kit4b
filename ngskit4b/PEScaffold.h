@@ -110,11 +110,11 @@ class CPEScaffold
 	int										// returned next CurIdx to use on a subsequent call to IterPE1s (0 if all scaffords have been iterated)
 		IterPE1s(int CurIdx,				// iterates, in PE1ContigID.PE2ContigID ascending order, all tsPEScaffolds, set to 0 for 1st scaffold
 				int ContigID,				// iterate for this PE1 contig
-			tsPEScaffold **ppPEScaffold);	// returned scafford or NULL if all scaffords have been iterated
+			tsPEScaffold **ppPEScaffold);	// returned scafford or nullptr if all scaffords have been iterated
 	int										// returned next CurIdx to use on a subsequent call to IterPE2s (0 if all scaffords have been iterated)
 		IterPE2s(int CurIdx,				// iterates, in PE2ContigID.PE1ContigID ascending order, all tsPEScaffolds
 				int ContigID,				// iterate for this PE2 contig
-				tsPEScaffold **ppPEScaffold); // returned scafford or NULL if all scaffords have been iterated
+				tsPEScaffold **ppPEScaffold); // returned scafford or nullptr if all scaffords have been iterated
 
 
 	int	ReportCorelationships(char *pszOutFile); // report corelationships to file

@@ -118,13 +118,13 @@ bool gbActivity;						// used to determine if activity messages via printf's can
 int gendeseq(int argc, char* argv[])
 {
 // determine my process name
-_splitpath(argv[0],NULL,NULL,gszProcName,NULL);
+_splitpath(argv[0],nullptr,nullptr,gszProcName,nullptr);
 #else
 int
 gendeseq(int argc, char** argv)
 {
 // determine my process name
-CUtility::splitpath((char *)argv[0],NULL,gszProcName);
+CUtility::splitpath((char *)argv[0],nullptr,gszProcName);
 #endif
 int iScreenLogLevel;		// level of file diagnostics
 int iFileLogLevel;			// level of file diagnostics
@@ -400,8 +400,8 @@ if (!argerrors)
 
 	for(NumInputControlFiles=Idx=0;NumInputControlFiles < cMaxInFileSpecs && Idx < incontrolfiles->count; Idx++)
 		{
-		pszInControlFileSpecs[Idx] = NULL;
-		if(pszInControlFileSpecs[NumInputControlFiles] == NULL)
+		pszInControlFileSpecs[Idx] = nullptr;
+		if(pszInControlFileSpecs[NumInputControlFiles] == nullptr)
 			pszInControlFileSpecs[NumInputControlFiles] = new char [_MAX_PATH];
 		strncpy(pszInControlFileSpecs[NumInputControlFiles],incontrolfiles->filename[Idx],_MAX_PATH);
 		pszInControlFileSpecs[NumInputControlFiles][_MAX_PATH-1] = '\0';
@@ -420,8 +420,8 @@ if (!argerrors)
 		{
 		for(NumInputExprFiles=Idx=0;NumInputExprFiles < cMaxInFileSpecs && Idx < inexperfiles->count; Idx++)
 			{
-			pszInExprFileSpecs[Idx] = NULL;
-			if(pszInExprFileSpecs[NumInputExprFiles] == NULL)
+			pszInExprFileSpecs[Idx] = nullptr;
+			if(pszInExprFileSpecs[NumInputExprFiles] == nullptr)
 				pszInExprFileSpecs[NumInputExprFiles] = new char [_MAX_PATH];
 			strncpy(pszInExprFileSpecs[NumInputExprFiles],inexperfiles->filename[Idx],_MAX_PATH);
 			pszInExprFileSpecs[NumInputExprFiles][_MAX_PATH-1] = '\0';
@@ -438,7 +438,7 @@ if (!argerrors)
 		}
 	else
 		{
-		pszInExprFileSpecs[0] = NULL;
+		pszInExprFileSpecs[0] = nullptr;
 		NumInputExprFiles = 0;
 		}
 	strncpy(szOutfile,outfile->filename[0],_MAX_PATH);
@@ -575,7 +575,7 @@ uint32_t m_NumExperimentSets;					// number of experiment datasets (1 per input 
 uint32_t m_NumControlSets;					// number of control datasets (1 per input file)
 char *m_pSampleSetNames;					// array of sampleset names
 
-tsFeatRPKM *m_pFeatRPKMs = NULL;
+tsFeatRPKM *m_pFeatRPKMs = nullptr;
 int m_AllocdFeatRPMs = 0;
 int m_NumFeatRPMs = 0;
 
@@ -597,20 +597,20 @@ if(m_hOutDESeqFile != -1)
 	close(m_hOutDESeqFile);
 	m_hOutDESeqFile = -1;
 	}
-if(m_pFeatRPKMs != NULL)
+if(m_pFeatRPKMs != nullptr)
 	{
 	free(m_pFeatRPKMs);
-	m_pFeatRPKMs = NULL;
+	m_pFeatRPKMs = nullptr;
 	}
-if(m_pWrtBuff != NULL)
+if(m_pWrtBuff != nullptr)
 	{
 	delete m_pWrtBuff;
-	m_pWrtBuff = NULL;
+	m_pWrtBuff = nullptr;
 	}
-if(m_pSampleSetNames != NULL)
+if(m_pSampleSetNames != nullptr)
 	{
 	delete m_pSampleSetNames;
-	m_pSampleSetNames = NULL;
+	m_pSampleSetNames = nullptr;
 	}
 m_AllocdFeatRPMs = 0;
 m_NumFeatRPMs = 0;
@@ -623,9 +623,9 @@ m_NormCntsScale = cNormCntsScale;
 void
 GDEInit(void)
 {
-m_pFeatRPKMs = NULL;
-m_pWrtBuff = NULL;
-m_pSampleSetNames = NULL;
+m_pFeatRPKMs = nullptr;
+m_pWrtBuff = nullptr;
+m_pSampleSetNames = nullptr;
 m_hOutDESeqFile = -1;
 GDEReset();
 }
@@ -662,7 +662,7 @@ m_NumExperimentSets = 0;
 m_NumControlSets = 0;
 
 
-if((m_pSampleSetNames = new char [cMaxSampleSets * cMaxSamplesetNameLen]) == NULL) // array of sampleset names
+if((m_pSampleSetNames = new char [cMaxSampleSets * cMaxSamplesetNameLen]) == nullptr) // array of sampleset names
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory for samplenames");
 	GDEReset();
@@ -839,7 +839,7 @@ int NumUnderCnts;
 
 double RPKM;
 CCSVFile *m_pCSVFile;					// used for processing input CSV file
-if((m_pCSVFile = new CCSVFile)==NULL)
+if((m_pCSVFile = new CCSVFile)==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to instantiate CCSVFile");
 	GDEReset();
@@ -953,10 +953,10 @@ while((Rslt=m_pCSVFile->NextLine()) > 0)	// onto next line containing fields
 	if((Rslt=AddFeatureRPKM(SampleSetID,FeatID,FeatLen,pszFeatName,ExonIntronCnts,RPKM))!=eBSFSuccess)
 		{
 		delete m_pCSVFile;
-		if(m_pFeatRPKMs == NULL)
+		if(m_pFeatRPKMs == nullptr)
 			{
 			free(m_pFeatRPKMs);
-			m_pFeatRPKMs = NULL;
+			m_pFeatRPKMs = nullptr;
 			}
 		return((teBSFrsltCodes)Rslt);
 		}
@@ -985,10 +985,10 @@ size_t memreq;
 // when all features added then can do a sort on feature name plus experiment, then iterate and output the DESeq file
 tsFeatRPKM *pFeatRPKM;
 
-if(m_pFeatRPKMs == NULL)
+if(m_pFeatRPKMs == nullptr)
 	{
 	memreq = sizeof(tsFeatRPKM) * cAllocFeatRPKMs;
-	if((m_pFeatRPKMs = (tsFeatRPKM *)malloc(memreq))==NULL)
+	if((m_pFeatRPKMs = (tsFeatRPKM *)malloc(memreq))==nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddFeatureRPKM: Memory allocation of %zd bytes - %s",(int64_t)memreq,strerror(errno));
 		GDEReset();
@@ -1002,7 +1002,7 @@ else
 	if(m_NumFeatRPMs == m_AllocdFeatRPMs)
 		{
 		memreq = sizeof(tsFeatRPKM) * (m_AllocdFeatRPMs + cAllocFeatRPKMs);
-		if((pFeatRPKM = (tsFeatRPKM *)realloc(m_pFeatRPKMs,memreq))==NULL)
+		if((pFeatRPKM = (tsFeatRPKM *)realloc(m_pFeatRPKMs,memreq))==nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddFeatureRPKM: Memory allocation of %zd bytes - %s",(int64_t)memreq,strerror(errno));
 			GDEReset();
@@ -1044,7 +1044,7 @@ uint32_t NumFeaturesDEd;
 uint32_t FeatLen;
 int Idx;
 
-if(m_pFeatRPKMs == NULL)
+if(m_pFeatRPKMs == nullptr)
 	return(-1);
 if(m_NumFeatRPMs > 1)
 	qsort(m_pFeatRPKMs,m_NumFeatRPMs,sizeof(tsFeatRPKM),SortFeatRPKMs);
@@ -1052,7 +1052,7 @@ if(m_NumFeatRPMs > 1)
 
 pFeatRPKM = m_pFeatRPKMs;
 pMrkFeatRPKM = pFeatRPKM;
-pszCurFeature = NULL;
+pszCurFeature = nullptr;
 TotExonIntronCnts = 0;
 TotRPKM = 0;
 NumMinExonIntronCnts = 0;
@@ -1129,16 +1129,16 @@ if(bFeatLens)
 for(ExpIdx = 0; ExpIdx < m_NumSampleSets; ExpIdx++)
 	BuffIdx += sprintf(&szBuff[BuffIdx],"\t%s",&m_pSampleSetNames[ExpIdx * cMaxSamplesetNameLen]);
 pFeatRPKM = m_pFeatRPKMs;
-pszCurFeature = NULL;
+pszCurFeature = nullptr;
 NumFeaturesDEd = 0;
 for(int Idx = 0; Idx < m_NumFeatRPMs; Idx++,pFeatRPKM++)
 	{
 	if(pFeatRPKM->FeatID == 0)			// 0 if feature has been filtered out because of insufficient counts
 		continue;
 
-	if(pszCurFeature == NULL || stricmp(pszCurFeature,pFeatRPKM->szFeatName))
+	if(pszCurFeature == nullptr || stricmp(pszCurFeature,pFeatRPKM->szFeatName))
 		{
-		if(pszCurFeature != NULL)
+		if(pszCurFeature != nullptr)
 			{
 			BuffIdx += sprintf(&szBuff[BuffIdx],"\n%s",pszCurFeature);
 			if(bFeatLens)
@@ -1165,7 +1165,7 @@ for(int Idx = 0; Idx < m_NumFeatRPMs; Idx++,pFeatRPKM++)
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"WriteoutDESeq: Check - %s - as scaled counts are rather abnormal at %d",pFeatRPKM->szFeatName,pFeatRPKM->RPKM);
 	}
 
-if(pszCurFeature != NULL && pszCurFeature[0] != '\0')
+if(pszCurFeature != nullptr && pszCurFeature[0] != '\0')
 	{	
 	BuffIdx += sprintf(&szBuff[BuffIdx],"\n%s",pszCurFeature);
 	if(bFeatLens)

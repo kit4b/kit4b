@@ -56,13 +56,13 @@ int ValidateFastaFile(char *pszFastaFile,
 int genbioseq(int argc, char* argv[])
 {
 	// determine my process name
-	_splitpath(argv[0], NULL, NULL, gszProcName, NULL);
+	_splitpath(argv[0], nullptr, nullptr, gszProcName, nullptr);
 #else
 int
 genbioseq(int argc, char** argv)
 {
 	// determine my process name
-	CUtility::splitpath((char*)argv[0], NULL, gszProcName);
+	CUtility::splitpath((char*)argv[0], nullptr, gszProcName);
 #endif
 int iScreenLogLevel;		// level of screen diagnostics
 int iFileLogLevel;			// level of file diagnostics
@@ -85,8 +85,8 @@ struct arg_lit  *version = arg_lit0("v","version,ver",			"print version informat
 struct arg_int *FileLogLevel=arg_int0("f", "FileLogLevel",		"<int>","Level of diagnostics written to screen and logfile 0=fatal,1=errors,2=info,3=diagnostics,4=debug");
 struct arg_file *LogFile = arg_file0("F","log","<file>",		"diagnostics log file");
 
-struct arg_file *InFile = arg_file1("i",NULL,"<file>",			"input from multifasta files");
-struct arg_file *OutFile = arg_file1("o",NULL,"<file>",			"output as bioseq file");
+struct arg_file *InFile = arg_file1("i",nullptr,"<file>",			"input from multifasta files");
+struct arg_file *OutFile = arg_file1("o",nullptr,"<file>",			"output as bioseq file");
 struct arg_str *RefSpecies = arg_str0("r","ref","<string>",		"reference species ");
 struct arg_str *Descr = arg_str0("d","descr","<string>",		"full description");
 struct arg_str *Title = arg_str0("t","title","<string>",		"short title");
@@ -253,7 +253,7 @@ unsigned int TestBuffSize;
 int FastaSeqLen;
 int BioSeqLen;
 
-if((pFasta = new CFasta)==NULL)
+if((pFasta = new CFasta)==nullptr)
 	return(-1);
 
 if((Rslt=pFasta->Open(pszFastaFile,true))!=eBSFSuccess)
@@ -264,7 +264,7 @@ if((Rslt=pFasta->Open(pszFastaFile,true))!=eBSFSuccess)
 	return(Rslt);
 	}
 
-if((pSeqFile = new CBioSeqFile)==NULL)
+if((pSeqFile = new CBioSeqFile)==nullptr)
 	{
 	delete pFasta;
 	return(eBSFerrObj);
@@ -290,7 +290,7 @@ if((Rslt=pSeqFile->Exists(EntryID))!= eBSFSuccess)
 	}
 
 
-if((pFastaSeqBuff = new uint8_t [cGBSMaxAllocBuffChunk])==NULL)
+if((pFastaSeqBuff = new uint8_t [cGBSMaxAllocBuffChunk])==nullptr)
 	{
 	pFasta->Close();
 	pSeqFile->Close();
@@ -299,7 +299,7 @@ if((pFastaSeqBuff = new uint8_t [cGBSMaxAllocBuffChunk])==NULL)
 	return(eBSFerrMem);
 	}
 
-if((pBioSeqBuff = new uint8_t [cGBSMaxAllocBuffChunk])==NULL)
+if((pBioSeqBuff = new uint8_t [cGBSMaxAllocBuffChunk])==nullptr)
 	{
 	delete pFastaSeqBuff;
 	pFasta->Close();
@@ -340,8 +340,8 @@ while((FastaSeqLen = pFasta->ReadSequence(pFastaSeqBuff,TestBuffSize,true)) > eB
 	if(!TestBuffSize)
 		TestBuffSize = 1;
 	}
-delete pFastaSeqBuff;
-delete pBioSeqBuff;
+delete []pFastaSeqBuff;
+delete []pBioSeqBuff;
 pFasta->Close();
 pSeqFile->Close();
 delete pFasta;
@@ -369,7 +369,7 @@ int Rslt;
 int SeqID;
 bool bCapsSoftMask;
 
-if((pSeqBuff = new uint8_t [cGBSMaxAllocBuffChunk]) == NULL)
+if((pSeqBuff = new uint8_t [cGBSMaxAllocBuffChunk]) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"ProcessFastaFile:- Unable to allocate memory (%d bytes) for sequence buffer", cGBSMaxAllocBuffChunk);
 	return(false);
@@ -441,7 +441,7 @@ if(Rslt < eBSFSuccess)
 	}
 if(bEntryCreated)
 	pSeqFile->SealEntry();
-delete pSeqBuff;
+delete []pSeqBuff;
 return(true);
 }
 
@@ -464,7 +464,7 @@ if (glob.Add(pszSrcDirPath) >= SG_SUCCESS)
 	for (int n = 0; n < glob.FileCount(); ++n)
 		{
 		gDiagnostics.DiagOut(eDLInfo,gszProcName,"Will process in this order: %d '%s", n+1,glob.File(n));
-		if(!bCreate && CUtility::ChkTargDepend(NULL,0,pszDestBioseqFile,glob.File(n),NULL)!= 0)
+		if(!bCreate && CUtility::ChkTargDepend(nullptr,0,pszDestBioseqFile,glob.File(n),nullptr)!= 0)
 			bCreate = true;
 		}
 	}
@@ -480,7 +480,7 @@ if(!bCreate)
 	}
 
 CBioSeqFile *pSeqFile = new CBioSeqFile;
-if(pSeqFile == NULL)
+if(pSeqFile == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"CreateBioseqFastaFile: Unable to instantiate CBioSeqFile");
 	return(eBSFerrObj);

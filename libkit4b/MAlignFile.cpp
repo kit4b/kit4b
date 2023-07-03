@@ -265,6 +265,8 @@ if(m_pSegCache != NULL)
 	}
 
 m_NumFiltSpecies = 0;
+m_AlignedRefSpeciesBlocks = 0;
+m_AligneNondRefSpeciesBlocks = 0;
 memset(m_FiltSpecies,0,sizeof(m_FiltSpecies));
 
 memset(m_ChromHshTbl,0,sizeof(m_ChromHshTbl));
@@ -308,18 +310,17 @@ int
 CMAlignFile::Close(bool bWrtDirHdr) // if true (default) then write out block directory 
 {
 int Rslt;
-int WrtLen;
+int64_t WrtLen;
 int Idx;
 int NumAlignBlocks;
 tsBlockDirEl *pDirEl;
 tsBlockDirEl *pPrvDirEl;
 
-
+Rslt = eBSFSuccess;
 if(m_hFile != -1)
 	{
 	if(bWrtDirHdr && m_AccessMode == eMAPOCreate)
 		{
-
 		if(m_pDirEls != NULL && m_FileHdr.NumAlignBlocks)
 			{
 			pPrvDirEl = m_pDirEls;
@@ -360,14 +361,19 @@ if(m_hFile != -1)
 					}
 				}
 
-			WrtLen = m_FileHdr.NumAlignBlocks * sizeof(tsBlockDirEl);	
-			if(_lseeki64(m_hFile,m_FileHdr.FileLen,SEEK_SET) != m_FileHdr.FileLen ||
-				write(m_hFile,m_pDirEls,WrtLen)!=WrtLen)
+			WrtLen = (int64_t)m_FileHdr.NumAlignBlocks * sizeof(tsBlockDirEl);	
+			if (!CUtility::RetryWrites(m_hFile, m_pDirEls, WrtLen))
 				{
-				close(m_hFile);
-				m_hFile = -1;
+				if(m_hFile != -1)
+					{
+					close(m_hFile);
+					m_hFile = -1;
+					}
+				bWrtDirHdr = false;
+				gDiagnostics.DiagOut(eDLFatal, gszProcName, "CMAlignFile::Close() failed writing block directory elements totaling size of %zd at file offset %zd", WrtLen, m_FileHdr.FileLen);
 				return(eBSFerrFileAccess);
 				}
+
 			m_FileHdr.DirElOfs = m_FileHdr.FileLen;
 			m_FileHdr.FileLen += WrtLen;
 			}
@@ -389,14 +395,19 @@ if(m_hFile != -1)
 					}
 				}
 
-			WrtLen = m_FileHdr.NumChroms * sizeof(tsChromName);	
-			if(_lseeki64(m_hFile,m_FileHdr.FileLen,SEEK_SET) != m_FileHdr.FileLen ||
-				write(m_hFile,m_pChromNames,WrtLen)!=WrtLen)
+			WrtLen = (int64_t)m_FileHdr.NumChroms * sizeof(tsChromName);
+			if(!CUtility::RetryWrites(m_hFile, m_pChromNames, WrtLen))
 				{
-				close(m_hFile);
-				m_hFile = -1;
+				if (m_hFile != -1)
+					{
+					close(m_hFile);
+					m_hFile = -1;
+					}
+				bWrtDirHdr = false;
+				gDiagnostics.DiagOut(eDLFatal, gszProcName, "CMAlignFile::Close() failed writing chrom directory elements totaling size of %zd at file offset %zd", WrtLen, m_FileHdr.FileLen);
 				return(eBSFerrFileAccess);
 				}
+
 			m_FileHdr.ChromNamesOfs = m_FileHdr.FileLen;
 			m_FileHdr.FileLen += WrtLen;
 			}
@@ -407,11 +418,23 @@ if(m_hFile != -1)
 			}
 
 		if((Rslt=Hdr2Disk())!= eBSFSuccess)
+			{
+			if (m_hFile != -1)
+				{
+				close(m_hFile);
+				m_hFile = -1;
+				}
+			bWrtDirHdr = false;
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "CMAlignFile::Close() final phase of commiting file header failed");
 			return(Rslt);
+			}
 		}
-	close(m_hFile);
-	m_hFile = -1;
-
+	if (m_hFile != -1)
+		{
+		close(m_hFile);
+		m_hFile = -1;
+		}
+	bWrtDirHdr = false;
 	}
 m_szFile[0] = '\0';
 if(m_pDirEls)
@@ -429,35 +452,7 @@ if(m_pDirEls)
 
 InitHdr();
 m_AccessMode = eMAPOReadOnly;
-return(eBSFSuccess);
-}
-
-// ChunkedWrite
-// Seeks to specified 64bit file offset and writes to disk as chunks of no more than INT_MAX/16
-teBSFrsltCodes
-CMAlignFile::ChunkedWrite(int64_t WrtOfs,uint8_t *pData,int64_t WrtLen)
-{
-int BlockLen;
-if(_lseeki64(m_hFile,WrtOfs,SEEK_SET) != WrtOfs)
-	{
-	AddErrMsg("CMAlignFile::ChunkedWrite","Unable to seek to %zd on file %s - error %s",WrtOfs,m_szFile,strerror(errno));
-	Reset(false);
-	return(eBSFerrFileAccess);
-	}
-
-while(WrtLen)
-	{
-	BlockLen = WrtLen > (int64_t)(INT_MAX/16) ? (INT_MAX/16) : (int)WrtLen;
-	WrtLen -= BlockLen;
-	if(write(m_hFile,pData,BlockLen)!=BlockLen)
-		{
-		AddErrMsg("CMAlignFile::ChunkedWrite","Unable to write to disk on file %s - error %s",m_szFile,strerror(errno));
-		Reset(false);
-		return(eBSFerrFileAccess);
-		}
-	pData += BlockLen;
-	}
-return(eBSFSuccess);
+return(Rslt);
 }
 
 // ChunkedRead
@@ -616,7 +611,7 @@ else // else opening existing file
 	// ensure contains at least one alignment block
 	if(m_FileHdr.NumAlignBlocks < 1)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Alignment file opened but contains no alignment blocks");
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Open: Alignment file opened but contains no alignment blocks");
 		Close();
 		return(eBSFerrNumAlignBlks);
 		}
@@ -633,7 +628,7 @@ else // else opening existing file
 	m_pDirEls = (tsBlockDirEl *)mmap(NULL,(size_t)m_AllocdDirElsMem, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pDirEls == MAP_FAILED)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %zd bytes through mmap()  failed - %s",(int64_t)m_AllocdDirElsMem,strerror(errno));
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Open: Memory allocation of %zd bytes through mmap()  failed - %s",(int64_t)m_AllocdDirElsMem,strerror(errno));
 		m_pDirEls = NULL;
 		}
 #endif
@@ -956,8 +951,14 @@ if(m_pAlignBlock == NULL)
 else
 	if(m_BlockStarted)			// write out any previously existing block
 		{
-		if(!m_AlignBlockSeqs)		// if block started but no associated sequences then reuse this block
+		if(!m_AlignBlockSeqs || m_pAlignBlock->RefSpeciesID == 0)		// if block started but no associated sequences then reuse this block
 			{								// including the block identifier
+			if(m_pAlignBlock->RefSpeciesID == 0)	// did block contain expected reference species sequence?
+				{
+				m_AligneNondRefSpeciesBlocks++;		// very few, if any, of the multialignment blocks shouldn't be missing the user specified reference species
+				if (m_AligneNondRefSpeciesBlocks <= 5)
+					gDiagnostics.DiagOut(eDLWarn, gszProcName, "StartAlignBlock: Check that reference species '%s' specified is same as the reference species used in the multialignment processimg", GetRefSpeciesName());;
+				}
 			m_AlignBlockID = 0;
 			m_BlockStarted = false;
 			m_FileHdr.NumAlignBlocks--;		// block is being sloughed!
@@ -965,6 +966,8 @@ else
 			}
 		else
 			{
+			m_AlignedRefSpeciesBlocks++;
+			m_pAlignBlock->RefSpeciesID = 0;	// set to reference species identifier if RefSpecies one of the species having an alignment sequences in next block to be parsed
 			Rslt = WriteBlock(m_AlignBlockID,m_pAlignBlock);
 			if(Rslt != eBSFSuccess)
 				{
@@ -974,6 +977,7 @@ else
 			}
 		}
 
+m_pAlignBlock->RefSpeciesID = 0;
 m_pAlignBlock->AlgnScore = Score;
 m_pAlignBlock->BlockLenWithSpecies = sizeof(tsAlignBlock);
 m_pAlignBlock->NumSpecies = 0;
@@ -1334,7 +1338,7 @@ if(IncInDelLen >= 0x07fff)	// need to use dynamically allocated buffer?
 	pSeq = new uint8_t [IncInDelLen+1];
 	CSeqTrans::MapAscii2Sense(pszSeq,IncInDelLen,pSeq,RptMskUpperCase);
 	Rslt = AddAlignSeqBases(pszSpeciesName,pszChromName,ChromLen,ChromOfs,IncInDelLen,Strand,pSeq,ConfScore);
-	delete pSeq;
+	delete []pSeq;
 	}
 else
 	{
@@ -1345,7 +1349,7 @@ else
 return(Rslt);
 }
 
-int 
+int		// returns reference species if associated with alignment sequence, 0 if not associated but no errors, < 0 if errors
 CMAlignFile::AddAlignSeqBases(char *pszSpeciesName,	// species being added to alignment
 						 char *pszChromName,	// alignment is on species chromosome
 						 int ChromLen,			// chromosome length or 0 if unknown
@@ -1418,6 +1422,7 @@ else
 
 if(SpeciesID == m_FileHdr.RefSpeciesID)
 	{
+	m_pAlignBlock->RefSpeciesID = SpeciesID;
 	m_CurRefChromID = ChromID;
 	m_CurRefChromOfs = ChromOfs;
 	m_CurRefChromXInDelLen = XInDelLen;
@@ -2245,7 +2250,7 @@ if((Rslt=Open(pszMAF))!=eBSFSuccess)
 // get the reference species
 pszRefSpecies = GetRefSpeciesName();
 
-// ensure ref species is represented in alignment file
+// ensure ref species was actually represented in alignment file
 if((Rslt = RefSpeciesID = LocateSpeciesID(pszRefSpecies))<= eBSFSuccess)
 	{
 	AddErrMsg("CMAlignFile::MultiAlignAll2DataPts","Unable to locate ref species %s in multialignment file %s\n",pszRefSpecies,pszMAF);
@@ -2461,9 +2466,9 @@ PrvBlockID = pDirEl->BlockID;
 FlushSegs2Dataset(pDataPoints);
 
 if(pRef2Struct != NULL)
-	delete pRef2Struct;
+	delete []pRef2Struct;
 if(pRel2Struct != NULL)
-	delete pRel2Struct;
+	delete []pRel2Struct;
 if(pDataPoints != NULL)
 	{
 	pDataPoints->Close(true);

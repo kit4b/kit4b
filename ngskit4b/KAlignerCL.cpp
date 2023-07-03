@@ -111,13 +111,13 @@ KProcess(etPMode PMode,					// processing mode
 int kalignercl(int argc, char* argv[])
 {
 // determine my process name
-_splitpath(argv[0],NULL,NULL,gszProcName,NULL);
+_splitpath(argv[0],nullptr,nullptr,gszProcName,nullptr);
 #else
 int
 kalignercl(int argc, char** argv)
 {
 // determine my process name
-CUtility::splitpath((char *)argv[0],NULL,gszProcName);
+CUtility::splitpath((char *)argv[0],nullptr,gszProcName);
 #endif
 
 int iFileLogLevel;			// level of file diagnostics
@@ -599,8 +599,8 @@ if (!argerrors)
 
 	for(NumPE1InputFiles=Idx=0;NumPE1InputFiles < cMaxInFileSpecs && Idx < pe1inputfiles->count; Idx++)
 		{
-		pszPE1InputFiles[Idx] = NULL;
-		if(pszPE1InputFiles[NumPE1InputFiles] == NULL)
+		pszPE1InputFiles[Idx] = nullptr;
+		if(pszPE1InputFiles[NumPE1InputFiles] == nullptr)
 			pszPE1InputFiles[NumPE1InputFiles] = new char [_MAX_PATH];
 		strncpy(pszPE1InputFiles[NumPE1InputFiles],pe1inputfiles->filename[Idx],_MAX_PATH);
 		pszPE1InputFiles[NumPE1InputFiles][_MAX_PATH-1] = '\0';
@@ -619,8 +619,8 @@ if (!argerrors)
 		{
 		for(NumPE2InputFiles=Idx=0;NumPE2InputFiles < cMaxInFileSpecs && Idx < pe2inputfiles->count; Idx++)
 			{
-			pszPE2InputFiles[Idx] = NULL;
-			if(pszPE2InputFiles[NumPE2InputFiles] == NULL)
+			pszPE2InputFiles[Idx] = nullptr;
+			if(pszPE2InputFiles[NumPE2InputFiles] == nullptr)
 				pszPE2InputFiles[NumPE2InputFiles] = new char [_MAX_PATH];
 			strncpy(pszPE2InputFiles[NumPE2InputFiles],pe2inputfiles->filename[Idx],_MAX_PATH);
 			pszPE2InputFiles[NumPE2InputFiles][_MAX_PATH-1] = '\0';
@@ -658,7 +658,7 @@ if (!argerrors)
 		}
 	else
 		{
-		pszPE2InputFiles[0] = NULL;
+		pszPE2InputFiles[0] = nullptr;
 		PairMinLen = 0;
 		PairMaxLen = 0;
 		bPairStrand = 0;
@@ -1491,13 +1491,13 @@ return 0;
 int kalignerPBA(int argc, char* argv[])
 {
 // determine my process name
-_splitpath(argv[0],NULL,NULL,gszProcName,NULL);
+_splitpath(argv[0],nullptr,nullptr,gszProcName,nullptr);
 #else
 int
 kalignerPBA(int argc, char** argv)
 {
 // determine my process name
-CUtility::splitpath((char *)argv[0],NULL,gszProcName);
+CUtility::splitpath((char *)argv[0],nullptr,gszProcName);
 #endif
 
 int iFileLogLevel;			// level of file diagnostics
@@ -1813,8 +1813,8 @@ if (!argerrors)
 
 	for(NumPE1InputFiles=Idx=0;NumPE1InputFiles < cMaxInFileSpecs && Idx < pe1inputfiles->count; Idx++)
 		{
-		pszPE1InputFiles[Idx] = NULL;
-		if(pszPE1InputFiles[NumPE1InputFiles] == NULL)
+		pszPE1InputFiles[Idx] = nullptr;
+		if(pszPE1InputFiles[NumPE1InputFiles] == nullptr)
 			pszPE1InputFiles[NumPE1InputFiles] = new char [_MAX_PATH];
 		strncpy(pszPE1InputFiles[NumPE1InputFiles],pe1inputfiles->filename[Idx],_MAX_PATH);
 		pszPE1InputFiles[NumPE1InputFiles][_MAX_PATH-1] = '\0';
@@ -1833,8 +1833,8 @@ if (!argerrors)
 		{
 		for(NumPE2InputFiles=Idx=0;NumPE2InputFiles < cMaxInFileSpecs && Idx < pe2inputfiles->count; Idx++)
 			{
-			pszPE2InputFiles[Idx] = NULL;
-			if(pszPE2InputFiles[NumPE2InputFiles] == NULL)
+			pszPE2InputFiles[Idx] = nullptr;
+			if(pszPE2InputFiles[NumPE2InputFiles] == nullptr)
 				pszPE2InputFiles[NumPE2InputFiles] = new char [_MAX_PATH];
 			strncpy(pszPE2InputFiles[NumPE2InputFiles],pe2inputfiles->filename[Idx],_MAX_PATH);
 			pszPE2InputFiles[NumPE2InputFiles][_MAX_PATH-1] = '\0';
@@ -1872,7 +1872,7 @@ if (!argerrors)
 		}
 	else
 		{
-		pszPE2InputFiles[0] = NULL;
+		pszPE2InputFiles[0] = nullptr;
 		PairMinLen = 0;
 		PairMaxLen = 0;
 		bPairStrand = 0;
@@ -2352,7 +2352,7 @@ KProcess(etPMode PMode,					// processing mode
 int Rslt;
 CKAligner *pKAligner;
 
-if((pKAligner = new CKAligner)==NULL)
+if((pKAligner = new CKAligner)==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: Unable to instantiate CKAligner");
 	return(eBSFerrObj);

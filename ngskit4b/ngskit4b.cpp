@@ -72,7 +72,7 @@ extern int RemapLoci(int argc, char* argv[]);
 extern int FilterSAMAlignments(int argc, char* argv[]);
 extern int LocateROI(int argc, char* argv[]);
 extern int AlignsBootstrap(int argc, char* argv[]);
-extern int genhyperconserved(int argc, char* argv[]); 
+extern int genhypers(int argc, char* argv[]); 
 extern int PSL2SQLite(int argc, char* argv[]);
 extern int DE2SQLite(int argc, char* argv[]);
 extern int Markers2SQLite(int argc, char* argv[]);
@@ -94,12 +94,14 @@ extern int repassemb(int argc, char *argv[]);
 extern int sarscov2ml(int argc, char *argv[]);
 extern int kalignerPBA(int argc, char *argv[]);
 extern int callhaplotypes(int argc, char *argv[]);
+extern int DGTs(int argc, char* argv[]);
 extern int gbsmapsnps(int argc, char *argv[]);
 extern int pbautils(int argc, char* argv[]);
 extern int wigutils(int argc, char* argv[]);
 extern int genmldatasets(int argc, char* argv[]);
 extern int xroiseqs(int argc, char* argv[]);
 extern int rnaexpr(int argc, char* argv[]);
+extern int genmafalgn(int argc, char* argv[]);
 
 // inplace text cleaning; any leading/trailing or internal quote characters are removed; excessive whitespace is reduced to single
 char *
@@ -160,7 +162,8 @@ tsSubProcess SubProcesses[] = {
 	{"filtchrom","Filter SAM/BAM by chrom", "Filter SAM/BAM alignments by chromosome", FilterSAMAlignments },
 	{"locateroi","Locate Regions of Interest", "Locate and report regions of interest", LocateROI },
 	{"alignsbs","Alignment Bootstraps", "Alignments bootstrapper", AlignsBootstrap },
-	{"ultras","Ultra/Hyper elements", "Identify Utra/Hyper conserved elements", genhyperconserved },
+	{"genmafalgn","Gen Algn from MAF", "Generate '.algn' indexed multialignments from 'MAF' files", genmafalgn },
+	{"hypers","Ultra/Hyper elements", "Identify Utra/Hyper conserved elements", genhypers },
 	{"psl2sqlite","SQLite Blat Alignments","Generate SQLite Blat alignment Database from Blat generated PSL alignments",PSL2SQLite},
 	{"snpm2sqlite","SQLite SNP Markers","Generate SQLite Marker Database from SNP markers  ",Markers2SQLite},
 	{"snps2sqlite","SQLite SNPs","Generate SQLite SNP Database from aligner identified SNPs",SNPs2SQLite},
@@ -177,7 +180,8 @@ tsSubProcess SubProcesses[] = {
 	{"repassemb","repurpose assembly","Repurpose fasta assembly sequences with SNP loci bases replaced by SNP call major allele bases",repassemb},
 	{"sarscov2ml","ML SARS-CoV-2","SARS-CoV-2 ML feature classification",sarscov2ml},
 	{"genpba","","Align readsets against a target assembly and report alignments to a packed base alleles (PBA) file",kalignerPBA},
-	{"callhaplotypes","Call skim Haplotypes","Call skim read haplotypes using packed base alleles (PBA) files",callhaplotypes},
+	{"callhaplotypes","Call GBS/WGS/RNA Haplotypes","Call skim read haplotypes using packed base alleles (PBA) files",callhaplotypes},
+	{"dgts","DGT Analysis","Analyse DGTs (Diplotype Group Tags)",DGTs},
 	{"gbsmapsnps","GBS map","SNP GBS to PBA GBS haplotypes",gbsmapsnps},
 	{"pbautils","PBA Utilities","PBA formated file utilities",pbautils},
 	{"wigutils","WIG Utilities","WIG formated file utilities",wigutils},
@@ -271,13 +275,13 @@ return((*SubProcesses[SubProcID-1].SubFunct)(argc,argv));
 int _tmain(int argc, char* argv[])
 {
 // determine my process name
-_splitpath(argv[0],NULL,NULL,gszProcName,NULL);
+_splitpath(argv[0],nullptr,nullptr,gszProcName,nullptr);
 #else
 int
 main(int argc, const char** argv)
 {
 // determine my process name
-CUtility::splitpath((char *)argv[0],NULL,gszProcName);
+CUtility::splitpath((char *)argv[0],nullptr,gszProcName);
 #endif
 
 // check if user has specified the subprocess required, each subprocess has it's own set of parameters

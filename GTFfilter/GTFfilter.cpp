@@ -231,16 +231,16 @@ int Rslt;
 int NumEntries;
 int NumUnmapped;
 tsGTFFields *pCurFields;
-char szLineBuff[16000];
+char *pszLineBuff = nullptr;
 int BufOfs;
 Init();
-if(pszMapFile != NULL && pszMapFile[0] != '\0')
+if(pszMapFile != NULL && *pszMapFile != '\0')
 	{
-m_pChromMap = new CChromMap;
+	m_pChromMap = new CChromMap;
 if((Rslt = m_pChromMap->LoadMap(pszMapFile)) <= eBSFSuccess)
-	{
-	Reset();
-	return(Rslt);
+		{
+		Reset();
+		return(Rslt);
 		}
 	}
 else
@@ -264,6 +264,7 @@ if((m_hRsltsFile = open(pszOutFile, O_RDWR | O_CREAT | O_TRUNC, S_IREAD | S_IWRI
 	return(eBSFerrCreateFile);
 	}
 
+pszLineBuff = new char[cGTFMaxLineLen * 2] ;
 NumEntries = 0;
 NumUnmapped = 0;
 BufOfs = 0;
@@ -280,23 +281,23 @@ while((Rslt=m_pGTFFile->NextRecordOfType(eGGTFany)) > 0)
 			gDiagnostics.DiagOut(eDLWarn,gszProcName,"Unable to map contig '%s' onto any chromosome",pCurFields->szSeqName);
 			}
 		}
-	if((BufOfs + 1000) > sizeof(szLineBuff))
+	if((BufOfs + 1000) > cGTFMaxLineLen)
 		{
-		CUtility::RetryWrites(m_hRsltsFile,szLineBuff,BufOfs);
+		CUtility::RetryWrites(m_hRsltsFile, pszLineBuff,BufOfs);
 		BufOfs = 0;
 		}
-	BufOfs += sprintf(&szLineBuff[BufOfs],"%s\t%s\t%s\t%d\t%d\t",pCurFields->szSeqName,pCurFields->szSeqSource,pCurFields->szFeature,pCurFields->Start,pCurFields->End);
-	BufOfs += sprintf(&szLineBuff[BufOfs],"%s\n",&pCurFields->szRawLine[pCurFields->ScoreOfs]);
+	BufOfs += sprintf(&pszLineBuff[BufOfs],"%s\t%s\t%s\t%d\t%d\t",pCurFields->szSeqName,pCurFields->szSeqSource,pCurFields->szFeature,pCurFields->Start,pCurFields->End);
+	BufOfs += sprintf(&pszLineBuff[BufOfs],"%s\n",&pCurFields->szRawLine[pCurFields->ScoreOfs]);
 	}
 
-if(Rslt >= eBSFSuccess && (BufOfs + 1000) > sizeof(szLineBuff))
-	CUtility::RetryWrites(m_hRsltsFile,szLineBuff,BufOfs);
+if(Rslt >= eBSFSuccess && BufOfs)
+	CUtility::RetryWrites(m_hRsltsFile, pszLineBuff,BufOfs);
 close(m_hRsltsFile);
+delete [] pszLineBuff;
 m_hRsltsFile = 0;
 if(Rslt >= eBSFSuccess)
-	{
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Total entries processed %d of which %d were unmappable to any chromosome",NumEntries,NumUnmapped);
-	}
+
 Reset();
 return(Rslt);
 }

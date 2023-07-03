@@ -28,13 +28,13 @@ int Process(eModePG PMode,			// processing mode
 int pangenome(int argc, char *argv[])
 {
 	// determine my process name
-	_splitpath (argv[0], NULL, NULL, gszProcName, NULL);
+	_splitpath (argv[0], nullptr, nullptr, gszProcName, nullptr);
 #else
 int
 pangenome(int argc, char **argv)
 {
 	// determine my process name
-	CUtility::splitpath ((char *)argv[0], NULL, gszProcName);
+	CUtility::splitpath ((char *)argv[0], nullptr, gszProcName);
 #endif
 	int iFileLogLevel;			// level of file diagnostics
 	int iScreenLogLevel;		// level of file diagnostics
@@ -268,11 +268,11 @@ pangenome(int argc, char **argv)
 
 CPangenome::CPangenome()
 {
-m_pInBuffer = NULL;
-m_pOutBuffer = NULL;
-m_pSAMfile=NULL;
-m_pBAMalignment =NULL;
-m_pSAMloci = NULL;
+m_pInBuffer = nullptr;
+m_pOutBuffer = nullptr;
+m_pSAMfile=nullptr;
+m_pBAMalignment =nullptr;
+m_pSAMloci = nullptr;
 m_hInFile = -1;			// input file handle
 m_hOutFile = -1;			// output file handle
 Reset();
@@ -284,17 +284,17 @@ if(m_hInFile != -1)
 	close(m_hInFile);
 if(m_hOutFile != -1)
 	close(m_hOutFile);
-if(m_pInBuffer != NULL)
+if(m_pInBuffer != nullptr)
 	delete []m_pInBuffer;
-if(m_pOutBuffer != NULL)
+if(m_pOutBuffer != nullptr)
 	delete []m_pOutBuffer;
-if(m_pSAMfile!=NULL)
+if(m_pSAMfile!=nullptr)
 	delete m_pSAMfile;
 
-if(m_pBAMalignment !=NULL)
+if(m_pBAMalignment !=nullptr)
 	delete m_pBAMalignment;
 
-if (m_pSAMloci != NULL)
+if (m_pSAMloci != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pSAMloci);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -319,19 +319,19 @@ if(m_hOutFile != -1)
 	m_hOutFile = -1;
 	}
 
-if(m_pInBuffer != NULL)
+if(m_pInBuffer != nullptr)
 	{
 	delete []m_pInBuffer;
-	m_pInBuffer = NULL;
+	m_pInBuffer = nullptr;
 	}
 
-if(m_pOutBuffer != NULL)
+if(m_pOutBuffer != nullptr)
 	{
 	delete []m_pOutBuffer;
-	m_pOutBuffer = NULL;
+	m_pOutBuffer = nullptr;
 	}
 
-if (m_pSAMloci != NULL)
+if (m_pSAMloci != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pSAMloci);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -339,7 +339,7 @@ if (m_pSAMloci != NULL)
 	if (m_pSAMloci != MAP_FAILED)
 		munmap(m_pSAMloci, m_AllocdSAMlociMem);
 #endif
-	m_pSAMloci = NULL;
+	m_pSAMloci = nullptr;
 	}
 
 m_InBuffIdx = 0;
@@ -405,7 +405,7 @@ if(m_hOutFile < 0)
 	return(eBSFerrCreateFile);
 	}
 
-if((m_pInBuffer = new uint8_t[cAllocPGBuffInSize]) == NULL)
+if((m_pInBuffer = new uint8_t[cAllocPGBuffInSize]) == nullptr)
 	{
 	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Unable to allocate memory for input file buffering");
 	Reset();
@@ -413,7 +413,7 @@ if((m_pInBuffer = new uint8_t[cAllocPGBuffInSize]) == NULL)
 	}
 m_AllocInBuff = cAllocPGBuffInSize;
 
-if((m_pOutBuffer = new uint8_t[cAllocPGBuffOutSize]) == NULL)
+if((m_pOutBuffer = new uint8_t[cAllocPGBuffOutSize]) == nullptr)
 	{
 	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Unable to allocate memory for output file buffering");
 	delete []m_pInBuffer;
@@ -548,7 +548,7 @@ if(m_hOutFile < 0)
 	return(eBSFerrCreateFile);
 	}
 
-if((m_pInBuffer = new uint8_t[cAllocPGBuffInSize]) == NULL)
+if((m_pInBuffer = new uint8_t[cAllocPGBuffInSize]) == nullptr)
 	{
 	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Unable to allocate memory for input file buffering");
 	Reset();
@@ -556,7 +556,7 @@ if((m_pInBuffer = new uint8_t[cAllocPGBuffInSize]) == NULL)
 	}
 m_AllocInBuff = cAllocPGBuffInSize;
 
-if((m_pOutBuffer = new uint8_t[cAllocPGBuffOutSize]) == NULL)
+if((m_pOutBuffer = new uint8_t[cAllocPGBuffOutSize]) == nullptr)
 	{
 	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Unable to allocate memory for output file buffering");
 	Reset();
@@ -706,7 +706,7 @@ int Process(eModePG PMode,			// processing mode
 int Rslt;
 CPangenome* pPangenome;
 
-if((pPangenome = new CPangenome) == NULL)
+if((pPangenome = new CPangenome) == nullptr)
 	{
 	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Unable to instantiate instance of CPangenome");
 	return(eBSFerrObj);
@@ -730,7 +730,7 @@ uint8_t *m_pInBuffer;
 
 if(PMode < eMPGWiggleUniqueLoci)		// wiggles input can be BAM (binary) so can't just check for ascii format input
 	{
-	if((m_pInBuffer = new uint8_t[cAllocAsciiChkSize]) == NULL)
+	if((m_pInBuffer = new uint8_t[cAllocAsciiChkSize]) == nullptr)
 		{
 		gDiagnostics.DiagOut (eDLFatal, gszProcName, "Unable to allocate memory for input file ASCII only check");
 		return(eBSFerrMem);
@@ -762,7 +762,7 @@ if(PMode < eMPGWiggleUniqueLoci)		// wiggles input can be BAM (binary) so can't 
 	while(--NumRead)
 		{
 		switch(Chr = m_pInBuffer[NumRead]) {
-			case '\0':		// can accept as long as not within 1st 1000 chars, some processes place a NULL char at end of ascii file
+			case '\0':		// can accept as long as not within 1st 1000 chars, some processes place a nullptr char at end of ascii file
 				if(NumRead < 1000)
 					break;
 				continue;
@@ -779,7 +779,7 @@ if(PMode < eMPGWiggleUniqueLoci)		// wiggles input can be BAM (binary) so can't 
 		return(eBSFerrOpnFile);
 		}
 	delete []m_pInBuffer;
-	m_pInBuffer = NULL;
+	m_pInBuffer = nullptr;
 	m_AllocInBuff = 0;
 	}
 
@@ -828,23 +828,23 @@ int TargID;
 tsSAMloci *pSAMloci;
 
 // open SAM for reading
-if(pszInFile == NULL || *pszInFile == '\0')
+if(pszInFile == nullptr || *pszInFile == '\0')
 	return(eBSFerrParams);
 
-if((m_pSAMfile = new CSAMfile) == NULL)
+if((m_pSAMfile = new CSAMfile) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenBinnedWiggle: Unable to instantiate class CSAMfile");
 	return(eBSFerrInternal);
 	}
 
-if((m_pBAMalignment = new tsBAMalign) == NULL)
+if((m_pBAMalignment = new tsBAMalign) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenBinnedWiggle: Unable to instantiate tsBAMalign");
 	Reset();
 	return(eBSFerrInternal);
 	}
 
-if((m_pInBuffer = new uint8_t[cMaxReadLen * 3]) == NULL)
+if((m_pInBuffer = new uint8_t[cMaxReadLen * 3]) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenBinnedWiggle: Unable to allocate buffers");
 	Reset();
@@ -852,7 +852,7 @@ if((m_pInBuffer = new uint8_t[cMaxReadLen * 3]) == NULL)
 	}
 m_AllocInBuff = cMaxReadLen * 3;
 
-if((m_pOutBuffer = new uint8_t[cAllocPGBuffOutSize]) == NULL)
+if((m_pOutBuffer = new uint8_t[cAllocPGBuffOutSize]) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenBinnedWiggle: Unable to allocate buffers");
 	Reset();
@@ -883,7 +883,7 @@ m_OutBuffIdx = sprintf((char *)m_pOutBuffer,"name=\"Coverage %s\" type=wiggle_0\
 m_AllocdSAMlociMem = (size_t)cAllocNumSAMloci * sizeof(tsSAMloci);
 #ifdef _WIN32
 m_pSAMloci = (tsSAMloci*)malloc(m_AllocdSAMlociMem);
-if (m_pSAMloci == NULL)
+if (m_pSAMloci == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenBinnedWiggle: Memory allocation of %zd bytes failed", (int64_t)m_AllocdSAMlociMem);
 	m_AllocdSAMlociMem = 0;
@@ -892,11 +892,11 @@ if (m_pSAMloci == NULL)
 	}
 #else
 // gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-m_pSAMloci = (tsSAMloci*)mmap(NULL, m_AllocdSAMlociMem, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+m_pSAMloci = (tsSAMloci*)mmap(nullptr, m_AllocdSAMlociMem, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 if (m_pSAMloci == MAP_FAILED)
 	{
 	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenBinnedWiggle: Memory allocation of %zd bytes through mmap()  failed", (int64_t)m_AllocdSAMlociMem, strerror(errno));
-	m_pSAMloci = NULL;
+	m_pSAMloci = nullptr;
 	m_AllocdSAMlociMem = 0;
 	Reset();
 	return(eBSFerrMem);
@@ -916,7 +916,7 @@ size_t NumAlignmentsProc = 0;
 size_t NumAcceptedAlignments = 0;
 uint32_t NumUnmapped = 0;
 
-time_t Then = time(NULL);
+time_t Then = time(nullptr);
 time_t Now;
 while(Rslt >= eBSFSuccess && (LineLen = m_pSAMfile->GetNxtSAMline((char *)m_pInBuffer)) > 0)
 	{
@@ -930,7 +930,7 @@ while(Rslt >= eBSFSuccess && (LineLen = m_pSAMfile->GetNxtSAMline((char *)m_pInB
 	NumAlignmentsProc += 1;
 	if (!(NumAlignmentsProc % 100000) || NumAlignmentsProc == 1)
 		{
-		Now = time(NULL);
+		Now = time(nullptr);
 		if ((Now - Then) >= 60)
 			{
 			gDiagnostics.DiagOut(eDLInfo, gszProcName, "Accepted %zd SAM/BAM alignments", NumAcceptedAlignments);
@@ -939,7 +939,7 @@ while(Rslt >= eBSFSuccess && (LineLen = m_pSAMfile->GetNxtSAMline((char *)m_pInB
 		}
 
 	// primary interest is in the reference chrom name, startloci, length
-	if ((Rslt = (teBSFrsltCodes)m_pSAMfile->ParseSAM2BAMalign(pszTxt, m_pBAMalignment, NULL,true)) < eBSFSuccess)
+	if ((Rslt = (teBSFrsltCodes)m_pSAMfile->ParseSAM2BAMalign(pszTxt, m_pBAMalignment, nullptr,true)) < eBSFSuccess)
 		{
 		if (Rslt == eBSFerrFeature)	// not too worried if aligned to feature is missing as some SAMs are missing header features
 			{
@@ -968,9 +968,9 @@ while(Rslt >= eBSFSuccess && (LineLen = m_pSAMfile->GetNxtSAMline((char *)m_pInB
 #else
 		pTmp = (uint8_t*)mremap(m_pSAMloci, m_AllocdSAMlociMem, memreq, MREMAP_MAYMOVE);
 		if (pTmp == MAP_FAILED)
-			pTmp = NULL;
+			pTmp = nullptr;
 #endif
-		if (pTmp == NULL)
+		if (pTmp == nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenBinnedWiggle: Memory re-allocation to %zd bytes - %s", (int64_t)(memreq), strerror(errno));
 			Reset();
@@ -1103,7 +1103,7 @@ int SeqNameLen;
 char *pszLAname;
 
 // with any luck the sequence name will be same as the last accessed
-if((pszLAname = LocateTargSeqName(m_LASeqNameID)) != NULL)
+if((pszLAname = LocateTargSeqName(m_LASeqNameID)) != nullptr)
 	if(!stricmp(pszSeqName,pszLAname))
 		return(m_LASeqNameID);
 
@@ -1134,7 +1134,7 @@ char*							// returned sequence name
 CPangenome::LocateTargSeqName(int SeqNameID)	// identifier returned by call to AddTargSeqName
 {
 if(SeqNameID < 1 || SeqNameID > m_NumSeqNames)
-	return(NULL);
+	return(nullptr);
 return(&m_szSeqNames[m_szSeqNameIdx[SeqNameID-1]]);
 }
 

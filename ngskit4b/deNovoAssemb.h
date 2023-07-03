@@ -204,7 +204,7 @@ public:
 								char *pszPE1File,				// input high confidence seed PE1 sequences file
 								char *pszPE2File,				// input high confidence seed PE2 sequences file
 								char *pszSeedContigsFile,		// optional input high confidence seed SE contigs file
-								char *pszInArtReducfile = NULL);	// optional input preprocessed artefact reduced packed reads from this file
+								char *pszInArtReducfile = nullptr);	// optional input preprocessed artefact reduced packed reads from this file
 
 
 		// build overlap extended sequences	

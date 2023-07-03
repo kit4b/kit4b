@@ -39,21 +39,21 @@ Original 'BioKanga' copyright notice has been retained and immediately follows t
 #include "./ngskit4b.h"
 #include "MarkerKMers.h"
 
-static tsPutMarker *gpPutativeMarkers = NULL;		// used when sorting putative marker sequences
+static tsPutMarker *gpPutativeMarkers = nullptr;		// used when sorting putative marker sequences
 static size_t gPutativeMarkerSeqLen = 0;			// length of putative marker sequences
 static size_t gPutMarkerSize = 0;					// size of a tsPutMarker including the putative sequence
 
 CMarkerKMers::CMarkerKMers(void)
 {
-m_pSfxArray = NULL;
-m_pMarkerBuff = NULL;
-m_pPutMarkers = NULL;
-m_pPutMarkersIndex = NULL;
+m_pSfxArray = nullptr;
+m_pMarkerBuff = nullptr;
+m_pPutMarkers = nullptr;
+m_pPutMarkersIndex = nullptr;
 m_hOutFile = -1;
 #ifdef _WIN32
 InitializeSRWLock(&m_hRwLock);
 #else
-pthread_rwlock_init( &m_hRwLock,NULL);
+pthread_rwlock_init( &m_hRwLock,nullptr);
 #endif
 
 #ifdef _WIN32
@@ -69,11 +69,11 @@ CMarkerKMers::~CMarkerKMers(void)
 {
 if(m_hOutFile != -1)
 	close(m_hOutFile);
-if(m_pSfxArray != NULL)
+if(m_pSfxArray != nullptr)
 	delete m_pSfxArray;
-if(m_pMarkerBuff != NULL)
+if(m_pMarkerBuff != nullptr)
 	delete m_pMarkerBuff;
-if(m_pPutMarkers != NULL)
+if(m_pPutMarkers != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pPutMarkers);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -82,7 +82,7 @@ if(m_pPutMarkers != NULL)
 		munmap(m_pPutMarkers,m_AllocPutMarkersSize);
 #endif
 	}
-if(m_pPutMarkersIndex != NULL)
+if(m_pPutMarkersIndex != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pPutMarkersIndex);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -101,10 +101,10 @@ pthread_spin_destroy(&m_hSpinLock);
 void
 CMarkerKMers::Reset(bool bSync)
 {
-if(m_pSfxArray != NULL)
+if(m_pSfxArray != nullptr)
 	{
 	delete m_pSfxArray;
-	m_pSfxArray = NULL;
+	m_pSfxArray = nullptr;
 	}
 
 if(m_hOutFile != -1)
@@ -119,13 +119,13 @@ if(m_hOutFile != -1)
 	m_hOutFile = -1;
 	}
 
-if(m_pMarkerBuff != NULL)
+if(m_pMarkerBuff != nullptr)
 	{
 	delete m_pMarkerBuff;
-	m_pMarkerBuff = NULL;
+	m_pMarkerBuff = nullptr;
 	}
 
-if(m_pPutMarkers != NULL)
+if(m_pPutMarkers != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pPutMarkers);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -133,10 +133,10 @@ if(m_pPutMarkers != NULL)
 	if(m_pPutMarkers != MAP_FAILED)
 		munmap(m_pPutMarkers,m_AllocPutMarkersSize);
 #endif
-	m_pPutMarkers = NULL;
+	m_pPutMarkers = nullptr;
 	}
 
-if(m_pPutMarkersIndex != NULL)
+if(m_pPutMarkersIndex != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pPutMarkersIndex);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -144,7 +144,7 @@ if(m_pPutMarkersIndex != NULL)
 	if(m_pPutMarkersIndex != MAP_FAILED)
 		munmap(m_pPutMarkersIndex,m_AllocPutMarkersIndexSize);
 #endif
-	m_pPutMarkersIndex = NULL;
+	m_pPutMarkersIndex = nullptr;
 	}
 
 m_szDataset[0] = '\0';
@@ -239,7 +239,7 @@ CMarkerKMers::ReportMarker(tsPutMarker *pMarker)
 int TruncMarkerLen;
 char szMarkerSeq[cMaxKMerLen+1];				// additional for '\0' terminator
 
-if(m_hOutFile == -1 || pMarker == NULL || m_pMarkerBuff == NULL)	// better safe than sorry...
+if(m_hOutFile == -1 || pMarker == nullptr || m_pMarkerBuff == nullptr)	// better safe than sorry...
 	return(0);
 
 TruncMarkerLen = m_PrefixLen > cMaxKMerLen ? cMaxKMerLen : m_PrefixLen;
@@ -264,9 +264,9 @@ CMarkerKMers::GetKMerProcProgress(int64_t *pTotSenseCnts,	// number of K-Mers ac
 {
 int64_t NumPutMarkers;
 EnterCritSect();
-if(pTotSenseCnts != NULL)
+if(pTotSenseCnts != nullptr)
 	*pTotSenseCnts = m_TotSenseCnts;
-if(pTotAntisenseCnts != NULL)
+if(pTotAntisenseCnts != nullptr)
 	*pTotAntisenseCnts = m_TotAntisenseCnts;
 NumPutMarkers = m_NumPutMarkers;
 LeaveCritSect();
@@ -308,7 +308,7 @@ strncpy(m_szMarkerFile,pszMarkerFile,sizeof(m_szMarkerFile));
 m_szMarkerFile[sizeof(m_szMarkerFile)-1] = '\0';
 
 // allocate buffers
-if((m_pMarkerBuff = new uint8_t [cMarkerSeqBuffSize])==NULL)
+if((m_pMarkerBuff = new uint8_t [cMarkerSeqBuffSize])==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Unable to allocate (%d bytes) for marker buffering",cMarkerSeqBuffSize);
 	Reset();
@@ -321,7 +321,7 @@ m_AllocMarkerBuffSize = cMarkerSeqBuffSize;
 m_AllocPutMarkersSize = (size_t)cAllocNumPutativeSeqs * m_PutMarkerSize;
 #ifdef _WIN32
 m_pPutMarkers = (tsPutMarker *) malloc(m_AllocPutMarkersSize);
-if(m_pPutMarkers == NULL)
+if(m_pPutMarkers == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %zd bytes contiguous memory for putative marker sequences",(int64_t)m_AllocPutMarkersSize);
 	m_AllocPutMarkersSize = 0;
@@ -330,19 +330,19 @@ if(m_pPutMarkers == NULL)
 	}
 #else
 // gnu malloc is still in the 32bit world and seems to have issues if more than 2GB allocation
-m_pPutMarkers = (tsPutMarker *)mmap(NULL,m_AllocPutMarkersSize, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+m_pPutMarkers = (tsPutMarker *)mmap(nullptr,m_AllocPutMarkersSize, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pPutMarkers == MAP_FAILED)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %zd bytes contiguous memory for putative marker sequences",(int64_t)m_AllocPutMarkersSize);
 	m_AllocPutMarkersSize = 0;
-	m_pPutMarkers = NULL;
+	m_pPutMarkers = nullptr;
 	Reset(false);
 	return(eBSFerrMem);
 	}
 #endif
 m_NumPutMarkers = 0;
 
-if((m_pSfxArray = new CSfxArray)==NULL)
+if((m_pSfxArray = new CSfxArray)==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Unable to instantiate instance of CSfxArray");
 	Reset();
@@ -469,9 +469,9 @@ for(ThreadIdx = 0; ThreadIdx < NumActiveThreads; ThreadIdx++)
 	WorkerThreads[ThreadIdx].ThreadIdx = ThreadIdx + 1;
 	WorkerThreads[ThreadIdx].pThis = this;
 #ifdef _WIN32
-	WorkerThreads[ThreadIdx].threadHandle = (HANDLE)_beginthreadex(NULL,0x0fffff,KMerThreadStart,&WorkerThreads[ThreadIdx],0,&WorkerThreads[ThreadIdx].threadID);
+	WorkerThreads[ThreadIdx].threadHandle = (HANDLE)_beginthreadex(nullptr,0x0fffff,KMerThreadStart,&WorkerThreads[ThreadIdx],0,&WorkerThreads[ThreadIdx].threadID);
 #else
-	WorkerThreads[ThreadIdx].threadRslt =	pthread_create (&WorkerThreads[ThreadIdx].threadID , NULL , KMerThreadStart , &WorkerThreads[ThreadIdx] );
+	WorkerThreads[ThreadIdx].threadRslt =	pthread_create (&WorkerThreads[ThreadIdx].threadID , nullptr , KMerThreadStart , &WorkerThreads[ThreadIdx] );
 #endif
 	}
 
@@ -501,7 +501,7 @@ for(ThreadIdx = 0; ThreadIdx < NumActiveThreads; ThreadIdx++)
 	int JoinRlt;
 	clock_gettime(CLOCK_REALTIME, &ts);
 	ts.tv_sec += 60 * 10;
-	while((JoinRlt = pthread_timedjoin_np(WorkerThreads[ThreadIdx].threadID, NULL, &ts)) != 0)
+	while((JoinRlt = pthread_timedjoin_np(WorkerThreads[ThreadIdx].threadID, nullptr, &ts)) != 0)
 		{
 		NumPutativePrefixKMers = GetKMerProcProgress(&TotSenseCnts,&TotAntisenseCnts);
 		gDiagnostics.DiagOut(eDLInfo,gszProcName,"Progress - putative prefix K-Mers: %zd",NumPutativePrefixKMers);
@@ -512,10 +512,10 @@ for(ThreadIdx = 0; ThreadIdx < NumActiveThreads; ThreadIdx++)
 
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Completed - putative prefix K-Mers: %zd",m_NumPutMarkers);
 
-if(m_pSfxArray != NULL)						// releases memory!
+if(m_pSfxArray != nullptr)						// releases memory!
 	{
 	delete m_pSfxArray;
-	m_pSfxArray = NULL;
+	m_pSfxArray = nullptr;
 	}
 
 if(gProcessingID > 0)
@@ -553,7 +553,7 @@ if(m_NumPutMarkers == 0 || m_NumPutMarkers > 0x07fffffff)
 m_AllocPutMarkersIndexSize = (size_t)m_NumPutMarkers * sizeof(uint32_t);
 #ifdef _WIN32
 m_pPutMarkersIndex = (uint32_t *) malloc(m_AllocPutMarkersIndexSize);
-if(m_pPutMarkersIndex == NULL)
+if(m_pPutMarkersIndex == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %zd bytes contiguous memory for putative marker sequence index",(int64_t)m_AllocPutMarkersIndexSize);
 	m_AllocPutMarkersIndexSize = 0;
@@ -562,12 +562,12 @@ if(m_pPutMarkersIndex == NULL)
 	}
 #else
 // gnu malloc is still in the 32bit world and seems to have issues if more than 2GB allocation
-m_pPutMarkersIndex = (uint32_t *)mmap(NULL,m_AllocPutMarkersIndexSize, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+m_pPutMarkersIndex = (uint32_t *)mmap(nullptr,m_AllocPutMarkersIndexSize, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pPutMarkersIndex == MAP_FAILED)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate %zd bytes contiguous memory for putative marker sequences",(int64_t)m_AllocPutMarkersIndexSize);
 	m_AllocPutMarkersIndexSize = 0;
-	m_pPutMarkersIndex = NULL;
+	m_pPutMarkersIndex = nullptr;
 	Reset(false);
 	return(eBSFerrMem);
 	}
@@ -635,7 +635,7 @@ if(m_NumPutMarkers > 1)
 			}
 
 		// if antisense processing then check for other marker antisense to current and mark that other marker if current not duplicate nor overlapping
-		if(m_PMode == ePMSenseAntiKMers && (pAntisense = GetMarkerAntisense(pMarker)) != NULL)
+		if(m_PMode == ePMSenseAntiKMers && (pAntisense = GetMarkerAntisense(pMarker)) != nullptr)
 			{
 			if(pAntisense->MarkerID < pMarker->MarkerID || pMarker->Flags & cMarkerAntiFlg)	// if antisense already processed or current sense marked antisense then don't re-mark
 				continue;
@@ -737,7 +737,7 @@ while(SfxHi >= SfxLo);
 return(false);
 }
 
-tsPutMarker *											// NULL if no others antisense, else the other antisense marker
+tsPutMarker *											// nullptr if no others antisense, else the other antisense marker
 CMarkerKMers::GetMarkerAntisense(tsPutMarker *pMarker)	// marker to check if this is antisense to any other marker sequence
 {
 int Cmp;
@@ -782,7 +782,7 @@ do {
 			if(!memcmp(pEl1,pEl2,m_PrefixLen))
 				return(pPutMarker);
 			}
-		return(NULL);
+		return(nullptr);
 		}
 
 	if(Cmp < 1)
@@ -791,7 +791,7 @@ do {
 		SfxLo = (int64_t)(uint64_t)TargPsn + 1;
 	}
 while(SfxHi >= SfxLo);
-return(NULL);
+return(nullptr);
 }
 
 // Thread startup
@@ -807,7 +807,7 @@ pArgs->pThis->LocateSharedPrefixKMers(pArgs);
 #ifdef WIN32
 ExitThread(1);
 #else
-return NULL;
+return nullptr;
 #endif
 }
 
@@ -821,7 +821,7 @@ tsPutMarker *pPutMarker;
 CMarkerKMers *pMarkerKMers;
 etSeqBase *pMarkerSeq;
 etSeqBase *pSrc;
-if(pThis == NULL || pCultsCnts == NULL)		// better safe than risking a segfault...
+if(pThis == nullptr || pCultsCnts == nullptr)		// better safe than risking a segfault...
 	return(-1);
 pMarkerKMers = (CMarkerKMers *)pThis;
 
@@ -839,9 +839,9 @@ if(((pMarkerKMers->m_NumPutMarkers + 1) * pMarkerKMers->m_PutMarkerSize) > pMark
 #else
 	pRealloc = (tsPutMarker *)mremap(pMarkerKMers->m_pPutMarkers,pMarkerKMers->m_AllocPutMarkersSize,(size_t)ReallocSize,MREMAP_MAYMOVE);
 	if(pRealloc == MAP_FAILED)
-		pRealloc = NULL;
+		pRealloc = nullptr;
 #endif
-	if(pRealloc == NULL)
+	if(pRealloc == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"MarkersCallback: putative marker sequences memory re-allocation to %zd bytes - %s",(int64_t)ReallocSize,strerror(errno));
 		pMarkerKMers->LeaveCritSect();

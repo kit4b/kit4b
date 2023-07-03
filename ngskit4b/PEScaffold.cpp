@@ -52,12 +52,12 @@ int Process(int PMode,					// processing mode
 int pescaffold(int argc, char* argv[])
 {
 // determine my process name
-_splitpath(argv[0],NULL,NULL,gszProcName,NULL);
+_splitpath(argv[0],nullptr,nullptr,gszProcName,nullptr);
 #else
 int pescaffold(int argc, char** argv)
 {
 // determine my process name
-CUtility::splitpath((char *)argv[0],NULL,gszProcName);
+CUtility::splitpath((char *)argv[0],nullptr,gszProcName);
 #endif
 
 int iScreenLogLevel;		// level of screen diagnostics
@@ -338,7 +338,7 @@ int Process(int PMode,					// processing mode
 {
 int Rslt;
 CPEScaffold *pPEScaffold;
-if((pPEScaffold = new CPEScaffold)==NULL)
+if((pPEScaffold = new CPEScaffold)==nullptr)
 	return(-1);
 Rslt = pPEScaffold->Process(PMode,pszSeqIDTerm,pszInPE1File,pszInPE2File,pszOutFile);
 delete pPEScaffold;
@@ -365,7 +365,7 @@ if(m_hOutFile != -1)
 	close(m_hOutFile);
 	m_hOutFile = -1;
 	}
-if(m_pPEIdents != NULL)
+if(m_pPEIdents != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pPEIdents);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -373,16 +373,16 @@ if(m_pPEIdents != NULL)
 	if(m_pPEIdents != MAP_FAILED)
 		munmap(m_pPEIdents,m_AllocdPEIdentsMem);
 #endif
-	m_pPEIdents = NULL;
+	m_pPEIdents = nullptr;
 	}
 
 if(m_pHashPEIdents)
 	{
 	delete m_pHashPEIdents;
-	m_pHashPEIdents = NULL;
+	m_pHashPEIdents = nullptr;
 	}
 
-if(m_pScaffoldContigs != NULL)
+if(m_pScaffoldContigs != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pScaffoldContigs);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -390,16 +390,16 @@ if(m_pScaffoldContigs != NULL)
 	if(m_pScaffoldContigs != MAP_FAILED)
 		munmap(m_pScaffoldContigs,m_AllocdScaffoldContigsMem);
 #endif
-	m_pScaffoldContigs = NULL;
+	m_pScaffoldContigs = nullptr;
 	}
 
 if(m_pHashContigs)
 	{
 	delete m_pHashContigs;
-	m_pHashContigs = NULL;
+	m_pHashContigs = nullptr;
 	}
 
-if(m_pScaffolds != NULL)
+if(m_pScaffolds != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pScaffolds);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -407,11 +407,11 @@ if(m_pScaffolds != NULL)
 	if(m_pScaffolds != MAP_FAILED)
 		munmap(m_pScaffolds,m_AllocdScaffoldsMem);
 #endif
-	m_pScaffolds = NULL;
+	m_pScaffolds = nullptr;
 	}
 
 
-if(m_ppPE2Scaffolds != NULL)
+if(m_ppPE2Scaffolds != nullptr)
 	{
 #ifdef _WIN32
 	free(m_ppPE2Scaffolds);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -419,7 +419,7 @@ if(m_ppPE2Scaffolds != NULL)
 	if(m_ppPE2Scaffolds != MAP_FAILED)
 		munmap(m_ppPE2Scaffolds,m_AllocdPE2ScaffoldsMem);
 #endif
-	m_ppPE2Scaffolds = NULL;
+	m_ppPE2Scaffolds = nullptr;
 	}
 
 m_szSeqIDTermChrs[0] = '\0';
@@ -441,12 +441,12 @@ m_AllocdPE2ScaffoldsMem = 0;
 void 
 CPEScaffold::Init(void)
 {
-m_pPEIdents = NULL;
-m_pHashPEIdents = NULL;
-m_pScaffoldContigs = NULL;
-m_pHashContigs = NULL;
-m_pScaffolds = NULL;
-m_ppPE2Scaffolds = NULL;
+m_pPEIdents = nullptr;
+m_pHashPEIdents = nullptr;
+m_pScaffoldContigs = nullptr;
+m_pHashContigs = nullptr;
+m_pScaffolds = nullptr;
+m_ppPE2Scaffolds = nullptr;
 m_hOutFile = -1;
 Reset();
 }
@@ -516,9 +516,9 @@ if(m_NumScaffoldContigs == m_AllocdNumScaffoldContigs)
 #else
 	pScaffoldContig = (tsPEScaffoldContig *)mremap(m_pScaffoldContigs,m_AllocdScaffoldContigsMem,memreq,MREMAP_MAYMOVE);
 	if(pScaffoldContig == MAP_FAILED)
-		pScaffoldContig = NULL;
+		pScaffoldContig = nullptr;
 #endif
-	if(pScaffoldContig == NULL)
+	if(pScaffoldContig == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddContigName: Memory re-allocation to %d bytes - %s",memreq,strerror(errno));
 		return(eBSFerrMem);
@@ -621,9 +621,9 @@ if(m_NumPEIdents == m_AllocdNumPEIdents)
 #else
 	pPEIdent = (tsPEIdent *)mremap(m_pPEIdents,m_AllocdPEIdentsMem,memreq,MREMAP_MAYMOVE);
 	if(pPEIdent == MAP_FAILED)
-		pPEIdent = NULL;
+		pPEIdent = nullptr;
 #endif
-	if(pPEIdent == NULL)
+	if(pPEIdent == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddPEIdent: Memory re-allocation to %d bytes - %s",memreq,strerror(errno));
 		return(eBSFerrMem);
@@ -710,9 +710,9 @@ if(m_NumScaffolds == m_AllocdNumScaffolds)
 #else
 	pPEScaffold = (tsPEScaffold *)mremap(m_pScaffolds,m_AllocdScaffoldsMem,memreq,MREMAP_MAYMOVE);
 	if(pPEScaffold == MAP_FAILED)
-		pPEScaffold = NULL;
+		pPEScaffold = nullptr;
 #endif
-	if(pPEScaffold == NULL)
+	if(pPEScaffold == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddScaffold: Memory re-allocation to %d bytes - %s",memreq,strerror(errno));
 		return(eBSFerrMem);
@@ -759,7 +759,7 @@ CSAMfile BAMfile;
 int LineLen;
 
 	// open SAM for reading
-if(pszSAMFile == NULL || *pszSAMFile == '\0')
+if(pszSAMFile == nullptr || *pszSAMFile == '\0')
 	return(eBSFerrParams);
 
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Loading alignments for %s from: '%s'",bPE2 ? "PE2" : "PE1", pszSAMFile);
@@ -854,7 +854,7 @@ do {
 		}
 	}
 while(Hi >= Lo);
-return(NULL);		// unable to match any
+return(nullptr);		// unable to match any
 }
 
 // locate scaffold having matching ContigID as PE1
@@ -867,7 +867,7 @@ int Mid;
 int Hi;
 int Lo;
 tsPEScaffold *pEl1;
-if(m_ppPE2Scaffolds == NULL || m_NumScaffolds == 0)		// better safe than sorry...
+if(m_ppPE2Scaffolds == nullptr || m_NumScaffolds == 0)		// better safe than sorry...
 	return(0);
 Lo = 0;
 Hi = m_NumScaffolds-1;
@@ -909,7 +909,7 @@ int Mid;
 int Hi;
 int Lo;
 tsPEScaffold *pEl1;
-if(m_ppPE2Scaffolds == NULL || m_NumScaffolds == 0)		// better safe than sorry...
+if(m_ppPE2Scaffolds == nullptr || m_NumScaffolds == 0)		// better safe than sorry...
 	return(0);
 Lo = 0;
 Hi = m_NumScaffolds-1;
@@ -945,12 +945,12 @@ return(0);		// unable to match any
 int						// returned next CurIdx to use on a subsequent call to IterPE1s (0 if all scaffords have been iterated)
 CPEScaffold::IterPE1s(int CurIdx,	// iterates, in PE1ContigID.PE2ContigID ascending order, all tsPEScaffolds, to start iterations
 		int ContigID,				// iterate for this PE1 chrom/contig
-		tsPEScaffold **ppPEScaffold)	// returned scafford or NULL if all scaffords have been iterated
+		tsPEScaffold **ppPEScaffold)	// returned scafford or nullptr if all scaffords have been iterated
 {
 tsPEScaffold *pScaffold;
 
-if(ppPEScaffold != NULL)
-	*ppPEScaffold = NULL;
+if(ppPEScaffold != nullptr)
+	*ppPEScaffold = nullptr;
 if(CurIdx < 0 || CurIdx >= m_NumScaffolds)
 	return(0);
 if(CurIdx == 0)
@@ -968,7 +968,7 @@ else
 		return(0);
 	}
 
-if(ppPEScaffold != NULL)
+if(ppPEScaffold != nullptr)
 	*ppPEScaffold = pScaffold;
 return(CurIdx + 1);
 }
@@ -976,12 +976,12 @@ return(CurIdx + 1);
 int						// returned next CurIdx to use on a subsequent call to IterPE2s (0 if all scaffords have been iterated)
 CPEScaffold::IterPE2s(int CurIdx,	// iterates, in PE2ContigID.PE1ContigID ascending order, all tsPEScaffolds, 0 to start iterations
 		int ContigID,				// iterate for this PE2 chrom/contig
-		tsPEScaffold **ppPEScaffold)	// returned scafford or NULL if all scaffords have been iterated
+		tsPEScaffold **ppPEScaffold)	// returned scafford or nullptr if all scaffords have been iterated
 {
 tsPEScaffold *pScaffold;
 
-if(ppPEScaffold != NULL)
-	*ppPEScaffold = NULL;
+if(ppPEScaffold != nullptr)
+	*ppPEScaffold = nullptr;
 if(CurIdx < 0 || CurIdx >= m_NumScaffolds)
 	return(0);
 
@@ -996,7 +996,7 @@ pScaffold = m_ppPE2Scaffolds[CurIdx];
 if(pScaffold->PE2ContigID != ContigID)
 	return(0);
 
-if(ppPEScaffold != NULL)
+if(ppPEScaffold != nullptr)
 	*ppPEScaffold = pScaffold;
 return(CurIdx + 1);
 }
@@ -1064,7 +1064,7 @@ if(ClusterID)
 			if(MaxNumClustered < pContig->NumClustered)
 				MaxNumClustered = pContig->NumClustered;
 			}
-	delete pNumClusterCnts;
+	delete []pNumClusterCnts;
 	}
 m_NumClusters = ClusterID;
 m_MaxNumClustered = MaxNumClustered;
@@ -1204,7 +1204,7 @@ for(Idx = 0; Idx < m_NumScaffolds; Idx++,pPEScaffold++)
 		if(PrevPE1ContigID != PrevPE2ContigID && (PrevPE1ContigID > 0 && PrevPE2ContigID > 0))
 			{
 			pMateScaffold = LocateMateScaffold(PrevPE2ContigID,PrevPE1ContigID);
-			if(pMateScaffold != NULL)
+			if(pMateScaffold != nullptr)
 				{
 				do {
 					if(pMateScaffold->PE1Sense == pMateScaffold->PE2Sense)
@@ -1282,7 +1282,7 @@ int Rslt;
 size_t memreq;
 Init();
 
-if(pszSeqIDTerm != NULL && pszSeqIDTerm[0] != '\0')
+if(pszSeqIDTerm != nullptr && pszSeqIDTerm[0] != '\0')
 	{
 	strncpy(m_szSeqIDTermChrs,pszSeqIDTerm,sizeof(m_szSeqIDTermChrs)-1);
 	m_szSeqIDTermChrs[sizeof(m_szSeqIDTermChrs)-1] = '\0';
@@ -1307,7 +1307,7 @@ memreq = (size_t)(sizeof(tsPEScaffoldContig) * cAllocContigNames);
 #ifdef _WIN32
 m_pScaffoldContigs = (tsPEScaffoldContig *) malloc(memreq);	// initial and perhaps the only allocation
 
-if(m_pScaffoldContigs == NULL)
+if(m_pScaffoldContigs == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %zd bytes for m_pScaffoldContigs - %s",(int64_t)memreq,strerror(errno));
 	Reset();
@@ -1315,11 +1315,11 @@ if(m_pScaffoldContigs == NULL)
 	}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-m_pScaffoldContigs = (tsPEScaffoldContig *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+m_pScaffoldContigs = (tsPEScaffoldContig *)mmap(nullptr,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pScaffoldContigs == MAP_FAILED)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %zd bytes for m_pScaffoldContigs through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
-	m_pScaffoldContigs = NULL;
+	m_pScaffoldContigs = nullptr;
 	Reset();
 	return(eBSFerrMem);
 	}
@@ -1329,7 +1329,7 @@ m_AllocdNumScaffoldContigs = cAllocContigNames;
 m_NumScaffoldContigs = 0;
 
 m_pHashContigs = new int [cHashSize];
-if(m_pHashContigs == NULL)
+if(m_pHashContigs == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %d bytes for m_pHashContigs - %s",cHashSize * sizeof(int),strerror(errno));
 	Reset();
@@ -1341,7 +1341,7 @@ memreq = (size_t)(sizeof(tsPEScaffold) * cAllocScafolds);
 #ifdef _WIN32
 m_pScaffolds = (tsPEScaffold *) malloc(memreq);	// initial and perhaps the only allocation
 
-if(m_pScaffolds == NULL)
+if(m_pScaffolds == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %zd bytes for m_pScaffolds - %s",(int64_t)memreq,strerror(errno));
 	Reset();
@@ -1349,11 +1349,11 @@ if(m_pScaffolds == NULL)
 	}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-m_pScaffolds = (tsPEScaffold *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+m_pScaffolds = (tsPEScaffold *)mmap(nullptr,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pScaffolds == MAP_FAILED)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %zd bytes for m_pScaffolds through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
-	m_pScaffolds = NULL;
+	m_pScaffolds = nullptr;
 	Reset();
 	return(eBSFerrMem);
 	}
@@ -1366,7 +1366,7 @@ memreq = (size_t)(sizeof(tsPEIdent) * cAllocPENames);
 #ifdef _WIN32
 m_pPEIdents = (tsPEIdent *) malloc(memreq);	// initial and perhaps the only allocation
 
-if(m_pPEIdents == NULL)
+if(m_pPEIdents == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %zd bytes for m_pPEIdents - %s",(int64_t)memreq,strerror(errno));
 	Reset();
@@ -1374,11 +1374,11 @@ if(m_pPEIdents == NULL)
 	}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-m_pPEIdents = (tsPEIdent *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+m_pPEIdents = (tsPEIdent *)mmap(nullptr,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pPEIdents == MAP_FAILED)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %zd bytes for m_pPEIdents through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
-	m_pPEIdents = NULL;
+	m_pPEIdents = nullptr;
 	Reset();
 	return(eBSFerrMem);
 	}
@@ -1388,7 +1388,7 @@ m_AllocdNumPEIdents = cAllocPENames;
 m_NumPEIdents = 0;
 
 m_pHashPEIdents = new int [cHashSize];
-if(m_pHashPEIdents == NULL)
+if(m_pHashPEIdents == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadReads: Memory allocation of %d bytes for m_pHashPEIdents - %s",cHashSize * sizeof(int),strerror(errno));
 	Reset();
@@ -1424,7 +1424,7 @@ if(m_NumScaffolds > 0)
 #ifdef _WIN32
 	m_ppPE2Scaffolds = (tsPEScaffold **) malloc(memreq);	// initial and perhaps the only allocation
 
-	if(m_ppPE2Scaffolds == NULL)
+	if(m_ppPE2Scaffolds == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Memory allocation of %zd bytes for m_ppPE2Scaffolds - %s",(int64_t)memreq,strerror(errno));
 		Reset();
@@ -1432,11 +1432,11 @@ if(m_NumScaffolds > 0)
 		}
 #else
 		// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-	m_ppPE2Scaffolds = (tsPEScaffold **)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+	m_ppPE2Scaffolds = (tsPEScaffold **)mmap(nullptr,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_ppPE2Scaffolds == MAP_FAILED)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Memory allocation of %zd bytes for m_ppPE2Scaffolds through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
-		m_ppPE2Scaffolds = NULL;
+		m_ppPE2Scaffolds = nullptr;
 		Reset();
 		return(eBSFerrMem);
 		}

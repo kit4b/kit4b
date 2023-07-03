@@ -72,13 +72,13 @@ teBSFrsltCodes Process(etDEPMode PMode,					// processing mode
 int rnade(int argc, char* argv[])
 {
 // determine my process name
-_splitpath(argv[0],NULL,NULL,gszProcName,NULL);
+_splitpath(argv[0],nullptr,nullptr,gszProcName,nullptr);
 #else
 int
 rnade(int argc, char** argv)
 {
 // determine my process name
-CUtility::splitpath((char *)argv[0],NULL,gszProcName);
+CUtility::splitpath((char *)argv[0],nullptr,gszProcName);
 #endif
 int iScreenLogLevel;		// level of file diagnostics
 int iFileLogLevel;			// level of file diagnostics
@@ -413,8 +413,8 @@ if (!argerrors)
 
 	for(NumInputControlSpecs=Idx=0;NumInputControlSpecs < cMaxInFileSpecs && Idx < incontrolfiles->count; Idx++)
 		{
-		pszInControlFiles[Idx] = NULL;
-		if(pszInControlFiles[NumInputControlSpecs] == NULL)
+		pszInControlFiles[Idx] = nullptr;
+		if(pszInControlFiles[NumInputControlSpecs] == nullptr)
 			pszInControlFiles[NumInputControlSpecs] = new char [_MAX_PATH];
 		strncpy(pszInControlFiles[NumInputControlSpecs],incontrolfiles->filename[Idx],_MAX_PATH);
 		pszInControlFiles[NumInputControlSpecs][_MAX_PATH-1] = '\0';
@@ -431,8 +431,8 @@ if (!argerrors)
 
 	for(NumInputExperimentSpecs=Idx=0;NumInputExperimentSpecs < cMaxInFileSpecs && Idx < inexperfiles->count; Idx++)
 		{
-		pszInExperimentFiles[Idx] = NULL;
-		if(pszInExperimentFiles[NumInputExperimentSpecs] == NULL)
+		pszInExperimentFiles[Idx] = nullptr;
+		if(pszInExperimentFiles[NumInputExperimentSpecs] == nullptr)
 			pszInExperimentFiles[NumInputExperimentSpecs] = new char [_MAX_PATH];
 		strncpy(pszInExperimentFiles[NumInputExperimentSpecs],inexperfiles->filename[Idx],_MAX_PATH);
 		pszInExperimentFiles[NumInputExperimentSpecs][_MAX_PATH-1] = '\0';
@@ -670,7 +670,7 @@ teBSFrsltCodes Process(etDEPMode PMode,					// processing mode
 teBSFrsltCodes Rslt;
 CRNA_DE* pCRNA_DE;
 
-if((pCRNA_DE = new CRNA_DE) == NULL)
+if((pCRNA_DE = new CRNA_DE) == nullptr)
 	{
 	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Unable to instantiate instance of CRNA_DE");
 	return(eBSFerrObj);
@@ -698,7 +698,8 @@ Rslt = pCRNA_DE->Process(PMode,					// processing mode
 					   pszExclZonesFile,		// exclude reads overlaying zone loci specified from this file
 					   pszOutfile,				// output into this file
 					   pszBinCountsFile);		// output bin counts to this file
-delete pCRNA_DE;
+if(pCRNA_DE == nullptr)
+	delete pCRNA_DE;
 return(Rslt);
 }
 
@@ -807,7 +808,7 @@ for(Lambda = 1; Lambda <= 10; Lambda++)
 		}
 	for(Idx = 0; Idx < Len; Idx++)
 		{
-		if(pThreadInst == NULL)
+		if(pThreadInst == nullptr)
 			*pPoisson++ = m_SimpleRNG.GetPoisson(Lambda);
 		else
 			*pPoisson++ =  pThreadInst->pSimpleRNG->GetPoisson(Lambda);
@@ -826,7 +827,7 @@ if(Lambda <= 0)
 	return(0);
 
 if(Lambda > 10)
-	return(pThreadInst == NULL ? m_SimpleRNG.GetPoisson(Lambda) : pThreadInst->pSimpleRNG->GetPoisson(Lambda));
+	return(pThreadInst == nullptr ? m_SimpleRNG.GetPoisson(Lambda) : pThreadInst->pSimpleRNG->GetPoisson(Lambda));
 
 switch(Lambda) {
 	case 1:
@@ -872,7 +873,7 @@ switch(Lambda) {
 	default:
 		return(0);
 	}
-IdxPoisson = pThreadInst == NULL ? m_SimpleRNG.GetUint() : pThreadInst->pSimpleRNG->GetUint();
+IdxPoisson = pThreadInst == nullptr ? m_SimpleRNG.GetUint() : pThreadInst->pSimpleRNG->GetUint();
 return(pPoissons[IdxPoisson  % Range]);
 }
 
@@ -948,22 +949,22 @@ pthread_spin_unlock(&m_hSpinLock);
 
 CRNA_DE::CRNA_DE()	// constructor
 {
-m_pThreadsInstData = NULL;
-m_pCtrlAlignReadLoci = NULL;
-m_pExprAlignReadLoci = NULL;
-m_pAlignBins = NULL;
-m_pBinInstsStarts = NULL;
-m_pWrtBinBuff = NULL;
-m_pWrtStatsBuff = NULL;
-m_pChroms = NULL;
-m_pChromHashes = NULL;
-m_pBEDFeatFile = NULL;
-m_pPoissonAlignBins = NULL;
-m_pFeatFoldChanges = NULL;
-m_pExclZones = NULL;
-m_pPValues = NULL;
-m_pPearsons = NULL;
-m_pFeatDEs = NULL;
+m_pThreadsInstData = nullptr;
+m_pCtrlAlignReadLoci = nullptr;
+m_pExprAlignReadLoci = nullptr;
+m_pAlignBins = nullptr;
+m_pBinInstsStarts = nullptr;
+m_pWrtBinBuff = nullptr;
+m_pWrtStatsBuff = nullptr;
+m_pChroms = nullptr;
+m_pChromHashes = nullptr;
+m_pBEDFeatFile = nullptr;
+m_pPoissonAlignBins = nullptr;
+m_pFeatFoldChanges = nullptr;
+m_pExclZones = nullptr;
+m_pPValues = nullptr;
+m_pPearsons = nullptr;
+m_pFeatDEs = nullptr;
 m_hOutStatsFile = -1;
 m_hOutBinFile = -1;
 m_bDEMutexesCreated = false;
@@ -978,7 +979,7 @@ if(m_hOutStatsFile != -1)
 if(m_hOutBinFile != -1)
 	close(m_hOutBinFile);
 
-if(m_pFeatDEs != NULL)
+if(m_pFeatDEs != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pFeatDEs);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -988,16 +989,16 @@ if(m_pFeatDEs != NULL)
 #endif
 	}
 
-if(m_pThreadsInstData != NULL)
+if(m_pThreadsInstData != nullptr)
 	delete m_pThreadsInstData;
 
-if(m_pChroms != NULL)
+if(m_pChroms != nullptr)
 	delete m_pChroms;
 
-if(m_pChromHashes != NULL)
-	m_pChromHashes = NULL;
+if(m_pChromHashes != nullptr)
+	m_pChromHashes = nullptr;
 
-if(m_pCtrlAlignReadLoci != NULL)
+if(m_pCtrlAlignReadLoci != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pCtrlAlignReadLoci);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -1007,7 +1008,7 @@ if(m_pCtrlAlignReadLoci != NULL)
 #endif
 	}
 
-if(m_pExprAlignReadLoci != NULL)
+if(m_pExprAlignReadLoci != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pExprAlignReadLoci);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -1017,7 +1018,7 @@ if(m_pExprAlignReadLoci != NULL)
 #endif
 	}
 
-if(m_pAlignBins != NULL)
+if(m_pAlignBins != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pAlignBins);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -1027,7 +1028,7 @@ if(m_pAlignBins != NULL)
 #endif
 	}
 
-if(m_pBinInstsStarts != NULL)
+if(m_pBinInstsStarts != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pBinInstsStarts);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -1037,7 +1038,7 @@ if(m_pBinInstsStarts != NULL)
 #endif
 	}
 
-if(m_pPoissonAlignBins != NULL)
+if(m_pPoissonAlignBins != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pPoissonAlignBins);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -1047,7 +1048,7 @@ if(m_pPoissonAlignBins != NULL)
 #endif
 	}
 
-if(m_pFeatFoldChanges != NULL)
+if(m_pFeatFoldChanges != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pFeatFoldChanges);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -1057,7 +1058,7 @@ if(m_pFeatFoldChanges != NULL)
 #endif
 	}
 
-if(m_pPValues != NULL)
+if(m_pPValues != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pPValues);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -1067,7 +1068,7 @@ if(m_pPValues != NULL)
 #endif
 	}
 
-if(m_pPearsons != NULL)
+if(m_pPearsons != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pPearsons);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -1077,16 +1078,16 @@ if(m_pPearsons != NULL)
 #endif
 	}
 
-if(m_pExclZones != NULL)
+if(m_pExclZones != nullptr)
 	delete m_pExclZones;
 
-if(m_pBEDFeatFile != NULL)
+if(m_pBEDFeatFile != nullptr)
 	delete m_pBEDFeatFile;
 
-if(m_pWrtBinBuff != NULL)
+if(m_pWrtBinBuff != nullptr)
 	delete m_pWrtBinBuff;
 
-if(m_pWrtStatsBuff != NULL)
+if(m_pWrtStatsBuff != nullptr)
 	delete m_pWrtStatsBuff;
 
 if(m_bDEMutexesCreated)
@@ -1124,7 +1125,7 @@ if(m_hOutBinFile != -1)
 	m_hOutBinFile = -1;
 	}
 
-if(m_pFeatDEs != NULL)
+if(m_pFeatDEs != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pFeatDEs);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -1132,28 +1133,28 @@ if(m_pFeatDEs != NULL)
 	if(m_pFeatDEs != MAP_FAILED)
 		munmap(m_pFeatDEs,m_AllocdFeatsDEd * sizeof(tsFeatDE));
 #endif
-	m_pFeatDEs = NULL;
+	m_pFeatDEs = nullptr;
 	}
 
-if(m_pThreadsInstData != NULL)
+if(m_pThreadsInstData != nullptr)
 	{
 	delete m_pThreadsInstData;
-	m_pThreadsInstData = NULL;
+	m_pThreadsInstData = nullptr;
 	}
 
-if(m_pChroms != NULL)
+if(m_pChroms != nullptr)
 	{
 	delete m_pChroms;
-	m_pChroms = NULL;
+	m_pChroms = nullptr;
 	}
 
-if(m_pChromHashes != NULL)
+if(m_pChromHashes != nullptr)
 	{
 	delete m_pChromHashes;
-	m_pChromHashes = NULL;
+	m_pChromHashes = nullptr;
 	}
 
-if(m_pCtrlAlignReadLoci != NULL)
+if(m_pCtrlAlignReadLoci != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pCtrlAlignReadLoci);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -1161,10 +1162,10 @@ if(m_pCtrlAlignReadLoci != NULL)
 	if(m_pCtrlAlignReadLoci != MAP_FAILED)
 		munmap(m_pCtrlAlignReadLoci,m_AllocdCtrlAlignReadsLoci * sizeof(tsAlignReadLoci));
 #endif
-	m_pCtrlAlignReadLoci = NULL;
+	m_pCtrlAlignReadLoci = nullptr;
 	}
 
-if(m_pExprAlignReadLoci != NULL)
+if(m_pExprAlignReadLoci != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pExprAlignReadLoci);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -1172,10 +1173,10 @@ if(m_pExprAlignReadLoci != NULL)
 	if(m_pExprAlignReadLoci != MAP_FAILED)
 		munmap(m_pExprAlignReadLoci,m_AllocdExprAlignReadsLoci * sizeof(tsAlignReadLoci));
 #endif
-	m_pExprAlignReadLoci = NULL;
+	m_pExprAlignReadLoci = nullptr;
 	}
 
-if(m_pAlignBins != NULL)
+if(m_pAlignBins != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pAlignBins);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -1183,10 +1184,10 @@ if(m_pAlignBins != NULL)
 	if(m_pAlignBins != MAP_FAILED)
 		munmap(m_pAlignBins,m_AllocdAlignBins * sizeof(tsAlignBin));
 #endif
-	m_pAlignBins = NULL;
+	m_pAlignBins = nullptr;
 	}
 
-if(m_pBinInstsStarts != NULL)
+if(m_pBinInstsStarts != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pBinInstsStarts);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -1194,10 +1195,10 @@ if(m_pBinInstsStarts != NULL)
 	if(m_pBinInstsStarts != MAP_FAILED)
 		munmap(m_pBinInstsStarts,m_AllocBinInstStarts * sizeof(tsAlignLociInstStarts));
 #endif
-	m_pBinInstsStarts = NULL;
+	m_pBinInstsStarts = nullptr;
 	}
 
-if(m_pPoissonAlignBins != NULL)
+if(m_pPoissonAlignBins != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pPoissonAlignBins);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -1205,10 +1206,10 @@ if(m_pPoissonAlignBins != NULL)
 	if(m_pPoissonAlignBins != MAP_FAILED)
 		munmap(m_pPoissonAlignBins,m_AllocNumPoissonCnts * sizeof(tsAlignBin));
 #endif
-	m_pPoissonAlignBins = NULL;
+	m_pPoissonAlignBins = nullptr;
 	}
 
-if(m_pFeatFoldChanges != NULL)
+if(m_pFeatFoldChanges != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pFeatFoldChanges);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -1216,10 +1217,10 @@ if(m_pFeatFoldChanges != NULL)
 	if(m_pFeatFoldChanges != MAP_FAILED)
 		munmap(m_pFeatFoldChanges,m_AllocNumFeatFoldChanges * sizeof(double));
 #endif
-	m_pFeatFoldChanges = NULL;
+	m_pFeatFoldChanges = nullptr;
 	}
 
-if(m_pPValues != NULL)
+if(m_pPValues != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pPValues);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -1227,10 +1228,10 @@ if(m_pPValues != NULL)
 	if(m_pPValues != MAP_FAILED)
 		munmap(m_pPValues,m_AllocNumPValues * sizeof(double));
 #endif
-	m_pPValues = NULL;
+	m_pPValues = nullptr;
 	}
 
-if(m_pPearsons != NULL)
+if(m_pPearsons != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pPearsons);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -1238,31 +1239,31 @@ if(m_pPearsons != NULL)
 	if(m_pPearsons != MAP_FAILED)
 		munmap(m_pPearsons,m_AllocNumPearsons * sizeof(double));
 #endif
-	m_pPearsons = NULL;
+	m_pPearsons = nullptr;
 	}
 
-if(m_pExclZones != NULL)
+if(m_pExclZones != nullptr)
 	{
 	delete m_pExclZones;
-	m_pExclZones = NULL;
+	m_pExclZones = nullptr;
 	}
 
-if(m_pBEDFeatFile != NULL)
+if(m_pBEDFeatFile != nullptr)
 	{
 	delete m_pBEDFeatFile;
-	m_pBEDFeatFile = NULL;
+	m_pBEDFeatFile = nullptr;
 	}
 
-if(m_pWrtBinBuff != NULL)
+if(m_pWrtBinBuff != nullptr)
 	{
 	delete m_pWrtBinBuff;
-	m_pWrtBinBuff = NULL;
+	m_pWrtBinBuff = nullptr;
 	}
 
-if(m_pWrtStatsBuff != NULL)
+if(m_pWrtStatsBuff != nullptr)
 	{
 	delete m_pWrtStatsBuff;
-	m_pWrtStatsBuff = NULL;
+	m_pWrtStatsBuff = nullptr;
 	}
 
 if(m_bDEMutexesCreated)
@@ -1314,7 +1315,7 @@ m_FeatsPerThread = 0;
 m_NumFeatsDEd = 0;
 m_AllocdFeatsDEd = 0;
 m_MaxConfidenceIterations = cMaxConfidenceIterations;
-InitPoissonSeqs(NULL);
+InitPoissonSeqs(nullptr);
 }
 
 
@@ -1342,7 +1343,7 @@ if((Rslt = m_pBEDFeatFile->GetFeature(pThreadInst->FeatureID,// feature instance
 			szChrom,				// where to return chromosome name
 			&StartLoci,				// where to return feature start on chromosome (0..n)
 			&EndLoci,				// where to return feature end on chromosome
-			NULL,					// where to return score
+			nullptr,					// where to return score
 			&Strand)) < eBSFSuccess)				// where to return strand
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Unexpected error returned from GetFeature: %d",Rslt);
@@ -1623,9 +1624,9 @@ for(ThreadInst = 1; ThreadInst <= (uint32_t)m_NumDEThreads; ThreadInst++,pThread
 	pThreadInst->pFeatFoldChanges = pFeatFoldChanges;
 	pThreadInst->pPValues = pPValues;
 #ifdef _WIN32
-	pThreadInst->threadHandle = (HANDLE)_beginthreadex(NULL,0x0fffff,&ThreadedDEprocInstance,pThreadInst,0,&pThreadInst->threadID);
+	pThreadInst->threadHandle = (HANDLE)_beginthreadex(nullptr,0x0fffff,&ThreadedDEprocInstance,pThreadInst,0,&pThreadInst->threadID);
 #else
-	pThreadInst->threadRslt =	pthread_create (&pThreadInst->threadID, NULL , ThreadedDEprocInstance , pThreadInst );
+	pThreadInst->threadRslt =	pthread_create (&pThreadInst->threadID, nullptr , ThreadedDEprocInstance , pThreadInst );
 #endif
 	}
 
@@ -1661,7 +1662,7 @@ for(ThreadInst = 1;ThreadInst <= (uint32_t)m_NumDEThreads; ThreadInst++,pThreadI
 	int JoinRlt;
 	clock_gettime(CLOCK_REALTIME, &ts);
 	ts.tv_sec += 60 * 10;
-	while((JoinRlt = pthread_timedjoin_np(pThreadInst->threadID, NULL, &ts)) != 0)
+	while((JoinRlt = pthread_timedjoin_np(pThreadInst->threadID, nullptr, &ts)) != 0)
 		{
 		// report on progress
 		DEAcquireSerialise();
@@ -1673,9 +1674,9 @@ for(ThreadInst = 1;ThreadInst <= (uint32_t)m_NumDEThreads; ThreadInst++,pThreadI
 
 #endif
 	delete pThreadInst->pSimpleRNG;
-	 pThreadInst->pSimpleRNG = NULL;
+	 pThreadInst->pSimpleRNG = nullptr;
 	 delete pThreadInst->pStats;
-	 pThreadInst->pStats = NULL;
+	 pThreadInst->pStats = nullptr;
 
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Thread %d finished...", ThreadInst);
 	if(pThreadInst->Rslt != eBSFSuccess)
@@ -1703,7 +1704,7 @@ int FeatClass;
 int UnableToAssocCnt;
 
 CCSVFile *pCSV = new CCSVFile;
-if(pCSV == NULL)
+if(pCSV == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to instantiate CCSVfile");
 	return(eBSFerrObj);
@@ -1767,7 +1768,7 @@ int UnableToAssocCnt;
 tsExclZone *pExclZone;
 
 CCSVFile *pCSV = new CCSVFile;
-if(pCSV == NULL)
+if(pCSV == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to instantiate CCSVfile");
 	return(eBSFerrObj);
@@ -1782,7 +1783,7 @@ if((Rslt=pCSV->Open(pszExclZonesFile))!=eBSFSuccess)
 	return(Rslt);
 	}
 
-if(m_pExclZones == NULL)
+if(m_pExclZones == nullptr)
 	m_pExclZones = new tsExclZone [cMaxExclZones];
 m_NumExclZones = 0;
 m_NumExclReads = 0;
@@ -1908,7 +1909,7 @@ if((m_hOutStatsFile = open(pszOutfile, O_RDWR | O_CREAT |O_TRUNC, S_IREAD | S_IW
 	}
 m_bWrtStatHdr = true;
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Output results file created/truncated: '%s'",pszOutfile);
-if((m_pWrtStatsBuff = new uint8_t [cWrtStatBuffSize])==NULL)
+if((m_pWrtStatsBuff = new uint8_t [cWrtStatBuffSize])==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate %d bytes for output write buffering",cWrtStatBuffSize);
 	Reset();
@@ -1917,7 +1918,7 @@ if((m_pWrtStatsBuff = new uint8_t [cWrtStatBuffSize])==NULL)
 m_AllocStatsWrtBuff = cWrtStatBuffSize;
 m_WrtStatsBuffOfs = 0;
 
-if(pszBinCountsFile != NULL && pszBinCountsFile[0] != '\0')
+if(pszBinCountsFile != nullptr && pszBinCountsFile[0] != '\0')
 	{
 #ifdef _WIN32
 	if((m_hOutBinFile = open(pszBinCountsFile, _O_RDWR | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC, _S_IREAD | _S_IWRITE ))==-1)
@@ -1932,7 +1933,7 @@ if(pszBinCountsFile != NULL && pszBinCountsFile[0] != '\0')
 
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Output bin counts file created/truncated: '%s'",pszBinCountsFile);
 	m_bWrtBinHdr = true;
-	if((m_pWrtBinBuff = new uint8_t [cWrtBinBuffSize])==NULL)
+	if((m_pWrtBinBuff = new uint8_t [cWrtBinBuffSize])==nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate %d bytes for output write buffering",cWrtBinBuffSize);
 		Reset();
@@ -1944,7 +1945,7 @@ if(pszBinCountsFile != NULL && pszBinCountsFile[0] != '\0')
 else
 	{
 	m_hOutBinFile = -1;
-	m_pWrtBinBuff = NULL;
+	m_pWrtBinBuff = nullptr;
 	m_AllocBinWrtBuff = 0;
 	}
 
@@ -1961,7 +1962,7 @@ m_NumFeaturesLoaded = m_pBEDFeatFile->GetNumFeatures();
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Completed loading %d features",m_NumFeaturesLoaded);
 m_pBEDFeatFile->InitUserClass(0);		// reset any previously existing user classifications back to the indeterminate state
 
-if(pszFeatClassFile != NULL && pszFeatClassFile[0] != '\0')
+if(pszFeatClassFile != nullptr && pszFeatClassFile[0] != '\0')
 	{
 	m_ProcessingPhase = ePPLoadFeatClass;
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Loading gene feature classifications from '%s'...",pszFeatClassFile);
@@ -1973,7 +1974,7 @@ if(pszFeatClassFile != NULL && pszFeatClassFile[0] != '\0')
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Completed loading gene feature classifications");
 	}
 
-if(pszExclZonesFile != NULL && pszExclZonesFile[0] != '\0')
+if(pszExclZonesFile != nullptr && pszExclZonesFile[0] != '\0')
 	{
 	m_ProcessingPhase = ePPLoadExclZones;
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Loading read exclusion zone loci from '%s'...",pszExclZonesFile);
@@ -2028,7 +2029,7 @@ if(Rslt < eBSFSuccess)
 
 m_ProcessingPhase = ePPAllocDEmem;
 // each thread has it's own data instance containing the variables it is currently processing/generating
-if((m_pThreadsInstData = new tsThreadInstData [NumThreads])==NULL)
+if((m_pThreadsInstData = new tsThreadInstData [NumThreads])==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Failed allocating memory for thread instance data");
 	Reset();
@@ -2041,7 +2042,7 @@ size_t memreq;
 memreq = m_NumBins * sizeof(tsAlignBin) * NumThreads;
 #ifdef _WIN32
 m_pAlignBins = (tsAlignBin *) malloc((size_t)memreq);
-if(m_pAlignBins == NULL)
+if(m_pAlignBins == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %zd bytes for bins failed",(int64_t)memreq);
 	Reset();
@@ -2049,11 +2050,11 @@ if(m_pAlignBins == NULL)
 	}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-m_pAlignBins = (tsAlignBin *)mmap(NULL,(size_t)memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+m_pAlignBins = (tsAlignBin *)mmap(nullptr,(size_t)memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pAlignBins == MAP_FAILED)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %zd bytes for bins through mmap()  failed",(int64_t)memreq,strerror(errno));
-	m_pAlignBins = NULL;
+	m_pAlignBins = nullptr;
 	Reset();
 	return(eBSFerrMem);
 	}
@@ -2064,7 +2065,7 @@ m_AllocdAlignBins = m_NumBins * NumThreads;
 memreq = m_NumBins * sizeof(tsAlignBin) * NumThreads;
 #ifdef _WIN32
 m_pPoissonAlignBins = (tsAlignBin *) malloc((size_t)memreq);
-if(m_pPoissonAlignBins == NULL)
+if(m_pPoissonAlignBins == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %zd bytes for bins failed",(int64_t)memreq);
 	Reset();
@@ -2072,11 +2073,11 @@ if(m_pPoissonAlignBins == NULL)
 	}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-m_pPoissonAlignBins = (tsAlignBin *)mmap(NULL,(size_t)memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+m_pPoissonAlignBins = (tsAlignBin *)mmap(nullptr,(size_t)memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pPoissonAlignBins == MAP_FAILED)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %zd bytes for bins through mmap()  failed",(int64_t)memreq,strerror(errno));
-	m_pPoissonAlignBins = NULL;
+	m_pPoissonAlignBins = nullptr;
 	Reset();
 	return(eBSFerrMem);
 	}
@@ -2087,7 +2088,7 @@ m_AllocNumPoissonCnts = m_NumBins * NumThreads;
 memreq = cMaxAssumTransLoci * NumThreads * sizeof(tsAlignLociInstStarts);
 #ifdef _WIN32
 m_pBinInstsStarts = (tsAlignLociInstStarts *) malloc((size_t)memreq);
-if(m_pBinInstsStarts == NULL)
+if(m_pBinInstsStarts == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %zd bytes for bin loci instances failed",(int64_t)memreq);
 	Reset();
@@ -2095,11 +2096,11 @@ if(m_pBinInstsStarts == NULL)
 	}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-m_pBinInstsStarts = (tsAlignLociInstStarts *)mmap(NULL,(size_t)memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+m_pBinInstsStarts = (tsAlignLociInstStarts *)mmap(nullptr,(size_t)memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pBinInstsStarts == MAP_FAILED)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %zd bytes for bin loci instances through mmap()  failed",(int64_t)memreq,strerror(errno));
-	m_pBinInstsStarts = NULL;
+	m_pBinInstsStarts = nullptr;
 	Reset();
 	return(eBSFerrMem);
 	}
@@ -2110,7 +2111,7 @@ m_AllocBinInstStarts = cMaxAssumTransLoci * NumThreads;
 memreq = cMaxConfidenceIterations * NumThreads * sizeof(double);
 #ifdef _WIN32
 m_pFeatFoldChanges = (double *) malloc((size_t)memreq);
-if(m_pFeatFoldChanges == NULL)
+if(m_pFeatFoldChanges == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %zd bytes for fold change instances failed",(int64_t)memreq);
 	Reset();
@@ -2118,11 +2119,11 @@ if(m_pFeatFoldChanges == NULL)
 	}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-m_pFeatFoldChanges = (double *)mmap(NULL,(size_t)memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+m_pFeatFoldChanges = (double *)mmap(nullptr,(size_t)memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pFeatFoldChanges == MAP_FAILED)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %zd bytes for fold change instances through mmap()  failed",(int64_t)memreq,strerror(errno));
-	m_pFeatFoldChanges = NULL;
+	m_pFeatFoldChanges = nullptr;
 	Reset();
 	return(eBSFerrMem);
 	}
@@ -2132,7 +2133,7 @@ m_AllocNumFeatFoldChanges = cMaxConfidenceIterations * NumThreads;
 memreq = cMaxConfidenceIterations * NumThreads * sizeof(double);
 #ifdef _WIN32
 m_pPValues = (double *) malloc((size_t)memreq);
-if(m_pPValues == NULL)
+if(m_pPValues == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %zd bytes for PValue instances failed",(int64_t)memreq);
 	Reset();
@@ -2140,11 +2141,11 @@ if(m_pPValues == NULL)
 	}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-m_pPValues = (double *)mmap(NULL,(size_t)memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+m_pPValues = (double *)mmap(nullptr,(size_t)memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pPValues == MAP_FAILED)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %zd bytes for PValue instances through mmap()  failed",(int64_t)memreq,strerror(errno));
-	m_pPValues = NULL;
+	m_pPValues = nullptr;
 	Reset();
 	return(eBSFerrMem);
 	}
@@ -2154,7 +2155,7 @@ m_AllocNumPValues = cMaxConfidenceIterations * NumThreads;
 memreq = cMaxConfidenceIterations * NumThreads * sizeof(double);
 #ifdef _WIN32
 m_pPearsons = (double *) malloc((size_t)memreq);
-if(m_pPearsons == NULL)
+if(m_pPearsons == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %zd bytes for fold change pearsons instances failed",(int64_t)memreq);
 	Reset();
@@ -2162,11 +2163,11 @@ if(m_pPearsons == NULL)
 	}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-m_pPearsons = (double *)mmap(NULL,(size_t)memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+m_pPearsons = (double *)mmap(nullptr,(size_t)memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pFeatFoldChanges == MAP_FAILED)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %zd bytes for fold change instances through mmap()  failed",(int64_t)memreq,strerror(errno));
-	m_pFeatFoldChanges = NULL;
+	m_pFeatFoldChanges = nullptr;
 	Reset();
 	return(eBSFerrMem);
 	}
@@ -2176,7 +2177,7 @@ m_AllocNumPearsons = cMaxConfidenceIterations * NumThreads;
 memreq = (m_NumFeaturesLoaded + 1) * sizeof(tsFeatDE);
 #ifdef _WIN32
 m_pFeatDEs = (tsFeatDE *) malloc((size_t)memreq);
-if(m_pFeatDEs == NULL)
+if(m_pFeatDEs == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %zd bytes for processed feature instances failed",(int64_t)memreq);
 	Reset();
@@ -2184,11 +2185,11 @@ if(m_pFeatDEs == NULL)
 	}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-m_pFeatDEs = (tsFeatDE *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+m_pFeatDEs = (tsFeatDE *)mmap(nullptr,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pFeatDEs == MAP_FAILED)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: Memory allocation of %zd bytes for processed feature instances through mmap()  failed",(int64_t)memreq,strerror(errno));
-	m_pFeatDEs = NULL;
+	m_pFeatDEs = nullptr;
 	Reset();
 	return(eBSFerrMem);
 	}
@@ -2338,7 +2339,7 @@ CRNA_DE::LoadGeneFeatures(char Strand,			// features on this strand
 				 char *pszInFeatFile)	// from this BED file
 {
 teBSFrsltCodes Rslt;
-if((m_pBEDFeatFile = new CBEDfile)==NULL)
+if((m_pBEDFeatFile = new CBEDfile)==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to instantiate CBEDfile");
 	Reset();
@@ -2531,9 +2532,9 @@ if(bIsExperiment)
 	#else
 		pTmpAlloc = (uint8_t *)mremap(m_pExprAlignReadLoci, m_AllocdExprAlignReadsMem,memreq,MREMAP_MAYMOVE);
 		if(pTmpAlloc == MAP_FAILED)
-			pTmpAlloc = NULL;
+			pTmpAlloc = nullptr;
 	#endif
-		if(pTmpAlloc == NULL)
+		if(pTmpAlloc == nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddReadLoci: Memory reallocation to %zd bytes failed - %s",memreq,strerror(errno));
 			Reset();
@@ -2556,9 +2557,9 @@ else
 	#else
 		pTmpAlloc = (uint8_t *)mremap(m_pCtrlAlignReadLoci, m_AllocdCtrlAlignReadsMem,memreq,MREMAP_MAYMOVE);
 		if(pTmpAlloc == MAP_FAILED)
-			pTmpAlloc = NULL;
+			pTmpAlloc = nullptr;
 	#endif
-		if(pTmpAlloc == NULL)
+		if(pTmpAlloc == nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddReadLoci: Memory reallocation to %zd bytes failed - %s",memreq,strerror(errno));
 			Reset();
@@ -2715,9 +2716,9 @@ if(bExperiment)
 	#else
 		pTmpAlloc = (uint8_t *)mremap(m_pExprAlignReadLoci, m_AllocdExprAlignReadsMem,memreq,MREMAP_MAYMOVE);
 		if(pTmpAlloc == MAP_FAILED)
-			pTmpAlloc = NULL;
+			pTmpAlloc = nullptr;
 	#endif
-		if(pTmpAlloc == NULL)
+		if(pTmpAlloc == nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"CoalesceReadAlignments: Memory reallocation to %zd bytes failed - %s",memreq,strerror(errno));
 			Reset();
@@ -2740,9 +2741,9 @@ else
 	#else
 		pTmpAlloc = (uint8_t *)mremap(m_pCtrlAlignReadLoci, m_AllocdCtrlAlignReadsMem,memreq,MREMAP_MAYMOVE);
 		if(pTmpAlloc == MAP_FAILED)
-			pTmpAlloc = NULL;
+			pTmpAlloc = nullptr;
 	#endif
-		if(pTmpAlloc == NULL)
+		if(pTmpAlloc == nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"CoalesceReadAlignments: Memory reallocation to %zd bytes failed - %s",memreq,strerror(errno));
 			Reset();
@@ -3017,7 +3018,7 @@ int MAPQ;
 int PNext;
 
 CSAMfile* pBAMfile;
-if ((pBAMfile = new CSAMfile) == NULL)
+if ((pBAMfile = new CSAMfile) == nullptr)
 	return(eBSFerrInternal);
 
 PrevNow = gStopWatch.ReadUSecs();
@@ -3105,7 +3106,7 @@ char szChrom[128];
 char szFeatName[128];
 char Strand;
 
-if((pBEDFile = new CBEDfile)==NULL)
+if((pBEDFile = new CBEDfile)==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to instantiate CBEDfile");
 	return(eBSFerrObj);
@@ -3196,11 +3197,11 @@ int NumFields;
 char szRawLine[200];
 
 
-CCSVFile *pCSVAligns = NULL;
+CCSVFile *pCSVAligns = nullptr;
 
 
 // load into memory
-if((pCSVAligns = new CCSVFile) == NULL)
+if((pCSVAligns = new CCSVFile) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to instantiate CCSVfile");
 	return(eBSFerrObj);
@@ -3291,10 +3292,10 @@ char *
 CRNA_DE::IDtoChrom(uint32_t ChromID)	// returns ptr to chrom for ChromID
 {
 char *pszChrom;
-if(m_pChroms == NULL || m_pChromHashes == NULL || ChromID == 0 || ChromID > (uint32_t)m_CurNumChroms)
+if(m_pChroms == nullptr || m_pChromHashes == nullptr || ChromID == 0 || ChromID > (uint32_t)m_CurNumChroms)
 	{
 	ReleaseSerialise();
-	return(NULL);
+	return(nullptr);
 	}
 pszChrom = m_pChroms[ChromID-1].szChromName;
 return(pszChrom);
@@ -3308,10 +3309,10 @@ tsRefIDChrom *pNewChrom;
 uint32_t aHash = (uint32_t)CUtility::GenHash24(pszChrom);
 DEAcquireSerialise();
 
-if(m_pChromHashes == NULL)		// NULL if first time..
+if(m_pChromHashes == nullptr)		// nullptr if first time..
 	{
 	m_pChromHashes = new uint32_t [0x01000000];	// 24bit hashes
-	if(m_pChromHashes == NULL)
+	if(m_pChromHashes == nullptr)
 		{
 		ReleaseSerialise();
 		return(0);
@@ -3319,10 +3320,10 @@ if(m_pChromHashes == NULL)		// NULL if first time..
 	memset(m_pChromHashes,0,sizeof(uint32_t) * 0x01000000);
 	}
 
-if(m_pChroms == NULL)		// NULL if first time...
+if(m_pChroms == nullptr)		// nullptr if first time...
 	{
 	m_pChroms = new tsRefIDChrom [cChromsInitalAllocNum*10];
-	if(m_pChroms == NULL)
+	if(m_pChroms == nullptr)
 		{
 		ReleaseSerialise();
 		return(0);
@@ -3374,7 +3375,7 @@ if(!bAdd)
 if(m_CurNumChroms >= m_NumChromsAllocd - 1)
 	{
 	pNewChrom = new tsRefIDChrom [m_NumChromsAllocd + (cChromsGrowAllocNum * 10)];
-	if(pNewChrom == NULL)
+	if(pNewChrom == nullptr)
 		{
 		ReleaseSerialise();
 		return(0);
@@ -3456,12 +3457,12 @@ char *pszInfile;
 int NumInputFilesProcessed;
 size_t memreq;
 
-if(m_pCtrlAlignReadLoci == NULL)
+if(m_pCtrlAlignReadLoci == nullptr)
 	{
 	memreq = cAlignReadsLociInitalAlloc * sizeof(tsAlignReadLoci);
 #ifdef _WIN32
 	m_pCtrlAlignReadLoci = (tsAlignReadLoci *) malloc((size_t)memreq);
-	if(m_pCtrlAlignReadLoci == NULL)
+	if(m_pCtrlAlignReadLoci == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEntry: Memory allocation of %zd bytes failed",(int64_t)memreq);
 		Reset();
@@ -3469,11 +3470,11 @@ if(m_pCtrlAlignReadLoci == NULL)
 		}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-	m_pCtrlAlignReadLoci = (tsAlignReadLoci *)mmap(NULL,(size_t)memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+	m_pCtrlAlignReadLoci = (tsAlignReadLoci *)mmap(nullptr,(size_t)memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pCtrlAlignReadLoci == MAP_FAILED)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadAlignedReadFiles: Memory allocation of %zd bytes through mmap()  failed",(int64_t)memreq,strerror(errno));
-		m_pCtrlAlignReadLoci = NULL;
+		m_pCtrlAlignReadLoci = nullptr;
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -3484,12 +3485,12 @@ if(m_pCtrlAlignReadLoci == NULL)
 	memset(m_pCtrlAlignReadLoci,0,sizeof(tsAlignReadLoci));
 	}
 
-if(m_pExprAlignReadLoci == NULL)
+if(m_pExprAlignReadLoci == nullptr)
 	{
 	memreq = cAlignReadsLociInitalAlloc * sizeof(tsAlignReadLoci);
 #ifdef _WIN32
 	m_pExprAlignReadLoci = (tsAlignReadLoci *) malloc((size_t)memreq);
-	if(m_pExprAlignReadLoci == NULL)
+	if(m_pExprAlignReadLoci == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddEntry: Memory allocation of %zd bytes failed",(int64_t)memreq);
 		Reset();
@@ -3497,11 +3498,11 @@ if(m_pExprAlignReadLoci == NULL)
 		}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-	m_pExprAlignReadLoci = (tsAlignReadLoci *)mmap(NULL,(size_t)memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+	m_pExprAlignReadLoci = (tsAlignReadLoci *)mmap(nullptr,(size_t)memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pExprAlignReadLoci == MAP_FAILED)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadAlignedReadFiles: Memory allocation of %zd bytes through mmap()  failed",(int64_t)memreq,strerror(errno));
-		m_pExprAlignReadLoci = NULL;
+		m_pExprAlignReadLoci = nullptr;
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -3626,7 +3627,7 @@ return(Rslt);
 int
 CRNA_DE::LocateStartAlignment(char Strand,uint32_t ChromID,uint32_t StartLoci,uint32_t EndLoci, uint32_t NumAlignReadsLoci,tsAlignReadLoci *pAlignReadLoci)
 {
-if(pAlignReadLoci == NULL|| NumAlignReadsLoci == 0)
+if(pAlignReadLoci == nullptr|| NumAlignReadsLoci == 0)
 	return(0);
 
 tsAlignReadLoci *pEl2;
@@ -4226,7 +4227,7 @@ tsFeatDE *pFeatDE;
 uint32_t *pBinCnts;
 int CurBin;
 
-if(m_hOutBinFile == -1 || m_pWrtBinBuff == NULL)
+if(m_hOutBinFile == -1 || m_pWrtBinBuff == nullptr)
 	return(eBSFSuccess);
 
 if(m_bWrtBinHdr)
@@ -4316,7 +4317,7 @@ CRNA_DE::ReportDEandPearsons(void)
 tsFeatDE *pFeatDE;
 int Idx;
 
-if(m_hOutStatsFile == -1 || m_pWrtStatsBuff == NULL)
+if(m_hOutStatsFile == -1 || m_pWrtStatsBuff == nullptr)
 	return(eBSFSuccess);
 
 if(m_bWrtStatHdr)

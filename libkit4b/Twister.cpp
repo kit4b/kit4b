@@ -881,7 +881,7 @@ while(iSeqEntry || (ProbeEntryID = pBioSeqFile->Next(ProbeEntryID)) > eBSFSucces
 		}
 
 if(pSeqBuff != NULL)
-	delete pSeqBuff;
+	delete []pSeqBuff;
 
 if(hRslts > 0)
 	{

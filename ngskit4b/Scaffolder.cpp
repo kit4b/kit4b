@@ -65,13 +65,13 @@ ProcessScaffoldedContigs(int PMode,			// processing mode: 0 - output scaffold mu
 int ScaffoldContigs(int argc, char* argv[])
 {
 // determine my process name
-_splitpath(argv[0],NULL,NULL,gszProcName,NULL);
+_splitpath(argv[0],nullptr,nullptr,gszProcName,nullptr);
 #else
 int
 ScaffoldContigs(int argc, char** argv)
 {
 // determine my process name
-CUtility::splitpath((char *)argv[0],NULL,gszProcName);
+CUtility::splitpath((char *)argv[0],nullptr,gszProcName);
 #endif
 int iScreenLogLevel;		// level of screen diagnostics
 int iFileLogLevel;			// level of file diagnostics
@@ -634,7 +634,7 @@ ScaffoldPars.pszContigsFile = pszContigsFile;
 ScaffoldPars.pszScaffoldedFile = pszScaffoldedFile;		
 
 #ifdef _WIN32
-ScaffoldPars.threadHandle = (HANDLE)_beginthreadex(NULL,cMainThreadStackSize, ThreadedScaffolds, &ScaffoldPars, 0, &ScaffoldPars.threadID);
+ScaffoldPars.threadHandle = (HANDLE)_beginthreadex(nullptr,cMainThreadStackSize, ThreadedScaffolds, &ScaffoldPars, 0, &ScaffoldPars.threadID);
 Sleep(3000);
 while (WAIT_TIMEOUT == WaitForSingleObject(ScaffoldPars.threadHandle, 60000)) 
 	{  // one day could put a reporting progress function in here ....
@@ -655,7 +655,7 @@ pthread_attr_destroy(&threadattr);
 sleep(3);
 clock_gettime(CLOCK_REALTIME, &ts);
 ts.tv_sec += 60;
-while ((JoinRslt = pthread_timedjoin_np(ScaffoldPars.threadID, NULL, &ts)) != 0)
+while ((JoinRslt = pthread_timedjoin_np(ScaffoldPars.threadID, nullptr, &ts)) != 0)
 	{ // one day could put a reporting progress function in here ....
 	ts.tv_sec += 60;
 	}
@@ -681,10 +681,10 @@ ScaffolderReset(false);
 int
 CScaffolder::ScaffolderInit(void)
 {
-m_pSeqEdges = NULL;
-m_ppToSeqEdges = NULL;
-m_pSeqVertices = NULL;
-m_pszScaffoldBuff = NULL;
+m_pSeqEdges = nullptr;
+m_ppToSeqEdges = nullptr;
+m_pSeqVertices = nullptr;
+m_pszScaffoldBuff = nullptr;
 m_hScaffoldFasta = -1;
 CKit4bdna::Reset(false);
 CdeNovoAssemb::Reset(false);
@@ -709,7 +709,7 @@ if(m_hScaffoldFasta != -1)
 	m_hScaffoldFasta = -1;
 	}
 
-if(m_pSeqEdges != NULL)
+if(m_pSeqEdges != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pSeqEdges);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -717,10 +717,10 @@ if(m_pSeqEdges != NULL)
 	if(m_pSeqEdges != MAP_FAILED)
 		munmap(m_pSeqEdges,m_AllocMemSeqEdges);
 #endif	
-	m_pSeqEdges = NULL;
+	m_pSeqEdges = nullptr;
 	}
 
-if(m_ppToSeqEdges != NULL)
+if(m_ppToSeqEdges != nullptr)
 	{
 #ifdef _WIN32
 	free(m_ppToSeqEdges);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -728,10 +728,10 @@ if(m_ppToSeqEdges != NULL)
 	if(m_ppToSeqEdges != MAP_FAILED)
 		munmap(m_ppToSeqEdges,m_AllocMemToSeqEdges);
 #endif	
-	m_ppToSeqEdges = NULL;
+	m_ppToSeqEdges = nullptr;
 	}
 
-if(m_pSeqVertices != NULL)
+if(m_pSeqVertices != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pSeqVertices);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -739,13 +739,13 @@ if(m_pSeqVertices != NULL)
 	if(m_pSeqVertices != MAP_FAILED)
 		munmap(m_pSeqVertices,m_AllocMemSeqVertices);
 #endif	
-	m_pSeqVertices = NULL;
+	m_pSeqVertices = nullptr;
 	}
 
-if(m_pszScaffoldBuff != NULL)
+if(m_pszScaffoldBuff != nullptr)
 	{
 	delete m_pszScaffoldBuff;
-	m_pszScaffoldBuff = NULL;
+	m_pszScaffoldBuff = nullptr;
 	}
 
 CKit4bdna::Reset(bSync);
@@ -810,7 +810,7 @@ SeqWrdBytes = GetSeqWrdBytes();
 CumulativeMemory = 0;
 CumulativeSequences = 0;
 
-if(pszSeedContigsFile != NULL && pszSeedContigsFile[0] != '\0')
+if(pszSeedContigsFile != nullptr && pszSeedContigsFile[0] != '\0')
 	{
 	if((Rslt = EstMemReq(pszSeedContigsFile)) != eBSFSuccess)
 		{
@@ -824,7 +824,7 @@ else
 	EstNumCtgs = 0;
 
 
-if(pszPE1File != NULL && pszPE1File[0] != '\0')
+if(pszPE1File != nullptr && pszPE1File[0] != '\0')
 	{
 	if((Rslt =EstMemReq(pszPE1File)) != eBSFSuccess)
 		{
@@ -931,7 +931,7 @@ m_MinReqPESepDist = MinPEInsertSize;
 m_MaxReqPESepDist = MaxPEInsertSize;
 m_MinScaffoldedSeqLen = MinScaffoldedSeqLen;
 if(Subs100bp < 0 || Subs100bp > cMaxSubs100bp ||
-   pszScaffoldedFile == NULL || pszScaffoldedFile[0] == '\0')
+   pszScaffoldedFile == nullptr || pszScaffoldedFile[0] == '\0')
    return(eBSFerrParams);
 Subs1Kbp = Subs100bp * 10;
 
@@ -1071,7 +1071,7 @@ int TotNumNonSense;
 uint32_t CurSeqVertexIdx;
 tsSeqVertex *pCurSeqVertex;
 
-if(m_pSeqVertices == NULL || m_NumSeqVertices < 1)	
+if(m_pSeqVertices == nullptr || m_NumSeqVertices < 1)	
 	return(0);	
 
 
@@ -1155,7 +1155,7 @@ bRemovePE = false;
 for(SeqID = 1; SeqID <= m_Sequences.NumSeqs2Assemb; SeqID++)
 	{
 	GetSeqHeader(SeqID,					// 32 bit sequence identifier
-						NULL,			// returned 5 bit source file identifier in bits 4..0
+						nullptr,			// returned 5 bit source file identifier in bits 4..0
 						&PE1Flags,		// returned 16 bit sequence flags in bits 20..0
 						&SeqLen,		// returned 30 bit sequence length
 						false);			// set true if access to headers are required to be serialised
@@ -1168,15 +1168,15 @@ for(SeqID = 1; SeqID <= m_Sequences.NumSeqs2Assemb; SeqID++)
 	// iterate over all PE1 and PE2 edges looking for PE1 and PE2 overlapping the same target SE sequence - both PE1 and PE2 will be marked for deletion
     // at same time look for PE1 or PE2 not overlapping any SE - if either does not overlap then both PE1 and PE2 will be marked for deletion
 	bRemovePE = false;
-	pPE1Edge = NULL;
+	pPE1Edge = nullptr;
 	PE1EdgeID = 0;
 	NumPE1Edges = 0;
 	NumPE2Edges = 0;
-	while(!bRemovePE && ((pPE1Edge = IterateEdgeFromSeqID(PE1SeqID,&PE1EdgeID)) != NULL))
+	while(!bRemovePE && ((pPE1Edge = IterateEdgeFromSeqID(PE1SeqID,&PE1EdgeID)) != nullptr))
 		{
 		NumPE1Edges += 1;			// at least one PE1 overlap onto a SE
 		PE2EdgeID = 0;
-		while((pPE2Edge = IterateEdgeFromSeqID(PE2SeqID,&PE2EdgeID)) != NULL)
+		while((pPE2Edge = IterateEdgeFromSeqID(PE2SeqID,&PE2EdgeID)) != nullptr)
 			{
 			NumPE2Edges += 1;		// at least one PE2 overlap onto a SE
 			if(pPE1Edge->TargetSeqID == pPE2Edge->TargetSeqID)  // are both PE1 and PE2 overlaying same SE?
@@ -1190,15 +1190,15 @@ for(SeqID = 1; SeqID <= m_Sequences.NumSeqs2Assemb; SeqID++)
 	if(NumPE1Edges == 0 || NumPE2Edges == 0 || bRemovePE) // if either end had no overlaps or both overlapping onto same SE (bRemove set) then mark all effected PE edges with FlgSlough and delete the PEs 
 		{
 		PE1EdgeID = 0;
-		pPE1Edge = NULL;
-		while((pPE1Edge = IterateEdgeFromSeqID(PE1SeqID,&PE1EdgeID)) != NULL)
+		pPE1Edge = nullptr;
+		while((pPE1Edge = IterateEdgeFromSeqID(PE1SeqID,&PE1EdgeID)) != nullptr)
 			{
 			pPE1Edge->FlgSlough = 1;
 			NumRemoveEdges += 1;
 			}
 		PE2EdgeID = 0;
-		pPE2Edge = NULL;
-		while((pPE2Edge = IterateEdgeFromSeqID(PE2SeqID,&PE2EdgeID)) != NULL)
+		pPE2Edge = nullptr;
+		while((pPE2Edge = IterateEdgeFromSeqID(PE2SeqID,&PE2EdgeID)) != nullptr)
 			{
 			pPE2Edge->FlgSlough = 1;
 			NumRemoveEdges += 1;
@@ -1241,7 +1241,7 @@ for(SeqID = 1; SeqID <= m_Sequences.NumSeqs2Assemb; SeqID++)
 
 // non-relevant SEs and PEs have been removed 
 // now create index over remaining edges sorted by ToSeqID
-if(m_ppToSeqEdges != NULL)
+if(m_ppToSeqEdges != nullptr)
 	{
 #ifdef _WIN32
 	free(m_ppToSeqEdges);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -1249,7 +1249,7 @@ if(m_ppToSeqEdges != NULL)
 	if(m_ppToSeqEdges != MAP_FAILED)
 		munmap(m_ppToSeqEdges,m_AllocMemToSeqEdges);
 #endif	
-	m_ppToSeqEdges = NULL;
+	m_ppToSeqEdges = nullptr;
 	m_AllocMemToSeqEdges = 0;
 	}
 
@@ -1258,17 +1258,17 @@ if(m_NumSeqEdges)
 	m_AllocMemToSeqEdges = (size_t)sizeof(tsSeqEdge *) * m_NumSeqEdges;
 #ifdef _WIN32
 	m_ppToSeqEdges = (tsSeqEdge **)malloc((size_t)m_AllocMemToSeqEdges);	
-	if(m_ppToSeqEdges == NULL)
+	if(m_ppToSeqEdges == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenerateGraph: Unable to allocate memory of %zu bytes - %s",m_AllocMemToSeqEdges,strerror(errno));
 		Reset(false);
 		return(eBSFerrMem);
 		}
 #else
-	if((m_ppToSeqEdges = (tsSeqEdge **)mmap(NULL,m_AllocMemToSeqEdges, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0)) == MAP_FAILED)
+	if((m_ppToSeqEdges = (tsSeqEdge **)mmap(nullptr,m_AllocMemToSeqEdges, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0)) == MAP_FAILED)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"GenerateGraph: Unable to allocate memory of %zu bytes - %s",m_AllocMemToSeqEdges,strerror(errno));
-		m_ppToSeqEdges = NULL;
+		m_ppToSeqEdges = nullptr;
 		Reset(false);
 		return(eBSFerrMem);
 		}
@@ -1296,12 +1296,12 @@ if(m_NumSeqEdges)
 
 // now create and initialse the vertices, one for each SE sequence
 tSeqWrd4 *pCurSeq;
-pCurSeq = NULL;
+pCurSeq = nullptr;
 while((pCurSeq = IterSeqHeaders(pCurSeq,	// iterate to next sequence following this
 			&SeqID,				// returned sequence identifier
-			NULL,				// returned 8 bit source file identifier
+			nullptr,				// returned 8 bit source file identifier
 			&SeqFlgs,			// returned 16 bit sequence flags
-			&SeqLen,false))!=NULL)			// returned 30 bit sequence length
+			&SeqLen,false))!=nullptr)			// returned 30 bit sequence length
 	{
 	if(SeqFlgs & cFlgSeqPE)
 		continue;
@@ -1386,10 +1386,10 @@ for(VertIdx = 0; VertIdx < m_NumSeqVertices; VertIdx++,pVertex++)
 
 				}
 			else
-				pPredVertex = NULL;
+				pPredVertex = nullptr;
 			pSuccVertex = pCurVertex;									// copy the current vertex in case the predecessor shows up as circular
 			}
-		while((pCurVertex = pPredVertex)!=NULL);
+		while((pCurVertex = pPredVertex)!=nullptr);
 		}
 
 	if(pVertex->SuccSeqID != 0)								
@@ -1434,10 +1434,10 @@ for(VertIdx = 0; VertIdx < m_NumSeqVertices; VertIdx++,pVertex++)
 
 				}
 			else
-				pSuccVertex = NULL;
+				pSuccVertex = nullptr;
 			pPredVertex = pCurVertex;	// copy the current vertex in case the successor shows up as circular	
 			}
-		while((pCurVertex = pSuccVertex)!=NULL);
+		while((pCurVertex = pSuccVertex)!=nullptr);
 		}
 	}
 
@@ -1484,7 +1484,7 @@ for(VertIdx = 0; VertIdx < m_NumSeqVertices; VertIdx++,pVertex++)
 	{
 	if(((CurSuccID = pVertex->SuccSeqID) == 0) || pVertex->FlgCircChkd)	// check next vertex if no successor linkage and already checked for circular references
 		continue;
-	while((pSuccVertex = LocateVerticesSeqID(CurSuccID))!=NULL)
+	while((pSuccVertex = LocateVerticesSeqID(CurSuccID))!=nullptr)
 		{
 		pSuccVertex->FlgCircChkd = 1;
 		if(pSuccVertex->SuccSeqID == pVertex->SeqID)
@@ -1526,9 +1526,9 @@ int ScaffLen;
 strcpy(m_szScaffoldSetsFile,pszScaffoldFile);
 
 // allocate buffering for buffering sequences as ascii multifasta
-if(m_pszScaffoldBuff == NULL)
+if(m_pszScaffoldBuff == nullptr)
 	{
-	if((m_pszScaffoldBuff = new char [cAllocScaffoldBuffSize]) == NULL)
+	if((m_pszScaffoldBuff = new char [cAllocScaffoldBuffSize]) == nullptr)
 		return(eBSFerrMem);
 	m_AllocScaffoldBuff = cAllocScaffoldBuffSize;
 	}
@@ -1660,7 +1660,7 @@ close(m_hScaffoldFasta);
 m_hScaffoldFasta = -1;
 
 delete m_pszScaffoldBuff;
-m_pszScaffoldBuff = NULL;
+m_pszScaffoldBuff = nullptr;
 m_ScaffoldBuffLen = 0;
 m_AllocScaffoldBuff = 0;
 
@@ -1740,7 +1740,7 @@ else
 		NumThreads = m_NumThreads;
 	}
 
-if((pThreadParams = new tsThreadProcScaffoldsPars[NumThreads])==NULL)
+if((pThreadParams = new tsThreadProcScaffoldsPars[NumThreads])==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Unable to allocate memory for threads...");
 	Reset(false);
@@ -1778,7 +1778,7 @@ pCurThread = pThreadParams;
 	pthread_attr_t threadattr; 
 	pthread_attr_init(&threadattr);
 	pthread_attr_getstacksize(&threadattr, &defaultStackSize);
-	if(defaultStackSize != cWorkThreadStackSize)
+	if(defaultStackSize < cWorkThreadStackSize)
 		pthread_attr_setstacksize(&threadattr, cWorkThreadStackSize);
 #endif
 for(ThreadIdx = 1; ThreadIdx <= NumThreads; ThreadIdx++,pCurThread++)
@@ -1800,20 +1800,20 @@ for(ThreadIdx = 1; ThreadIdx <= NumThreads; ThreadIdx++,pCurThread++)
 	pCurThread->AllocMateSeqLen = 0;
 
 	pCurThread->pProbeSeqWrds = new uint8_t [pCurThread->AllocProbeSeqLen];
-	pCurThread->pMateSeqWrds = NULL;
+	pCurThread->pMateSeqWrds = nullptr;
 	if(CurPhase > 0)
 		{
 		pCurThread->pRevCplProbeSeqWrds = new uint8_t [pCurThread->AllocProbeSeqLen];
-		pCurThread->pRevCplMateSeqWrds = NULL;
+		pCurThread->pRevCplMateSeqWrds = nullptr;
 		}
 	else
 		{
-		pCurThread->pRevCplProbeSeqWrds = NULL;
-		pCurThread->pRevCplMateSeqWrds = NULL;
+		pCurThread->pRevCplProbeSeqWrds = nullptr;
+		pCurThread->pRevCplMateSeqWrds = nullptr;
 		}
 
 #ifdef _WIN32
-	pCurThread->threadHandle = (HANDLE)_beginthreadex(NULL,cWorkThreadStackSize,ThreadedProcScaffolds,pCurThread,0,&pCurThread->threadID);
+	pCurThread->threadHandle = (HANDLE)_beginthreadex(nullptr,cWorkThreadStackSize,ThreadedProcScaffolds,pCurThread,0,&pCurThread->threadID);
 #else
 	pCurThread->threadRslt = pthread_create (&pCurThread->threadID , &threadattr , ThreadedProcScaffolds , pCurThread);
 #endif
@@ -1852,7 +1852,7 @@ for(ThreadIdx = 0; ThreadIdx < NumThreads; ThreadIdx++,pCurThread++)
 	int JoinRlt;
 	clock_gettime(CLOCK_REALTIME, &ts);
 	ts.tv_sec += 60 * 10;
-	while((JoinRlt = pthread_timedjoin_np(pCurThread->threadID, NULL, &ts)) != 0)
+	while((JoinRlt = pthread_timedjoin_np(pCurThread->threadID, nullptr, &ts)) != 0)
 		{
 		AcquireLock(false);
 		CurNumProcessed = m_NextProcSeqID;
@@ -1864,9 +1864,9 @@ for(ThreadIdx = 0; ThreadIdx < NumThreads; ThreadIdx++,pCurThread++)
 		ts.tv_sec += 60;
 		}
 #endif
-	if(pCurThread->pProbeSeqWrds != NULL)
+	if(pCurThread->pProbeSeqWrds != nullptr)
 		delete (uint8_t *)pCurThread->pProbeSeqWrds;
-	if(pCurThread->pRevCplProbeSeqWrds != NULL)
+	if(pCurThread->pRevCplProbeSeqWrds != nullptr)
 		delete (uint8_t *)pCurThread->pRevCplProbeSeqWrds;
 	}
 
@@ -1911,7 +1911,7 @@ else
 		NumThreads = m_NumThreads;
 	}
 
-if((pThreadParams = new tsThreadProcScaffoldsPars[NumThreads])==NULL)
+if((pThreadParams = new tsThreadProcScaffoldsPars[NumThreads])==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Unable to allocate memory for threads...");
 	Reset(false);
@@ -1949,7 +1949,7 @@ pCurThread = pThreadParams;
 	pthread_attr_t threadattr; 
 	pthread_attr_init(&threadattr);
 	pthread_attr_getstacksize(&threadattr, &defaultStackSize);
-	if(defaultStackSize != cWorkThreadStackSize)
+	if (defaultStackSize < cWorkThreadStackSize)
 		pthread_attr_setstacksize(&threadattr, cWorkThreadStackSize);
 #endif
 for(ThreadIdx = 1; ThreadIdx <= NumThreads; ThreadIdx++,pCurThread++)
@@ -1981,13 +1981,13 @@ for(ThreadIdx = 1; ThreadIdx <= NumThreads; ThreadIdx++,pCurThread++)
 		}
 	else
 		{
-		pCurThread->pRevCplProbeSeqWrds = NULL;
-		pCurThread->pRevCplMateSeqWrds = NULL;
+		pCurThread->pRevCplProbeSeqWrds = nullptr;
+		pCurThread->pRevCplMateSeqWrds = nullptr;
 		}
 
 
 #ifdef _WIN32
-	pCurThread->threadHandle = (HANDLE)_beginthreadex(NULL,cWorkThreadStackSize,ThreadedProcContained,pCurThread,0,&pCurThread->threadID);
+	pCurThread->threadHandle = (HANDLE)_beginthreadex(nullptr,cWorkThreadStackSize,ThreadedProcContained,pCurThread,0,&pCurThread->threadID);
 #else
 	pCurThread->threadRslt = pthread_create (&pCurThread->threadID , &threadattr , ThreadedProcContained , pCurThread);
 #endif
@@ -2026,7 +2026,7 @@ for(ThreadIdx = 0; ThreadIdx < NumThreads; ThreadIdx++,pCurThread++)
 	int JoinRlt;
 	clock_gettime(CLOCK_REALTIME, &ts);
 	ts.tv_sec += 60 * 10;
-	while((JoinRlt = pthread_timedjoin_np(pCurThread->threadID, NULL, &ts)) != 0)
+	while((JoinRlt = pthread_timedjoin_np(pCurThread->threadID, nullptr, &ts)) != 0)
 		{
 		AcquireLock(false);
 		CurNumProcessed = m_NextProcSeqID;
@@ -2038,13 +2038,13 @@ for(ThreadIdx = 0; ThreadIdx < NumThreads; ThreadIdx++,pCurThread++)
 		ts.tv_sec += 60;
 		}
 #endif
-	if(pCurThread->pProbeSeqWrds != NULL)
+	if(pCurThread->pProbeSeqWrds != nullptr)
 		delete (uint8_t *)pCurThread->pProbeSeqWrds;
-	if(pCurThread->pRevCplProbeSeqWrds != NULL)
+	if(pCurThread->pRevCplProbeSeqWrds != nullptr)
 		delete (uint8_t *)pCurThread->pRevCplProbeSeqWrds;
-	if(pCurThread->pMateSeqWrds != NULL)
+	if(pCurThread->pMateSeqWrds != nullptr)
 		delete (uint8_t *)pCurThread->pMateSeqWrds;
-	if(pCurThread->pRevCplMateSeqWrds != NULL)
+	if(pCurThread->pRevCplMateSeqWrds != nullptr)
 		delete (uint8_t *)pCurThread->pRevCplMateSeqWrds;
 	}
 
@@ -2140,8 +2140,8 @@ while(GetSeqProcRange(&StartingSeqID,&EndingSeqID,cMaxMultiSeqFlags) > 0)
 				}
 			}
 
-		pProbeHdr = (tSeqWrd4 *)GetSeqHeader(SeqID,NULL,&ProbeFlags,&ProbeLen,false);
-		if(pProbeHdr == NULL)				// serious problem if can't get header...
+		pProbeHdr = (tSeqWrd4 *)GetSeqHeader(SeqID,nullptr,&ProbeFlags,&ProbeLen,false);
+		if(pProbeHdr == nullptr)				// serious problem if can't get header...
 			{
 			if((TooMAnyWarnings+=1) < 10)
 				gDiagnostics.DiagOut(eDLWarn,gszProcName,"Thread %d Couldn't find sequence header for known sequence %u...",pPars->ThreadIdx,SeqID);
@@ -2168,8 +2168,8 @@ while(GetSeqProcRange(&StartingSeqID,&EndingSeqID,cMaxMultiSeqFlags) > 0)
 			{
 			ProbeSeqID = SeqID++;
 			MateSeqID = SeqID;
-			pMateHdr = (tSeqWrd4 *)GetSeqHeader(MateSeqID,NULL,&MateFlags,&MateLen,false);
-			if(pMateHdr == NULL)				// serious problem if can't get header...
+			pMateHdr = (tSeqWrd4 *)GetSeqHeader(MateSeqID,nullptr,&MateFlags,&MateLen,false);
+			if(pMateHdr == nullptr)				// serious problem if can't get header...
 				{
 				if((TooMAnyWarnings+=1) < 10)
 					gDiagnostics.DiagOut(eDLWarn,gszProcName,"Thread %d Couldn't find sequence header for known sequence %u...",pPars->ThreadIdx,MateSeqID);
@@ -2183,8 +2183,8 @@ while(GetSeqProcRange(&StartingSeqID,&EndingSeqID,cMaxMultiSeqFlags) > 0)
 			MateLen = ProbeLen;
 			MateSeqID = SeqID++;
 			ProbeSeqID = SeqID;
-			pProbeHdr = (tSeqWrd4 *)GetSeqHeader(ProbeSeqID,NULL,&ProbeFlags,&ProbeLen,false);
-			if(pMateHdr == NULL)				// serious problem if can't get header...
+			pProbeHdr = (tSeqWrd4 *)GetSeqHeader(ProbeSeqID,nullptr,&ProbeFlags,&ProbeLen,false);
+			if(pMateHdr == nullptr)				// serious problem if can't get header...
 				{
 				if((TooMAnyWarnings+=1) < 10)
 					gDiagnostics.DiagOut(eDLWarn,gszProcName,"Thread %d Couldn't find mate sequence header for known sequence %u...",pPars->ThreadIdx,ProbeSeqID);
@@ -2242,15 +2242,15 @@ while(GetSeqProcRange(&StartingSeqID,&EndingSeqID,cMaxMultiSeqFlags) > 0)
 			// have at least one exact seed matching, iterate over these seed matches extending and allowing any mismatches
 			while(!bContained) {
 				CmpRslt = 0;
-				if((pHit = (tSeqWrd4 *)SfxIdxToFirstSeqWrd(SfxWrdIdx++,&RelSfxWrdOfs))==NULL)  // get ptr to targets starting (immediately following header) seqword containing 5' bases 
-					break;									   // should only be a NULL if exhusted all potential overlaps
+				if((pHit = (tSeqWrd4 *)SfxIdxToFirstSeqWrd(SfxWrdIdx++,&RelSfxWrdOfs))==nullptr)  // get ptr to targets starting (immediately following header) seqword containing 5' bases 
+					break;									   // should only be a nullptr if exhusted all potential overlaps
 
 				// if overlap is less than required minimum overlap then must have exhusted all potential overlaps for current probe
 				if((TargOverlapLen = GetExactMatchLen((tSeqWrd4 *)pPars->pProbeSeqWrds,&pHit[RelSfxWrdOfs],MinOvrlp)) < MinOvrlp)
 					break;
 
 				// which target was hit and what length is it?
-				pCurTargStartSeqWrd = (tSeqWrd4 *)GetSeqHeader(pHit,&CurTargSeqID,NULL,&TargFlags,(uint32_t *)&CurTargSeqLen,false);
+				pCurTargStartSeqWrd = (tSeqWrd4 *)GetSeqHeader(pHit,&CurTargSeqID,nullptr,&TargFlags,(uint32_t *)&CurTargSeqLen,false);
 
 				// can't accept self hits
 				if(CurTargSeqID == ProbeSeqID)				// if self hit then not interested, try for another target sequence
@@ -2404,8 +2404,8 @@ while(GetSeqProcRange(&StartingSeqID,&EndingSeqID,cMaxMultiSeqFlags) > 0)
 				}
 			}
 
-		pProbeHdr = (tSeqWrd4 *)GetSeqHeader(SeqID,NULL,&ProbeFlags,&ProbeLen,false);
-		if(pProbeHdr == NULL)						// serious problem if can't get header...
+		pProbeHdr = (tSeqWrd4 *)GetSeqHeader(SeqID,nullptr,&ProbeFlags,&ProbeLen,false);
+		if(pProbeHdr == nullptr)						// serious problem if can't get header...
 			{
 			if((TooMAnyWarnings+=1) < 10)
 				gDiagnostics.DiagOut(eDLWarn,gszProcName,"Thread %d Couldn't find sequence header for known sequence %u...",pPars->ThreadIdx,SeqID);
@@ -2469,15 +2469,15 @@ while(GetSeqProcRange(&StartingSeqID,&EndingSeqID,cMaxMultiSeqFlags) > 0)
 			// iterating over all overlapped target sequences
 			do {
 				CmpRslt = 0;
-				if((pHit = (tSeqWrd4 *)SfxIdxToFirstSeqWrd(SfxWrdIdx++,&RelSfxWrdOfs))==NULL)  // get ptr to targets starting (immediately following header) seqword containing 5' bases 
-					break;									   // should only be a NULL if exhusted all potential overlaps
+				if((pHit = (tSeqWrd4 *)SfxIdxToFirstSeqWrd(SfxWrdIdx++,&RelSfxWrdOfs))==nullptr)  // get ptr to targets starting (immediately following header) seqword containing 5' bases 
+					break;									   // should only be a nullptr if exhusted all potential overlaps
 
 				// if overlap is less than required minimum overlap then must have exhusted all potential overlaps for current probe
 				if((TargOverlapLen = GetExactMatchLen((tSeqWrd4 *)pPars->pProbeSeqWrds,&pHit[RelSfxWrdOfs],MinOvrlp)) < MinOvrlp)
 					break;
 
 				// which target was hit and what length is it?
-				pCurTargStartSeqWrd = (tSeqWrd4 *)GetSeqHeader(pHit,&CurTargSeqID,NULL,&TargFlags,(uint32_t *)&CurTargSeqLen,false);
+				pCurTargStartSeqWrd = (tSeqWrd4 *)GetSeqHeader(pHit,&CurTargSeqID,nullptr,&TargFlags,(uint32_t *)&CurTargSeqLen,false);
 
 				// can't accept self hits
 				if(CurTargSeqID == ProbeSeqID)				// if self hit then not interested, try for another target sequence
@@ -2620,22 +2620,22 @@ CScaffolder::AddOverlapEdge(tsSeqEdge *pEdge)  // pts to pre-initialised edge, e
 tsSeqEdge *pSeqEdge;
 
 AcquireSerialiseSeqFlags();
-if(m_pSeqEdges == NULL)
+if(m_pSeqEdges == nullptr)
 	{
 	m_AllocMemSeqEdges = (size_t)sizeof(tsSeqEdge) * cSeqEdges2Alloc;
 #ifdef _WIN32
 	m_pSeqEdges = (tsSeqEdge *)malloc((size_t)m_AllocMemSeqEdges);	
-	if(m_pSeqEdges == NULL)
+	if(m_pSeqEdges == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddOverlap: Unable to allocate memory of %zu bytes - %s",m_AllocMemSeqEdges,strerror(errno));
 		Reset(false);
 		return(eBSFerrMem);
 		}
 #else
-	if((m_pSeqEdges = (tsSeqEdge *)mmap(NULL,m_AllocMemSeqEdges, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0)) == MAP_FAILED)
+	if((m_pSeqEdges = (tsSeqEdge *)mmap(nullptr,m_AllocMemSeqEdges, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0)) == MAP_FAILED)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddOverlap: Unable to allocate memory of %zu bytes - %s",m_AllocMemSeqEdges,strerror(errno));
-		m_pSeqEdges = NULL;
+		m_pSeqEdges = nullptr;
 		ReleaseSerialiseSeqFlags();
 		Reset(false);
 		return(eBSFerrMem);
@@ -2653,9 +2653,9 @@ else
 #else
 		pSeqEdge = (tsSeqEdge *)mremap(m_pSeqEdges,m_AllocMemSeqEdges,memreq,MREMAP_MAYMOVE);
 		if(pSeqEdge == MAP_FAILED)
-			pSeqEdge = NULL;
+			pSeqEdge = nullptr;
 #endif
-		if(pSeqEdge == NULL)
+		if(pSeqEdge == nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddOverlap: Memory re-allocation to %d bytes - %s",memreq,strerror(errno));
 			ReleaseSerialiseSeqFlags();
@@ -2681,22 +2681,22 @@ CScaffolder::AddSeqVertex(tsSeqVertex *pSE)	// SE
 tsSeqVertex *pSeqVertex;
 
 AcquireSerialiseSeqFlags();
-if(m_pSeqVertices == NULL)
+if(m_pSeqVertices == nullptr)
 	{
 	m_AllocMemSeqVertices = (size_t)sizeof(tsSeqVertex) * (100 + m_Sequences.NumPE1Seqs2Assemb);
 #ifdef _WIN32
 	m_pSeqVertices = (tsSeqVertex *)malloc((size_t)m_AllocMemSeqVertices);	
-	if(m_pSeqVertices == NULL)
+	if(m_pSeqVertices == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddSeqVertex: Unable to allocate memory of %zu bytes - %s",m_AllocMemSeqVertices,strerror(errno));
 		Reset(false);
 		return(eBSFerrMem);
 		}
 #else
-	if((m_pSeqVertices = (tsSeqVertex *)mmap(NULL,m_AllocMemSeqVertices, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0)) == MAP_FAILED)
+	if((m_pSeqVertices = (tsSeqVertex *)mmap(nullptr,m_AllocMemSeqVertices, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0)) == MAP_FAILED)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddSeqVertex: Unable to allocate memory of %zu bytes - %s",m_AllocMemSeqVertices,strerror(errno));
-		m_pSeqVertices = NULL;
+		m_pSeqVertices = nullptr;
 		ReleaseSerialiseSeqFlags();
 		Reset(false);
 		return(eBSFerrMem);
@@ -2714,9 +2714,9 @@ else
 #else
 		pSeqVertex = (tsSeqVertex *)mremap(m_pSeqVertices,m_AllocMemSeqVertices,memreq,MREMAP_MAYMOVE);
 		if(pSeqVertex == MAP_FAILED)
-			pSeqVertex = NULL;
+			pSeqVertex = nullptr;
 #endif
-		if(pSeqVertex == NULL)
+		if(pSeqVertex == nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"AddSeqVertex: Memory re-allocation to %d bytes - %s",memreq,strerror(errno));
 			ReleaseSerialiseSeqFlags();
@@ -2741,7 +2741,7 @@ CScaffolder::IterateNextFromSeqID(tSeqID FromSeqID)						// 0 to start from 1st
 {
 uint64_t EdgeIdx;
 tsSeqEdge *pEdge;
-if(m_NumSeqEdges == 0 || m_pSeqEdges == NULL)
+if(m_NumSeqEdges == 0 || m_pSeqEdges == nullptr)
 	return(0);
 if(FromSeqID == 0)
 	return(m_pSeqEdges[0].ProbeSeqID);
@@ -2763,7 +2763,7 @@ CScaffolder::IterateNextToSeqID(tSeqID ToSeqID)	// 0 to start from 1st
 {
 uint64_t SeqIdx;
 tsSeqEdge *pEdge;
-if(m_NumSeqEdges == 0 || m_pSeqEdges == NULL || m_ppToSeqEdges == NULL)
+if(m_NumSeqEdges == 0 || m_pSeqEdges == nullptr || m_ppToSeqEdges == nullptr)
 	return(0);
 if(ToSeqID == 0)
 	return(m_ppToSeqEdges[0]->TargetSeqID);
@@ -2783,59 +2783,59 @@ for(;SeqIdx < m_NumSeqEdges; SeqIdx += 1)
 return(0);
 }
 
-tsSeqEdge *			// NULL if unable to locate any with matching FromSeqID				 
+tsSeqEdge *			// nullptr if unable to locate any with matching FromSeqID				 
 CScaffolder::IterateEdgeFromSeqID(tSeqID FromSeqID,	// iterate over sequence edges with matching FromSeqID
 								  tEdgeID *pEdgeId)	// set *pSeqIdx to 0 to return 1st sequence edge, returns index to use on next iteration of IterateEdgeFromSeqID()
 {
 uint64_t EdgeIdx;
 tsSeqEdge *pEdge;
-if(m_NumSeqEdges == 0 || m_pSeqEdges == NULL || FromSeqID < m_LowestEdgeFromSeqID || FromSeqID > m_HighestEdgeFromSeqID)
-	return(NULL);
-if(pEdgeId != NULL && (EdgeIdx = *pEdgeId) > 0)
+if(m_NumSeqEdges == 0 || m_pSeqEdges == nullptr || FromSeqID < m_LowestEdgeFromSeqID || FromSeqID > m_HighestEdgeFromSeqID)
+	return(nullptr);
+if(pEdgeId != nullptr && (EdgeIdx = *pEdgeId) > 0)
 	{
 	*pEdgeId = 0;
 	if(EdgeIdx >= m_NumSeqEdges)
-		return(NULL);
+		return(nullptr);
 	pEdge = &m_pSeqEdges[EdgeIdx];
 	if(pEdge->ProbeSeqID == FromSeqID)
 		{
 		*pEdgeId = EdgeIdx+1;
 		return(pEdge);
 		}
-	return(NULL);
+	return(nullptr);
 	}
 EdgeIdx = LocateFirstEdgeFromSeqID(FromSeqID);
-if(pEdgeId != NULL)
+if(pEdgeId != nullptr)
 	*pEdgeId = EdgeIdx;
-return(EdgeIdx > 0 ? &m_pSeqEdges[EdgeIdx-1] : NULL);
+return(EdgeIdx > 0 ? &m_pSeqEdges[EdgeIdx-1] : nullptr);
 }
 
 
-tsSeqEdge *			// NULL if unable to locate any with matching ToSeqID				 
+tsSeqEdge *			// nullptr if unable to locate any with matching ToSeqID				 
 CScaffolder::IterateEdgeToSeqID(tSeqID ToSeqID,	// iterate over sequence edges with matching ToSeqID
 									tEdgeID *pEdgeID)	// set *pEdgeID to 0 to return 1st sequence edge, returns edge identifier to use on next iteration of IterateEdgeToSeqID()
 {
 tEdgeID EdgeID;
 tsSeqEdge *pEdge;
-if(m_NumSeqEdges == 0 || m_pSeqEdges == NULL || m_ppToSeqEdges == NULL || ToSeqID < m_LowestEdgeToSeqID || ToSeqID > m_HighestEdgeToSeqID)
-	return(NULL);
-if(pEdgeID != NULL && (EdgeID = *pEdgeID) > 0)
+if(m_NumSeqEdges == 0 || m_pSeqEdges == nullptr || m_ppToSeqEdges == nullptr || ToSeqID < m_LowestEdgeToSeqID || ToSeqID > m_HighestEdgeToSeqID)
+	return(nullptr);
+if(pEdgeID != nullptr && (EdgeID = *pEdgeID) > 0)
 	{
 	*pEdgeID = 0;
 	if(EdgeID >= m_NumSeqEdges)
-		return(NULL);
+		return(nullptr);
 	pEdge = m_ppToSeqEdges[EdgeID];
 	if(pEdge->TargetSeqID == ToSeqID)
 		{
 		*pEdgeID = EdgeID+1;
 		return(pEdge);
 		}
-	return(NULL);
+	return(nullptr);
 	}
 EdgeID = LocateFirstEdgeToSeqID(ToSeqID);
-if(pEdgeID != NULL)
+if(pEdgeID != nullptr)
 	*pEdgeID = EdgeID;
-return(EdgeID > 0 ? m_ppToSeqEdges[EdgeID-1] : NULL);
+return(EdgeID > 0 ? m_ppToSeqEdges[EdgeID-1] : nullptr);
 }
 
 
@@ -2883,7 +2883,7 @@ int ReqNumSubs;
 double Diff;
 double HiDiff;
 
-if(pSeqVert == NULL)
+if(pSeqVert == nullptr)
 	return(0);
 
 pSeqVert->PredSeqID = 0;
@@ -2969,12 +2969,12 @@ if((EdgeID = LocateFirstEdgeToSeqID(pSeqVert->SeqID)) != 0)			// if no edges ont
 		{
 		pLinkedSeq = LinkedSeqs;
 		HiDiff = 0.0;
-		pRetSeq = NULL;
+		pRetSeq = nullptr;
 		for(LinkedSeqsIdx = 0; LinkedSeqsIdx < NumLinkedSeqs; LinkedSeqsIdx += 1, pLinkedSeq += 1)
 			{
 			Diff = (double)abs(pLinkedSeq->AntisenseCnt - pLinkedSeq->SenseCnt)/(double)(pLinkedSeq->AntisenseCnt + pLinkedSeq->SenseCnt);
 			if(Diff >= HiDiff && Diff <= (HiDiff + 0.1)) // if very little difference from previously accepted HiDiff then treat as if same and thus need to look for a clear winner
-				pRetSeq = NULL;
+				pRetSeq = nullptr;
 			else
 				if(Diff > 0.75 && Diff > HiDiff)	// needs to be a substantial differential between sense and antisense counts before putative acceptance
 					{
@@ -2983,7 +2983,7 @@ if((EdgeID = LocateFirstEdgeToSeqID(pSeqVert->SeqID)) != 0)			// if no edges ont
 					}
 			}
 
-		if(pRetSeq != NULL)
+		if(pRetSeq != nullptr)
 			{
 			pSeqVert->PredSeqID = pRetSeq->SeqID;
 			pSeqVert->PredNumPEs = max(pRetSeq->SenseCnt,pRetSeq->AntisenseCnt);
@@ -3069,12 +3069,12 @@ if((EdgeID = LocateFirstEdgeToSeqID(pSeqVert->SeqID)) != 0)	// if none then no s
 		{
 		pLinkedSeq = LinkedSeqs;
 		HiDiff = 0.0; 
-		pRetSeq = NULL;
+		pRetSeq = nullptr;
 		for(LinkedSeqsIdx = 0; LinkedSeqsIdx < NumLinkedSeqs; LinkedSeqsIdx += 1, pLinkedSeq += 1)
 			{
 			Diff = (double)abs(pLinkedSeq->AntisenseCnt - pLinkedSeq->SenseCnt)/(double)(pLinkedSeq->AntisenseCnt + pLinkedSeq->SenseCnt);
 			if(Diff >= HiDiff && Diff <= (HiDiff + 0.1)) // if very little difference from previously accepted HiDiff then treat as if same and thus need to look for a clear winner
-				pRetSeq = NULL;
+				pRetSeq = nullptr;
 			else
 				if(Diff > 0.75 && Diff > HiDiff)	// needs to be a substantial differential between sense and antisense counts before putative acceptance
 					{
@@ -3082,7 +3082,7 @@ if((EdgeID = LocateFirstEdgeToSeqID(pSeqVert->SeqID)) != 0)	// if none then no s
 					pRetSeq = pLinkedSeq;
 					}
 			}
-		if(pRetSeq != NULL)
+		if(pRetSeq != nullptr)
 			{
 			pSeqVert->SuccSeqID = pRetSeq->SeqID;
 			pSeqVert->SuccNumPEs = max(pRetSeq->SenseCnt,pRetSeq->AntisenseCnt);
@@ -3107,7 +3107,7 @@ int NumEdges;
 tsSeqEdge *pEdge;
 tEdgeID EdgeID;
 
-if(m_NumSeqEdges == 0 || m_pSeqEdges == NULL || m_ppToSeqEdges == NULL || SeqID < m_LowestEdgeToSeqID || SeqID > m_HighestEdgeToSeqID)
+if(m_NumSeqEdges == 0 || m_pSeqEdges == nullptr || m_ppToSeqEdges == nullptr || SeqID < m_LowestEdgeToSeqID || SeqID > m_HighestEdgeToSeqID)
 	return(0);
 
 if((EdgeID = LocateFirstEdgeToSeqID(SeqID)) == 0)
@@ -3132,7 +3132,7 @@ int NumEdges;
 tsSeqEdge *pEdge;
 tEdgeID EdgeID;
 
-if(m_NumSeqEdges == 0 || m_pSeqEdges == NULL || m_ppToSeqEdges == NULL || SeqID < m_LowestEdgeToSeqID || SeqID > m_HighestEdgeToSeqID)
+if(m_NumSeqEdges == 0 || m_pSeqEdges == nullptr || m_ppToSeqEdges == nullptr || SeqID < m_LowestEdgeToSeqID || SeqID > m_HighestEdgeToSeqID)
 	return(0);
 
 if((EdgeID = LocateFirstEdgeToSeqID(SeqID)) == 0)
@@ -3159,7 +3159,7 @@ int64_t Mark;
 int64_t TargPsn;
 int64_t NodeLo = 0;
 int64_t NodeHi = m_NumSeqEdges-1;
-if(m_NumSeqEdges == 0 || m_pSeqEdges == NULL)
+if(m_NumSeqEdges == 0 || m_pSeqEdges == nullptr)
 	return(0);
 
 do {
@@ -3228,7 +3228,7 @@ int64_t Mark;
 int64_t TargPsn;
 int64_t NodeLo = 0;
 int64_t NodeHi = m_NumSeqEdges-1;
-if(m_NumSeqEdges == 0 || m_pSeqEdges == NULL || m_ppToSeqEdges == NULL)
+if(m_NumSeqEdges == 0 || m_pSeqEdges == nullptr || m_ppToSeqEdges == nullptr)
 	return(0);
 
 do {
@@ -3290,7 +3290,7 @@ return(0);	// unable to locate any instance of ToSeqID
 }
 
 
-tsSeqVertex *									// NULL if unable to locate any with matching SeqID				 
+tsSeqVertex *									// nullptr if unable to locate any with matching SeqID				 
 CScaffolder::LocateVerticesSeqID(tSeqID SeqID)	// find vertex with this SeqID 
 {
 tsSeqVertex *pEl2;
@@ -3298,7 +3298,7 @@ int CmpRslt;
 int64_t TargPsn;
 int64_t NodeLo = 0;
 int64_t NodeHi = m_NumSeqVertices-1;
-if(m_NumSeqVertices == 0 || m_pSeqVertices == NULL)
+if(m_NumSeqVertices == 0 || m_pSeqVertices == nullptr)
 	return(0);
 
 do {
@@ -3326,7 +3326,7 @@ do {
 		NodeLo = TargPsn+1;
 	}
 while(NodeHi >= NodeLo);
-return(NULL);	
+return(nullptr);	
 }
 
 

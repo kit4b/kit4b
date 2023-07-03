@@ -221,13 +221,13 @@ if(m_pFeatures != NULL)
 
 if(m_ppFeatureNames != NULL)
 	{
-	delete m_ppFeatureNames;
+	delete []m_ppFeatureNames;
 	m_ppFeatureNames = NULL;
 	}
 
 if(m_ppFeatureChromStarts != NULL)
 	{
-	delete m_ppFeatureChromStarts;
+	delete []m_ppFeatureChromStarts;
 	m_ppFeatureChromStarts = NULL;
 	}
 
@@ -240,7 +240,7 @@ m_AllocdFeatBM = 0;		// bytes allocated to m_pFeatBM for holding packed bitmap
 
 if(m_pChromHashes != NULL)
 	{
-	delete m_pChromHashes;
+	delete []m_pChromHashes;
 	m_pChromHashes = NULL;
 	}
 
@@ -1529,12 +1529,12 @@ gDiagnostics.DiagOut(eDLInfo,gszProcName,"Sort optimising loaded chromosomes (%d
 
 if(m_ppFeatureNames != NULL)
 	{
-	delete m_ppFeatureNames;
+	delete []m_ppFeatureNames;
 	m_ppFeatureNames = NULL;
 	}
 if(m_ppFeatureChromStarts != NULL)
 	{
-	delete m_ppFeatureChromStarts;
+	delete []m_ppFeatureChromStarts;
 	m_ppFeatureChromStarts = NULL;
 	}
 
@@ -1584,7 +1584,7 @@ for(Idx = 0; Idx < m_FileHdr.NumFeatures; Idx++)
 	pFeature = (tsBEDfeature *)(((char *)pFeature) + pFeature->Size);
 	}
 
-delete pAllocdU2S;
+delete []pAllocdU2S;
 
 // create array of ptrs (m_ppFeatureNames) into concatenated features which will be used to sort
 // by name->chrom->start->end
@@ -1624,7 +1624,7 @@ for(FeatureID = 1; FeatureID < m_FileHdr.NumFeatures; FeatureID++)
 m_ppFeatureChromStarts = new tsBEDfeature * [m_FileHdr.NumFeatures];
 if(m_ppFeatureChromStarts == NULL)
 	{
-	delete m_ppFeatureNames;
+	delete []m_ppFeatureNames;
 	m_ppFeatureNames = NULL;
 	return(eBSFerrMem);
 	}
@@ -2301,29 +2301,47 @@ if(m_pFeatures == NULL)
 m_AllocFeaturesSize = m_FileHdr.FeaturesSize;	
 
 // allocate memory to hold chromosome names
-if(m_pChromNames != NULL)
+size_t AllocSize;
+if (m_pChromNames == NULL || m_FileHdr.ChromNamesSize > m_AllocChromNamesSize)
 	{
-	delete m_pChromNames;
-	m_pChromNames = NULL;
-	m_AllocChromNamesSize = 0;
-	}
-
-if((m_pChromNames = (tsBEDchromname *)new uint8_t [m_FileHdr.ChromNamesSize])==NULL)
-	{
-	AddErrMsg("CBEDfile::LoadFeatures","Unable to alloc %d bytes of memory to hold feature chrom names - %s",m_FileHdr.ChromNamesSize,m_szFile);
-	m_AllocChromNamesSize = 0;
-	if(bCloseFile)
+	if(m_pChromNames != NULL)
 		{
-		close(m_hFile);
-		m_hFile = -1;
+#ifdef _WIN32
+		free(m_pChromNames);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
+#else
+		if (m_pChromNames != MAP_FAILED)
+			munmap(m_pChromNames, m_AllocFeaturesSize);
+#endif
+		m_pChromNames = NULL;
+		m_AllocChromNamesSize = 0;
 		}
-	return(eBSFerrMem);
+	AllocSize = (size_t)m_FileHdr.ChromNamesSize;
+#ifdef _WIN32
+	m_pChromNames = (tsBEDchromname*)malloc(AllocSize);	// initial and perhaps the only allocation
+#else
+	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
+	m_pChromNames = (tsBEDchromname*)mmap(NULL, AllocSize, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	if (m_pChromNames == MAP_FAILED)
+		m_pChromNames = NULL;
+#endif
+	if (m_pChromNames == NULL)
+		{
+		AddErrMsg("CBEDfile::AddFeature", "Memory allocation of %zd bytes failed - %s", (int64_t)AllocSize, strerror(errno));
+		m_AllocChromNamesSize = 0;
+		if (bCloseFile)
+			{
+			close(m_hFile);
+			m_hFile = -1;
+			}
+		return(eBSFerrMem);
+		}
+	m_AllocChromNamesSize = AllocSize;
+	memset(m_pChromNames, 0, sizeof(tsBEDchromname));
 	}
-m_AllocChromNamesSize = m_FileHdr.ChromNamesSize;
 
 if(m_ppFeatureNames != NULL)
 	{
-	delete m_ppFeatureNames;
+	delete []m_ppFeatureNames;
 	m_ppFeatureNames = NULL;
 	}
 
@@ -2339,7 +2357,7 @@ if((m_ppFeatureNames = (tsBEDfeature **)new tsBEDfeature *[m_FileHdr.NumFeatures
 	}
 if(m_ppFeatureChromStarts != NULL)
 	{
-	delete m_ppFeatureChromStarts;
+	delete []m_ppFeatureChromStarts;
 	m_ppFeatureChromStarts = NULL;
 	}
 

@@ -270,54 +270,54 @@ tsSummStmSQL CSQLiteSummaries::m_StmSQL[10] = {
 	{(char *)"TblExprs",
 		(char *)"CREATE TABLE IF NOT EXISTS TblExprs (ExprID INTEGER PRIMARY KEY ASC,ExprName VARCHAR(50) UNIQUE, ExprTitle VARCHAR(50) UNIQUE,ExprDescr VARCHAR(1000) DEFAULT '')",
 		(char *)"INSERT INTO TblExprs (ExprName,ExprTitle,ExprName,ExprDescr) VALUES(?,?,?,?)",
-		NULL,
+		nullptr,
 		(char *)"CREATE INDEX IF NOT EXISTS 'TblExprs_ExprName' ON 'TblExprs' ('ExprName' ASC)",
 		(char *)"CREATE INDEX IF NOT EXISTS 'TblExprs_ExprName' ON 'TblExprs' ('ExprName' ASC)",
-		NULL },
+		nullptr },
 	{ (char *)"TblProcess",
 		(char *)"CREATE TABLE IF NOT EXISTS TblProcess ( ProcessID INTEGER PRIMARY KEY ASC,ProcessName VARCHAR(50) UNIQUE,ProcessTitle VARCHAR(50),ProcessDescr VARCHAR(1000))",
 		(char *)"INSERT INTO TblProcess (ProcessName,ProcessTitle,ProcessDescr) VALUES(?,?,?)",
-		NULL,
+		nullptr,
 		(char *)"CREATE INDEX IF NOT EXISTS 'TblProcess_ProcessName' ON 'TblProcess' ('ProcessName' ASC)",
 		(char *)"CREATE INDEX IF NOT EXISTS 'TblProcess_ProcessName' ON 'TblProcess' ('ProcessName' ASC)",
-		NULL },
+		nullptr },
 	{ (char *)"TblProcessing",
 		(char *)"CREATE TABLE IF NOT EXISTS TblProcessing (ProcessingID INTEGER PRIMARY KEY ASC,ExprID INTEGER,ProcessID INTEGER, ProcessVer VARCHAR(20), Start VARCHAR(24), Finish VARCHAR(24), ResultCode INTEGER)", 
 		(char *)"INSERT INTO TblProcessing (ExprID,ProcessID,ProcessVer,Start,Finish,ResultCode) VALUES(?,?,?,?,?,?)",
-		NULL,
+		nullptr,
 		(char *)"DROP INDEX IF EXISTS 'TblProcessing_ExprIDProcessID'",
 		(char *)"CREATE INDEX IF NOT EXISTS 'TblProcessing_ExprIDProcessID' ON 'TblProcessing' ('ExprID' ASC,'ProcessID' ASC)",
-		NULL },
+		nullptr },
 	{ (char *)"TblProcessingLog",
 		(char *)"CREATE TABLE IF NOT EXISTS TblProcessingLog (ProcessingLogID INTEGER PRIMARY KEY ASC,ExprID INTEGER,ProcessingID INTEGER,Timestamp VARCHAR(24),LogText VARCHAR(2000))",
 		(char *)"INSERT INTO TblProcessingLog (ExprID,ProcessingID,Timestamp,LogText) VALUES(?,?,?,?)",
-		NULL,
+		nullptr,
 		(char *)"DROP INDEX IF EXISTS 'TblProcessingLog_ProcessingID'",
 		(char *)"CREATE INDEX IF NOT EXISTS 'TblProcessingLog_ProcessingID' ON 'TblProcessingLog' ('ProcessingID' ASC)",
-		NULL },
+		nullptr },
 
 	{ (char *)"TblParams",
 		(char *)"CREATE TABLE IF NOT EXISTS TblParams (ParamID INTEGER PRIMARY KEY ASC,ExprID INTEGER,ProcessingID INTEGER,ParamType INTEGER,ParmName VARCHAR(50),ParmValue VARCHAR(2000))",
 		(char *)"INSERT INTO TblParams (ExprID,ProcessingID,ParamType,ParmName,ParmValue) VALUES(?,?,?,?,?)",
-		NULL,
+		nullptr,
 		(char *)"DROP INDEX IF EXISTS 'TblParams_ParmName'",
 		(char *)"CREATE INDEX IF NOT EXISTS 'TblParams_ParmName' ON 'TblParams' ('ParmName' ASC)",
-		NULL},
+		nullptr},
 
 	{ (char *)"TblResults",
 		(char *)"CREATE TABLE IF NOT EXISTS TblResults (ResultID INTEGER PRIMARY KEY ASC,ExprID INTEGER,ProcessingID INTEGER,GroupAs VARCHAR(50), ResultType INTEGER, ResultName VARCHAR(50),ResultValue VARCHAR(500))",
 		(char *)"INSERT INTO TblResults (ExprID,ProcessingID,GroupAs,ResultType,ResultName,ResultValue) VALUES(?,?,?,?,?,?)",
-		NULL,
+		nullptr,
 		(char *)"DROP INDEX IF EXISTS 'TblResults_ProcessingID'",
 		(char *)"CREATE INDEX IF NOT EXISTS 'TblResults_ProcessingID' ON 'TblResults' ('ProcessingID' ASC)",
-		NULL },
+		nullptr },
 	{ (char *)"TblXYResults",
 		(char *)"CREATE TABLE IF NOT EXISTS TblXYResults (ResultID INTEGER PRIMARY KEY ASC,ExprID INTEGER,ProcessingID INTEGER,GroupAs VARCHAR(50), ResultXType INTEGER, ResultXName VARCHAR(50),ResultXValue VARCHAR(500),ResultYType INTEGER, ResultYName VARCHAR(50),ResultYValue VARCHAR(500))",
 		(char *)"INSERT INTO TblXYResults (ExprID,ProcessingID,GroupAs,ResultXType,ResultXName,ResultXValue,ResultYType,ResultYName,ResultYValue) VALUES(?,?,?,?,?,?,?,?,?)",
-		NULL,
+		nullptr,
 		(char *)"DROP INDEX IF EXISTS 'TblXYResults_ProcessingID'",
 		(char *)"CREATE INDEX IF NOT EXISTS 'TblXYResults_ProcessingID' ON 'TblXYResults' ('ProcessingID' ASC)",
-		NULL },
+		nullptr },
 
 
 	{ (char *)"TblMonoSNPs",
@@ -329,10 +329,10 @@ tsSummStmSQL CSQLiteSummaries::m_StmSQL[10] = {
 							"StartLoci,	EndLoci, Len, Strand, Rank, PValue, Bases,	Mismatches,"
 							"RefBase, MMBaseA, MMBaseC,	MMBaseG, MMBaseT, MMBaseN,"
 							"BackgroundSubRate, TotWinBases, TotWinMismatches, MarkerID, NumPolymorphicSites) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-		NULL,
+		nullptr,
 		(char *)"DROP INDEX IF EXISTS 'TblMonoSNPs_ProcessingID'",
 		(char *)"CREATE INDEX IF NOT EXISTS 'TblMonoSNPs_ProcessingID' ON 'TblMonoSNPs' ('ProcessingID' ASC)",
-		NULL },
+		nullptr },
 
 		{ (char *)"TblDiSNPs",
 		(char *)"CREATE TABLE IF NOT EXISTS TblDiSNPs (DiSnpID INTEGER PRIMARY KEY ASC,ExprID INTEGER,ProcessingID INTEGER, DiSnpPID INTEGER, ElType VARCHAR(50), Species VARCHAR(80), Chrom VARCHAR(80),"
@@ -346,10 +346,10 @@ tsSummStmSQL CSQLiteSummaries::m_StmSQL[10] = {
 										"Depth, Antisense, Haplotypes,"
 										"aa,ac,ag,at,ca,cc,cg,ct,ga,gc,gg,gt,ta,tc,tg,tt) "
 										" VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-		NULL,
+		nullptr,
 		(char *)"DROP INDEX IF EXISTS 'TblDiSNPs_ProcessingID'",
 		(char *)"CREATE INDEX IF NOT EXISTS 'TblDiSNPs_ProcessingID' ON 'TblDiSNPs' ('ProcessingID' ASC)",
-		NULL },
+		nullptr },
 
 		{ (char *)"TblTriSNPs",
 		(char *)"CREATE TABLE IF NOT EXISTS TblTriSNPs (TriSnpID INTEGER PRIMARY KEY ASC,ExprID,ProcessingID INTEGER, TriSnpPID INTEGER, ElType VARCHAR(50), Species VARCHAR(80), Chrom VARCHAR(80),"
@@ -370,26 +370,26 @@ tsSummStmSQL CSQLiteSummaries::m_StmSQL[10] = {
 										"aaa,aac,aag,aat,aca,acc,acg,act,aga,agc,agg,agt,ata,atc,atg,att,caa,cac,cag,cat,cca,ccc,ccg,cct,cga,cgc,cgg,cgt,cta,ctc,ctg,ctt,"
 										"gaa,gac,gag,gat,gca,gcc,gcg,gct,gga,ggc,ggg,ggt,gta,gtc,gtg,gtt,taa,tac,tag,tat,tca,tcc,tcg,tct,tga,tgc,tgg,tgt,tta,ttc,ttg,ttt) "
 										" VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-		NULL,
+		nullptr,
 		(char *)"DROP INDEX IF EXISTS 'TblTriSNPs_ProcessingID'",
 		(char *)"CREATE INDEX IF NOT EXISTS 'TblTriSNPs_ProcessingID' ON 'TblTriSNPs' ('ProcessingID' ASC)",
-		NULL },
+		nullptr },
 };
 
 
 CSQLiteSummaries::CSQLiteSummaries(void)
 {
-m_pDB = NULL;
+m_pDB = nullptr;
 m_bInitialised = (Init() == eBSFSuccess) ? true : false;
 }
 
 
 CSQLiteSummaries::~CSQLiteSummaries(void)
 {
-if(m_pDB != NULL)
+if(m_pDB != nullptr)
 	{
 	sqlite3_close_v2(m_pDB);
-	m_pDB = NULL;
+	m_pDB = nullptr;
 	}
 sqlite3_shutdown();
 #ifndef _WIN32
@@ -464,20 +464,20 @@ if(StatRslt >= 0 && bReplace)
 	remove(pszDatabase);
 
 // try opening/creating the database 
-if((sqlite_error = sqlite3_open_v2(pszDatabase, &m_pDB,SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE,NULL))!=SQLITE_OK)
+if((sqlite_error = sqlite3_open_v2(pszDatabase, &m_pDB,SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE,nullptr))!=SQLITE_OK)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"sqlite - can't open database: %s", sqlite3_errmsg(m_pDB));
 	sqlite3_shutdown();
-	m_pDB = NULL;
-	return(NULL);
+	m_pDB = nullptr;
+	return(nullptr);
 	}
 
 // create all tables which may not already exist
 pStms = m_StmSQL;
 for(TblIdx = 0; TblIdx < 10; TblIdx++,pStms++)
 	{
-	pStms->pPrepInsert = NULL;
-	if(pStms->pszCreateTbl == NULL)
+	pStms->pPrepInsert = nullptr;
+	if(pStms->pszCreateTbl == nullptr)
 		continue;
 	if((sqlite_error = sqlite3_exec(m_pDB,pStms->pszCreateTbl,0,0,0))!=SQLITE_OK)
 		{
@@ -485,8 +485,8 @@ for(TblIdx = 0; TblIdx < 10; TblIdx++,pStms++)
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"sqlite - statement: %s",pStms->pszCreateTbl);   
 		sqlite3_close_v2(m_pDB);
 		sqlite3_shutdown();
-		m_pDB = NULL;
-		return(NULL);
+		m_pDB = nullptr;
+		return(nullptr);
 		}
 	}
 
@@ -494,7 +494,7 @@ for(TblIdx = 0; TblIdx < 10; TblIdx++,pStms++)
 pStms = m_StmSQL;
 for(TblIdx = 0; TblIdx < 10; TblIdx++,pStms++)
 	{
-	if(pStms->pszOpenCreateIndexes == NULL)
+	if(pStms->pszOpenCreateIndexes == nullptr)
 		continue;
 	if((sqlite_error = sqlite3_exec(m_pDB,pStms->pszOpenCreateIndexes,0,0,0))!=SQLITE_OK)
 		{
@@ -502,8 +502,8 @@ for(TblIdx = 0; TblIdx < 10; TblIdx++,pStms++)
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"sqlite - statement: %s",pStms->pszOpenCreateIndexes);   
 		sqlite3_close_v2(m_pDB);
 		sqlite3_shutdown();
-		m_pDB = NULL;
-		return(NULL);
+		m_pDB = nullptr;
+		return(nullptr);
 		}
 	}
 
@@ -511,27 +511,27 @@ for(TblIdx = 0; TblIdx < 10; TblIdx++,pStms++)
 pStms = m_StmSQL;
 for(TblIdx = 0; TblIdx < 10; TblIdx++,pStms++)
 	{
-	if(pStms->pszInsert == NULL)
+	if(pStms->pszInsert == nullptr)
 		{
-		pStms->pPrepInsert = NULL;
+		pStms->pPrepInsert = nullptr;
 		continue;
 		}
-	if((sqlite_error = sqlite3_prepare_v2(m_pDB,pStms->pszInsert,-1,&pStms->pPrepInsert,NULL))!=SQLITE_OK)
+	if((sqlite_error = sqlite3_prepare_v2(m_pDB,pStms->pszInsert,-1,&pStms->pPrepInsert,nullptr))!=SQLITE_OK)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"sqlite - can't prepare insert statement on table %s: %s", pStms->pTblName, sqlite3_errmsg(m_pDB));
 		while(TblIdx > 0)
 			{
 			pStms -= 1;
-			if(pStms->pPrepInsert != NULL)
+			if(pStms->pPrepInsert != nullptr)
 				{
 				sqlite3_finalize(pStms->pPrepInsert);
-				pStms->pPrepInsert = NULL;
+				pStms->pPrepInsert = nullptr;
 				}
 			}
 		sqlite3_close_v2(m_pDB);
 		sqlite3_shutdown();
-		m_pDB = NULL;
-		return(NULL);
+		m_pDB = nullptr;
+		return(nullptr);
 		}
 	}
 return(m_pDB);
@@ -544,18 +544,18 @@ int TblIdx;
 int Rslt = 0;
 tsSummStmSQL *pStms;
 pStms = m_StmSQL;
-if(m_pDB != NULL)
+if(m_pDB != nullptr)
 	{
 	for(TblIdx = 0; TblIdx < 10; TblIdx++,pStms++)
 		{
-		if(pStms->pPrepInsert == NULL)
+		if(pStms->pPrepInsert == nullptr)
 			continue;
 		sqlite3_finalize(pStms->pPrepInsert);
-		pStms->pPrepInsert = NULL;
+		pStms->pPrepInsert = nullptr;
 		}
 	Rslt = sqlite3_close_v2(m_pDB);
 	sqlite3_shutdown();
-	m_pDB = NULL;
+	m_pDB = nullptr;
 	}
 return(Rslt);
 }
@@ -603,7 +603,7 @@ int *pID;
 char *ppEnd;
 
 // some basic validation of call back parameter values
-if(pCallP1 == NULL || NumCols != 1 || ppColValues == NULL || ppColValues[0] == NULL || *ppColValues[0] == '\0')
+if(pCallP1 == nullptr || NumCols != 1 || ppColValues == nullptr || ppColValues[0] == nullptr || *ppColValues[0] == '\0')
 	return(1);
 
 pID = (int *)pCallP1;
@@ -628,7 +628,7 @@ char szExprName[cMaxNameLen+1];
 char szExprTitle[cMaxNameLen+1];
 char szExprDescr[cMaxDescrText+1];
 
-if(pszExprimentName == NULL || pszExperimentTitle == NULL || pszExperimentDescr == NULL ||
+if(pszExprimentName == nullptr || pszExperimentTitle == nullptr || pszExperimentDescr == nullptr ||
    pszExprimentName[0] == '\0' || pszExperimentTitle[0] == '\0' || pszExperimentDescr[0] == '\0')
 	return(eBSFerrParams);
 
@@ -640,12 +640,12 @@ strncpy(szExprDescr,pszExperimentDescr,sizeof(szExprDescr));
 szExprDescr[sizeof(szExprDescr)-1] = '\0';
 
 SQLiteSerialise();
-if(OpenDatabase(pszDatabase,bReplace)== NULL)
+if(OpenDatabase(pszDatabase,bReplace)== nullptr)
 	{
 	SQLiteRelease();
 	return(0);
 	}
-if(m_pDB == NULL)
+if(m_pDB == nullptr)
 	{
 	SQLiteRelease();
 	return(eBSFerrInternal);
@@ -659,7 +659,7 @@ char *pszPragmaSyncOn = (char *)"PRAGMA synchronous = ON";
 char *pszPragmaJournMem = (char *)"PRAGMA journal_mode = MEMORY";
 
 // synchronous writes off
-if((sqlite_error = sqlite3_exec(m_pDB,pszPragmaSyncOff,NULL,NULL,NULL))!=SQLITE_OK)
+if((sqlite_error = sqlite3_exec(m_pDB,pszPragmaSyncOff,nullptr,nullptr,nullptr))!=SQLITE_OK)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"sqlite - can't turn synchronous writes off: %s", sqlite3_errmsg(m_pDB)); 
 	CloseDatabase();
@@ -668,7 +668,7 @@ if((sqlite_error = sqlite3_exec(m_pDB,pszPragmaSyncOff,NULL,NULL,NULL))!=SQLITE_
 	}
 
 // bracket inserts as a single transaction
-if((sqlite_error = sqlite3_exec(m_pDB,pszBeginTransaction,NULL,NULL,NULL))!=SQLITE_OK)
+if((sqlite_error = sqlite3_exec(m_pDB,pszBeginTransaction,nullptr,nullptr,nullptr))!=SQLITE_OK)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"sqlite - can't begin transactions: %s",sqlite3_errmsg(m_pDB)); 
 	CloseDatabase();
@@ -681,7 +681,7 @@ pStm = &m_StmSQL[0];
 // experiment already known?
 ExprID = -1;
 sprintf(szSQLStatement,"select ExprID from TblExprs where ExprName LIKE '%s'",szExprName);
-if((sqlite_error = sqlite3_exec(m_pDB,szSQLStatement,ExecCallbackID,&ExprID,NULL))!=SQLITE_OK)
+if((sqlite_error = sqlite3_exec(m_pDB,szSQLStatement,ExecCallbackID,&ExprID,nullptr))!=SQLITE_OK)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"sqlite3_exec - getting ExprID: %s", sqlite3_errmsg(m_pDB));   
 	CloseDatabase();
@@ -745,7 +745,7 @@ char szProcessName[cMaxNameLen+1];
 char szProcessTitle[cMaxNameLen+1];
 char szProcessDescr[cMaxDescrText+1];
 
-if(pszProcessName == NULL || pszProcessTitle == NULL || pszProcessDescr == NULL ||
+if(pszProcessName == nullptr || pszProcessTitle == nullptr || pszProcessDescr == nullptr ||
    pszProcessName[0] == '\0' || pszProcessTitle[0] == '\0' || pszProcessDescr[0] == '\0')
 	return(eBSFerrParams);
 
@@ -757,7 +757,7 @@ strncpy(szProcessDescr,pszProcessDescr,sizeof(szProcessDescr));
 szProcessDescr[sizeof(szProcessDescr)-1] = '\0';
 
 
-if(m_pDB == NULL)
+if(m_pDB == nullptr)
 	return(eBSFerrInternal);
 
 pStm = &m_StmSQL[1];
@@ -765,7 +765,7 @@ SQLiteSerialise();
 // process already known?
 ProcessID = -1;
 sprintf(szSQLStatement,"select ProcessID from TblProcess where ProcessName LIKE '%s'",szProcessName);
-if((sqlite_error = sqlite3_exec(m_pDB,szSQLStatement,ExecCallbackID,&ProcessID,NULL))!=SQLITE_OK)
+if((sqlite_error = sqlite3_exec(m_pDB,szSQLStatement,ExecCallbackID,&ProcessID,nullptr))!=SQLITE_OK)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"sqlite3_exec - getting ProcessID: %s", sqlite3_errmsg(m_pDB));   
 	CloseDatabase();
@@ -848,7 +848,7 @@ tsSummStmSQL *pStm;
 int sqlite_error;
 int ProcessingID;
 
-if(m_pDB == NULL)
+if(m_pDB == nullptr)
 	return(eBSFerrInternal);
 
 pStm = &m_StmSQL[2];
@@ -928,7 +928,7 @@ char szLogText[cMaxDiagLen+1];
 tsSummStmSQL *pStm;
 int sqlite_error;
 int ProcessingLogID;
-if(m_pDB == NULL)
+if(m_pDB == nullptr)
 	return(eBSFerrInternal);
 
 pStm = &m_StmSQL[4];
@@ -1004,13 +1004,13 @@ tsSummStmSQL *pStm;
 int sqlite_error;
 char szParamValue[cMaxTextBuff];
 
-if(m_pDB == NULL || 
+if(m_pDB == nullptr || 
    ProcessingID == 0 ||
    (ParamType != ePTText && ValueSize < 1) ||
-   pszParamName == NULL || pszParamName[0] == '\0')
+   pszParamName == nullptr || pszParamName[0] == '\0')
 	return(eBSFerrInternal);
 
-if(ParamType == ePTText && (pParmValue == NULL || ValueSize == 0 || *(char *)pParmValue == '\0'))
+if(ParamType == ePTText && (pParmValue == nullptr || ValueSize == 0 || *(char *)pParmValue == '\0'))
 	{
 	pParmValue = (void *)"N/A";
 	ValueSize = 3;
@@ -1089,14 +1089,14 @@ tsSummStmSQL *pStm;
 int sqlite_error;
 char szResultValue[cMaxTextBuff];
 
-if(m_pDB == NULL || 
+if(m_pDB == nullptr || 
    ProcessingID == 0 ||
    (ParamType != ePTText && ValueSize < 1) ||
-   GroupAs == NULL || GroupAs[0] == '\0' ||
-   pszResultName == NULL || pszResultName[0] == '\0')
+   GroupAs == nullptr || GroupAs[0] == '\0' ||
+   pszResultName == nullptr || pszResultName[0] == '\0')
 	return(eBSFerrInternal);
 
-if(ParamType == ePTText && (pResultValue == NULL || ValueSize == 0 || *(char *)pResultValue == '\0'))
+if(ParamType == ePTText && (pResultValue == nullptr || ValueSize == 0 || *(char *)pResultValue == '\0'))
 	{
 	pResultValue = (void *)"N/A";
 	ValueSize = 3;
@@ -1838,22 +1838,22 @@ int sqlite_error;
 char szResultXValue[cMaxTextBuff];
 char szResultYValue[cMaxTextBuff];
 
-if(m_pDB == NULL || 
+if(m_pDB == nullptr || 
    ProcessingID == 0 ||
    (ParamXType != ePTText && ValueXSize < 1) ||
    (ParamYType != ePTText && ValueYSize < 1) ||
-   GroupAs == NULL || GroupAs[0] == '\0' ||
-   pszResultXName == NULL || pszResultXName[0] == '\0' ||
-   pszResultYName == NULL || pszResultYName[0] == '\0')
+   GroupAs == nullptr || GroupAs[0] == '\0' ||
+   pszResultXName == nullptr || pszResultXName[0] == '\0' ||
+   pszResultYName == nullptr || pszResultYName[0] == '\0')
 	return(eBSFerrInternal);
 
-if(ParamXType == ePTText && (pResultXValue == NULL || ValueXSize == 0 || *(char *)pResultXValue == '\0'))
+if(ParamXType == ePTText && (pResultXValue == nullptr || ValueXSize == 0 || *(char *)pResultXValue == '\0'))
 	{
 	pResultXValue = (void *)"N/A";
 	ValueXSize = 3;
 	}
 
-if(ParamYType == ePTText && (pResultYValue == NULL || ValueYSize == 0 || *(char *)pResultYValue == '\0'))
+if(ParamYType == ePTText && (pResultYValue == nullptr || ValueYSize == 0 || *(char *)pResultYValue == '\0'))
 	{
 	pResultYValue = (void *)"N/A";
 	ValueYSize = 3;
@@ -1952,13 +1952,13 @@ CSQLiteSummaries::EndProcessing(int ExprID,	// identifier returned by StartExper
 {
 char szUpdate[cMaxSQLStatement];
 int sqlite_error;
-if(m_pDB == NULL)
+if(m_pDB == nullptr)
 	return(eBSFerrInternal);
 SQLiteSerialise();
 char szTimestamp[cMaxNameLen];
 GetTimeStamp(szTimestamp);
 sprintf(szUpdate,"UPDATE TblProcessing SET ExprID = %d, ResultCode = %d, Finish = \"%s\" WHERE ProcessingID = %d",ExprID,ResultCode,szTimestamp,ProcessingID);
-if((sqlite_error = sqlite3_exec(m_pDB,szUpdate,NULL,NULL,NULL))!=SQLITE_OK)
+if((sqlite_error = sqlite3_exec(m_pDB,szUpdate,nullptr,nullptr,nullptr))!=SQLITE_OK)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"sqlite - can't update processing result code: %s", sqlite3_errmsg(m_pDB)); 
 	CloseDatabase();
@@ -1980,7 +1980,7 @@ char *pszPragmaSyncOn = (char *)"PRAGMA synchronous = ON";
 
 SQLiteSerialise();
 	// end transaction
-if((sqlite_error = sqlite3_exec(m_pDB,pszEndTransaction,NULL,NULL,NULL))!=SQLITE_OK)
+if((sqlite_error = sqlite3_exec(m_pDB,pszEndTransaction,nullptr,nullptr,nullptr))!=SQLITE_OK)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"sqlite - can't end transactions: %s", sqlite3_errmsg(m_pDB)); 
 	CloseDatabase();
@@ -1993,7 +1993,7 @@ pStms = m_StmSQL;
 int TblIdx;
 for(TblIdx = 0; TblIdx < 10; TblIdx++,pStms++)
 	{
-	if(pStms->pszCreateIndexes == NULL)
+	if(pStms->pszCreateIndexes == nullptr)
 		continue;
 	if((sqlite_error = sqlite3_exec(m_pDB,pStms->pszCreateIndexes,0,0,0))!=SQLITE_OK)
 		{
@@ -2005,7 +2005,7 @@ for(TblIdx = 0; TblIdx < 10; TblIdx++,pStms++)
 		}
 	}
 // synchronous writes off
-if((sqlite_error = sqlite3_exec(m_pDB,pszPragmaSyncOn,NULL,NULL,NULL))!=SQLITE_OK)
+if((sqlite_error = sqlite3_exec(m_pDB,pszPragmaSyncOn,nullptr,nullptr,nullptr))!=SQLITE_OK)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"sqlite - can't turn synchronous writes on: %s", sqlite3_errmsg(m_pDB)); 
 	CloseDatabase();
@@ -2028,7 +2028,7 @@ CSQLiteSummaries::ValueToText(teSQLliteSummParamTypes ParamType,	// result value
 {
 char szBuff[cMaxTextBuff];
 
-if(ValueSize < 1 || pszValueText == NULL || MaxTextLen < 1)
+if(ValueSize < 1 || pszValueText == nullptr || MaxTextLen < 1)
 	return(eBSFerrParams);
 pszValueText[0] = '\0';
 switch(ParamType) {

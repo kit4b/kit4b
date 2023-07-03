@@ -155,7 +155,7 @@ void GHamDistCrick(uint16_t *pHDs,		// where to return Hamming differentials for
 			  uint32_t GenomeLen);	 // total genome length including chrom eBaseEOS markers, but exluding start/end eBaseEOG markers
 
 // use to return the processing parameters for use by calling thread instance
-tsThreadParams *					// returns NULL if no more processing parameters available
+tsThreadParams *					// returns nullptr if no more processing parameters available
 ThreadedIterParams(void);
 
 int MinHamCnt(int MaxHamCnt,		// only need to cnt upto this many mismatches
@@ -169,13 +169,13 @@ static int SortSeqs(const void *arg1, const void *arg2);
 int hammings(int argc, char* argv[])
 {
 // determine my process name
-_splitpath(argv[0],NULL,NULL,gszProcName,NULL);
+_splitpath(argv[0],nullptr,nullptr,gszProcName,nullptr);
 #else
 int
 hammings(int argc, char** argv)
 {
 // determine my process name
-CUtility::splitpath((char *)argv[0],NULL,gszProcName);
+CUtility::splitpath((char *)argv[0],nullptr,gszProcName);
 #endif
 int iScreenLogLevel;		// level of screen diagnostics
 int iFileLogLevel;			// level of file diagnostics
@@ -773,17 +773,17 @@ if(m_hOutFile != -1)
 	close(m_hOutFile);
 	m_hOutFile = -1;
 	}
-if(m_pBioSeqFile != NULL)
+if(m_pBioSeqFile != nullptr)
 	{
 	delete m_pBioSeqFile;
-	m_pBioSeqFile = NULL;
+	m_pBioSeqFile = nullptr;
 	}
-if(m_pGChroms != NULL)
+if(m_pGChroms != nullptr)
 	{
 	delete m_pGChroms;
-	m_pGChroms = NULL;
+	m_pGChroms = nullptr;
 	}
-if(m_pGenomeSeq != NULL)
+if(m_pGenomeSeq != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pGenomeSeq);
@@ -791,9 +791,9 @@ if(m_pGenomeSeq != NULL)
 	if(m_pGenomeSeq != MAP_FAILED)
 		munmap(m_pGenomeSeq,m_AllocGenomeSeq);
 #endif
-	m_pGenomeSeq = NULL;
+	m_pGenomeSeq = nullptr;
 	}
-if(m_pHamDist != NULL)
+if(m_pHamDist != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pHamDist);
@@ -801,31 +801,31 @@ if(m_pHamDist != NULL)
 	if(m_pHamDist != MAP_FAILED)
 		munmap(m_pHamDist,m_AllocHamDist);
 #endif
-	m_pHamDist = NULL;
+	m_pHamDist = nullptr;
 	}
-if(m_pThreadParams != NULL)
+if(m_pThreadParams != nullptr)
 	{
 	delete m_pThreadParams;
-	m_pThreadParams = NULL;
+	m_pThreadParams = nullptr;
 	}
-if(m_pHamHdr != NULL)
+if(m_pHamHdr != nullptr)
 	{
 	free(m_pHamHdr);					// was allocated with malloc/realloc
-	m_pHamHdr = NULL;
+	m_pHamHdr = nullptr;
 	}
-if(m_pPregenHamHdr != NULL)
+if(m_pPregenHamHdr != nullptr)
 	{
 	free(m_pPregenHamHdr);
-	m_pPregenHamHdr = NULL;
+	m_pPregenHamHdr = nullptr;
 	}
 
-if(m_pSfxArray != NULL)
+if(m_pSfxArray != nullptr)
 	{
 	delete m_pSfxArray;
-	m_pSfxArray = NULL;
+	m_pSfxArray = nullptr;
 	}
 
-if(m_pRHammings != NULL)
+if(m_pRHammings != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pRHammings);
@@ -833,19 +833,19 @@ if(m_pRHammings != NULL)
 	if(m_pRHammings != MAP_FAILED)
 		munmap(m_pRHammings,m_TotAllocHammings);
 #endif
-	m_pRHammings = NULL;
+	m_pRHammings = nullptr;
 	}
 
-if(m_pAllocsIdentNodes != NULL)
+if(m_pAllocsIdentNodes != nullptr)
 	{
 	delete m_pAllocsIdentNodes;
-	m_pAllocsIdentNodes = NULL;
+	m_pAllocsIdentNodes = nullptr;
 	}
 
 m_TotAllocHammings = 0;
 m_AllocGenomeSeq = 0;
 m_AllocHamDist = 0;
-m_pCurHamChrom = NULL;
+m_pCurHamChrom = nullptr;
 m_SubSeqLen=0;
 m_NumProcThreads=0;
 m_szSpecies[0] = '\0';
@@ -862,18 +862,18 @@ m_PercentComplete = 0.0;
 void
 Init(void)
 {
-m_pBioSeqFile = NULL;
-m_pGChroms = NULL;
-m_pCurHamChrom = NULL;
-m_pHamHdr = NULL;
-m_pPregenHamHdr = NULL;
-m_pSfxArray = NULL;
-m_pRHammings = NULL;
+m_pBioSeqFile = nullptr;
+m_pGChroms = nullptr;
+m_pCurHamChrom = nullptr;
+m_pHamHdr = nullptr;
+m_pPregenHamHdr = nullptr;
+m_pSfxArray = nullptr;
+m_pRHammings = nullptr;
 m_hOutFile = -1;
-m_pGenomeSeq = NULL;
-m_pHamDist = NULL;
-m_pThreadParams = NULL;
-m_pAllocsIdentNodes = NULL;
+m_pGenomeSeq = nullptr;
+m_pHamDist = nullptr;
+m_pThreadParams = nullptr;
+m_pAllocsIdentNodes = nullptr;
 m_TotAllocdIdentNodes = 0;
 m_PerThreadAllocdIdentNodes = 0;
 Reset(false);
@@ -892,7 +892,7 @@ tsThreadParams *pParams;
 uint32_t Seq;
 uint32_t Idx;
 double PercentComplete;
-while((pParams = ThreadedIterParams())!=NULL)
+while((pParams = ThreadedIterParams())!=nullptr)
 	{
 	for(Seq = pParams->SSofs, Idx = 0; Idx < pParams->NumSeqs; Idx++, Seq+=pParams->SeqDelta)
 		{
@@ -934,7 +934,7 @@ while((pParams = ThreadedIterParams())!=NULL)
 _endthreadex(0);
 return(eBSFSuccess);
 #else
-pthread_exit(NULL);
+pthread_exit(nullptr);
 #endif
 }
 
@@ -946,10 +946,10 @@ LoadPregenHammings(char *pszHammings)
 int hHamFile;
 tsHHamHdr HamHdr;
 
-if(m_pPregenHamHdr != NULL)
+if(m_pPregenHamHdr != nullptr)
 	{
 	delete []m_pPregenHamHdr;
-	m_pPregenHamHdr = NULL;
+	m_pPregenHamHdr = nullptr;
 	}
 
 #ifdef _WIN32
@@ -986,7 +986,7 @@ if(HamHdr.NumChroms < 1)
 	return(eBSFerrNoEntries);
 	}
 
-if((m_pPregenHamHdr = (tsHHamHdr *)new uint8_t [HamHdr.Len])==NULL)
+if((m_pPregenHamHdr = (tsHHamHdr *)new uint8_t [HamHdr.Len])==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Unable to allocate memory (%d bytes) for holding Hamming distances loaded from - %s",HamHdr.Len,pszHammings);
 	close(hHamFile);
@@ -1143,7 +1143,7 @@ int hOutFile;
 // c) ensure chrom and loci are same
 // d) writeout record with minimum of Hamming distance
 
-if((pMergeFrom = new CCSVFile())==NULL)
+if((pMergeFrom = new CCSVFile())==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to instantiate CCSVfile");
 	return(eBSFerrObj);
@@ -1157,7 +1157,7 @@ if((RsltFrom=pMergeFrom->Open(pszMergeFromFile))!=eBSFSuccess)
 	return(RsltFrom);
 	}
 
-if((pMergeInto = new CCSVFile())==NULL)
+if((pMergeInto = new CCSVFile())==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to instantiate CCSVfile");
 	delete pMergeFrom;
@@ -1359,10 +1359,10 @@ tsHHamChrom *pCurHamChrom;
 tsHHamHdr *pTmpHdr;
 CCSVFile *pHammings;
 
-if(m_pHamHdr != NULL)
+if(m_pHamHdr != nullptr)
 	free(m_pHamHdr);
-m_pCurHamChrom = NULL;
-if((m_pHamHdr = (tsHHamHdr *)malloc(cAllocHamDist))==NULL)
+m_pCurHamChrom = nullptr;
+if((m_pHamHdr = (tsHHamHdr *)malloc(cAllocHamDist))==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory (%d bytes) for Hamming distances",cAllocHamDist);
 	return(eBSFerrMem);
@@ -1377,7 +1377,7 @@ m_pHamHdr->Magic[3] = 'm';
 m_pHamHdr->Version = 1;
 m_pHamHdr->Len = sizeof(tsHHamHdr);
 
-if((pHammings = new CCSVFile())==NULL)
+if((pHammings = new CCSVFile())==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to instantiate CCSVfile");
 	return(eBSFerrObj);
@@ -1421,7 +1421,7 @@ while((Rslt=pHammings->NextLine()) > 0)
 		gDiagnostics.DiagOut(eDLInfo,gszProcName,"Loading Hammings for chrom: %s",pszChrom);
 		if((AllocLen - m_pHamHdr->Len) < (sizeof(tsHHamChrom) + (cAllocHamDist/16)))	// allow some hammings as well as the tsHHamChrom
 			{
-			if((pTmpHdr = (tsHHamHdr *)realloc(m_pHamHdr,AllocLen + cAllocHamDist))==NULL)
+			if((pTmpHdr = (tsHHamHdr *)realloc(m_pHamHdr,AllocLen + cAllocHamDist))==nullptr)
 				{
 				gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to reallocate memory (%d bytes) for Hamming distances",AllocLen + cAllocHamDist);
 				return(eBSFerrMem);
@@ -1442,7 +1442,7 @@ while((Rslt=pHammings->NextLine()) > 0)
 	// check if needing to extend
 	if(m_pHamHdr->Len == AllocLen)
 		{
-		if((pTmpHdr = (tsHHamHdr *)realloc(m_pHamHdr,AllocLen + cAllocHamDist))==NULL)
+		if((pTmpHdr = (tsHHamHdr *)realloc(m_pHamHdr,AllocLen + cAllocHamDist))==nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to reallocate memory (%d bytes) for Hamming distances",AllocLen + cAllocHamDist);
 			return(eBSFerrMem);
@@ -1465,7 +1465,7 @@ while((Rslt=pHammings->NextLine()) > 0)
 	}
 if(m_pHamHdr->NumChroms > 0)
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"chrom %s has %d Hammings",szCurChrom,pCurHamChrom->NumEls);
-m_pCurHamChrom = NULL;
+m_pCurHamChrom = nullptr;
 delete pHammings;
 
 return((teBSFrsltCodes)Rslt);
@@ -1642,7 +1642,7 @@ do {
 				else							// k-mers in suffix array sequence....
 					{
 					pHammState->CurEntryLen = m_pSfxArray->GetSeqLen(pHammState->CurEntryID);
-					pHammState->pSeq = NULL;
+					pHammState->pSeq = nullptr;
 					}
 				pHammState->CurSeqLen = min(pHammState->MaxHammSeqLen,pHammState->CurEntryLen);
 				pHammState->NxtSeqOfs = 1 + pHammState->CurSeqLen - pHammState->KMerLen;
@@ -1730,7 +1730,7 @@ uint32_t RHammingsOfs;
 int PrefixLen;
 char szPrefix[cMaxSHLenPrefix + 3];		// allowing for 2 terminating chars plus '\0'
 
-if(pszFounderPrefix != NULL && pszFounderPrefix[0] != '\0')
+if(pszFounderPrefix != nullptr && pszFounderPrefix[0] != '\0')
 	{
 	strcpy(szPrefix,pszFounderPrefix);
 	PrefixLen = (int)strlen(szPrefix);
@@ -1761,7 +1761,7 @@ if(m_hOutFile < 0)
 	return(eBSFerrCreateFile);
 	}
 
-if((pszBuffer = new char [cRptBuffAllocsize])==NULL)
+if((pszBuffer = new char [cRptBuffAllocsize])==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Process: unable to allocate memory for report buffering");
 	Reset(false);
@@ -1844,7 +1844,7 @@ fsync(m_hOutFile);
 #endif
 close(m_hOutFile);
 m_hOutFile = -1;
-delete pszBuffer;
+delete []pszBuffer;
 return(eBSFSuccess);
 }
 
@@ -1876,7 +1876,7 @@ uint32_t RHammingsOfs;
 int PrefixLen;
 char szPrefix[cMaxSHLenPrefix + 3];		// allowing for 2 terminating chars plus '\0'
 
-if(pszFounderPrefix != NULL && pszFounderPrefix[0] != '\0')
+if(pszFounderPrefix != nullptr && pszFounderPrefix[0] != '\0')
 	{
 	strcpy(szPrefix,pszFounderPrefix);
 	PrefixLen = (int)strlen(szPrefix);
@@ -2006,7 +2006,7 @@ uint32_t RHammingsOfs;
 int PrefixLen;
 char szPrefix[cMaxSHLenPrefix + 3];		// allowing for 2 terminating chars plus '\0'
 
-if(pszFounderPrefix != NULL && pszFounderPrefix[0] != '\0')
+if(pszFounderPrefix != nullptr && pszFounderPrefix[0] != '\0')
 	{
 	strcpy(szPrefix,pszFounderPrefix);
 	PrefixLen = (int)strlen(szPrefix);
@@ -2145,7 +2145,7 @@ etSeqBase *pGseq;
 m_NumThreads = NumThreads;
 m_PerThreadAllocdIdentNodes = cMaxNumIdentNodes;
 m_TotAllocdIdentNodes = m_PerThreadAllocdIdentNodes * m_NumThreads;
-if((m_pAllocsIdentNodes = new tsIdentNode [m_TotAllocdIdentNodes])==NULL)
+if((m_pAllocsIdentNodes = new tsIdentNode [m_TotAllocdIdentNodes])==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to allocate memory for %d tsIdentNodes",m_TotAllocdIdentNodes);
 	Reset(false);
@@ -2155,7 +2155,7 @@ if((m_pAllocsIdentNodes = new tsIdentNode [m_TotAllocdIdentNodes])==NULL)
 // load targeted suffix array assembly
 // open bioseq file containing suffix array for targeted assembly to align reads against
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Loading suffix array file '%s'", pszSfxFile);
-if((m_pSfxArray = new CSfxArray()) == NULL)
+if((m_pSfxArray = new CSfxArray()) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to instantiate CSfxArray");
 	Reset(false);
@@ -2192,7 +2192,7 @@ if((Rslt=m_pSfxArray->SetTargBlock(CurBlockID))<0)
 
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Genome assembly suffix array loaded");
 
-if(pszInSeqFile != NULL && pszInSeqFile[0] != '\0')
+if(pszInSeqFile != nullptr && pszInSeqFile[0] != '\0')
 	bProcSepKMers = true;
 else
 	bProcSepKMers = false;
@@ -2200,7 +2200,7 @@ else
 // if specified that kmer sequences are to be separately loaded then load from that file
 if(bProcSepKMers)
 	{
-	if((m_pBioSeqFile = new CBioSeqFile) == NULL)
+	if((m_pBioSeqFile = new CBioSeqFile) == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to instantiate CBioSeqFile object");
 		return(eBSFerrObj);
@@ -2217,7 +2217,7 @@ if(bProcSepKMers)
 	m_pBioSeqFile->GetTitle(sizeof(m_szSpecies),m_szSpecies);
 
 	m_NumGChroms = m_pBioSeqFile->NumEntries();
-	if((m_pGChroms = new tsGChrom [m_NumGChroms])==NULL)
+	if((m_pGChroms = new tsGChrom [m_NumGChroms])==nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"unable to allocate memory (%d bytes) for %d ChromSeqs",sizeof(tsGChrom) * m_NumGChroms,m_NumGChroms);
 		Reset(false);
@@ -2239,7 +2239,7 @@ if(bProcSepKMers)
 		Len = m_pBioSeqFile->GetDataLen(ChromID);
 		m_GenomeLen += Len + 1;		// allow for a concatenation separator (eBaseEOS) or final (eBaseEOG)
 		pChrom->Len = Len;
-		pChrom->pSeq = NULL;
+		pChrom->pSeq = nullptr;
 		pChrom->ChromSeqID = ++ChromIdx;
 		}
 
@@ -2247,7 +2247,7 @@ if(bProcSepKMers)
 	#ifdef _WIN32
 	// use malloc instead of new() because of gnu new()/malloc issues - helps portability
 	m_pGenomeSeq = (uint8_t *) malloc((size_t)m_AllocGenomeSeq);
-	if(m_pGenomeSeq == NULL)
+	if(m_pGenomeSeq == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadGenome: Memory allocation of %zd bytes failed",(int64_t)m_AllocGenomeSeq);
 		Reset(false);
@@ -2255,11 +2255,11 @@ if(bProcSepKMers)
 		}
 	#else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations so use mmap
-	m_pGenomeSeq = (uint8_t *)mmap(NULL,(size_t)m_AllocGenomeSeq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+	m_pGenomeSeq = (uint8_t *)mmap(nullptr,(size_t)m_AllocGenomeSeq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pGenomeSeq == MAP_FAILED)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadGenome: Memory allocation of %zd bytes through mmap()  failed",(int64_t)m_AllocGenomeSeq,strerror(errno));
-		m_pGenomeSeq = NULL;
+		m_pGenomeSeq = nullptr;
 		Reset(false);
 		return(eBSFerrMem);
 		}
@@ -2283,7 +2283,7 @@ if(bProcSepKMers)
 		}
 	pSeq[-1] = eBaseEOG;   // marks prev chromosome sequence as being the last
 	delete m_pBioSeqFile;
-	m_pBioSeqFile = NULL;
+	m_pBioSeqFile = nullptr;
 
 	// determine the total number of subsequences over which Hammings are required
 	int ChromLen;
@@ -2329,12 +2329,12 @@ else
 														NumEntries,(uint64_t)m_TotAllocHammings,m_NumSubSeqs,m_SubSeqLen);
 	}
 
-m_pRHammings = NULL;
+m_pRHammings = nullptr;
 
 #ifdef _WIN32
 	// use malloc instead of new() because of gnu new()/malloc issues - helps portability
 m_pRHammings = (uint8_t *) malloc((size_t)m_TotAllocHammings);
-if(m_pRHammings == NULL)
+if(m_pRHammings == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadGenome: Memory allocation of %zu bytes failed",(int64_t)m_TotAllocHammings);
 	Reset(false);
@@ -2342,11 +2342,11 @@ if(m_pRHammings == NULL)
 	}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations so use mmap
-m_pRHammings = (uint8_t *)mmap(NULL,(size_t)m_TotAllocHammings, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+m_pRHammings = (uint8_t *)mmap(nullptr,(size_t)m_TotAllocHammings, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pRHammings == MAP_FAILED)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadGenome: Memory allocation of %zu bytes through mmap()  failed",(int64_t)m_TotAllocHammings,strerror(errno));
-	m_pRHammings = NULL;
+	m_pRHammings = nullptr;
 	Reset(false);
 	return(eBSFerrMem);
 	}
@@ -2392,7 +2392,7 @@ HammProcState.CurSeqOfs = 0;
 HammProcState.EntryHammOfs = 0;
 HammProcState.NumEntryIDs = bProcSepKMers ? m_NumGChroms : m_pSfxArray->GetNumEntries();
 HammProcState.pHammings = m_pRHammings;
-HammProcState.pSeq = NULL;
+HammProcState.pSeq = nullptr;
 HammProcState.bProcSepKMers = bProcSepKMers;
 HammProcState.bWatsonOnly = bWatsonOnly;
 HammProcState.MaxHammSeqLen = (int)max(10000,(int)(m_TotAllocHammings/(size_t)10000));
@@ -2412,15 +2412,15 @@ for(ThreadIdx = 0; ThreadIdx < m_NumProcThreads; ThreadIdx++,pThreadParam++,pWor
 	pThreadParam->threadID = ThreadIdx+1;
 	pThreadParam->EntryID = 0;
 	pThreadParam->IntraInterBoth = IntraInterBoth;
-	pThreadParam->pHammings = NULL;
+	pThreadParam->pHammings = nullptr;
 	pThreadParam->pHammState = &HammProcState;
 	pThreadParam->NumIdentNodes = m_PerThreadAllocdIdentNodes;
 	pThreadParam->pIdentNodes = &m_pAllocsIdentNodes[m_PerThreadAllocdIdentNodes * ThreadIdx];
 	pThreadParam->State = 0;
 #ifdef _WIN32
-	pWorkerThread->threadHandle = (HANDLE)_beginthreadex(NULL,0x0fffff,RestrictedHammingThread,pThreadParam,0,&WorkerThreads[ThreadIdx].threadID);
+	pWorkerThread->threadHandle = (HANDLE)_beginthreadex(nullptr,0x0fffff,RestrictedHammingThread,pThreadParam,0,&WorkerThreads[ThreadIdx].threadID);
 #else
-	pWorkerThread->threadRslt =	pthread_create (&pWorkerThread->threadID , NULL , RestrictedHammingThread , pThreadParam );
+	pWorkerThread->threadRslt =	pthread_create (&pWorkerThread->threadID , nullptr , RestrictedHammingThread , pThreadParam );
 #endif
 	}
 
@@ -2470,7 +2470,7 @@ for(ThreadIdx = 0; ThreadIdx < m_NumProcThreads; ThreadIdx++)
 	int JoinRlt;
 	clock_gettime(CLOCK_REALTIME, &ts);
 	ts.tv_sec += 60;
-	while((JoinRlt = pthread_timedjoin_np(WorkerThreads[ThreadIdx].threadID, NULL, &ts)) != 0)
+	while((JoinRlt = pthread_timedjoin_np(WorkerThreads[ThreadIdx].threadID, nullptr, &ts)) != 0)
 		{
 		pthread_mutex_lock(&m_hMtxThreadParams);
 		ApproxNumChroms = HammProcState.ApproxNumChroms;
@@ -2482,7 +2482,7 @@ for(ThreadIdx = 0; ThreadIdx < m_NumProcThreads; ThreadIdx++)
 		PrevApproxNumHammings = ApproxNumHammings;
 		ts.tv_sec += 60;
 		}
-	pthread_join(WorkerThreads[ThreadIdx].threadID,NULL);
+	pthread_join(WorkerThreads[ThreadIdx].threadID,nullptr);
 #endif
 	}
 
@@ -2506,7 +2506,7 @@ int NumEntries;
 uint32_t ChromLen;
 uint32_t RHammingsOfs;
 
-if(pszHammingFile != NULL && pszHammingFile[0] != '\0')
+if(pszHammingFile != nullptr && pszHammingFile[0] != '\0')
 	{
 	// write out the Hamming distances as chrom,loci,Hamming - a simple format easily post processed
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Writing Hamming edit distances to file: '%s'",pszHammingFile);
@@ -2589,7 +2589,7 @@ for(SeqIdx = 0; SeqIdx <= (uint32_t)(RHamm+1); SeqIdx++)
 Reset(true);
 
 delete m_pSfxArray;
-m_pSfxArray = NULL;
+m_pSfxArray = nullptr;
 Reset(true);
 return(0);
 }
@@ -2620,9 +2620,9 @@ Init();
 
 
 #ifdef _WIN32
-if((m_hMtxThreadParams = CreateMutex(NULL,false,NULL))==NULL)
+if((m_hMtxThreadParams = CreateMutex(nullptr,false,nullptr))==nullptr)
 #else
-if(pthread_mutex_init (&m_hMtxThreadParams,NULL)!=0)
+if(pthread_mutex_init (&m_hMtxThreadParams,nullptr)!=0)
 #endif
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Fatal: unable to create mutex");
@@ -2711,7 +2711,7 @@ gDiagnostics.DiagOut(eDLInfo,gszProcName,"Node sweep start is %u, and sweep end 
 // adjust m_NumProcThreads so as to ensure each processing thread has at least 1 sweep to process
 m_NumProcThreads = (int)min(1 + SSeqEnd - SSeqStart,(uint32_t)m_NumProcThreads);
 
-if(pszHammingFile != NULL && pszHammingFile[0] != '\0')
+if(pszHammingFile != nullptr && pszHammingFile[0] != '\0')
 	{
 	// ensure output results file can be accessed/created
 #ifdef _WIN32
@@ -2773,9 +2773,9 @@ for(ThreadIdx = 0; ThreadIdx < m_NumProcThreads; ThreadIdx++)
 	{
 	WorkerThreads[ThreadIdx].Rslt = 0;
 #ifdef _WIN32
-	WorkerThreads[ThreadIdx].threadHandle = (HANDLE)_beginthreadex(NULL,0x0fffff,ThreadedGHamDist,&WorkerThreads[ThreadIdx],0,&WorkerThreads[ThreadIdx].threadID);
+	WorkerThreads[ThreadIdx].threadHandle = (HANDLE)_beginthreadex(nullptr,0x0fffff,ThreadedGHamDist,&WorkerThreads[ThreadIdx],0,&WorkerThreads[ThreadIdx].threadID);
 #else
-	WorkerThreads[ThreadIdx].threadRslt =	pthread_create (&WorkerThreads[ThreadIdx].threadID , NULL , ThreadedGHamDist , &WorkerThreads[ThreadIdx] );
+	WorkerThreads[ThreadIdx].threadRslt =	pthread_create (&WorkerThreads[ThreadIdx].threadID , nullptr , ThreadedGHamDist , &WorkerThreads[ThreadIdx] );
 #endif
 	}
 
@@ -2822,7 +2822,7 @@ for(ThreadIdx = 0; ThreadIdx < m_NumProcThreads; ThreadIdx++)
 	int JoinRlt;
 	clock_gettime(CLOCK_REALTIME, &ts);
 	ts.tv_sec += 60;
-	while((JoinRlt = pthread_timedjoin_np(WorkerThreads[ThreadIdx].threadID, NULL, &ts)) != 0)
+	while((JoinRlt = pthread_timedjoin_np(WorkerThreads[ThreadIdx].threadID, nullptr, &ts)) != 0)
 		{
 		pthread_mutex_lock(&m_hMtxThreadParams);
 		CurPercentComplete = m_PercentComplete;
@@ -2832,7 +2832,7 @@ for(ThreadIdx = 0; ThreadIdx < m_NumProcThreads; ThreadIdx++)
 		PrevCurPercentComplete = CurPercentComplete;
 		ts.tv_sec += 60;
 		}
-	pthread_join(WorkerThreads[ThreadIdx].threadID,NULL);
+	pthread_join(WorkerThreads[ThreadIdx].threadID,nullptr);
 #endif
 	}
 
@@ -2871,7 +2871,7 @@ int BuffOfs;
 uint32_t CurLoci;
 tsGChrom *pChrom;
 
-if(pszHammingFile != NULL && pszHammingFile[0] != '\0')
+if(pszHammingFile != nullptr && pszHammingFile[0] != '\0')
 	{
 	// write out the Hamming distances as chrom,loci,Hamming - a simple format easily post processed
 	gDiagnostics.DiagOut(eDLInfo,gszProcName,"Writing Hamming edit distances to file: '%s'",pszHammingFile);
@@ -2992,7 +2992,7 @@ etSeqBase *pGseq;
 uint16_t *pHamDist;
 
 
-if((m_pBioSeqFile = new CBioSeqFile) == NULL)
+if((m_pBioSeqFile = new CBioSeqFile) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to instantiate CBioSeqFile object");
 	return(eBSFerrObj);
@@ -3009,7 +3009,7 @@ if((Rslt = m_pBioSeqFile->Open(pszBioSeqFile))!=eBSFSuccess)
 m_pBioSeqFile->GetTitle(sizeof(m_szSpecies),m_szSpecies);
 
 m_NumGChroms = m_pBioSeqFile->NumEntries();
-if((m_pGChroms = new tsGChrom [m_NumGChroms])==NULL)
+if((m_pGChroms = new tsGChrom [m_NumGChroms])==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"unable to allocate memory (%d bytes) for %d ChromSeqs",sizeof(tsGChrom) * m_NumGChroms,m_NumGChroms);
 	Reset(false);
@@ -3031,7 +3031,7 @@ while((ChromID = m_pBioSeqFile->Next(ChromID)) > 0) {
 	Len = m_pBioSeqFile->GetDataLen(ChromID);
 	m_GenomeLen += Len + 1;		// allow for a concatenation separator (eBaseEOS) or final (eBaseEOG)
 	pChrom->Len = Len;
-	pChrom->pSeq = NULL;
+	pChrom->pSeq = nullptr;
 	pChrom->ChromSeqID = ++ChromIdx;
 	}
 
@@ -3039,7 +3039,7 @@ m_AllocGenomeSeq = m_GenomeLen;
 #ifdef _WIN32
 // use malloc instead of new() because of gnu new()/malloc issues - helps portability
 m_pGenomeSeq = (uint8_t *) malloc((size_t)m_AllocGenomeSeq);
-if(m_pGenomeSeq == NULL)
+if(m_pGenomeSeq == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadGenome: Memory allocation of %zd bytes failed",(int64_t)m_AllocGenomeSeq);
 	Reset(false);
@@ -3047,11 +3047,11 @@ if(m_pGenomeSeq == NULL)
 	}
 #else
 // gnu malloc is still in the 32bit world and can't handle more than 2GB allocations so use mmap
-m_pGenomeSeq = (uint8_t *)mmap(NULL,(size_t)m_AllocGenomeSeq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+m_pGenomeSeq = (uint8_t *)mmap(nullptr,(size_t)m_AllocGenomeSeq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pGenomeSeq == MAP_FAILED)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadGenome: Memory allocation of %zd bytes through mmap()  failed",(int64_t)m_AllocGenomeSeq,strerror(errno));
-	m_pGenomeSeq = NULL;
+	m_pGenomeSeq = nullptr;
 	Reset(false);
 	return(eBSFerrMem);
 	}
@@ -3075,7 +3075,7 @@ while((ChromID = m_pBioSeqFile->Next(ChromID)) > 0) {
 	}
 pSeq[-1] = eBaseEOG;   // marks prev chromosome sequence as being the last
 delete m_pBioSeqFile;
-m_pBioSeqFile = NULL;
+m_pBioSeqFile = nullptr;
 
 // determine the total number of subsequences over which Hammings are required
 m_NumSubSeqs = 0;
@@ -3099,7 +3099,7 @@ gDiagnostics.DiagOut(eDLInfo,gszProcName,"Genome containing %zu total nucleotide
 m_AllocHamDist = ((int64_t)(m_GenomeLen-2) * m_NumProcThreads * sizeof(uint16_t)); // no hammings for start/end eBaseEOGs
 #ifdef _WIN32
 m_pHamDist = (uint16_t *) malloc((size_t)m_AllocHamDist);
-if(m_pHamDist == NULL)
+if(m_pHamDist == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadGenome: Memory allocation of %zd bytes failed",(int64_t)m_AllocHamDist);
 	Reset(false);
@@ -3107,11 +3107,11 @@ if(m_pHamDist == NULL)
 	}
 #else
 // gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-m_pHamDist = (uint16_t *)mmap(NULL,(size_t)m_AllocHamDist, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+m_pHamDist = (uint16_t *)mmap(nullptr,(size_t)m_AllocHamDist, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 if(m_pHamDist == MAP_FAILED)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"LoadGenome: Memory allocation of %zd bytes through mmap()  failed",(int64_t)m_AllocHamDist,strerror(errno));
-	m_pHamDist = NULL;
+	m_pHamDist = nullptr;
 	Reset(false);
 	return(eBSFerrMem);
 	}
@@ -3121,7 +3121,7 @@ pHamDist = m_pHamDist;
 for(Len = 0; Len < (m_AllocHamDist / sizeof(uint16_t)); Len++)
 	*pHamDist++ = m_SubSeqLen + 1;
 
-if((m_pThreadParams = new tsThreadParams [m_NumProcThreads]) == NULL)
+if((m_pThreadParams = new tsThreadParams [m_NumProcThreads]) == nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"unable to allocate memory (%d bytes) for thread parameter sets",sizeof(tsThreadParams) * m_NumProcThreads);
 	Reset(false);
@@ -3135,13 +3135,13 @@ return(eBSFSuccess);
 
 // ThreadedIterParams
 // use to return the processing parameters set for use calling thread instance
-tsThreadParams *						// returns NULL if no more processing parameters available
+tsThreadParams *						// returns nullptr if no more processing parameters available
 ThreadedIterParams(void)
 {
 tsThreadParams *pThreadParam;
 int Idx;
-if((pThreadParam = m_pThreadParams) == NULL || m_NumProcThreads == 0)
-	return(NULL);
+if((pThreadParam = m_pThreadParams) == nullptr || m_NumProcThreads == 0)
+	return(nullptr);
 
 #ifdef _WIN32
 WaitForSingleObject(m_hMtxThreadParams,INFINITE);
@@ -3166,7 +3166,7 @@ ReleaseMutex(m_hMtxThreadParams);
 #else
 pthread_mutex_unlock(&m_hMtxThreadParams);
 #endif
-return(NULL);
+return(nullptr);
 }
 
 // lookup table for quick base complementation

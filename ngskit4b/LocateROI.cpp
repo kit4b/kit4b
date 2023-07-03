@@ -69,13 +69,13 @@ char *ROIRegion2Txt(etBEDRegion Region);
 int LocateROI(int argc, char* argv[])
 {
 // determine my process name
-_splitpath(argv[0],NULL,NULL,gszProcName,NULL);
+_splitpath(argv[0],nullptr,nullptr,gszProcName,nullptr);
 #else
 int 
 LocateROI(int argc, char** argv)
 {
 // determine my process name
-CUtility::splitpath((char *)argv[0],NULL,gszProcName);
+CUtility::splitpath((char *)argv[0],nullptr,gszProcName);
 #endif
 int iScreenLogLevel;		// level of screen diagnostics
 int iFileLogLevel;			// level of file diagnostics
@@ -299,15 +299,15 @@ if (!argerrors)
 		else
 			{
 			NumAssocFiles = 0;
-			pszAssocFiles[0] = NULL;
+			pszAssocFiles[0] = nullptr;
 			}
 		}
 	else
 		{
 		for(NumAssocFiles=Idx=0;NumAssocFiles < cMaxNumAssocFiles && Idx < assocfiles->count; Idx++)
 			{
-			pszAssocFiles[Idx] = NULL;
-			if(pszAssocFiles[NumAssocFiles] == NULL)
+			pszAssocFiles[Idx] = nullptr;
+			if(pszAssocFiles[NumAssocFiles] == nullptr)
 				pszAssocFiles[NumAssocFiles] = new char [_MAX_PATH];
 			strncpy(pszAssocFiles[NumAssocFiles],assocfiles->filename[Idx],_MAX_PATH);
 			pszAssocFiles[NumAssocFiles][_MAX_PATH-1] = '\0';
@@ -479,9 +479,9 @@ Reset();
 void
 CLocateROI::Init(void)
 {
-m_pCSVFile = NULL;
-m_pBEDFile = NULL;
-m_pDistBEDFile = NULL;
+m_pCSVFile = nullptr;
+m_pBEDFile = nullptr;
+m_pDistBEDFile = nullptr;
 
 m_hRsltsFile = -1;			// handle for opened results file
 
@@ -490,7 +490,7 @@ for(int ChromIdx = 0; ChromIdx < cMaxChromCov; ChromIdx++)
 	m_ChromCnts[ChromIdx].AllocCovCnts = 0;
 	m_ChromCnts[ChromIdx].StartOfs = 0;
 	m_ChromCnts[ChromIdx].EndOfs = 0;
-	m_ChromCnts[ChromIdx].pCovCnts = NULL;
+	m_ChromCnts[ChromIdx].pCovCnts = nullptr;
 	m_ChromCnts[ChromIdx].szChrom[0] = '\0';
 	}
 m_NumChromsCov = 0;	
@@ -499,7 +499,7 @@ m_AllocNumROIsMem = 0;
 m_AllocNumROIs = 0;
 m_NumOfROIs = 0;
 m_NumAcceptedReads = 0;
-m_pROIs = NULL;
+m_pROIs = nullptr;
 }
 
 void
@@ -511,21 +511,21 @@ if(m_hRsltsFile != -1)
 	m_hRsltsFile = -1;
 	}
 
-if(m_pBEDFile != NULL)
+if(m_pBEDFile != nullptr)
 	{
 	delete m_pBEDFile;
-	m_pBEDFile = NULL;
+	m_pBEDFile = nullptr;
 	}
-if(m_pDistBEDFile != NULL)
+if(m_pDistBEDFile != nullptr)
 	{
 	delete m_pDistBEDFile;
-	m_pDistBEDFile = NULL;
+	m_pDistBEDFile = nullptr;
 	}
 
-if(m_pCSVFile != NULL)
+if(m_pCSVFile != nullptr)
 	{
 	delete m_pCSVFile;
-	m_pCSVFile = NULL;
+	m_pCSVFile = nullptr;
 	}
 
 if(m_NumChromsCov > 0)
@@ -534,7 +534,7 @@ if(m_NumChromsCov > 0)
 		{
 		m_ChromCnts[ChromIdx].StartOfs = 0;
 		m_ChromCnts[ChromIdx].EndOfs = 0;
-		if(m_ChromCnts[ChromIdx].pCovCnts != NULL)
+		if(m_ChromCnts[ChromIdx].pCovCnts != nullptr)
 			{
 #ifdef _WIN32
 			free(m_ChromCnts[ChromIdx].pCovCnts);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -542,7 +542,7 @@ if(m_NumChromsCov > 0)
 			if(m_ChromCnts[ChromIdx].pCovCnts != MAP_FAILED)
 				munmap(m_ChromCnts[ChromIdx].pCovCnts,m_ChromCnts[ChromIdx].AllocCovCnts * sizeof(uint32_t));
 #endif
-			m_ChromCnts[ChromIdx].pCovCnts = NULL;
+			m_ChromCnts[ChromIdx].pCovCnts = nullptr;
 			}
 		m_ChromCnts[ChromIdx].AllocCovCnts = 0;
 		m_ChromCnts[ChromIdx].szChrom[0] = '\0';
@@ -550,7 +550,7 @@ if(m_NumChromsCov > 0)
 	m_NumChromsCov = 0;	
 	}
 
-if(m_pROIs != NULL)
+if(m_pROIs != nullptr)
 	{
 #ifdef _WIN32
 	free(m_pROIs);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
@@ -558,17 +558,17 @@ if(m_pROIs != NULL)
 	if(m_pROIs != MAP_FAILED)
 		munmap(m_pROIs,m_AllocNumROIsMem);
 #endif
-	m_pROIs = NULL;
+	m_pROIs = nullptr;
 	}
 
 if(m_NumFeatFiles > 0)
 	{
 	for(int Idx = 0; Idx < m_NumFeatFiles; Idx++)
 		{
-		if(m_pszFeatFiles[Idx] != NULL)
+		if(m_pszFeatFiles[Idx] != nullptr)
 			{
 			delete m_pszFeatFiles[Idx];
-			m_pszFeatFiles[Idx] = NULL;
+			m_pszFeatFiles[Idx] = nullptr;
 			}
 		}
 	m_NumFeatFiles = 0;
@@ -589,7 +589,7 @@ int AllocCovCnts;
 uint32_t *pCovCnts;
 size_t ReallocTo;
 
-if(pszChrom == NULL || pszChrom[0] == '\0')
+if(pszChrom == nullptr || pszChrom[0] == '\0')
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"BuildReadCoverage: No chromosome specified");
 	Reset();
@@ -638,7 +638,7 @@ if(ChromIdx == m_NumChromsCov)	// if a new or first chrom
 	ReallocTo =  AllocCovCnts * sizeof(uint32_t);
 #ifdef _WIN32
 	pChrom->pCovCnts = (uint32_t *) malloc(ReallocTo);	// initial and perhaps the only allocation
-	if(pChrom->pCovCnts == NULL)
+	if(pChrom->pCovCnts == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"BuildReadCoverage: Memory allocation of %zd bytes - %s",(int64_t)ReallocTo,strerror(errno));
 		Reset();
@@ -646,11 +646,11 @@ if(ChromIdx == m_NumChromsCov)	// if a new or first chrom
 		}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-	pChrom->pCovCnts = (uint32_t *)mmap(NULL,ReallocTo, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+	pChrom->pCovCnts = (uint32_t *)mmap(nullptr,ReallocTo, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(pChrom->pCovCnts == MAP_FAILED)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"BuildReadCoverage: Memory allocation of %zd bytes through mmap()  failed - %s",(int64_t)ReallocTo,strerror(errno));
-		pChrom->pCovCnts = NULL;
+		pChrom->pCovCnts = nullptr;
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -670,9 +670,9 @@ if(EndOfs >= pChrom->AllocCovCnts)
 #else
 	pCovCnts = (uint32_t *)mremap(pChrom->pCovCnts,pChrom->AllocCovCnts * sizeof(uint32_t),ReallocTo,MREMAP_MAYMOVE);
 	if(pCovCnts == MAP_FAILED)
-		pCovCnts = NULL;
+		pCovCnts = nullptr;
 #endif
-	if(pCovCnts == NULL)
+	if(pCovCnts == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"BuildReadCoverage: Memory re-allocation to %d bytes - %s",ReallocTo,strerror(errno));
 		Reset();
@@ -718,7 +718,7 @@ tsChromCnts *pChrom;
 int ChromIdx;
 uint32_t *pCovCnts;
 
-if(pszChrom == NULL || pszChrom[0] == '\0')
+if(pszChrom == nullptr || pszChrom[0] == '\0')
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"FilterReadCoverage: No chromosome specified");
 	Reset();
@@ -790,14 +790,14 @@ uint64_t TotGenomeCnts;
 double GenomeCntsPerM;
 size_t memreq;
 
-if(m_pROIs == NULL)		// should be the case but who knows :-)
+if(m_pROIs == nullptr)		// should be the case but who knows :-)
 	{
 		// initial allocation of memory to hold regions of interest
 	memreq = cROIAlloc * 2 * sizeof(tsROI);
 
 #ifdef _WIN32
 	m_pROIs = (tsROI *) malloc(memreq);	// initial allocation
-	if(m_pROIs == NULL)
+	if(m_pROIs == nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"IdentROI: Memory allocation of %zd bytes - %s",(int64_t)memreq,strerror(errno));
 		Reset();
@@ -805,11 +805,11 @@ if(m_pROIs == NULL)		// should be the case but who knows :-)
 		}
 #else
 	// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-	m_pROIs = (tsROI *)mmap(NULL,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
+	m_pROIs = (tsROI *)mmap(nullptr,memreq, PROT_READ |  PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 	if(m_pROIs == MAP_FAILED)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"IdentROI: Memory allocation of %zd bytes through mmap()  failed - %s",(int64_t)memreq,strerror(errno));
-		m_pROIs = NULL;
+		m_pROIs = nullptr;
 		Reset();
 		return(eBSFerrMem);
 		}
@@ -877,9 +877,9 @@ for(ChromIdx = 0 ; ChromIdx < m_NumChromsCov; ChromIdx++,pChrom++)
 #else
 							pTmpAlloc = (tsROI *)mremap(m_pROIs,m_AllocNumROIsMem,memreq,MREMAP_MAYMOVE);
 							if(pTmpAlloc == MAP_FAILED)
-								pTmpAlloc = NULL;
+								pTmpAlloc = nullptr;
 #endif
-							if(pTmpAlloc == NULL)
+							if(pTmpAlloc == nullptr)
 								{
 								gDiagnostics.DiagOut(eDLFatal,gszProcName,"IdentROI: Memory re-allocation to %d bytes - %s",memreq,strerror(errno));
 								Reset();	
@@ -956,15 +956,15 @@ int ChromID;
 int ROIidx;
 tsROI *pROI;
 
-if(m_pDistBEDFile != NULL)
+if(m_pDistBEDFile != nullptr)
 	{
 	delete m_pDistBEDFile;
-	m_pDistBEDFile = NULL;
+	m_pDistBEDFile = nullptr;
 	}
 
-if(pszAnnoFile != NULL && pszAnnoFile[0] != '\0')
+if(pszAnnoFile != nullptr && pszAnnoFile[0] != '\0')
 	{
-	if((m_pDistBEDFile = new CBEDfile)==NULL)
+	if((m_pDistBEDFile = new CBEDfile)==nullptr)
 		{
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to instantiate CBEDfile");
 		Reset();
@@ -995,7 +995,7 @@ pROI = m_pROIs;
 for(ROIidx = 0; ROIidx < m_NumOfROIs; ROIidx++,pROI++)
 	{
 	pChrom = &m_ChromCnts[pROI->ChromIdx-1];
-	if(m_pDistBEDFile != NULL)
+	if(m_pDistBEDFile != nullptr)
 		ChromID = m_pDistBEDFile->LocateChromIDbyName(pChrom->szChrom);
 	else
 		ChromID = 0;
@@ -1058,7 +1058,7 @@ if(FMode == eFROIsumCSV && bFinal)
 if(BuffIdx)
 	CUtility::RetryWrites(m_hRsltsFile,szLineBuff,BuffIdx);
 delete m_pDistBEDFile;
-m_pDistBEDFile = NULL;
+m_pDistBEDFile = nullptr;
 return(m_NumOfROIs);
 }
 
@@ -1098,7 +1098,7 @@ int EndLoci;
 char *pszStrand;
 int NumFiltStrand;
 
-if((m_pCSVFile = new CCSVFile)==NULL)
+if((m_pCSVFile = new CCSVFile)==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to instantiate CCSVFile");
 	Reset();
@@ -1174,7 +1174,7 @@ int IntergenicStart;
 int NumEls;
 int NumFiltStrand;
 
-if((m_pBEDFile = new CBEDfile)==NULL)
+if((m_pBEDFile = new CBEDfile)==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to instantiate CBEDfile");
 	Reset();
@@ -1267,7 +1267,7 @@ int LineLen;
 CSAMfile BAMfile;
 
 // open SAM for reading
-if(pszInFile == NULL || *pszInFile == '\0')
+if(pszInFile == nullptr || *pszInFile == '\0')
 	return(eBSFerrParams);
 if((Rslt = BAMfile.Open(pszInFile)) != eBSFSuccess)
 	{
@@ -1379,14 +1379,14 @@ if(pROI->DSFeatDist < 0)
 	pROI->DSFeatFileID = AnnoFileID;
 	strcpy(pROI->szDSFeatID,cpszNoFeat);
 	}
-if(m_pDistBEDFile == NULL || ROIChromID < 1)
+if(m_pDistBEDFile == nullptr || ROIChromID < 1)
 	return(false);
 
 // check if contained or even partially overlapping a feature
 Nth = 0;
 while((FeatID = m_pDistBEDFile->LocateFeatureIDinRangeOnChrom(ROIChromID,pROI->StartOfRegion,pROI->EndOfRegion,++Nth)) > 0)
 	{
-	Rslt = m_pDistBEDFile->GetFeature(FeatID,szFeatName,szFeatChrom,&FeatStart,&FeatEnd,NULL,&FeatStrand);
+	Rslt = m_pDistBEDFile->GetFeature(FeatID,szFeatName,szFeatChrom,&FeatStart,&FeatEnd,nullptr,&FeatStrand);
 	if(FiltStrand != '*' && FeatStrand != FiltStrand)
 		continue;
 	pROI->DSFeatFileID = AnnoFileID;
@@ -1405,7 +1405,7 @@ Rslt = -1;
 if((FeatID = m_pDistBEDFile->LocateFeatureAfter(ROIChromID,pROI->EndOfRegion)) > 0)
 	{
 	// determine feature strand and start loci
-	while((Rslt = m_pDistBEDFile->GetFeature(FeatID,szFeatName,szFeatChrom,&FeatStart,NULL,NULL,&FeatStrand))==0)
+	while((Rslt = m_pDistBEDFile->GetFeature(FeatID,szFeatName,szFeatChrom,&FeatStart,nullptr,nullptr,&FeatStrand))==0)
 		{
 		// ensure still on same chromosome as ROI
 		if(stricmp(szFeatChrom,pszROIChrom))
@@ -1439,7 +1439,7 @@ if(FeatID < 0 || Rslt < 0)
 if((FeatID = m_pDistBEDFile->LocateFeatureBefore(ROIChromID,pROI->StartOfRegion)) > 0)
 	{
 	// determine feature strand and end loci
-	while(FeatID > 0 && (Rslt = m_pDistBEDFile->GetFeature(FeatID,szFeatName,szFeatChrom,NULL,&FeatEnd,NULL,&FeatStrand))==0)
+	while(FeatID > 0 && (Rslt = m_pDistBEDFile->GetFeature(FeatID,szFeatName,szFeatChrom,nullptr,&FeatEnd,nullptr,&FeatStrand))==0)
 		{
 		// ensure still on same chromosome as ROI
 		if(stricmp(szFeatChrom,pszROIChrom))
@@ -1497,7 +1497,7 @@ int NumFiltStrand;
 if(pszInFile[0] == '\0')
 	return(eBSFSuccess);
 
-if((m_pBEDFile = new CBEDfile)==NULL)
+if((m_pBEDFile = new CBEDfile)==nullptr)
 	{
 	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to instantiate CBEDfile");
 	Reset();
@@ -1820,7 +1820,7 @@ if(!m_NumAcceptedReads)
 
 
 // now filter by genomic regions
-if(pszRetainFile != NULL && pszRetainFile[0] != '\0')
+if(pszRetainFile != nullptr && pszRetainFile[0] != '\0')
 	bNoFilter = false;
 else
 	bNoFilter = true;
@@ -1857,10 +1857,10 @@ if(Rslt >= 1)
 			{
 			pszAssocFile = pszAssocFiles[Idx];
 #ifdef _WIN32
-			_splitpath(pszAssocFile,NULL,NULL,szAssocName,szAssocExtn);
+			_splitpath(pszAssocFile,nullptr,nullptr,szAssocName,szAssocExtn);
 			strcat(szAssocName,szAssocExtn);
 #else
-			CUtility::splitpath(pszAssocFile,NULL,szAssocName);
+			CUtility::splitpath(pszAssocFile,nullptr,szAssocName);
 #endif
 			m_pszFeatFiles[Idx] = new char [strlen(szAssocName)+1];
 			strcpy(m_pszFeatFiles[Idx],szAssocName);
@@ -1879,7 +1879,7 @@ if(Rslt >= 1)
 		}
 	else
 		{
-		Rslt = WriteRegions(true, NULL,1,FMode,pszTitle,FeatDistStrand);
+		Rslt = WriteRegions(true, nullptr,1,FMode,pszTitle,FeatDistStrand);
 		if(Rslt < 0)
 			{
 			gDiagnostics.DiagOut(eDLInfo,gszProcName,"Errors whilst identifying ROIs");
