@@ -1,20 +1,20 @@
 #pragma once
 
 const int32_t cMaxWildCardFileSpecs = 200;			// can accept at most this max number of input wildcarded file specs
-const int32_t cMaxWIGReadsets = 8000;				// currently allowing for at most this number of WIG readsets
+const int32_t cMaxWIGReadsets = 10000;				// currently allowing for at most this number of WIG readsets
+const int32_t cMaxLoadWIGReadsets = 250;			// if more than this number of loaded WIG chroms then discard last loaded to make room for next readset
 const int32_t cMaxIncludeChroms = 20;				// max number of include chromosomes regular expressions
 const int32_t cMaxExcludeChroms = 20;				// max number of exclude chromosomes regular expressions
 
 const int32_t cMaxChromNames = 100000;				// max number of unique chromsome names allowed
-const int32_t cMaxChromMetadata = 1000000;			// allowing for a maximum of this many chromosomes/contigs over all founders
-const int32_t cAllocChromMetadata = 100000;			// allocate chrom metadata in this sized increments
+const int32_t cMaxChromMetadata = 10000000;			// allowing for a maximum of this many chromosomes/contigs over all founders
+const int32_t cAllocChromMetadata = 1000000;			// allocate chrom metadata in this sized increments
 
 const uint32_t cMaxWIGutilityThreads = 4;			// relatively few threads likely to be required
 const size_t cAllocPackedBaseAlleles = 0x3fffffff;	// allocate packed base alleles to this maximal size, 1 allocation per chromosome per readset
 
 typedef enum TAG_eWIGuMode {	// WIG processing modes
-	eWIGu2DEseq = 0,  // default is for processing WIGs into DEseq counts ready for DE analysis
-	eWIGu2TODEseq,	  // process WIG into DE transcript turnover pseudo counts ready for DE analysis
+	eWIG2CovCnts = 0,  // default is for processing WIGs into coverage counts
 	eWIGuPlaceholder  // used as a placeholder to mark number of processing modes
 	} eWIGuMode;
 
@@ -170,7 +170,7 @@ public:
 
 	void Reset(void);	// reset state back to that immediately following instantiation
 
-	int Process(eWIGuMode PMode,	// processing mode: eWIGu2DEseq WIG to DEseq, eWIGu2TODEseq WIG to turnover DEseq
+	int Process(eWIGuMode PMode,	// processing mode: eWIG2CovCnts, default is for processing WIGs into coverage counts
 		int32_t NumInputFiles,		// number of input WIG file specs
 		char* pszInputFiles[],		// names of input WIG files (wildcards allowed)
 		char* pszOutFile,			// output to this file

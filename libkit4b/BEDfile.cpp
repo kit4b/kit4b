@@ -1000,7 +1000,7 @@ int32_t GeneScore;
 int MRAInternalChromID;
 char szMRAFeatChromName[cMaxFeatNameLen+1];
 int MRAInternalGeneID;
-
+bool bInGene;
 m_NumGFFFeats = 0;
 m_NumGFFGenes = 0;
 
@@ -1017,6 +1017,7 @@ LineNum = 0;
 szMRAFeatChromName[0] = '\0';
 MRAInternalChromID = 0;
 MRAInternalGeneID = 0;
+bInGene = false;
 while(fgets(m_szLineBuff,sizeof(m_szLineBuff)-1,pGFFStream)!= NULL)
 	{
 	LineNum += 1;
@@ -1040,6 +1041,9 @@ while(fgets(m_szLineBuff,sizeof(m_szLineBuff)-1,pGFFStream)!= NULL)
 		continue;
 
 	switch(FeatTypeID) {
+		case eGFF3FTmRNA:	// mRNAs should only be specified within a gene but some GFFs use gene and mRNA synomously, so if no preceding gene then treat as if gene!
+			if(bInGene)		// will be set true if already parsed out a preceding gene record so mRNA is redundant
+				continue;
 		case eGFF3FTgene:	// starts a gene
 			if (m_NumGFFFeats) // add to BED any outstanding gene
 				{
@@ -1079,6 +1083,7 @@ while(fgets(m_szLineBuff,sizeof(m_szLineBuff)-1,pGFFStream)!= NULL)
 			memset(m_pFeatBM,0,PackedGeneSize);
 			m_NumGFFFeats = 0;
 			m_NumGFFGenes++;
+			bInGene = true;
 			break;
 
 		case eGFF3FTexon:
@@ -1097,7 +1102,7 @@ while(fgets(m_szLineBuff,sizeof(m_szLineBuff)-1,pGFFStream)!= NULL)
 				fclose(pGFFStream);
 				return(eBSFerrParse);
 				}
-				
+			bInGene = false;
 			break;
 
 		default:	// of no interest!

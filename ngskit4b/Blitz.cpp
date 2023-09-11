@@ -158,7 +158,7 @@ struct arg_int *querylendpct = arg_int0("a","querylendpct","<int>",		"minimum re
 struct arg_int *maxpathstoreport = arg_int0("P","maxpathstoreport","<int>",	"report at most this many highest scored alignment paths for each query (default is 1)");
 
 struct arg_int *filtminlen = arg_int0("l","minlen","<int>",	"filter out input sequences less than this length (default is 100, range 100..16Mbp)");
-struct arg_int *filtmaxlen = arg_int0("L","maxlen","<int>",	"filter out input sequences less than this length (default is 100000, range 100..16Mbp)");
+struct arg_int *filtmaxlen = arg_int0("L","maxlen","<int>",	"filter out input sequences more than this length (default is 100000, range 100..16Mbp)");
 
 struct arg_int *threads = arg_int0("T","threads","<int>",			"number of processing threads 0..128 (defaults to 0 which sets threads to number of CPU cores)");
 

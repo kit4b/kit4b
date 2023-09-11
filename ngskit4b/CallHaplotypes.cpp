@@ -3280,20 +3280,38 @@ for (SrcID = 1; SrcID <= MaxNumSrcs; SrcID++, SrcPBAsIdx++)
 	for (RefID = 1; RefID <= pPar->NumRefPBAs; RefID++)
 		{
 		// starting from first bin at loci 0 on the source
-		pSrcPBA = pPar->pFndrPBAs[SrcPBAsIdx];
+		pChromScore = &pPar->pChromScores[(pPar->NumRefPBAs * pPar->BinsThisChrom * (SrcID - 1)) + ((RefID - 1) * pPar->BinsThisChrom)];
+
+		if(pPar->pFndrPBAs[SrcPBAsIdx] == nullptr || pPar->pFndrPBAs[RefID - 1] == nullptr) // explicitly handle these cases, some sample chromosomes will have no PBAs. 
+			{
+			for(BinID = 1, Loci = 0; BinID <= pPar->BinsThisChrom && Loci < pPar->ChromLen; BinID++, Loci += pPar->MaxBinSize,pChromScore++)
+				{
+				memset(pChromScore, 0, sizeof(tsCHChromScores));
+				pChromScore->ChromID = pPar->ChromID;
+				pChromScore->SrcID = SrcID;
+				pChromScore->RefID = RefID;
+				pChromScore->BinID = BinID;
+				pChromScore->BinLoci = Loci;
+				pChromScore->BinSize = (pPar->ChromLen - Loci) > pPar->MaxBinSize ? pPar->MaxBinSize : pPar->ChromLen - Loci;
+				pChromScore->ExactScore = 0.0;
+				pChromScore->PartialScore = 0.0;
+				pChromScore->BinSize = (pPar->ChromLen - Loci) > pPar->MaxBinSize ? pPar->MaxBinSize : pPar->ChromLen - Loci;
+				}
+			continue;
+			}
+
+		pSrcPBA = pPar->pFndrPBAs[SrcPBAsIdx]; // already handled cases of nullptr; unlikely but possible if sample has no PBAs on current chromosome
 		pSrcLoci = pSrcPBA;
 		pRefLoci = pPar->pFndrPBAs[RefID - 1];
-
-		pChromScore = &pPar->pChromScores[(pPar->NumRefPBAs * pPar->BinsThisChrom * (SrcID - 1)) + ((RefID - 1) * pPar->BinsThisChrom)];
-		BinID = 1;
 		EndBinLoci = pPar->MaxBinSize - 1;
-		for (Loci = 0; Loci < pPar->ChromLen && BinID <= pPar->BinsThisChrom; Loci++, pSrcLoci++, pRefLoci++)
+		BinID = 1;
+		for (Loci = 0; Loci < pPar->ChromLen && BinID <= pPar->BinsThisChrom; Loci++)
 			{
 			if (Loci == 0 || Loci > EndBinLoci)			// initial bin or starting a new bin
 				{
 				if(Loci > 0)		// Loci > 0 if starting a new bin
 					{
-					// score just precessed bin before starting on new bin
+					// score just processed bin before starting on new bin
 					if(pChromScore->AlignLen > 0)
 						{
 						// fixed down weighting of 0.5 applied to partial matchings or a match where one allele matched but there was a non-ref allele also present
@@ -3320,8 +3338,8 @@ for (SrcID = 1; SrcID <= MaxNumSrcs; SrcID++, SrcPBAsIdx++)
 				pChromScore->BinSize = (pPar->ChromLen - Loci) > pPar->MaxBinSize ? pPar->MaxBinSize : pPar->ChromLen - Loci;
 				}
 
-			SrcPBA = *pSrcLoci;
-			RefPBA = *pRefLoci;
+			SrcPBA = *pSrcLoci++;
+			RefPBA = *pRefLoci++;
 			if (RefPBA == 0 || SrcPBA == 0) // both source and reference must have coverage at Loci, if not then iterate to next loci
 				continue;
 
@@ -3506,24 +3524,17 @@ for (ChromIdx = 0; ChromIdx < pFndrMetadata->NumChroms && CurChromMetadataIdx !=
 	for (PBAsID = 1; PBAsID <= (NumRefPBAs + NumSrcPBAs); PBAsID++)
 		{
 		tsCHChromMetadata* pChromMetadata;
-		// returned pointer to chromosome metadata
+
 		if ((pChromMetadata = LocateChromMetadataFor(PBAsID, CurChromID)) == nullptr)
 			{
-			gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenPBAsHomozygosityScores: No metadata for chromosome '%s' in this PBA '%s', skipping this chromosome", pszChrom, LocateReadset(PBAsID));
-			break;
+			pFndrPBAs[PBAsID - 1] = nullptr;				// nullptr but subsequent processing will check and handle appropriately
+			gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenPBAsHomozygosityScores: No metadata for chromosome '%s' in this PBA '%s', treating as if chromosome loaded but had no alignments ...", pszChrom, LocateReadset(PBAsID));
 			}
-
-		if ((pFndrPBAs[PBAsID - 1] = pChromMetadata->pPBAs) == nullptr)
+		else
 			{
-			gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenPBAsHomozygosityScores: No PBA for chromosome '%s' in this PBA '%s', skipping this chromosome", pszChrom, LocateReadset(PBAsID));
-			break;
+			pFndrPBAs[PBAsID - 1] = pChromMetadata->pPBAs; // could be assigning nullptr if no chromosome reads but subsequent processing will check and handle appropriately
+			gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenPBAsHomozygosityScores: Metadata for chromosome '%s' exists in this PBA '%s', but had no alignments ...", pszChrom, LocateReadset(PBAsID));
 			}
-		}
-	if (PBAsID <= NumRefPBAs + NumSrcPBAs)
-		{
-		for (PBAsID = 1; PBAsID <= (NumRefPBAs + NumSrcPBAs); PBAsID++)
-			DeleteSampleChromPBAs(PBAsID, pChromMetadata->ChromID);
-		continue;
 		}
 
 	// all founder PBAs for current chromosome now loaded and normalised for coverage
@@ -3870,9 +3881,15 @@ if((FillInBuffer(500,min(m_AllocInBuff,500u)) == 0) || m_InNumBuffered < 9) // 5
 
 
 // check file type is PBA
-if(strncmp((char *)m_pInBuffer,"Type:PbA\n",9))
+if(strncmp((char *)m_pInBuffer,"Type:PbA",8))
 	{
-	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Input file '%s' exists, unable to parse file type header tag, is it a packed base allele file",pszFile);
+	gDiagnostics.DiagOut (eDLFatal, gszProcName, "Input file '%s' exists, unable to parse file type header tag as being a packed base allele file",pszFile);
+	return(eBSFerrOpnFile);
+	}
+// file type in header expected to be followed by a new line, not carriage return then a new line!
+if(m_pInBuffer[8] != '\n' && m_pInBuffer[9] != 'V')
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Input file '%s' exists, file type header tag is for a PBA type but this tag is incorrectly terminated. Has file been transformed into ascii?", pszFile);
 	return(eBSFerrOpnFile);
 	}
 m_InNumProcessed = 9;
@@ -4021,7 +4038,7 @@ tsCHChromMetadata* pChromMetadata;
 
 // returned pointer to chromosome metadata
 if((pChromMetadata = LocateChromMetadataFor(SampleID, ChromID)) == nullptr)
-	return(0);
+	return(false);
 if(pChromMetadata->pPBAs == nullptr) 
 	return(false);
 #ifdef _WIN32
@@ -6052,8 +6069,10 @@ for(CurSampleID = pThreadPar->StartSampleID; CurSampleID <= pThreadPar->EndSampl
 	if(ReqTerminate)
 		break;
 
+	// it is possible for a chromosome to be missing in a PBA if no reads were aligned to that chromosome
+	// if so then continue loading from remaining samples
 	if((pPBAs = LoadSampleChromPBAs(CurSampleID, pThreadPar->ChromID)) == nullptr)
-		break;
+		continue;
 
 	if(pThreadPar->bNormAlleles)
 		{
@@ -6246,6 +6265,11 @@ for(AlleleLoci = Loci; AlleleLoci < EndLoci; AlleleLoci++)
 		if(!(m_Fndrs2Proc[FndrIdx] & 0x01))	// skip this founder?
 			continue;
 		bFndrAllele = false;
+		if(pFounderPBAs[FndrIdx] == nullptr)
+			{
+			continue;
+			}
+
 		pFndrLoci = pFounderPBAs[FndrIdx] + AlleleLoci;
 		if(*pFndrLoci == 0)					
 			{
@@ -6274,6 +6298,7 @@ for(AlleleLoci = Loci; AlleleLoci < EndLoci; AlleleLoci++)
 			AlleleStack.NumAlleleFndrs[AlleleIdx]++;
 			BitsVectSet(FndrIdx, AlleleStack.Alleles[AlleleIdx]);
 			}
+
 		if(!bFndrAllele)				// if no alleles of required level for this founder then don't bother with other founders
 			break;
 		}
@@ -7586,6 +7611,7 @@ CCallHaplotypes::AlignAlleleStacks(int32_t NumFndrs,			// number of founders to 
 int32_t FounderID;
 tsCHReadsetMetadata *pReadsetMetadata;
 tsCHChromMetadata *pChromMetadata;
+uint32_t ChromID;
 uint32_t CurChromID;
 char* pszChrom;
 tsCHWorkQueueEl *pWorkQueueEl;
@@ -7598,8 +7624,6 @@ uint32_t NumUnits;			// NumUnits is the total number of work units to be distrib
 uint32_t UnitSize;
 int WorkerThreadStatus;
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"AlignAlleleStacks: Starting to generate allele stacks over %d founders ",NumFndrs);
-pReadsetMetadata = &m_Readsets[0];		// founders were loaded first so 1st founder will be here
-CurChromMetadataIdx = pReadsetMetadata->StartChromMetadataIdx;
 if(m_pWorkQueueEls != nullptr)				// ensuring only one work queue exists
 	delete []m_pWorkQueueEls;
 m_pWorkQueueEls = nullptr;
@@ -7609,16 +7633,14 @@ pMskPBA = nullptr;
 // determine number of work queue elements required to process the maximal length chromosome
 NumUnits = 0;
 MaximalChromLen = 0;
-CurChromMetadataIdx = pReadsetMetadata->StartChromMetadataIdx;
-for( ChromIdx = 0; ChromIdx < pReadsetMetadata->NumChroms && CurChromMetadataIdx != 0; ChromIdx++)
+for(ChromID = 1; ChromID <= (uint32_t)m_NumChromNames; ChromID++)
 	{
-	pChromMetadata = &m_pChromMetadata[CurChromMetadataIdx - 1];
-	if(pChromMetadata->ChromLen > MaximalChromLen && pChromMetadata->ChromLen >= MaxNumLoci)
+	int32_t CurChromSize = m_ChromSizes[ChromID - 1];
+	if(CurChromSize > MaximalChromLen && CurChromSize >= MaxNumLoci)
 		{
-		MaximalChromLen = pChromMetadata->ChromLen;
+		MaximalChromLen = CurChromSize;
 		NumUnits = 1 + (MaximalChromLen + MaxNumLoci - 1) / MaxNumLoci;
 		}
-	CurChromMetadataIdx = pChromMetadata->NxtChromMetadataIdx;
 	}
 if(NumUnits == 0)
 	{
@@ -7639,6 +7661,7 @@ ppPBAs = new uint8_t * [cMaxFounderReadsets + 1];
 memset(ppPBAs,0,sizeof(uint8_t *) * (cMaxFounderReadsets+1));
 // iterate along PBAs which are common to all founders, plus mask readset if present, and then initialise elements of work to be undertaken by each thread
 CurChromID = 0;
+pReadsetMetadata = &m_Readsets[0];
 CurChromMetadataIdx = pReadsetMetadata->StartChromMetadataIdx;
 for(ChromIdx = 0; ChromIdx < pReadsetMetadata->NumChroms && CurChromMetadataIdx != 0; ChromIdx++)
 	{

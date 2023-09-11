@@ -1231,9 +1231,16 @@ CDGTvQTLs::LoadPBAFile(char* pszFile,	// load chromosome metadata and PBA data f
 
 
 	// check file type is PBA
-	if (strncmp((char*)m_pInBuffer, "Type:PbA\n", 9))
+// check file type is PBA
+	if (strncmp((char*)m_pInBuffer, "Type:PbA", 8))
 	{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Input file '%s' exists, unable to parse file type header tag, is it a packed base allele file", pszFile);
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Input file '%s' exists, unable to parse file type header tag as being a packed base allele file", pszFile);
+		return(eBSFerrOpnFile);
+	}
+	// file type in header expected to be followed by a new line, not carriage return then a new line!
+	if (m_pInBuffer[8] != '\n' && m_pInBuffer[9] != 'V')
+	{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Input file '%s' exists, file type header tag is for a PBA type but this tag is incorrectly terminated. Has file been transformed into ascii?", pszFile);
 		return(eBSFerrOpnFile);
 	}
 	m_InNumProcessed = 9;

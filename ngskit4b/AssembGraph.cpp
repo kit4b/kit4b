@@ -307,8 +307,8 @@ size_t AllocMem;
 tSeqID CurOverlapSeqID;
 tSeqID CurOverlappedSeqID;
 tsGraphVertex *pVertex;
-tVertID OverlappingVertexID;
-tVertID OverlappedVertexID;
+tVertID OverlappingVertexID = 0;
+tVertID OverlappedVertexID = 0;
 
 if(NumSeqs == 0 || pOverlappedSeqs == nullptr)
 	return(eBSFerrParams);
@@ -637,7 +637,7 @@ else
 		size_t memreq;
 		ReallocVertices = (uint32_t)(m_AllocGraphVertices * cReallocVertices);
 
-		memreq = (m_AllocGraphVertices + ReallocVertices) * sizeof(tsGraphVertex);
+		memreq = ((size_t)m_AllocGraphVertices + ReallocVertices) * sizeof(tsGraphVertex);
 #ifdef _WIN32
 		pTmp = (tsGraphVertex *)realloc(m_pGraphVertices,memreq);
 #else
@@ -678,8 +678,8 @@ int CmpRslt;
 uint32_t TargPsn;
 uint32_t NodeLo;				
 uint32_t NodeHi;				
-if( SeqID < 1,								// must be valid
-	m_pGraphVertices == nullptr,				// must be allocated
+if( SeqID < 1 ||								// must be valid
+	m_pGraphVertices == nullptr ||				// must be allocated
 	m_UsedGraphVertices < 1 ||				// must have at least 1 vertex
 	m_VerticesSortOrder != eVSOSeqID)		// and vertices must be sorted by SeqID ascending
 	return(nullptr);
@@ -720,8 +720,8 @@ int CmpRslt;
 uint32_t TargPsn;
 uint32_t NodeLo;				
 uint32_t NodeHi;				
-if( VertexID < 1,								// must be valid
-	m_pGraphVertices == nullptr,				// must be allocated
+if( VertexID < 1 ||								// must be valid
+	m_pGraphVertices == nullptr ||				// must be allocated
 	m_UsedGraphVertices < 1 ||				// must have at least 1 vertex
 	m_VerticesSortOrder != eVSOVertexID)		// and vertices must be sorted by VertexID ascending
 	return(nullptr);
@@ -1182,7 +1182,7 @@ for(VertexIdx = 0; VertexIdx < m_UsedGraphVertices; VertexIdx++, pVertex++)
 			tsComponent *pTmp;
 			uint32_t ReallocComponents;
 			ReallocComponents = (uint32_t)(m_AllocComponents * cReallocComponents);
-			AllocMem = (size_t)((m_AllocComponents + ReallocComponents) * sizeof(tsComponent));
+			AllocMem = (size_t)((size_t)(m_AllocComponents + ReallocComponents) * sizeof(tsComponent));
 		#ifdef _WIN32
 			pTmp = (tsComponent *)realloc(m_pComponents,AllocMem);
 		#else
@@ -1267,7 +1267,7 @@ else
 		tVertID *pTmp;
 		uint32_t ReallocTransitStack;
 		ReallocTransitStack = (uint32_t)(m_AllocTransitStack * cReallocTransitStack); 
-		AllocMem = (size_t)((m_AllocTransitStack + ReallocTransitStack) * sizeof(tVertID));
+		AllocMem = (size_t)((size_t)(m_AllocTransitStack + ReallocTransitStack) * sizeof(tVertID));
 	#ifdef _WIN32
 		pTmp = (tVertID *)realloc(m_pTransitStack,AllocMem);
 	#else
@@ -1659,7 +1659,7 @@ CAssembGraph::ReduceEdges(void)		// reduce graph by detecting and removing extra
 tsGraphOutEdge *pEdge;
 tsGraphOutEdge *pDstEdge;
 tVertID ToVertexID;
-uint16_t SeqOfs;
+uint16_t SeqOfs = 0;
 uint32_t Idx;
 
 uint32_t Num2Remove;

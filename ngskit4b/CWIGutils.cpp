@@ -16,7 +16,7 @@
 #include "CWIGutils.h"
 
 int
-Process(eWIGuMode PMode,	// processing mode: eWIGu2DEseq WIG to DEseq, eWIGu2TODEseq WIG to turnover DEseq
+Process(eWIGuMode PMode,	// processing mode: eWIG2CovCnts, default is for processing WIGs into coverage counts
 		int32_t NumInputFiles,		// number of input WIG file specs
 		char* pszInputFiles[],		// names of input WIG files (wildcards allowed)
 		char* pszOutFile,			// output to this file
@@ -50,7 +50,7 @@ int NumThreads;				// number of threads (0 defaults to number of CPUs or a maxim
 
 int Idx;
 
-eWIGuMode PMode;			// processing mode: eWIGu2DEseq WIG to DEseq, eWIGu2TODEseq WIG to turnover DEseq
+eWIGuMode PMode;			// processing mode: eWIG2CovCnts, default is for processing WIGs into coverage counts
 char szChromFile[_MAX_PATH];	// BED file containing chromosome names and sizes
 char szROIFile[_MAX_PATH];	// BED file containing regions of interest
 char szOutFile[_MAX_PATH];	// output DEseq written to this file
@@ -65,7 +65,7 @@ struct arg_lit* help = arg_lit0("h", "help", "print this help and exit");
 struct arg_lit* version = arg_lit0("v", "version,ver", "print version information and exit");
 struct arg_int* FileLogLevel = arg_int0("f", "FileLogLevel", "<int>", "Level of diagnostics written to screen and logfile 0=fatal,1=errors,2=info,3=diagnostics,4=debug");
 struct arg_file* LogFile = arg_file0("F", "log", "<file>", "diagnostics log file");
-struct arg_int* pmode = arg_int0("m", "mode", "<int>", "processing mode: 0 WIG to DEseq, 2 WIG to turnover DEseq");
+struct arg_int* pmode = arg_int0("m", "mode", "<int>", "processing mode: 0 processing WIGs into coverage counts");
 struct arg_file* chromfile = arg_file1("c", "chromfile", "<file>", "input BED file containing chromosome names and sizes");
 struct arg_file* roifile = arg_file1("C", "roifile", "<file>", "BED file containing regions of interest/genes");
 
@@ -148,8 +148,8 @@ if(!argerrors)
 	gProcessID = 0;
 	gProcessingID = 0;
 
-	PMode = pmode->count ? (eWIGuMode)pmode->ival[0] : eWIGu2DEseq;
-	if(PMode < eWIGu2DEseq || PMode >= eWIGuPlaceholder)
+	PMode = pmode->count ? (eWIGuMode)pmode->ival[0] : eWIG2CovCnts;
+	if(PMode < eWIG2CovCnts || PMode >= eWIGuPlaceholder)
 		{
 		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Error: Unsupported processing mode '-m%d'\n", PMode);
 		exit(1);
@@ -261,11 +261,8 @@ if(!argerrors)
 	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Processing parameters:");
 	const char* pszDescr;
 	switch(PMode) {
-		case eWIGu2DEseq:
-			pszDescr = "generating DEseq file from WIG file";
-			break;
-		case eWIGu2TODEseq:
-			pszDescr = "generating turnover DEseq file from WIG file";
+		case eWIG2CovCnts:
+			pszDescr = "processing mode: processing WIGs into coverage counts";
 			break;
 
 	}
@@ -292,7 +289,7 @@ if(!argerrors)
 #endif
 	gStopWatch.Start();
 	Rslt = 0;
-	Rslt = Process(PMode,	// processing mode: eWIGu2DEseq WIG to DEseq, eWIGu2TODEseq WIG to turnover DEseq
+	Rslt = Process(PMode,	// processing mode: eWIG2CovCnts, default is for processing WIGs into coverage counts
 					NumInputFiles,		// number of input WIG file specs
 					pszInputFiles,		// names of input WIG files (wildcards allowed)
 					szOutFile,			// output to this file
@@ -320,7 +317,7 @@ else
 }
 
 int
-Process(eWIGuMode PMode,	// processing mode: eWIGu2DEseq WIG to DEseq, eWIGu2TODEseq WIG to turnover DEseq
+Process(eWIGuMode PMode,	// processing mode: eWIG2CovCnts, default is for processing WIGs into coverage counts
 		int32_t NumInputFiles,		// number of input WIG file specs
 		char* pszInputFiles[],		// names of input WIG files (wildcards allowed)
 		char* pszOutFile,			// output to this file
@@ -899,11 +896,14 @@ if ((pszChrom = LocateChrom(ChromID)) == nullptr)
 	return(nullptr);
 
 pChromMetadata = LocateChromMetadataFor(ReadsetID, ChromID);
-if (pChromMetadata->pCnts == nullptr)
-	{
-	if ((pChromMetadata->pCnts = AllocCnts(pChromMetadata->ChromLen)) == nullptr)
-		return(nullptr);
-	}
+if(pChromMetadata == nullptr)
+	return(nullptr);
+
+if (pChromMetadata->pCnts != nullptr)	// only the case if coverage depth counts have already been loaded
+	return(pChromMetadata->pCnts);
+
+if ((pChromMetadata->pCnts = AllocCnts(pChromMetadata->ChromLen)) == nullptr)
+	return(nullptr);
 memset(pChromMetadata->pCnts, 0, pChromMetadata->ChromLen * sizeof(uint32_t));
 
 // WIG file can now be opened and coverage for requested chromosome parsed and mapped as though PBAs
@@ -1126,7 +1126,7 @@ tsWUChromMetadata* pPrevChromMetadata;
 
 if ((ReadsetID = AddReadset(pszReadset, 0)) == 0)
 	{
-	gDiagnostics.DiagOut(eDLFatal, gszProcName, "InitialiseMetadata: Input file '%s' duplicates the ReadsetID '%s' of a previously loaded readset", pszInWIGFile, pszReadset);
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "InitialiseMetadata: Input file '%s' too many files or a duplicate of the ReadsetID '%s' of a previously loaded readset", pszInWIGFile, pszReadset);
 	return(eBSFerrOpnFile);
 	}
 
@@ -1243,7 +1243,7 @@ return(ReadsetID);
 
 
 int 
-CWIGutils::Process(eWIGuMode PMode,	// processing mode: eWIGu2DEseq WIG to DEseq, eWIGu2TODEseq WIG to turnover DEseq
+CWIGutils::Process(eWIGuMode PMode,	// processing mode: eWIG2CovCnts, default is for processing WIGs into coverage counts
 			int32_t NumInputFiles,		// number of input WIG file specs
 			char* pszInputFiles[],		// names of input WIG files (wildcards allowed)
 			char* pszOutFile,			// output to this file
@@ -1326,7 +1326,7 @@ int32_t NumFiles;
 int32_t TotNumFiles;
 int32_t Idx;
 char* pszInFile;
-gDiagnostics.DiagOut(eDLInfo, gszProcName, "Process: Starting to load input PBA files");
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "Process: Starting to load input WIG coverage files");
 Rslt = eBSFSuccess;		// assume success!
 TotNumFiles = 0;
 for (Idx = 0; Idx < NumInputFiles; Idx++)
@@ -1392,19 +1392,15 @@ for (Idx = 0; Idx < NumInputFiles; Idx++)
 		}
 	}
 m_NumReadsetIDs = ReadsetID;
-gDiagnostics.DiagOut(eDLInfo, gszProcName, "Process: Completed initialising metadata for input files");
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "Process: Completed initialising metadata for %d input WIG files", m_NumReadsetIDs);
 
 // try loading coverage counts for all readsets
 char *pszLineBuff;
 int LineOfs;
 tsChromROI *pRSChromROI;
 tsChromROI *pCurRS;
-uint32_t CurChromMetadataIdx;
-tsWUChromMetadata* pChromMetadata;
-tsWUReadsetMetadata* pReadsetMetadata;
 uint32_t Cnts;
 uint32_t ChromID;
-uint32_t ChromIdx;
 
 char szFileFeatExonTurnOver[_MAX_FNAME];
 FILE *pOutFeatExonTurnOver;
@@ -1416,11 +1412,21 @@ char szFileFeatCnts[_MAX_FNAME];
 FILE *pOutFeatCnts;
 char szFileFeatExonRatio[_MAX_FNAME];
 FILE *pOutFeatExonRatio;
+
+char szFileFeatCoverage[_MAX_FNAME];
+FILE* pOutFeatCoverage;
+
+char szFileFeatExonCoverage[_MAX_FNAME];
+FILE* pOutFeatExonCoverage;
+
 CUtility::AppendFileNameSuffix(szFileFeatExonTurnOver,m_szOutFile,(char *)".exonturnover.csv",'.');
 CUtility::AppendFileNameSuffix(szFileFeatTurnOver,m_szOutFile,(char *)".featturnover.csv",'.');
 CUtility::AppendFileNameSuffix(szFileFeatExonCnts,m_szOutFile,(char *)".exoncnts.csv",'.');
 CUtility::AppendFileNameSuffix(szFileFeatCnts,m_szOutFile,(char *)".featcnts.csv",'.');
 CUtility::AppendFileNameSuffix(szFileFeatExonRatio,m_szOutFile,(char *)".featexonratio.csv",'.');
+CUtility::AppendFileNameSuffix(szFileFeatCoverage, m_szOutFile, (char*)".featcoverage.csv", '.');
+CUtility::AppendFileNameSuffix(szFileFeatExonCoverage, m_szOutFile, (char*)".featexoncoverage.csv", '.');
+
 
 pszLineBuff = new char [500000];
 pRSChromROI = new tsChromROI[m_NumReadsetIDs];
@@ -1466,6 +1472,31 @@ if((pOutFeatExonRatio = fopen(szFileFeatExonRatio,"w"))==nullptr)
 	return(eBSFerrOpnFile);
 	}
 
+if ((pOutFeatCoverage = fopen(szFileFeatCoverage, "w")) == nullptr)
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to create/truncate file %s for writing error: %s", szFileFeatCoverage, strerror(errno));
+	fclose(pOutFeatExonTurnOver);
+	fclose(pOutFeatTurnOver);
+	fclose(pOutFeatCnts);
+	fclose(pOutFeatExonCnts);
+	fclose(pOutFeatExonRatio);
+	Reset();
+	return(eBSFerrOpnFile);
+	}
+
+if ((pOutFeatExonCoverage = fopen(szFileFeatExonCoverage, "w")) == nullptr)
+{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to create/truncate file %s for writing error: %s", szFileFeatExonCoverage, strerror(errno));
+	fclose(pOutFeatExonTurnOver);
+	fclose(pOutFeatTurnOver);
+	fclose(pOutFeatCnts);
+	fclose(pOutFeatExonCnts);
+	fclose(pOutFeatExonRatio);
+	fclose(pOutFeatCoverage);
+	Reset();
+	return(eBSFerrOpnFile);
+}
+
 LineOfs = sprintf(pszLineBuff,"\"Feature\",\"Chrom\",\"Start\",\"End\",\"Strand\",\"NumExons\",\"FeatLength\",\"TransLength\"");
 for (ReadsetID = 1; ReadsetID <= m_NumReadsetIDs; ReadsetID++)
 	LineOfs += sprintf(&pszLineBuff[LineOfs],",\"%s\"",LocateReadset(ReadsetID));
@@ -1475,13 +1506,12 @@ fwrite(pszLineBuff,1,LineOfs,pOutFeatTurnOver);
 fwrite(pszLineBuff,1,LineOfs,pOutFeatCnts);
 fwrite(pszLineBuff,1,LineOfs,pOutFeatExonCnts);
 fwrite(pszLineBuff,1,LineOfs,pOutFeatExonRatio);
+fwrite(pszLineBuff, 1, LineOfs, pOutFeatCoverage);
+fwrite(pszLineBuff, 1, LineOfs, pOutFeatExonCoverage);
 LineOfs = 0;
-pReadsetMetadata = &m_Readsets[0];
-CurChromMetadataIdx = pReadsetMetadata->StartChromMetadataIdx;
-for (ChromIdx = 0; ChromIdx < pReadsetMetadata->NumChroms && CurChromMetadataIdx != 0; ChromIdx++)
+
+for (ChromID = 1; ChromID <= (uint32_t)m_NumChromNames; ChromID++)
 	{
-	pChromMetadata = &m_pChromMetadata[CurChromMetadataIdx - 1];
-	ChromID = pChromMetadata->ChromID;
 	int ROIChromID;
 	int ROILoci;
 	int ROIFeatID;
@@ -1499,64 +1529,87 @@ for (ChromIdx = 0; ChromIdx < pReadsetMetadata->NumChroms && CurChromMetadataIdx
 	char* pszChrom;
 	char szROIFeatName[200];
 	char szROIFeatChrom[200];
-	pszChrom = LocateChrom(pChromMetadata->ChromID);
+
+	pszChrom = LocateChrom(ChromID);
 	ROIChromID = m_pROIFile->LocateChromIDbyName(pszChrom);
 	if (ROIChromID < 0)
 		continue;
-	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Process: Loading coverage for: '%s'", LocateChrom(ChromID));
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Process: Loading coverage depths for: '%s'", pszChrom);
+	// initialising for each readset
 	pCurRS = pRSChromROI;
-	for (ReadsetID = 0; ReadsetID < m_NumReadsetIDs; ReadsetID++,pCurRS++)
+	for (ReadsetID = 1; ReadsetID <= m_NumReadsetIDs; ReadsetID++,pCurRS++)
 		{
 		memset(pCurRS,0,sizeof(tsChromROI));
 		pCurRS->ReadsetID = ReadsetID;
-		if ((pCurRS->pCnts = LoadChromCoverage(ReadsetID+1, pChromMetadata->ChromID)) == nullptr)
-			break;
 		}
-	if(ReadsetID < m_NumReadsetIDs)	// all readsets must have read coverage on the current chromosome 
-		continue;
 
-		// iterate over features on this chromosome
+		// iterate over all features on this chromosome
 	ROIFeatID = 0;
 	while ((ROIFeatID = m_pROIFile->GetNextChromFeatureID(ROIChromID, ROIFeatID)) > 0)
 		{
-		pCurRS = pRSChromROI;
-		for (ReadsetID = 0; ReadsetID < m_NumReadsetIDs; ReadsetID++,pCurRS++)
-			memset(&pCurRS->ROICnts,0,sizeof(pCurRS->ROICnts));
 		m_pROIFile->GetFeature(ROIFeatID,szROIFeatName,szROIFeatChrom,&ROIFeatStart,&ROIFeatEnd,nullptr,&ROIFeatStrand);
-		TranscribedLength = m_pROIFile->GetTranscribedLen(ROIFeatID); // sum of all exon lengths
-		FeatLength = m_pROIFile->GetFeatLen(ROIFeatID) + 1;
+		TranscribedLength = m_pROIFile->GetTranscribedLen(ROIFeatID); // sum of all exon lengths in current feature
+		if(TranscribedLength < 0)
+			TranscribedLength = 0;
+		FeatLength = m_pROIFile->GetFeatLen(ROIFeatID);
 		ROINumExons = m_pROIFile->GetNumExons(ROIFeatID);
+		if(ROINumExons < 0)
+			ROINumExons = 0;
 
-		LineOfs = sprintf(pszLineBuff,"\"%s\",\"%s\",%d,%d,\"%c\",%d,%d,%d",szROIFeatName,szROIFeatChrom,ROIFeatStart,ROIFeatEnd,ROIFeatStrand,ROINumExons,FeatLength,TranscribedLength);
-		int MarkVarOfs = LineOfs;
-		CurTranscriptOfs = 0;
-		CurFeatOfs = 0;
-		for (ROILoci = ROIFeatStart; ROILoci <= ROIFeatEnd; ROILoci++)
+		bool *pbInFeatExons = new bool [FeatLength];
+		bool *pbInFeatExon = pbInFeatExons;
+		for (ROILoci = ROIFeatStart; ROILoci <= ROIFeatEnd; ROILoci++, pbInFeatExon++)
+			*pbInFeatExon = m_pROIFile->InExon(ROIFeatID, ROILoci, ROILoci);
+
+		int32_t ReadsetsWithCoverage = 0;
+		pCurRS = pRSChromROI;
+		for (ReadsetID = 1; ReadsetID <= m_NumReadsetIDs; ReadsetID++, pCurRS++)
 			{
-			CurFeatOfs += 1;
-			bTot50Cnts = CurFeatOfs <= FeatLength/2 ? true : false; 
-			if(bInExon = m_pROIFile->InExon(ROIFeatID,ROILoci,ROILoci))
-				CurTranscriptOfs += 1;
-			bTot50ExonCnts = CurTranscriptOfs <= TranscribedLength/2 ? true:false;
-			pCurRS = pRSChromROI;
-			for (ReadsetID = 0; ReadsetID < m_NumReadsetIDs; ReadsetID++,pCurRS++)
+			memset(&pCurRS->ROICnts, 0, sizeof(pCurRS->ROICnts));
+			if ((pCurRS->pCnts = LoadChromCoverage(ReadsetID, ChromID)) == nullptr)	// readset may be missing any coverage on the current chromosome
+				continue;															// unexpectedly common with GBS
+			ReadsetsWithCoverage++;
+
+			pbInFeatExon = pbInFeatExons;
+			CurTranscriptOfs = 0;
+			CurFeatOfs = 0;
+			for (ROILoci = ROIFeatStart; ROILoci <= ROIFeatEnd; ROILoci++,pbInFeatExon++)
 				{
+				CurFeatOfs += 1;
+				if(TranscribedLength)
+					{
+					bTot50Cnts = CurFeatOfs <= FeatLength / 2 ? true : false;
+					if (bInExon = *pbInFeatExon)
+						CurTranscriptOfs += 1;
+					bTot50ExonCnts = CurTranscriptOfs <= TranscribedLength / 2 ? true : false;
+					}
 				Cnts = pCurRS->pCnts[ROILoci];
-				if(Cnts == 0)
+				if (Cnts == 0)
 					continue;
 				pCurRS->ROICnts.NumLociCoverage++;
 				pCurRS->ROICnts.TotCnts += Cnts;
-				if(bTot50Cnts)
-					pCurRS->ROICnts.Tot50Cnts += Cnts;
-				if(bInExon)
+				if(TranscribedLength)
 					{
-					pCurRS->ROICnts.NumExonLociCoverage++;
-					pCurRS->ROICnts.TotExonCnts += Cnts;
-					if(bTot50ExonCnts)
-						pCurRS->ROICnts.Tot50ExonCnts += Cnts;	
+					if (bTot50Cnts)
+						pCurRS->ROICnts.Tot50Cnts += Cnts;
+					if (bInExon)
+						{
+						pCurRS->ROICnts.NumExonLociCoverage++;
+						pCurRS->ROICnts.TotExonCnts += Cnts;
+						if (bTot50ExonCnts)
+							pCurRS->ROICnts.Tot50ExonCnts += Cnts;
+						}
 					}
 				}
+			pCurRS->pCnts = nullptr;
+			if(ReadsetsWithCoverage >= cMaxLoadWIGReadsets)
+				DeleteSampleChromCnts(ReadsetID,ChromID);
 			}
+
+		delete []pbInFeatExons;
+
+		LineOfs = sprintf(pszLineBuff, "\"%s\",\"%s\",%d,%d,\"%c\",%d,%d,%d", szROIFeatName, szROIFeatChrom, ROIFeatStart, ROIFeatEnd, ROIFeatStrand, ROINumExons, FeatLength, TranscribedLength);
+		int MarkVarOfs = LineOfs;
 		pCurRS = pRSChromROI;
 		for (ReadsetID = 0; ReadsetID < m_NumReadsetIDs; ReadsetID++,pCurRS++)
 			{
@@ -1611,24 +1664,50 @@ for (ChromIdx = 0; ChromIdx < pReadsetMetadata->NumChroms && CurChromMetadataIdx
 		LineOfs+=sprintf(&pszLineBuff[LineOfs],"\n");
 		fwrite(pszLineBuff,1,LineOfs,pOutFeatExonRatio);
 		
+		pCurRS = pRSChromROI;
+		LineOfs = MarkVarOfs;
+		for (ReadsetID = 0; ReadsetID < m_NumReadsetIDs; ReadsetID++, pCurRS++)
+			LineOfs += sprintf(&pszLineBuff[LineOfs], ",%u", pCurRS->ROICnts.NumLociCoverage);
+		LineOfs += sprintf(&pszLineBuff[LineOfs], "\n");
+		fwrite(pszLineBuff, 1, LineOfs, pOutFeatCoverage);
+
+		pCurRS = pRSChromROI;
+		LineOfs = MarkVarOfs;
+		for (ReadsetID = 0; ReadsetID < m_NumReadsetIDs; ReadsetID++, pCurRS++)
+			LineOfs += sprintf(&pszLineBuff[LineOfs], ",%u", pCurRS->ROICnts.NumExonLociCoverage);
+		LineOfs += sprintf(&pszLineBuff[LineOfs], "\n");
+		fwrite(pszLineBuff, 1, LineOfs, pOutFeatExonCoverage);
+
 		LineOfs = 0;
 		}
-	CurChromMetadataIdx = pChromMetadata->NxtChromMetadataIdx;
 	DeleteAllChromCnts();	// ready for next chromosome
 	}
 DeleteAllChromCnts();
 fflush(pOutFeatExonTurnOver);
 fclose(pOutFeatExonTurnOver);
+
 fflush(pOutFeatTurnOver);
 fclose(pOutFeatTurnOver);
+
 fflush(pOutFeatExonCnts);
-fflush(pOutFeatExonRatio);
 fclose(pOutFeatExonCnts);
+
+fflush(pOutFeatExonRatio);
+fclose(pOutFeatExonRatio);
+
+fflush(pOutFeatCoverage);
+fclose(pOutFeatCoverage);
+
+fflush(pOutFeatExonCoverage);
+fclose(pOutFeatExonCoverage);
+
 fflush(pOutFeatCnts);
 fclose(pOutFeatCnts);
-fclose(pOutFeatExonRatio);
+
+
 delete []pRSChromROI;
 delete []pszLineBuff;
 Reset();
+gDiagnostics.DiagOut(eDLInfo, gszProcName, "Completed all WIG coverage counts processing");
 return(eBSFSuccess);
 }

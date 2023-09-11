@@ -44,13 +44,14 @@ CUtility RegExpr;                      // used for regular expression processing
 const int cMaxExtractDescrs = 20;					// at most this number of extraction descriptors can be processed
 
 int
-fastaextractproc(int PMode,				// processing mode - 0 by matching descriptor, 1 subsample by selecting every Nth sequence
+fastaextractproc(int PMode,				// processing mode - 0 by matching descriptor, 1 subsample by selecting every Nth sequence, 2 extracting sequences for each feature defined in this BED
 		int NthSel,						// if > 0 then select every Nth descriptor.sequence to be extracted
 		int XSense,						// extraction sense - 0 - original sense, 1 - reverse only, 2 - complement only 3 - reverse complement
 		int NumDescrs,					// number of descriptors
 		char *pszDescrs[],				// extract sequences with these descriptors
+		char* pszBED,					// in PMode 2, extracting sequences for each feature defined in this BED
 		char *pszInFasta,				// extract from this multifasta file
-        char *pszOutFasta);				// output extracted sequences to this multifasta file
+		char *pszOutFasta);				// output extracted sequences to this multifasta file
 
 
 
@@ -76,6 +77,7 @@ int PMode;					// processing mode
 int NthSel;					// select every Nth sequence
 int XSense;					// extraction sense - 0 - original sense, 1 - reverse only, 2 - complement only 3 - reverse complement
 
+char szInBEDFile[_MAX_PATH];	// in PMode 2, extracting sequences for each feature defined in this BED
 char szInFile[_MAX_PATH];		// read from this file
 char szOutFile[_MAX_PATH];		// write extracted sequences to this file
 
@@ -92,9 +94,10 @@ struct arg_lit  *version = arg_lit0("v","version,ver",			"Print version informat
 struct arg_int *FileLogLevel=arg_int0("f", "FileLogLevel",		"<int>","Level of diagnostics written to screen and logfile 0=fatal,1=errors,2=info,3=diagnostics,4=debug");
 struct arg_file *LogFile = arg_file0("F","log","<file>",		"Diagnostics log file");
 
-struct arg_int *mode = arg_int0("m","mode","<int>",				"Processing mode: 0 extract by descriptor, 1 extract every Nth sequence");
+struct arg_int *mode = arg_int0("m","mode","<int>",				"Processing mode: 0 extract by descriptor, 1 extract every Nth sequence, 2 extract subsequences defined in BED file starting at chrom.loci");
 struct arg_int *nthsel = arg_int0("n","nth","<int>",			"Extract every Nth descriptor 1 .. Nth");
 struct arg_str *extractdescrs = arg_strn("e","extract","<str>",0,cMaxExtractDescrs,		"Extract sequences with these descriptors (wildcards allowed)");
+struct arg_file* inputbedfile = arg_file0("b", "bed", "<file>",	"Extract sequences for each feature defined in this Input BED file");
 struct arg_file *inputfile = arg_file1("i","in","<file>",		"Input file containing sequences to extract");
 struct arg_file *outfile = arg_file1("o","out","<file>",		"Output extracted sequences to this file");
 
@@ -108,7 +111,7 @@ struct arg_end *end = arg_end(200);
 
 void *argtable[] = {help,version,FileLogLevel,LogFile,
 					summrslts,experimentname,experimentdescr,
-	                mode,nthsel,extractdescrs, xsense, inputfile, outfile,
+	                mode,nthsel,extractdescrs,  xsense, inputbedfile, inputfile, outfile,
 					end};
 char **pAllArgs;
 int argerrors;
@@ -246,7 +249,7 @@ if (!argerrors)
 	PMode = mode->count ? mode->ival[0] : 0;
 	if(PMode < 0 || PMode > 2)
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Processing mode '-m%d' must be in range 0..1",PMode);
+		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Error: Processing mode '-m%d' must be in range 0..2",PMode);
 		return(1);
 		}
 
@@ -292,6 +295,21 @@ if (!argerrors)
 		pszExtractDescrs[0] = nullptr;
 		}
 
+	szInBEDFile[0] = '\0';
+	if (PMode == 2)
+		{
+		if(inputbedfile->count > 1)
+			{
+			strcpy(szInBEDFile, inputbedfile->filename[0]);
+			CUtility::TrimQuotedWhitespcExtd(szInBEDFile);
+			}
+		if (szInBEDFile[0] == '\0')
+			{
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "Error: No input BED file specified containing feature specifications using '-b<file>' option)\n");
+			exit(1);
+			}
+		}
+
 	XSense = xsense->count ? xsense->ival[0] : 0;
 	if(XSense < 0 || XSense > 3)
 		{
@@ -314,10 +332,13 @@ if (!argerrors)
 	const char *pszDescr;
 	switch(PMode) {
 		case 0:
-			pszDescr = "Extract fasta sequence(s)";
+			pszDescr = "Extract fasta sequence(s) matching descriptors";
 			break;
 		case 1:
 			pszDescr = "Sample every Nth sequence";
+			break;
+		case 2:
+			pszDescr = "Extract fasta subsequence(s) as specified in BED formated file";
 			break;
 		}
 
@@ -327,13 +348,18 @@ if (!argerrors)
 	gDiagnostics.DiagOutMsgOnly(eDLInfo,"Experiment description : '%s'",szExperimentDescr);
 	gDiagnostics.DiagOutMsgOnly(eDLInfo,"SQLite database file: '%s'",szSQLiteDatabase);
 
-	if(PMode == 0)
-		{
-		for(int Idx = 0; Idx < NumExtractDescrs; Idx++)
-			gDiagnostics.DiagOutMsgOnly(eDLInfo,"Descriptor (%d) : '%s'",Idx+1,pszExtractDescrs[Idx]);
+	switch(PMode) {
+		case 0:
+			for(int Idx = 0; Idx < NumExtractDescrs; Idx++)
+				gDiagnostics.DiagOutMsgOnly(eDLInfo,"Descriptor (%d) : '%s'",Idx+1,pszExtractDescrs[Idx]);
+			break;
+		case 1:
+			gDiagnostics.DiagOutMsgOnly(eDLInfo,"Sample every Nth sequence: %d",NthSel);
+			break;
+		case 2:
+			gDiagnostics.DiagOutMsgOnly(eDLInfo, "BED formated file soecifying features: '%s'", szInBEDFile);
+			break;
 		}
-	else
-		gDiagnostics.DiagOutMsgOnly(eDLInfo,"Sample every Nth sequence: %d",NthSel);
 
 	switch(XSense) {
 			case 0:
@@ -362,13 +388,18 @@ if (!argerrors)
 		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,sizeof(XSense),"xsense",&XSense);
 
 	    ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,sizeof(NumExtractDescrs),"NumExtractDescrs",&NumExtractDescrs);
-		if(PMode == 0)
-			{
-			for(int Idx=0; Idx < NumExtractDescrs; Idx++)
-				ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTText,(int)strlen(pszExtractDescrs[Idx]),"extractdescrs",pszExtractDescrs[Idx]);
+		switch(PMode) {
+			case 0:
+				for(int Idx=0; Idx < NumExtractDescrs; Idx++)
+					ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTText,(int)strlen(pszExtractDescrs[Idx]),"extractdescrs",pszExtractDescrs[Idx]);
+				break;
+			case 1:
+				ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,sizeof(NthSel),"nthsel",&NthSel);
+				break;
+			case 2:
+				ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID, ePTText, (int)strlen(szInFile), "bed", szInBEDFile);
+				break;
 			}
-		else
-			ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTInt32,sizeof(NthSel),"nthsel",&NthSel);
 
 		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTText,(int)strlen(szOutFile),"out",szOutFile);
 		ParamID = gSQLiteSummaries.AddParameter(gExperimentID, gProcessingID,ePTText,(int)strlen(szInFile),"in",szInFile);
@@ -384,7 +415,7 @@ if (!argerrors)
 #endif
 	gStopWatch.Start();
 
-	Rslt = fastaextractproc(PMode,NthSel,XSense,NumExtractDescrs,pszExtractDescrs,szInFile,szOutFile);
+	Rslt = fastaextractproc(PMode,NthSel,XSense,NumExtractDescrs,pszExtractDescrs, szInBEDFile,szInFile,szOutFile);
 	Rslt = Rslt >=0 ? 0 : 1;
 	if(gExperimentID > 0)
 		{
@@ -410,6 +441,7 @@ return 0;
 
 const size_t cMaxAllocBuffChunk = 0x0ffffff;		// allocate for input sequences buffering in these sized chunks
 
+CBEDfile *m_pBedFile; // Extract sequences for each feature defined in this Input BED file
 int m_hFEInFile;	// file handle for opened multifasta input file
 int m_hFEOutFile;	// file handle for opened multifasta output file
 
@@ -423,6 +455,12 @@ regex* m_pRegexDescrs[100]; // to hold precompiled regular expressions
 void
 FEReset(void)
 {
+if(m_pBedFile != nullptr)
+	{
+	delete m_pBedFile;
+	m_pBedFile = nullptr;
+	}
+
 if(m_hFEInFile != -1)
 	{
 	close(m_hFEInFile);
@@ -462,6 +500,7 @@ FEInit(void)
 {
 m_hFEInFile = -1;
 m_hFEOutFile = -1;
+m_pBedFile = nullptr;
 m_pSeqBuff = nullptr;
 m_pRegexDescrs[0] = nullptr;
 m_NumExtractDescrs = 0;
@@ -527,7 +566,9 @@ char Chr;
 int LineLen;
 int BuffIdx;
 int SeqIdx;
-uint8_t szOutBuff[0x07fff];
+uint8_t *pszOutBuff;
+
+pszOutBuff = new uint8_t [0x07ffff];
 
 switch(XSense) {
 	case 0:		// original sense
@@ -545,12 +586,12 @@ switch(XSense) {
 
 LineLen = 0;
 		// write out descriptor to file
-BuffIdx = sprintf((char *)szOutBuff,">%s\n",pszDescr);
+BuffIdx = sprintf((char *)pszOutBuff,">%s\n",pszDescr);
 for(SeqIdx = 0; SeqIdx < SeqLen; SeqIdx++,pSeq++,LineLen++)
 	{
 	if(LineLen > 75)
 		{
-		szOutBuff[BuffIdx++] = '\n';
+		pszOutBuff[BuffIdx++] = '\n';
 		LineLen = 0;
 		}
 	switch(*pSeq & 0x07) {
@@ -570,24 +611,26 @@ for(SeqIdx = 0; SeqIdx < SeqLen; SeqIdx++,pSeq++,LineLen++)
 			Chr = 'N';
 			break;
 		}
-	szOutBuff[BuffIdx++] = Chr;
-	if(BuffIdx > (sizeof(szOutBuff) - 100))
+	pszOutBuff[BuffIdx++] = Chr;
+	if(BuffIdx > (0x07ffff - 0x3ff))
 		{
-		CUtility::RetryWrites(m_hFEOutFile,szOutBuff,BuffIdx);
+		CUtility::RetryWrites(m_hFEOutFile,pszOutBuff,BuffIdx);
 		BuffIdx = 0;
 		}
 	}
-szOutBuff[BuffIdx++] = '\n';
-CUtility::RetryWrites(m_hFEOutFile,szOutBuff,BuffIdx);
+pszOutBuff[BuffIdx++] = '\n';
+CUtility::RetryWrites(m_hFEOutFile,pszOutBuff,BuffIdx);
+delete []pszOutBuff;
 return(SeqLen);
 }
 
 int
-fastaextractproc(int PMode,				// processing mode - 0 by matching descriptor, 1 subsample by selecting every Nth sequence
+fastaextractproc(int PMode,				// processing mode - 0 by matching descriptor, 1 subsample by selecting every Nth sequence, 2 extracting sequences for each feature defined in this BED
 		int NthSel,						// if > 0 then select every Nth descriptor.sequence to be extracted
 		int XSense,						// extraction sense - 0 - original sense, 1 - reverse only, 2 - complement only 3 - reverse complement
 		int NumDescrs,					// number of descriptor reqular expressions (in pszDescrs[]) to match on
 		char *pszDescrs[],				// extract sequences with these descriptors
+		char *pszBED,					// in PMode 2, extracting sequences for each feature defined in this BED
 		char *pszInFasta,				// extract from this multifasta file
         char *pszOutFasta)				// output extracted sequences to this multifasta file
 {
@@ -599,6 +642,10 @@ int SeqLen;
 size_t AvailBuffSize;
 bool bExtract;
 char szInDescription[cBSFDescriptionSize];
+char *pszDescriptor;
+int CurChromID;
+char *pszChromName;
+char szChromName[cMaxDatasetSpeciesChrom];
 
 CFasta Fasta;
 
@@ -606,8 +653,24 @@ FEInit();
 
 if(PMode == 0 && NumDescrs >= 1)
 	{
-	if ((Rslt = RegExpr.CompileIncludeREs(NumDescrs, pszDescrs)) <= eBSFSuccess)
+	if ((Rslt = RegExpr.CompileIncludeREs(NumDescrs, pszDescrs)) < eBSFSuccess)
 		return(Rslt);
+	}
+else if (PMode == 2)
+	{
+	if ((m_pBedFile = new CBEDfile) == nullptr)
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to instantiate CBEDfile");
+		return(eBSFerrObj);
+		}
+
+	if ((Rslt = m_pBedFile->Open(pszBED, eBTAnyBed)) != eBSFSuccess)
+		{
+		while (m_pBedFile->NumErrMsgs())
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, m_pBedFile->GetErrMsg());
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to open '%s' for processing", pszBED);
+		return(eBSFerrOpnFile);
+		}
 	}
 
 #ifdef _WIN32
@@ -651,7 +714,25 @@ while((Rslt = SeqLen = Fasta.ReadSequence(&m_pSeqBuff[m_SeqBuffLen],(int)min(Ava
 	if(SeqLen == eBSFFastaDescr)		// just read a descriptor line
 		{
 		if(bExtract && m_SeqBuffLen)
-			WriteSeqFile(XSense,szInDescription,(int)m_SeqBuffLen,m_pSeqBuff);
+			{
+			if(PMode != 2)
+				WriteSeqFile(XSense,szInDescription,(int)m_SeqBuffLen,m_pSeqBuff);
+			else
+				{
+				char szFeatChrom[cMaxDatasetSpeciesChrom + 1];
+				char szFeatName[cMaxGeneNameLen + 1];
+				int FeatStart;
+				int FeatEnd;
+				int NthFeature = 0;
+				int CurFeatID = 0;
+				while ((CurFeatID = m_pBedFile->LocateFeatureIDinRangeOnChrom(CurChromID, 0, (int)m_SeqBuffLen, ++NthFeature)) > 0)
+					{
+					Rslt = m_pBedFile->GetFeature(CurFeatID, szFeatName, szFeatChrom, &FeatStart, &FeatEnd);
+					WriteSeqFile(XSense, szFeatName, FeatEnd-FeatStart+1, &m_pSeqBuff[FeatStart]);
+					NumMatches++;
+					}
+				}
+			}
 		else
 			if(bExtract)
 				gDiagnostics.DiagOut(eDLWarn,gszProcName,"Matching descriptor '%s' but no sequence in file - '%s'",szInDescription,pszOutFasta);
@@ -663,17 +744,37 @@ while((Rslt = SeqLen = Fasta.ReadSequence(&m_pSeqBuff[m_SeqBuffLen],(int)min(Ava
 
 		Descrlen = Fasta.ReadDescriptor(szInDescription,cBSFDescriptionSize-10);
 
-		// simply subsampling by selecting every Nth sequence?
-		if(NumDescrs == 0 || PMode == 1)
-			{
-			if(PMode != 0 && NthSel > 1 && (SeqID % NthSel))
-				continue;
-			bExtract = true;
+		switch(PMode) {
+			case 0:		// processing for sequences with matching descriptors
+				if (NumDescrs > 0 && !RegExpr.MatchIncludeRegExpr(szInDescription))
+					continue;
+				break;
+
+			case 1:		// sampling every Nth sequence, includes 1st sequence
+				if (NthSel > 1 && (SeqID % NthSel))
+					continue;
+				break;
+
+			case 2:		// processing for chrom or sequence identifer as specified in a BED file
+				// chrom name expected to be prefix in descriptor and terminated by first whitespace
+				char Chr;
+				pszChromName = szChromName;
+				pszDescriptor = szInDescription;
+				for (int Idx = 0; Idx < sizeof(szChromName)-1; Idx++)
+					{
+					Chr = *pszDescriptor++;
+					if(isspace(Chr))
+						break;
+					*pszChromName++ = Chr;
+					}
+				*pszChromName = '\0';
+				if((CurChromID = m_pBedFile->LocateChromIDbyName(szChromName)) < 1)
+					continue;
+				break;
 			}
-		else	// is this a descriptor of interest?
-			if(!RegExpr.MatchIncludeRegExpr(szInDescription))
-				continue;
-		NumMatches += 1;
+
+		if(PMode != 2)
+			NumMatches += 1;
 		bExtract = true;				// flag that the sequence is to be extracted
 		m_SeqBuffLen = 0;
 		AvailBuffSize = m_AllocdSeqBuffMem;
@@ -683,7 +784,7 @@ while((Rslt = SeqLen = Fasta.ReadSequence(&m_pSeqBuff[m_SeqBuffLen],(int)min(Ava
 	if(!bExtract)						// slough this sequence?
 		continue;
 
-	// write to file
+	// accumulate complete sequence prior to writing to file, this enables subsequence extraction as needed for the BED processing
 	m_SeqBuffLen += SeqLen;
 	AvailBuffSize -= SeqLen;
 	if(AvailBuffSize < (size_t)(cMaxAllocBuffChunk / 8))
@@ -704,7 +805,25 @@ if(Rslt < eBSFSuccess)
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,Fasta.GetErrMsg());
 	}
 if(bExtract && m_SeqBuffLen)					// was previous sequence to be extracted?
-	WriteSeqFile(XSense,szInDescription,(int)m_SeqBuffLen,m_pSeqBuff);
+	{
+	if (PMode != 2)
+		WriteSeqFile(XSense, szInDescription, (int)m_SeqBuffLen, m_pSeqBuff);
+	else
+		{
+		char szFeatChrom[cMaxDatasetSpeciesChrom + 1];
+		char szFeatName[cMaxGeneNameLen + 1];
+		int FeatStart;
+		int FeatEnd;
+		int NthFeature = 0;
+		int CurFeatID = 0;
+		while ((CurFeatID = m_pBedFile->LocateFeatureIDinRangeOnChrom(CurChromID, 0, (int)m_SeqBuffLen, ++NthFeature)) > 0)
+			{
+			Rslt = m_pBedFile->GetFeature(CurFeatID, szFeatName, szFeatChrom, &FeatStart, &FeatEnd);
+			WriteSeqFile(XSense, szFeatName, FeatEnd - FeatStart + 1, &m_pSeqBuff[FeatStart]);
+			NumMatches++;
+			}
+		}
+	}
 
 gDiagnostics.DiagOut(eDLInfo,gszProcName,"Extracted %d sequences",NumMatches);
 FEReset();

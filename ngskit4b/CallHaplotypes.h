@@ -6,8 +6,8 @@ const int32_t cMaxPBAWorkerThreads = 128;			// limiting number of worker threads
 const int32_t cMaxFounderFileSpecs = 500;			// can accept at most this max number of input wildcarded founder file specs
 const int32_t cMaxProgenyFileSpecs = 500;			// can specify a max of this number of input wildcarded progeny file specs
 
-const int32_t cMaxFounderReadsets = 8000;			// after input wildcard expansion then can accept at most this max number of founder readsets
-const int32_t cMaxProgenyReadsets = 8000;			// after input wildcard expansion then can specify at most this max number of progeny readsets
+const int32_t cMaxFounderReadsets = 2000;			// after input wildcard expansion then can accept at most this max number of founder readsets
+const int32_t cMaxProgenyReadsets = 10000;			// after input wildcard expansion then can specify at most this max number of progeny readsets
 
 const int cMaxIncludeChroms = 20;					// max number of include chromosomes regular expressions
 const int cMaxExcludeChroms = 20;					// max number of exclude chromosomes regular expressions
