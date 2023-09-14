@@ -18,11 +18,13 @@
 #include <sys/times.h>
 #include <unistd.h>
 #include <errno.h>
+#include <cstdint>
 #include <regex.h>
 #include <stdarg.h>
 #include <ftw.h>
 #include <fnmatch.h>
 #include <stdint.h>
+
 #endif
 #include <sys/timeb.h>
 #include <math.h>

@@ -97,3 +97,4 @@ Release 1.90.0 - Ultraconserved/Hyperconserved discovery processing now modules 
 Release 1.92.0 - GBS haplotype grouping using GWS haplotype groupings as surrogates functionality added to 'ngskit4b callhaplotypes'.
 Release 1.95.0 - GBS haplotype grouping using GWS haplotype groupings as surrogates functionality added to 'ngskit4b callhaplotypes' - completed.
 Release 1.95.2 - GBS haplotype grouping using GWS haplotype groupings extended to allow a maximum of 10000 GBS samples to be processed.
+Release 1.96.0 - Automake configuration files updated, GCC 'ngskit4b' generated as statically linked, 'SQLite3' updated to version 3.43.1 

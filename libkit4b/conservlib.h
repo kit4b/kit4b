@@ -5,7 +5,7 @@
 #include "./argtable3.h"
 #include "./StopWatch.h"
 #include "./ErrorCodes.h"
-#include "./Endian.h"
+#include "./EndianX.h"
 #include "../libzlib/zlib.h"
 #include "./Conformation.h"
 #include "./SeqTrans.h"

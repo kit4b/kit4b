@@ -200,7 +200,7 @@
     <ClInclude Include="DataPoints.h" />
     <ClInclude Include="Diagnostics.h" />
     <ClInclude Include="DSsort.h" />
-    <ClInclude Include="Endian.h" />
+    <ClInclude Include="EndianX.h" />
     <ClInclude Include="ErrorCodes.h" />
     <ClInclude Include="Fasta.h" />
     <ClInclude Include="FeatLoci.h" />

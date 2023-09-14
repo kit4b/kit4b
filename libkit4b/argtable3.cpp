@@ -28,6 +28,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 #include "stdafx.h"
+#include <cstdint>
 #include "argtable3.h"
 
 #define ARG_AMALGAMATION
