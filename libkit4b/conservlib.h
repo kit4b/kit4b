@@ -53,5 +53,5 @@
 #include "./sqlite3.h"
 #include "./CSQLitePSL.h"
 #include "./CBlitz.h"
-
+#include "./CPBASfxArray.h"
 

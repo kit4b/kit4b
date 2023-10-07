@@ -122,12 +122,12 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>shlwapi.lib;..\libkit4b\debug64\libkit4b.lib;..\libzlib\debug64\libzlib.lib;..\libBKPLPlot\debug64\libBKPLPlot.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <StackReserveSize>100000000</StackReserveSize>
-      <StackCommitSize>100000000</StackCommitSize>
+      <StackReserveSize>200000000</StackReserveSize>
+      <StackCommitSize>200000000</StackCommitSize>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
-      <HeapReserveSize>100000000</HeapReserveSize>
-      <HeapCommitSize>100000000</HeapCommitSize>
+      <HeapReserveSize>200000000</HeapReserveSize>
+      <HeapCommitSize>200000000</HeapCommitSize>
       <LinkTimeCodeGeneration>
       </LinkTimeCodeGeneration>
       <AdditionalOptions>/EDITANDCONTINUE %(AdditionalOptions)</AdditionalOptions>
@@ -171,10 +171,11 @@
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>shlwapi.lib;..\libkit4b\release64\libkit4b.lib;..\libzlib\release64\libzlib.lib;..\libBKPLPlot\release64\libBKPLPlot.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <StackReserveSize>100000000</StackReserveSize>
-      <StackCommitSize>100000000</StackCommitSize>
-      <HeapReserveSize>100000000</HeapReserveSize>
-      <HeapCommitSize>100000000</HeapCommitSize>
+      <StackReserveSize>200000000</StackReserveSize>
+      <StackCommitSize>200000000</StackCommitSize>
+      <HeapReserveSize>200000000</HeapReserveSize>
+      <HeapCommitSize>200000000</HeapCommitSize>
+      <LargeAddressAware>true</LargeAddressAware>
     </Link>
     <PostBuildEvent>
       <Command>copy Release64\*.exe $(SolutionDir)bin64</Command>

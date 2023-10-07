@@ -331,6 +331,7 @@ return(eBSFSuccess);
 void
 CSfxArray::SetMaxQSortThreads(int MaxThreads)			// sets maximum number of threads to use in multithreaded qsorts
 {
+m_MaxQSortThreads = MaxThreads;
 m_MTqsort.SetMaxThreads(MaxThreads);
 }
 
@@ -1682,7 +1683,7 @@ else	// else already at least one entry
 		}
 
 	// check if the m_pSfxBlock needs to be extended
-	if((m_pSfxBlock->ConcatSeqLen + SeqLen + 16) > m_AllocSfxBlockMem) // 10 is to allow for appended eBaseEOS's and slight safety margin
+	if((m_pSfxBlock->ConcatSeqLen + SeqLen + 10) > m_AllocSfxBlockMem) // 10 is to allow for appended eBaseEOS's and slight safety margin
 		{
 		tsSfxBlock *pRealloc;
 		int64_t ReallocSize = m_AllocSfxBlockMem + max(cReallocBlockEls,((uint64_t)SeqLen) + 10);	
@@ -9735,52 +9736,6 @@ return(2);
 
 
 int
-ValidateSort32(uint32_t SeqLen,etSeqBase *pSeq,uint32_t *pArray)
-{
-etSeqBase *pSeq1;
-etSeqBase *pSeq2;
-uint32_t Ofs;
-uint32_t Idx;
-for(Idx = 0; Idx < (SeqLen-1); Idx++)
-	{
-	pSeq1 = &pSeq[*pArray++];
-	pSeq2 = &pSeq[*pArray];
-	for(Ofs = 0; Ofs < 100; Ofs++,pSeq1++,pSeq2++)
-		{
-		if(*pSeq1 == *pSeq2)
-			continue;
-		if(*pSeq1 < *pSeq2)
-			break;
-		return(-1);
-		}
-	}
-return(0);
-}
-
-int
-ValidateSort64(int64_t SeqLen,etSeqBase *pSeq,int64_t *pArray)
-{
-etSeqBase *pSeq1;
-etSeqBase *pSeq2;
-uint32_t Ofs;
-int64_t Idx;
-for(Idx = 0; Idx < (SeqLen-1); Idx++)
-	{
-	pSeq1 = &pSeq[*pArray++];
-	pSeq2 = &pSeq[*pArray];
-	for(Ofs = 0; Ofs < 100; Ofs++,pSeq1++,pSeq2++)
-		{
-		if(*pSeq1 == *pSeq2)
-			continue;
-		if(*pSeq1 < *pSeq2)
-			break;
-		return(-1);
-		}
-	}
-return(0);
-}
-
-int
 CSfxArray::QSortSeq(int64_t SeqLen,		// total concatenated sequence length
 						etSeqBase *pSeq,	// pts to start of concatenated sequences
 						int SfxElSize,		// suffix element size (will be either 4 or 5)
@@ -9838,6 +9793,8 @@ while(MaxCmpLen--)
 	{
 	if((b1 = (*pSeq1++ & 0x0f)) != (b2 = (*pSeq2++ & 0x0f)))
 		return(b1 < b2 ? -1 : 1);
+	if (b1 == eBaseEOS || b2 == eBaseEOS)
+		break;
 	}
 return(0);
 }
@@ -9870,6 +9827,8 @@ while(MaxCmpLen--)
 	{
 	if((b1 = (*pSeq1++ & 0x0f)) != (b2 = (*pSeq2++ & 0x0f)))
 		return(b1 < b2 ? -1 : 1);
+	if(b1 == eBaseEOS || b2 == eBaseEOS)
+		break;
 	}
 return(0);
 }

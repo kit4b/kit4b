@@ -1,10 +1,8 @@
 PACKAGE=kit4b
-VERSION=1.96.0
-AC_INIT([kit4b],[1.96.0])
+VERSION=1.98.0
+AC_INIT([kit4b],[1.98.0])
 AC_CONFIG_SRCDIR([libkit4b/kit4bversion.h])
 AM_INIT_AUTOMAKE
-AC_CHECK_LIB(gslcblas,main)
-AC_CHECK_LIB(gsl,main)
 AC_CHECK_LIB(pthread,main)
 AC_CHECK_LIB(dl,main)
 AC_CHECK_LIB(rt,main)

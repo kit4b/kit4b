@@ -5,7 +5,7 @@
 const int cSFXVersion = 5;				// current file structure version
 const int cSFXVersionBack = 3;			// can handle previous file structures back to this version
 
-const int cSigWaitSecs = 5;				// background readahead thread wakes every cSigWaitSecs sec just in case a signalling event missed
+const int cSigWaitSecs = 5;				// background readahead thread wakes every cSigWaitSecs sec just in case a signaling event missed
 const int cSigMaxWaitSecs = 600;		// master thread times out after cSigMaxWaitSecs
 const int cSigTermWaitSecs = 2;			// background readahead thread is allowed at most cSigTermWaitSecs to self terminate if requested to terminate
 
@@ -1000,7 +1000,7 @@ public:
 
 	int	QSortSeq(int64_t SeqLen,		// total concatenated sequence length
 						etSeqBase *pSeq,	// pts to start of concatenated sequences
-						int SfxElSize,		// suffix element size (will be either 4 or 8)
+						int SfxElSize,		// suffix element size (will be either 4 or 5)
 						void *pArray);		// allocated to hold suffix elements
 	void SetMaxQSortThreads(int MaxThreads);			// sets maximum number of threads to use in multithreaded qsorts
 

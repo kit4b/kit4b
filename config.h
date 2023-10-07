@@ -4,12 +4,6 @@
 /* Define to 1 if you have the `dl' library (-ldl). */
 #define HAVE_LIBDL 1
 
-/* Define to 1 if you have the `gsl' library (-lgsl). */
-/* #undef HAVE_LIBGSL */
-
-/* Define to 1 if you have the `gslcblas' library (-lgslcblas). */
-/* #undef HAVE_LIBGSLCBLAS */
-
 /* Define to 1 if you have the `pthread' library (-lpthread). */
 #define HAVE_LIBPTHREAD 1
 
@@ -26,7 +20,7 @@
 #define PACKAGE_NAME "kit4b"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "kit4b 1.96.0"
+#define PACKAGE_STRING "kit4b 1.96.4"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "kit4b"
@@ -35,7 +29,7 @@
 #define PACKAGE_URL ""
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "1.96.0"
+#define PACKAGE_VERSION "1.96.4"
 
 /* Version number of package */
-#define VERSION "1.96.0"
+#define VERSION "1.98.0"

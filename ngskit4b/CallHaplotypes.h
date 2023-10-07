@@ -68,6 +68,14 @@ const int32_t cDfltSparseRepPropGrpMbrs = 0;		// only apply sparse representativ
 const double cDfltSparseRepProp = 0.25;				// if highest frequency (consensus) allele is 0x00 (no coverage) then if next highest frequency allele is at least this proportion of all members in haplotype group then treat next highest allele as
 													// being as being the consensus. Objective to obtain an imputed allele in regions of sparse haplotype coverage
 const int32_t cDfltProgFndrBinScoring = 1000000;	// when scoring sample vs. references then use this bin size
+
+const int32_t cDfltKMerSize = 25;					// default KMer size in processing mode eMCSHKMerGrps
+const int32_t cDfltKMerHammings = 1;				// default is require at least this hamming to separate any two groups in processing mode eMCSHKMerGrps
+const bool cDfltbKMerCoverage = true;				// if true then all sites in KMer must have coverage
+
+const size_t cInitialAllocKMerSeqs = 0x01ffffff;	// initially allocate for KMer group sequences in this sized allocation - m_pGrpKMerSeqs
+const size_t cReallocKMerSeqs = 0x0ffffff;			// if needing to extend KMer group sequences then realloc by this - m_pGrpKMerSeqs 
+
 const int cMaxWaitThreadsStartup = 120;				// allowing all threads to initialise and report starting up within this many seconds = m_NumWorkerInsts == m_ExpNumWorkerInsts
 const int cWorkThreadStackSize = 0x01ffff;			// threads created with stacks this size - no recursive functions so an overkill, but who knows, memory is cheap!
 
@@ -85,6 +93,7 @@ typedef enum TAG_eModeCSH {
 	eMCSHSrcVsRefs,									// source PBAs vs. reference PBAs allelic association scores
 	eMCSHRefsVsRefs,								// reference PBAs vs. reference PBAs allelic association scores
 	eMCSHGroupScores,								// grouping allelic association scores
+	eMCSHKMerGrps,									// post-processing haplotype groupings for differential group KMers
 	eMCSHPlaceHolder								// used to mark end of processing modes
 	}eModeCSH;
 
@@ -115,6 +124,19 @@ typedef struct TAG_sDGTLoci { // loci which have been identified as group DGTs
 	tsGrpCnts GrpCnts[6];    // counts for 1st 5 groups plus a pseudo-group containing sum of counts for groups after the 1st 5 
 	} tsDGTLoci;
 
+typedef struct TAG_sKMerLoci {  // loci for which KMer sized sequences have group hamming separation 
+	int32_t ChromID;				// KMer is on this chromosome
+	int32_t CurLoci;				// starting at this loci
+	int32_t KMerSize;				// and for this number of base pairs
+	int32_t NumHammingGrps;			// actual number of non-noise groups for which differential hammings were generated
+	uint32_t TotNumOffTargets;		// total number of times one of the KMer sequences aligned elsewhere than this originating ChromID.CurLoci
+	int32_t MinReffRelHammingDist;	// the actual minimal hamming between any two groups
+	int32_t MaxReffRelHammingDist;	// the actual maximal hamming between any two groups
+	uint32_t GrpsKMerMsk;			// bit mask of those groups for which are represented in NumHammingGrps (group1 -> bit0, group2 -> bit1, groupN -> bitN-1)
+	int64_t GrpKMerSeqOfs;			// offset in m_pGrpKMerSeqs at which 1st group in GrpsKMer sequence starts, next group is concatenated ...
+	} tsKMerLoci;
+
+
 typedef struct TAG_sBitsVect {
 	uint64_t Bits[cBitVectWords];		// cMaxBitVectBits bits packed into cBitVectWords x 64bit words
 } tsBitsVect;
@@ -130,12 +152,12 @@ typedef struct TAG_sHaplotypeGroup {
 	int32_t MinCentroidDistance; // centroid distance can range from this minimum and up to MaxCentroidDistance when attempting to limit number of haplotype groupings to MaxNumHaplotypeGroups
 	int32_t MaxCentroidDistance; // maximum centroid distance which can be used when attempting to meet MaxNumHaplotypeGroups constraint
 	int32_t MaxHaplotypeGroups; // attempt to constrain number of haplotype groups to be this maximum
+	int32_t ActualHaplotypeGroups;      // after constraining, contains this many actual haplotype groups
 	int32_t CentroidDistance; // actual centroid distance used when limiting number of haplotype groupings to MaxNumHaplotypeGroups
 	int32_t MRAGrpChromID;	     // most recently updated group consensus PBAs was on this chrom - GenConsensusGroupBPA()
 	int32_t MRAGrpLoci;      // most recently updated group consensus PBAs was at this loci - GenConsensusGroupBPA()
 	uint8_t MRAGrpConsensus[256];    // most recently returned haplotype group consensus allele - GenConsensusGroupBPA()
 	int32_t NumFndrs;       // groups contain a total of this many founders
-	int32_t NumHaplotypeGroups;      // contains this many haplotype groups
 	tsBitsVect HaplotypeGroup[1]; // could be (extremely likely!) multiple groups, will be dynamically allocated to hold actual NumHaplotypeGroups
 	} tsHaplotypeGroup;
 
@@ -150,7 +172,7 @@ typedef struct TAG_sHGBinSpec { // haplotype group clustering is for this bin sp
 	int32_t MinCentroidDistance; // centroid distance can range from this minimum and up to MaxCentroidDistance when attempting to limit number of haplotype groupings to MaxNumHaplotypeGroups
 	int32_t MaxCentroidDistance; // maximum centroid distance which can be used when attempting to meet MaxNumHaplotypeGroups constraint
 	int32_t MaxNumHaplotypeGroups;	// attempt to constrain number of haplotype groups to be this maximum
-	int32_t NumHaplotypeGroups;      // actual number of haplotype groups
+	int32_t ActualHaplotypeGroups;      // contains this many haplotype groups;      // actual number of haplotype groups
 	tsHaplotypeGroup* pHaplotypeGroup; // haplotype groupings for this bin (each allocated independently so ptr expected to remain stable)
 	} tsHGBinSpec;
 
@@ -273,7 +295,7 @@ int32_t MaxNumLoci;				// max number of loci to be processed - starting from Sta
 int32_t NumFndrs;				// number of founders to be processed against the progeny (or founder) PBA at *pPBAs[0]
 uint8_t *pFounderPBAs[cMaxFounderReadsets]; // ptrs to each of the chromosome founder PBAs indexed in FounderID ascending order
 uint8_t *pMskPBA;				// pts to optional chromosome masking PBA, scoring only for segments contained in mask which are non-zero and where progeny and founder PBAs also have an allele.
-								// enables a founder to be processed as if a progeny, restricting scoring Kmers to be same as if a progeny
+								// enables a founder to be processed as if a progeny, restricting scoring KMers to be same as if a progeny
 } tsCHWorkQueueEl;
 
 typedef struct TAG_sCHWorkerInstance {
@@ -426,10 +448,19 @@ class CCallHaplotypes
 
 	int m_CurSelfID;							// currently the highest self PBAs being aligned by any thread 
 
+	uint32_t m_UsedKMerLoci;					// number of actually used KMerLoci
+	uint32_t m_AllocdKMerLoci;					// number of allocated KMerLoci
+	size_t m_AllocdKMerLociMem;					// current mem allocation size for m_pKMerLoci
+	tsKMerLoci* m_pKMerLoci;					// allocated to hold haplotype grouping KMerLoci
+
 	uint32_t m_UsedDGTLoci;						// number of actually used DGTLoci
 	uint32_t m_AllocdDGTLoci;					// number of allocated DGTLoci
 	size_t m_AllocdDGTLociMem;					// current mem allocation size for m_pDGTLoci
-	tsDGTLoci * m_pDGTLoci;						// allocated to hold haplotype grouping DGT loci
+	tsDGTLoci* m_pDGTLoci;						// allocated to hold haplotype grouping DGT loci
+
+	size_t m_UsedKMerSeqMem;					// currently used KMerSeqMem in m_pGrpKMerSeqs
+	size_t m_AllocdKMerSeqMem;					// currently allocated to m_pGrpKMerSeqs 
+	uint8_t* m_pGrpKMerSeqs;					// allocated to hold KMer group sequences
 
 	int32_t m_AcceptedASRefGrps;				// accepted this many ASRefGrps
 	int32_t m_UsedASRefGrps;					// cuurently this many instances have been used
@@ -517,6 +548,8 @@ class CCallHaplotypes
 	void ReleaseFastSerialise(void);
 
 	int	AlignSelfPBAs(int32_t NumRefPBAs, int32_t NumRowPBAs, int32_t ChromID, int32_t ChromLen, int32_t BinsThisChrom, int32_t MaxBinSize, tsCHChromScores* pChromScores, uint8_t* pFndrPBAs[], int MaxThreads); // initialise and start worker threads for aligning PBAs and scoring alignments
+
+	int AlignSelfPBAsKMer(int32_t NumRefPBAs, int32_t KMerSize, int32_t ChromID, int32_t ChromLen, int32_t BinsThisChrom, int32_t MaxBinSize, tsCHChromScores* pChromScores, uint8_t* pFndrPBAs[], int MaxThreads);
 
 	// initialise and start pool of worker threads
 	int					// returns < 0 if errors, 0 if all threads have started processing, 1 if all threads started and some have completed processing, 2 if not all have started
@@ -657,6 +690,24 @@ class CCallHaplotypes
 					double FMeasure[4],		// F-measure for each allele - 0.0 if no group having an accepted F-measure for that allele
 					tsGrpCnts GrpCnts[6]);	// counts for 1st 5 groups plus a pseudo-group containing sum of counts for groups after the 1st 5
 
+	int64_t									// returned index+1 into m_pGrpKMerSeqs[] to allocated and copied KMerSeq of size KMerSize, returns 0 if errors
+			AddKMerSeq(int32_t NumGrpMembers, // group for which this KMer sequence is representative has this many members
+			int32_t KMerSize,	// KMer sequence to copy is this size
+			uint8_t* pKMerSeq);				// sequence to copy
+
+	int32_t									// returned index+1 into m_pKMerLoci[] to allocated and initialised KMers, 0 if errors
+		AddKMerLoci(tsKMerLoci* pInitKMerLoci);	// allocated tsKMerLoci to be initialised with a copy of pInitKMerLoci
+
+	int									// returned index+1 into m_pKMerLoci[] to allocated and initialised KMers, 0 if errors
+		AddKMerLoci(int32_t ChromID,	// KMer is on this chromosome
+			int32_t CurLoci,			// starting at this loci
+			int32_t KMerSize,			// and for this number of base pairs
+			int32_t NumHammingGrps,		// number of actual groups for which hamming differentials were generated
+			uint32_t GrpsKMerMsk,			// bit mask of those groups for which are represented in NumHammingGrps (group1 -> bit0, group2 -> bit1, groupN -> bitN-1)
+			int64_t GrpKMerSeqOfs,				// offset (0 based) in m_pGrpKMerSeqs at which 1st group in GrpsKMer sequence starts, 2nd group at GrpKMerSeqOfs+KMerSize ...
+			int32_t MinReffRelHammingDist,		// the actual minimal hamming between any two groups
+			int32_t MaxReffRelHammingDist);	// the actual maximal hamming between any two groups
+
 	int32_t									// returned index+1 into m_pHGBinSpecs[] to allocated and initialised allele stack, 0 if errors
 		AddHGBinSpec(tsHGBinSpec* pInitHGBinSpec);	// allocated tsHGBinSpec to be initialised with a copy of pInitHGBinSpec
 
@@ -694,16 +745,19 @@ class CCallHaplotypes
 	int ProcessProgenyPBAFile(char* pszProgenyPBAFile,	// load, process and call haplotypes for this progeny PBA file against previously loaded panel founder PBAs
 					char *pszRsltsFileBaseName);		// results are written to this file base name with progeny readset identifier and type appended
 
-#ifdef _USEORIGINAL
-	int	GenPBAsHomozygosityScores(int32_t NumFndrPBAs,	// number of founder PBAs to be processed
-						int32_t NumProgPBAs,			// number of progeny PBAs to be processed, 0 if none and processing will be founders vs. founders
-						char* pszRsltsFileBaseName);	// results are written to this file base name
-#else
 	int	GenPBAsHomozygosityScores(int MaxBinSize,		// binning scores using these maximal sized bins accross each chromosome, 0 if each bin spans a complete chromosome 
 		int32_t NumFndrPBAs,			// number of founder PBAs to be processed
 		int32_t NumProgPBAs,			// number of progeny PBAs to be processed, 0 if none and processing will be founders vs. founders
 		char* pszRsltsFileBaseName);	// results are written to this file base name
-#endif
+
+	int
+		GenKMerGrpHammings(int32_t KMerSize,		// use this KMer sized sequences when identifying group segregation hammings
+			int32_t MinKMerHammings,				// must be at least this hamming between any two group members
+			bool bKMerCoverage,					// if true then must be coverage at all KMer sites
+			char* pszHapGrpFile,					 // input, previously generated by 'callhaplotypes', haplotype group file (CSV format)
+			int32_t NumRefPBAs,						// number of reference PBAs to be processed
+			char* pszFounderInputFiles[],			// names of input founder PBA files (wildcards allowed)
+			char* pszRsltsFileBaseName);			// results are written to this file base name
 
 	int				// < 0 if errors, otherwise success
 		GenChromAlleleStacks(int32_t ChromID,		// processing is for this chromosome
@@ -713,15 +767,15 @@ class CCallHaplotypes
 							int32_t NumFndrs,		// number of founders to be processed 1st PBA at *pPBAs[0]
 							uint8_t* pFounderPBAs[],// pPBAs[] pts to chromosome PBAs, for each of the chromosome founder PBAs
 							uint8_t* pMskPBA);		// pts to optional masking PBA, scoring only for segments contained in mask which are non-zero and where progeny and founder PBAs also have an allele.
-													// enables a founder to be processed as if a progeny, restricting scoring Kmers to be same as if a progeny
+													// enables a founder to be processed as if a progeny, restricting scoring KMers to be same as if a progeny
 
 	
-	int				// < 0 if errors, >=0 length of generated consensus
-		GenConsensusPBA(int32_t Loci,				// processing for allele stacks starting from this loci
-			int32_t NumLoci,						// processing for generation of this sized consensus PBAs
-			int32_t NumFndrs,						// number of founders to be processed 1st PBA at *pPBAs[0]
-			uint8_t* pFounderPBAs[],				// pPBAs[] pts to chromosome PBAs, for each of the chromosome founder PBAs
-			uint8_t* pConsensusPBAs);				// ptr to preallocated sequence of length MaxNumLoci which is to be updated with consensus PBAs
+	uint32_t				// the total number of non-consensus alleles over all founders within KMer NumLoci
+		GenConsensusPBA(int32_t Loci,			// processing for consensus starting from this loci
+			int32_t NumLoci,		// processing for generation of this maximum sized consensus PBAs
+			int32_t NumFndrs,		// number of founders to be processed 1st PBA at *pPBAs[0]
+			uint8_t* pFounderPBAs[], // pPBAs[] pts to chromosome PBAs, for each of the chromosome founder PBAs
+			uint8_t* pConsensusPBAs);     // ptr to preallocated sequence of length NumLoci which is to be updated with consensus PBAs
 
 	uint8_t				// concensus PBA for founders in a group of which specified founder is a member at the requested loci
 		GenFounderConsensusPBA(int32_t Founder,// consensus for all founders in same group as this founder
@@ -754,6 +808,15 @@ class CCallHaplotypes
 	int32_t				// error or success (>=0) code 
 		GenBinDGTs(int32_t ChromID,			// requiring DGTs across this chrom
 			int32_t ChromSize,					// chromosome is this size
+			int32_t NumFndrs,					// number of founders to be processed 1st PBA at *pPBAs[0]
+			uint8_t* pFounderPBAs[]);			// pPBAs[] pts to chromosome PBAs, for each of the chromosome founder PBAs
+
+	int32_t				// error or success (>=0) code 
+		GenBinKMers(int32_t ChromID,			// requiring bin group segregating KMers over this chrom
+			int32_t ChromSize,					// chromosome is this size
+			int32_t KMerSize,					// use this KMer sized sequences when identifying group segregation homozygosity scores
+			int32_t MinKMerHammings,			// must be at least this hammings between any two group KMer sequences of KMerSize base pair
+			bool bKMerCoverage,					// true if all sites in KMers must have coverage
 			int32_t NumFndrs,					// number of founders to be processed 1st PBA at *pPBAs[0]
 			uint8_t* pFounderPBAs[]);			// pPBAs[] pts to chromosome PBAs, for each of the chromosome founder PBAs
 
@@ -815,6 +878,21 @@ class CCallHaplotypes
 			bool bNormalise=true);					// normalise for coverage, low coverage major alleles (2,0,0,0) are normalised to high coverage (3,0,0,0)
 
 
+	bool
+		ValidateArrayKMerSeqs(int32_t KMerSize,		// KMers are this length
+			int32_t NumGrpSeqs,						// number of KMer sequences to validate, must be at least 1 difference between any 2 sequences
+			uint8_t* pSeqs[],						// sequences to be validated
+			int32_t MinHammings = 0,				// claimed minimum hammings between any two KMers = if 0 and MaxHammings also 0 then don't validate the actual hammings
+			int32_t MaxHammings = 0);				// claimed maximum hammings between any two KMers
+
+	bool
+		ValidateKMerSeqs(int32_t KMerSize,	// KMers are this length
+			int32_t NumGrpSeqs,	// number of KMer sequences to validate 
+			uint8_t* pGrpSeqs,	// KMer group sequences, each preceded by number of group members as a int32_t
+			int32_t MinHammings, // claimed minimum hammings between any two KMers
+			int32_t MaxHammings);	// claimed maximum hammings between any two KMers
+
+
 	void	BitsVectSet(uint16_t Bit,				// bit to set, range 0..cMaxBitVectBits-1
 		tsBitsVect& BitsVect);
 	void	BitsVectReset(uint16_t Bit,				// bit to reset, range 0..cMaxBitVectBits-1
@@ -840,6 +918,7 @@ class CCallHaplotypes
 	static int SortDGTLoci(const void* arg1, const void* arg2);
 	static int SortASBin(const void* arg1, const void* arg2);
 	static int SortASRefGrp(const void* arg1, const void* arg2);
+	static int SortKMerLoci(const void* arg1, const void* arg2);
 
 	int32_t ReportHaplotypesAsGWAS(char* pszRsltsFileBaseName,	// generate a GWAS format file(s) for viewing haplotype calls in IGV, useful for looking at associations with coverage etc
 								   int32_t ReadsetID,			// report on this progeny readset
@@ -870,12 +949,13 @@ class CCallHaplotypes
 			int32_t MaxSpanLen = 10000000);					// allow reported variableStep WIG spans to be continuous up this maximal length and then start another span
 
 	CStats m_Stats;												// used for determining statistical significance of individual founder unique counts relative to other founder counts
+	CPBASfxArray m_PBASfxArray;									// used to determine uniqueness of any PBA sequence over all sample PBAs
 
 public:
 	CCallHaplotypes();
 	~CCallHaplotypes();
 	void Reset(void);						// resets class instance state back to that immediately following instantiation
-	int Process(eModeCSH PMode,				// processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons, 3: allelic haplotype grouping,4: coverage haplotype grouping, 5: post-process haplotype groupings for DGTs,  6: post-process to WIG, 7: progeny PBAs vs. founder PBAs allelic association scores, 8: founder PBAs vs. founder PBAs allelic association scores
+	int Process(eModeCSH PMode,				// processing mode 0: report imputation haplotype matrix, 1: report both raw and imputation haplotype matrices, 2: additionally generate GWAS allowing visual comparisons, 3: allelic haplotype grouping,4: coverage haplotype grouping, 5: post-process haplotype groupings for DGTs,  6: post-process to WIG,  7 progeny PBAs vs. founder PBAs allelic association scores, 8 founder PBAs vs. founder PBAs allelic association scores, 9 grouping by scores, 10 differential group KMers
 			int32_t ExprID,					// assign this experiment identifier for this PBA analysis
 			int32_t SeedRowID,				// generated CSVs will contain monotonically unique row identifiers seeded with this row identifier  
 			int32_t LimitPrimaryPBAs,		// limit number of loaded primary or founder PBA files to this many. 0: no limits, > 0 sets upper limit
@@ -892,6 +972,9 @@ public:
 			int32_t MinDGTGrpMembers,		// groups with fewer than this number of members - in processing mode 5 only -are treated as noise alleles these groups are not used when determining DGT group specific major alleles
 			double MinDGTGrpPropTotSamples,	// haplotype groups - in processing mode 5 only -containing less than this proportion of all samples are treated as if containing noise and alleles in these groups are not used when determining DGT group specific major alleles 
 			double MinDGTFmeasure,			// only accepting DGT loci with at least this F-measure score
+			int32_t KMerSize,				// use this KMer sized sequences when identifying group segregation hammings
+			int32_t MinKMerHammings,		// must be at least this hamming separating any two groups
+			bool bKMerCoverage,				// if true then all sites in KMer must have coverage
 			int32_t FndrTrim5,				// trim this many aligned PBAs from 5' end of founder aligned segments - reduces false alleles due to sequencing errors
 			int32_t FndrTrim3,				// trim this many aligned PBAs from 3' end of founder aligned segments - reduces false alleles due to sequencing errors
 			int32_t ProgTrim5,				// trim this many aligned PBAs from 5' end of progeny aligned segments - reduces false alleles due to sequencing errors
@@ -915,6 +998,8 @@ public:
 	int ProcWorkerThread(tsCHWorkerInstance* pThreadPar);	// worker thread parameters
 	int ProcWorkerLoadChromPBAThread(tsCHWorkerLoadChromPBAsInstance* pThreadPar);	// worker thread parameters
 	int AlignSelfPBAsThread(tsCHWorkerSelfScoreInstance* pPar);	// worker thread parameters
+	// thread for scoring an instance of a source PBAs (termed as Self) against all founder PBAs using KMer size subsequences
+	int AlignSelfPBAsKMerThread(tsCHWorkerSelfScoreInstance* pPar);
 
 };
 

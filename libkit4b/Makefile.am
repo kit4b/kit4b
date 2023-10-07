@@ -4,7 +4,7 @@ libkit4b_a_SOURCES = AlignValidate.cpp AlignValidate.h argtable3.cpp argtable3.h
 	Diagnostics.cpp Endian.cpp EndianX.h ErrorCodes.cpp Fasta.cpp FeatLoci.cpp \
 	FilterLoci.cpp FilterRefIDs.cpp GOAssocs.cpp GOTerms.cpp SimReads.cpp SimReads.h \
 	HashFile.cpp HyperEls.cpp GFFFile.cpp GTFFile.cpp GOAssocs.cpp GOTerms.cpp Contaminants.cpp \
-	MAlignFile.cpp Random.cpp SimpleRNG.cpp RsltsFile.cpp sais.cpp SAMfile.cpp SeqTrans.cpp SfxArray.cpp Shuffle.cpp \
+	MAlignFile.cpp Random.cpp SimpleRNG.cpp RsltsFile.cpp sais.cpp SAMfile.cpp SeqTrans.cpp SfxArray.cpp CPBASfxArray.cpp Shuffle.cpp \
 	SmithWaterman.cpp NeedlemanWunsch.cpp Stats.cpp StopWatch.cpp Twister.cpp Utility.cpp ProcRawReads.cpp MTqsort.cpp \
         bgzf.cpp bgzf.h sqlite3.c CBlitz.cpp CBlitz.h CSQLitePSL.cpp CSQLitePSL.h
 

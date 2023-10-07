@@ -98,3 +98,7 @@ Release 1.92.0 - GBS haplotype grouping using GWS haplotype groupings as surroga
 Release 1.95.0 - GBS haplotype grouping using GWS haplotype groupings as surrogates functionality added to 'ngskit4b callhaplotypes' - completed.
 Release 1.95.2 - GBS haplotype grouping using GWS haplotype groupings extended to allow a maximum of 10000 GBS samples to be processed.
 Release 1.96.0 - Automake configuration files updated, GCC 'ngskit4b' generated as statically linked, 'SQLite3' updated to version 3.43.1 
+Release 1.97.1 - Callhaplotypes now has processing mode for identifying KMers wuich are candidates for primer targeting
+Release 1.97.4 - Callhaplotypes now has processing mode for identifying KMers wuich are candidates for primer targeting plus checking for genomewide uniqueness of these targets
+Release 1.98.0 - Callhaplotypes KMer processing bug fixes
+
