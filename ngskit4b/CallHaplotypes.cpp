@@ -10490,7 +10490,8 @@ CCallHaplotypes::GroupAlleleScores(char* pszInFile, // file containing allele as
 	char* pszOutFile) // where to write grouping CSV file
 {
 int32_t Rslt;
-int32_t CurLineNumber;
+int64_t CurLineNumber;
+int64_t ASBinIdx;
 int32_t NumFields;
 
 char *pszSrcPBA;
@@ -10562,7 +10563,7 @@ if(m_pASBins == nullptr)
 	m_AllocdASBins = cAllocASBins;
 	}
 m_UsedASBins = 0;
-
+ASBinIdx = 0;
 CurLineNumber = 0;
 BinStartLoci = 0;
 BinSize = 0;
@@ -10578,7 +10579,7 @@ while ((Rslt = m_pAlleleScoresCSVFile->NextLine()) > 0)		// onto next line conta
 	CurLineNumber++;
 	if ((NumFields = m_pAlleleScoresCSVFile->GetCurFields()) < 13)	// must contain at least 13 fields
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "GroupAlleleScores: Allele association score file '%s' expected to contain a minimum of 13 fields, it contains %d at line %d", pszInFile, NumFields, CurLineNumber);
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "GroupAlleleScores: Allele association score file '%s' expected to contain a minimum of 13 fields, it contains %d at line %zd", pszInFile, NumFields, CurLineNumber);
 		Reset();
 		return(eBSFerrParse);
 		}
@@ -10590,7 +10591,7 @@ while ((Rslt = m_pAlleleScoresCSVFile->NextLine()) > 0)		// onto next line conta
 	Rslt = m_pAlleleScoresCSVFile->GetText(3, &pszChrom);
 	if (Rslt < 0 || pszChrom == nullptr || pszChrom[0] == '\0')
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "GroupAlleleScores: Unable to parse chromosome name at line %d in file '%s'", CurLineNumber, pszInFile);
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "GroupAlleleScores: Unable to parse chromosome name at line %zd in file '%s'", CurLineNumber, pszInFile);
 		Reset();
 		return(eBSFerrParse);
 		}
@@ -10601,7 +10602,7 @@ while ((Rslt = m_pAlleleScoresCSVFile->NextLine()) > 0)		// onto next line conta
 	Rslt = m_pAlleleScoresCSVFile->GetText(1, &pszSrcPBA);
 	if (Rslt < 0 || pszSrcPBA == nullptr || pszSrcPBA[0] == '\0')
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "GroupAlleleScores: Unable to parse source identifier at line %d in file '%s'", CurLineNumber, pszInFile);
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "GroupAlleleScores: Unable to parse source identifier at line %zd in file '%s'", CurLineNumber, pszInFile);
 		Reset();
 		return(eBSFerrParse);
 		}
@@ -10613,7 +10614,7 @@ while ((Rslt = m_pAlleleScoresCSVFile->NextLine()) > 0)		// onto next line conta
 	Rslt = m_pAlleleScoresCSVFile->GetText(2, &pszRefPBA);
 	if (Rslt < 0 || pszRefPBA == nullptr || pszRefPBA[0] == '\0')
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "GroupAlleleScores: Unable to parse reference identifier at line %d in file '%s'", CurLineNumber, pszInFile);
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "GroupAlleleScores: Unable to parse reference identifier at line %zd in file '%s'", CurLineNumber, pszInFile);
 		Reset();
 		return(eBSFerrParse);
 		}
@@ -10625,20 +10626,20 @@ while ((Rslt = m_pAlleleScoresCSVFile->NextLine()) > 0)		// onto next line conta
 	CurChromID = AddChrom(pszChrom);
 	if (CurChromID != PrevChromID)
 		{
-		gDiagnostics.DiagOut(eDLInfo, gszProcName, "GroupAlleleScores: Loading bin scores for chromosome '%s' at line %d from file '%s'", pszChrom, CurLineNumber, pszInFile);
+		gDiagnostics.DiagOut(eDLInfo, gszProcName, "GroupAlleleScores: Loading bin scores for chromosome '%s' at line %zd from file '%s'", pszChrom, CurLineNumber, pszInFile);
 		PrevChromID = CurChromID;
 		}
 
 	Rslt = m_pAlleleScoresCSVFile->GetInt(5, &BinStartLoci);
 	if (Rslt < 0 || BinStartLoci < 0)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "GroupAlleleScores: Error whilst parsing bin loci %d at line %d in file '%s'", BinStartLoci, CurLineNumber, pszInFile);
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "GroupAlleleScores: Error whilst parsing bin loci %d at line %zd in file '%s'", BinStartLoci, CurLineNumber, pszInFile);
 		Reset();
 		return(eBSFerrParse);
 		}
 	if(BinStartLoci >= m_ChromSizes[CurChromID -1])
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "GroupAlleleScores: Bin start loci %d not within chromosome '%s' size %d at line %d in file '%s'", BinStartLoci, m_ChromSizes[CurChromID - 1], pszChrom, CurLineNumber, pszInFile);
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "GroupAlleleScores: Bin start loci %d not within chromosome '%s' size %d at line %zd in file '%s'", BinStartLoci, m_ChromSizes[CurChromID - 1], pszChrom, CurLineNumber, pszInFile);
 		Reset();
 		return(eBSFerrParse);
 		}
@@ -10646,63 +10647,64 @@ while ((Rslt = m_pAlleleScoresCSVFile->NextLine()) > 0)		// onto next line conta
 	Rslt = m_pAlleleScoresCSVFile->GetInt(6, &BinSize);
 	if (Rslt < 0 || BinSize < 1)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "GroupAlleleScores: Error whilst parsing bin size %d at line %d in file '%s'", BinSize, CurLineNumber, pszInFile);
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "GroupAlleleScores: Error whilst parsing bin size %d at line %zd in file '%s'", BinSize, CurLineNumber, pszInFile);
 		Reset();
 		return(eBSFerrParse);
 		}
 
 	if (BinStartLoci + BinSize  > m_ChromSizes[CurChromID - 1])
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "GroupAlleleScores: Bin end loci %d not within chromosome '%s' size %d at line %d in file '%s'", BinStartLoci + BinSize - 1, m_ChromSizes[CurChromID - 1], pszChrom, CurLineNumber, pszInFile);
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "GroupAlleleScores: Bin end loci %d not within chromosome '%s' size %d at line %zd in file '%s'", BinStartLoci + BinSize - 1, m_ChromSizes[CurChromID - 1], pszChrom, CurLineNumber, pszInFile);
 		Reset();
 		return(eBSFerrParse);
 		}
 
 	if ((Rslt = m_pAlleleScoresCSVFile->GetDouble(12, &ExactScore)) < 0)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "GroupAlleleScores: Error while parsing ExactScore at line %d in file '%s'", ExactScore, CurLineNumber, pszInFile);
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "GroupAlleleScores: Error while parsing ExactScore at line %zd in file '%s'", ExactScore, CurLineNumber, pszInFile);
 		Reset();
 		return(eBSFerrParse);
 		}
 
 	if (ExactScore < 0.0 || ExactScore > 1.0)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "GroupAlleleScores: ExactScore %f not in range 0..1 at line %d in file '%s'", ExactScore, CurLineNumber, pszInFile);
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "GroupAlleleScores: ExactScore %f not in range 0..1 at line %zd in file '%s'", ExactScore, CurLineNumber, pszInFile);
 		Reset();
 		return(eBSFerrParse);
 		}
 
 	if ((Rslt = m_pAlleleScoresCSVFile->GetDouble(13, &PartialScore)) < 0)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "GroupAlleleScores: Error while parsing PartialScore at line %d in file '%s'", ExactScore, CurLineNumber, pszInFile);
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "GroupAlleleScores: Error while parsing PartialScore at line %zd in file '%s'", ExactScore, CurLineNumber, pszInFile);
 		Reset();
 		return(eBSFerrParse);
 		}
 	if (PartialScore < 0.0 || PartialScore > 1.0)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "GroupAlleleScores: PartialScore %f not in range 0.0 .. 1.0 at line %d in file '%s'", PartialScore, CurLineNumber, pszInFile);
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "GroupAlleleScores: PartialScore %f not in range 0.0 .. 1.0 at line %zd in file '%s'", PartialScore, CurLineNumber, pszInFile);
 		Reset();
 		return(eBSFerrParse);
 		}
 	if (PartialScore < ExactScore)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "GroupAlleleScores: PartialScore %f must be at least same as ExactScore %f at line %d in file '%s'", PartialScore, ExactScore, CurLineNumber, pszInFile);
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "GroupAlleleScores: PartialScore %f must be at least same as ExactScore %f at line %zd in file '%s'", PartialScore, ExactScore, CurLineNumber, pszInFile);
 		Reset();
 		return(eBSFerrParse);
 		}
+	
 
-	if((Rslt = (int32_t)AddASBin(SrcID,RefID,CurChromID, m_ChromSizes[CurChromID - 1], BinStartLoci, BinSize, ExactScore,PartialScore)) < 1)
+	if((ASBinIdx = AddASBin(SrcID,RefID,CurChromID, m_ChromSizes[CurChromID - 1], BinStartLoci, BinSize, ExactScore,PartialScore)) < 1)
 		{
-		gDiagnostics.DiagOut(eDLFatal, gszProcName, "GroupAlleleScores: Internal errors processing successfully parsed allele scored bin whilst at line %d in file '%s'", PartialScore, ExactScore, CurLineNumber, pszInFile);
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "GroupAlleleScores: Internal errors processing successfully parsed allele scored bin whilst at line %zd in file '%s'", PartialScore, ExactScore, CurLineNumber, pszInFile);
 		Reset();
-		return(Rslt);
+		return((int32_t)ASBinIdx);
 		}
 	}
 delete m_pAlleleScoresCSVFile;
 m_pAlleleScoresCSVFile = nullptr;
 
 
-	// sorting by ChromID.BinLoci.SrcID ascending, then ScorePartial decending, then RefID ascending
+	// sorting by ChromID.BinLoci.SrcID ascending, then ScorePartial descending, then RefID ascending
 if (m_UsedASBins > 1)
 	{
 	m_mtqsort.SetMaxThreads(m_NumThreads);
@@ -10724,7 +10726,7 @@ int32_t ExpNxtBinLoci;
 int32_t CurBinSize;
 int32_t CurChromSize;
 int32_t NumBinsAtLoci;
-int32_t BinIdx;
+int64_t BinIdx;
 int32_t ExpBinsAtLoci = m_NumReadsetTypes[0] * m_NumReadsetTypes[1];
 int32_t AnError = 0;
 CurChromID = 0;

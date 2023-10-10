@@ -101,4 +101,4 @@ Release 1.96.0 - Automake configuration files updated, GCC 'ngskit4b' generated 
 Release 1.97.1 - Callhaplotypes now has processing mode for identifying KMers wuich are candidates for primer targeting
 Release 1.97.4 - Callhaplotypes now has processing mode for identifying KMers wuich are candidates for primer targeting plus checking for genomewide uniqueness of these targets
 Release 1.98.0 - Callhaplotypes KMer processing bug fixes
-
+Release 1.98.1 - Callhaplotypes haplotype scoring bin idexing overflow bug fixes
