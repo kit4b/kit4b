@@ -46,7 +46,7 @@ int CallHaplotypes(eModeCSH PMode,			// processing mode 0: report imputation hap
 			double MinDGTFmeasure,			// only accepting DGT loci with at least this F-measure score
 			int32_t KMerSize,				// use this KMer sized sequences when identifying group segregation hammings
 			int32_t MinKMerHammings,		// must be at least this hamming separating any two groups
-			bool bKMerCoverage,				// if true then all sites in KMer must have coverage
+			int32_t KMerNoneCoverage,				// if > 0 then allow upto this number of bp within a KMer to have no coverage, maximum is 50% of KMerSize
 			int32_t FndrTrim5,				// trim this many aligned PBAs from 5' end of founder aligned segments - reduces false alleles due to sequencing errors
 			int32_t FndrTrim3,				// trim this many aligned PBAs from 3' end of founder aligned segments - reduces false alleles due to sequencing errors
 			int32_t ProgTrim5,				// trim this many aligned PBAs from 5' end of progeny aligned segments - reduces false alleles due to sequencing errors
@@ -118,7 +118,7 @@ double SparseRepProp;				// if highest frequency (consensus) allele is 0x00 (no 
 									// being as being the consensus. Objective to obtain an imputed allele in regions of sparse haplotype coverage
 int32_t KMerSize;					// use this KMer sized sequences when identifying group segregation hammings
 int32_t MinKMerHammings;			// must be at least this hamming separating any two groups
-bool bKMerCoverage;				// if true then all sites in KMer must have coverage
+int32_t KMerNoneCoverage;				// if > 0 then allow upto this number of bp within a KMer to have no coverage, maximum is 50% of KMerSize
 int NumIncludeChroms;
 char *pszIncludeChroms[cMaxIncludeChroms];
 int NumExcludeChroms;
@@ -171,7 +171,7 @@ struct arg_int* maxcentclustdist = arg_int0("D", "maxcentclustdist", "<int>", "h
 
 struct arg_int* kmersize = arg_int0("k", "kmersize", "<int>", "KMers - bp size used to check for group hammings in mode 10 (default 25)");
 struct arg_int* minkmerhamming = arg_int0("K", "minkmerhamming", "<int>", "KMers - hammings between any two groups must be at least this in mode 10 (default 2)");
-struct arg_lit* kmercoverage = arg_lit0("W", "kmercoverage", "KMers - allows KMers to include sites without coverage in mode 10 (default is for all KMer sites must have coverage)");
+struct arg_int* kmernonecoverage = arg_int0("U", "KMerNoneCoverage", "<int>", "KMers - allows KMers to include this number of sites without coverage in mode 10 (default is all KMer sites must have coverage)");
 
 struct arg_str  *ExcludeChroms = arg_strn("Z","chromexclude",	"<string>",0,cMaxExcludeChroms,"high priority - regular expressions defining chromosomes to exclude");
 struct arg_str  *IncludeChroms = arg_strn("z","chromeinclude",	"<string>",0,cMaxIncludeChroms,"low priority - regular expressions defining chromosomes to include");
@@ -188,7 +188,7 @@ struct arg_int *threads = arg_int0("T","threads","<int>","number of processing t
 struct arg_end *end = arg_end (200);
 
 void *argtable[] = { help,version,FileLogLevel,LogFile,
-					pmode,exprid,rowid,limitprimarypbas,kmersize,minkmerhamming,kmercoverage,maxreportgrpDGTs,minDGTgrpmembers,minDGTgrpfmeasure,minDGTgrpprptotsamples,minsparsegrpmbrs,minsparseprop,
+					pmode,exprid,rowid,limitprimarypbas,kmersize,minkmerhamming,kmernonecoverage,maxreportgrpDGTs,minDGTgrpmembers,minDGTgrpfmeasure,minDGTgrpprptotsamples,minsparsegrpmbrs,minsparseprop,
 					grphapbinsize,gpphases,mincentclustdist,maxcentclustdist,affinegaplen,maxclustgrps,fndrtrim5,fndrtrim3,progtrim5,progtrim3,wwrlproxwindow,outliersproxwindow,
 					maskbpafile,chromfile,IncludeChroms,ExcludeChroms,progenyfiles,founderfiles, allelescorefile, outfile,threads,end };
 
@@ -263,7 +263,7 @@ if (!argerrors)
 		MinDGTFmeasure = 0.0;
 		MinKMerHammings = cDfltKMerHammings;
 		KMerSize = cDfltKMerSize;
-		bKMerCoverage = cDfltbKMerCoverage;
+		KMerNoneCoverage = 0;
 
 		PMode = pmode->count ? (eModeCSH)pmode->ival[0] : eMCSHDefault;
 		if(PMode < eMCSHDefault || PMode >= eMCSHPlaceHolder)
@@ -297,7 +297,13 @@ if (!argerrors)
 				if (MinKMerHammings > 5)
 					MinKMerHammings = 5;
 
-			bKMerCoverage = kmercoverage->count ? false : true;
+			
+			KMerNoneCoverage = kmernonecoverage->count ? kmernonecoverage->ival[0] : 0;
+			if(KMerNoneCoverage < 0)
+				KMerNoneCoverage = 0;
+			else
+				if(KMerNoneCoverage > KMerSize/2)
+					KMerNoneCoverage = KMerSize/2;
 
 			MinDGTGrpMembers = minDGTgrpmembers->count ? minDGTgrpmembers->ival[0] : cDfltMinDGTGrpMembers;
 			if (MinDGTGrpMembers < 1)
@@ -808,7 +814,7 @@ if (!argerrors)
 							gDiagnostics.DiagOutMsgOnly(eDLInfo, "Minimum haplotype group members: %d", MinDGTGrpMembers);
 							gDiagnostics.DiagOutMsgOnly(eDLInfo, "KMer size: %dbp", KMerSize);
 							gDiagnostics.DiagOutMsgOnly(eDLInfo, "Minimum hammings separating KMer groups: %d", MinKMerHammings);
-							gDiagnostics.DiagOutMsgOnly(eDLInfo, "KMers must contain all bases with coverage: %s", bKMerCoverage ? "Yes" : "No");
+							gDiagnostics.DiagOutMsgOnly(eDLInfo, "KMers can contain at most this many bp with no coverage: %d", KMerNoneCoverage);
 							}
 					gDiagnostics.DiagOutMsgOnly(eDLInfo, "Loading previously generated haplotype groupings from : '%s'", szMaskBPAFile);
 					}
@@ -858,7 +864,7 @@ if (!argerrors)
 					MinDGTFmeasure,           // only accepting DGT loci with at least this F-measure score
 					KMerSize,					// use this KMer sized sequences when identifying group segregation hammings
 					MinKMerHammings,			// must be at least this hamming separating any two groups
-					bKMerCoverage,				// if true then all sites in KMer must have coverage
+					KMerNoneCoverage,				// if > 0 then allow upto this number of bp within a KMer to have no coverage, maximum is 50% of KMerSize
 					FndrTrim5,			// trim this many aligned PBAs from 5' end of founder aligned segments - reduces false alleles due to sequencing errors
 					FndrTrim3,			// trim this many aligned PBAs from 3' end of founder aligned segments - reduces false alleles due to sequencing errors
 					ProgTrim5,			// trim this many aligned PBAs from 5' end of progeny aligned segments - reduces false alleles due to sequencing errors
@@ -911,7 +917,7 @@ int CallHaplotypes(eModeCSH PMode,	// processing mode 0: report imputation haplo
 			double MinDGTFmeasure,           // only accepting DGT loci with at least this F-measure score
 			int32_t KMerSize,					// use this KMer sized sequences when identifying group segregation hammings
 			int32_t MinKMerHammings,			// must be at least this hamming separating any two groups
-			bool bKMerCoverage,				// if true then all sites in KMer must have coverage
+			int32_t KMerNoneCoverage,				// if > 0 then allow upto this number of bp within a KMer to have no coverage, maximum is 50% of KMerSize
 			int32_t FndrTrim5,			// trim this many aligned PBAs from 5' end of founder aligned segments - reduces false alleles due to sequencing errors
 			int32_t FndrTrim3,			// trim this many aligned PBAs from 3' end of founder aligned segments - reduces false alleles due to sequencing errors
 			int32_t ProgTrim5,			// trim this many aligned PBAs from 5' end of progeny aligned segments - reduces false alleles due to sequencing errors
@@ -941,7 +947,7 @@ if((pCallHaplotypes = new CCallHaplotypes) == nullptr)
 	return(eBSFerrObj);
 	}
 Rslt = pCallHaplotypes->Process(PMode,ExprID,SeedRowID,LimitPrimaryPBAs, AffineGapLen,GrpHapBinSize,NumHapGrpPhases,MinCentClustDist,MaxCentClustDist,MaxClustGrps, SparseRepPropGrpMbrs, SparseRepProp,
-				MaxReportGrpDGTs,MinDGTGrpMembers,MinDGTGrpPropTotSamples,MinDGTFmeasure, KMerSize, MinKMerHammings,bKMerCoverage,
+				MaxReportGrpDGTs,MinDGTGrpMembers,MinDGTGrpPropTotSamples,MinDGTFmeasure, KMerSize, MinKMerHammings,KMerNoneCoverage,
 				FndrTrim5, FndrTrim3, ProgTrim5, ProgTrim3, WWRLProxWindow,OutliersProxWindow,
 				pszMaskBPAFile,pszChromFile,pszAlleleScoreFile,NumFounderInputFiles,
 				pszFounderInputFiles,NumProgenyInputFiles,pszProgenyInputFiles,pszOutFile,NumIncludeChroms,ppszIncludeChroms,NumExcludeChroms,ppszExcludeChroms,NumThreads);
@@ -1563,7 +1569,7 @@ CCallHaplotypes::Process(eModeCSH PMode,	// processing mode 0: report imputation
 			double MinDGTFmeasure,           // only accepting DGT loci with at least this F-measure score
 			int32_t KMerSize,					// use this KMer sized sequences when identifying group segregation hammings
 			int32_t MinKMerHammings,			// must be at least this hamming separating any two groups
-			bool bKMerCoverage,					// if true then must be coverage at all KMer sites
+			int32_t KMerNoneCoverage,				// if > 0 then allow upto this number of bp within a KMer to have no coverage, maximum is 50% of KMerSize
 			int32_t FndrTrim5,				// trim this many aligned PBAs from 5' end of founder aligned segments - reduces false alleles due to sequencing errors
 			int32_t FndrTrim3,				// trim this many aligned PBAs from 3' end of founder aligned segments - reduces false alleles due to sequencing errors
 			int32_t ProgTrim5,				// trim this many aligned PBAs from 5' end of progeny aligned segments - reduces false alleles due to sequencing errors
@@ -1705,7 +1711,7 @@ if(PMode == eMCSHDGTHapsGrps)
 
 if (PMode == eMCSHKMerGrps)
 {
-	Rslt = GenKMerGrpHammings(KMerSize, MinKMerHammings, bKMerCoverage, pszMaskBPAFile, NumFounderInputFiles, pszFounderInputFiles, pszOutFile);
+	Rslt = GenKMerGrpHammings(KMerSize, MinKMerHammings, KMerNoneCoverage, pszMaskBPAFile, NumFounderInputFiles, pszFounderInputFiles, pszOutFile);
 	Reset();
 	return(Rslt);
 }
@@ -4009,7 +4015,7 @@ CCallHaplotypes::AlignSelfPBAsKMerThread(tsCHWorkerSelfScoreInstance* pPar)
 int
 CCallHaplotypes::GenKMerGrpHammings(int32_t KMerSize,		// use this KMer sized sequences when identifying group segregation hammings
 	int32_t MinKMerHammings,			// must be at least this hamming between any two group members
-	bool bKMerCoverage,					// if true then must be coverage at all KMer sites
+	int32_t KMerNoneCoverage,				// if > 0 then allow upto this number of bp within a KMer to have no coverage, maximum is 50% of KMerSize
 	char* pszHapGrpFile,             // input, previously generated by 'callhaplotypes', haplotype group file (CSV format)
 	int32_t NumRefPBAs,				// number of reference PBAs to be processed
 	char* pszFounderInputFiles[],	// names of input founder PBA files (wildcards allowed)
@@ -4190,7 +4196,7 @@ for (ChromID = 1; ChromID <= m_NumChromNames; ChromID++)
 							ChromSize,		  // chromosome is this size
 							KMerSize,			// use this KMer sized sequences when identifying group segregation hammings
 							MinKMerHammings,	// must be at least this hammings between any two group members
-							bKMerCoverage,		// true if all sites in KMers must have coverage
+							KMerNoneCoverage,		// true if all sites in KMers must have coverage
 							m_NumFounders,		// number of founders to be processed 1st PBA at *pPBAs[0]
 							ppPBAs)) < 0) // ppPBAs[] pts to chromosome PBAs, for each of the chromosome founder PBAs
 			{
@@ -4283,6 +4289,7 @@ for (ChromID = 1; ChromID <= m_NumChromNames; ChromID++)
 	uint32_t CurGrpMsk;
 	uint32_t GrpsKMerMsk;
 	uint32_t NumGrpMembers;
+	uint32_t NumGrpMismatches;
 	uint8_t* pSeq;
 	uint32_t *pNumOffTargets;
 	uint32_t NumOffTargets;
@@ -4308,9 +4315,13 @@ for (ChromID = 1; ChromID <= m_NumChromNames; ChromID++)
 				{
 				NumGrpMembers = *(uint32_t*)pSeq;
 				pSeq += sizeof(uint32_t);
+				NumGrpMismatches = *(uint32_t*)pSeq;
+				pSeq += sizeof(uint32_t);
 				pNumOffTargets = (uint32_t*)pSeq;
 				pSeq += sizeof(int32_t);
 				}
+			else
+				break;
 			
 			uint32_t HitChromID;
 			uint32_t HitSeqID;
@@ -4356,7 +4367,7 @@ if (m_hOutFile == -1)
 		m_AllocOutBuff = cOutBuffSize;
 		}
 	m_OutBuffIdx = 0;
-	sprintf(szOutFile, "%s.Kmers.K%dbp_H%d_%s.bed", pszRsltsFileBaseName, KMerSize, MinKMerHammings,bKMerCoverage ? "C" : "NC");
+	sprintf(szOutFile, "%s.Kmers.K%dbp_H%d_U%d.bed", pszRsltsFileBaseName, KMerSize, MinKMerHammings,KMerNoneCoverage);
 	gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenKMerGrpHammings: Reporting KMer grouping loci to file '%s'", szOutFile);
 #ifdef _WIN32
 	m_hOutFile = open(szOutFile, (O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC), (_S_IREAD | _S_IWRITE));
@@ -4446,7 +4457,7 @@ if (m_hOutFile == -1)
 		m_AllocOutBuff = cOutBuffSize;
 	}
 	m_OutBuffIdx = 0;
-	sprintf(szOutFile, "%s.UniqueKmers.K%dbp_H%d_%s.bed", pszRsltsFileBaseName, KMerSize, MinKMerHammings, bKMerCoverage ? "C" : "NC");
+	sprintf(szOutFile, "%s.UniqueKmers.K%dbp_H%d_U%d.bed", pszRsltsFileBaseName, KMerSize, MinKMerHammings, KMerNoneCoverage);
 	gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenKMerGrpHammings: Reporting KMer grouping loci to file '%s'", szOutFile);
 #ifdef _WIN32
 	m_hOutFile = open(szOutFile, (O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC), (_S_IREAD | _S_IWRITE));
@@ -4537,7 +4548,7 @@ if (m_hOutFile == -1)
 		m_AllocOutBuff = cOutBuffSize;
 		}
 	m_OutBuffIdx = 0;
-	sprintf(szOutFile, "%s.Kmers.K%dbp_H%d_%s.csv", pszRsltsFileBaseName, KMerSize, MinKMerHammings, bKMerCoverage ? "C" : "NC");
+	sprintf(szOutFile, "%s.Kmers.K%dbp_H%d_U%d.csv", pszRsltsFileBaseName, KMerSize, MinKMerHammings, KMerNoneCoverage);
 	gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenKMerGrpHammings: Reporting KMer grouping loci to file '%s'", szOutFile);
 #ifdef _WIN32
 	m_hOutFile = open(szOutFile, (O_WRONLY | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC), (_S_IREAD | _S_IWRITE));
@@ -4556,7 +4567,7 @@ if (m_hOutFile == -1)
 		Reset();
 		return(eBSFerrCreateFile);
 		}
-	m_OutBuffIdx=sprintf((char *)m_pszOutBuffer,"\"RowID\",\"Chrom\",\"StartLoci\",\"EndLoci\",\"KMerSize\",\"NumGrps\",\"MinHammingDist\",\"MaxHammingDist\",\"CurGrp\",\"NumGrpMembers\",\"NumNCs\",\"NumBiallelics\",\"NumIndeterminates\",\"TotNumOffTargets\",\"GrpNumOffTargets\",\"DiplotypeKMerSeq\"\n");
+	m_OutBuffIdx=sprintf((char *)m_pszOutBuffer,"\"RowID\",\"Chrom\",\"StartLoci\",\"EndLoci\",\"KMerSize\",\"NumGrps\",\"MinHammingDist\",\"MaxHammingDist\",\"CurGrp\",\"NumGrpMembers\",\"GrpErrRate\",\"NumNCs\",\"NumBiallelics\",\"NumIndeterminates\",\"TotNumOffTargets\",\"GrpNumOffTargets\",\"DiplotypeKMerSeq\"\n");
 	}
 
 if (m_hOutFile != -1 && m_UsedKMerLoci)
@@ -4594,6 +4605,8 @@ if (m_hOutFile != -1 && m_UsedKMerLoci)
 				int32_t NumDiplotype = 0;
 				int32_t NumIndeterminate = 0;
 				uint32_t NumGrpMembers = *(uint32_t *)pSeq;
+				pSeq += sizeof(uint32_t);
+				uint32_t NumGrpErrs = *(uint32_t*)pSeq;
 				pSeq += sizeof(uint32_t);
 				uint32_t NumOffTarget = *(uint32_t *)pSeq;
 				pSeq += sizeof(uint32_t);
@@ -4670,7 +4683,10 @@ if (m_hOutFile != -1 && m_UsedKMerLoci)
 					}
 				*pszBase = '\0';
 				pSeq += pKMerLoci->KMerSize;
-				m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], "%d,\"%s\",%d,%u,%d,%d,%d,%d,%d,%d,%d,%d,%d,%u,%u,\"%s\"\n", m_CurRowID++,pszChrom, pKMerLoci->CurLoci, pKMerLoci->CurLoci + pKMerLoci->KMerSize - 1, pKMerLoci->KMerSize,pKMerLoci->NumHammingGrps, pKMerLoci->MinReffRelHammingDist, pKMerLoci->MaxReffRelHammingDist, CurGrp, NumGrpMembers, NumNC, NumDiplotype, NumIndeterminate, pKMerLoci->TotNumOffTargets, NumOffTarget,szSeq);
+				m_OutBuffIdx += sprintf((char*)&m_pszOutBuffer[m_OutBuffIdx], "%d,\"%s\",%d,%u,%d,%d,%d,%d,%d,%d,%.6f,%d,%d,%d,%u,%u,\"%s\"\n", 
+														m_CurRowID++,pszChrom, pKMerLoci->CurLoci, pKMerLoci->CurLoci + pKMerLoci->KMerSize - 1, pKMerLoci->KMerSize,pKMerLoci->NumHammingGrps, pKMerLoci->MinReffRelHammingDist, pKMerLoci->MaxReffRelHammingDist, CurGrp, NumGrpMembers, 
+														NumGrpErrs/(double)(NumGrpMembers * pKMerLoci->KMerSize),
+														NumNC, NumDiplotype, NumIndeterminate, pKMerLoci->TotNumOffTargets, NumOffTarget,szSeq);
 	
 				if (m_OutBuffIdx + 10000 > m_AllocOutBuff)
 					{
@@ -5657,8 +5673,9 @@ return(m_UsedDGTLoci);
 
 int64_t									// returned index+1 into m_pGrpKMerSeqs to allocated and copied KMerSeq of size KMerSize, returns 0 if errors
 CCallHaplotypes::AddKMerSeq(int32_t NumGrpMembers, // group for which this KMer sequence is representative has this many members
-							int32_t KMerSize,	//  KMer sequence to copy is this size
-							uint8_t *pKMerSeq)	// copy from here
+							int32_t NumMismatches,	// over all group members, there were this many mismatches with the consensus KMer sequence
+							int32_t KMerSize,	//  consensus KMer sequence to copy is this size
+							uint8_t *pKMerSeq)	// copy consensus from here
 {
 size_t KMerCpyOfs;
 uint8_t* pSeq;
@@ -5690,7 +5707,7 @@ if (m_pGrpKMerSeqs == nullptr)					// may be nullptr first time in
 	}
 else
 		// needing to allocate more memory?
-	if ((m_UsedKMerSeqMem + KMerSize + (2*sizeof(uint32_t))) >= m_AllocdKMerSeqMem)
+	if ((m_UsedKMerSeqMem + KMerSize + (3*sizeof(int32_t))) >= m_AllocdKMerSeqMem)
 		{
 		memreq = m_AllocdKMerSeqMem + cReallocKMerSeqs;
 #ifdef _WIN32
@@ -5710,12 +5727,14 @@ else
 		m_AllocdKMerSeqMem = memreq;
 		}
 KMerCpyOfs = m_UsedKMerSeqMem;
-m_UsedKMerSeqMem += KMerSize + (2*sizeof(uint32_t));
+m_UsedKMerSeqMem += KMerSize + (3*sizeof(int32_t));
 pSeq = &m_pGrpKMerSeqs[KMerCpyOfs];
 *(int32_t *)pSeq = NumGrpMembers;
-pSeq+= sizeof(uint32_t);
+pSeq+= sizeof(int32_t);
+*(int32_t*)pSeq = NumMismatches;
+pSeq += sizeof(int32_t);
 *(int32_t*)pSeq = 0;
-pSeq += sizeof(uint32_t);
+pSeq += sizeof(int32_t);
 memcpy(pSeq, pKMerSeq, KMerSize);
 ReleaseFastSerialise();
 return(KMerCpyOfs+1);
@@ -8536,12 +8555,58 @@ gDiagnostics.DiagOut(eDLInfo, gszProcName, "Completed reporting haplotype groupi
 return(eBSFSuccess);
 }
 
+int32_t				// < 0 error, otherwise the total number of non-consensus PBA over all pPBAs: if 0 then all PBAs of ConsensusLen were identical to each other
+CCallHaplotypes::GenGrpConsensus(int32_t ConsensusLen,		// PBAs consensus length
+			int32_t NumPBAs,					// number of PBAs to be processed, 1st PBA at *pPBAs[0]
+			uint8_t* pPBAs[],					// pPBAs[] pts to PBAs over which consensus is be generated
+			uint8_t* pConsensusPBAs)			// preallocated (min ConsensusLen) by caller to hold consensus for pPBAs[]
+{
+int32_t CurOfs;
+int32_t PBAsIdx;
+uint8_t *pPBA;
+uint32_t AlleleFreq[256];
+uint8_t MaxFreqAllele;
+int32_t NumNonConsensus;
+
+if(ConsensusLen < 1 || NumPBAs < 1 || pConsensusPBAs == nullptr)
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenGrpConsensus: internal parameter error");
+	return(eBSFerrParams);
+	}
+
+NumNonConsensus = 0;
+for (CurOfs = 0; CurOfs < ConsensusLen; CurOfs++, pConsensusPBAs++)
+	{
+	memset(AlleleFreq, 0, sizeof(AlleleFreq));
+	MaxFreqAllele = 0;
+	for (PBAsIdx = 0; PBAsIdx < NumPBAs; PBAsIdx++)
+		{
+		if ((pPBA = pPBAs[PBAsIdx]) == nullptr)
+			continue;
+		pPBA += CurOfs;
+		AlleleFreq[*pPBA]++;
+		if (AlleleFreq[*pPBA] > AlleleFreq[MaxFreqAllele])
+			MaxFreqAllele = *pPBA;
+		}
+	*pConsensusPBAs = MaxFreqAllele;
+	for (PBAsIdx = 0; PBAsIdx < NumPBAs; PBAsIdx++)
+		{
+		if((pPBA = pPBAs[PBAsIdx])==nullptr)
+			continue;
+		pPBA += CurOfs;
+		if (*pPBA != MaxFreqAllele)
+			NumNonConsensus++;
+		}
+	}
+return(NumNonConsensus);
+}
+
 int32_t				// error or success (>=0) code 
 CCallHaplotypes::GenBinKMers(int32_t ChromID,          // requiring bin group segregating KMers over this chrom
 	int32_t ChromSize,			// chromosome is this size
 	int32_t KMerSize,			// use this KMer sized sequences when identifying group segregation homozygosity scores
 	int32_t MinKMerHammings,	// must be at least this hammings between any two group KMer sequences of KMerSize base pair
-	bool bKMerCoverage,			// true if all sites in KMer must have coverage
+	int32_t KMerNoneCoverage,				// if > 0 then allow upto this number of bp within a KMer to have no coverage, maximum is 50% of KMerSize
 	int32_t NumFndrs,			// number of founders to be processed 1st PBA at *pPBAs[0]
 	uint8_t* pFounderPBAs[])	// pPBAs[] pts to chromosome PBAs, for each of the chromosome founder PBAs
 {
@@ -8555,16 +8620,17 @@ uint32_t TotGrpKMerSizeLoci;
 tsHGBinSpec* pHGBinSpec;
 tsHaplotypeGroup* pHaplotypeGroup;
 int32_t NumNoiseGrps;                  // number groups chracterised as noise groups
-int32_t NumGrpMembers[6];              // number of members in first 5 groups plus a pseudo group to hold sum of group counts in any groups after the 5th
+int32_t NumGrpMembers[cMaxClustGrps];              // number of members in first 5 groups plus a pseudo group to hold sum of group counts in any groups after the 5th
 int32_t MaxGrpMembers;                 // maximum number of members in first 5 groups
 int32_t GrpMembers;                    // number of group members in current group
 int32_t MaxMembersGrpIdx;              // index of a group having the maximum number of members - could be multiple groups, this is the index of the first group 
 int32_t NumDGTGrps;                    // DGTs are called over this number of groups which is limited to the 1st 5 groupsuint32_t NumNoiseGrps;                  // number of groups likely contain background noise alleles - having less than m_MinDGTGrpMembers or m_MinDGTGrpPropTotSamples
-uint8_t SampleAllele;                   // raw sample PBA allele combination
-uint8_t* pSampleLoci;
+
+uint32_t SampleIdx;
+uint8_t* ppConsensusPBAs[cMaxClustGrps];
 char* pszChrom;
 
-
+memset(ppConsensusPBAs,0,sizeof(ppConsensusPBAs));
 if (m_UsedHGBinSpecs == 0)
 	{
 	gDiagnostics.DiagOut(eDLWarn, gszProcName, "GenBinKMers: No haplotype group bins to report on!"); // not a failure, but still warn user
@@ -8615,6 +8681,7 @@ for (BinIdx = 0; BinIdx < m_UsedHGBinSpecs; BinIdx++, pHGBinSpec++)
 		// determine number of groups to be characterised as being noise, and if less than 2 groups with meaningful allele counts remaining then skip current bin
 	if (MaxGrpMembers < m_MinDGTGrpMembers)
 		continue;
+
 	NumDGTGrps = min(5, pHaplotypeGroup->ActualHaplotypeGroups); // could be more than 5 groups but only calling KMers on the first 5 groups
 	NumNoiseGrps = 0;
 	for (GrpIdx = 0; GrpIdx < NumDGTGrps; GrpIdx++)
@@ -8623,25 +8690,82 @@ for (BinIdx = 0; BinIdx < m_UsedHGBinSpecs; BinIdx++, pHGBinSpec++)
 	if (NumDGTGrps - NumNoiseGrps < 2) // has to be at least two groups remaining after noise groups have been counted
 		continue;
 
-		// 2 or more non-noise group sample counts now known
-		// members of each individual group must have consensus within the Kmer sequence before processing for hammings between groups
-	uint8_t *pGrpRepPBAs[cMaxClustGrps];
-	uint8_t GrpSampleAllele;
-	int32_t LociDiff = 1;
+
+
+	// generate consensus for members of each group over full length of bin
+	int32_t NumNonConsensus[cMaxClustGrps];
+	memset(NumNonConsensus,0,sizeof(NumNonConsensus));
+	for (GrpIdx = 0; GrpIdx < pHaplotypeGroup->ActualHaplotypeGroups; GrpIdx++)
+		{
+		if (ppConsensusPBAs[GrpIdx] != nullptr)
+			{
+			delete[]ppConsensusPBAs[GrpIdx];
+			ppConsensusPBAs[GrpIdx] = nullptr;
+			}
+		if (NumGrpMembers[GrpIdx] < m_MinDGTGrpMembers)
+			continue;
+		ppConsensusPBAs[GrpIdx] = new uint8_t [pHGBinSpec->NumLoci];
+		uint8_t **ppPBAs = new uint8_t *[NumGrpMembers[GrpIdx]];
+		memset(ppPBAs,0,sizeof(uint8_t*)* NumGrpMembers[GrpIdx]);
+		int32_t ConsensusIdx = 0;
+		for (SampleIdx = 0; SampleIdx < (uint32_t)pHaplotypeGroup->NumFndrs; SampleIdx++)
+			{
+			if (!BitsVectTest(SampleIdx, pHaplotypeGroup->HaplotypeGroup[GrpIdx])) // if sample not member of current group then onto next sample
+				continue;
+			
+			ppPBAs[ConsensusIdx++] = pFounderPBAs[SampleIdx] + pHGBinSpec->StartLoci;
+			}
+		ppConsensusPBAs[GrpIdx] = new uint8_t [pHGBinSpec->NumLoci];
+		NumNonConsensus[GrpIdx] = GenGrpConsensus(pHGBinSpec->NumLoci, NumGrpMembers[GrpIdx], ppPBAs, ppConsensusPBAs[GrpIdx]);
+		delete[]ppPBAs;
+		}
+
+	// have the consensus for each group over the full length bin, iterate over the bin looking for KMers which could segregate between bins
+	int32_t KMerLoci;
+	int32_t KMerEndLoci;										// KMerEndLoci is inclusive
 	int32_t KMerSizeLociGrpsIdentical = 0;
 	int32_t KMerSizeLociGrpsHammingsAccepted = 0;
-	EndLoci = pHGBinSpec->StartLoci + pHGBinSpec->NumLoci;
-	for (CurLoci = pHGBinSpec->StartLoci; CurLoci < EndLoci; CurLoci+=LociDiff)
+	int32_t LociDiff = 1;
+	uint8_t* pGrpRepPBAs[cMaxClustGrps];
+
+	EndLoci = pHGBinSpec->StartLoci + pHGBinSpec->NumLoci - 1;	// EndLoci is inclusive
+	for (CurLoci = pHGBinSpec->StartLoci; CurLoci <= EndLoci; CurLoci += LociDiff)
 		{
-		int32_t KMerLoci;
-		int32_t KMerEndLoci = min(CurLoci + KMerSize, EndLoci);
-		if((KMerEndLoci - CurLoci) < KMerSize)
+		if((EndLoci - CurLoci + 1) < KMerSize)
 			break;
-		for(KMerLoci = CurLoci; KMerLoci < KMerEndLoci; KMerLoci++)
+
+		KMerEndLoci = CurLoci + KMerSize - 1;
+
+		for (GrpIdx = 0; GrpIdx < pHaplotypeGroup->ActualHaplotypeGroups; GrpIdx++)
+			{
+			if (NumGrpMembers[GrpIdx] < m_MinDGTGrpMembers)
+				continue;
+			pGrpRepPBAs[GrpIdx] = ppConsensusPBAs[GrpIdx] + (CurLoci - pHGBinSpec->StartLoci);
+			}
+		KMerLoci = KMerEndLoci;
+
+#ifdef USETHISNONCONSENSUS
+		// 2 or more non-noise group sample counts now known
+		// members of each individual group must have consensus within the Kmer sequence before processing for hammings between groups
+	int NumGrpRepNoCoverage[cMaxClustGrps];
+	uint8_t GrpSampleAllele;
+	LociDiff = 1;
+	KMerSizeLociGrpsIdentical = 0;
+	KMerSizeLociGrpsHammingsAccepted = 0;
+	EndLoci = pHGBinSpec->StartLoci + pHGBinSpec->NumLoci - 1;	// EndLoci is inclusive
+	for (CurLoci = pHGBinSpec->StartLoci; CurLoci <= EndLoci; CurLoci+=LociDiff)
+		{
+		if ((EndLoci - CurLoci + 1) < KMerSize)
+			break;
+		KMerEndLoci = CurLoci + KMerSize - 1;
+
+		if(KMerNoneCoverage > 0)
+			memset(NumGrpRepNoCoverage,0,sizeof(NumGrpRepNoCoverage));
+		for(KMerLoci = CurLoci; KMerLoci <= KMerEndLoci; KMerLoci++)
 			{
 			for (GrpIdx = 0; GrpIdx < pHaplotypeGroup->ActualHaplotypeGroups; GrpIdx++)		// is there agreement intra group - consensus?
 				{
-				uint32_t SampleIdx;
+				
 				if(NumGrpMembers[GrpIdx] < m_MinDGTGrpMembers)
 					continue;
 				GrpSampleAllele = 0xff;
@@ -8651,10 +8775,16 @@ for (BinIdx = 0; BinIdx < m_UsedHGBinSpecs; BinIdx++, pHGBinSpec++)
 						continue;
 					pSampleLoci = pFounderPBAs[SampleIdx] + KMerLoci; // alleles for current sample at CurLoci
 					SampleAllele = *pSampleLoci;
-					if(bKMerCoverage && SampleAllele == 0)
+					if(KMerNoneCoverage == 0 && SampleAllele == 0)
 						break;
 					if(GrpSampleAllele == 0xff)		// true if 1st sample in group, 1st sample to become representative
 						{
+						if(KMerNoneCoverage > 0 && SampleAllele == 0)
+							{
+							NumGrpRepNoCoverage[GrpIdx] += 1;
+							if (NumGrpRepNoCoverage[GrpIdx] > KMerNoneCoverage)
+								break;
+							}
 						GrpSampleAllele = SampleAllele;
 						if(KMerLoci == CurLoci)
 							pGrpRepPBAs[GrpIdx] = pSampleLoci;
@@ -8678,15 +8808,21 @@ for (BinIdx = 0; BinIdx < m_UsedHGBinSpecs; BinIdx++, pHGBinSpec++)
 
 		// if individual group members have consensus then generate the intergroup hammings between the group consensus sequences
 		if(GrpIdx == pHaplotypeGroup->ActualHaplotypeGroups && KMerLoci == KMerEndLoci)
+#endif
+			// if individual group members have consensus then generate the intergroup hammings between the group consensus sequences
+		if (GrpIdx == pHaplotypeGroup->ActualHaplotypeGroups)
 			{
 			uint8_t *pGrpRefKMerSeq;
 			uint8_t* pGrpRelKMerSeq;
+			uint8_t RefPBA;
+			uint8_t RelPBA;
 			int32_t RefGrpIdx;
 			int32_t RelGrpIdx;
 			int32_t RefRelSeqIdx;
 			int32_t RefRelHammingDist;
 			int32_t MinRefRelHammingDist;
 			int32_t MaxRefRelHammingDist;
+			int32_t NumLociNoCoverage;
 			LociDiff = KMerSize;
 			KMerSizeLociGrpsIdentical++;
 				// over the KMerSize sequence, each group must be a minimum hamming away from any other group
@@ -8706,11 +8842,24 @@ for (BinIdx = 0; BinIdx < m_UsedHGBinSpecs; BinIdx++, pHGBinSpec++)
 
 						// what is the hamming distance between the ref and rel group?
 					RefRelHammingDist = 0;
+					NumLociNoCoverage = 0;
 					for(RefRelSeqIdx = 0; RefRelSeqIdx < KMerSize; RefRelSeqIdx++, pGrpRefKMerSeq++, pGrpRelKMerSeq++)
 						{
-						if(*pGrpRefKMerSeq != *pGrpRelKMerSeq)
+						RefPBA = *pGrpRefKMerSeq;
+						RelPBA = *pGrpRelKMerSeq;
+						if(RefPBA == 0x00 || RelPBA == 0x00)	// no coverage?
+							{
+							if(KMerNoneCoverage < ++NumLociNoCoverage)			// allowing loci within KMer to have no coverage?
+								{
+								RefRelHammingDist = 0;
+								LociDiff = RefRelSeqIdx + 1;
+								break;
+								}
+							}
+						if(RefPBA != RelPBA)
 							RefRelHammingDist++;
 						}
+					
 					if(RefRelHammingDist < MinKMerHammings)
 						break;
 
@@ -8743,9 +8892,13 @@ for (BinIdx = 0; BinIdx < m_UsedHGBinSpecs; BinIdx++, pHGBinSpec++)
 			if(RefGrpIdx == pHaplotypeGroup->ActualHaplotypeGroups - 1 && RelGrpIdx == pHaplotypeGroup->ActualHaplotypeGroups && RefRelHammingDist >= MinKMerHammings)
 				{
 				KMerSizeLociGrpsHammingsAccepted++;
+				int32_t KMerIdx;
+				uint8_t *pSampleLoci;
+				uint8_t *pGrpRefKMerLoci;
 				size_t CurKMerSeqOfs;
 				size_t KMerSeqOfs;
 				int NumKMersToValidate;
+				int32_t NumMismatches;
 				size_t StartKMerSegOfs;
 				uint32_t GrpsKMerMsk = 0x0000;
 				uint32_t CurGrpKMerMsk = 0x0001;
@@ -8756,7 +8909,19 @@ for (BinIdx = 0; BinIdx < m_UsedHGBinSpecs; BinIdx++, pHGBinSpec++)
 					if (NumGrpMembers[RefGrpIdx] < m_MinDGTGrpMembers)
 						continue;
 					pGrpRefKMerSeq = pGrpRepPBAs[RefGrpIdx];
-					CurKMerSeqOfs = AddKMerSeq(NumGrpMembers[RefGrpIdx],KMerSize, pGrpRefKMerSeq);
+
+					NumMismatches = 0;
+					for (SampleIdx = 0; SampleIdx < (uint32_t)pHaplotypeGroup->NumFndrs; SampleIdx++)
+						{
+						if (!BitsVectTest(SampleIdx, pHaplotypeGroup->HaplotypeGroup[RefGrpIdx])) // if sample not member of current group then onto next sample
+							continue;
+						pSampleLoci = pFounderPBAs[SampleIdx] + CurLoci;
+						pGrpRefKMerLoci = pGrpRefKMerSeq;
+						for(KMerIdx=0; KMerIdx < KMerSize; KMerIdx++, pSampleLoci++, pGrpRefKMerLoci++)
+							if(*pGrpRefKMerLoci != *pSampleLoci)
+								NumMismatches++;
+						}
+					CurKMerSeqOfs = AddKMerSeq(NumGrpMembers[RefGrpIdx],NumMismatches,KMerSize, pGrpRefKMerSeq);
 					NumKMersToValidate++;
 					if(NumKMersToValidate == 1)
 						StartKMerSegOfs = CurKMerSeqOfs;
@@ -8774,6 +8939,16 @@ for (BinIdx = 0; BinIdx < m_UsedHGBinSpecs; BinIdx++, pHGBinSpec++)
 	TotGrpKMerSizeLoci += KMerSizeLociGrpsIdentical;
 	TotKMerSizeLociGrpsHammingsAccepted += KMerSizeLociGrpsHammingsAccepted;
 	}
+
+for (GrpIdx = 0; GrpIdx < pHaplotypeGroup->ActualHaplotypeGroups; GrpIdx++)
+	{
+	if (ppConsensusPBAs[GrpIdx] != nullptr)
+		{
+		delete[]ppConsensusPBAs[GrpIdx];
+		ppConsensusPBAs[GrpIdx] = nullptr;
+		}
+	}
+
 gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenBinKMers: There are %d potential grouping KMers of size %d with %d KMers having minimum %d hamming differentials between any two groups on '%s'", TotGrpKMerSizeLoci, KMerSize, TotKMerSizeLociGrpsHammingsAccepted, MinKMerHammings, pszChrom);
 return(TotKMerSizeLociGrpsHammingsAccepted);
 }

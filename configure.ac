@@ -1,6 +1,6 @@
 PACKAGE=kit4b
-VERSION=1.98.1
-AC_INIT([kit4b],[1.98.1])
+VERSION=1.98.2
+AC_INIT([kit4b],[1.98.2])
 AC_CONFIG_SRCDIR([libkit4b/kit4bversion.h])
 AM_INIT_AUTOMAKE
 AC_CHECK_LIB(pthread,main)

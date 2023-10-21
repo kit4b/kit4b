@@ -1,4 +1,4 @@
-# kit4b 1.98.1
+# kit4b 1.98.2
 **kit4b** - the 'K-mer Informed Toolkit for Bioinformatics' - is an integrated toolkit of high performance bioinformatics processes and subprocesses targeting the challenges of next generation sequencing analytics. 
 
 ## Why YAT (Yet Another Toolkit)
