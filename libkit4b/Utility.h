@@ -23,6 +23,11 @@ class CUtility
 	int32_t m_NumExcludeREs;                // number of exclusion regular expressions compiled into m_pRegexDescrs
 	regex* m_pExcludeREs[cMaxREs];          // compiled exclusion regular expressions
 
+	int32_t m_NumSrcPBANameREs;				// number of source PBA name regular expressions compiled into m_pSrcPBANameREs
+	regex* m_pSrcPBANameREs[cMaxREs];		// compiled source PBA name regular expressions
+	int32_t m_NumRefPBANameREs;				// number of reference PBA name regular expressions compiled into m_pRefPBANameREs
+	regex* m_pRefPBANameREs[cMaxREs];		// compiled reference PBA name regular expressions
+
 public:
 	CUtility(void);
 	~CUtility(void);
@@ -53,6 +58,33 @@ public:
 	bool HasRegExprs(void);        // returns true if any compiled regular expressions available for matching against 
 	bool HasIncludeRegExprs(void); // returns true if any include compiled regular expressions available for matching against
 	bool HasExcludeRegExprs(void); // returns true if any exlude compiled regular expressions available for matching against
+
+	int               // returns eBSFSuccess if regular expression compilation was successful
+		CompilePBANamesREs(int	NumSrcPBANamesExprs,	        // number of source PBA names regular expressions to compile
+			char** ppszSrcPBANamesRegExpr,	// array of source PBA names regular expressions to be compiled
+			int	NumRefPBANamesExprs,		// number of reference PBA names regular expressions to compile
+			char** ppszRefPBANamesRegExpr);	// array of reference PBA names regular expressions to be compiled
+
+	int     // compile regular expressions ready for subsequent matching for source PBA name matching, returns eBSFSuccess if regular expression compilation was successful 
+		CompileSrcPBANameREs(int	NumRegExprs,	// number of regular expressions to compile
+			char** ppszRegExpr);							// array of regular expressions to be compiled
+
+	int     // compile regular expressions ready for subsequent matching for reference PBA name matching, returns eBSFSuccess if regular expression compilation was successful 
+		CompileRefPBANameREs(int	NumRegExprs,	// number of regular expressions to compile
+			char** ppszRegExpr);							// array of regular expressions to be compiled
+
+	bool							// returns true if name matches any PBA source name compiled RE, if none compiled then treat as a match
+		MatchSrcPBANameRxprs(char* pszName);	// name to match against any of the compiled PBA source name REs
+
+	bool							// returns true if name matches any PBA reference name compiled RE, if none compiled then treat as a match
+		MatchRefPBANameRxprs(char* pszName);	// name to match against any of the compiled PBA source name REs
+
+	bool	HasPBANameRxprs(void);        // returns true if any PBA name compiled regular expressions available for matching against
+
+	bool	HasSrcPBANameRxprs(void);     // returns true if any source PBA name compiled regular expressions available for matching against
+
+	bool	HasRefPBANameRxprs(void);        // returns true if any reference PBA name compiled regular expressions available for matching against
+
 
 	// ClassifyFileType
 // Attempt to classify the alignment file as one of CSV, BED or SAM from it's initial 8k char contents

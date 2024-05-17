@@ -1,14 +1,14 @@
 #pragma once
 #include "./commdefs.h"
 
-const int cMALGNVersion = 12;			// file header + structure version
-const int cMALGNVersionBack = 10;		// backwards compatiable to this version
-const int cMaxAlignedSpecies = 200;		// can handle upto this many species in an alignment
+const int cMALGNVersion = 13;			// file header + structure version
+const int cMALGNVersionBack = 13;		// backwards compatiable to this version
+const int cMaxAlignedSpecies = 500;		// can handle upto this many species in an alignment
 const int cMaxAlignedChroms = 0x0ffffff;  	// can handle a total of this many chromosomes or contigs
 const int cMaxSrcFiles = 100;		    	// can handle upto this many alignment source files
 const int cMaxAlignBlocks =  0x07ffffff;   	// max number of alignment blocks
 const int cAllocAlignBlockDirs =  0x0fffff;   // allocate in increments of this many alignment block directory entries
-const int cMaxAlignSeqLen =   0x03fffff;	// max length of any aligned sequence per block
+const int cMaxAlignSeqLen =   0x0ffffff;	// max length of any aligned sequence for any individual block
 const int cMaxMetaDataLen = 1024;		// max total length of any header metadata per source file
 const int cMaxParamLen = 4096;			// max total length of any parameter data per source file
 
@@ -29,7 +29,7 @@ typedef enum TAG_eMAOpen {
 #pragma pack(1)
 
 typedef struct TAG_sAlignSpecies {
-	int32_t AlignSpeciesLen;		// total size of this instance
+	int32_t AlignSpeciesLen;		// total size of this instance (includes concatenated species alignment sequence)
 	int32_t ChromID;				// chromosome identifier (species.chrom unique)
 	int32_t ChromOfs;				// start offset (0..ChromLen-1) on ChromID (if '-' strand then ChromLen-1..0) 
 	int32_t AlignXInDelLen;		// alignment length (1..n) in relative chromosome excluding InDel'-' markers
@@ -130,7 +130,7 @@ typedef struct TAG_sAlignHdr {
 	int32_t NumChroms;				// actual number of aligned chromosomes (summed over all blocks over all species)
 	int32_t NumAlignBlocks;			// actual number of alignment blocks
 	int32_t AlignIncInDelLen;		// actual longest aligned sequence (incuding InDels) in any alignment
-	int32_t AlignBlockLen;			// actual longest alignment block
+	int64_t AlignBlockLen;			// actual longest alignment block
 	tsSpeciesName SpeciesNames[cMaxAlignedSpecies];	// directory of all aligned species
 	int16_t NumSrcFiles;			// actual number of files from which alignments were sourced
 	int16_t MaxSrcFiles;			// maximum number of source alignment files supported
@@ -143,9 +143,9 @@ typedef struct TAG_sAlignHdr {
 	int8_t szTitle[cMBSFShortFileDescrLen];	// short title by which this file can be distingished from other files in dropdown lists etc
 }tsAlignHdr;
 #pragma pack()
-// best initial guestimate of an upper limit on a maximal sized block
+// Maximal sized block to be allocated
 // if an actual block is larger then error reported
-const int64_t cAlloc4Block = (10 * (sizeof(tsAlignSpecies) + cMaxAlignSeqLen)) + sizeof(tsAlignBlock);
+const int64_t cAlloc4Block = (cMaxAlignedSpecies * (sizeof(tsAlignSpecies) + cMaxAlignSeqLen)) + sizeof(tsAlignBlock);
 
 class CMAlignFile : protected CEndian,public CErrorCodes
 {
@@ -216,6 +216,9 @@ public:
 
 	int Close(bool bWrtDirHdr = true);
 	int LocateSpeciesID(char *pszSpeciesName);			// returns species identifer for specified species name
+	int32_t		// returned species identifier (1..NumSpecies)
+		LocateSpeciesID(int SpeciesIdx);	// Idx 0..NumSpecies-1
+
 	int LocateChromID(char *pszSpeciesName,char *pszChromName); //returns chromosome identifier
 	int LocateChromID(tSpeciesID SpeciesID,char *pszChromName); //returns chromosome identifier
 
@@ -351,7 +354,7 @@ public:
 					  int NumSpecies,			// number of species to return alignments for
 					  int *pSpeciesIDs,			// pts to array of species identifiers (ref species must be first)
 					  int RelOfs,	   		    // offset in pSeqBases[species][] at which to return alignment bases
-					  etSeqBase *pSeqBases[],	// pts to array of ptrs of where to return alignment bases for each species			
+					  etSeqBase *pSeqBases[],	// pts to array of ptrs of where to return alignment bases for each species
 					  etSeqBase RefUnalignedBase = eBaseUndef, // base to return if no ref species alignment
 					  etSeqBase RelUnalignedBase = eBaseInDel); // base to return if ref species aligned but no alignment onto rel species
 

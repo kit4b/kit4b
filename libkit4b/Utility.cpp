@@ -36,6 +36,11 @@ m_NumIncludeREs = 0;
 m_pIncludeREs[0] = nullptr;
 m_NumExcludeREs = 0;
 m_pExcludeREs[0] = nullptr;
+
+m_NumSrcPBANameREs = 0;
+m_pSrcPBANameREs[0] = nullptr;
+m_NumRefPBANameREs = 0;
+m_pRefPBANameREs[0] = nullptr;
 }
 
 CUtility::~CUtility(void)
@@ -47,6 +52,13 @@ for (Idx = 0; Idx < m_NumIncludeREs; Idx++)
 for (Idx = 0; Idx < m_NumExcludeREs; Idx++)
 	if (m_pExcludeREs[Idx] != nullptr)
 		delete m_pExcludeREs[Idx];
+
+for (Idx = 0; Idx < m_NumSrcPBANameREs; Idx++)
+	if (m_pSrcPBANameREs[Idx] != nullptr)
+		delete m_pSrcPBANameREs[Idx];
+for (Idx = 0; Idx < m_NumRefPBANameREs; Idx++)
+	if (m_pRefPBANameREs[Idx] != nullptr)
+		delete m_pRefPBANameREs[Idx];
 }
 
 
@@ -129,6 +141,86 @@ catch(const std::regex_error& err)
 return(eBSFSuccess);
 }
 
+int               // returns eBSFSuccess if regular expression compilation was successful
+CUtility::CompilePBANamesREs(int	NumSrcPBANamesExprs,	        // number of source PBA names regular expressions to compile
+	char** ppszSrcPBANamesRegExpr,		// array of source PBA names regular expressions to be compiled
+	int	NumRefPBANamesExprs,	        // number of reference PBA names regular expressions to compile
+	char** ppszRefPBANamesRegExpr)		// array of reference PBA names regular expressions to be compiled
+{
+	int Rslt;
+	if ((Rslt = CompileSrcPBANameREs(NumSrcPBANamesExprs, ppszSrcPBANamesRegExpr)) >= eBSFSuccess)
+		Rslt = CompileRefPBANameREs(NumRefPBANamesExprs, ppszRefPBANamesRegExpr);
+	return(Rslt);
+}
+
+int     // compile regular expressions ready for subsequent matching for source PBA name matching, returns eBSFSuccess if regular expression compilation was successful 
+CUtility::CompileSrcPBANameREs(int	NumRegExprs,	// number of regular expressions to compile
+	char** ppszRegExpr)								// array of regular expressions to be compiled
+{
+int Idx;
+int Len;
+char szRE[cMaxLenRE + 1];
+
+if (NumRegExprs == 0 || m_NumSrcPBANameREs == cMaxREs)         // silently discarding REs if already at limit
+	return(eBSFSuccess);
+
+try {
+	for (Idx = 0; Idx < NumRegExprs; Idx++)
+		{
+		if (m_NumSrcPBANameREs == cMaxREs)         // silently discarding REs if already at limit
+			return(eBSFSuccess);
+		strncpy(szRE, ppszRegExpr[Idx], cMaxLenRE);
+		szRE[cMaxLenRE] = '\0';
+		Len = (int)strlen(szRE);
+		m_pSrcPBANameREs[m_NumSrcPBANameREs] = nullptr;
+		m_pSrcPBANameREs[m_NumSrcPBANameREs] = new regex(szRE);
+		m_NumSrcPBANameREs++;
+		}
+	}
+catch (const std::regex_error& err)
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to compile source PBA name regular expression '%s' - '%s'", szRE, err.what());
+	return(eBSFerrParams);
+	}
+
+return(eBSFSuccess);
+}
+
+int     // compile regular expressions ready for subsequent matching for reference PBA name matching, returns eBSFSuccess if regular expression compilation was successful 
+CUtility::CompileRefPBANameREs(int	NumRegExprs,	// number of regular expressions to compile
+	char** ppszRegExpr)								// array of regular expressions to be compiled
+{
+int Idx;
+int Len;
+char szRE[cMaxLenRE + 1];
+
+if (NumRegExprs == 0 || m_NumRefPBANameREs == cMaxREs)         // silently discarding REs if already at limit
+	return(eBSFSuccess);
+
+
+try {
+	for (Idx = 0; Idx < NumRegExprs; Idx++)
+		{
+		if (m_NumRefPBANameREs == cMaxREs)         // silently discarding REs if already at limit
+			return(eBSFSuccess);
+		strncpy(szRE, ppszRegExpr[Idx], cMaxLenRE);
+		szRE[cMaxLenRE] = '\0';
+		Len = (int)strlen(szRE);
+		m_pRefPBANameREs[m_NumRefPBANameREs] = nullptr;
+		m_pRefPBANameREs[m_NumRefPBANameREs] = new regex(szRE);
+		m_NumRefPBANameREs++;
+		}
+	}
+catch (const std::regex_error& err)
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to compile reference PBA name regular expression '%s' - '%s'", szRE, err.what());
+	return(eBSFerrParams);
+	}
+
+return(eBSFSuccess);
+}
+
+
 
 bool							// returns true if text matches any compiled RE for inclusion or if there are no inclusion REs
 CUtility::MatchIncludeRegExpr(char *pszText)	// text to match against any of the compiled inclusion REs
@@ -202,22 +294,108 @@ if(MatchExcludeRegExpr(pszText)) // match on exclusions before trying inclusions
 return(MatchIncludeRegExpr(pszText));
 }
 
-bool 
+bool
 CUtility::HasRegExprs(void)        // returns true if any compiled regular expressions available for matching against
 {
-return((m_NumIncludeREs > 0 || m_NumExcludeREs > 0));
+	return((m_NumIncludeREs > 0 || m_NumExcludeREs > 0));
 }
 
-bool 
+bool
 CUtility::HasIncludeRegExprs(void)        // returns true if any include compiled regular expressions available for matching against
 {
-return(m_NumIncludeREs > 0);
+	return(m_NumIncludeREs > 0);
+}
+
+bool
+CUtility::HasExcludeRegExprs(void)        // returns true if any exlude compiled regular expressions available for matching against
+{
+	return(m_NumExcludeREs > 0);
+}
+
+
+bool 
+CUtility::HasPBANameRxprs(void)        // returns true if any PBA name compiled regular expressions available for matching against
+{
+return((m_NumSrcPBANameREs > 0 || m_NumRefPBANameREs > 0));
 }
 
 bool 
-CUtility::HasExcludeRegExprs(void)        // returns true if any exlude compiled regular expressions available for matching against
+CUtility::HasSrcPBANameRxprs(void)        // returns true if any source PBA name compiled regular expressions available for matching against
 {
-return(m_NumExcludeREs > 0);
+return(m_NumSrcPBANameREs > 0);
+}
+
+bool 
+CUtility::HasRefPBANameRxprs(void)        // returns true if any reference PBA name compiled regular expressions available for matching against
+{
+return(m_NumRefPBANameREs > 0);
+}
+
+
+
+
+bool							// returns true if name matches any PBA source name compiled RE, if none compiled then treat as a match
+CUtility::MatchSrcPBANameRxprs(char* pszName)	// name to match against any of the compiled PBA source name REs
+{
+	char szText[cMaxLenRE + 1];
+	char Chr;
+	bool bAcceptDescr = false;
+	int Idx;
+
+	if (m_NumSrcPBANameREs == 0)      // if no REs then accept as if matched
+		return(true);
+
+	for (Idx = 0; Idx < cMaxLenRE; Idx++)
+	{
+		switch (Chr = *pszName++) {
+		case '\0': case ' ': case '\t':
+			break;
+		default:
+			szText[Idx] = Chr;
+			continue;
+		}
+		break;
+	}
+	szText[Idx] = '\0';
+
+	for (Idx = 0; Idx < m_NumSrcPBANameREs; Idx++)
+	{
+		if (regex_search(szText, *m_pSrcPBANameREs[Idx]))
+			return(true);
+	}
+	return(false);
+}
+
+bool							// returns true if name matches any PBA reference name compiled RE, if none compiled then treat as a match
+CUtility::MatchRefPBANameRxprs(char* pszName)	// name to match against any of the compiled PBA source name REs
+{
+	char szText[cMaxLenRE + 1];
+	char Chr;
+	bool bAcceptDescr = false;
+	int Idx;
+
+	if (m_NumRefPBANameREs == 0)      // if no REs then accept as if matched
+		return(true);
+
+	for (Idx = 0; Idx < cMaxLenRE; Idx++)
+	{
+		switch (Chr = *pszName++) {
+		case '\0': case ' ': case '\t':
+			break;
+		default:
+			szText[Idx] = Chr;
+			continue;
+		}
+		break;
+	}
+	szText[Idx] = '\0';
+
+	for (Idx = 0; Idx < m_NumRefPBANameREs; Idx++)
+	{
+		if (regex_search(szText, *m_pRefPBANameREs[Idx]))
+			return(true);
+	}
+	return(false);
 }
 
 uint16_t			// generated 16bit hash over the lowercased chromosome name; hashes as 0 if pszName == null or is empty

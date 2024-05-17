@@ -9,6 +9,8 @@ const int32_t cMaxProgenyFileSpecs = 500;			// can specify a max of this number 
 const int32_t cMaxFounderReadsets = 2000;			// after input wildcard expansion then can accept at most this max number of founder readsets
 const int32_t cMaxProgenyReadsets = 10000;			// after input wildcard expansion then can specify at most this max number of progeny readsets
 
+const int32_t cMaxFilterPBAsScoresNames = 100;		// can only accept at most this number of PBAs names when filtering scores file
+
 const int cMaxIncludeChroms = 20;					// max number of include chromosomes regular expressions
 const int cMaxExcludeChroms = 20;					// max number of exclude chromosomes regular expressions
 
@@ -17,7 +19,7 @@ const int32_t cMaxChromMetadata = 1000000;			// allowing for a maximum of this m
 const int32_t cAllocChromMetadata = 100000;			// allocate chrom metadata in this sized increments
 const size_t cAllocPackedBaseAlleles = 0x3fffffff;	// allocate packed base alleles to this maximal size, 1 allocation per chromosome per readset
 const uint32_t cInBuffSize = 0x7fffffff;			// buffer size for file reads
-const uint32_t cOutBuffSize = 0x6fffffff;			// buffer size for file writes
+const uint32_t cOutBuffSize = 0x0fffffff;			// buffer size for file writes
 const int32_t cDfltFndrTrim5 = 5;					// default is for no trimming - can trim PBAs from 5' end of founder aligned segments - reduces false alleles due to sequencing errors
 const int32_t cDfltFndrTrim3 = 5;					// default is for no trimming - can trim PBAs from 3' end of founder aligned segments - reduces false alleles due to sequencing errors
 const int32_t cDfltProgTrim5 = 5;					// default is for no trimming - can trim PBAs 5' end of progeny aligned segments - reduces false alleles due to sequencing errors
@@ -72,6 +74,9 @@ const int32_t cDfltProgFndrBinScoring = 1000000;	// when scoring sample vs. refe
 const int32_t cDfltKMerSize = 25;					// default KMer size in processing mode eMCSHKMerGrps
 const int32_t cDfltKMerHammings = 1;				// default is require at least this hamming to separate any two groups in processing mode eMCSHKMerGrps
 
+const int32_t cDfltMinUnprunedRefs = 1;				// in mode 9: prune whilst at least this number of unpruned references remain
+const int32_t cDfltMaxUnprunedRefs = 4;				// targeting pruning down to no more than this number of references, could be more if additional pruning would reduce to less than cDfltMinUnprunedRefs
+
 const size_t cInitialAllocKMerSeqs = 0x01ffffff;	// initially allocate for KMer group sequences in this sized allocation - m_pGrpKMerSeqs
 const size_t cReallocKMerSeqs = 0x0ffffff;			// if needing to extend KMer group sequences then realloc by this - m_pGrpKMerSeqs 
 
@@ -80,6 +85,16 @@ const int cWorkThreadStackSize = 0x01ffff;			// threads created with stacks this
 
 const int cMaxBitVectBits = 64*128;					// able to process bit vectors containing at most this many bits, must be a multiple of 64 as bits are packed into 64bit words
 const int cBitVectWords = cMaxBitVectBits/64;		// each bit vector comprises this many 64bit words as an array of words
+
+// Attempting to fill in missing bin data points by using imputation from accepted immediately left/right non-imputed bin values
+// Treating bins with bin size of less than 10000 or proportion of bin size actually aligned as being less than 0.01 as bins needing imputation
+// Set bin ProcState to:
+const int8_t cBinScoreAccepted = 0x01;			// bin has a score directly accepted as not requiring imputation
+const int8_t cBinScoreImputed = 0x02;			// bins which were imputed from accepted score (cBinScoreAccepted)
+const int8_t cBinScoreNotAccepted = 0x04;		// bin which could have been imputed, but imputation is only from an accepted score (cBinScoreAccepted)
+const int8_t cBinRefPruned = 0x08;				// bin reference has been pruned
+const int8_t cBinRefSelected = 0x10;			// bin reference selected as being uniquely highest scoring - Note: there will always be just one selected even though it may be just a representative cBinSourceNoDiffRefs 
+const int8_t cBinSourceNoDiffRefs = 0x20;		// all bin references for source have been purged as there were no differential references
 
 typedef enum TAG_eModeCSH {
 	eMCSHDefault = 0,								// processing mode 0: report progeny imputation haplotype matrix
@@ -93,6 +108,8 @@ typedef enum TAG_eModeCSH {
 	eMCSHRefsVsRefs,								// reference PBAs vs. reference PBAs allelic association scores
 	eMCSHGroupScores,								// grouping allelic association scores
 	eMCSHKMerGrps,									// post-processing haplotype groupings for differential group KMers
+	eMCSHKFiltScores,								// filter previously generated scores file by source and reference PBAs names into new filtered scores file
+	eMCSHKTransFiltScores,							// Filter scores file by source and reference PBAs names into new transformed filtered scores file
 	eMCSHPlaceHolder								// used to mark end of processing modes
 	}eModeCSH;
 
@@ -163,15 +180,15 @@ typedef struct TAG_sHaplotypeGroup {
 
 typedef struct TAG_sHGBinSpec { // haplotype group clustering is for this bin specification
 	uint32_t ProcState;        // bin processing state  - 0x00 if unprocessed, 0x01 if currently being processing, 0x03 if processing completed but referenced chromosome not located, 0x07 if processing successfully completed       
-	int32_t ChromID;	    // haplotype group clustering is on this chromosome
-	int32_t ChromSize;		// chromosome is this size
-	int32_t BinID;          // uniquely identifies bin - globally unique 
-	int32_t StartLoci;      // bin starts at this loci
-	int32_t NumLoci;	    // covering this many loci
+	int32_t ChromID;			// haplotype group clustering is on this chromosome
+	int32_t ChromSize;			// chromosome is this size
+	int32_t AllocID;			// uniquely identifies allocated bin - globally unique 
+	int32_t StartLoci;			// bin starts at this loci
+	int32_t NumLoci;			// covering this many loci
 	int32_t MinCentroidDistance; // centroid distance can range from this minimum and up to MaxCentroidDistance when attempting to limit number of haplotype groupings to MaxNumHaplotypeGroups
 	int32_t MaxCentroidDistance; // maximum centroid distance which can be used when attempting to meet MaxNumHaplotypeGroups constraint
 	int32_t MaxNumHaplotypeGroups;	// attempt to constrain number of haplotype groups to be this maximum
-	int32_t ActualHaplotypeGroups;      // contains this many haplotype groups;      // actual number of haplotype groups
+	int32_t ActualHaplotypeGroups;  // contains this many haplotype groups;      // actual number of haplotype groups
 	tsHaplotypeGroup* pHaplotypeGroup; // haplotype groupings for this bin (each allocated independently so ptr expected to remain stable)
 	} tsHGBinSpec;
 
@@ -185,9 +202,9 @@ typedef struct TAG_sASRefGrp {		// haplotype reference sample grouping assignmen
 	int32_t Size;					// tsASRefGrp instance size
 	int32_t ChromID;				// haplotype grouping assignments are on this chromosome
 	int32_t ChromSize;				// chromosome is this size
-	int32_t BinID;					// uniquely identifies bin - globally unique 
-	int32_t StartLoci;				// bin starts at this loci
-	int32_t NumLoci;				// covering this many loci
+	int32_t AllocID;				// uniquely identifies allocated bin - globally unique 
+	int32_t StartLoci;				// AllocID bin starts at this loci
+	int32_t NumLoci;				// bin is covering this many loci
 	int32_t MinCentroidDistance;	// centroid distance can range from this minimum and up to MaxCentroidDistance when attempting to limit number of haplotype groupings to MaxNumHaplotypeGroups
 	int32_t MaxCentroidDistance;	// maximum centroid distance which can be used when attempting to meet MaxNumHaplotypeGroups constraint
 	int32_t MaxHaplotypeGroups;		// attempt to constrain number of haplotype groups to be this maximum
@@ -198,14 +215,17 @@ typedef struct TAG_sASRefGrp {		// haplotype reference sample grouping assignmen
 } tsASRefGrp;
 
 typedef struct TAG_sASBin { // allele scoring is for this bin specification
-	uint32_t ProcState;        // bin processing state  - 0x00 if unprocessed, 0x01 if currently being processing, 0x03 if processing completed but referenced chromosome not located, 0x07 if processing successfully completed
-	int64_t BinID;				// uniquely identifies bin - globally unique 
+	uint32_t ProcState;			// bin processing state  - 0x00 if unprocessed, 0x01 if currently being processing, 0x03 if processing completed but referenced chromosome not located, 0x07 if processing successfully completed
+								// when mapping to a reference: 0x40 unambiguously mapped to single reference, 0x80 mapped to multiple references 
+	int64_t AllocID;			// uniquely identifies bin in order of allocation - globally unique 
 	int32_t SrcID;				// identifies the source PBA which was aligned against
 	int32_t RefID;				// this reference PBA scoring allelic differences
 	int32_t ChromID;			// scoring was on this chromosome
 	int32_t ChromSize;			// chromosome is this size
-	int32_t BinLoci;			// scored bin starts at this loci
-	int32_t BinSize;			// bin is this size
+	int32_t BinID;				// identifies which scored bin is starting at BinLoci
+	int32_t BinLoci;			// BinID scored bin starts at this loci
+	int32_t BinSize;			// BinID bin is this size
+	int32_t AlignLen;			// number of loci in which loci PBAs were matched - effective alignment length 
 	double ScoreExact;			// scoring for exact matches
 	double ScorePartial;		// scoring both eact and partial matches
 } tsASBin;
@@ -276,11 +296,11 @@ typedef struct TAG_sCHChromScores {
 	int32_t BinID;				// scoring is for this bin
 	int32_t BinLoci;			// bin starting at this loci
 	int32_t BinSize;			// bin is this size size
+	int32_t AlignLen;			// number of loci in which loci PBAs were matched - effective alignment length
 	int32_t NumExactMatches;	// number of loci having exact matches
 	int32_t NumBiallelicExactMatches; // number of exact matches which are biallelic
 	int32_t NumPartialMatches;	// number of loci having at least one allele which matched
 	int32_t NumNonRefAlleles;	// number of non-ref alleles which if not present would have been accepted as being a partial match
-	int32_t AlignLen;			// number of loci in which loci PBAs were matched - effective alignment length
 	double ExactScore;			// bin score if only exactly matching diplotype alleles scored
 	double PartialScore;		// bin score if exactly matching diplotype alleles and down weighted (0.5) partially matching diplotype alleles scored
 	} tsCHChromScores;
@@ -420,7 +440,12 @@ class CCallHaplotypes
 	int32_t m_UsedNumChromMetadata;				// current number of chrom metadata used 
 	int32_t m_AllocdChromMetadata;				// current allocation is for this many 
 	size_t m_AllocdChromMetadataMem;			// current mem allocation size for m_pChromMetadata
-	tsCHChromMetadata *m_pChromMetadata;		// allocated to hold metadata for all founder chromosomes
+	tsCHChromMetadata* m_pChromMetadata;		// allocated to hold metadata for all founder chromosomes
+
+	int32_t m_UsedNumBinScores;				// current number of bin scores used 
+	int32_t m_AllocdBinScores;				// current allocation is for this many 
+	size_t m_AllocdBinScoresMem;			// current mem allocation size for m_pBinScores
+	tsCHChromScores *m_pBinScores;				// allocated to hold scores for all bins prior to transformations
 
 	size_t m_UsedProgenyFndrAligns;				// number of actually used progeny to founder alignments
 	size_t m_AllocdProgenyFndrAligns;			// number of allocated founder alignments
@@ -431,14 +456,14 @@ class CCallHaplotypes
 	int32_t m_AllocdAlleleStacks;				// number of allocated allele stacks
 	size_t m_AllocdAlleleStacksMem;				// current mem allocation size for m_pAlleleStacks
 	tsAlleleStack *m_pAlleleStacks;				// allocated to hold founder allele stacks
-	int32_t m_ProccessingHGBinID;					// most recent bin undergoing processing - processing may be incomplete
+	int32_t m_ProccessingHGAllocID;					// most recent allocated bin undergoing processing - processing may be incomplete
 	int32_t m_UsedHGBinSpecs;					// number of actually used haplotype grouping bins
 	int32_t m_AllocdHGBinSpecs;					// number of allocated haplotype grouping bins
 	size_t m_AllocdHGBinSpecsMem;				// current mem allocation size for m_pHGBinSpecs
 	tsHGBinSpec* m_pHGBinSpecs;					// allocated to hold haplotype grouping bin specifications
 
 
-	int64_t m_ProccessingASBinID;				// most recent bin undergoing processing - processing may be incomplete
+	int64_t m_ProccessingASAllocID;				// most recent bin undergoing processing - processing may be incomplete
 	int64_t m_UsedASBins;					// number of actually used alelle score bins
 	int64_t m_AllocdASBins;					// number of allocated alelle score bins
 	size_t m_AllocdASBinsMem;				// current mem allocation size for m_pASBins
@@ -531,7 +556,6 @@ class CCallHaplotypes
 		AcceptThisChromName(char* pszChrom,		// chromosome name
 						 bool bKnown = true);	// if true then chromosome must have been previously processed and accepted by LoadChromSizes() processing - size is known!
 
-
 	bool m_bMutexesCreated;						// will be set true if synchronisation mutexes have been created
 	int CreateMutexes(void);
 	void DeleteMutexes(void);
@@ -576,8 +600,8 @@ class CCallHaplotypes
 		IterateHGBinSpecs(int32_t PrevBinID,	// previously iterated bin identifier, to start from 1st bin then pass 0 as the bin identifier 
 						  int32_t ChromID=0);	// only processing bins on this chrom, 0 if processing all bins
 
-	tsASBin*								// returned allele scoring bin specification, returns nullptr if all bins on chromosome have been iterated
-		IterateASBins(int32_t PrevBinID,	// previously iterated bin identifier, to start from 1st bin then pass 0 as the bin identifier 
+	tsASBin*								// returned allele scoring allocated bin specification, returns nullptr if all bins on chromosome have been iterated
+		IterateASAllocIDs(int32_t PrevAllocID,	// previously iterated allocated bin identifier, to start from 1st bin then pass 0 as the bin identifier 
 			int32_t ChromID = 0);	// only processing bins on this chrom, 0 if processing all bins
 
 
@@ -729,18 +753,32 @@ class CCallHaplotypes
 					int32_t RefID,				// this reference PBA scoring allelic differences
 					int32_t ChromID,			// scoring was on this chromosome
 					int32_t ChromSize,			// chromosome is this size
-					int32_t BinLoci,			// scored bin starts at this loci
-					int32_t BinSize,			// bin is this size
+					int32_t BinID,				// identifies which scored bin is starting at BinLoci
+					int32_t BinLoci,			// scored BinID starts at this loci
+					int32_t BinSize,			// BinID is this size
+					int32_t AlignLen,			// alignment length
 					double ScoreExact,			// scoring for exact matches
 					double ScorePartial);		// scoring both eact and partial matches
 
 	int
-		GroupAlleleScores(char* pszInFile, // file containing allele association scores
-						 char* pszWGSHapGrpFile,	// WGS haplotype groupings file
+		GroupAlleleScores(int32_t MinUnprunedRefs,		// in mode eMCSHGroupScores: prune whilst at least this number of unpruned references remain
+						int32_t MaxUnprunedRefs,		// in mode eMCSHGroupScores: attempt to prune untill no more than this number of unpruned references
+						char* pszInFile, // file containing allele association scores
+						char* pszWGSHapGrpFile,	// WGS haplotype groupings file
 						char* pszOutFile); // where to write grouping CSV file
 
+	int
+		FilterAlleleScores(char* pszInFile, // existing CSV file containing allele association scores
+			char* pszOutFile);								// where to write source and/or reference named filtered allele association scores CSV file
+
+	int
+		FilterTransformAlleleScores(char* pszInFile, // existing CSV file containing allele association scores
+			char* pszOutFile);								 // where to write source and/or reference named filtered allele association scores CSV file
+	
 	int32_t
-		ProcessAlleleScoreBins(char* pszOutFile); // where to write allele score bins grouping CSV file
+		ProcessAlleleScoreBins(char* pszOutFile,				// where to write allele score bins grouping CSV file
+								int32_t MinUnprunedRefs = cDfltMinUnprunedRefs,	// prune whilst at least this number of unpruned references remain
+								int32_t MaxUnprunedRefs = cDfltMaxUnprunedRefs);	// attempt to prune untill no more than this number of unpruned references
 
 	int ProcessProgenyPBAFile(char* pszProgenyPBAFile,	// load, process and call haplotypes for this progeny PBA file against previously loaded panel founder PBAs
 					char *pszRsltsFileBaseName);		// results are written to this file base name with progeny readset identifier and type appended
@@ -922,7 +960,8 @@ class CCallHaplotypes
 	static int SortHGBinSpecs(const void* arg1, const void* arg2);
 	static int SortDGTLociFMeasureDesc(const void* arg1, const void* arg2);
 	static int SortDGTLoci(const void* arg1, const void* arg2);
-	static int SortASBin(const void* arg1, const void* arg2);
+	static int SortASBins(const void* arg1, const void* arg2);				// sorting tsASBins by ChromID.BinID.SrcID.RefID ascending
+	static int SortChromScores(const void* arg1, const void* arg2);			// sorting tsCHChromScores by ChromID.BinID.SrcID.RefID ascending
 	static int SortASRefGrp(const void* arg1, const void* arg2);
 	static int SortKMerLoci(const void* arg1, const void* arg2);
 
@@ -987,9 +1026,15 @@ public:
 			int32_t ProgTrim3,				// trim this many aligned PBAs from 3' end of progeny aligned segments - reduces false alleles due to sequencing errors
 			int32_t WWRLProxWindow,			// proximal window size for Wald-Wolfowitz runs test
 			int32_t OutliersProxWindow,		// proximal window size for outliers reduction
+			int32_t MinUnprunedRefs,		// in mode eMCSHGroupScores: prune whilst at least this number of unpruned references remain
+			int32_t MaxUnprunedRefs,		// in mode eMCSHGroupScores: attempt to prune untill no more than this number of unpruned references
 			char *pszMaskBPAFile,			// optional masking input BPA file, only process BPAs which are intersect of these BPAs and progeny plus founder BPAs
 			char* pszChromFile,				// BED file containing reference assembly chromosome names and sizes
 			char *pszAlleleScoreFile,	// CSV file containing allelic association scores previously generated by processing in eMCSHSrcVsRefs or eMCSHRefsVsRefs mode
+			int32_t NumIncludeSrcPBAsScores,	// if filtering scores then only retain scores for this number of source PBAs
+			char* pszIncludeSrcPBAsScores[],	// names of source PBAs (could be wildcarded)
+			int32_t NumIncludeRefPBAsScores,	// if filtering scores then only retain scores for this number of reference PBAs
+			char* pszIncludeRefPBAsScores[],	// names of reference PBAs (could be wildcarded)
 			int NumFounderInputFiles,		// number of input founder file specs
 			char *pszFounderInputFiles[],	// names of input founder PBA files (wildcards allowed)
 			int NumProgenyInputFiles,		// number of input progeny file specs

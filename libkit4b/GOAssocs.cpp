@@ -311,7 +311,7 @@ else
 	m_hFile = open(pszFileName, O_CREATETRUNC);
 #else
 if(!bCreate)
-m_hFile = open64(pszFileName, O_READSEQ); // file access is normally sequential..
+	m_hFile = open64(pszFileName, O_READSEQ); // file access is normally sequential..
 else
 	{
      if((m_hFile = open64(pszFileName,O_RDWR | O_CREAT,S_IREAD | S_IWRITE))!=-1)

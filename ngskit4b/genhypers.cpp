@@ -1,5 +1,5 @@
 // genhypers.cpp : Defines the entry point for the console application.
-// Locates all hyper and ultraconserved elements according to parameterised filtering critera
+// Locates all hyper elements according to parameterised filtering critera
 //
 #include "stdafx.h"
 
@@ -22,7 +22,7 @@
 
 int
 Process(bool bTargDeps,				// true if process only if any independent src files newer than target
-		int ProcMode,					// processing mode 0: default, 1: summary stats only
+		int PMode,					// processing mode 0: default, 1: summary stats only
 		int NumBins,				// when generating length distributions then use this many bins - 0 defaults to using 1000
 		int BinDelta,				// when generating length distributions then each bin holds this length delta - 0 defaults to auto determine from NunBins and longest sequence length
 		char *pszInputFile,		// bio multialignment (.algn) file to process
@@ -36,12 +36,11 @@ Process(bool bTargDeps,				// true if process only if any independent src files 
 		char *pszUniqueSpeciesSeqs, // ignore alignment block if these species sequences are not unique
 		int WindowSize,			// sampling window size
 		int NumCoreSpecies,		// number of core species to be in alignment
-		int MinAlignSpecies,	// minimum number of species required in an alignment (includes core species)
-		char *pszSpeciesList,	// space or comma separated list of species, priority ordered
-		int MinHyperLen,		// minimum hyper core length required
-		int MinUltraLen,		// minimum ultra core length required
-		int MaxHyperMismatches,	// hyper cores can have upto this number of total mismatches
-		int VMismatches,		// number of mismatches in an alignment col to count as a missmatch against MaxMismatches
+		char* pszCoreSpecies,	// space or comma separated list of species which must be present in any MAF block alignment before that block will be further processed
+		int MinNonCoreSpecies,	// minimum number of species required in an alignment (excluding core species)
+		int MinHyperCoreLen,	// minimum hyper core length required
+		int MaxHyperColsMismatches,	// hyper cores can have up to this number of columns with at least one mismatches
+		int VMismatches,		// number of mismatches in an alignment col to count as a mismatch against MaxHyperColsMismatches
 		int MinIdentity,		// minimum identity required when processing hyperconserved
 		int NumDistSegs,		// number of match distribution profile segments
 		int RegLen,				// regulatory region length - up/dn stream of 5/3' 
@@ -82,11 +81,10 @@ int NumberOfProcessors;		// number of installed CPUs
 
 bool bTargDeps;						// true if only process if independent files newer than target
 
-int iProcMode;
+int PMode;
 int NumBins;				// when generating length distributions then use this many bins - 0 defaults to using 1000
 int BinDelta;				// when generating length distributions then each bin holds this length delta - defaults to 1
-int iNumCoreSpecies;
-int iMinAlignSpecies;
+
 bool bMultipleFeatBits;
 bool bInDelsAsMismatches;
 bool bSloughRefInDels;
@@ -106,15 +104,16 @@ int NumIncludeFiles;
 char *pszIncludeFiles[cMaxExcludeFiles];
 int NumExcludeFiles;
 char *pszExcludeFiles[cMaxIncludeFiles];
-int iWindowSize;
+int WindowSize;
 char szSpeciesList[cMaxAlignedSpecies * cMaxDatasetSpeciesChrom];
-int iNumSpeciesList;
-int iRegLen;
-int	iMinHyperLen;		// minimum hyper core length required
-int iMinUltraLen;		// minimum ultra core length required
-int iMaxHyperMismatches;// hyper cores can have upto this number of total mismatches
-int	iMinIdentity;		// minimum identity (50-100) required for hypercores
-int iDistSegs;			// match distribution profile segments
+int NumCoreSpecies;
+int MinNonCoreSpecies;
+int NumSpeciesList;
+int RegLen;
+int	MinHyperCoreLen;			// minimum hyper core length required
+int MaxHyperColsMismatches;		// hyper cores can have at most this number of columns having mismatches
+int	MinIdentity;				// minimum identity (50-100) required for hypercores
+int DistSegs;					// match distribution profile segments
 char szUniqueSpeciesSeqs[512];	// slough blocks in which these species sequences are not unique
 
 char szSQLiteDatabase[_MAX_PATH];	// results summaries to this SQLite file
@@ -128,37 +127,36 @@ struct arg_int *FileLogLevel=arg_int0("f", "FileLogLevel",		"<int>","Level of di
 struct arg_int *ScreenLogLevel=arg_int0("S", "ScreenLogLevel",	"<int>","Level of diagnostics written to logfile 0=fatal,1=errors,2=info,3=diagnostics,4=debug");
 struct arg_file *LogFile = arg_file0("F","log","<file>",	"diagnostics log file");
 
-struct arg_int  *RegLen = arg_int0("L","updnstream","<int>",	"length of 5'up or 3'down  stream regulatory region length (default = 2000) 0..1000000");
-struct arg_file *InFile = arg_file1("i",nullptr,"<file>",			"input from .algn file");
-struct arg_file *OutFile = arg_file1("o",nullptr,"<file>",			"output to statistics file as CSV");
-struct arg_file *OutCoreFile = arg_file0("O",nullptr,"<file>",		"output hypercore loci to file as CSV");
-struct arg_file *InBedFile = arg_file0("r","regions","<file>",		"characterise regions from biobed file");
-struct arg_int  *NumCoreSpecies = arg_int0("m","numcorespecies","<int>", "number of core species in alignment, default is num of species in -s<specieslist>");
-struct arg_int  *MinAlignSpecies = arg_int0("M","minalignedspecies","<int>", "min number of species required in alignment (includes core species), default is num of species in -s<specieslist>");
-struct arg_str  *SpeciesList = arg_str1("s","species","<string>","species list, ordered by processing priority");
-struct arg_lit  *MultipleFeatBits  = arg_lit0("q","multiplefeatbits",	"single featbit (default) or multiple featbits allowed");
-struct arg_lit  *InDelsAsMismatches  = arg_lit0("j","indelsasmismatches",	"treat InDels same as mismatches (default is to terminate element if InDel)");
-struct arg_lit  *SloughRefInDels  = arg_lit0("k","sloughrefindels",	"slough columns in which the ref base is an InDel (default is to terminate element if InDel)");
-struct arg_lit  *FiltLoConfidence = arg_lit0("l","filt",		"filter out low confidence subsequences,( slough subsequence < 15mer and first/last subsequence, subsequence must start/end on identical, identity > 70)");
-struct arg_int  *MinHyperLen = arg_int0("N","minhyperlen","<int>",		"minimum (default = 50 or minultralen) required hypercore length (0,10..1000) - will be maximally extended");
-struct arg_int  *MinUltraLen = arg_int0("n","minultralen","<int>",		"minimum (default = 50) required ultra length (0,10..1000) - will be maximally extended");
-struct arg_int  *MaxHyperMismatches = arg_int0("X","maxmismatches","<int>",	"total number (default = 0) of mismatches allowed in any hypercores (0..500)");
-struct arg_int  *MinIdentity = arg_int0("y","minidentity","<int>",	"minimum percentage identity (default = 100) required in hypercore (50-100)");
-struct arg_lit  *ChromPer = arg_lit0("c","chromper",			"generate stats for each chromosome -= default is for complete genome");
-struct arg_int  *ProcMode = arg_int0("x","procmode","<int>",	"processing mode 0:default, 1:summary, 2:outspecies");
+struct arg_int* pmode = arg_int0("m", "pmode", "<int>", "processing mode 0:default, 1:summary, 2:outspecies");
+struct arg_int  *reglen = arg_int0("L","updnstream","<int>",	"length of 5'up or 3'down  stream regulatory region length (default = 2000) 0..1000000");
+struct arg_file *infile = arg_file1("i",nullptr,"<file>",			"input from .algn file");
+struct arg_file *outfile = arg_file1("o",nullptr,"<file>",			"output to statistics file as CSV");
+struct arg_file *outcorefile = arg_file0("O",nullptr,"<file>",		"output hypercore loci to file as CSV");
+struct arg_file *inbedfile = arg_file0("r","regions","<file>",		"characterise regions from biobed file");
+struct arg_int  *numcorespecies = arg_int0("n","numcorespecies","<int>", "number of core species in alignment, default is num of species in -s<corespecieslist>");
+struct arg_int  *minnoncorespecies = arg_int0("N","minnoncorespecies","<int>", "min number of species required in alignment (excludes core species)");
+struct arg_str  *specieslist = arg_str0("s","species","<string>","species list, ordered by processing priority, if not specified then defaults to all multialignment species");
+struct arg_lit  *multiplefeatbits  = arg_lit0("K","multiplefeatbits",	"single featbit (default) or multiple featbits allowed");
+struct arg_lit  *indelsasmismatches  = arg_lit0("j","indelsasmismatches",	"treat InDels same as mismatches (default is to terminate element if InDel)");
+struct arg_lit  *sloughrefindels  = arg_lit0("J","sloughrefindels",	"slough columns in which the ref base is an InDel (default is to terminate element if InDel)");
+struct arg_lit  *filtloconfidence = arg_lit0("l","filt",		"filter out low confidence subsequences,( slough subsequence < 15mer and first/last subsequence, subsequence must start/end on identical, identity > 70)");
+struct arg_int  *minhypercorelen = arg_int0("k","minhypercorelen","<int>",		"minimum (default = 25) required hypercore length (5..1000) - will be maximally extended");
+struct arg_int  * maxhypercolsmismatches = arg_int0("X","maxhypercolsmismatches","<int>",	"total number (default = 0) of columns with mismatches allowed in any hypercores (0..500)");
+struct arg_int  *minidentity = arg_int0("y","minidentity","<int>",	"minimum percentage identity (default = 100) required in hypercore (50-100)");
+struct arg_lit  *chromper = arg_lit0("c","chromper",			"generate stats for each chromosome -= default is for complete genome");
 struct arg_int  *numbins = arg_int0("b","numbins","<int>",	"when generating length distributions then use this many bins (defaults to 1000, range 10..10000)");
 struct arg_int  *bindelta = arg_int0("B","bindelta","<int>","when generating length distributions then each bin holds this length delta (default 1, range 1,2,5,10,25,50,100,250,500 or 1000)");
 
-struct arg_str  *UniqueSpeciesSeqs = arg_str0("u","uniquespecieseqs","<string>","Ignore alignment blocks in which these species are not unique (use 'any' for all, or '*' for -s<specieslist>)");
+struct arg_str  *uniquespeciesseqs = arg_str0("u","uniquespecieseqs","<string>","Ignore alignment blocks in which these species are not unique (use 'any' for all, or '*' for -s<specieslist>)");
 
-struct arg_int  *DistSegs = arg_int0("d","distsegs","<int>",	"number of match distribution segments (default 10) used when processing outspecies mode");
+struct arg_int  *distsegs = arg_int0("d","distsegs","<int>",	"number of match distribution segments (default 10) used when processing outspecies mode");
 
-struct arg_file *ExcludeFile = arg_filen("E","exclude","<file>",0,cMaxExcludeFiles,	"exclude all regions in biobed file from processing ");
-struct arg_file *IncludeFile = arg_filen("I","include","<file>",0,cMaxExcludeFiles,	"include all regions (unless specific regions excluded) in biobed file");
-struct arg_int  *WindowSize = arg_int0("w","windowsize","<int>","if non-zero then sets fixed size window (in Knt) used to sample along genome");
-struct arg_str  *IncludeChroms = arg_strn("z","chromeinclude","<string>",0,cMaxIncludeChroms,"regular expressions defining species.chromosomes to include (overrides exclude) from processing");
-struct arg_str  *ExcludeChroms = arg_strn("Z","chromexclude","<string>",0,cMaxExcludeChroms,"regular expressions defining species.chromosomes to exclude from processing");
-struct arg_lit  *TargDeps = arg_lit0("D","TargDep",				"Generate target file only if missing or older than any of the independent source files");
+struct arg_file *excludefile = arg_filen("E","exclude","<file>",0,cMaxExcludeFiles,	"exclude all regions in biobed file from processing ");
+struct arg_file *includefile = arg_filen("I","include","<file>",0,cMaxExcludeFiles,	"include all regions (unless specific regions excluded) in biobed file");
+struct arg_int  *windowsize = arg_int0("w","windowsize","<int>","if non-zero then sets fixed size window (in Knt) used to sample along genome");
+struct arg_str  *includechroms = arg_strn("z","chromeinclude","<string>",0,cMaxIncludeChroms,"regular expressions defining species.chromosomes to include (overrides exclude) from processing");
+struct arg_str  *excludechroms = arg_strn("Z","chromexclude","<string>",0,cMaxExcludeChroms,"regular expressions defining species.chromosomes to exclude from processing");
+struct arg_lit  *targdeps = arg_lit0("D","TargDep",				"Generate target file only if missing or older than any of the independent source files");
 
 struct arg_file* summrslts = arg_file0("q", "sumrslts", "<file>", "Output results summary to this SQLite3 database file");
 struct arg_str* experimentname = arg_str0("w", "experimentname", "<str>", "experiment name SQLite3 database file");
@@ -168,12 +166,12 @@ struct arg_end *end = arg_end(20);
 
 void *argtable[] = {help,version,FileLogLevel,ScreenLogLevel,LogFile,
 					
-					InFile,OutFile,OutCoreFile,InBedFile,
-					ProcMode,numbins,bindelta,UniqueSpeciesSeqs,
-					NumCoreSpecies,MinAlignSpecies,SpeciesList,MultipleFeatBits,
-					InDelsAsMismatches,SloughRefInDels,FiltLoConfidence,
-					MinHyperLen,MinUltraLen,MaxHyperMismatches,MinIdentity,RegLen,
-					ChromPer,DistSegs,ExcludeFile,IncludeFile,WindowSize,IncludeChroms,ExcludeChroms,TargDeps,
+					infile,outfile,outcorefile,inbedfile,
+					pmode,numbins,bindelta,uniquespeciesseqs,
+					numcorespecies,minnoncorespecies,specieslist,multiplefeatbits,
+					indelsasmismatches,sloughrefindels,filtloconfidence,
+					minhypercorelen,maxhypercolsmismatches,minidentity,reglen,
+					chromper,distsegs,excludefile,includefile,windowsize,includechroms,excludechroms,targdeps,
 					summrslts,experimentname,experimentdescr,
 					end};
 
@@ -181,11 +179,11 @@ char** pAllArgs;
 int argerrors;
 argerrors = CUtility::arg_parsefromfile(argc, (char**)argv, &pAllArgs);
 if (argerrors >= 0)
-argerrors = arg_parse(argerrors, pAllArgs, argtable);
+	argerrors = arg_parse(argerrors, pAllArgs, argtable);
 
 /* special case: '--help' takes precedence over error reporting */
 if (help->count > 0)
-{
+	{
 	printf("\n%s %s %s, Version %s\nOptions ---\n", gszProcName, gpszSubProcess->pszName, gpszSubProcess->pszFullDescr, kit4bversion);
 	arg_print_syntax(stdout, argtable, "\n");
 	arg_print_glossary(stdout, argtable, "  %-25s %s\n");
@@ -194,23 +192,23 @@ if (help->count > 0)
 	printf("\n      e.g. %s %s @myparams.txt\n", gszProcName, gpszSubProcess->pszName);
 	printf("\nPlease report any issues regarding usage of %s at https://github.com/kit4b/issues\n\n", gszProcName);
 	return(1);
-}
+	}
 
 /* special case: '--version' takes precedence error reporting */
 if (version->count > 0)
-{
+	{
 	printf("\n%s %s Version %s\n", gszProcName, gpszSubProcess->pszName, kit4bversion);
 	return(1);
-}
+	}
 
 
 if (!argerrors)
-{
-	if (FileLogLevel->count && !LogFile->count)
 	{
+	if (FileLogLevel->count && !LogFile->count)
+		{
 		printf("\nError: FileLogLevel '-f%d' specified but no logfile '-F<logfile>\n'", FileLogLevel->ival[0]);
 		return(1);
-	}
+		}
 
 	iScreenLogLevel = iFileLogLevel = FileLogLevel->count ? FileLogLevel->ival[0] : eDLInfo;
 	if (iFileLogLevel < eDLNone || iFileLogLevel > eDLDebug)
@@ -326,130 +324,70 @@ if (!argerrors)
 	NumBins = 1000;
 	BinDelta = 1;
 
-	iProcMode = ProcMode->count ? ProcMode->ival[0] : eProcModeStandard;
-	if(iProcMode < eProcModeStandard || iProcMode > eProcModeOutspecies)
+	PMode = pmode->count ? pmode->ival[0] : eProcModeStandard;
+	if(PMode < eProcModeStandard || PMode > eProcModeOutspecies)
 		{
-		printf("\nError: Requested processing mode '-x%d' not supported",iProcMode);
+		printf("\nError: Requested processing mode '-x%d' not supported", PMode);
 		exit(1);
 		}
 
-	if(iProcMode == eProcModeSummary)
+	MaxHyperColsMismatches = 0;
+	MinIdentity = 100;
+	if(PMode == eProcModeSummary)
 		{	
 		szOutCoreFile[0] = '\0';		// where to write out the hypercore loci 
-		iMinHyperLen =0;				// minimum hyper core length required
-		iMinUltraLen =0;				// minimum ultra core length required
-		iMaxHyperMismatches=0;			// hyper cores can have upto this number of total mismatches
-		iMinIdentity=0;					// minimum identity required when processing hyperconserved
+		MinHyperCoreLen =0;				// minimum hyper core length required
+		MaxHyperColsMismatches=0;			// hyper cores can have up to this number of columns with mismatches
+		MinIdentity=0;					// minimum identity required when processing hyperconserved
 		bInDelsAsMismatches=false;		// treat InDels as if mismatches
 		bSloughRefInDels =false;		// slough columns in which the reference base is an InDel
 		bFiltLoConfidence=false;		// filter out low confidence subsequences
 		}
 	else	// standard or outspecies processing mode
 		{
-		if(!MinUltraLen->count && !MinHyperLen->count)	// default will be for ultra processing if neither ultras or hypers not specified
-			iMinUltraLen = cDfltMinCoreLen;
+		MinHyperCoreLen = minhypercorelen->count ? minhypercorelen->ival[0] : cDfltMinHyperCoreLen;
+		if(MinHyperCoreLen < cMinHyperCoreLen)
+			MinHyperCoreLen = cMinHyperCoreLen;
 		else
+			if(MinHyperCoreLen > cMaxHyperCoreLen)
+				MinHyperCoreLen = cMaxHyperCoreLen;
+			
+		MaxHyperColsMismatches = maxhypercolsmismatches->count ? maxhypercolsmismatches->ival[0] : cDfltMaxMismatches;
+		if(MaxHyperColsMismatches < 0)
 			{
-			iMinUltraLen = MinUltraLen->count ? MinUltraLen->ival[0] : 0;
-			if(iMinUltraLen != 0)
-				{
-				if(iMinUltraLen < 0)
-					{
-					printf("\nspecified minimum hyper length '-n%d' < 0, assuming you are not requiring ultra processing",iMinUltraLen);
-					iMinUltraLen = 0;
-					}
-				else
-					{
-					if(iMinUltraLen < cHCMinCoreLen)
-						{
-						printf("\nSpecified minimum ultra length was '-n%d' < %d, assuming you meant '-n%d'",iMinUltraLen,cHCMinCoreLen,cHCMinCoreLen);
-						iMinUltraLen = cHCMinCoreLen;
-						}
-					else
-						if(iMinUltraLen > cMaxMinCoreLen)
-							{
-							printf("\nSpecified minimum ultra length was '-n%d' > %d, assuming you meant '-n%d'",iMinUltraLen,cMaxMinCoreLen,cMaxMinCoreLen);
-							iMinUltraLen = cMaxMinCoreLen;
-							}
-					}
-				}
-			}
-	
-
-		iMinHyperLen = MinHyperLen->count ? MinHyperLen->ival[0] : 0;	// default is for ultra processing only
-		if(iMinHyperLen <= 0)
-			{
-			if(iMinUltraLen == 0)
-				{
-				printf("\nNothing to do, neither ultra '-n<len>' or hyper '-N<len>' core lengths specified, or lengths are both 0!");
-				exit(1);
-				}
-			if(iMinHyperLen < 0)
-				printf("\nminimum hyper length '-n%d' less than 0, assuming you are only processing for ultras",iMinHyperLen);
-			iMinHyperLen = 0;
-			}
-
-		if(iMinHyperLen > 0)	// Note: will only process minimum required identity if hypercore length was specified > 0
-			{
-			if(iMinHyperLen < cHCMinCoreLen)
-				{
-				printf("\nSpecified minimum hyper length '-N%d' < %d, assuming you meant '-N%d'",iMinHyperLen, cHCMinCoreLen, cHCMinCoreLen);
-				iMinHyperLen = cHCMinCoreLen;
-				}
-			else
-				if(iMinHyperLen > cMaxMinCoreLen)
-					{
-					printf("\nSpecified minimum hyper length '-N%d' > %d, assuming you meant '-N%d'",iMinHyperLen,cMaxMinCoreLen,cMaxMinCoreLen);
-					iMinHyperLen = cMaxMinCoreLen;
-					}
-
-		if(iMinHyperLen < iMinUltraLen)
-			{
-			printf("\nSpecified minimum hyper length '-N%d' < minimum ultra length '-n%d', assuming you meant '-N%d'",iMinHyperLen,iMinUltraLen,iMinUltraLen);
-			iMinHyperLen = iMinUltraLen;
-			}
-
-		iMaxHyperMismatches = MaxHyperMismatches->count ? MaxHyperMismatches->ival[0] : cDfltMaxMismatches;
-		if(iMaxHyperMismatches < 0)
-			{
-			printf("\nMaximun allowed Hypercore mismatches '-X%d' less than 0, assuming you meant to use '-y%d'",iMaxHyperMismatches,cDfltMaxMismatches);
-			iMaxHyperMismatches = cDfltMaxMismatches;
+			printf("\nMaximum allowed Hypercore columns with mismatches '-X%d' less than 0, assuming you meant to use '-y%d'",MaxHyperColsMismatches,cDfltMaxMismatches);
+			MaxHyperColsMismatches = cDfltMaxMismatches;
 			}
 		else
-			if(iMaxHyperMismatches > cMaxMismatches)
+			if(MaxHyperColsMismatches > cMaxMismatches)
 				{
-				printf("\nRequested Hypercore mismatches '-X%d' more than than allowed '-X%d', assuming you meant to use '-X%d'",iMaxHyperMismatches,cMaxMismatches,cMaxMismatches);
-				iMaxHyperMismatches = cDfltMaxMismatches;
+				printf("\nRequested Hypercore columns with mismatches '-X%d' more than than allowed '-X%d', assuming you meant to use '-X%d'",MaxHyperColsMismatches,cMaxMismatches,cMaxMismatches);
+				MaxHyperColsMismatches = cDfltMaxMismatches;
 				}
 
-		iMinIdentity = MinIdentity->count ? MinIdentity->ival[0] : cDfltIdentity;
-		if(iMinIdentity < cMinIdentity)
+		MinIdentity = minidentity->count ? minidentity->ival[0] : cDfltIdentity;
+		if(MinIdentity < cMinIdentity)
 			{
-			printf("\nMinimum identity specified '-y%d' less than %d%%, assuming you meant to use '-y%d'",iMinIdentity,cMinIdentity,cMinIdentity);
-			iMinIdentity = cMinIdentity;
+			printf("\nMinimum identity specified '-y%d' less than %d%%, assuming you meant to use '-y%d'", MinIdentity,cMinIdentity,cMinIdentity);
+			MinIdentity = cMinIdentity;
 			}
 		else
-			if(iMinIdentity > 100)
+			if(MinIdentity > 100)
 				{
-				printf("\nMinimum identity specified '-y%d' more than %d, assuming you meant to use '-y%d'",iMinIdentity,cMaxIdentity,cMaxIdentity);
-				iMinIdentity = cMaxIdentity;
+				printf("\nMinimum identity specified '-y%d' more than %d, assuming you meant to use '-y%d'", MinIdentity,cMaxIdentity,cMaxIdentity);
+				MinIdentity = cMaxIdentity;
 				}
-			}
-		else
-			{
-			iMaxHyperMismatches = 0;
-			iMinIdentity = 100;
-			}
-
-		if(OutCoreFile->count)
-			strcpy(szOutCoreFile,OutCoreFile->filename[0]);
-		else
-			szOutCoreFile[0] = '\0';
-
-		bFiltLoConfidence = FiltLoConfidence->count ? true : false;
-		bInDelsAsMismatches = InDelsAsMismatches->count ? true : false;
-		bSloughRefInDels = SloughRefInDels->count ? true : false;
 		}
+	
+	if(outcorefile->count)
+		strcpy(szOutCoreFile, outcorefile->filename[0]);
+	else
+		szOutCoreFile[0] = '\0';
+
+	bFiltLoConfidence = filtloconfidence->count ? true : false;
+	bInDelsAsMismatches = indelsasmismatches->count ? true : false;
+	bSloughRefInDels = sloughrefindels->count ? true : false;
+		
 	
 	NumBins = numbins->count ? numbins->ival[0] : 1000;
 	if(NumBins == 0)
@@ -470,148 +408,149 @@ if (!argerrors)
 			exit(1);
 		}
 
-	bMultipleFeatBits = MultipleFeatBits->count ? true : false;
+	bMultipleFeatBits = multiplefeatbits->count ? true : false;
 
-	strcpy(szInputFile,InFile->filename[0]);
-	strcpy(szOutputFile,OutFile->filename[0]);
+	strcpy(szInputFile,infile->filename[0]);
+	strcpy(szOutputFile,outfile->filename[0]);
 
-	if(InBedFile->count)
-		strcpy(szInputBiobedFile,InBedFile->filename[0]);
+	if(inbedfile->count)
+		strcpy(szInputBiobedFile,inbedfile->filename[0]);
 	else
 		szInputBiobedFile[0] = '\0';
 
-	NumIncludeFiles = IncludeFile->count;
-	for(Idx=0;Idx < IncludeFile->count; Idx++)
+	NumIncludeFiles = includefile->count;
+	for(Idx=0;Idx < includefile->count; Idx++)
 		{
-		LenReq = (int)strlen(IncludeFile->filename[Idx]);
+		LenReq = (int)strlen(includefile->filename[Idx]);
 		pszIncludeFiles[Idx] = new char [LenReq+1];
-		strcpy(pszIncludeFiles[Idx],IncludeFile->filename[Idx]);
+		strcpy(pszIncludeFiles[Idx],includefile->filename[Idx]);
 		CUtility::TrimQuotes(pszIncludeFiles[Idx]);
 		}
-	NumExcludeFiles = ExcludeFile->count;
-	for(Idx=0;Idx < ExcludeFile->count; Idx++)
+	NumExcludeFiles = excludefile->count;
+	for(Idx=0;Idx < excludefile->count; Idx++)
 		{
-		LenReq = (int)strlen(ExcludeFile->filename[Idx]);
+		LenReq = (int)strlen(excludefile->filename[Idx]);
 		pszExcludeFiles[Idx] = new char [LenReq+1];
-		strcpy(pszExcludeFiles[Idx],ExcludeFile->filename[Idx]);
+		strcpy(pszExcludeFiles[Idx], excludefile->filename[Idx]);
 		CUtility::TrimQuotes(pszExcludeFiles[Idx]);
 		}
 
-	NumIncludeChroms = IncludeChroms->count;
-	for(Idx=0;Idx < IncludeChroms->count; Idx++)
+	NumIncludeChroms = includechroms->count;
+	for(Idx=0;Idx < includechroms->count; Idx++)
 		{
-		LenReq = (int)strlen(IncludeChroms->sval[Idx]);
+		LenReq = (int)strlen(includechroms->sval[Idx]);
 		pszIncludeChroms[Idx] = new char [LenReq+1];
-		strcpy(pszIncludeChroms[Idx],IncludeChroms->sval[Idx]);
+		strcpy(pszIncludeChroms[Idx], includechroms->sval[Idx]);
 		CUtility::TrimQuotes(pszIncludeChroms[Idx]);
 		}
 
-	NumExcludeChroms = ExcludeChroms->count;
-	for(Idx=0;Idx < ExcludeChroms->count; Idx++)
+	NumExcludeChroms = excludechroms->count;
+	for(Idx=0;Idx < excludechroms->count; Idx++)
 		{
-		LenReq = (int)strlen(ExcludeChroms->sval[Idx]);
+		LenReq = (int)strlen(excludechroms->sval[Idx]);
 		pszExcludeChroms[Idx] = new char [LenReq+1];
-		strcpy(pszExcludeChroms[Idx],ExcludeChroms->sval[Idx]);
+		strcpy(pszExcludeChroms[Idx], excludechroms->sval[Idx]);
 		CUtility::TrimQuotes(pszExcludeChroms[Idx]);
 		}
 
-	iWindowSize = WindowSize->count ? WindowSize->ival[0] : 0;
-	if(iWindowSize < 0)
+	WindowSize = windowsize->count ? windowsize->ival[0] : 0;
+	if(WindowSize < 0)
 		{
-		printf("\nAllowed sampling result window size '-w%d' less than 0, assuming you meant to use '-w0'",iWindowSize);
-		iWindowSize = 0;
+		printf("\nAllowed sampling result window size '-w%d' less than 0, assuming you meant to use '-w0'", WindowSize);
+		WindowSize = 0;
 		}
 
-	if(ChromPer->count && iWindowSize == 0) // a hack to force per chromosome stats generation
-		iWindowSize = 0x1fffffff;
+	if(chromper->count && WindowSize == 0) // a hack to force per chromosome stats generation
+		WindowSize = 0x1fffffff;
 
-	iRegLen = RegLen->count ? RegLen->ival[0] : cDfltRegLen;
-	if(iRegLen < cMinRegLen)
+	RegLen = reglen->count ? reglen->ival[0] : cDfltRegLen;
+	if(RegLen < cMinRegLen)
 		{
-		printf("\nRegulatory region length '-L%d' less than minimum %d, assuming you meant to use '-L%d'",iRegLen,cMinRegLen,cMinRegLen);
-		iRegLen = cMinRegLen;
+		printf("\nRegulatory region length '-L%d' less than minimum %d, assuming you meant to use '-L%d'",RegLen,cMinRegLen,cMinRegLen);
+		RegLen = cMinRegLen;
 		}
 	else
 		{
-		if(iRegLen > cMaxRegLen)
+		if(RegLen > cMaxRegLen)
 			{
-			printf("\nRegulatory region length '-L%d' more than maximum %d, assuming you meant to use '-L%d'",iRegLen,cMaxRegLen,cMaxRegLen);
-			iRegLen = cMaxRegLen;
+			printf("\nRegulatory region length '-L%d' more than maximum %d, assuming you meant to use '-L%d'",RegLen,cMaxRegLen,cMaxRegLen);
+			RegLen = cMaxRegLen;
 			}
 		}
 	
-	if(UniqueSpeciesSeqs->count)
+	if(uniquespeciesseqs->count)
 		{
-		strcpy(szUniqueSpeciesSeqs,UniqueSpeciesSeqs->sval[0]);
+		strcpy(szUniqueSpeciesSeqs,uniquespeciesseqs->sval[0]);
 		CUtility::TrimQuotes(szUniqueSpeciesSeqs);
 		}
 	else
 		szUniqueSpeciesSeqs[0] = '\0';
 
-	if(!SpeciesList->count)
+	if(!specieslist->count)		// if none specified then default species list to be all present in multialignment file
 		{
-		printf("\nError: Species list '-s<specieslist>' is empty\n");
-		exit(1);
+		CGenHypers *pHypers = new CGenHypers;
+		Rslt = pHypers->LoadSpeciesnameList(szInputFile, cMaxAlignedSpecies, sizeof(szSpeciesList), szSpeciesList);
+		delete pHypers;
+		if (Rslt < 1)
+			{
+			printf("\nError: Unable to load species list directly from multiple alignment file '%s'\n", szInputFile);
+			exit(1);
+			}
 		}
-	strcpy(szSpeciesList,SpeciesList->sval[0]);
+	else
+		strcpy(szSpeciesList,specieslist->sval[0]);
 	CUtility::TrimQuotes(szSpeciesList);
 
-	iNumSpeciesList = CGenHypers::ParseNumSpecies(szSpeciesList,nullptr);
-	if(iProcMode == eProcModeOutspecies)
+	NumSpeciesList = CGenHypers::ParseNumSpecies(szSpeciesList,nullptr);
+	if(PMode == eProcModeOutspecies)
 		{
-		if(iNumSpeciesList < 3)
+		if(NumSpeciesList < 3)
 			{
 			printf("\nError: At least three (2 core + outspecies) species must be specified in Outspecies mode\n");
 			exit(1);
 			}
-		iDistSegs = DistSegs->count ? DistSegs->ival[0] : cDfltMatchDistSegments;
-		if(iDistSegs < cMinMatchDistSegments)
+		DistSegs = distsegs->count ? distsegs->ival[0] : cDfltMatchDistSegments;
+		if(DistSegs < cMinMatchDistSegments)
 			{
-			printf("\nWarning: too few distribution segments specified with '-d%d', assume you meant %d segments", iDistSegs,cMinMatchDistSegments);
-			iDistSegs = iMinUltraLen;
+			printf("\nWarning: too few distribution segments specified with '-d%d', assume you meant %d segments", DistSegs,cMinMatchDistSegments);
+			DistSegs = MinHyperCoreLen;
 			}
 		else
-			if(iDistSegs > min(iMinUltraLen,cMaxMatchDistSegments))
+			if(DistSegs > min(MinHyperCoreLen,cMaxMatchDistSegments))
 				{
-				printf("\nWarning: too many distribution segments specified with '-d%d', assume you meant %d segments", iDistSegs,min(iMinUltraLen,cMaxMatchDistSegments));
-				iDistSegs = min(iMinUltraLen,cMaxMatchDistSegments);
+				printf("\nWarning: too many distribution segments specified with '-d%d', assume you meant %d segments", DistSegs,min(MinHyperCoreLen,cMaxMatchDistSegments));
+				DistSegs = min(MinHyperCoreLen,cMaxMatchDistSegments);
 				}
 		}
 	else
 		{
-		if(iNumSpeciesList < 2)
+		if(NumSpeciesList < 2)		// if multialignment then must be at least 2!
 			{
 			printf("\nError: At least two species must be specified\n");
 			exit(1);
 			}
-		iDistSegs = 0;
+		DistSegs = 0;
 		}
 
-	if(iProcMode != eProcModeOutspecies)
+	if(PMode != eProcModeOutspecies)
 		{
-		iNumCoreSpecies = NumCoreSpecies->count ? NumCoreSpecies->ival[0] : iNumSpeciesList;
-		if(iNumCoreSpecies < 2)
-			iNumCoreSpecies = 2;
-		if(iNumCoreSpecies > iNumSpeciesList)
-			{
-			printf("NumCoreSpecies %d is more than number of species actually specified %d in species list",iNumCoreSpecies,iNumSpeciesList);
-			exit(1);
-			}
+		NumCoreSpecies = numcorespecies->count ? numcorespecies->ival[0] : NumSpeciesList;
+		if(NumCoreSpecies < 2)
+			NumCoreSpecies = 2;
+		if(NumCoreSpecies > NumSpeciesList)
+			NumCoreSpecies = NumSpeciesList;
 
-		iMinAlignSpecies = MinAlignSpecies->count ? MinAlignSpecies->ival[0] : iNumCoreSpecies;
-		if(iMinAlignSpecies < iNumCoreSpecies || iMinAlignSpecies > iNumSpeciesList)
-			{
-			printf("MinAlignSpecies %d must be in range %d..%d",iMinAlignSpecies,iNumCoreSpecies,iNumSpeciesList);
-			exit(1);
-			}
+		MinNonCoreSpecies = minnoncorespecies->count ? minnoncorespecies->ival[0] : 0;
+		if(MinNonCoreSpecies < 0)
+			MinNonCoreSpecies = 0;
 		}
 	else
 		{
-		iNumCoreSpecies = iNumSpeciesList - 1;
-		iMinAlignSpecies = iNumSpeciesList;
+		NumCoreSpecies = NumSpeciesList - 1;
+		MinNonCoreSpecies = 1;
 		}
 
-	if (TargDeps->count > 0)
+	if (targdeps->count > 0)
 		bTargDeps = true;
 	else
 		bTargDeps = false;
@@ -621,7 +560,7 @@ if (!argerrors)
 	gDiagnostics.DiagOutMsgOnly(eDLInfo,"bio multialignment (.algn) file to process: '%s'",szInputFile);
 	gDiagnostics.DiagOutMsgOnly(eDLInfo,"where to write out stats: '%s'",szOutputFile);
 	gDiagnostics.DiagOutMsgOnly(eDLInfo,"biobed file containing regional features: '%s'",szInputBiobedFile);
-	switch(iProcMode) {
+	switch(PMode) {
 		case eProcModeStandard:
 			gDiagnostics.DiagOutMsgOnly(eDLInfo,"Processing mode: standard");
 			break;
@@ -632,32 +571,31 @@ if (!argerrors)
 
 		case eProcModeOutspecies:
 			gDiagnostics.DiagOutMsgOnly(eDLInfo,"Processing mode: outspecies");
-			gDiagnostics.DiagOutMsgOnly(eDLInfo,"Match distribution profile segments: %d",iDistSegs);
+			gDiagnostics.DiagOutMsgOnly(eDLInfo,"Match distribution profile segments: %d",DistSegs);
 			break;
 		}
 
 	if(szUniqueSpeciesSeqs[0] != '\0')
 		gDiagnostics.DiagOutMsgOnly(eDLInfo,"Ignore alignment blocks where sequences not unique for: '%s'",szUniqueSpeciesSeqs);
 
-	if(iProcMode != eProcModeSummary)
+	if(PMode != eProcModeSummary)
 		gDiagnostics.DiagOutMsgOnly(eDLInfo,"where to write out the hypercore loci: '%s'",szOutCoreFile);
 	for(Idx = 0; Idx < NumIncludeFiles; Idx++)
 		gDiagnostics.DiagOutMsgOnly(eDLInfo,"biobed file containing regions to include: '%s'",pszIncludeFiles[Idx]); 
 	for(Idx = 0; Idx < NumExcludeFiles; Idx++)
 		gDiagnostics.DiagOutMsgOnly(eDLInfo,"biobed file containing regions to exclude: '%s'",pszExcludeFiles[Idx]);
-	if(iWindowSize)
-		gDiagnostics.DiagOutMsgOnly(eDLInfo,"sampling window size: %d",iWindowSize);
+	if(WindowSize)
+		gDiagnostics.DiagOutMsgOnly(eDLInfo,"sampling window size: %d",WindowSize);
 	gDiagnostics.DiagOutMsgOnly(eDLInfo,"Number of bins: %d",NumBins);
 	gDiagnostics.DiagOutMsgOnly(eDLInfo,"Bin length delta: %d",BinDelta);
-	gDiagnostics.DiagOutMsgOnly(eDLInfo,"number of core species to be in alignment: %d",iNumCoreSpecies);
-	gDiagnostics.DiagOutMsgOnly(eDLInfo,"minimum number of species to be in alignment: %d",iMinAlignSpecies);
+	gDiagnostics.DiagOutMsgOnly(eDLInfo,"number of core species to be in alignment: %d",NumCoreSpecies);
+	gDiagnostics.DiagOutMsgOnly(eDLInfo,"minimum number of non-core species to be in alignment: %d", MinNonCoreSpecies);
 	gDiagnostics.DiagOutMsgOnly(eDLInfo,"species list: '%s'",	szSpeciesList);
-	if(iProcMode != eProcModeSummary)
+	if(PMode != eProcModeSummary)
 		{
-		gDiagnostics.DiagOutMsgOnly(eDLInfo,"minimum hyper core length required: %d",iMinHyperLen);
-		gDiagnostics.DiagOutMsgOnly(eDLInfo,"minimum ultra core length required: %d",iMinUltraLen);
-		gDiagnostics.DiagOutMsgOnly(eDLInfo,"hyper cores can have upto this number of total mismatches: %d",iMaxHyperMismatches);
-		gDiagnostics.DiagOutMsgOnly(eDLInfo,"minimum identity required when processing hyperconserved: %d",iMinIdentity);
+		gDiagnostics.DiagOutMsgOnly(eDLInfo,"minimum hyper core length required: %d",MinHyperCoreLen);
+		gDiagnostics.DiagOutMsgOnly(eDLInfo,"hyper cores can have upto this number of total mismatches: %d",MaxHyperColsMismatches);
+		gDiagnostics.DiagOutMsgOnly(eDLInfo,"minimum identity required when processing hyperconserved: %d",MinIdentity);
 		gDiagnostics.DiagOutMsgOnly(eDLInfo,"treat InDels as if mismatches: %s",bInDelsAsMismatches ? "yes" : "no");
 		gDiagnostics.DiagOutMsgOnly(eDLInfo,"slough columns in which the reference base is an InDel: %s",bSloughRefInDels ? "yes" : "no");
 		gDiagnostics.DiagOutMsgOnly(eDLInfo,"filter out low confidence subsequences: %s",bFiltLoConfidence ? "yes" : "no");
@@ -665,7 +603,7 @@ if (!argerrors)
 		gDiagnostics.DiagOutMsgOnly(eDLInfo,"subsequences of less than this length are treated as being low confidence: %d",bFiltLoConfidence ? 15 : 0);
 		gDiagnostics.DiagOutMsgOnly(eDLInfo,"treat subsequences of less than this identity as being low confidence: %d",bFiltLoConfidence? 70 : 0);
 		}
-	gDiagnostics.DiagOutMsgOnly(eDLInfo,"regulatory region length: %d",iRegLen);
+	gDiagnostics.DiagOutMsgOnly(eDLInfo,"regulatory region length: %d",RegLen);
 	gDiagnostics.DiagOutMsgOnly(eDLInfo,"accept alignments in which multiple feature bits are set: %s",bMultipleFeatBits ? "yes" : "no");
 	for(Idx = 0; Idx < NumIncludeChroms; Idx++)
 		gDiagnostics.DiagOutMsgOnly(eDLInfo,"reg expressions defining chroms to include: '%s'",pszIncludeChroms[Idx]);
@@ -677,7 +615,7 @@ if (!argerrors)
 	SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
 #endif
 	Rslt = Process(bTargDeps,				// true if process only if any independent src files newer than target
-					iProcMode,		// processing mode 0: default, 1: summary stats only, 2: outspecies processing
+					PMode,					// processing mode 0: default, 1: summary stats only, 2: outspecies processing
 					NumBins,				// when generating length distributions then use this many bins - 0 defaults to using 1000
 					BinDelta,				// when generating length distributions then each bin holds this length delta - 0 defaults to auto determine from NunBins and longest sequence length
 					szInputFile,		// bio multialignment (.algn) file to process
@@ -689,17 +627,16 @@ if (!argerrors)
 					NumExcludeFiles,	// number of exclude region files
 					pszExcludeFiles,	// biobed file containing regions to exclude - default is to include all
 					szUniqueSpeciesSeqs, // ignore alignment blocks if these species sequences are not unique
-					iWindowSize,		// sampling window size
-					iNumCoreSpecies,	// number of core species to be in alignment
-					iMinAlignSpecies,	// minimum number of species to be in alignment
-					szSpeciesList,		// space or comma separated list of species, priority ordered
-					iMinHyperLen,		// minimum hyper core length required
-					iMinUltraLen,		// minimum ultra core length required
-					iMaxHyperMismatches,	// hyper cores can have upto this number of total mismatches
-					1,					// number of mismatches in an alignment col to count as a missmatch against MaxMismatches
-					iMinIdentity,		// minimum identity required when processing hyperconserved
-					iDistSegs,			// number of match distribution profile segments
-					iRegLen,			// regulatory region length - up/dn stream of 5/3' 
+					WindowSize,		// sampling window size
+					NumCoreSpecies,	// number of core species to be in alignment
+					szSpeciesList,		// space or comma separated list of core species
+					MinNonCoreSpecies,	// minimum number of non-core species to be in alignment
+					MinHyperCoreLen,		// minimum hyper core length required
+					MaxHyperColsMismatches,	// hyper cores can have up to this number of columns with mismatches
+					1,					// max number of mismatches in an alignment col to count as a mismatch against MaxHyperColsMismatches
+					MinIdentity,		// minimum identity required when processing hyperconserved
+					DistSegs,			// number of match distribution profile segments
+					RegLen,			// regulatory region length - up/dn stream of 5/3' 
 					bMultipleFeatBits,	// if true then accept alignments in which multiple feature bits are set
 					bInDelsAsMismatches, // treat InDels as if mismatches
 					bSloughRefInDels,		// slough columns in which the reference base is an InDel
@@ -741,12 +678,11 @@ Process(bool bTargDeps,				// true if process only if any independent src files 
 	char* pszUniqueSpeciesSeqs, // ignore alignment block if these species sequences are not unique
 	int WindowSize,			// sampling window size
 	int NumCoreSpecies,		// number of core species to be in alignment
-	int MinAlignSpecies,	// minimum number of species required in an alignment (includes core species)
-	char* pszSpeciesList,	// space or comma separated list of species, priority ordered
-	int MinHyperLen,		// minimum hyper core length required
-	int MinUltraLen,		// minimum ultra core length required
-	int MaxHyperMismatches,	// hyper cores can have upto this number of total mismatches
-	int VMismatches,		// number of mismatches in an alignment col to count as a missmatch against MaxMismatches
+	char* pszCoreSpecies,	// space or comma separated list of species which must be present in any MAF block alignment before that block will be further processed
+	int MinNonCoreSpecies,	// minimum number of species required in an alignment (excluding core species)
+	int MinHyperCoreLen,		// minimum hyper core length required
+	int MaxHyperColsMismatches,	// hyper cores can have upto this number of columns with mismatches
+	int VMismatches,		// number of mismatches in an alignment col to count as a mismatch against MaxHyperColsMismatches
 	int MinIdentity,		// minimum identity required when processing hyperconserved
 	int NumDistSegs,		// number of match distribution profile segments
 	int RegLen,				// regulatory region length - up/dn stream of 5/3' 
@@ -770,41 +706,40 @@ if((pGenHypers = new CGenHypers) == nullptr)
 	return(eBSFerrObj);
 	}
 
-Rslt = pGenHypers->Process(bTargDeps,				// true if process only if any independent src files newer than target
-						ProcMode,					// processing mode 0: default, 1: summary stats only
+Rslt = pGenHypers->Process(bTargDeps,			// true if process only if any independent src files newer than target
+						ProcMode,				// processing mode 0: default, 1: summary stats only
 						NumBins,				// when generating length distributions then use this many bins - 0 defaults to using 1000
 						BinDelta,				// when generating length distributions then each bin holds this length delta - 0 defaults to auto determine from NunBins and longest sequence length
-						pszInputFile,		// bio multialignment (.algn) file to process
-						pszOutputFile,	// where to write out stats
-						pszOutputCoreFile, // where to write out the hypercore loci 
-						pszBiobedFile,	// biobed file containing regional features - exons, introns etc
-						NumIncludeFiles,	// number of include region files
-						ppszIncludeFiles,// biobed files containing regions to include - default is to exclude none
-						NumExcludeFiles,	// number of exclude region files
-						ppszExcludeFiles,// biobed file containing regions to exclude - default is to include all
-						pszUniqueSpeciesSeqs, // ignore alignment block if these species sequences are not unique
-						WindowSize,			// sampling window size
-						NumCoreSpecies,		// number of core species to be in alignment
-						MinAlignSpecies,	// minimum number of species required in an alignment (includes core species)
-						pszSpeciesList,	// space or comma separated list of species, priority ordered
-						MinHyperLen,		// minimum hyper core length required
-						MinUltraLen,		// minimum ultra core length required
-						MaxHyperMismatches,	// hyper cores can have upto this number of total mismatches
-						VMismatches,		// number of mismatches in an alignment col to count as a missmatch against MaxMismatches
-						MinIdentity,		// minimum identity required when processing hyperconserved
-						NumDistSegs,		// number of match distribution profile segments
-						RegLen,				// regulatory region length - up/dn stream of 5/3' 
-						bMultipleFeatBits,	// if true then accept alignments in which multiple feature bits are set
-						bInDelsAsMismatches, // treat InDels as if mismatches
-						bSloughRefInDels,	// slough columns in which the reference base is an InDel
-						bFiltLoConfidence,	// filter out low confidence subsequences
-						 bFilt1stLast,		// treat 1st and last subsequences as being low confidence
-						MinSubSeqLen,		// subsequences of less than this length are treated as being low confidence
-						MinIdent,			// treat subsequences of less than this identity as being low confidence
-						NumIncludeChroms,	// number of chromosomes explicitly defined to be included
-						ppszIncludeChroms,	// ptr to array of reg expressions defining chroms to include - overides exclude
-						NumExcludeChroms,	// number of chromosomes explicitly defined to be excluded
-						ppszExcludeChroms);	// ptr to array of reg expressions defining chroms to exclude);
+						pszInputFile,			// bio multialignment (.algn) file to process
+						pszOutputFile,			// where to write out stats
+						pszOutputCoreFile,		// where to write out the hypercore loci 
+						pszBiobedFile,			// biobed file containing regional features - exons, introns etc
+						NumIncludeFiles,		// number of include region files
+						ppszIncludeFiles,		// biobed files containing regions to include - default is to exclude none
+						NumExcludeFiles,		// number of exclude region files
+						ppszExcludeFiles,		// biobed file containing regions to exclude - default is to include all
+						pszUniqueSpeciesSeqs,	// ignore alignment block if these species sequences are not unique
+						WindowSize,				// sampling window size
+						NumCoreSpecies,			// number of core species to be in alignment
+						pszCoreSpecies,			// space or comma separated list of species which must be present in any MAF block alignment before that block will be further processed
+						MinNonCoreSpecies,		// minimum number of species required in an alignment (excluding core species)
+						MinHyperCoreLen,			// minimum hyper core length required
+						MaxHyperColsMismatches,	// hyper cores can have up to this number of columns with mismatches
+						VMismatches,			// number of mismatches in an alignment col to count as a mismatch against MaxHyperColsMismatches
+						MinIdentity,			// minimum identity required when processing hyperconserved
+						NumDistSegs,			// number of match distribution profile segments
+						RegLen,					// regulatory region length - up/dn stream of 5/3' 
+						bMultipleFeatBits,		// if true then accept alignments in which multiple feature bits are set
+						bInDelsAsMismatches,	// treat InDels as if mismatches
+						bSloughRefInDels,		// slough columns in which the reference base is an InDel
+						bFiltLoConfidence,		// filter out low confidence subsequences
+						 bFilt1stLast,			// treat 1st and last subsequences as being low confidence
+						MinSubSeqLen,			// subsequences of less than this length are treated as being low confidence
+						MinIdent,				// treat subsequences of less than this identity as being low confidence
+						NumIncludeChroms,		// number of chromosomes explicitly defined to be included
+						ppszIncludeChroms,		// ptr to array of reg expressions defining chroms to include - overides exclude
+						NumExcludeChroms,		// number of chromosomes explicitly defined to be excluded
+						ppszExcludeChroms);		// ptr to array of reg expressions defining chroms to exclude
 
 if(pGenHypers != nullptr)
 	delete pGenHypers;
@@ -814,11 +749,14 @@ return(Rslt);
 CGenHypers::CGenHypers()
 {
 m_pLenRangeClasses = nullptr;
+m_pszOutBuffer = nullptr;
 Reset();
 }
 
 CGenHypers::~CGenHypers()
 {
+if (m_pszOutBuffer != nullptr)
+	delete[]m_pszOutBuffer;
 if (m_pLenRangeClasses != nullptr)
 	delete[]m_pLenRangeClasses;
 }
@@ -826,6 +764,15 @@ if (m_pLenRangeClasses != nullptr)
 void
 CGenHypers::Reset(void)
 {
+
+if(m_pszOutBuffer != nullptr)
+	{
+	delete []m_pszOutBuffer;
+	m_pszOutBuffer = nullptr;
+	}
+m_AllocOutBuff = 0;
+m_OutBuffIdx = 0;
+
 m_NumLenRangeBins = 1000;				// when generating length distributions then use this many bins - 0 defaults to using 1000
 m_BinDelta = 1;				// when generating length distributions then each bin holds this length delta - defaults to 1
 if(m_pLenRangeClasses != nullptr)
@@ -1110,6 +1057,63 @@ sprintf(szSpeciesChrom,"%s.%s",pszSpecies,pszChrom);
 return(AddExcludeHistory(SpeciesID,ChromID,!m_RegExprs.Accept(szSpeciesChrom)));
 }
 
+
+// Directly load a space separated list of all species contained in a multialignment file
+int
+CGenHypers::LoadSpeciesnameList(char* pszAlgn,			 // source bioseq multialignment file
+							int MaxSpecies,			 // can accept at most this many multialigned species
+							int SpeciesBuffAllocSize, // pszSpeciesBuff is caller allocated to hold a maximum of this many chars including the string null terminator
+							char *pszSpeciesBuff)	// all species are written (space separated) into this caller allocated buffer
+{
+int NumSpecies;
+char *pszSpecies;
+int CurBuffOfs;
+int SpeciesNameLen;
+int Rslt;
+CMAlignFile* pAlignments;
+int SpeciesID;
+
+if ((pAlignments = new CMAlignFile()) == nullptr)
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "Unable to create new instance of CMAlignFile");
+	return(eBSFerrObj);
+	}
+
+if ((Rslt = pAlignments->Open(pszAlgn)) != eBSFSuccess)
+	{
+	while (pAlignments->NumErrMsgs())
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, pAlignments->GetErrMsg());
+	delete pAlignments;
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "LoadSpeciesnameList: Unable to open Algn file %s\n", pszAlgn);
+	return(Rslt);
+	}
+NumSpecies = pAlignments->GetNumSpecies(0);
+if (NumSpecies > MaxSpecies)
+	{
+	delete pAlignments;
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "LoadSpeciesnameList: Too many species, allowed %d actual %d, in multialignment Algn file %s\n", MaxSpecies, NumSpecies, pszAlgn);
+	return(eBSFerrSpecies);
+	}
+
+	// iterate over all species which are present in the multialignments, copying into pszSpeciesBuff with space separators
+CurBuffOfs = 0;
+for (SpeciesID = 1; SpeciesID <= NumSpecies; SpeciesID++)
+	{
+	pszSpecies = pAlignments->GetSpeciesName(SpeciesID);
+	SpeciesNameLen = (int)strlen(pszSpecies);
+	if((SpeciesNameLen + CurBuffOfs + 1) > SpeciesBuffAllocSize)
+		{
+		delete pAlignments;
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "LoadSpeciesnameList: Insufficient buffering allowed for species names in multialignment Algn file %s\n", pszAlgn);
+		return(eBSFerrSpecies);
+		}
+	CurBuffOfs += sprintf(&pszSpeciesBuff[CurBuffOfs], "%s ",pszSpecies);
+	}
+pszSpeciesBuff[CurBuffOfs] = '\0';		// overwrites space char prefixed onto last species name
+delete pAlignments;
+return(NumSpecies);
+}
+
 int 
 CGenHypers::ProcessAlignments(char *pszMAF,			 // source bioseq multialignment file
 				  tsProcParams *pProcParams) // processing parameters
@@ -1208,7 +1212,7 @@ while(CurBlockID >= 0 && ((CurBlockID =						// returned blockid to next start l
 		{
 		if(PrevDispRefChromID > 0)
 			{
-			if(pProcParams->ProcMode == eProcModeSummary)
+			if(pProcParams->PMode == eProcModeSummary)
 				ChkOutputSummaryResults(pProcParams->szRefChrom, -1,pProcParams,false,false);
 			else
 				ChkOutputResults(pProcParams->szRefChrom, -1,pProcParams,false,false);
@@ -1230,14 +1234,14 @@ while(CurBlockID >= 0 && ((CurBlockID =						// returned blockid to next start l
 		continue;
 
 		// not interested if the alignment length would be too short unless extended stats being generated
-	if(pProcParams->ProcMode != eProcModeSummary && RefAlignLen < pProcParams->MinCoreLen)
+	if(pProcParams->PMode != eProcModeSummary && RefAlignLen < pProcParams->MinHyperCoreLen)
 		continue;
 	if(pProcParams->bFiltLoConfidence && RefAlignLen < pProcParams->MinSubSeqLen)
 		continue;
 
 		// here we need to normalise the alignments so that there will be no case of all InDels in
 		// any column which can occur if none of the processed species is not the reference species
-	if((RefAlignLen = NormaliseInDelColumns(pProcParams,RefAlignLen))< pProcParams->MinCoreLen)
+	if((RefAlignLen = NormaliseInDelColumns(pProcParams,RefAlignLen))< pProcParams->MinHyperCoreLen)
 		continue;
 	if(pProcParams->bFiltLoConfidence && RefAlignLen < pProcParams->MinSubSeqLen)
 		continue;
@@ -1245,7 +1249,7 @@ while(CurBlockID >= 0 && ((CurBlockID =						// returned blockid to next start l
 	if(RefChromID != PrevRefChromID)
 		PrevRefChromID = RefChromID;
 
-	if(pProcParams->ProcMode == eProcModeSummary)
+	if(pProcParams->PMode == eProcModeSummary)
 		{
 		ChkOutputSummaryResults(pProcParams->szRefChrom, RefChromOfs,pProcParams,false,false);
 		if(!ProcAlignBlockSummary(RefChromID,RefChromOfs,RefAlignLen,pProcParams))
@@ -1264,6 +1268,9 @@ delete pAlignments;
 return(eBSFSuccess);
 }
 
+// LoadContiguousBlocks() loads sequences from 1 or more blocks starting at BlockID which are contiguous in the reference sequence.
+// Each individual block loaded may differ in the number of relatively aligned species so if any species is absent then its
+// corresponding sequence will be set to be eBaseUndef 
 int										// returned blockid to next start loading from
 CGenHypers::LoadContiguousBlocks(int RefSpeciesID,	// reference species identifier
 			   int  BlockID,			// which block to initially start loading from
@@ -1311,7 +1318,7 @@ CurRefStrand = '+';
 CurRefChromOfs = -1;
 CurRefChromEndOfs = -1;
 CurRefAlignLen = 0;
-
+MaxAlignIdxSpecies = 0;
 while(CurBlockID >= 0 && ((CurBlockID = pAlignments->NxtBlock(CurBlockID)) > 0))
 	{
 	CurRefChromID  = pAlignments->GetRelChromID(CurBlockID,RefSpeciesID);
@@ -1320,29 +1327,32 @@ while(CurBlockID >= 0 && ((CurBlockID = pAlignments->NxtBlock(CurBlockID)) > 0))
 	CurRefChromEndOfs = pAlignments->GetRelChromEndOfs(CurBlockID,RefSpeciesID);
 	CurRefAlignLen = pAlignments->GetAlignLen(CurBlockID,RefSpeciesID);
 	
-			// terminate with blocks in which there are less species than the minimum number we need!
+			// terminate with blocks in which there are fewer species than the minimum number we need!
 	if((CurNumAlignments = pAlignments->GetNumSpecies(CurBlockID)) < pProcParams->NumCoreSpecies)
 		break;
 
-	// check if this aligned block would overflow alloc'd memory for holding concatenated alignments
+	// check if this aligned block would overflow alloc'd memory for holding alignments when block sequences are
+	// concatenated with a previously loaded block in the current call to LoadContiguousBlocks().
+	// 
+	// a copy of each species aligned sequence will be made into pProcParms->pSeqs[SpeciesID]
 	if((CurRefAlignLen + RefAlignLen) > pProcParams->MaxSeqAlignLen)
 		{
-		CurBlockID = PrvBlockID; // force re-read of block next time
+		CurBlockID = PrvBlockID; // force re-read of block next time LoadContiguousBlocks() is called
 		break;
 		}
 
-	if(bFirst) 
+	if(bFirst) // if initial block in current call to LoadContiguousBlocks()
 		{
-		RefChromID =   CurRefChromID;
+		RefChromID =   CurRefChromID;				// noting which chrom, strand, offsets this initial block covers
 		RefStrand  =   CurRefStrand;
 		RefChromOfs=   CurRefChromOfs;
 		RefChromEndOfs=CurRefChromOfs;
 		}
 	else
-		{
-		if(CurRefChromID != RefChromID || 
+		{	// not the initial block in current call to LoadContiguousBlocks()
+		if(CurRefChromID != RefChromID ||			// if concatenating sequences then need to ensure the concatenation would be on same chrom as the initial block sequences 
 		   CurRefStrand != RefStrand || 
-		   (CurRefChromOfs != (RefChromEndOfs + 1)))
+		   (CurRefChromOfs != (RefChromEndOfs + 1)))	// need to ensure that this blocks sequences start immediately following previous blocks end offset 
 			{
 			CurBlockID = PrvBlockID; // force re-read of block next time
 			break;
@@ -1350,28 +1360,27 @@ while(CurBlockID >= 0 && ((CurBlockID = pAlignments->NxtBlock(CurBlockID)) > 0))
 		}
 
 		// iterate over species aligned in current block, species are assumed to be in priority order
+	MaxAlignIdxSpecies = 0;
+	int SpeciesExpected = 0;
 	for(NumSpecies = Idx = 0; Idx < pProcParams->NumSpeciesList; Idx++) 
 		{
 		RelSpeciesID = pSpeciesIDs[Idx];
-		RelChromID = pAlignments->GetRelChromID(CurBlockID,RelSpeciesID);
-
+		RelChromID = pAlignments->GetRelChromID(CurBlockID, RelSpeciesID);
 		if(RelChromID < 1)			// assume < 1 is because species not in alignment
 			{
-			if(Idx < pProcParams->NumCoreSpecies)	// first pParams->NumCoreSpecies must always be present
-				break;
+			if(RelSpeciesID == 1)
+				SpeciesExpected++;
 			memset(&pProcParams->pSeqs[Idx][RefAlignLen],eBaseUndef,CurRefAlignLen);
 			continue;		
 			}
 
 		if(ExcludeThisChrom(pAlignments,RelSpeciesID,RelChromID,pProcParams))	// should this chromosome be accepted for processing or sloughed?
 			{
-			if(Idx < pProcParams->NumCoreSpecies)	// first pParams->NumCoreSpecies must always be present
-				break;
 			memset(&pProcParams->pSeqs[Idx][RefAlignLen],eBaseUndef,CurRefAlignLen);
 			continue;	
 			}
 
-			// get each sequence
+			// get sequence for the species and if present - expected to be! - then concatenate on to any previously loaded sequences
 		if((pSeq = pAlignments->GetSeq(CurBlockID,RelSpeciesID))==nullptr) 
 			{
 			gDiagnostics.DiagOut(eDLInfo,gszProcName,"LoadContiguousBlocks: Unexpected missing sequence in alignments");
@@ -1520,8 +1529,6 @@ CurSeqLen = 0;
 CurFiltSeqLen = 0;
 SubRefOfs = RefChromOfs;
 SubSeqStartIdx = 0;
-//if(RefChromID == 1 && RefChromOfs > 10673120 && RefChromOfs < 10690000)
-//	printf("\nAt ChromOfs: %d",RefChromOfs);
 
 for(SeqIdx = 0; SeqIdx < AlignLen; SeqIdx++)
 	{
@@ -1554,10 +1561,10 @@ for(SeqIdx = 0; SeqIdx < AlignLen; SeqIdx++)
 	// if the reference base was an InDel then bRefInDel will be true
 	// if in column all identical and a,c,g or t then bAllIdentical will be true
 	// if any base was mismatched or not a,c,g or t then bAllIdentical will be false
-	if((pProcParams->ProcMode != eProcModeOutspecies && NumVInDels) && (!pProcParams->bInDelsAsMismatches &&
+	if((pProcParams->PMode != eProcModeOutspecies && NumVInDels) && (!pProcParams->bInDelsAsMismatches &&
 		(!pProcParams->bSloughRefInDels || (pProcParams->bSloughRefInDels && !bRefInDel))))
 		{
-		if(CurFiltSeqLen >= pProcParams->MinCoreLen)	// has to be of at least MinLen to be worth further processing
+		if(CurFiltSeqLen >= pProcParams->MinHyperCoreLen)	// has to be of at least MinLen to be worth further processing
 			{
 			CurNumSeqs+=1;
 			if(CurFiltSeqLen >= pProcParams->MinSubSeqLen)			
@@ -1569,7 +1576,7 @@ for(SeqIdx = 0; SeqIdx < AlignLen; SeqIdx++)
 					if(CurFiltSeqLen &&  pProcParams->MinIdent > 0 && ((NumIdents * 100)/CurFiltSeqLen) < pProcParams->MinIdent)
 						CurFiltSeqLen = 0;
 					}
-				if(CurFiltSeqLen >= pProcParams->MinCoreLen)
+				if(CurFiltSeqLen >= pProcParams->MinHyperCoreLen)
 					ProcessAlignment(RefChromID,SubRefOfs,SubSeqStartIdx,CurFiltSeqLen,pProcParams);
 				}
 			}
@@ -1607,7 +1614,7 @@ for(SeqIdx = 0; SeqIdx < AlignLen; SeqIdx++)
 	}
 
 // no more bases in this block
-if(CurFiltSeqLen >= pProcParams->MinCoreLen)	// has to be at least MinLen to be worth further processing
+if(CurFiltSeqLen >= pProcParams->MinHyperCoreLen)	// has to be at least MinLen to be worth further processing
 	{
 	if(CurFiltSeqLen >= pProcParams->MinSubSeqLen)			
 		{
@@ -1618,7 +1625,7 @@ if(CurFiltSeqLen >= pProcParams->MinCoreLen)	// has to be at least MinLen to be 
 			if(CurFiltSeqLen &&  pProcParams->MinIdent > 0 && ((NumIdents * 100)/CurFiltSeqLen) < pProcParams->MinIdent)
 				CurFiltSeqLen = 0;
 			}
-		if(CurFiltSeqLen >= pProcParams->MinCoreLen)
+		if(CurFiltSeqLen >= pProcParams->MinHyperCoreLen)
 			ProcessAlignment(RefChromID,SubRefOfs,SubSeqStartIdx,CurFiltSeqLen,pProcParams);
 		}
 	}
@@ -1889,40 +1896,39 @@ return(true);
 // Create alignment stats from files in specified source directory
 int
 CGenHypers::Process(bool bTargDeps,				// true if process only if any independent src files newer than target
-		int ProcMode,				// processing mode 0: default, 1: summary stats only, 2: outspecies
-		int NumBins,				// when generating length distributions then use this many bins - 0 defaults to using 1000
-		int BinDelta,				// when generating length distributions then each bin holds this length delta - 0 defaults to auto determine from NunBins and longest sequence length
-		char *pszInputFile,		// bio multialignment (.algn) file to process
-		char *pszOutputFile,	// where to write out stats
-		char *pszOutputCoreFile, // where to write out the hypercore loci 
-		char *pszBiobedFile,	// biobed file containing regional features - exons, introns etc
-		int NumIncludeFiles,	// number of include region files
-		char **ppszIncludeFiles,	// biobed files containing regions to include - default is to exclude none
-		int NumExcludeFiles,	// number of exclude region files
-		char **ppszExcludeFiles,	// biobed file containing regions to exclude - default is to include all
-		char *pszUniqueSpeciesSeqs, // ignore alignment block if these species sequences are not unique
-		int WindowSize,			// sampling window size
-		int NumCoreSpecies,		// number of core species to be in alignment
-		int MinAlignSpecies,	// minimum number of species required in an alignment (includes core species)
-		char *pszSpeciesList,	// space or comma separated list of species, priority ordered
-		int MinHyperLen,		// minimum hyper core length required
-		int MinUltraLen,		// minimum ultra core length required
-		int MaxHyperMismatches,	// hyper cores can have upto this number of total mismatches
-		int VMismatches,		// number of mismatches in an alignment col to count as a missmatch against MaxMismatches
-		int MinIdentity,		// minimum identity required when processing hyperconserved
-		int NumDistSegs,		// number of match distribution profile segments
-		int RegLen,				// regulatory region length - up/dn stream of 5/3' 
-		bool bMultipleFeatBits,	// if true then accept alignments in which multiple feature bits are set
-		bool bInDelsAsMismatches, // treat InDels as if mismatches
-		bool bSloughRefInDels,			// slough columns in which the reference base is an InDel
-		bool bFiltLoConfidence,		// filter out low confidence subsequences
-		bool bFilt1stLast,			// treat 1st and last subsequences as being low confidence
-		int MinSubSeqLen,			// subsequences of less than this length are treated as being low confidence
-		int MinIdent,				// treat subsequences of less than this identity as being low confidence
-		int NumIncludeChroms,	// number of chromosomes explicitly defined to be included
-		char **ppszIncludeChroms,	// ptr to array of reg expressions defining chroms to include - overides exclude
-		int NumExcludeChroms,	// number of chromosomes explicitly defined to be excluded
-		char **ppszExcludeChroms)	// ptr to array of reg expressions defining chroms to include
+	int PMode,					// processing mode 0: default, 1: summary stats only
+	int NumBins,				// when generating length distributions then use this many bins - 0 defaults to using 1000
+	int BinDelta,				// when generating length distributions then each bin holds this length delta - 0 defaults to auto determine from NunBins and longest sequence length
+	char* pszInputFile,		// bio multialignment (.algn) file to process
+	char* pszOutputFile,	// where to write out stats
+	char* pszOutputCoreFile, // where to write out the hypercore loci 
+	char* pszBiobedFile,	// biobed file containing regional features - exons, introns etc
+	int NumIncludeFiles,	// number of include region files
+	char** ppszIncludeFiles,// biobed files containing regions to include - default is to exclude none
+	int NumExcludeFiles,	// number of exclude region files
+	char** ppszExcludeFiles,// biobed file containing regions to exclude - default is to include all
+	char* pszUniqueSpeciesSeqs, // ignore alignment block if these species sequences are not unique
+	int WindowSize,			// sampling window size
+	int NumCoreSpecies,		// number of core species to be in alignment
+	char* pszCoreSpecies,	// space or comma separated list of species which must be present in any MAF block alignment before that block will be further processed
+	int MinNonCoreSpecies,	// minimum number of species required in an alignment (excluding core species)
+	int MinHyperCoreLen,		// minimum hyper core length required
+	int MaxHyperColsMismatches,	// hyper cores can have up to this number of columns with at least one mismatches
+	int VMismatches,		// number of mismatches in an alignment col to count as a mismatch against MaxHyperColsMismatches
+	int MinIdentity,		// minimum identity required when processing hyperconserved
+	int NumDistSegs,		// number of match distribution profile segments
+	int RegLen,				// regulatory region length - up/dn stream of 5/3' 
+	bool bMultipleFeatBits,	// if true then accept alignments in which multiple feature bits are set
+	bool bInDelsAsMismatches, // treat InDels as if mismatches
+	bool bSloughRefInDels,	// slough columns in which the reference base is an InDel
+	bool bFiltLoConfidence,	// filter out low confidence subsequences
+	bool bFilt1stLast,		// treat 1st and last subsequences as being low confidence
+	int MinSubSeqLen,		// subsequences of less than this length are treated as being low confidence
+	int MinIdent,			// treat subsequences of less than this identity as being low confidence
+	int NumIncludeChroms,	// number of chromosomes explicitly defined to be included
+	char** ppszIncludeChroms,	// ptr to array of reg expressions defining chroms to include - overides exclude
+	int NumExcludeChroms,	// number of chromosomes explicitly defined to be excluded
+	char** ppszExcludeChroms)	// ptr to array of reg expressions defining chroms to exclude
 {
 int Rslt;
 int Idx;
@@ -1934,7 +1940,7 @@ CBEDfile *pBiobed = nullptr;
 tsProcParams ProcParams;
 int	MismatchScore;
 int	MatchScore;
-char szCSVSpecies[2048];				// to hold comma separated species list
+char *pszCSVSpecies;				// to hold comma separated species list
 char szInaccessible[_MAX_PATH];
 
 Reset();
@@ -1976,26 +1982,28 @@ memset(&ProcParams,0,sizeof(tsProcParams));
 
 // parse out species which must have unique alignment block sequences
 if(!stricmp(pszUniqueSpeciesSeqs,"*"))
-	ParseUniqueSpeciesSeqs(pszSpeciesList,&ProcParams);
+	ParseUniqueSpeciesSeqs(pszCoreSpecies,&ProcParams);
 else
 	ParseUniqueSpeciesSeqs(pszUniqueSpeciesSeqs,&ProcParams);
 
 // parse out species list
-ProcParams.NumSpeciesList = ParseNumSpecies(pszSpeciesList,&ProcParams);
-szCSVSpecies[0]='\0';
+ProcParams.NumSpeciesList = ParseNumSpecies(pszCoreSpecies,&ProcParams);
+pszCSVSpecies = new char[strlen(pszCoreSpecies) * 2];
+pszCSVSpecies[0]='\0';
 for(Idx = 0; Idx < ProcParams.NumSpeciesList; Idx++)
 	{
 	if(Idx > 0)
-		strcat(szCSVSpecies,",");
-	strcat(szCSVSpecies,ProcParams.szSpecies[Idx]);
+		strcat(pszCSVSpecies,",");
+	strcat(pszCSVSpecies,ProcParams.szSpecies[Idx]);
 	}
-ProcParams.pszSpeciesList = szCSVSpecies;
+ProcParams.pszSpeciesList = pszCSVSpecies;
 
 for(Idx=0;Idx<NumIncludeFiles; Idx++)
 	{
 	if((ProcParams.pIncludes[Idx] = OpenBedfile(ppszIncludeFiles[Idx]))==nullptr)
 		{
 		CloseBedfiles(&ProcParams);
+		delete []pszCSVSpecies;
 		return(eBSFerrObj);
 		}
 	ProcParams.NumIncludes++;
@@ -2006,6 +2014,7 @@ for(Idx=0;Idx<NumExcludeFiles; Idx++)
 	if((ProcParams.pExcludes[Idx] = OpenBedfile(ppszExcludeFiles[Idx]))==nullptr)
 		{
 		CloseBedfiles(&ProcParams);
+		delete[]pszCSVSpecies;
 		return(eBSFerrObj);
 		}
 	ProcParams.NumExcludes++;
@@ -2017,6 +2026,7 @@ if(pszBiobedFile != nullptr && pszBiobedFile[0] != '\0')
 	if((ProcParams.pBiobed = OpenBedfile(pszBiobedFile))==nullptr)
 		{
 		CloseBedfiles(&ProcParams);
+		delete[]pszCSVSpecies;
 		return(eBSFerrObj);
 		}
 	Regions = cNumCharRegs;	
@@ -2032,7 +2042,7 @@ else
 m_NumLenRangeBins = NumBins;
 m_BinDelta = BinDelta;
 
-if(ProcMode == eProcModeSummary)
+if(PMode == eProcModeSummary)
 	NumCnts=Regions * 4;	// allows for RefIndels,RelInDels,Matches and Mismatch counts per region
 else
 	NumCnts=Regions * m_NumLenRangeBins;
@@ -2040,7 +2050,8 @@ else
 if((pCntStepCnts = new int[NumCnts])==nullptr)
 	{
 	CloseBedfiles(&ProcParams);
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"nUnable to allocate memory (%d bytes) for holding alignment statistics",sizeof(int) * NumCnts);
+	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory (%d bytes) for holding alignment statistics",sizeof(int) * NumCnts);
+	delete[]pszCSVSpecies;
 	return(eBSFerrMem);
 	}
 memset(pCntStepCnts,0,NumCnts * sizeof(int));
@@ -2054,9 +2065,10 @@ ProcParams.bFiltLoConfidence = bFiltLoConfidence;
 ProcParams.bFilt1stLast = bFilt1stLast;
 ProcParams.MinIdent = MinIdent;
 ProcParams.MinSubSeqLen = MinSubSeqLen;
-ProcParams.ProcMode = ProcMode;
-ProcParams.MinAlignSpecies = MinAlignSpecies;
+ProcParams.PMode = PMode;
+ProcParams.MinAlignSpecies = NumCoreSpecies + MinNonCoreSpecies;
 ProcParams.NumCoreSpecies = NumCoreSpecies;
+ProcParams.MinNonCoreSpecies = MinNonCoreSpecies;
 ProcParams.NumSpeciesInAlignment = 0;
 ProcParams.MaxAlignIdxSpecies = 0;
 ProcParams.RefSpeciesIdx = 0;
@@ -2066,21 +2078,15 @@ ProcParams.UpDnStreamLen = UpDnStreamLen;
 ProcParams.bMultipleFeatBits = bMultipleFeatBits;
 ProcParams.Regions = Regions;
 ProcParams.NumCnts = NumCnts;
-ProcParams.MinUltraLen = MinUltraLen;
-ProcParams.MinHyperLen = MinHyperLen;
-#ifdef _WIN32
-ProcParams.MinCoreLen = max(MinUltraLen,MinHyperLen);
-#else
-ProcParams.MinCoreLen = MinUltraLen > MinHyperLen ? MinUltraLen : MinHyperLen;
-#endif
+ProcParams.MinHyperCoreLen = MinHyperCoreLen;
 
-ProcParams.MaxHyperMismatches = MaxHyperMismatches;
+ProcParams.MaxHyperColsMismatches = MaxHyperColsMismatches;
 ProcParams.MinIdentity = MinIdentity;		// minimum identity required when processing hyperconserved
 
-if(ProcMode != eProcModeSummary && MinIdentity < 100)
+if(PMode != eProcModeSummary && MinIdentity < 100)
 	{
-	MismatchScore = (cRandWalk100Score - 1) / (100 - MinIdentity);	   // decrease score by this much on each mismatch
-	MatchScore = cRandWalk100Score / MinIdentity;			   // increase score by this much each time there is a match
+	MismatchScore = (cRandWalk100Score - 1) / (100 - MinIdentity);	// decrease score by this much on each mismatch
+	MatchScore = cRandWalk100Score / MinIdentity;					// increase score by this much each time there is a match
 	}
 else
 	{
@@ -2096,6 +2102,7 @@ if((Rslt =m_RegExprs.CompileREs(NumIncludeChroms, ppszIncludeChroms,NumExcludeCh
 	{
 	delete pCntStepCnts;
 	CloseBedfiles(&ProcParams);
+	delete[]pszCSVSpecies;
 	return(eBSFerrMem);
 	}
 
@@ -2109,44 +2116,41 @@ for(Idx = 0; Idx < ProcParams.NumSpeciesList; Idx++)
 		delete pCntStepCnts;
 		CloseBedfiles(&ProcParams);
 		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to allocate memory (%d bytes) for holding species sequences",ProcParams.MaxSeqAlignLen);
+		delete[]pszCSVSpecies;
 		return(eBSFerrMem);
 		}
 	}
 
-#ifdef _WIN32
-if((ProcParams.hRsltsFile = open(pszOutputFile, _O_RDWR | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC, _S_IREAD | _S_IWRITE ))==-1)
-#else
-if((ProcParams.hRsltsFile = open(pszOutputFile,O_RDWR | O_CREAT |O_TRUNC, S_IREAD | S_IWRITE ))==-1)
-#endif
-	{
-	gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create %s - %s",pszOutputFile,strerror(errno));
-	delete pCntStepCnts;
-	CloseBedfiles(&ProcParams);
-	return(eBSFerrCreateFile);
-	}
 
-if(pszOutputCoreFile != nullptr && pszOutputCoreFile[0] != '\0')
+ProcParams.hCoreCSVRsltsFile = -1;
+Rslt = GenKimura3P(pszInputFile, pszOutputFile, &ProcParams);
+if (Rslt == eBSFSuccess)
 	{
-#ifdef _WIN32
-	if((ProcParams.hCoreCSVRsltsFile = open(pszOutputCoreFile, _O_RDWR | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC, _S_IREAD | _S_IWRITE ))==-1)
-#else
-	if((ProcParams.hCoreCSVRsltsFile = open(pszOutputCoreFile, O_RDWR | O_CREAT | O_TRUNC, S_IREAD | S_IWRITE ))==-1)
-#endif
+	if(pszOutputCoreFile != nullptr && pszOutputCoreFile[0] != '\0')
 		{
-		gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create %s - %s",pszOutputCoreFile,strerror(errno));
-		close(ProcParams.hRsltsFile);
-		delete pCntStepCnts;
-		CloseBedfiles(&ProcParams);
-		return(eBSFerrCreateFile);
+#ifdef _WIN32
+		if((ProcParams.hCoreCSVRsltsFile = open(pszOutputCoreFile, _O_RDWR | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC, _S_IREAD | _S_IWRITE ))==-1)
+#else
+		if((ProcParams.hCoreCSVRsltsFile = open(pszOutputCoreFile, O_RDWR | O_CREAT | O_TRUNC, S_IREAD | S_IWRITE ))==-1)
+#endif
+			{
+			gDiagnostics.DiagOut(eDLFatal,gszProcName,"Unable to create %s - %s",pszOutputCoreFile,strerror(errno));
+			close(ProcParams.hRsltsFile);
+			delete []pCntStepCnts;
+			CloseBedfiles(&ProcParams);
+			delete[]pszCSVSpecies;
+			return(eBSFerrCreateFile);
+			}
 		}
+	else
+		ProcParams.hCoreCSVRsltsFile = -1;
 	}
-else
-	ProcParams.hCoreCSVRsltsFile = -1;
 
-Rslt = ProcessAlignments(pszInputFile,&ProcParams);
+if(Rslt == eBSFSuccess)
+	Rslt = ProcessAlignments(pszInputFile,&ProcParams);
 if(Rslt == eBSFSuccess && !WindowSize)
 	{
-	if(ProcMode == eProcModeSummary)
+	if(PMode == eProcModeSummary)
 		OutputSummaryResults( "Alignment",0,&ProcParams,false);
 	else
 		OutputResults( "Genome",0,&ProcParams,false);
@@ -2154,14 +2158,25 @@ if(Rslt == eBSFSuccess && !WindowSize)
 if(pCntStepCnts != nullptr)
 	delete []pCntStepCnts;
 if(ProcParams.hRsltsFile != -1)
+	{
 	close(ProcParams.hRsltsFile);
+	ProcParams.hRsltsFile = -1;
+	}
 if(ProcParams.hCoreCSVRsltsFile != -1)
+	{
 	close(ProcParams.hCoreCSVRsltsFile);
+	ProcParams.hCoreCSVRsltsFile = -1;
+	}
 CloseBedfiles(&ProcParams);
 for(Idx = 0; Idx < ProcParams.NumSpeciesList; Idx++)
+	{
 	if(ProcParams.pSeqs[Idx] != nullptr)
+		{
 		delete ProcParams.pSeqs[Idx];
-
+		ProcParams.pSeqs[Idx] = nullptr;
+		}
+	}
+delete[]pszCSVSpecies;
 return(Rslt);
 }
 
@@ -2181,16 +2196,14 @@ int NxtSeqIdx;
 etSeqBase *pRefBase;
 pRefBase = pProcParams->pSeqs[pProcParams->RefSpeciesIdx];
 pRefBase += SeqIdx;
-while(SubSeqLen >= pProcParams->MinCoreLen)
+while(SubSeqLen >= pProcParams->MinHyperCoreLen)
 	{
 		// from current SubRefOfs maximally extend to right allowing for MaxMismatches
-//	if(RefChromID == 1 && (ChromOfs > 10673740 && ChromOfs < 10674000))
-//		printf("\nNow at ChromOfs: %d",ChromOfs);
 	NxtSeqIdx = ProcessSubSeq(RefChromID,ChromOfs,SeqIdx,SubSeqLen,pProcParams);
 	if(NxtSeqIdx == -1)		// -1 flags that there is no more processing required for this alignment
 		break;
 	SubSeqLen -= (NxtSeqIdx - SeqIdx);	// update length of remaining sequence in this alignment
-	if(SubSeqLen < pProcParams->MinCoreLen)
+	if(SubSeqLen < pProcParams->MinHyperCoreLen)
 		break;
 
 	// determine chrom offset at which next
@@ -2204,6 +2217,326 @@ while(SubSeqLen >= pProcParams->MinCoreLen)
 return(true);
 }
 
+// Reference: Kimura 3 Parameter distance https://en.wikipedia.org/wiki/Genetic_distance
+// For each species. relative to the reference species, empirically determine the transistion/transversion1/transversion2 mutation rates.
+// Transition:		A<->G,T<->C 
+// Transversion1:	T<->A,C<->G
+// Transversion2:	T<->G,A<->C
+// For each species iterate over all alignment blocks, containing that species, and accumulate counts of each observed ref:species relative nucleotides
+// Thus a 4x4 matrix of counts for each species is generated
+typedef struct Tag_sKimura3PCnts {
+	int32_t SpeciesID;		// counts are for this species
+	int64_t NumMatches;		// ref:rel exacts
+	int64_t NumTransitions; // ref:rel Transition	A<->G,T<->C
+	int64_t NumTransversion1s; // ref:rel Transversion1:	T<->A,C<->G
+	int64_t NumTransversion2s; // ref:rel Transversion2:	T<->G,A<->C
+	int64_t NumIndeterminate;		// ref:rel is indeterminate - must likely no alignment or a short InDel
+	double Distance;		// Kimura3P distance
+} tsKimura3PCnts;
+
+int
+CGenHypers::GenKimura3P(char* pszMAF,			 // source bioseq multialignment file
+						char* pszKimura3PFile,	// write species parameter counts to this output file
+	tsProcParams* pProcParams) // processing parameters
+{
+int RefSpeciesID;
+int RefChromID;
+int BEDChromID;
+int PrevRefChromID;
+int PrevDispRefChromID;
+char* pszRefChrom;
+int RefChromOfs;
+char RefStrand;
+int SpeciesIdx2IDs[cMaxAlignedSpecies];  // mapping species indexes to species identifiers
+int SpeciesID2Idxs[cMaxAlignedSpecies+1];	// mapping species identifiers to species indexes
+char szOutFile[_MAX_PATH];
+int Rslt;
+int RefAlignLen;
+CMAlignFile* pAlignments;
+int Idx;
+int CurBlockID;
+bool bLoaded;
+tsKimura3PCnts *pKimura3PCnts;
+tsKimura3PCnts* pKimura3PCnt;
+// compose CSV file name, the file will contain the Kimura3P global genome parameter values
+CUtility::AppendFileNameSuffix(szOutFile, pszKimura3PFile, (char*)".Kimura3P.csv", '.');
+
+if (m_pszOutBuffer == nullptr)
+{
+	m_pszOutBuffer = new uint8_t[cAllOutBuffSize];
+	m_AllocOutBuff = cAllOutBuffSize;
+}
+m_OutBuffIdx = 0;
+
+#ifdef _WIN32
+if ((pProcParams->hRsltsFile = open(szOutFile, _O_RDWR | _O_BINARY | _O_SEQUENTIAL | _O_CREAT | _O_TRUNC, _S_IREAD | _S_IWRITE)) == -1)
+#else
+if ((pProcParams->hRsltsFile = open(szOutFile, O_RDWR | O_CREAT | O_TRUNC, S_IREAD | S_IWRITE)) == -1)
+#endif
+{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenKimura3P: Unable to open or create %s - %s", szOutFile, strerror(errno));
+	return(eBSFerrCreateFile);
+	}
+m_OutBuffIdx = sprintf((char*)m_pszOutBuffer, "\"Species\",\"NumExacts\",\"NumTransitions\",\"NumTransversion1s\",\"NumTransversion2s\",\"NumIndeterminate\"\n");
+if (!CUtility::RetryWrites(pProcParams->hRsltsFile, m_pszOutBuffer, m_OutBuffIdx))
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenKimura3P: Fatal error in '%s' RetryWrites()", szOutFile);
+	close(pProcParams->hRsltsFile);
+	pProcParams->hRsltsFile = -1;
+	Reset();
+	return(eBSFerrFileAccess);
+	}
+m_OutBuffIdx = 0;
+
+if ((pAlignments = new CMAlignFile()) == nullptr)
+	{
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenKimura3P: Unable to create new instance of CMAlignFile");
+	return(eBSFerrObj);
+	}
+
+if ((Rslt = pAlignments->Open(pszMAF)) != eBSFSuccess)
+	{
+	while (pAlignments->NumErrMsgs())
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, pAlignments->GetErrMsg());
+	delete pAlignments;
+	gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenKimura3P: Unable to open MAF file %s\n", pszMAF);
+	return(Rslt);
+	}
+
+// total number of species in the multialignments?
+m_NumMAFSpecies = pAlignments->GetNumSpecies();
+RefSpeciesID = pAlignments->GetRefSpeciesID();			// get reference species identifer
+
+pKimura3PCnts = new tsKimura3PCnts[m_NumMAFSpecies];
+memset(pKimura3PCnts, 0, sizeof(tsKimura3PCnts) * m_NumMAFSpecies);
+pKimura3PCnt = pKimura3PCnts;
+	// obtain identifiers for each of the species present in the multialignments
+for (Idx = 0; Idx < m_NumMAFSpecies; Idx++, pKimura3PCnt++)
+	{
+	if ((Rslt = SpeciesIdx2IDs[Idx] = pAlignments->LocateSpeciesID(Idx)) < 1)	// mapping species index to species identifier
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenKimura3P: Species indexed as '%d' not represented in %s", Idx, pszMAF);
+		delete pAlignments;
+		return(eBSFerrEntry);
+		}
+	SpeciesID2Idxs[Rslt] = Idx;
+	pKimura3PCnt->SpeciesID = Rslt;
+	}
+
+
+pAlignments->SetAllConfFilt(false);
+
+	// iterate over reference blocks which are sorted by chrom then offset
+CurBlockID = 0;
+PrevRefChromID = 0;
+PrevDispRefChromID = 0;
+BEDChromID = 0;
+pProcParams->RefSpeciesIdx = 0;		// reference sequence will always be 1st
+pProcParams->NxtOutputOffset = pProcParams->WindowSize;
+
+while (CurBlockID >= 0 && ((CurBlockID =						// returned blockid to next start loading from
+		LoadContiguousBlocks(RefSpeciesID,	// reference species identifier
+			CurBlockID,			// which block to initially start loading from
+			&bLoaded,			// returned indicator as to if any loaded blocks meet processing requirements
+			&RefChromID,		// returned reference chromosome identifier 
+			&RefStrand,			// returned reference strand
+			&RefAlignLen,		// returned alignment (incl InDels) length
+			&RefChromOfs,		// returned alignment start offset
+			SpeciesIdx2IDs,		// input - species of interest identifier array
+			pAlignments,
+			pProcParams)) > 0 || (CurBlockID == eBSFerrAlignBlk && RefAlignLen > 0)))
+	{
+	if (RefChromID > 0 && RefChromID != PrevDispRefChromID)
+		{
+		PrevDispRefChromID = RefChromID;
+		pszRefChrom = pAlignments->GetChromName(RefChromID);
+
+		strcpy(pProcParams->szRefChrom, pszRefChrom);
+		gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenKimura3P: Processing chromosome %s", pszRefChrom);
+		pProcParams->NxtOutputOffset = pProcParams->WindowSize;
+		if (pProcParams->pBiobed != nullptr)
+			pProcParams->BEDChromID = pProcParams->pBiobed->LocateChromIDbyName(pProcParams->szRefChrom);
+		else
+			pProcParams->BEDChromID = 0;
+		pProcParams->RefChromID = RefChromID;
+		}
+
+	if (!bLoaded)
+		continue;
+
+	int32_t AlignColIdx;
+	int32_t SpeciesSeqIdx;
+	etSeqBase RefBase;
+	etSeqBase *pSeqBases;
+	etSeqBase SeqBase;
+	for (AlignColIdx = 0; AlignColIdx < RefAlignLen; AlignColIdx++)
+		{
+		pKimura3PCnt = pKimura3PCnts;
+		RefBase = eBaseUndef;
+		for (SpeciesSeqIdx = 0; SpeciesSeqIdx < m_NumMAFSpecies; SpeciesSeqIdx++, pKimura3PCnt++)
+			{
+			pSeqBases = pProcParams->pSeqs[SpeciesSeqIdx];
+			SeqBase = pSeqBases[AlignColIdx] & ~cRptMskFlg;
+			if (SpeciesSeqIdx == pProcParams->RefSpeciesIdx)
+				{
+				if(SeqBase > eBaseT)		// skipping over cols where the reference contains a non-canonical base
+					break;
+				RefBase = SeqBase;
+				pKimura3PCnt->NumMatches++;
+				continue;
+				}
+			if(RefBase == eBaseUndef)
+				break;
+
+			if (SeqBase > eBaseT)
+				{
+				pKimura3PCnt->NumIndeterminate++;
+				continue;
+				}
+			switch (RefBase) {
+				case eBaseA:
+					switch (SeqBase) {
+						case eBaseA:
+							pKimura3PCnt->NumMatches++;
+							break;
+
+						case eBaseC:
+							pKimura3PCnt->NumTransversion2s++;
+							break;
+
+						case eBaseG:
+							pKimura3PCnt->NumTransitions++;
+							break;
+
+						case eBaseT:
+							pKimura3PCnt->NumTransversion1s++;
+							break;
+						}
+					break;
+
+				case eBaseC:
+					switch (SeqBase) {
+						case eBaseA:
+							pKimura3PCnt->NumTransversion2s++;
+							break;
+
+						case eBaseC:
+							pKimura3PCnt->NumMatches++;
+							break;
+
+						case eBaseG:
+							pKimura3PCnt->NumTransversion1s++;
+							break;
+
+						case eBaseT:
+							pKimura3PCnt->NumTransitions++;
+							break;
+						}
+					break;
+
+				case eBaseG:
+					switch (SeqBase) {
+						case eBaseA:
+							pKimura3PCnt->NumTransitions++;
+							break;
+
+						case eBaseC:
+							pKimura3PCnt->NumTransversion1s++;
+							break;
+
+						case eBaseG:
+							pKimura3PCnt->NumMatches++;
+							break;
+
+						case eBaseT:
+							pKimura3PCnt->NumTransversion2s++;
+							break;
+						}
+					break;
+
+				case eBaseT:
+					switch (SeqBase) {
+					case eBaseA:
+						pKimura3PCnt->NumTransversion1s++;
+						break;
+
+					case eBaseC:
+						pKimura3PCnt->NumTransitions++;
+						break;
+
+					case eBaseG:
+						pKimura3PCnt->NumTransversion2s++;
+						break;
+
+					case eBaseT:
+						pKimura3PCnt->NumMatches++;
+						break;
+					}
+				break;
+				}
+			}
+		}
+
+	if (RefChromID != PrevRefChromID)
+		PrevRefChromID = RefChromID;
+	}
+
+
+pKimura3PCnt = pKimura3PCnts;
+for(Idx = 0; Idx < m_NumMAFSpecies; Idx++, pKimura3PCnt++)
+	{
+	char *pszAlignedSpecies = pAlignments->GetSpeciesName(pKimura3PCnt->SpeciesID);
+	m_OutBuffIdx += sprintf((char *)&m_pszOutBuffer[m_OutBuffIdx], "\"%s\",%zd,%zd,%zd,%zd,%zd,%f\n",
+								pszAlignedSpecies, pKimura3PCnt->NumMatches, pKimura3PCnt->NumTransitions, pKimura3PCnt->NumTransversion1s, pKimura3PCnt->NumTransversion2s, pKimura3PCnt->NumIndeterminate, pKimura3PCnt->Distance);
+	if ((m_OutBuffIdx + 1000) > m_AllocOutBuff)
+	{	
+		if (!CUtility::RetryWrites(pProcParams->hRsltsFile, m_pszOutBuffer, m_OutBuffIdx))
+			{
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenKimura3P: Fatal error in '%s' RetryWrites()", szOutFile);
+			close(pProcParams->hRsltsFile);
+			pProcParams->hRsltsFile = -1;
+			Reset();
+			return(eBSFerrFileAccess);
+			}
+		m_OutBuffIdx = 0;
+		}
+	}
+
+if (m_OutBuffIdx > 0 && pProcParams->hRsltsFile != -1)
+	{
+	if (!CUtility::RetryWrites(pProcParams->hRsltsFile, m_pszOutBuffer, m_OutBuffIdx))
+		{
+		gDiagnostics.DiagOut(eDLFatal, gszProcName, "GenKimura3P: Fatal error in '%s' RetryWrites()", szOutFile);
+		close(pProcParams->hRsltsFile);
+		pProcParams->hRsltsFile = -1;
+		Reset();
+		return(eBSFerrFileAccess);
+		}
+	m_OutBuffIdx = 0;
+	}
+
+if (pProcParams->hRsltsFile != -1)
+	{
+	// commit output file
+#ifdef _WIN32
+	_commit(pProcParams->hRsltsFile);
+#else
+	fsync(pProcParams->hRsltsFile);
+#endif
+	close(pProcParams->hRsltsFile);
+	pProcParams->hRsltsFile = -1;
+	}
+
+delete pAlignments;
+delete []pKimura3PCnts;
+return(eBSFSuccess);
+}
+
+
+
+
+
+ 
 // Process subsequence which starts immediately following the end of the previous subsequence of start of an alignment block
 // and which ends immediately prior to the next InDel - if bInDelsAsMismatches false -  or end of alignment block
 // Returns the SubSeqStartIdx at which to start a subsequent ProcessSubSeq processing call
@@ -2225,7 +2558,7 @@ int FeatureBits;
 int BitMsk;
 int NxtSeqIdx =-1;
 int FeatIdx;
-int TotNumMismatches = 0;
+int TotColsMismatches = 0;
 int ChromOfsEnd = ChromOfs;
 int HypercoreLen = 0;			// current reference species core length (includes any refseq InDels into length)
 int VMismatches;
@@ -2250,14 +2583,14 @@ OGMismatches = 0;
 OGInDels = 0;
 OGUnaligned = 0;
 
-if(pProcParams->ProcMode == eProcModeOutspecies)
+if(pProcParams->PMode == eProcModeOutspecies)
 	NumCoreSpecies = pProcParams->MinAlignSpecies;
 else
 	NumCoreSpecies = pProcParams->NumSpeciesInAlignment;
 
 for(HypercoreLen = 0; HypercoreLen < MaxLen ; HypercoreLen++, WinIdx++)
 	{
-	// determine in the current alignment column the number of mismatches
+	// determine in the current alignment column the number of mismatches and deletions (missing alignment)
 	VMismatches = 0;
 	VIndels = 0;
 
@@ -2286,7 +2619,7 @@ for(HypercoreLen = 0; HypercoreLen < MaxLen ; HypercoreLen++, WinIdx++)
 		if(VBase == eBaseInDel)
 				VIndels++;
 		if(VBase == eBaseInDel || VBase == eBaseN || // treat InDels and indeterminate bases as if mismatches
-			RefBase != VBase)			   // any bases which don't match the reference base are mismatches
+			RefBase != VBase)		
 			VMismatches++;
 		}
 
@@ -2297,7 +2630,7 @@ for(HypercoreLen = 0; HypercoreLen < MaxLen ; HypercoreLen++, WinIdx++)
 
 		// if processing outspecies mode and core column consisted of InDels then
 		// incr InDel count if there is an alignment onto the out species
-	if(VIndels == NumCoreSpecies && pProcParams->ProcMode == eProcModeOutspecies)
+	if(VIndels == NumCoreSpecies && pProcParams->PMode == eProcModeOutspecies)
 		{
 		if(pProcParams->NumSpeciesInAlignment > NumCoreSpecies)
 			OGInDels += 1;
@@ -2318,15 +2651,15 @@ for(HypercoreLen = 0; HypercoreLen < MaxLen ; HypercoreLen++, WinIdx++)
 		if(NxtSeqIdx == -1)						// if 1st mismatch then note where next search for hypercore should start from
 			NxtSeqIdx = HypercoreLen+SeqIdx+1;  // if current hypercore not accepted
 				// this many total mismatches allowed?
-		if(++TotNumMismatches > pProcParams->MaxHyperMismatches)
+		if(++TotColsMismatches > pProcParams->MaxHyperColsMismatches)
 			break;
 		}
-	else	// no mismatch
+	else	// mismatches in current column are less than max number allowed
 		{
 		CurUltraCoreLen++;							// current ultracore increases as bases identical
 		if(CurUltraCoreLen > MaxUltraCoreLen)		// is this the longest ultracore in current subsequence?
 			MaxUltraCoreLen = CurUltraCoreLen;
-		if(pProcParams->MinUltraLen && CurUltraCoreLen >= pProcParams->MinUltraLen) // when it's an ultra of minimal length
+		if(pProcParams->MinHyperCoreLen && CurUltraCoreLen >= pProcParams->MinHyperCoreLen) // when it's an ultra of minimal length
 			IdentityScore = cRandWalk100Score;			// then assume backup to 100% identity
 		else										// else current ultra not at least minimal length
 			{
@@ -2336,7 +2669,7 @@ for(HypercoreLen = 0; HypercoreLen < MaxLen ; HypercoreLen++, WinIdx++)
 			}
 		}
 
-	if(pProcParams->ProcMode == eProcModeOutspecies && pProcParams->NumSpeciesInAlignment > pProcParams->MinAlignSpecies)
+	if(pProcParams->PMode == eProcModeOutspecies && pProcParams->NumSpeciesInAlignment > pProcParams->MinAlignSpecies)
 		{
 		pVSeq = pProcParams->pSeqs[pProcParams->NumSpeciesInAlignment-1];
 		OGBase = pVSeq[HypercoreLen+SeqIdx] & ~cRptMskFlg;
@@ -2363,8 +2696,8 @@ if(HypercoreLen==MaxLen)// if core was terminated because subsequence ended then
 	NxtSeqIdx = -1;		// checking for more hypercores in same subsequence as these would be internal to this core
 
 // RefHyperCoreLen holds the reference species hypercore length excluding any InDels on the ref species sequence
-if(MaxUltraCoreLen < pProcParams->MinUltraLen || 
-	RefHyperCoreLen < pProcParams->MinHyperLen)	// if less than required then return where to start next core from
+if(MaxUltraCoreLen < pProcParams->MinHyperCoreLen ||
+	RefHyperCoreLen < pProcParams->MinHyperCoreLen)	// if less than required then return where to start next core from
 	return(NxtSeqIdx);
 
 ChromOfsEnd = ChromOfs+RefHyperCoreLen-1;	// determine reference chromosomal offset at which sequence ends
@@ -2442,7 +2775,7 @@ else
 	}
 
 memset(OGDistProfile,0,sizeof(OGDistProfile));
-if(pProcParams->ProcMode == eProcModeOutspecies)
+if(pProcParams->PMode == eProcModeOutspecies)
 	{
 	if(pProcParams->NumSpeciesInAlignment == pProcParams->MinAlignSpecies)
 		OGUnaligned = RefHyperCoreLen;
@@ -2572,7 +2905,7 @@ for(Idx = 0; Idx < m_NumLenRangeBins; Idx++, pStep += pProcParams->Regions)
 		Instances = pStep[0];
 	pRange = GetRangeClass(Idx+1);
 	Len = sprintf(szLineBuff,"\n\"%s\",%d,%d",
-						pRange->szDescr,pProcParams->MaxHyperMismatches,Instances);
+						pRange->szDescr,pProcParams->MaxHyperColsMismatches,Instances);
 	if(pProcParams->Regions > 1)
 		for(Steps = 0; Steps < pProcParams->Regions; Steps++)
 			Len += sprintf(&szLineBuff[Len],",%d",pStep[Steps]);
@@ -2601,12 +2934,12 @@ int Len;
 if(pProcParams->hCoreCSVRsltsFile != -1)
 	{
 	Len = 0;
-	Len += sprintf(&szLineBuff[Len],"%d,\"%s\",\"%s\",\"%s\",%d,%d,%d,\"%s\",%d",
-			++CoreID,pProcParams->MinHyperLen ? "hypercore" : "ultracore",
+	Len += sprintf(&szLineBuff[Len],"%d,\"hypercore\",\"%s\",\"%s\",%d,%d,%d,\"%s\",%d",
+			++CoreID,
 			pProcParams->szSpecies[pProcParams->RefSpeciesIdx],
 			pszChrom,ChromStartOffset,ChromEndOffset,ChromEndOffset-ChromStartOffset+1,
 			pProcParams->pszSpeciesList,FeatureBits & (cAnyFeatBits | cOverlaysSpliceSites));
-	if(pProcParams->ProcMode == eProcModeOutspecies)
+	if(pProcParams->PMode == eProcModeOutspecies)
 		{
 		Len += sprintf(&szLineBuff[Len],",%d,%d,%d,%d",OGUnaligned,OGMatches,OGMismatches,OGInDels);
 		for(int Idx = 0; Idx < pProcParams->NumDistSegs; Idx++)

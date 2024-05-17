@@ -16,6 +16,7 @@ ngskit4b_SOURCES= KAlignerCL.cpp Blitz.cpp genDESeq.cpp kit4bax.cpp LocKMers.cpp
 AM_CPPFLAGS= $(all_includes)
 
 AM_CFLAGS= -g
+
 # our library
 LDADD = ../libkit4b/libkit4b.a ../libzlib/libzlib.a ../libBKPLPlot/libBKPLPlot.a
 AM_LDFLAGS = -static -Wl,-z,stack-size=0x01ffffff -lrt -ldl -lpthread

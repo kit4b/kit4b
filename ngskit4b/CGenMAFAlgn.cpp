@@ -72,7 +72,7 @@ genmafalgn(int argc, char** argv)
 	struct arg_lit* IsAXT = arg_lit0("x", "axt", "MAF (default) or AXT two species source files");
 	struct arg_file* ChromLens = arg_file0("c", "chromlens", "<file>", "input file containing species.chrom lengths, required for .axt processing");
 	struct arg_int* Mode = arg_int0("m", "mode", "<int>", "processing mode: 0 (default) MAF or AXT -> multialign, 1 multialign -> datapoints");
-	struct arg_file* InFile = arg_file1("i", nullptr, "<file>", "input from .maf or axt files");
+	struct arg_file* InFile = arg_file1("i", nullptr, "<file>", "input from .maf or axt files (wildcards accepted)");
 	struct arg_file* OutFile = arg_file1("o", nullptr, "<file>", "output as multialign biosequence file");
 	struct arg_str* Descr = arg_str1("d", "descr", "<string>", "full description");
 	struct arg_str* Title = arg_str1("t", "title", "<string>", "short title");
@@ -384,12 +384,16 @@ CGenMAFAlgn::ProcessThisFile(char* pszFile,
 {
 	int Rslt;
 	int hFile;
+	unsigned long Elapsed;
+	unsigned long CurElapsed;
+	CStopWatch CurTime;
 	gzFile pgzFile;
 
 	char* pNxtChr;
 	char Chr;
 	int iBuffLen;							// number of buffered chrs in szBuffer
 	int LineLen;							// current number of chars in pszLineBuffer;
+	int64_t CurLineNumb;					// current line being processed 
 	tsProcParams* pProcParams = (tsProcParams*)pParams;
 	bool bIsAXT = pProcParams->bIsAXT;
 	gDiagnostics.DiagOut(eDLInfo, gszProcName, "Processing File: %s", pszFile);
@@ -429,7 +433,10 @@ CGenMAFAlgn::ProcessThisFile(char* pszFile,
 	Rslt = pProcParams->pAlignFile->StartFile(pszFile);
 	if (Rslt != eBSFSuccess)
 		return(Rslt);
-
+	
+	CurTime.Start();
+	Elapsed = CurTime.ReadUSecs();
+	CurLineNumb = 0;
 	LineLen = 0;
 	while (Rslt >= eBSFSuccess && ((iBuffLen = pgzFile != nullptr ? gzread(pgzFile, pProcParams->pRawBuffer, cMARawBuffSize) : read(hFile, pProcParams->pRawBuffer, cMARawBuffSize)) > 0))
 	{
@@ -442,20 +449,30 @@ CGenMAFAlgn::ProcessThisFile(char* pszFile,
 				continue;
 			if (Chr == '\n')		// EOL
 			{
-				if (!LineLen)
-					continue;
-				pProcParams->pszLineBuffer[LineLen] = 0;
-				if (bIsAXT)
-					Rslt = ProcessAXTline(LineLen, pProcParams);
-				else
-					Rslt = ProcessMAFline(LineLen, pProcParams);
-				if (Rslt < 0)
-				{
-					gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessThisFile: Errors processing %s line", bIsAXT ? "AXT" : "MAF");
-					return(Rslt);
-				}
-				LineLen = 0;
+			CurLineNumb++;
+			if (!LineLen)
 				continue;
+			if((CurLineNumb % 100000) == 0)
+				{
+				CurElapsed = CurTime.ReadUSecs();
+				if ((CurElapsed - Elapsed) > 60)
+					{
+					Elapsed = CurElapsed;
+					gDiagnostics.DiagOut(eDLInfo, gszProcName, "Parsing line %zd in file '%s'", CurLineNumb, pszFile);
+					}
+				}
+			pProcParams->pszLineBuffer[LineLen] = 0;
+			if (bIsAXT)
+				Rslt = ProcessAXTline(LineLen, pProcParams);
+			else
+				Rslt = ProcessMAFline(LineLen, pProcParams);
+			if (Rslt < 0)
+			{
+				gDiagnostics.DiagOut(eDLFatal, gszProcName, "ProcessThisFile: Errors processing %s line", bIsAXT ? "AXT" : "MAF");
+				return(Rslt);
+			}
+			LineLen = 0;
+			continue;
 			}
 			if (!LineLen)		// strip any leading space
 			{

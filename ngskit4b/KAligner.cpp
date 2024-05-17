@@ -7193,9 +7193,12 @@ if(!m_bPackedBaseAlleles)
 	}
 else
 	{ // this code block contains the PBA processing
+
+	gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenPBAChrom: Processing chrom '%s'", szChromName);
 	if (m_pPackedBaseAlleles == nullptr)					// will be nullptr first time in
 		{
-		memreq = (m_pChromSNPs->ChromLen + 10000) * sizeof(uint8_t);
+		memreq = (m_pChromSNPs->ChromLen + 0x0fffff) * sizeof(uint8_t);  // allocating a little extra to minimize chances of a realloc required if a subsequent larger chrom processed
+		gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenPBAChrom: Initial memory allocation is for %zd bytes", memreq);
 #ifdef _WIN32
 		m_pPackedBaseAlleles = (uint8_t*)malloc((size_t)memreq);
 		if (m_pPackedBaseAlleles == nullptr)
@@ -7223,10 +7226,11 @@ else
 		m_NumPackedBaseAlleles+=1;	
 		}
 	else
-			// needing to allocate more memory? NOTE: allowing small safety margin of 10 tsLociPValues
-		if ((m_AllocPackedBaseAllelesMem + 1000) < m_pChromSNPs->ChromLen)
+			// needing to allocate additional memory for this new chrom?
+		if ((m_pChromSNPs->ChromLen + 0x0ffff) > m_AllocPackedBaseAllelesMem) 
 			{
-			size_t memreq = m_AllocPackedBaseAllelesMem + 1000 + (m_pChromSNPs->ChromLen * sizeof(uint8_t));
+			memreq = (m_pChromSNPs->ChromLen + 0x0fffff) * sizeof(uint8_t);  // reallocating a little extra to minimize chances of a realloc required if a subsequent larger chrom processed
+			gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenPBAChrom: Increasing memory allocation to %zd bytes", memreq);
 #ifdef _WIN32
 			pPackedBaseAlleles = (uint8_t*)realloc(m_pPackedBaseAlleles, memreq);
 			if (pPackedBaseAlleles == nullptr)
@@ -7236,7 +7240,7 @@ else
 				if (pPackedBaseAlleles == MAP_FAILED)
 				{
 #endif
-				gDiagnostics.DiagOut(eDLFatal, gszProcName, "OutputSNPs: Memory reallocation to %zd bytes failed - %s", memreq, strerror(errno));
+				gDiagnostics.DiagOut(eDLFatal, gszProcName, "OutputSNPs: Memory reallocation PackedBaseAlleles to %zd bytes from %zd failed - (%d) %s", memreq, m_AllocPackedBaseAllelesMem, errno, strerror(errno));
 				return(eBSFerrMem);
 				}
 			m_pPackedBaseAlleles = pPackedBaseAlleles;

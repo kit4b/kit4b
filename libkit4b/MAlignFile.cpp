@@ -101,7 +101,7 @@ if(m_bIsBigEndian)	// if on a big-endian machine then need to make little endian
 	FileHdr.NumChroms = SwapUI32Endians(m_FileHdr.NumChroms);				// actual number of aligned chromosomes
 	FileHdr.NumAlignBlocks = SwapUI32Endians(m_FileHdr.NumAlignBlocks);	// actual number of alignment blocks
 	FileHdr.AlignIncInDelLen = SwapUI32Endians(m_FileHdr.AlignIncInDelLen);			// actual longest aligned sequence (incuding InDels) in any alignment
-	FileHdr.AlignBlockLen = SwapUI32Endians(m_FileHdr.AlignBlockLen);			// actual longest alignment block
+	FileHdr.AlignBlockLen = SwapUI64Endians(m_FileHdr.AlignBlockLen);			// actual longest alignment block
 	FileHdr.NumSrcFiles = SwapUI16Endians(m_FileHdr.NumSrcFiles);				// actual number of files from which alignments were sourced
 	FileHdr.MaxSrcFiles = SwapUI16Endians(m_FileHdr.MaxSrcFiles);				// maximum number of source alignment files supported
 
@@ -181,7 +181,7 @@ if(m_bIsBigEndian)	// file was written with little-endian ordering
 	m_FileHdr.NumChroms = SwapUI32Endians(m_FileHdr.NumChroms);				// actual number of aligned chromosomes
 	m_FileHdr.NumAlignBlocks = SwapUI32Endians(m_FileHdr.NumAlignBlocks);	// actual number of alignment blocks
 	m_FileHdr.AlignIncInDelLen = SwapUI32Endians(m_FileHdr.AlignIncInDelLen);			// actual longest aligned sequence (incuding InDels) in any alignment
-	m_FileHdr.AlignBlockLen = SwapUI32Endians(m_FileHdr.AlignBlockLen);			// actual longest alignment block
+	m_FileHdr.AlignBlockLen = SwapUI64Endians(m_FileHdr.AlignBlockLen);			// actual longest alignment block
 	m_FileHdr.NumSrcFiles = SwapUI16Endians(m_FileHdr.NumSrcFiles);				// actual number of files from which alignments were sourced
 	m_FileHdr.MaxSrcFiles = SwapUI16Endians(m_FileHdr.MaxSrcFiles);				// maximum number of source alignment files supported
 
@@ -195,8 +195,8 @@ if(m_bIsBigEndian)	// file was written with little-endian ordering
 	for(Idx=0; Idx < m_FileHdr.NumSrcFiles; Idx++,pSrc++)
 		{
 		pSrc->SrcFileID = SwapUI16Endians(pSrc->SrcFileID);					// globally unique (1..n), identifies file from which alignments are sourced
-		pSrc->MetaDataLen = SwapUI16Endians(pSrc->MetaDataLen);					// header ("##") metadata length
-		pSrc->AlignParamsLen = SwapUI16Endians(pSrc->AlignParamsLen);				// alignment ("#") parameter length
+		pSrc->MetaDataLen = SwapUI16Endians(pSrc->MetaDataLen);				// header ("##") metadata length
+		pSrc->AlignParamsLen = SwapUI16Endians(pSrc->AlignParamsLen);		// alignment ("#") parameter length
 		}
 	}
 
@@ -1223,6 +1223,14 @@ for(Idx = 0; Idx < m_FileHdr.NumSpecies; Idx++, pSpecies++)
 return(eBSFerrDataset);
 }
 
+int32_t		// returned species identifier (1..NumSpecies)
+CMAlignFile::LocateSpeciesID(int SpeciesIdx)	// Idx 0..NumSpecies-1
+{
+if(SpeciesIdx < 0 || SpeciesIdx >= m_FileHdr.NumSpecies)
+	return(eBSFerrDataset);
+return(m_FileHdr.SpeciesNames[SpeciesIdx].SpeciesID);
+}
+
 //returns chromosome identifier
 int
 CMAlignFile::LocateChromID(char *pszSpeciesName,char *pszChromName)
@@ -1531,7 +1539,7 @@ if(m_bIsBigEndian)
 return(eBSFSuccess);
 }
 
-tsAlignSpecies *										// NULL if species not in block alignment
+tsAlignSpecies *										// nullptr if species not in block alignment
 CMAlignFile::LoadAlignSpecies(tAlignBlockID BlockID,	// which alignment block
 							  tSpeciesID SpeciesID)		// which species to locate alignment for
 {
@@ -1540,23 +1548,24 @@ int NumSpecies;
 tChromID ChromID;
 
 if(!SpeciesID || SpeciesID > m_FileHdr.NumSpecies || !BlockID || BlockID > m_FileHdr.NumAlignBlocks)
-	return(NULL);
+	return(nullptr);
 
 if(LoadBlock(BlockID)!=eBSFSuccess)
-	return(NULL);
+	return(nullptr);
 
 // check if species is represented in the alignment block
 NumSpecies = m_pAlignBlock->NumSpecies;
 if(!NumSpecies)
-	return(NULL);
+	return(nullptr);
 
+// iterate until a match on the species, or species not present in the block
 pSpecies = (tsAlignSpecies *)((uint8_t *)m_pAlignBlock + sizeof(tsAlignBlock));
 while(ChromID = pSpecies->ChromID) 
 	{
 	if(SpeciesID == m_pChromNames[ChromID-1].SpeciesID)
 		break;
 	if(!--NumSpecies)
-		return(NULL);
+		return(nullptr);
 	pSpecies = (tsAlignSpecies *)((uint8_t *)pSpecies + pSpecies->AlignSpeciesLen);
 	}
 return(pSpecies);
@@ -2162,7 +2171,7 @@ return(BasesReturned);
 
 // GetSeq
 // Gets sequence for species in specified block 
-etSeqBase *
+etSeqBase *		// ptr to sequence or nullptr if no alignment for species in specified block
 CMAlignFile::GetSeq(tAlignBlockID BlockID,tSpeciesID SpeciesID)   // returns alignment sequence for specified block and species
 {
 tsAlignSpecies *pAlignSpecies;
