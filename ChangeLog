@@ -104,4 +104,5 @@ Release 1.98.0 - Callhaplotypes KMer processing bug fixes
 Release 1.98.1 - Callhaplotypes haplotype scoring bin idexing overflow bug fixes
 Release 1.98.2 - Callhaplotypes grouping segregation consensus KMers option added
 Release 2.0.1 - Commenced refactoring Hyperconserved discovery (now accepts UCSC 470 way hg38 MAFs) - NOTE: refactoring is currently incomplete - genpba memory reallocation optimisations
+Release 2.0.2 - Genpba reduce dependencies on mmap() -> mremap() memory allocations by overallocating in initial mmap().  
 

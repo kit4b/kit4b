@@ -1,4 +1,4 @@
-# kit4b 1.98.2
+# kit4b 2.0.2
 **kit4b** - the 'K-mer Informed Toolkit for Bioinformatics' - is an integrated toolkit of high performance bioinformatics processes and subprocesses targeting the challenges of next generation sequencing analytics. 
 
 ## Why YAT (Yet Another Toolkit)
@@ -61,7 +61,7 @@ Limited documentation is located in the /kit4b/Docs directory
 To build on Ubuntu firstly clone this repository. Dependent on your hosting environment it may be neccessary to firstly update the repository 'aclocal.m4' by running 'aclocal'.
 
 
-The following example, for Ubuntu 18..22.04 LTS, will install the **kitb** toolkit processes to a user created `bin` directory in the user's home directory. It assumes that the Autotools toolchain ('autotools-dev', 'automake' and 'autoconf') have been installed and are accessible to the user. 
+The following example, for Ubuntu 18..24.04 LTS, will install the **kitb4** toolkit processes to a user created `bin` directory in the user's home directory. It assumes that the Autotools toolchain ('autotools-dev', 'automake' and 'autoconf') have been installed and are accessible to the user. 
 
 ```
 mkdir ~/bin
@@ -106,7 +106,7 @@ Contributions are most welcome. To contribute, follow these steps.
 Please report any issues to [github project](https://github.com/kit4b/kit4b/issues).
 
 ## Acknowlegement
-This toolkit is a source base clone of **BioKanga** release 4.4.2 (https://github.com/csiro-crop-informatics/biokanga) which has been further developed to contain significant functionality enhancements, these enhancements have resulted in compromised backward compatibility with **BioKanga**.
+This toolkit originated as a source clone of **BioKanga** release 4.4.2 (https://github.com/csiro-crop-informatics/biokanga). **kit4b** is not backward compatible with **BioKanga**.
 
 **kit4b** is being released under the Opensource Software License Agreement (GPLv3), the same as **BioKanga** licencing.
 

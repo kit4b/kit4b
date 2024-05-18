@@ -1307,7 +1307,7 @@ if(m_pPackedBaseAlleles != nullptr)
 	free(m_pPackedBaseAlleles);				// was allocated with malloc/realloc, or mmap/mremap, not c++'s new....
 #else
 	if(m_pPackedBaseAlleles != MAP_FAILED)
-		munmap(m_pPackedBaseAlleles,m_AllocLociPValuesMem);
+		munmap(m_pPackedBaseAlleles, m_AllocPackedBaseAllelesMem);
 #endif
 	m_pPackedBaseAlleles = nullptr;
 	}
@@ -7193,31 +7193,30 @@ if(!m_bPackedBaseAlleles)
 	}
 else
 	{ // this code block contains the PBA processing
-
+// NOTE: initial allocation size is likely to be sufficent for any single chromosome
+// but the reallocation to larger size processing is retained in case there is, in future, a need to realloc! 
 	gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenPBAChrom: Processing chrom '%s'", szChromName);
 	if (m_pPackedBaseAlleles == nullptr)					// will be nullptr first time in
 		{
-		memreq = (m_pChromSNPs->ChromLen + 0x0fffff) * sizeof(uint8_t);  // allocating a little extra to minimize chances of a realloc required if a subsequent larger chrom processed
+		memreq = max((size_t)0x07ffffff0,((size_t)m_pChromSNPs->ChromLen + 0x0fff) * 2);  // allocating a little extra for the header
 		gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenPBAChrom: Initial memory allocation is for %zd bytes", memreq);
 #ifdef _WIN32
-		m_pPackedBaseAlleles = (uint8_t*)malloc((size_t)memreq);
+		m_pPackedBaseAlleles = (uint8_t*)malloc(memreq);
 		if (m_pPackedBaseAlleles == nullptr)
 			{
 			gDiagnostics.DiagOut(eDLFatal, gszProcName, "OutputSNPs: Memory allocation of %zd bytes failed", (int64_t)memreq);
 			return(eBSFerrMem);
 			}
 #else
-		// gnu malloc is still in the 32bit world and can't handle more than 2GB allocations
-		m_pPackedBaseAlleles = (uint8_t*)mmap(nullptr, (size_t)memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+		m_pPackedBaseAlleles = (uint8_t*)mmap(nullptr, memreq, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 		if (m_pPackedBaseAlleles == MAP_FAILED)
 			{
 			m_pPackedBaseAlleles = nullptr;
-			gDiagnostics.DiagOut(eDLFatal, gszProcName, "OutputSNPs: Memory allocation of %zd bytes through mmap()  failed", (int64_t)memreq, strerror(errno));
+			gDiagnostics.DiagOut(eDLFatal, gszProcName, "OutputSNPs: Initial memory allocation of %zd bytes through mmap()  failed", (int64_t)memreq, strerror(errno));
 			return(eBSFerrMem);
 			}
 #endif
 		m_AllocPackedBaseAllelesMem = memreq;
-		m_NumPackedBaseAlleles = 0;
 
 		// as this the first chromosome being called then generate header
 		// This header contains a series of '\n' separated tagname:values 
@@ -7226,10 +7225,11 @@ else
 		m_NumPackedBaseAlleles+=1;	
 		}
 	else
-			// needing to allocate additional memory for this new chrom?
-		if ((m_pChromSNPs->ChromLen + 0x0ffff) > m_AllocPackedBaseAllelesMem) 
+		{	// initial allocation and header not required
+			// but need to allocate additional memory for this new chrom?
+		if (((size_t)m_pChromSNPs->ChromLen + 0x0ffff) > m_AllocPackedBaseAllelesMem) 
 			{
-			memreq = (m_pChromSNPs->ChromLen + 0x0fffff) * sizeof(uint8_t);  // reallocating a little extra to minimize chances of a realloc required if a subsequent larger chrom processed
+			memreq = ((size_t)m_pChromSNPs->ChromLen + 0x0ffff);  // reallocating a little extra to minimize chances of a realloc required if a subsequent larger chrom processed
 			gDiagnostics.DiagOut(eDLInfo, gszProcName, "GenPBAChrom: Increasing memory allocation to %zd bytes", memreq);
 #ifdef _WIN32
 			pPackedBaseAlleles = (uint8_t*)realloc(m_pPackedBaseAlleles, memreq);
@@ -7245,8 +7245,10 @@ else
 				}
 			m_pPackedBaseAlleles = pPackedBaseAlleles;
 			m_AllocPackedBaseAllelesMem = memreq;
-			m_NumPackedBaseAlleles = 0;
 			}
+		m_NumPackedBaseAlleles = 0;	// no header
+		}
+	
 	pPackedBaseAlleles = &m_pPackedBaseAlleles[m_NumPackedBaseAlleles];
 
 	*pPackedBaseAlleles = (uint8_t)strlen(szChromName);
